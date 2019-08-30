@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNotNull;
 public class ClientClusterDiscoveryServiceTest {
 
     private CandidateClusterContext createContext() {
-        return new CandidateClusterContext(null, null, null, null, null);
+        return new CandidateClusterContext(null, null, null, null, null, null);
     }
 
     @Test(expected = NoSuchElementException.class)

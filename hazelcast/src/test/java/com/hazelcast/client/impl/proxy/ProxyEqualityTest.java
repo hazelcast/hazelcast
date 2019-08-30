@@ -63,7 +63,7 @@ public class ProxyEqualityTest {
         hazelcastFactoryClusterA.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName(clusterAName);
+        clientConfig.setClientName(clusterAName);
         client1ClusterA = hazelcastFactoryClusterA.newHazelcastClient(clientConfig);
         client2ClusterA = hazelcastFactoryClusterA.newHazelcastClient(clientConfig);
 
@@ -74,7 +74,7 @@ public class ProxyEqualityTest {
         hazelcastFactoryClusterB.newHazelcastInstance(config);
 
         clientConfig = new ClientConfig();
-        clientConfig.setClusterName(clusterBName);
+        clientConfig.setClientName(clusterBName);
         client1ClusterB = hazelcastFactoryClusterB.newHazelcastClient(clientConfig);
     }
 

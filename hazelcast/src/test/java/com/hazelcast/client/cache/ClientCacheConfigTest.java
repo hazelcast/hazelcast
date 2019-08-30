@@ -64,7 +64,6 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().setPort(5701);
         config.setClusterName("cluster1");
-        config.setClusterPassword("cluster1pass");
         config.addCacheConfig(simpleConfig);
         Hazelcast.newHazelcastInstance(config);
 
@@ -72,7 +71,6 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().setPort(5702);
         config2.setClusterName("cluster2");
-        config2.setClusterPassword("cluster2pass");
         config.addCacheConfig(simpleConfig);
         Hazelcast.newHazelcastInstance(config2);
     }
@@ -129,8 +127,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         String instanceName = "ClientInstanceTest";
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName("cluster1");
-        clientConfig.setClusterPassword("cluster1pass");
+        clientConfig.setClientName("cluster1");
         clientConfig.setInstanceName(instanceName);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
@@ -149,8 +146,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     @Test
     public void testGetPreConfiguredCache() {
         ClientConfig config = new ClientConfig();
-        config.setClusterName("cluster1");
-        config.setClusterPassword("cluster1pass");
+        config.setClientName("cluster1");
 
         for (int i = 0; i < 4; i++) {
             HazelcastInstance client = HazelcastClient.newHazelcastClient(config);

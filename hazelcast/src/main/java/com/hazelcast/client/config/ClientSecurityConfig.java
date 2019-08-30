@@ -16,121 +16,116 @@
 
 package com.hazelcast.client.config;
 
+import java.util.Objects;
+
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.security.CredentialsIdentityConfig;
+import com.hazelcast.config.security.IdentityConfig;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.security.ICredentialsFactory;
 
 /**
  * Contains the security configuration for the client.
- * Credentials object is used for both authentication and authorization
- * Credentials is used with ClusterLoginModule for authentication
- * It is also used with SecurityInterceptor and to define principal in client-permissions for authorization.
- *
- * @see Credentials#getName()
- * @see com.hazelcast.security.SecurityInterceptor
  */
 public class ClientSecurityConfig {
 
-    private Credentials credentials;
-    private String credentialsClassname;
-    private CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig();
+    private IdentityConfig identityConfig;
 
     public ClientSecurityConfig() {
     }
 
     public ClientSecurityConfig(ClientSecurityConfig securityConfig) {
-        credentials = securityConfig.credentials;
-        credentialsClassname = securityConfig.credentialsClassname;
-        credentialsFactoryConfig = new CredentialsFactoryConfig(securityConfig.credentialsFactoryConfig);
+        if (securityConfig.identityConfig == null) {
+            identityConfig = null;
+        } else {
+            identityConfig = identityConfig.copy();
+        }
     }
 
-    public Credentials getCredentials() {
-        return credentials;
+    public UsernamePasswordIdentityConfig getUsernamePasswordIdentityConfig() {
+        return getIfType(identityConfig, UsernamePasswordIdentityConfig.class);
     }
 
-    /**
-     * @param credentials that will be used when
-     * @return configured {@link com.hazelcast.client.config.ClientSecurityConfig} for chaining
-     */
+    public ClientSecurityConfig setUsernamePasswordIdentityConfig(UsernamePasswordIdentityConfig identityConfig) {
+        this.identityConfig = identityConfig;
+        return this;
+    }
+
+    public ClientSecurityConfig setUsernamePasswordIdentityConfig(String username, String password) {
+        this.identityConfig = new UsernamePasswordIdentityConfig(username, password);
+        return this;
+    }
+
+    public TokenIdentityConfig getTokenIdentityConfig() {
+        return getIfType(identityConfig, TokenIdentityConfig.class);
+    }
+
+    public ClientSecurityConfig setTokenIdentityConfig(TokenIdentityConfig identityConfig) {
+        this.identityConfig = identityConfig;
+        return this;
+    }
+
+    public CredentialsIdentityConfig getCredentialsIdentityConfig() {
+        return getIfType(identityConfig, CredentialsIdentityConfig.class);
+    }
+
+    public ClientSecurityConfig setCredentialsIdentityConfig(CredentialsIdentityConfig identity) {
+        this.identityConfig = identity;
+        return this;
+    }
+
     public ClientSecurityConfig setCredentials(Credentials credentials) {
-        this.credentials = credentials;
+        this.identityConfig = new CredentialsIdentityConfig(credentials);
         return this;
     }
 
-    /**
-     * @return configured class name for credentials
-     */
-    public String getCredentialsClassname() {
-        return credentialsClassname;
-    }
-
-    /**
-     * Credentials class will be instantiated from class name when setCredentialsFactoryConfig and  setCredentials
-     * are not used. The class will be instantiated with empty constructor.
-     *
-     * @param credentialsClassname class name for credentials
-     * @return configured {@link com.hazelcast.client.config.ClientSecurityConfig} for chaining
-     */
-    public ClientSecurityConfig setCredentialsClassname(String credentialsClassname) {
-        this.credentialsClassname = credentialsClassname;
-        return this;
-    }
-
-    /**
-     * @return credentials factory config
-     */
     public CredentialsFactoryConfig getCredentialsFactoryConfig() {
-        return credentialsFactoryConfig;
+        return getIfType(identityConfig, CredentialsFactoryConfig.class);
     }
 
-    /**
-     * Credentials Factory Config allows user to pass custom properties and use group config when instantiating
-     * a credentials object.
-     *
-     * @param credentialsFactoryConfig the config that will be used to create credentials factory
-     * @return configured {@link com.hazelcast.client.config.ClientSecurityConfig} for chaining
-     */
-    public ClientSecurityConfig setCredentialsFactoryConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
-        this.credentialsFactoryConfig = credentialsFactoryConfig;
+    public ClientSecurityConfig setCredentialsFactoryConfig(CredentialsFactoryConfig identityConfig) {
+        this.identityConfig = identityConfig;
         return this;
     }
 
-    @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ClientSecurityConfig that = (ClientSecurityConfig) o;
-
-        if (credentials != null ? !credentials.equals(that.credentials) : that.credentials != null) {
-            return false;
-        }
-        if (credentialsClassname != null
-                ? !credentialsClassname.equals(that.credentialsClassname) : that.credentialsClassname != null) {
-            return false;
-        }
-        return credentialsFactoryConfig != null
-                ? credentialsFactoryConfig.equals(that.credentialsFactoryConfig) : that.credentialsFactoryConfig == null;
+    public ICredentialsFactory asCredentialsFactory(ClassLoader cl) {
+        return identityConfig != null ? identityConfig.asCredentialsFactory(cl) : null;
     }
 
-    @Override
-    public int hashCode() {
-        int result = credentials != null ? credentials.hashCode() : 0;
-        result = 31 * result + (credentialsClassname != null ? credentialsClassname.hashCode() : 0);
-        result = 31 * result + (credentialsFactoryConfig != null ? credentialsFactoryConfig.hashCode() : 0);
-        return result;
+    public boolean hasIdentityConfig() {
+        return identityConfig != null;
     }
 
     @Override
     public String toString() {
         return "ClientSecurityConfig{"
-                + "credentials=" + credentials
-                + ", credentialsClassname='" + credentialsClassname + '\''
-                + ", credentialsFactoryConfig=" + credentialsFactoryConfig
+                + "identityConfig=" + identityConfig
                 + '}';
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(identityConfig);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        ClientSecurityConfig other = (ClientSecurityConfig) obj;
+        return Objects.equals(identityConfig, other.identityConfig);
+    }
+
+    private <T> T getIfType(Object inst, Class<T> clazz) {
+        return clazz.isInstance(inst) ? clazz.cast(inst) : null;
     }
 }

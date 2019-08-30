@@ -22,6 +22,7 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -37,13 +38,14 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.security.Credentials;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -97,10 +99,9 @@ public final class ClientConfigXmlGenerator {
                 "xsi:schemaLocation", "http://www.hazelcast.com/schema/client-config "
                         + "http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd");
 
-        //Config
-        cluster(gen, clientConfig);
         //InstanceName
         gen.node("instance-name", clientConfig.getInstanceName());
+        gen.node("client-name", clientConfig.getClientName());
         //attributes
         gen.appendLabels(clientConfig.getLabels());
         //Properties
@@ -196,13 +197,6 @@ public final class ClientConfigXmlGenerator {
         }
     }
 
-    private static void cluster(XmlGenerator gen, ClientConfig cluster) {
-        gen.open("cluster")
-                .node("name", cluster.getClusterName())
-                .node("password", cluster.getClusterPassword())
-                .close();
-    }
-
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {
         gen.open("network")
                 .node("smart-routing", network.isSmartRouting())
@@ -222,14 +216,27 @@ public final class ClientConfigXmlGenerator {
     }
 
     private static void security(XmlGenerator gen, ClientSecurityConfig security) {
-        String credentialsClassname = security.getCredentialsClassname();
-        Credentials credentials = security.getCredentials();
-        if (credentialsClassname == null && credentials == null) {
+        if (security == null || !security.hasIdentityConfig()) {
             return;
         }
-        gen.open("security")
-                .node("credentials", classNameOrImplClass(credentialsClassname, credentials))
-                .close();
+        gen.open("security");
+        UsernamePasswordIdentityConfig upConfig = security.getUsernamePasswordIdentityConfig();
+        if (upConfig != null) {
+            gen.node("username-password", null,
+                    "username", upConfig.getUsername(),
+                    "password", upConfig.getPassword());
+        }
+        TokenIdentityConfig tic = security.getTokenIdentityConfig();
+        if (tic != null) {
+            gen.node("token", tic.getTokenEncoded(), "encoding", tic.getEncoding());
+        }
+        CredentialsFactoryConfig cfConfig = security.getCredentialsFactoryConfig();
+        if (cfConfig != null) {
+            gen.open("credentials-factory", "class-name", cfConfig.getClassName())
+            .appendProperties(cfConfig.getProperties())
+            .close();
+        }
+        gen.close();
     }
 
     private static void listener(XmlGenerator gen, List<ListenerConfig> listeners) {

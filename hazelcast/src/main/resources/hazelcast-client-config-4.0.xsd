@@ -26,7 +26,7 @@
             <xs:choice minOccurs="1" maxOccurs="unbounded">
                 <xs:element ref="import" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="config-replacers" type="config-replacers" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="cluster" type="cluster" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="client-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
@@ -394,19 +394,6 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:complexType name="cluster">
-        <xs:all>
-            <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" default="dev"/>
-            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1" default="dev-pass">
-                <xs:annotation>
-                    <xs:documentation>
-                        Password of the group to connect to.
-                        The password is only checked when security is enabled on Hazelcast members.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-    </xs:complexType>
     <xs:complexType name="listeners">
         <xs:sequence>
             <xs:element name="listener" type="listener-base" minOccurs="0" maxOccurs="unbounded"/>
@@ -422,10 +409,11 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="security">
-        <xs:sequence>
-            <xs:element name="credentials" type="credentials" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="credentials-factory" type="security-object" minOccurs="0" maxOccurs="1"/>
-        </xs:sequence>
+        <xs:choice>
+            <xs:element name="username-password" type="username-password"/>
+            <xs:element name="credentials-factory" type="security-object"/>
+            <xs:element name="token" type="token"/>
+        </xs:choice>
     </xs:complexType>
     <xs:complexType name="credentials">
         <xs:annotation>
@@ -830,5 +818,22 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
-
+    <xs:complexType name="username-password">
+        <xs:attribute name="username" type="xs:string" use="required" />
+        <xs:attribute name="password" type="xs:string" use="required" />
+    </xs:complexType>
+    <xs:complexType name="token">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="encoding">
+                    <xs:simpleType>
+                        <xs:restriction base="non-space-string">
+                            <xs:enumeration value="none"/>
+                            <xs:enumeration value="base64"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
 </xs:schema>

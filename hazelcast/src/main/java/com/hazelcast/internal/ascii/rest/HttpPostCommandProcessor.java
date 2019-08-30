@@ -17,7 +17,6 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
@@ -837,18 +836,18 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String decodedName = URLDecoder.decode(clusterName, "UTF-8");
         SecurityContext securityContext = textCommandService.getNode().getNodeExtension().getSecurityContext();
         if (securityContext == null) {
-            final Config config = textCommandService.getNode().getConfig();
             if (pass != null && !pass.isEmpty()) {
                 logger.fine("Password was provided but the Hazelcast Security is disabled.");
             }
-            return config.getClusterName().equals(decodedName);
+            String expectedName = textCommandService.getNode().getConfig().getClusterName();
+            return expectedName.equals(decodedName);
         }
         if (pass == null) {
             logger.fine("Empty password is not allowed when the Hazelcast Security is enabled.");
             return false;
         }
         String decodedPass = URLDecoder.decode(pass, "UTF-8");
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(clusterName, decodedPass);
+        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(decodedName, decodedPass);
         try {
             LoginContext lc = securityContext.createMemberLoginContext(credentials, command.getConnection());
             lc.login();

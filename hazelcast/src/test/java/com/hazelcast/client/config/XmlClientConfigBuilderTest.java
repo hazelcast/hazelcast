@@ -88,10 +88,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     @Test(expected = InvalidConfigurationException.class)
     public void testInvalidRootElement() {
         String xml = "<hazelcast>"
-                + "<cluster>"
-                + "<name>dev</name>"
-                + "<password>clusterpass</password>"
-                + "</cluster>"
+                + "<client-name>dev</client-name>"
                 + "</hazelcast>";
         buildConfig(xml);
     }
@@ -110,10 +107,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     @Test
     public void loadingThroughSystemProperty_existingFile() throws IOException {
         String xml = HAZELCAST_CLIENT_START_TAG
-                + "    <cluster>\n"
-                + "        <name>foobar</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </cluster>\n"
+                + "    <client-name>foobar</client-name>\n"
                 + "</hazelcast-client>";
 
         File file = File.createTempFile("foo", ".xml");
@@ -126,7 +120,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar", config.getClusterName());
+        assertEquals("foobar", config.getClientName());
     }
 
     @Override
@@ -143,7 +137,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar-xml", config.getClusterName());
+        assertEquals("foobar-xml", config.getClientName());
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", config.getNetworkConfig().getSSLConfig().getFactoryClassName());
         assertEquals(128, config.getNetworkConfig().getSocketOptions().getBufferSize());
         assertFalse(config.getNetworkConfig().getSocketOptions().isKeepAlive());

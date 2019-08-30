@@ -16,20 +16,23 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.security.ICredentialsFactory;
-
+import java.util.Objects;
 import java.util.Properties;
+
+import com.hazelcast.config.security.IdentityConfig;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.security.ICredentialsFactory;
 
 /**
  * Contains the configuration for Credentials Factory.
  */
-public class CredentialsFactoryConfig {
+public class CredentialsFactoryConfig implements IdentityConfig {
 
-    private String className;
+    private volatile String className;
 
-    private ICredentialsFactory implementation;
+    private volatile ICredentialsFactory implementation;
 
-    private Properties properties = new Properties();
+    private volatile Properties properties = new Properties();
 
     public CredentialsFactoryConfig() {
     }
@@ -38,7 +41,7 @@ public class CredentialsFactoryConfig {
         this.className = className;
     }
 
-    public CredentialsFactoryConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
+    private CredentialsFactoryConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
         className = credentialsFactoryConfig.className;
         implementation = credentialsFactoryConfig.implementation;
         properties = new Properties();
@@ -73,46 +76,50 @@ public class CredentialsFactoryConfig {
     }
 
     @Override
-    public String toString() {
-        return "CredentialsFactoryConfig{"
-                + "className='" + className + '\''
-                + ", implementation=" + implementation
-                + ", properties=" + properties
-                + '}';
+    public ICredentialsFactory asCredentialsFactory(ClassLoader cl) {
+        if (implementation != null) {
+            return implementation;
+        } else {
+            try {
+                ICredentialsFactory credentialsFactory = ClassLoaderUtil.newInstance(cl, className);
+                credentialsFactory.init(properties);
+                return credentialsFactory;
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Could not create instance of '" + className + "', cause: " + e.getMessage(),
+                        e);
+            }
+        }
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+    public IdentityConfig copy() {
+        return new CredentialsFactoryConfig(this);
+    }
 
-        CredentialsFactoryConfig that = (CredentialsFactoryConfig) o;
-
-        if (className != null
-                ? !className.equals(that.className)
-                : that.className != null) {
-            return false;
-        }
-        if (implementation != null
-                ? !implementation.equals(that.implementation)
-                : that.implementation != null) {
-            return false;
-        }
-        return properties != null
-                ? properties.equals(that.properties)
-                : that.properties == null;
+    @Override
+    public String toString() {
+        return "CredentialsFactoryConfig{" + "className='" + className + '\'' + ", implementation=" + implementation
+                + ", properties=" + properties + '}';
     }
 
     @Override
     public int hashCode() {
-        int result = className != null ? className.hashCode() : 0;
-        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
-        result = 31 * result + (properties != null ? properties.hashCode() : 0);
-        return result;
+        return Objects.hash(className, implementation, properties);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        CredentialsFactoryConfig other = (CredentialsFactoryConfig) obj;
+        return Objects.equals(className, other.className) && Objects.equals(implementation, other.implementation)
+                && Objects.equals(properties, other.properties);
     }
 }

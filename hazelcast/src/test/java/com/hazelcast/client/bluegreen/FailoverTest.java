@@ -60,14 +60,14 @@ public class FailoverTest extends ClientTestSupport {
 
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config2);
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName("dev1");
+        clientConfig.setClientName("dev1");
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         Member member1 = (Member) instance1.getLocalEndpoint();
         Address address1 = member1.getAddress();
         networkConfig.setAddresses(Collections.singletonList(address1.getHost() + ":" + address1.getPort()));
 
         ClientConfig clientConfig2 = new ClientConfig();
-        clientConfig2.setClusterName("dev2");
+        clientConfig2.setClientName("dev2");
         ClientNetworkConfig networkConfig2 = clientConfig2.getNetworkConfig();
         Member member2 = (Member) instance2.getLocalEndpoint();
         Address address2 = member2.getAddress();
