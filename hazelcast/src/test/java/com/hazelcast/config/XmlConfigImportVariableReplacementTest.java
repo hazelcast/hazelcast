@@ -17,6 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
+import com.hazelcast.config.test.builders.MapXmlConfigBuilder;
+import com.hazelcast.config.test.builders.MapXmlStoreConfigBuilder;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -31,6 +33,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
@@ -106,12 +110,12 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        <name>${java.version} $ID{dev}</name>\n"
                 + "    </group>\n"
                 + HAZELCAST_END_TAG;
-        GroupConfig groupConfig = buildConfig(
+        Config groupConfig = buildConfig(
                 xml,
                 "config.location",
                 file.getAbsolutePath()
-        ).getGroupConfig();
-        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getName());
+        );
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getInstanceName());
     }
 
     @Override
@@ -237,28 +241,21 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
 
     @Test(expected = HazelcastException.class)
     public void testImportFromNonHazelcastConfigThrowsException() throws Exception {
+        final String mapName = "mymap";
+        String xmlContent = new MapXmlConfigBuilder()
+                .withName(mapName)
+                .build();
         File file = createConfigFile("mymap", "config");
         FileOutputStream os = new FileOutputStream(file);
-        String mapConfig = HAZELCAST_START_TAG
-                + "    <map name=\"mymap\">\n"
-                + "       <backup-count>6</backup-count>"
-                + "       <time-to-live-seconds>10</time-to-live-seconds>"
-                + "       <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
-                + "            <class-name>com.hazelcast.examples.MyMapStore</class-name>\n"
-                + "            <write-delay-seconds>10</write-delay-seconds>\n"
-                + "            <write-batch-size>100</write-batch-size>\n"
-                + "        </map-store>"
-                + "</map>\n"
-                + HAZELCAST_END_TAG;
-        writeStringToStreamAndClose(os, mapConfig);
+        writeStringToStreamAndClose(os, HAZELCAST_START_TAG + xmlContent + HAZELCAST_END_TAG);
+        String pathTo = file.getAbsolutePath();
 
-        String xml = ""
-                + "<non-hazelcast>\n"
-                + "  <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+        String nonHazelcastXml = "<non-hazelcast>\n"
+                + "    <import resource=\"file:///" + pathTo + "\"/>\n"
                 + "</non-hazelcast>";
 
-        Config config = buildConfig(xml, null);
-        assertNull(config.getMapConfig("mymap"));
+        Config config = buildConfig(nonHazelcastXml, null);
+        assertNull(config.getMapConfig(mapName));
     }
 
     @Override
@@ -289,58 +286,72 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Override
     @Test
     public void testImportMapConfigFromFile() throws Exception {
+        final String mapName = "mymap";
+        final int mapBackupCount = 6;
+        final int mapTimeToLiveSeconds = 10;
+        final int mapStoreWriteDelaySeconds = 10;
+        final int mapStoreWriteBatchSize = 100;
+        MapXmlConfigBuilder mapXmlConfigBuilder = new MapXmlConfigBuilder()
+                .withName(mapName)
+                .withBackupCount(mapBackupCount)
+                .withTimeToLive(mapTimeToLiveSeconds)
+                .withStore(new MapXmlStoreConfigBuilder()
+                                   .enabled()
+                                   .withInitialMode("LAZY")
+                                   .withClassName("com.hazelcast.examples.MyMapStore")
+                                   .withWriteDelay(mapStoreWriteDelaySeconds)
+                                   .withWriteBatchSize(mapStoreWriteBatchSize));
+
         File file = createConfigFile("mymap", "config");
         FileOutputStream os = new FileOutputStream(file);
         String mapConfig = HAZELCAST_START_TAG
-                + "    <map name=\"mymap\">\n"
-                + "       <backup-count>6</backup-count>"
-                + "       <time-to-live-seconds>10</time-to-live-seconds>"
-                + "       <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
-                + "            <class-name>com.hazelcast.examples.MyMapStore</class-name>\n"
-                + "            <write-delay-seconds>10</write-delay-seconds>\n"
-                + "            <write-batch-size>100</write-batch-size>\n"
-                + "        </map-store>"
-                + "    </map>\n"
+                + mapXmlConfigBuilder.build()
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os, mapConfig);
 
-        String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
-                + HAZELCAST_END_TAG;
+        String xml = xmlContentWithImportResource("file://" + file.getAbsolutePath());
 
         Config config = buildConfig(xml, null);
-        MapConfig myMapConfig = config.getMapConfig("mymap");
-        assertEquals("mymap", myMapConfig.getName());
-        assertEquals(6, myMapConfig.getBackupCount());
-        assertEquals(10, myMapConfig.getTimeToLiveSeconds());
+
+        MapConfig myMapConfig = config.getMapConfig(mapName);
+        assertEquals(mapName, myMapConfig.getName());
+        assertEquals(mapBackupCount, myMapConfig.getBackupCount());
+        assertEquals(mapTimeToLiveSeconds, myMapConfig.getTimeToLiveSeconds());
+
         MapStoreConfig myMapStoreConfig = myMapConfig.getMapStoreConfig();
-        assertEquals(10, myMapStoreConfig.getWriteDelaySeconds());
-        assertEquals(100, myMapStoreConfig.getWriteBatchSize());
+        assertEquals(mapStoreWriteDelaySeconds, myMapStoreConfig.getWriteDelaySeconds());
+        assertEquals(mapStoreWriteBatchSize, myMapStoreConfig.getWriteBatchSize());
         assertEquals("com.hazelcast.examples.MyMapStore", myMapStoreConfig.getClassName());
     }
 
     @Override
     @Test
     public void testImportOverlappingMapConfigFromFile() throws Exception {
+        final String mapName = "mymap";
+        final int mapBackupCount = 6;
+        final int mapStoreWriteDelaySeconds = 10;
+        final int mapStoreWriteBatchSize = 100;
+        MapXmlConfigBuilder importedMapConfig = new MapXmlConfigBuilder()
+                .withName(mapName)
+                .withBackupCount(mapBackupCount)
+                .withStore(new MapXmlStoreConfigBuilder()
+                                   .enabled()
+                                   .withInitialMode("LAZY")
+                                   .withClassName("com.hazelcast.examples.MyMapStore")
+                                   .withWriteDelay(mapStoreWriteDelaySeconds)
+                                   .withWriteBatchSize(mapStoreWriteBatchSize));
+
         File file = createConfigFile("mymap", "config");
         FileOutputStream os = new FileOutputStream(file);
-        String mapConfig = HAZELCAST_START_TAG
-                + "    <map name=\"mymap\">\n"
-                + "       <backup-count>6</backup-count>"
-                + "       <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
-                + "            <class-name>com.hazelcast.examples.MyMapStore</class-name>\n"
-                + "            <write-delay-seconds>10</write-delay-seconds>\n"
-                + "            <write-batch-size>100</write-batch-size>\n"
-                + "        </map-store>"
-                + "</map>\n"
-                + HAZELCAST_END_TAG;
-        writeStringToStreamAndClose(os, mapConfig);
+        final String mapConfigXml = HAZELCAST_START_TAG + importedMapConfig.build() + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, mapConfigXml);
+
+        final int mapTimeToLiveSeconds = 10;
+        MapXmlConfigBuilder mainMapConfig = new MapXmlConfigBuilder().withName(mapName).withTimeToLive(mapTimeToLiveSeconds);
 
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
-                + "    <map name=\"mymap\">\n"
-                + "       <time-to-live-seconds>10</time-to-live-seconds>"
-                + "</map>\n"
+                + mainMapConfig.build()
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml, null);
@@ -365,25 +376,24 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     public void testMapConfigFromMainAndImportedFile() throws Exception {
         File file = createConfigFile("importmap", "config");
         FileOutputStream os = new FileOutputStream(file);
+        MapXmlConfigBuilder importedMapConfig = new MapXmlConfigBuilder()
+                .withName("importedMap")
+                .withBackupCount(6)
+                .withTimeToLive(10)
+                .withStore(new MapXmlStoreConfigBuilder().enabled()
+                                   .withInitialMode("LAZY")
+                                   .withClassName("com.hazelcast.examples.MyMapStore")
+                                   .withWriteDelay(10)
+                                   .withWriteBatchSize(100));
         String mapConfig = HAZELCAST_START_TAG
-                + "    <map name=\"importedMap\">\n"
-                + "       <backup-count>6</backup-count>"
-                + "       <time-to-live-seconds>10</time-to-live-seconds>"
-                + "       <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
-                + "            <class-name>com.hazelcast.examples.MyMapStore</class-name>\n"
-                + "            <write-delay-seconds>10</write-delay-seconds>\n"
-                + "            <write-batch-size>100</write-batch-size>\n"
-                + "        </map-store>"
-                + "</map>\n"
+                + importedMapConfig.build()
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os, mapConfig);
 
+        MapXmlConfigBuilder mapInMain = new MapXmlConfigBuilder().withName("mapInMain").withBackupCount(2).withTimeToLive(5);
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
-                + "    <map name=\"mapInMain\">\n"
-                + "       <backup-count>2</backup-count>"
-                + "       <time-to-live-seconds>5</time-to-live-seconds>"
-                + "</map>\n"
+                + mapInMain.build()
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml, null);
@@ -422,20 +432,22 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         } finally {
             IOUtil.closeResource(out);
         }
+
+        ConfigReplacerBuilder encryptionReplacer = new ConfigReplacerBuilder()
+                .withClass(EncryptionReplacer.class)
+                .addProperty("passwordFile", passwordFile.getAbsolutePath())
+                .addProperty("passwordUserProperties", false)
+                .addProperty("keyLengthBits", 64)
+                .addProperty("saltLengthBytes", 8)
+                .addProperty("cipherAlgorithm", "DES")
+                .addProperty("secretKeyFactoryAlgorithm", "PBKDF2WithHmacSHA1")
+                .addProperty("secretKeyAlgorithm", "DES");
+        ConfigReplacerBuilder identityReplacer = new ConfigReplacerBuilder()
+                .withClass(IdentityReplacer.class);
         String xml = HAZELCAST_START_TAG
                 + "    <config-replacers>\n"
-                + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'>\n"
-                + "            <properties>\n"
-                + "                <property name='passwordFile'>" + passwordFile.getAbsolutePath() + "</property>\n"
-                + "                <property name='passwordUserProperties'>false</property>\n"
-                + "                <property name='keyLengthBits'>64</property>\n"
-                + "                <property name='saltLengthBytes'>8</property>\n"
-                + "                <property name='cipherAlgorithm'>DES</property>\n"
-                + "                <property name='secretKeyFactoryAlgorithm'>PBKDF2WithHmacSHA1</property>\n"
-                + "                <property name='secretKeyAlgorithm'>DES</property>\n"
-                + "            </properties>\n"
-                + "        </replacer>\n"
-                + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
+                + encryptionReplacer.build()
+                + identityReplacer.build()
                 + "    </config-replacers>\n"
                 + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
                 + "    <instance-name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</instance-name>\n"
@@ -443,6 +455,58 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         Config config = buildConfig(xml, System.getProperties());
         assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
         assertEquals("My very secret secret", config.getInstanceName());
+    }
+
+    private static class ConfigReplacerBuilder {
+        private String className;
+        private Map<String, String> properties = new HashMap<>();
+
+        public ConfigReplacerBuilder withClassName(String className) {
+            this.className = className;
+            return this;
+        }
+
+        public ConfigReplacerBuilder withClass(Class<?> c) {
+            withClassName(c.getName());
+            return this;
+        }
+
+        public ConfigReplacerBuilder addProperty(String key, boolean value) {
+            return addProperty(key, String.valueOf(value));
+        }
+
+        public ConfigReplacerBuilder addProperty(String key, int value) {
+            return addProperty(key, String.valueOf(value));
+        }
+
+        public ConfigReplacerBuilder addProperty(String key, String value) {
+            properties.put(key, value);
+            return this;
+        }
+
+        public String build() {
+            if (properties.isEmpty()) {
+                return "<replacer class-name='" + className + "' />";
+            } else {
+                return "<replacer class-name='" + className + "'>\n"
+                        + "<properties>"
+                        + properties()
+                        + "</properties>"
+                        +"</replacer>";
+            }
+        }
+
+        private String properties() {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<String, String> property : properties.entrySet()) {
+                sb.append("<property name='")
+                        .append(property.getKey())
+                        .append("'>")
+                        .append(property.getValue())
+                        .append("</property>\n");
+            }
+            return sb.toString();
+        }
     }
 
     @Override
