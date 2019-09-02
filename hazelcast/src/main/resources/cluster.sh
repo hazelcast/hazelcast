@@ -98,7 +98,7 @@ if [ -z "$ADDRESS" ]; then
     ADDRESS="127.0.0.1"
 fi
 
-command -v curl >/dev/null 2>&1 || { echo >&2 "Cluster state script requires curl but it's not installed. Aborting."; exit -1; }
+command -v curl >/dev/null 2>&1 || { echo >&2 "Cluster state script requires curl but it's not installed. Aborting."; exit 255; }
 
 URL_BASE="${URL_SCHEME}://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster"
 CURL_CMD="curl $CURL_ARGS"
