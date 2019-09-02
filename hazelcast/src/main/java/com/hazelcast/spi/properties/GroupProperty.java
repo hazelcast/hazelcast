@@ -1060,13 +1060,6 @@ public final class GroupProperty {
     public static final HazelcastProperty RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED
             = new HazelcastProperty("raft.linearizable.read.optimization.enabled", true);
 
-    /**
-     * !!! ONLY FOR INTERNAL USAGE AND TESTING !!!
-     * If enabled, a node tries to pick its own persistence directory if it discovers multiple directories.
-     */
-    public static final HazelcastProperty FAVOR_OWN_PERSISTENCE_DIRECTORY
-            = new HazelcastProperty("persistence.favor.own.directory", true);
-
     private GroupProperty() {
     }
 }
