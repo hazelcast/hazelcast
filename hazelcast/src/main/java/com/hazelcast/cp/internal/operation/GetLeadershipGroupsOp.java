@@ -16,12 +16,15 @@
 
 package com.hazelcast.cp.internal.operation;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.cp.internal.RaftSystemOperation;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +49,14 @@ public class GetLeadershipGroupsOp extends Operation implements RaftSystemOperat
     @Override
     public Object getResponse() {
         return groups;
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
+            return ExceptionAction.THROW_EXCEPTION;
+        }
+        return super.onInvocationException(throwable);
     }
 
     @Override

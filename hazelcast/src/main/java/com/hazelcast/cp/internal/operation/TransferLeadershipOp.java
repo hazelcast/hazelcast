@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal.operation;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.CPMemberInfo;
@@ -28,7 +29,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CallStatus;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
@@ -70,6 +73,14 @@ public class TransferLeadershipOp extends Operation
     @Override
     public final boolean validatesTarget() {
         return false;
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
+            return ExceptionAction.THROW_EXCEPTION;
+        }
+        return super.onInvocationException(throwable);
     }
 
     @Override

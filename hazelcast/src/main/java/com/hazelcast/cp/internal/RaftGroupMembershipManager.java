@@ -484,6 +484,13 @@ class RaftGroupMembershipManager {
 
             try {
                 rebalanceLeaderships();
+            } catch (Exception e) {
+                if (logger.isFineEnabled()) {
+                    logger.warning("Cannot execute leadership rebalance at the moment", e);
+                } else {
+                    logger.info("Cannot execute leadership rebalance at the moment: "
+                            + e.getClass().getName() + ": " + e.getMessage());
+                }
             } finally {
                 rebalanceTaskRunning.set(false);
             }
