@@ -19,12 +19,12 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -723,13 +723,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     /**
-     * Eventual consistency for Near Cache can be used with server versions >= 3.8
-     * For repairing functionality please see {@link RepairingHandler}
-     * handleCacheInvalidationEventV14 and handleCacheBatchInvalidationEventV14
-     *
-     * If server version is < 3.8 and client version is >= 3.8, eventual consistency is not supported
-     * Following methods handle the old behaviour:
-     * handleCacheBatchInvalidationEventV10 and handleCacheInvalidationEventV10
+     * This listener listens server side invalidation events.
      */
     private final class NearCacheInvalidationEventHandler
             extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler

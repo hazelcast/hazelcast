@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
@@ -25,7 +26,6 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -513,8 +513,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     public <R> void submitToKeyInternal(Object key,
-                                    EntryProcessor<K, V, R> entryProcessor,
-                                    ExecutionCallback<? super R> callback) {
+                                        EntryProcessor<K, V, R> entryProcessor,
+                                        ExecutionCallback<? super R> callback) {
         key = toNearCacheKey(key);
         try {
             super.submitToKeyInternal(key, entryProcessor, callback);
@@ -658,13 +658,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     /**
-     * Eventual consistency for Near Cache can be used with server versions >= 3.8
-     * For repairing functionality please see {@link RepairingHandler}
-     * handleCacheInvalidationEventV14 and handleCacheBatchInvalidationEventV14
-     * <p>
-     * If server version is < 3.8 and client version is >= 3.8, eventual consistency is not supported
-     * Following methods handle the old behaviour:
-     * handleCacheBatchInvalidationEventV10 and handleCacheInvalidationEventV10
+     * This listener listens server side invalidation events.
      */
     private final class NearCacheInvalidationEventHandler
             extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler
@@ -684,16 +678,16 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         @Override
         public void handleIMapInvalidationEvent(Data key, String sourceUuid,
-                                                   UUID partitionUuid, long sequence) {
+                                                UUID partitionUuid, long sequence) {
             repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
         }
 
 
         @Override
         public void handleIMapBatchInvalidationEvent(Collection<Data> keys,
-                                                        Collection<String> sourceUuids,
-                                                        Collection<UUID> partitionUuids,
-                                                        Collection<Long> sequences) {
+                                                     Collection<String> sourceUuids,
+                                                     Collection<UUID> partitionUuids,
+                                                     Collection<Long> sequences) {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
         }
     }
