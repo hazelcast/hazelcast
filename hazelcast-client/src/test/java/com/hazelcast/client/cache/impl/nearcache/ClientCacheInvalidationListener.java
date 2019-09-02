@@ -32,13 +32,19 @@ class ClientCacheInvalidationListener
         implements EventHandler<ClientMessage> {
 
     private final AtomicLong invalidationCount = new AtomicLong();
+    private final AtomicLong numOfInvalidationsCausedByCacheClear = new AtomicLong();
 
     public long getInvalidationCount() {
         return invalidationCount.get();
     }
 
+    public long getNumOfInvalidationsCausedByCacheClear() {
+        return numOfInvalidationsCausedByCacheClear.get();
+    }
+
     public void resetInvalidationCount() {
         invalidationCount.set(0);
+        numOfInvalidationsCausedByCacheClear.set(0);
     }
 
     @Override
@@ -59,11 +65,25 @@ class ClientCacheInvalidationListener
     @Override
     public void handleCacheInvalidationEventV10(String name, Data key, String sourceUuid) {
         invalidationCount.incrementAndGet();
+        incNumOfInvalidationsCausedByCacheClear(key);
     }
 
     @Override
     public void handleCacheInvalidationEventV14(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
         invalidationCount.incrementAndGet();
+        incNumOfInvalidationsCausedByCacheClear(key);
+    }
+
+    /**
+     * This method only counts null keys. Here is the reasoning for this: Cache
+     * clear deletes multiple keys. Instead of sending separate invalidations
+     * for each deleted key, we send one single invalidation whose key is
+     * null. An invalidation with null key indicates a clear operation.
+     */
+    private void incNumOfInvalidationsCausedByCacheClear(Data key) {
+        if (key == null) {
+            numOfInvalidationsCausedByCacheClear.incrementAndGet();
+        }
     }
 
     @Override

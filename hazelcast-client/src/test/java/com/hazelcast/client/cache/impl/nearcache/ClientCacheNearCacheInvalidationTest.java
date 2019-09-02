@@ -356,7 +356,24 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
             testContext.nearCacheAdapter.clear();
         }
 
-        assertNoFurtherInvalidationThan(1);
+        assertNoFurtherInvalidationForCacheClear(1);
+    }
+
+    private void assertNoFurtherInvalidationForCacheClear(final int expectedInvalidationCount) {
+        AssertTask assertTask = new AssertTask() {
+            @Override
+            public void run() {
+                long numOfInvalidationsCausedByCacheClear = invalidationListener.getNumOfInvalidationsCausedByCacheClear();
+                assertTrue(format("Invalidation event count :[caused by cache clear=%d, total=%d, expected=%d], stats(%s)",
+                        numOfInvalidationsCausedByCacheClear, invalidationListener.getInvalidationCount(),
+                        expectedInvalidationCount, testContext.stats),
+                        numOfInvalidationsCausedByCacheClear <= expectedInvalidationCount);
+            }
+        };
+
+        assertTrueEventually(assertTask);
+        assertTrueAllTheTime(assertTask, TIMEOUT);
+        invalidationListener.resetInvalidationCount();
     }
 
     @Test
