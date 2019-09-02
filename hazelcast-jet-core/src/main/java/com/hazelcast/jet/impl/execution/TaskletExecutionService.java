@@ -73,7 +73,7 @@ public class TaskletExecutionService {
     private final String hzInstanceName;
     private final ILogger logger;
     private int cooperativeThreadIndex;
-    @Probe
+    @Probe(name = "blockingWorkerCount")
     private final AtomicInteger blockingWorkerCount = new AtomicInteger();
     private volatile boolean isShutdown;
     private final Object lock = new Object();
@@ -281,7 +281,7 @@ public class TaskletExecutionService {
 
         @Probe(name = "taskletCount")
         private final CopyOnWriteArrayList<TaskletTracker> trackers;
-        @Probe
+        @Probe(name = "iterationCount")
         private final AtomicLong iterationCount = new AtomicLong();
 
         private final ProgressTracker progressTracker = new ProgressTracker();

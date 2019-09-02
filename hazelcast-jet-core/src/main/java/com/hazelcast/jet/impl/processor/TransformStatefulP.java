@@ -50,7 +50,7 @@ public class TransformStatefulP<T, K, S, R, OUT> extends AbstractProcessor {
     private static final int HASH_MAP_INITIAL_CAPACITY = 16;
     private static final float HASH_MAP_LOAD_FACTOR = 0.75f;
 
-    @Probe
+    @Probe(name = "lateEventsDropped")
     private final AtomicLong lateEventsDropped = new AtomicLong();
 
     private final long ttl;

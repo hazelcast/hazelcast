@@ -92,10 +92,224 @@ For more information about logging when using the Core API, see the
 [[metrics-monitoring]]
 == Monitor Metrics
 
-Jet exposes metrics using the JVM's standard JMX interface. You can use
-tools such as Java Mission Control or JConsole to display them. All
+Jet exposes various metrics to facilitate monitoring of the cluster
+state and of running jobs.
+
+Metrics have associated tags which describe which object the metric
+applies to. The tags for job metrics typically indicate the specific
+vertex and processor the metric belongs to.
+
+Each metric instance provided belongs to a particular Jet cluster member, so
+different cluster members can have their own versions of the same metric
+with different values.
+
+The metric collection runs in regular intervals on each member, but note
+that the metric collection on different cluster members happens at
+different moments in time. So if you try to correlate metrics from
+different members, they can be from different moments of time.
+
+There are two broad categories of Jet metrics. For clarity we will group
+them based on significant tags which define their granularity.
+
+Last but not least let's not forget about the fact that each Jet member is
+also an IMDG member, so Jet also exposes all the metrics available in IMDG.
+
+Let's look at these 3 broad categories of metrics in detail.
+
+=== IMDG Metrics ===
+There is a wide range of metrics and statistics provided by IMDG:
+
+* statistics of distributed data structures (see
+{hz-refman}#getting-member-statistics[IMDG Reference Manual])
+* executor statistics (see {hz-refman}#executor-statistics[IMDG Reference Manual])
+* partition related statistics (state, migration, replication)
+* garbage collection statistics (see {hz-javadoc}/memory/GarbageCollectorStats.html[IMDG API Docs])
+* memory statistics for the JVM which current IMDG member belongs to (total
+physical/free OS memory, max/committed/used/free heap memory and
+max/committed/used/free native memory)
+* network traffic related statistics (traffic and queue sizes)
+* class loading related statistics
+* thread count information (current, peak and deamon thread counts)
+
+=== Jet Cluster metrics ===
+
+[cols="3,2"]
+|===
+|Names|Main tags
+
+| **blockingWorkerCount**: The number of non-cooperative workers employed.
+| **none** +
+Each Jet cluster member will have one instance of this metric.
+
+| **iterationCount**: The total number of iterations the driver of tasklets in cooperative
+thread N made. It should increase by at least 250 iterations/s. Lower
+value means some of the cooperative processors blocks for too long.
+Somewhat lower value is normal if there are many tasklets assigned to
+the processor. Lower value affects the latency.
+
+ **taskletCount**: The number of assigned tasklets to cooperative thread N.
+| **cooperativeWorker=<N>** +
+N is the number of the cooperative thread.
+|===
+
+=== Jet Job metrics ===
+
+All job specific metrics have their `{jet-javadoc}/core/metrics/MetricTags.html#JOB[job=<jobId>]`,
+`{jet-javadoc}/core/metrics/MetricTags.html#EXECUTION[exec=<executionId>]` and
+`{jet-javadoc}/core/metrics/MetricTags.html#VERTEX[vertex=<vertexName>]` tags set. This means
+that all these metrics will have at least one instance for each vertex of each current job
+execution.
+
+Additionally, if the vertex sourcing them is a data source or data sink, then the
+`{jet-javadoc}/core/metrics/MetricTags.html#SOURCE[source]` or
+`{jet-javadoc}/core/metrics/MetricTags.html#SINK[sink]` tags will also be set to `true`.
+
+[cols="3,2"]
+|===
+|Names|Main tags
+
+|**distributedBytesIn**: Total number of bytes received from remote
+members. +
+**distributedBytesOut**: Total number of bytes sent to remote members. +
+**distributedItemsIn**: Total number of items received from remote
+members. +
+**distributedItemsOut**: Total number of items sent to remote members.
+
+These values are only present for distributed edges, they only account
+for data actually transmitted over the network between members. This
+numbers include watermarks, snapshot barriers etc.
+|**ordinal=<N>** +
+Each Jet member will have an instance of these metrics
+for each ordinal of each vertex of each job execution.
+
+|**topObservedWm**: This value is equal to the highest _coalescedWm_ on
+any input edge of this processor. +
+**coalescedWm**: The highest watermark received from _all_ inputs that
+was sent to the processor to handle. +
+**lastForwardedWm**: Last watermark emitted by the processor to output. +
+**lastForwardedWmLatency**: The difference between _lastForwardedWn_
+and the system time at the moment when metrics were collected.
+
+**queuesCapacity**: The total capacity of input queues. +
+**queuesSize**: The total number of items waiting in input queues.
+
+All input queues for all edges to the processor are summed in the above
+two metrics. If size is close to capacity, backpressure is applied and
+this processor is a bottleneck. Only input edges with equal priority are
+summed. If the processor has input edges with different priority, only
+edges with the highest priority will be reflected, after those are
+exhausted edges with the next lower priority will be reflected and so
+on.
+|**proc=<N>, ordinal=<not specified>** +
+Each Jet member will have one instances of these metrics for each processor
+instance _N_, the _N_ denotes the global processor index. Processor is the
+parallel worker doing the work of the vertex.
+
+|**topObservedWm**: The highest received watermark from _any_ input on
+edge _N_. +
+**coalescedWm**: The highest watermark received from _all_ upstream
+processors on edge _N_. +
+
+**emittedCount**: The number of emitted items. This number includes
+watermarks, snapshot barriers etc. Unlike _distributedItemsOut_, it
+includes items emitted items to local processors. +
+**receivedCount**: The number of received items. This number does not
+include watermarks, snapshot barriers etc. It's the number of items the
+_Processor.process_ method will receive. +
+**receivedBatches**: The number of received batches.
+_Processor.process_ receives a batch of items at a time, this is the
+number of such batches. By dividing _receivedCount_ by
+_receivedBatches_, you get the average batch size. It will be 1 under
+low load.
+|**proc=<N>, ordinal=<M>** +
+Each Jet member will have one instance of these metrics for each edge _M_ (input or
+output) of each processor _N_. _N_ is the global processor index and _M_ is either
+the ordinal of the edge or has the value _snapshot_ for output items
+written to state snapshot.
+
+|**numInFlightOps**: The number of pending (in flight) operations when using
+asynchronous flat-mapping processors. +
+See
+`{jet-javadoc}/core/processor/Processors.html#flatMapUsingContextAsyncP-com.hazelcast.jet.pipeline.ContextFactory-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.BiFunctionEx-[
+Processors.flatMapUsingContextAsyncP]`.
+
+** totalKeys **: The number of active keys being tracked by a session window
+processor. +
+** totalWindows **: The number of active windows being tracked by a session window
+processor. +
+ See
+`{jet-javadoc}/core/processor/Processors.html#aggregateToSessionWindowP-long-long-java.util.List-java.util.List-com.hazelcast.jet.aggregate.AggregateOperation-com.hazelcast.jet.core.function.KeyedWindowResultFunction-[
+Processors.aggregateToSessionWindowP]`.
+
+** totalFrames **: The number of active frames being tracked by a sliding window
+processor. +
+** totalKeysInFrames **: The number of grouping keys associated with the current
+active frames of a sliding window processor. +
+ See
+`{jet-javadoc}/core/processor/Processors.html#aggregateToSlidingWindowP-java.util.List-java.util.List-com.hazelcast.jet.core.TimestampKind-com.hazelcast.jet.core.SlidingWindowPolicy-long-com.hazelcast.jet.aggregate.AggregateOperation-com.hazelcast.jet.core.function.KeyedWindowResultFunction-[
+Processors.aggregateToSlidingWindowP]`.
+
+** lateEventsDropped **: The number of late events dropped by various
+processor, due to the watermark already having passed their windows. +
+|**proc=<N>, procType=<set>** +
+Processor specific metrics, only certain types of processors have them. The
+__procType__ tag can be used to indentify the exact type of processor sourcing
+them. +
+Like all processor metrics, each Jet member will have one instances of
+these metrics for each processor instance _N_, the _N_ denotes the global
+processor index.
+|===
+
+=== Exposing metrics ===
+The main method Jet has for exposing the metrics to the outside world is the
+JVM's standard JMX interface. Since Jet 3.2 there is also an alternative to JMX
+for monitoring metrics, via the `Job API`, albeit only the job-specific ones.
+
+==== Over JMX ====
+Jet exposes all of its metrics using the JVM's standard JMX interface. You can use
+tools such as _Java Mission Control_ or _JConsole_ to display them. All
 Jet-related beans are stored under
-`com.hazelcast.jet/Metrics/<instanceName>/` node.
+`com.hazelcast.jet/Metrics/<instanceName>/` node and the various tags they
+have form further sub-nodes in the resulting tree structure.
+
+IMDG metrics are stored under the `com.hazelcast/Metrics/<instanceName>/` node.
+
+==== Via Job API ====
+
+The `Job` class has a
+`{jet-javadoc}/Job.html#getMetrics--[getMetrics()]` method which returns
+a `{jet-javadoc}/core/metrics/JobMetrics.html[JobMetrics]` instance. It
+contains the latest known metric values for the job.
+
+This functionality has been developed primarily for giving access to metrics of
+finished jobs, but can in fact be used for jobs in any {jet-javadoc}/core/JobStatus.html[state].
+
+While the job is running, the metric values are updated periodically (according to a
+{jet-javadoc}/config/MetricsConfig.html#setCollectionIntervalSeconds-int-[configured collection interval]),
+assuming that both
+{jet-javadoc}/config/MetricsConfig.html#setEnabled-boolean-[generic metrics functionality] and
+{jet-javadoc}/config/JobConfig.html#setMetricsEnabled-boolean-[job metrics] are enabled.
+Otherwise empty metrics will be returned.
+
+When a job is restarted (or resumed after being previously suspended), the metrics
+are reset; their values will reflect only updates from the latest execution of the job.
+
+Once a job stops executing (successfully, after a failure, cancellation,
+or temporarily while suspended) the metrics will have values taken at
+the moment just before the job completed), assuming that
+{jet-javadoc}/config/JobConfig.html#setStoreMetricsAfterJobCompletion-boolean-[metrics storing]
+was enabled. Otherwise, empty metrics will be returned.
+
+For details on how to use and filter the metric values consult the
+{jet-javadoc}/core/metrics/JobMetrics.html[JobMetrics API docs]. A
+simple example for computing the number of data items emitted by a
+certain vertex (let's call it `vertexA`), excluding items emitted to the
+snapshot, would look like this:
+
+[source]
+----
+include::{javasource}/integration/Metrics.java[tag=s2]
+----
 
 === Configuration
 
@@ -119,139 +333,10 @@ using the `hazelcast-jet.xml` file:
 </metrics>
 ----
 
-or using `JetConfig` object:
+or using `{jet-javadoc}/config/JetConfig.html[JetConfig]` object:
 
 [source]
 ----
 include::{javasource}/integration/Metrics.java[tag=s1]
 ----
 See {jet-javadoc}/config/MetricsConfig.html[MetricsConfig API docs] for available methods.
-
-=== Exposed JMX MBeans
-
-[cols="2,3"]
-|===
-|Property|Description
-
-|`cooperativeWorker=<N>`
-
-|* **iterationCount**: The total number of iterations the driver of tasklets in cooperative
-thread N makes. It should increase by at least 250 iterations/s. Lower
-value means some of the cooperative processors blocks for too long.
-
-* **taskletCount**:The number of assigned tasklets to cooperative thread N
-
-|*Job-related metrics, nested under* +
-`job=<jobId>` +
-&nbsp;&nbsp; `/exec=<executionId>` +
-&nbsp;&nbsp; `/vertex=<vertexName>`
-|All job-related metrics are nested under these nodes. If the vertex is
-a source or a sink, additionally `source=true` or `sink=true` is
-inserted to the tree.
-
-|`/ordinal=<N>`
-
-|This MBean groups metrics for input or output ordinal _N_.
-
-Values in this section are 0 for non-distributed edges, they only
-account for data actually transmitted over the network between members.
-This numbers include watermarks, snapshot barriers etc.
-
-* **distributedBytesIn**: Total number of bytes received from remote
-members +
-* **distributedBytesOut**: Total number of bytes sent to remote members +
-* **distributedItemsIn**: Total number of items received from remote
-members +
-* **distributedItemsOut**: Total number of items sent to remote members
-
-|`/proc=N`
-|This MBean groups metrics for processor instance _N_. The _N_ is
-global processor index. Processor is the parallel worker doing the work
-of the vertex.
-
-* **topObservedWm**: This value is equal to the highest `coalescedWm` on
-any input edge of this processor +
-* **coalescedWm**: The highest watermark received from _all_ inputs that
-was sent to the processor to handle +
-* **lastForwardedWm**: Last watermark emitted by the processor to output +
-* **lastForwardedWmLatency**: The difference between `lastForwardedWn`
-and the system time at the moment when metrics were collected
-
-* **queuesCapacity**: The total capacity of input queues +
-* **queuesSize**: The total number of items waiting in input queues
-
-All input queues for all edges to the processor are summed in the above
-two metrics. If size is close to capacity, backpressure is applied and
-this processor is a bottleneck. Only input edges with equal priority are
-summed. If the processor has input edges with different priority, only
-edges with the highest priority will be reflected, after those are
-exhausted edges with the next lower priority will be reflected and so
-on.
-
-|`/proc=N` +
-&nbsp;&nbsp; `/ordinal=M`
-|This MBean groups metrics pertaining to processor instance _N_ and
-input or output edge _M_. _M_ can be a number, or it can be `snapshot`
-for output items written to state snapshot.
-
-* **topObservedWm**: The highest received watermark from _any_ input on
-edge _N_ +
-* **coalescedWm**: The highest watermark received from _all_ upstream
-processors on edge _N_ +
-
-* **emittedCount**: The number of emitted items. This number includes
-watermarks, snapshot barriers etc. Unlike `distributedItemsOut`, it
-includes items emitted items to local processors. +
-* **receivedCount**: The number of received items. This number does not
-include watermarks, snapshot barriers etc. It's the number of items the
-`Processor.process` method will receive. +
-* **receivedBatches**: The number of received batches.
-`Processor.process` receives a batch of items at a time, this is the
-number of such batches. By dividing _receivedCount_ by
-_receivedBatches_, you get the average batch size. It will be 1 under
-low load.
-
-|===
-
-=== Hazelcast IMDG Metrics
-Since Jet is built on top of Hazelcast IMDG the metrics exposed by IMDG are also
-available and are observable as MBeans under the node
-`com.hazelcast/Metrics/<instanceName>/`.
-
-For further information on the IMDG metrics pleaso consult the
-{hz-refman}[Hazelcast IMDG Reference Manual].
-
-=== Job Metrics
-Since Jet 3.2 there is an alternative to JMX for monitoring metrics, albeit only
-the job-specific ones. `Job` objects have a `getMetrics()` method, which
-returns `JobMetrics` instances and those contain the latest known metric values
-for their source jobs.
-
-This functionality has been developed primarily for giving access to metrics of
-finished jobs, but can in fact be used for jobs with any {jet-javadoc}/core/JobStatus.html[status].
-
-While the job is running the metric values are updated periodically (see
-{jet-javadoc}/config/MetricsConfig.html#setCollectionIntervalSeconds-int-[MetricsConfig.setCollectionIntervalSeconds]).
-
-Once a job stops executing (successfully, after a failure, cancellation,
-or temporarily while suspended) the metrics will have their most
-recent values (i.e. the last metric values from the moment before the
-job completed).
-
-When a job is restarted (or resumed after being previously suspended) the metrics
-are reset too, their values will reflect only updates from the latest execution of the job.
-
-The method returns empty metrics if metrics collection is disabled  or until the
-first collection takes place. Also keep in mind that the collections may occur at
-different times on each member, metrics from various members aren't from the same
-instant of time.
-
-For details on how to use and filter the metric values provided by `JobMetrics` consult
-the {jet-javadoc}/core/metrics/JobMetrics.html[API docs]. A simple example for
-computing the number of data items emitted by a certain vertex (let's call it `filter`),
-excluding saved snapshots, would look like this:
-
-[source]
-----
-include::{javasource}/integration/Metrics.java[tag=s2]
-----

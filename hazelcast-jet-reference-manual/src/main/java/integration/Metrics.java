@@ -20,7 +20,6 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.core.metrics.Measurement;
 import com.hazelcast.jet.core.metrics.MeasurementPredicates;
@@ -36,8 +35,12 @@ public class Metrics {
     static void s1() {
         //tag::s1[]
         JetConfig jetConfig = new JetConfig();
-        MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
-        // use set-methods on this object
+        jetConfig.getMetricsConfig()
+                 .setEnabled(true)
+                 .setJmxEnabled(true)
+                .setRetentionSeconds(5)
+                .setCollectionIntervalSeconds(5)
+                .setMetricsForDataStructuresEnabled(false);
         //end::s1[]
     }
 
@@ -48,7 +51,7 @@ public class Metrics {
         JobMetrics jobMetrics = job.getMetrics();
         //tag::s2[]
         Predicate<Measurement> vertexOfInterest =
-                MeasurementPredicates.tagValueEquals(MetricTags.VERTEX, "filter");
+                MeasurementPredicates.tagValueEquals(MetricTags.VERTEX, "vertexA");
         Predicate<Measurement> notSnapshotEdge =
                 MeasurementPredicates.tagValueEquals(MetricTags.ORDINAL, "snapshot").negate();
 
@@ -56,7 +59,7 @@ public class Metrics {
                 .filter(vertexOfInterest.and(notSnapshotEdge))
                 .get(MetricNames.EMITTED_COUNT);
 
-        long count = measurements.stream().mapToLong(Measurement::getValue).sum();
+        long totalCount = measurements.stream().mapToLong(Measurement::getValue).sum();
         //end::s2[]
     }
 }

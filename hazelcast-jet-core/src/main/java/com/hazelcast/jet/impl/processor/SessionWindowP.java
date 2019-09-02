@@ -100,11 +100,11 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     private final FlatMapper<Watermark, Object> closedWindowFlatmapper;
     private ProcessingGuarantee processingGuarantee;
 
-    @Probe
+    @Probe(name = "lateEventsDropped")
     private final AtomicLong lateEventsDropped = new AtomicLong();
-    @Probe
+    @Probe(name = "totalKeys")
     private final AtomicLong totalKeys = new AtomicLong();
-    @Probe
+    @Probe(name = "totalWindows")
     private final AtomicLong totalWindows = new AtomicLong();
 
     // Fields for early results emission

@@ -27,8 +27,8 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -109,11 +109,11 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     private final LongFunction<Map<K, A>> createMapPerTsFunction;
     private final Function<K, A> createAccFunction;
 
-    @Probe
+    @Probe(name = "lateEventsDropped")
     private final AtomicLong lateEventsDropped = new AtomicLong();
-    @Probe
+    @Probe(name = "totalFrames")
     private final AtomicLong totalFrames = new AtomicLong();
-    @Probe
+    @Probe(name = "totalKeysInFrames")
     private final AtomicLong totalKeysInFrames = new AtomicLong();
 
     // Fields for early results emission
