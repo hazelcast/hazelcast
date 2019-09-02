@@ -20,6 +20,8 @@ import com.hazelcast.projection.impl.IdentityProjection;
 import com.hazelcast.projection.impl.MultiAttributeProjection;
 import com.hazelcast.projection.impl.SingleAttributeProjection;
 
+import java.util.ArrayList;
+
 /**
  * A utility class to create basic {@link com.hazelcast.projection.Projection} instances.
  *

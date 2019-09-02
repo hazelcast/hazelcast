@@ -20,6 +20,7 @@ import com.hazelcast.aggregation.impl.BigDecimalAverageAggregator;
 import com.hazelcast.aggregation.impl.BigDecimalSumAggregator;
 import com.hazelcast.aggregation.impl.BigIntegerAverageAggregator;
 import com.hazelcast.aggregation.impl.BigIntegerSumAggregator;
+import com.hazelcast.aggregation.impl.CanonicalizingHashSet;
 import com.hazelcast.aggregation.impl.CountAggregator;
 import com.hazelcast.aggregation.impl.DistinctValuesAggregator;
 import com.hazelcast.aggregation.impl.DoubleAverageAggregator;
@@ -38,7 +39,6 @@ import com.hazelcast.aggregation.impl.NumberAverageAggregator;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Set;
 
 /**
  * A utility class to create basic {@link com.hazelcast.aggregation.Aggregator} instances.
@@ -95,9 +95,9 @@ public final class Aggregators {
      * @param <R> type of the return object.
      * @return an aggregator that calculates the distinct set of input values.
      * Accepts null input values.
-     * Aggregation result type is a Set of R.
+     * Aggregation result type is a CanonicalizingHashSet of R.
      */
-    public static <I, R> Aggregator<I, Set<R>> distinct() {
+    public static <I, R> Aggregator<I, CanonicalizingHashSet<R>> distinct() {
         return new DistinctValuesAggregator<I, R>();
     }
 
@@ -107,9 +107,9 @@ public final class Aggregators {
      * @param <R> type of the return object.
      * @return an aggregator that calculates the distinct set of input values extracted from the given attributePath.
      * Accepts null input values and null extracted values.
-     * Aggregation result type is a Set of R.
+     * Aggregation result type is a CanonicalizingHashSet of R.
      */
-    public static <I, R> Aggregator<I, Set<R>> distinct(String attributePath) {
+    public static <I, R> Aggregator<I, CanonicalizingHashSet<R>> distinct(String attributePath) {
         return new DistinctValuesAggregator<I, R>(attributePath);
     }
 

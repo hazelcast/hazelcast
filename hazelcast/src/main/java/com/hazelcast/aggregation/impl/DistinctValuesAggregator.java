@@ -28,7 +28,8 @@ import java.util.Objects;
 import java.util.Set;
 
 @SuppressFBWarnings("SE_BAD_FIELD")
-public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, R, Set<R>> implements IdentifiedDataSerializable {
+public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, R, CanonicalizingHashSet<R>>
+        implements IdentifiedDataSerializable {
 
     private CanonicalizingHashSet<R> values = new CanonicalizingHashSet<R>();
 
@@ -53,7 +54,7 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
     }
 
     @Override
-    public Set<R> aggregate() {
+    public CanonicalizingHashSet<R> aggregate() {
         return values;
     }
 
