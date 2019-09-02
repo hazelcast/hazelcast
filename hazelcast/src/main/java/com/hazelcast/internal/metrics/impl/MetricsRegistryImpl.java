@@ -30,6 +30,7 @@ import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,33 +44,34 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 
 /**
  * The {@link MetricsRegistry} implementation.
  */
 public class MetricsRegistryImpl implements MetricsRegistry {
 
-    private static final Comparator<ProbeInstance> COMPARATOR = (o1, o2) -> o1.name.compareTo(o2.name);
+    private static final Comparator<ProbeInstance> COMPARATOR = Comparator.comparing(o -> o.name);
 
     final ILogger logger;
     private final ProbeLevel minimumLevel;
 
     private final ScheduledExecutorService scheduler;
-    private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
+    private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<>();
 
     // use ConcurrentReferenceHashMap to allow unreferenced Class instances to be garbage collected
-    private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
-            = new ConcurrentReferenceHashMap<Class<?>, SourceMetadata>();
+    private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap = new ConcurrentReferenceHashMap<>();
     private final LockStripe lockStripe = new LockStripe();
 
-    private final AtomicReference<SortedProbeInstances> sortedProbeInstancesRef
-            = new AtomicReference<SortedProbeInstances>(new SortedProbeInstances(0));
-
+    private final AtomicLong modCount = new AtomicLong();
+    private final AtomicReference<SortedProbeInstances> sortedProbeInstances =
+            new AtomicReference<>(new SortedProbeInstances(0, emptyList()));
 
     /**
      * Creates a MetricsRegistryImpl instance.
@@ -109,12 +111,12 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     long modCount() {
-        return sortedProbeInstancesRef.get().mod;
+        return modCount.get();
     }
 
     @Override
     public Set<String> getNames() {
-        Set<String> names = new HashSet<String>(probeInstances.keySet());
+        Set<String> names = new HashSet<>(probeInstances.keySet());
         return Collections.unmodifiableSet(names);
     }
 
@@ -178,7 +180,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         synchronized (lockStripe.getLock(source)) {
             ProbeInstance probeInstance = probeInstances.get(name);
             if (probeInstance == null) {
-                probeInstance = new ProbeInstance<S>(name, source, function);
+                probeInstance = new ProbeInstance<>(name, source, function);
                 probeInstances.put(name, probeInstance);
             } else {
                 logOverwrite(probeInstance);
@@ -192,17 +194,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             probeInstance.function = function;
         }
 
-        incrementMod();
-    }
-
-    private void incrementMod() {
-        for (; ; ) {
-            SortedProbeInstances current = sortedProbeInstancesRef.get();
-            SortedProbeInstances update = new SortedProbeInstances(current.mod + 1);
-            if (sortedProbeInstancesRef.compareAndSet(current, update)) {
-                break;
-            }
-        }
+        modCount.incrementAndGet();
     }
 
     private void logOverwrite(ProbeInstance probeInstance) {
@@ -258,7 +250,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
 
         if (changed) {
-            incrementMod();
+            modCount.incrementAndGet();
         }
     }
 
@@ -290,20 +282,17 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     List<ProbeInstance> getSortedProbeInstances() {
-        for (; ; ) {
-            SortedProbeInstances current = sortedProbeInstancesRef.get();
-            if (current.probeInstances != null) {
-                return current.probeInstances;
-            }
-
-            List<ProbeInstance> probeInstanceList = new ArrayList<ProbeInstance>(probeInstances.values());
-            Collections.sort(probeInstanceList, COMPARATOR);
-
-            SortedProbeInstances update = new SortedProbeInstances(current.mod, probeInstanceList);
-            if (sortedProbeInstancesRef.compareAndSet(current, update)) {
-                return update.probeInstances;
-            }
+        long modCountLocal = modCount.get();
+        SortedProbeInstances sortedProbeInstances = this.sortedProbeInstances.get();
+        if (sortedProbeInstances.mod < modCountLocal) {
+            List<ProbeInstance> sorted = new ArrayList<>(probeInstances.values());
+            Collections.sort(sorted, COMPARATOR);
+            sortedProbeInstances = new SortedProbeInstances(modCountLocal, sorted);
+            // if some other thread sorted in the meantime, ignore our sorting
+            this.sortedProbeInstances.compareAndSet(sortedProbeInstances, sortedProbeInstances);
         }
+        // let's use whatever sorted version we have, it's non-null
+        return sortedProbeInstances.probeInstances;
     }
 
     private void render(ProbeRenderer renderer, ProbeInstance probeInstance) {
@@ -346,12 +335,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         private final long mod;
         private final List<ProbeInstance> probeInstances;
 
-        private SortedProbeInstances(long mod) {
-            this.mod = mod;
-            this.probeInstances = null;
-        }
-
-        SortedProbeInstances(long mod, List<ProbeInstance> probeInstances) {
+        SortedProbeInstances(long mod, @Nonnull List<ProbeInstance> probeInstances) {
             this.mod = mod;
             this.probeInstances = probeInstances;
         }
