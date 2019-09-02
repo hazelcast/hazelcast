@@ -38,7 +38,7 @@ public interface CPPersistenceService {
      * Returns the utility that is used for storing {@link CPMember} identity of
      * the local Hazelcast member.
      */
-    CPMemberMetadataStore getCPMemberMetadataStore();
+    CPMetadataStore getCPMemberMetadataStore();
 
     /**
      * Creates a {@link RaftStateStore} that is going to be used by the local Raft node

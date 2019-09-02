@@ -17,13 +17,14 @@
 package com.hazelcast.cp.internal.persistence;
 
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.internal.RaftGroupId;
 
 import java.io.IOException;
 
 /**
- * Persists and restores CP member identity of the local member.
+ * Persists and restores CP member metadata of the local member.
  */
-public interface CPMemberMetadataStore {
+public interface CPMetadataStore {
 
     /**
      * Returns true if this member is marked as AP member on the storage layer.
@@ -50,4 +51,15 @@ public interface CPMemberMetadataStore {
      * is not not known yet CP member discovery will run.
      */
     CPMember readLocalCPMember() throws IOException;
+
+    /**
+     * Persists group id of the METADATA group.
+     */
+    void persistMetadataGroupId(RaftGroupId groupId) throws IOException;
+
+    /**
+     * Reads group id of the METADATA group, or reads null if METADATA
+     * group id has not changed
+     */
+    RaftGroupId readMetadataGroupId() throws IOException;
 }

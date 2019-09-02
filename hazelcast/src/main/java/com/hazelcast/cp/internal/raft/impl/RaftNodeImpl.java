@@ -263,30 +263,43 @@ public final class RaftNodeImpl implements RaftNode {
     }
 
     @Override
-    public void forceSetTerminatedStatus() {
+    public ICompletableFuture forceSetTerminatedStatus() {
+        final SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         if (isTerminatedOrSteppedDown()) {
-            return;
+            resultFuture.complete(null);
+            return resultFuture;
         }
 
         execute(new Runnable() {
             @Override
             public void run() {
-                if (isTerminatedOrSteppedDown()) {
-                    return;
-                }
-
-                setStatus(TERMINATED);
-                invalidateFuturesFrom(state.commitIndex() + 1);
-                LeaderState leaderState = state.leaderState();
-                if (leaderState != null) {
-                    for (Tuple2<Object, SimpleCompletableFuture> t : leaderState.queryState().operations()) {
-                        t.element2.setResult(new LeaderDemotedException(state.localEndpoint(), null));
+                Object result = null;
+                try {
+                    if (isTerminatedOrSteppedDown()) {
+                        resultFuture.complete(null);
+                        return;
                     }
+
+                    invalidateFuturesFrom(state.commitIndex() + 1);
+                    LeaderState leaderState = state.leaderState();
+                    if (leaderState != null) {
+                        for (Tuple2<Object, SimpleCompletableFuture> t : leaderState.queryState().operations()) {
+                            t.element2.setResult(new LeaderDemotedException(state.localEndpoint(), null));
+                        }
+                    }
+                    state.completeLeadershipTransfer(new LeaderDemotedException(state.localEndpoint(), null));
+                    closeStateStore();
+                } catch (Exception e) {
+                    logger.severe("Failure during force-termination", e);
+                    result = e;
+                } finally {
+                    setStatus(TERMINATED);
+                    resultFuture.complete(result);
                 }
-                state.completeLeadershipTransfer(new LeaderDemotedException(state.localEndpoint(), null));
-                closeStateStore();
             }
         });
+
+        return resultFuture;
     }
 
     /**

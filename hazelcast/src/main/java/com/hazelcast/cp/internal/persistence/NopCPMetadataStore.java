@@ -17,15 +17,16 @@
 package com.hazelcast.cp.internal.persistence;
 
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.internal.RaftGroupId;
 
 /**
  * Used when CP Subsystem works transiently (its state is not persisted).
  */
-public final class NopCPMemberMetadataStore implements CPMemberMetadataStore {
+public final class NopCPMetadataStore implements CPMetadataStore {
 
-    public static final CPMemberMetadataStore INSTANCE = new NopCPMemberMetadataStore();
+    public static final CPMetadataStore INSTANCE = new NopCPMetadataStore();
 
-    private NopCPMemberMetadataStore() {
+    private NopCPMetadataStore() {
     }
 
     @Override
@@ -44,6 +45,15 @@ public final class NopCPMemberMetadataStore implements CPMemberMetadataStore {
 
     @Override
     public CPMember readLocalCPMember() {
+        return null;
+    }
+
+    @Override
+    public void persistMetadataGroupId(RaftGroupId groupId) {
+    }
+
+    @Override
+    public RaftGroupId readMetadataGroupId() {
         return null;
     }
 

@@ -90,6 +90,7 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
@@ -110,6 +111,8 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
 import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
+import static com.hazelcast.util.FutureUtil.IGNORE_ALL_EXCEPTIONS;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkState;
@@ -307,9 +310,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             }
         }
 
+        List<ICompletableFuture> futures = new ArrayList<ICompletableFuture>(nodes.size());
         for (RaftNode node : nodes.values()) {
-            node.forceSetTerminatedStatus();
+            ICompletableFuture f = node.forceSetTerminatedStatus();
+            futures.add(f);
         }
+
+        destroyedGroupIds.addAll(nodes.keySet());
+
+        // TODO [basri] fix deadline
+        waitWithDeadline(futures, 30, SECONDS, IGNORE_ALL_EXCEPTIONS);
 
         destroyedGroupIds.addAll(nodes.keySet());
         nodes.clear();
@@ -536,6 +546,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     void updateMissingMembers() {
+        // TODO [basri] disable this logic before start completed...
         if (config.getMissingCPMemberAutoRemovalSeconds() == 0 || !metadataGroupManager.isDiscoveryCompleted()) {
             return;
         }
@@ -916,6 +927,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     public void handleActiveCPMembers(RaftGroupId latestMetadataGroupId, long membersCommitIndex,
                                       Collection<CPMemberInfo> members) {
+        // TODO [basri] should we check anything related to isStartCompleted() ?
         if (!metadataGroupManager.isDiscoveryCompleted()) {
             if (logger.isFineEnabled()) {
                 logger.fine("Ignoring received active CP members: " + members + " since discovery is in progress.");
@@ -930,21 +942,17 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
 
-        updateInvocationManagerMembers(latestMetadataGroupId.seed(), membersCommitIndex, members);
-
         CPMemberInfo localMember = getLocalCPMember();
-        if (localMember != null && !members.contains(localMember) && nodeEngine.getNode().isRunning()) {
-            if (nodeEngine.getNode().isRunning()) {
-                boolean missingAutoRemovalEnabled = config.getMissingCPMemberAutoRemovalSeconds() > 0;
-                logger.severe("Local " + localMember + " is not part of received active CP members: " + members
-                        + ". It seems local member is removed from CP subsystem. "
-                        + "Auto removal of missing members is " + (missingAutoRemovalEnabled ? "enabled." : "disabled."));
+        members = replaceLocalMemberIfAddressChanged(membersCommitIndex, members, localMember);
+
+        if (updateInvocationManagerMembers(latestMetadataGroupId.seed(), membersCommitIndex, members)) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Handled new active CP members list: " + members + ", members commit index: " + membersCommitIndex
+                        + ", METADATA group id seed: " + latestMetadataGroupId.seed());
             }
-            return;
         }
 
         RaftGroupId metadataGroupId = getMetadataGroupId();
-
         if (latestMetadataGroupId.seed() < metadataGroupId.seed() || metadataGroupId.equals(latestMetadataGroupId)) {
             return;
         }
@@ -964,6 +972,48 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
 
         metadataGroupManager.handleMetadataGroupId(latestMetadataGroupId);
+    }
+
+    private Collection<CPMemberInfo> replaceLocalMemberIfAddressChanged(long membersCommitIndex, Collection<CPMemberInfo> members,
+                                                                        CPMemberInfo localMember) {
+        if (localMember != null && !members.contains(localMember)) {
+            // If I am present in the received CP member list with another address, I replace my local member.
+            // In addition, I will remove any other member that has my address.
+            CPMemberInfo otherMember = null, staleLocalMember = null;
+            for (CPMemberInfo m : members) {
+                if (m.getAddress().equals(localMember.getAddress()) && !m.getUuid().equals(localMember.getUuid())) {
+                    otherMember = m;
+                } else if (!m.getAddress().equals(localMember.getAddress()) && m.getUuid().equals(localMember.getUuid())) {
+                    staleLocalMember = m;
+                }
+            }
+
+            if (otherMember != null || staleLocalMember != null) {
+                members = new ArrayList<CPMemberInfo>(members);
+                members.remove(otherMember);
+                members.remove(staleLocalMember);
+                if (logger.isFineEnabled()) {
+                    // prints null if there is no other member with the same address but it is ok in a debug log...
+                    logger.fine("Removing other member: " + otherMember + " in received CP members list: " + members
+                            + " and commit index: " + membersCommitIndex);
+                }
+            }
+
+            if (staleLocalMember != null) {
+                members.add(localMember);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Replacing stale local member: " + staleLocalMember + " with: " + localMember
+                            + " in received CP members list: " + members + " and commit index: " + membersCommitIndex);
+                }
+            } else if (nodeEngine.getNode().isRunning()) {
+                boolean missingAutoRemovalEnabled = config.getMissingCPMemberAutoRemovalSeconds() > 0;
+                logger.severe("Local " + localMember + " is not part of received active CP members: " + members
+                        + ". It seems local member is removed from CP subsystem. "
+                        + "Auto removal of missing members is " + (missingAutoRemovalEnabled ? "enabled." : "disabled."));
+            }
+        }
+
+        return members;
     }
 
     @Override

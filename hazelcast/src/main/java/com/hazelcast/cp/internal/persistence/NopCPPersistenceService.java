@@ -37,8 +37,8 @@ public final class NopCPPersistenceService implements CPPersistenceService {
     }
 
     @Override
-    public CPMemberMetadataStore getCPMemberMetadataStore() {
-        return NopCPMemberMetadataStore.INSTANCE;
+    public CPMetadataStore getCPMemberMetadataStore() {
+        return NopCPMetadataStore.INSTANCE;
     }
 
     @Override

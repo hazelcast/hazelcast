@@ -85,19 +85,29 @@ public class RaftInvocationContext {
 
     public void updateMember(CPMemberInfo member) {
         while (true) {
+            // Put the given member into the current member list,
+            // even if the given member does not exist with another address.
+            // In addition, remove any other member that has the address of the given member.
             CPMembersContainer currentContainer = membersContainer.get();
-            CPMemberInfo existingMember = currentContainer.membersMap.get(member.getUuid());
-            if (existingMember == null) {
-                return;
+            CPMemberInfo otherMember = null;
+            for (CPMemberInfo m : currentContainer.members) {
+                if (m.getAddress().equals(member.getAddress()) && !m.getUuid().equals(member.getUuid())) {
+                    otherMember = m;
+                    break;
+                }
             }
-            if (existingMember.getAddress().equals(member.getAddress())) {
+            CPMemberInfo existingMember = currentContainer.membersMap.get(member.getUuid());
+            if (otherMember == null && existingMember != null && existingMember.getAddress().equals(member.getAddress())) {
                 return;
             }
 
             Map<UUID, CPMemberInfo> newMembers = new HashMap<UUID, CPMemberInfo>(currentContainer.membersMap);
             newMembers.put(member.getUuid(), member);
-            CPMembersContainer newContainer = new CPMembersContainer(currentContainer.version, newMembers);
+            if (otherMember != null) {
+                newMembers.remove(otherMember.getUuid());
+            }
 
+            CPMembersContainer newContainer = new CPMembersContainer(currentContainer.version, newMembers);
             if (membersContainer.compareAndSet(currentContainer, newContainer)) {
                 logger.info("Replaced " + existingMember + " -> " + member);
                 return;
