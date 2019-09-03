@@ -106,12 +106,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private final RaftGroupMembershipManager membershipManager;
     private final ILogger logger;
     private final CPSubsystemConfig config;
+    private final CPMetadataStore metadataStore;
 
     // these fields are related to the local CP member but they are not maintained within the Metadata CP group
     private final AtomicReference<CPMemberInfo> localCPMember = new AtomicReference<CPMemberInfo>();
     private final AtomicReference<RaftGroupId> metadataGroupIdRef = new AtomicReference<RaftGroupId>(INITIAL_METADATA_GROUP_ID);
     private final AtomicBoolean discoveryCompleted = new AtomicBoolean();
-    private final CPMetadataStore metadataStore;
 
     // all fields below are state of the Metadata CP group and put into Metadata snapshot and reset while restarting...
     // these fields are accessed outside of Raft while restarting or local querying, etc.
@@ -269,16 +269,20 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         return metadataGroupIdRef.get();
     }
 
-    public void restoreMetadataGroupId(RaftGroupId groupId) {
+    public void restoreMetadataGroupId(RaftGroupId restoredMetadataGroupId) {
         if (raftService.isStartCompleted()) {
             throw new IllegalStateException("Cannot set metadata groupId after start process is completed!");
         }
 
-        if (groupId.equals(getMetadataGroupId())) {
+        RaftGroupId currentMetadataGroupId = getMetadataGroupId();
+        if (restoredMetadataGroupId.seed() <= currentMetadataGroupId.seed()) {
+            // I might be already received a newer METADATA group id even before I restore mine
+            logger.fine("Not restoring METADATA groupId: " + restoredMetadataGroupId + " because the current METADATA groupId: "
+                    + currentMetadataGroupId + " is newer.");
             return;
         }
 
-        if (getMetadataGroupId().seed() != INITIAL_METADATA_GROUP_ID.seed()
+        if (currentMetadataGroupId.seed() != INITIAL_METADATA_GROUP_ID.seed()
             || initializationStatus != MetadataRaftGroupInitStatus.IN_PROGRESS
             || !initializedCPMembers.isEmpty()
             || !groups.isEmpty()) {
@@ -286,10 +290,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
 
         synchronized (metadataGroupIdRef) {
-            metadataGroupIdRef.set(groupId);
+            metadataGroupIdRef.set(restoredMetadataGroupId);
         }
 
-        logger.fine("Restored METADATA groupId: " + groupId);
+        logger.fine("Restored METADATA groupId: " + restoredMetadataGroupId);
     }
 
     public void restoreLocalCPMember(CPMemberInfo member) {
