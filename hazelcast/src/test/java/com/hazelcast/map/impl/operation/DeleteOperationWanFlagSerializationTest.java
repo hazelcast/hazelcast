@@ -50,7 +50,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RemoveBaseOperationWanFlagSerializationTest {
+public class DeleteOperationWanFlagSerializationTest {
 
     static final String MAP_NAME = "map";
 
@@ -91,22 +91,14 @@ public class RemoveBaseOperationWanFlagSerializationTest {
     }
 
     @Test
-    public void testRemoveOperation() throws IOException {
-        BaseRemoveOperation original = new RemoveOperation(MAP_NAME, keyMock, disableWanReplication);
-        BaseRemoveOperation deserialized = new RemoveOperation();
-
-        testSerialization(original, deserialized);
-    }
-
-    @Test
     public void testDeleteOperation() throws IOException {
-        BaseRemoveOperation original = new DeleteOperation(MAP_NAME, keyMock, disableWanReplication);
-        BaseRemoveOperation deserialized = new DeleteOperation();
+        DeleteOperation original = new DeleteOperation(MAP_NAME, keyMock, disableWanReplication);
+        DeleteOperation deserialized = new DeleteOperation();
 
         testSerialization(original, deserialized);
     }
 
-    private void testSerialization(BaseRemoveOperation originalOp, BaseRemoveOperation deserializedOp) throws IOException {
+    private void testSerialization(DeleteOperation originalOp, DeleteOperation deserializedOp) throws IOException {
         serializeAndDeserialize(originalOp, deserializedOp);
 
         assertEquals(originalOp.disableWanReplicationEvent, deserializedOp.disableWanReplicationEvent);

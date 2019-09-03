@@ -58,7 +58,7 @@ public class MapRemoveMessageTask
     @Override
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        MapOperation op = operationProvider.createRemoveOperation(parameters.name, parameters.key, false);
+        MapOperation op = operationProvider.createRemoveOperation(parameters.name, parameters.key);
         op.setThreadId(parameters.threadId);
         return op;
     }

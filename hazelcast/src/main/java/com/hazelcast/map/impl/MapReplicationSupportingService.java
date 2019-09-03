@@ -60,7 +60,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     private void handleRemove(MapReplicationRemove replicationRemove) {
         String mapName = replicationRemove.getMapName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
-        MapOperation operation = operationProvider.createRemoveOperation(replicationRemove.getMapName(),
+        MapOperation operation = operationProvider.createDeleteOperation(replicationRemove.getMapName(),
                 replicationRemove.getKey(), true);
 
         try {

@@ -23,66 +23,49 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-public class DeleteOperation extends BaseRemoveOperation {
+public class PutTransientWithExpiryOperation extends PutTransientOperation {
 
-    // package private for testing purposes
-    boolean disableWanReplicationEvent;
-    private boolean success;
+    private long ttl;
+    private long maxIdle;
 
-    public DeleteOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
-        super(name, dataKey);
-        this.disableWanReplicationEvent = disableWanReplicationEvent;
+    public PutTransientWithExpiryOperation() {
     }
 
-    public DeleteOperation() {
-    }
-
-    @Override
-    protected void runInternal() {
-        success = recordStore.delete(dataKey, getCallerProvenance());
+    public PutTransientWithExpiryOperation(String name, Data dataKey, Data value,
+                                           long ttl, long maxIdle) {
+        super(name, dataKey, value);
+        this.ttl = ttl;
+        this.maxIdle = maxIdle;
     }
 
     @Override
-    protected boolean disableWanReplicationEvent() {
-        return disableWanReplicationEvent;
+    protected long getTtl() {
+        return ttl;
     }
 
     @Override
-    public Object getResponse() {
-        return success;
-    }
-
-    @Override
-    protected void afterRunInternal() {
-        if (success) {
-            super.afterRunInternal();
-        }
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return success;
-    }
-
-    @Override
-    public void onWaitExpire() {
-        sendResponse(false);
+    protected long getMaxIdle() {
+        return maxIdle;
     }
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.DELETE;
+        return MapDataSerializerHook.PUT_TRANSIENT_WITH_EXPIRY;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(disableWanReplicationEvent);
+
+        out.writeLong(ttl);
+        out.writeLong(maxIdle);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        disableWanReplicationEvent = in.readBoolean();
+
+        ttl = in.readLong();
+        maxIdle = in.readLong();
     }
 }

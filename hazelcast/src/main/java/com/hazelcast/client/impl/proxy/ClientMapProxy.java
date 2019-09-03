@@ -415,7 +415,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value) {
-        return setAsync(key, value, -1, MILLISECONDS);
+        return setAsync(key, value, DEFAULT_TTL, MILLISECONDS);
     }
 
     @Override
@@ -695,7 +695,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public void lock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        lockInternal(key, timeInMsOrTimeIfNullUnit(-1, MILLISECONDS));
+        lockInternal(key, timeInMsOrTimeIfNullUnit(DEFAULT_TTL, MILLISECONDS));
     }
 
     @Override
@@ -1686,7 +1686,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public void set(@Nonnull K key, @Nonnull V value) {
-        set(key, value, -1, MILLISECONDS);
+        set(key, value, DEFAULT_TTL, MILLISECONDS);
     }
 
     @Override

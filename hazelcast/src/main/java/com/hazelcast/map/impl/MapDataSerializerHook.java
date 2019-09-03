@@ -99,8 +99,12 @@ import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutFromLoadAllBackupOperation;
 import com.hazelcast.map.impl.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.impl.operation.PutIfAbsentOperation;
+import com.hazelcast.map.impl.operation.PutIfAbsentWithExpiryOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
+import com.hazelcast.map.impl.operation.PutTransientBackupOperation;
 import com.hazelcast.map.impl.operation.PutTransientOperation;
+import com.hazelcast.map.impl.operation.PutTransientWithExpiryOperation;
+import com.hazelcast.map.impl.operation.PutWithExpiryOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveFromLoadAllOperation;
 import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
@@ -111,6 +115,7 @@ import com.hazelcast.map.impl.operation.ReplaceOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.operation.SetTtlBackupOperation;
 import com.hazelcast.map.impl.operation.SetTtlOperation;
+import com.hazelcast.map.impl.operation.SetWithExpiryOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
 import com.hazelcast.map.impl.operation.TryPutOperation;
@@ -303,8 +308,13 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ADD_INDEX_BACKUP = 140;
     public static final int TXN_SET_BACKUP = 141;
     public static final int TXN_DELETE_BACKUP = 142;
+    public static final int SET_WITH_EXPIRY = 143;
+    public static final int PUT_WITH_EXPIRY = 144;
+    public static final int PUT_TRANSIENT_WITH_EXPIRY = 145;
+    public static final int PUT_IF_ABSENT_WITH_EXPIRY = 146;
+    public static final int PUT_TRANSIENT_BACKUP = 147;
 
-    private static final int LEN = TXN_DELETE_BACKUP + 1;
+    private static final int LEN = PUT_TRANSIENT_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -458,6 +468,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ADD_INDEX_BACKUP] = arg -> new AddIndexBackupOperation();
         constructors[TXN_SET_BACKUP] = arg -> new TxnSetBackupOperation();
         constructors[TXN_DELETE_BACKUP] = arg -> new TxnDeleteBackupOperation();
+        constructors[SET_WITH_EXPIRY] = arg -> new SetWithExpiryOperation();
+        constructors[PUT_WITH_EXPIRY] = arg -> new PutWithExpiryOperation();
+        constructors[PUT_TRANSIENT_WITH_EXPIRY] = arg -> new PutTransientWithExpiryOperation();
+        constructors[PUT_IF_ABSENT_WITH_EXPIRY] = arg -> new PutIfAbsentWithExpiryOperation();
+        constructors[PUT_TRANSIENT_BACKUP] = arg -> new PutTransientBackupOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

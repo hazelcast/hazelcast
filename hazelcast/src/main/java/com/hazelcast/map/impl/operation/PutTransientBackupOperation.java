@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.operation.RemoveBackupOperation;
+import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.serialization.Data;
 
-public class TxnDeleteBackupOperation extends RemoveBackupOperation {
+public class PutTransientBackupOperation extends PutBackupOperation {
 
-    public TxnDeleteBackupOperation() {
+    public PutTransientBackupOperation() {
     }
 
-    public TxnDeleteBackupOperation(String name, Data dataKey) {
-        super(name, dataKey, false);
+    public PutTransientBackupOperation(String name, Data dataKey, Data dataValue,
+                                       RecordInfo recordInfo) {
+        super(name, dataKey, dataValue, recordInfo);
     }
 
     @Override
-    protected void runInternal() {
-        super.runInternal();
-
-        recordStore.forceUnlock(dataKey);
+    protected boolean isPutTransient() {
+        return true;
     }
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.TXN_DELETE_BACKUP;
+        return MapDataSerializerHook.PUT_TRANSIENT_BACKUP;
     }
+
 }
