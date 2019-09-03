@@ -290,7 +290,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             Collections.sort(sorted, COMPARATOR);
             sortedInstances = new SortedProbeInstances(modCountLocal, sorted);
             // if some other thread sorted in the meantime, ignore our sorting
-            this.sortedProbeInstances.compareAndSet(sortedInstancesOld, sortedInstancesOld);
+            this.sortedProbeInstances.compareAndSet(sortedInstancesOld, sortedInstances);
         } else {
             sortedInstances = sortedInstancesOld;
         }
