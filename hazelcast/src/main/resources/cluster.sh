@@ -2,21 +2,21 @@
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "parameters: "
-    echo "  -o, --operation  : Executes cluster-wide operation. Operation can be 'get-state','change-state','shutdown','force-start','partial-start','get-cluster-version','change-cluster-version'."
-    echo "  -s, --state      : Updates state of the cluster to new state. New state can be 'active', 'frozen', 'passive', 'no_migration'."
-    echo "  -a, --address    : Defines which ip address hazelcast is running. Default value is '127.0.0.1'."
-    echo "  -p, --port       : Defines which port hazelcast is running. Default value is '5701'."
-    echo "  -g, --groupname  : Defines groupname of the cluster. Default value is 'dev'."
-    echo "  -P, --password   : Defines password of the cluster. Default value is 'dev-pass'."
-    echo "  -v, --version    : Defines the cluster version to change to. To be used in conjunction with '-o change-cluster-version'."
-    echo "  -d, --debug      : Prints error output."
+    echo "  -o, --operation   : Executes cluster-wide operation. Operation can be 'get-state','change-state','shutdown','force-start','partial-start','get-cluster-version','change-cluster-version'."
+    echo "  -s, --state       : Updates state of the cluster to new state. New state can be 'active', 'frozen', 'passive', 'no_migration'."
+    echo "  -a, --address     : Defines which ip address hazelcast is running. Default value is '127.0.0.1'."
+    echo "  -p, --port        : Defines which port hazelcast is running. Default value is '5701'."
+    echo "  -c, --clustername : Defines clustername of the cluster. Default value is 'dev'."
+    echo "  -P, --password    : Defines password of the cluster. Default value is 'dev-pass'."
+    echo "  -v, --version     : Defines the cluster version to change to. To be used in conjunction with '-o change-cluster-version'."
+    echo "  -d, --debug       : Prints error output."
     echo
     echo "HTTPs related (when TLS is enabled):"
-    echo "      --https      : Uses HTTPs protocol for REST calls. (no parameter value expected)"
-    echo "      --cacert     : Defines trusted PEM-encoded certificate file path. It's used to verify member certificates."
-    echo "      --cert       : Defines PEM-encoded client certificate file path. Only needed when client certificate authentication is used."
-    echo "      --key        : Defines PEM-encoded client private key file path. Only needed when client certificate authentication is used."
-    echo "      --insecure   : Disables member certificate verification. (no parameter value expected)"
+    echo "      --https       : Uses HTTPs protocol for REST calls. (no parameter value expected)"
+    echo "      --cacert      : Defines trusted PEM-encoded certificate file path. It's used to verify member certificates."
+    echo "      --cert        : Defines PEM-encoded client certificate file path. Only needed when client certificate authentication is used."
+    echo "      --key         : Defines PEM-encoded client private key file path. Only needed when client certificate authentication is used."
+    echo "      --insecure    : Disables member certificate verification. (no parameter value expected)"
     exit 0
 fi
 
@@ -39,8 +39,8 @@ case "$key" in
     PORT="$2"
     shift # past argument
     ;;
-    -g|--groupname)
-    GROUPNAME="$2"
+    -c|--clustername)
+    CLUSTERNAME="$2"
     shift # past argument
     ;;
     -P|--password)
@@ -88,9 +88,9 @@ if [ -z "$PORT" ]; then
     PORT="5701"
 fi
 
-if [ -z "$GROUPNAME" ]; then
-    echo "No groupname is defined, running script with default groupname: 'dev'."
-    GROUPNAME="dev"
+if [ -z "$CLUSTERNAME" ]; then
+    echo "No clustername is defined, running script with default clustername: 'dev'."
+    CLUSTERNAME="dev"
 fi
 
 if [ -z "$ADDRESS" ]; then
@@ -110,7 +110,7 @@ fi
 
 if [ "$OPERATION" = "get-state" ]; then
     echo "Getting cluster state on address ${ADDRESS}:${PORT}"
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/state")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/state")
     CURL_EXIT_CODE=$?
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
@@ -133,7 +133,7 @@ elif [ "$OPERATION" = "change-state" ]; then
     fi
 
     echo "Changing cluster state to ${STATE} on address ${ADDRESS}:${PORT}"
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}&${STATE}" "${URL_BASE}/changeState")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}&${STATE}" "${URL_BASE}/changeState")
     CURL_EXIT_CODE=$?
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
@@ -158,7 +158,7 @@ elif [ "$OPERATION" = "force-start" ]; then
     echo "Force-start makes cluster operational if cluster start is blocked by problematic members."
     echo "Starting cluster from member on address ${ADDRESS}:${PORT}"
 
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/forceStart")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/forceStart")
     CURL_EXIT_CODE=$?
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
@@ -172,7 +172,7 @@ elif [ "$OPERATION" = "partial-start" ]; then
     echo "Partial-start makes cluster operational by starting only a portion of available members if cluster start is blocked by problematic members."
     echo "Starting cluster from member on address ${ADDRESS}:${PORT}"
 
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/partialStart")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/partialStart")
     CURL_EXIT_CODE=$?
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
@@ -186,7 +186,7 @@ elif [ "$OPERATION" = "shutdown" ]; then
     echo "You are shutting down the cluster."
     echo "Shutting down from member on address ${ADDRESS}:${PORT}"
 
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/clusterShutdown")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/clusterShutdown")
     CURL_EXIT_CODE=$?
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 
@@ -216,7 +216,7 @@ elif [ "$OPERATION" = "change-cluster-version" ]; then
     fi
 
     echo "Changing cluster version to ${CLUSTER_VERSION} on address ${ADDRESS}:${PORT}"
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}&${CLUSTER_VERSION}" "${URL_BASE}/version")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}&${CLUSTER_VERSION}" "${URL_BASE}/version")
     CURL_EXIT_CODE=$?
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//')
 

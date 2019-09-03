@@ -47,7 +47,6 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -702,10 +701,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testGroupConfig() {
-        GroupConfig groupConfig = config.getGroupConfig();
-        assertNotNull(groupConfig);
-        assertEquals("spring-group", groupConfig.getName());
-        assertEquals("spring-group-pass", groupConfig.getPassword());
+        assertNotNull(config);
+        assertEquals("spring-cluster", config.getClusterName());
+        assertEquals("spring-cluster-pass", config.getClusterPassword());
     }
 
     @Test
@@ -845,7 +843,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("TENANT_ID", azure.getProperty("tenant-id"));
         assertEquals("SUB_ID", azure.getProperty("subscription-id"));
         assertEquals("HZLCAST001", azure.getProperty("cluster-id"));
-        assertEquals("GROUP-NAME", azure.getProperty("group-name"));
+        assertEquals("CLUSTER-NAME", azure.getProperty("cluster-name"));
     }
 
     private void assertKubernetesConfig(KubernetesConfig kubernetes) {
@@ -951,7 +949,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(wcfg);
 
         WanBatchReplicationPublisherConfig pc = wcfg.getBatchPublisherConfigs().get(0);
-        assertEquals("tokyo", pc.getGroupName());
+        assertEquals("tokyo", pc.getClusterName());
         assertEquals("tokyoPublisherId", pc.getPublisherId());
         assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", pc.getClassName());
         assertEquals(WanQueueFullBehavior.THROW_EXCEPTION, pc.getQueueFullBehavior());
@@ -1024,7 +1022,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1, publisherConfigs.size());
 
         final WanBatchReplicationPublisherConfig pc = publisherConfigs.get(0);
-        assertEquals("tokyo", pc.getGroupName());
+        assertEquals("tokyo", pc.getClusterName());
 
         final WanSyncConfig wanSyncConfig = pc.getWanSyncConfig();
         assertNotNull(wanSyncConfig);
@@ -1100,7 +1098,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testMemberAttributesConfig() {
         MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
         assertNotNull(memberAttributeConfig);
-        assertEquals("spring-group", memberAttributeConfig.getAttribute("cluster.group.name"));
+        assertEquals("spring-cluster", memberAttributeConfig.getAttribute("cluster.name"));
     }
 
     @Test

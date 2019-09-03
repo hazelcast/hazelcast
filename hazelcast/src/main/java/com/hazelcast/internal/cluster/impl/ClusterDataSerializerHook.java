@@ -27,7 +27,7 @@ import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
-import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOp;
+import com.hazelcast.internal.cluster.impl.operations.ClusterMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
@@ -71,7 +71,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int BEFORE_JOIN_CHECK_FAILURE = 8;
     public static final int CHANGE_CLUSTER_STATE = 9;
     public static final int CONFIG_MISMATCH = 10;
-    public static final int GROUP_MISMATCH = 11;
+    public static final int CLUSTER_MISMATCH = 11;
     public static final int SPLIT_BRAIN_MERGE_VALIDATION = 12;
     public static final int JOIN_REQUEST_OP = 13;
     public static final int LOCK_CLUSTER_STATE = 14;
@@ -126,7 +126,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[BEFORE_JOIN_CHECK_FAILURE] = arg -> new BeforeJoinCheckFailureOp();
         constructors[CHANGE_CLUSTER_STATE] = arg -> new CommitClusterStateOp();
         constructors[CONFIG_MISMATCH] = arg -> new ConfigMismatchOp();
-        constructors[GROUP_MISMATCH] = arg -> new GroupMismatchOp();
+        constructors[CLUSTER_MISMATCH] = arg -> new ClusterMismatchOp();
         constructors[SPLIT_BRAIN_MERGE_VALIDATION] = arg -> new SplitBrainMergeValidationOp();
         constructors[JOIN_REQUEST_OP] = arg -> new JoinRequestOp();
         constructors[LOCK_CLUSTER_STATE] = arg -> new LockClusterStateOp();

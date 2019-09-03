@@ -109,7 +109,7 @@ public class ClientServiceTest extends ClientTestSupport {
     public void testNumberOfClients_afterUnAuthenticatedClient() {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("wrongName");
+        clientConfig.setClusterName("wrongName");
 
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
@@ -125,7 +125,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("wrongName");
+        clientConfig.setClusterName("wrongName");
 
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
@@ -144,7 +144,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("wrongName");
+        clientConfig.setClusterName("wrongName");
 
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);

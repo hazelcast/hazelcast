@@ -68,10 +68,10 @@ hazelcast-client:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
   #
-  # Specifies the name and password for a cluster group you connect to.
-  # Cluster groups allow you to create separate sub-clusters with different names.
+  # Specifies the name and password for a cluster you connect to.
+  # Cluster configuration allow you to create separate sub-clusters with different names.
   # The password is only checked when security is enabled on Hazelcast members (Enterprise edition feature).
-  group:
+  cluster:
     name: dev
     password: dev-pass
   #
@@ -305,7 +305,7 @@ hazelcast-client:
       tenant-id: TENANT_ID
       subscription-id: SUB_ID
       cluster-id: HZLCAST001
-      group-name: GROUP-NAME
+      cluster-name: CLUSTER-NAME
     kubernetes:
       enabled: false
       namespace: MY-KUBERNETES-NAMESPACE

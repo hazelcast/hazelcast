@@ -65,6 +65,7 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
 /**
@@ -79,6 +80,16 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBas
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class Config {
 
+    /**
+     * Default cluster name.
+     */
+    public static final String DEFAULT_CLUSTER_NAME = "dev";
+
+    /**
+     * Default group password.
+     */
+    public static final String DEFAULT_CLUSTER_PASSWORD = "dev-pass";
+
     private URL configurationUrl;
 
     private File configurationFile;
@@ -89,7 +100,9 @@ public class Config {
 
     private String instanceName;
 
-    private GroupConfig groupConfig = new GroupConfig();
+    private String clusterName = DEFAULT_CLUSTER_NAME;
+
+    private String clusterPassword = DEFAULT_CLUSTER_PASSWORD;
 
     private NetworkConfig networkConfig = new NetworkConfig();
 
@@ -339,28 +352,51 @@ public class Config {
     }
 
     /**
-     * Returns the configuration for hazelcast groups. Members of a cluster
-     * must share the same group configuration. Other instances that are
-     * reachable but don't have the same group configuration will form
-     * independent clusters.
+     * Returns the cluster name uniquely identifying the hazelcast cluster. This name is
+     * used in different scenarios, such as identifying cluster for WAN publisher.
      *
-     * @return the hazelcast group configuration
+     * @return the cluster name.
      */
-    public GroupConfig getGroupConfig() {
-        return groupConfig;
+    public String getClusterName() {
+        return clusterName;
     }
 
     /**
-     * Sets the configuration for hazelcast groups. Members of a cluster must
-     * share the same group configuration. Other instances that are reachable
-     * but don't have the same group configuration will form independent
-     * clusters.
-     *
-     * @param groupConfig the hazelcast group configuration
+     * Sets the cluster name uniquely identifying the hazelcast cluster. This name is
+     * used in different scenarios, such as identifying cluster for WAN publisher.
+     * @param clusterName the new cluster name
      * @return this config instance
+     * @throws IllegalArgumentException if name is {@code null}
      */
-    public Config setGroupConfig(GroupConfig groupConfig) {
-        this.groupConfig = groupConfig;
+    public Config setClusterName(String clusterName) {
+        this.clusterName = isNotNull(clusterName, "clusterName");
+        return this;
+    }
+
+    /**
+     * Gets the password of the cluster.
+     *
+     * @return the password of the cluster
+     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
+     * {@link SecurityConfig security} is enabled (Enterprise edition only).
+     */
+    @Deprecated
+    public String getClusterPassword() {
+        return clusterPassword;
+    }
+
+    /**
+     * Sets the password for the cluster.
+     *
+     * @param password the password to set for the cluster
+     * @return the updated Config
+     * @throws IllegalArgumentException if password is {@code null}
+     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
+     * {@link SecurityConfig security} is enabled (Enterprise edition only).
+     */
+    @Deprecated
+    public Config setClusterPassword(final String password) {
+        this.clusterPassword = isNotNull(password, "cluster password");
         return this;
     }
 
@@ -2803,7 +2839,7 @@ public class Config {
     @Override
     public String toString() {
         return "Config{"
-                + "groupConfig=" + groupConfig
+                + "clusterName=" + clusterName
                 + ", properties=" + properties
                 + ", networkConfig=" + networkConfig
                 + ", mapConfigs=" + mapConfigs

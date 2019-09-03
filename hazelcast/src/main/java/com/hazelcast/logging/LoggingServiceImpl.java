@@ -52,10 +52,10 @@ public class LoggingServiceImpl implements LoggingService {
     private volatile String thisAddressString = "[LOCAL] ";
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(String groupName, String loggingType, BuildInfo buildInfo) {
+    public LoggingServiceImpl(String clusterName, String loggingType, BuildInfo buildInfo) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        versionMessage = "[" + groupName + "] ["
+        versionMessage = "[" + clusterName + "] ["
                 + (jetBuildInfo != null ?  jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
     }
 

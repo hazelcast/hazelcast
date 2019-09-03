@@ -114,7 +114,6 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      */
     UUID syncAllMaps(String wanReplicationName, String wanPublisherId);
 
-
     /**
      * Initiate WAN consistency check for a specific map.
      * NOTE: not supported on OS, only on EE

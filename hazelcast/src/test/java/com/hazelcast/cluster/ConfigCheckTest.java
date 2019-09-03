@@ -36,12 +36,12 @@ import static org.junit.Assert.fail;
 public class ConfigCheckTest {
 
     @Test
-    public void whenGroupNameDifferent_thenFalse() {
+    public void whenClusterNameDifferent_thenFalse() {
         Config config1 = new Config();
-        config1.getGroupConfig().setName("foo");
+        config1.setClusterName("foo");
 
         Config config2 = new Config();
-        config2.getGroupConfig().setName("bar");
+        config2.setClusterName("bar");
 
         ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
         ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");
@@ -52,12 +52,12 @@ public class ConfigCheckTest {
     @Test
     public void whenGroupPasswordDifferent_thenJoin() {
         Config config1 = new Config();
-        config1.getGroupConfig().setName("foo");
-        config1.getGroupConfig().setPassword("Here");
+        config1.setClusterName("foo");
+        config1.setClusterPassword("Here");
 
         Config config2 = new Config();
-        config2.getGroupConfig().setName("foo");
-        config2.getGroupConfig().setPassword("There");
+        config2.setClusterName("foo");
+        config2.setClusterPassword("There");
 
         ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
         ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");

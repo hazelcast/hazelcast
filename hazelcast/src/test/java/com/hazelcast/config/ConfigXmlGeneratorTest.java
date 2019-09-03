@@ -90,7 +90,7 @@ public class ConfigXmlGeneratorTest {
         assertEquals(secPassword, MASK_FOR_SENSITIVE_DATA);
         assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(newConfigViaXMLGenerator.getClusterPassword(), MASK_FOR_SENSITIVE_DATA);
     }
 
     @Test
@@ -100,7 +100,7 @@ public class ConfigXmlGeneratorTest {
         String licenseKey = "HazelcastLicenseKey";
 
         Config cfg = new Config();
-        cfg.getGroupConfig().setPassword(password);
+        cfg.setClusterPassword(password);
 
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", password)
@@ -125,7 +125,7 @@ public class ConfigXmlGeneratorTest {
         assertEquals(secPassword, password);
         assertEquals(theSalt, salt);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), licenseKey);
-        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), password);
+        assertEquals(newConfigViaXMLGenerator.getClusterPassword(), password);
     }
 
     @Test
@@ -1054,7 +1054,7 @@ public class ConfigXmlGeneratorTest {
                 .setName("testName")
                 .setWanConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
         WanBatchReplicationPublisherConfig batchPublisher = new WanBatchReplicationPublisherConfig()
-                .setGroupName("dummyGroup")
+                .setClusterName("dummyGroup")
                 .setPublisherId("dummyPublisherId")
                 .setSnapshotEnabled(false)
                 .setInitialPublisherState(WanPublisherState.STOPPED)

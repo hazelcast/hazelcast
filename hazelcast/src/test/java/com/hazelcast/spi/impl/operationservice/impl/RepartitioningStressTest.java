@@ -76,7 +76,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
 
         instanceFactory = createHazelcastInstanceFactory(10000);
         config = new Config();
-        config.getGroupConfig().setName(generateRandomString(10));
+        config.setClusterName(generateRandomString(10));
         MapConfig mapConfig = new MapConfig("map");
         config.addMapConfig(mapConfig);
         hz = createHazelcastInstance();

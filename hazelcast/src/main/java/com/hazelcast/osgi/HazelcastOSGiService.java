@@ -37,7 +37,7 @@ public interface HazelcastOSGiService {
     String HAZELCAST_OSGI_REGISTER_DISABLED = "hazelcast.osgi.register.disabled";
 
     /**
-     * System property for disabling the behaviour that gives different group name
+     * System property for disabling the behaviour that gives different cluster name
      * to each Hazelcast bundle.
      */
     String HAZELCAST_OSGI_GROUPING_DISABLED = "hazelcast.osgi.grouping.disabled";

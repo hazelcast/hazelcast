@@ -56,7 +56,7 @@ import static com.hazelcast.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.FLAKE_ID_GENERATOR;
-import static com.hazelcast.config.ConfigSections.GROUP;
+import static com.hazelcast.config.ConfigSections.CLUSTER;
 import static com.hazelcast.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.ConfigSections.IMPORT;
 import static com.hazelcast.config.ConfigSections.INSTANCE_NAME;
@@ -150,8 +150,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleNetwork(node);
         } else if (IMPORT.isEqual(nodeName)) {
             throw new HazelcastException("Non-expanded <import> element found");
-        } else if (GROUP.isEqual(nodeName)) {
-            handleGroup(node);
+        } else if (CLUSTER.isEqual(nodeName)) {
+            handleCluster(node);
         } else if (PROPERTIES.isEqual(nodeName)) {
             fillProperties(node, config.getProperties());
         } else if (WAN_REPLICATION.isEqual(nodeName)) {
@@ -536,8 +536,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                                      WanBatchReplicationPublisherConfig config) {
         for (Node targetChild : childElements(nodeTarget)) {
             String targetChildName = cleanNodeName(targetChild);
-            if ("group-name".equals(targetChildName)) {
-                config.setGroupName(getTextContent(targetChild));
+            if ("cluster-name".equals(targetChildName)) {
+                config.setClusterName(getTextContent(targetChild));
             } else if ("publisher-id".equals(targetChildName)) {
                 config.setPublisherId(getTextContent(targetChild));
             } else if ("target-endpoints".equals(targetChildName)) {
@@ -935,14 +935,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addFlakeIdGeneratorConfig(generatorConfig);
     }
 
-    private void handleGroup(Node node) {
+    private void handleCluster(Node node) {
         for (Node n : childElements(node)) {
             String value = getTextContent(n).trim();
             String nodeName = cleanNodeName(n);
             if ("name".equals(nodeName)) {
-                config.getGroupConfig().setName(value);
+                config.setClusterName(value);
             } else if ("password".equals(nodeName)) {
-                config.getGroupConfig().setPassword(value);
+                config.setClusterPassword(value);
             }
         }
     }

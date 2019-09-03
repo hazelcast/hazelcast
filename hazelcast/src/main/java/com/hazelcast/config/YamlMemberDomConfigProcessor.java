@@ -182,15 +182,15 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         if ("batch-publisher".equals(nodeName)) {
             for (Node publisherNode : childElements(nodeTarget)) {
                 WanBatchReplicationPublisherConfig publisherConfig = new WanBatchReplicationPublisherConfig();
-                String groupNameOrPublisherId = publisherNode.getNodeName();
-                Node groupNameAttr = publisherNode.getAttributes().getNamedItem("group-name");
+                String clusterNameOrPublisherId = publisherNode.getNodeName();
+                Node clusterNameAttr = publisherNode.getAttributes().getNamedItem("cluster-name");
 
                 // the publisher's key may mean either the publisher-id or the
-                // group-name depending on whether the group-name is explicitly defined
-                String groupName = groupNameAttr != null ? groupNameAttr.getTextContent() : groupNameOrPublisherId;
-                String publisherId = groupNameAttr != null ? groupNameOrPublisherId : null;
+                // cluster-name depending on whether the cluster-name is explicitly defined
+                String clusterName = clusterNameAttr != null ? clusterNameAttr.getTextContent() : clusterNameOrPublisherId;
+                String publisherId = clusterNameAttr != null ? clusterNameOrPublisherId : null;
                 publisherConfig.setPublisherId(publisherId);
-                publisherConfig.setGroupName(groupName);
+                publisherConfig.setClusterName(clusterName);
 
                 handleBatchWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
             }

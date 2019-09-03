@@ -230,8 +230,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         //non retryable client messages will fail immediately
         //retryable client messages will be retried but they will wait for new partition table
         client.getConnectionManager().beforeClusterSwitch(context);
-        //update logger with new group name
-        ((ClientLoggingService) client.getLoggingService()).updateGroupName(context.getName());
+        //update logger with new cluster name
+        ((ClientLoggingService) client.getLoggingService()).updateClusterName(context.getName());
     }
 
     private boolean connectToCandidate(CandidateClusterContext context) {

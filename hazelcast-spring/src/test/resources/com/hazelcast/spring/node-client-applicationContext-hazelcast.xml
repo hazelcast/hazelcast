@@ -35,9 +35,9 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:group
-                    name="${cluster.group.name}"
-                    password="${cluster.group.password}"/>
+            <hz:cluster
+                    name="${cluster.name}"
+                    password="${cluster.password}"/>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -59,7 +59,7 @@
     </hz:hazelcast>
 
     <hz:client id="client">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+        <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
         <hz:properties>
             <hz:property name="hazelcast.client.retry.count">13</hz:property>
         </hz:properties>
@@ -340,7 +340,7 @@
     </hz:client>
 
     <hz:client id="client15-credentials-factory">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+        <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
         <hz:network connection-attempt-limit="0">
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
@@ -356,7 +356,7 @@
     </hz:client>
 
     <hz:client id="client16-name-and-labels">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+        <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
         <hz:network connection-attempt-limit="0">
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
@@ -368,8 +368,8 @@
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
-        <property name="name" value="spring-group"/>
-        <property name="password" value="spring-group-pass"/>
+        <property name="name" value="spring-cluster"/>
+        <property name="password" value="spring-cluster-pass"/>
     </bean>
 
     <hz:map id="map1" instance-ref="client" name="map1"/>

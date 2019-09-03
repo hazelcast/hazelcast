@@ -39,13 +39,13 @@ public class XmlSchemaValidationTest {
 
     @Test
     public void testXmlDeniesDuplicateGroupConfig() {
-        expectDuplicateElementError("group");
-        String groupConfig = ""
-                + "    <group>\n"
+        expectDuplicateElementError("cluster");
+        String clusterConfig = ""
+                + "    <cluster>\n"
                 + "        <name>foobar</name>\n"
                 + "        <password>dev-pass</password>\n"
-                + "    </group>\n";
-        buildConfig(HAZELCAST_START_TAG + groupConfig + groupConfig + HAZELCAST_END_TAG);
+                + "    </cluster>\n";
+        buildConfig(HAZELCAST_START_TAG + clusterConfig + clusterConfig + HAZELCAST_END_TAG);
     }
 
     @Test

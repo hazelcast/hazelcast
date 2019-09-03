@@ -52,7 +52,7 @@ public class DynamicConfigSearchOrderTest extends HazelcastTestSupport {
         staticHazelcastConfig.setProperty(SEARCH_DYNAMIC_CONFIG_FIRST.getName(), "true");
         String uuid = UUID.randomUUID().toString();
         staticHazelcastConfig.setInstanceName(uuid);
-        staticHazelcastConfig.setGroupConfig(staticHazelcastConfig.getGroupConfig().setName(uuid));
+        staticHazelcastConfig.setClusterName(uuid);
     }
 
     @Test

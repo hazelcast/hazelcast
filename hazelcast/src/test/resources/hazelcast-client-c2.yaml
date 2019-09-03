@@ -14,7 +14,7 @@
 
 hazelcast-client:
 
-  group:
+  cluster:
     name: cluster2
     password: cluster2pass
 

@@ -175,7 +175,7 @@ public final class HazelcastInstanceFactory {
         if (useMobyNaming) {
             name = createUniqueMobyName(instanceNum);
         } else {
-            name = "_hzInstance_" + instanceNum + "_" + config.getGroupConfig().getName();
+            name = "_hzInstance_" + instanceNum + "_" + config.getClusterName();
         }
         return name;
     }

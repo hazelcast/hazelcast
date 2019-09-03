@@ -23,7 +23,7 @@
 # To learn how to configure Hazelcast, please see the Reference Manual
 # at https://hazelcast.org/documentation/
 hazelcast:
-  group:
+  cluster:
     name: dev
   management-center:
     enabled: false
@@ -69,7 +69,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        group-name: GROUP-NAME
+        cluster-name: CLUSTER-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE

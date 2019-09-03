@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,51 +38,51 @@ import static org.junit.Assert.assertSame;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ProxyEqualityTest {
 
-    private final TestHazelcastFactory hazelcastFactoryGroupA = new TestHazelcastFactory();
-    private final TestHazelcastFactory hazelcastFactoryGroupB = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactoryClusterA = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactoryClusterB = new TestHazelcastFactory();
 
     private final String atomicName = "foo";
 
-    private HazelcastInstance client1GroupA;
-    private HazelcastInstance client2GroupA;
+    private HazelcastInstance client1ClusterA;
+    private HazelcastInstance client2ClusterA;
 
-    private HazelcastInstance client1GroupB;
+    private HazelcastInstance client1ClusterB;
 
     @After
     public void tearDown() {
-        hazelcastFactoryGroupA.terminateAll();
-        hazelcastFactoryGroupB.terminateAll();
+        hazelcastFactoryClusterA.terminateAll();
+        hazelcastFactoryClusterB.terminateAll();
     }
 
 
     @Before
     public void setup() throws Exception {
         Config config = new Config();
-        String groupAName = "GroupA";
-        config.getGroupConfig().setName(groupAName);
-        hazelcastFactoryGroupA.newHazelcastInstance(config);
+        String clusterAName = "ClusterA";
+        config.setClusterName(clusterAName);
+        hazelcastFactoryClusterA.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig(new GroupConfig(config.getGroupConfig().getName()));
-        client1GroupA = hazelcastFactoryGroupA.newHazelcastClient(clientConfig);
-        client2GroupA = hazelcastFactoryGroupA.newHazelcastClient(clientConfig);
+        clientConfig.setClusterName(clusterAName);
+        client1ClusterA = hazelcastFactoryClusterA.newHazelcastClient(clientConfig);
+        client2ClusterA = hazelcastFactoryClusterA.newHazelcastClient(clientConfig);
 
         //setup Group B
         config = new Config();
-        String groupBName = "GroupB";
-        config.getGroupConfig().setName(groupBName);
-        hazelcastFactoryGroupB.newHazelcastInstance(config);
+        String clusterBName = "ClusterB";
+        config.setClusterName(clusterBName);
+        hazelcastFactoryClusterB.newHazelcastInstance(config);
 
         clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig(new GroupConfig(config.getGroupConfig().getName()));
-        client1GroupB = hazelcastFactoryGroupB.newHazelcastClient(clientConfig);
+        clientConfig.setClusterName(clusterBName);
+        client1ClusterB = hazelcastFactoryClusterB.newHazelcastClient(clientConfig);
     }
 
     @Test
     public void testTwoClientProxiesFromTheSameInstanceAreEquals() {
 
-        ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
+        ClientProxy ref1 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
+        ClientProxy ref2 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
 
         assertEquals(ref1, ref2);
     }
@@ -91,8 +90,8 @@ public class ProxyEqualityTest {
     @Test
     public void testProxiesAreCached() {
 
-        ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
+        ClientProxy ref1 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
+        ClientProxy ref2 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
 
         assertSame(ref1, ref2);
     }
@@ -100,8 +99,8 @@ public class ProxyEqualityTest {
     @Test
     public void testTwoClientProxiesFromDifferentInstancesAreNotEquals() {
 
-        ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client1GroupB.getAtomicLong(atomicName);
+        ClientProxy ref1 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
+        ClientProxy ref2 = (ClientProxy) client1ClusterB.getAtomicLong(atomicName);
 
         assertNotEquals(ref1, ref2);
     }
@@ -109,8 +108,8 @@ public class ProxyEqualityTest {
     @Test
     public void testTwoClientProxiesFromTwoDifferentClientsConnectedToTheSameInstanceAreNotEquals() {
 
-        ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client2GroupA.getAtomicLong(atomicName);
+        ClientProxy ref1 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
+        ClientProxy ref2 = (ClientProxy) client2ClusterA.getAtomicLong(atomicName);
 
         assertNotEquals(ref1, ref2);
     }

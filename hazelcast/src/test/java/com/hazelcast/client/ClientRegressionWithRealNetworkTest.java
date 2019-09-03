@@ -68,18 +68,18 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     @Test
     public void testClientPortConnection() {
         final Config config1 = new Config();
-        config1.getGroupConfig().setName("foo");
+        config1.setClusterName("foo");
         config1.getNetworkConfig().setPort(5701);
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
         instance1.getMap("map").put("key", "value");
 
         final Config config2 = new Config();
-        config2.getGroupConfig().setName("bar");
+        config2.setClusterName("bar");
         config2.getNetworkConfig().setPort(5702);
         Hazelcast.newHazelcastInstance(config2);
 
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("bar");
+        clientConfig.setClusterName("bar");
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final IMap<Object, Object> map = client.getMap("map");

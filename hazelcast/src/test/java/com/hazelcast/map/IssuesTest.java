@@ -179,7 +179,7 @@ public class IssuesTest extends HazelcastTestSupport {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         Config config = getConfig();
-        config.getGroupConfig().setName("testIssue174NearCacheContainsKeySingleNode");
+        config.setClusterName("testIssue174NearCacheContainsKeySingleNode");
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
         HazelcastInstance h = factory.newHazelcastInstance(config);

@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.connection.nio;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.ICredentialsFactory;
@@ -35,12 +35,12 @@ public class DefaultCredentialsFactory implements ICredentialsFactory {
 
     private final Credentials credentials;
 
-    public DefaultCredentialsFactory(ClientSecurityConfig securityConfig, GroupConfig groupConfig,
+    public DefaultCredentialsFactory(ClientSecurityConfig securityConfig, ClientConfig config,
                                      ClassLoader classLoader) {
-        credentials = initCredentials(securityConfig, groupConfig, classLoader);
+        credentials = initCredentials(securityConfig, config, classLoader);
     }
 
-    private Credentials initCredentials(ClientSecurityConfig securityConfig, GroupConfig groupConfig, ClassLoader classLoader) {
+    private Credentials initCredentials(ClientSecurityConfig securityConfig, ClientConfig config, ClassLoader classLoader) {
         Credentials credentials = securityConfig.getCredentials();
         if (credentials == null) {
             String credentialsClassname = securityConfig.getCredentialsClassname();
@@ -53,13 +53,13 @@ public class DefaultCredentialsFactory implements ICredentialsFactory {
             }
         }
         if (credentials == null) {
-            credentials = new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
+            credentials = new UsernamePasswordCredentials(config.getClusterName(), config.getClusterPassword());
         }
         return credentials;
     }
 
     @Override
-    public void configure(GroupConfig groupConfig, Properties properties) {
+    public void configure(String clusterName, String clusterPassword, Properties properties) {
 
     }
 

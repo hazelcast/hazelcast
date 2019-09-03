@@ -65,17 +65,17 @@ public class ClientConfigTest {
     }
 
     @Test
-    public void testAccessGroupNameOverClientInstance() {
+    public void testAccessClusterNameOverClientInstance() {
         Config config = new Config();
-        String groupName = "aGroupName";
-        config.getGroupConfig().setName(groupName);
+        String clusterName = "aClusterName";
+        config.setClusterName(clusterName);
         hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName(groupName);
+        clientConfig.setClusterName(clusterName);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        assertEquals(groupName, client.getConfig().getGroupConfig().getName());
+        assertEquals(clusterName, client.getConfig().getClusterName());
     }
 
     @Test

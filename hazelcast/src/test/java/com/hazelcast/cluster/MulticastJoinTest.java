@@ -100,11 +100,11 @@ public class MulticastJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenDifferentGroupNames() throws Exception {
+    public void test_whenDifferentClusterNames() throws Exception {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config1.getGroupConfig().setName("group1");
+        config1.setClusterName("cluster1");
         config1.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
@@ -112,7 +112,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
         Config config2 = new Config();
         config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config2.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config2.getGroupConfig().setName("group2");
+        config2.setClusterName("cluster2");
         config2.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);

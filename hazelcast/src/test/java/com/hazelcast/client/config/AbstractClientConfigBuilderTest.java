@@ -25,7 +25,6 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
@@ -368,10 +367,8 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     }
 
     @Test
-    public void testGroupConfig() {
-        final GroupConfig groupConfig = fullClientConfig.getGroupConfig();
-        assertEquals("dev", groupConfig.getName());
-        assertEquals("dev-pass", groupConfig.getPassword());
+    public void testClusterName() {
+        assertEquals("dev", fullClientConfig.getClusterName());
     }
 
     @Test

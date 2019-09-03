@@ -72,7 +72,6 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -221,9 +220,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             instanceName = "hz.client_" + id;
         }
 
-        GroupConfig groupConfig = config.getGroupConfig();
         String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
-        loggingService = new ClientLoggingService(groupConfig.getName(),
+        loggingService = new ClientLoggingService(config.getClusterName(),
                 loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
         logGroupPasswordInfo();
         ClassLoader classLoader = config.getClassLoader();
@@ -387,10 +385,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private void logGroupPasswordInfo() {
-        if (!isNullOrEmpty(config.getGroupConfig().getPassword())) {
+        if (!isNullOrEmpty(config.getClusterPassword())) {
             ILogger logger = loggingService.getLogger(HazelcastClient.class);
             logger.info("A non-empty group password is configured for the Hazelcast client."
-                    + " Starting with Hazelcast version 3.11, clients with the same group name,"
+                    + " Starting with Hazelcast version 3.11, clients with the same cluster name,"
                     + " but with different group passwords (that do not use authentication) will be accepted to a cluster."
                     + " The group password configuration will be removed completely in a future release.");
         }

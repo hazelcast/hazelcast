@@ -71,8 +71,8 @@ abstract class AbstractClientFailoverConfigBuilderTest {
     void assertSampleFailoverConfig(ClientFailoverConfig config) {
         List<ClientConfig> clientConfigs = fullClientConfig.getClientConfigs();
         assertEquals(2, clientConfigs.size());
-        assertEquals("cluster1", clientConfigs.get(0).getGroupConfig().getName());
-        assertEquals("cluster2", clientConfigs.get(1).getGroupConfig().getName());
+        assertEquals("cluster1", clientConfigs.get(0).getClusterName());
+        assertEquals("cluster2", clientConfigs.get(1).getClusterName());
         assertEquals(4, config.getTryCount());
     }
 }

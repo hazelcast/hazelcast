@@ -19,12 +19,12 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.Client;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
@@ -45,7 +45,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.config.Config.DEFAULT_CLUSTER_NAME;
+import static com.hazelcast.config.Config.DEFAULT_CLUSTER_PASSWORD;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 
@@ -61,10 +64,15 @@ public class ClientConfig {
     private Properties properties = new Properties();
 
     /**
-     * The Group Configuration properties like:
-     * Name and Password that is used to connect to the cluster.
+     * The cluster name uniquely identifying the hazelcast cluster
      */
-    private GroupConfig groupConfig = new GroupConfig();
+    private String clusterName = DEFAULT_CLUSTER_NAME;
+
+    /**
+     * The cluster password.
+     */
+    private String clusterPassword = DEFAULT_CLUSTER_PASSWORD;
+
 
     /**
      * The Security Configuration for custom Credentials:
@@ -124,7 +132,7 @@ public class ClientConfig {
     public ClientConfig(ClientConfig config) {
         properties = new Properties();
         properties.putAll(config.properties);
-        groupConfig = new GroupConfig(config.groupConfig);
+        clusterName = config.clusterName;
         securityConfig = new ClientSecurityConfig(config.securityConfig);
         networkConfig = new ClientNetworkConfig(config.networkConfig);
         loadBalancer = config.loadBalancer;
@@ -181,7 +189,7 @@ public class ClientConfig {
      * @return this configuration
      */
     public ClientConfig setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
-        Preconditions.isNotNull(configPatternMatcher, "configPatternMatcher");
+        isNotNull(configPatternMatcher, "configPatternMatcher");
         this.configPatternMatcher = configPatternMatcher;
         return this;
     }
@@ -236,7 +244,7 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setProperties(final Properties properties) {
-        Preconditions.isNotNull(properties, "properties");
+        isNotNull(properties, "properties");
         this.properties = properties;
         return this;
     }
@@ -259,7 +267,7 @@ public class ClientConfig {
      * @see com.hazelcast.client.config.ClientSecurityConfig
      */
     public ClientConfig setSecurityConfig(ClientSecurityConfig securityConfig) {
-        Preconditions.isNotNull(securityConfig, "securityConfig");
+        isNotNull(securityConfig, "securityConfig");
         this.securityConfig = securityConfig;
         return this;
     }
@@ -282,7 +290,7 @@ public class ClientConfig {
      * @see com.hazelcast.client.config.ClientNetworkConfig
      */
     public ClientConfig setNetworkConfig(ClientNetworkConfig networkConfig) {
-        Preconditions.isNotNull(networkConfig, "networkConfig");
+        isNotNull(networkConfig, "networkConfig");
         this.networkConfig = networkConfig;
         return this;
     }
@@ -382,7 +390,7 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setNearCacheConfigMap(Map<String, NearCacheConfig> nearCacheConfigMap) {
-        Preconditions.isNotNull(nearCacheConfigMap, "nearCacheConfigMap");
+        isNotNull(nearCacheConfigMap, "nearCacheConfigMap");
         this.nearCacheConfigMap.clear();
         this.nearCacheConfigMap.putAll(nearCacheConfigMap);
         for (Entry<String, NearCacheConfig> entry : this.nearCacheConfigMap.entrySet()) {
@@ -480,7 +488,7 @@ public class ClientConfig {
      * @return this config instance
      */
     public ClientConfig setFlakeIdGeneratorConfigMap(Map<String, ClientFlakeIdGeneratorConfig> map) {
-        Preconditions.isNotNull(map, "flakeIdGeneratorConfigMap");
+        isNotNull(map, "flakeIdGeneratorConfigMap");
         flakeIdGeneratorConfigMap.clear();
         flakeIdGeneratorConfigMap.putAll(map);
         for (Entry<String, ClientFlakeIdGeneratorConfig> entry : map.entrySet()) {
@@ -498,7 +506,7 @@ public class ClientConfig {
      * @return this config instance
      */
     public ClientConfig setReliableTopicConfigMap(Map<String, ClientReliableTopicConfig> map) {
-        Preconditions.isNotNull(map, "reliableTopicConfigMap");
+        isNotNull(map, "reliableTopicConfigMap");
         reliableTopicConfigMap.clear();
         reliableTopicConfigMap.putAll(map);
         for (Entry<String, ClientReliableTopicConfig> entry : map.entrySet()) {
@@ -540,24 +548,51 @@ public class ClientConfig {
     }
 
     /**
-     * gets {@link GroupConfig}
+     * Returns the cluster name uniquely identifying the hazelcast cluster. This name is
+     * used in different scenarios, such as identifying cluster for WAN publisher.
      *
-     * @return {@link GroupConfig}
-     * @see com.hazelcast.config.GroupConfig
+     * @return the cluster name.
      */
-    public GroupConfig getGroupConfig() {
-        return groupConfig;
+    public String getClusterName() {
+        return clusterName;
     }
 
     /**
-     * Sets {@link GroupConfig}
-     *
-     * @param groupConfig {@link GroupConfig}
-     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     * Sets the cluster name uniquely identifying the hazelcast cluster. This name is
+     * used in different scenarios, such as identifying cluster for WAN publisher.
+     * @param clusterName the new cluster name
+     * @return this config instance
+     * @throws IllegalArgumentException if name is {@code null}
      */
-    public ClientConfig setGroupConfig(GroupConfig groupConfig) {
-        Preconditions.isNotNull(groupConfig, "groupConfig");
-        this.groupConfig = groupConfig;
+    public ClientConfig setClusterName(String clusterName) {
+        this.clusterName = isNotNull(clusterName, "clusterName");
+        return this;
+    }
+
+    /**
+     * Gets the password of the cluster.
+     *
+     * @return the password of the cluster
+     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
+     * {@link SecurityConfig security} is enabled (Enterprise edition only).
+     */
+    @Deprecated
+    public String getClusterPassword() {
+        return clusterPassword;
+    }
+
+    /**
+     * Sets the password for the cluster.
+     *
+     * @param password the password to set for the cluster
+     * @return the updated Config
+     * @throws IllegalArgumentException if password is {@code null}
+     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
+     * {@link SecurityConfig security} is enabled (Enterprise edition only).
+     */
+    @Deprecated
+    public ClientConfig setClusterPassword(final String password) {
+        this.clusterPassword = isNotNull(password, "cluster password");
         return this;
     }
 
@@ -579,7 +614,7 @@ public class ClientConfig {
      * @see com.hazelcast.config.ListenerConfig
      */
     public ClientConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
-        Preconditions.isNotNull(listenerConfigs, "listenerConfigs");
+        isNotNull(listenerConfigs, "listenerConfigs");
         this.listenerConfigs.clear();
         this.listenerConfigs.addAll(listenerConfigs);
         return this;
@@ -686,7 +721,7 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setProxyFactoryConfigs(List<ProxyFactoryConfig> proxyFactoryConfigs) {
-        Preconditions.isNotNull(proxyFactoryConfigs, "proxyFactoryConfigs");
+        isNotNull(proxyFactoryConfigs, "proxyFactoryConfigs");
         this.proxyFactoryConfigs.clear();
         this.proxyFactoryConfigs.addAll(proxyFactoryConfigs);
         return this;
@@ -710,7 +745,7 @@ public class ClientConfig {
      * @see com.hazelcast.config.SerializationConfig
      */
     public ClientConfig setSerializationConfig(SerializationConfig serializationConfig) {
-        Preconditions.isNotNull(serializationConfig, "serializationConfig");
+        isNotNull(serializationConfig, "serializationConfig");
         this.serializationConfig = serializationConfig;
         return this;
     }
@@ -720,7 +755,7 @@ public class ClientConfig {
     }
 
     public ClientConfig setNativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
-        Preconditions.isNotNull(nativeMemoryConfig, "nativeMemoryConfig");
+        isNotNull(nativeMemoryConfig, "nativeMemoryConfig");
         this.nativeMemoryConfig = nativeMemoryConfig;
         return this;
     }
@@ -747,7 +782,7 @@ public class ClientConfig {
     }
 
     public ClientConfig setQueryCacheConfigs(Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs) {
-        Preconditions.isNotNull(queryCacheConfigs, "queryCacheConfigs");
+        isNotNull(queryCacheConfigs, "queryCacheConfigs");
         this.queryCacheConfigs.clear();
         this.queryCacheConfigs.putAll(queryCacheConfigs);
         return this;
@@ -767,7 +802,7 @@ public class ClientConfig {
     }
 
     public ClientConfig setConnectionStrategyConfig(ClientConnectionStrategyConfig connectionStrategyConfig) {
-        Preconditions.isNotNull(connectionStrategyConfig, "connectionStrategyConfig");
+        isNotNull(connectionStrategyConfig, "connectionStrategyConfig");
         this.connectionStrategyConfig = connectionStrategyConfig;
         return this;
     }
@@ -790,7 +825,7 @@ public class ClientConfig {
      * @since 3.9
      */
     public ClientConfig setUserCodeDeploymentConfig(ClientUserCodeDeploymentConfig userCodeDeploymentConfig) {
-        Preconditions.isNotNull(userCodeDeploymentConfig, "userCodeDeploymentConfig");
+        isNotNull(userCodeDeploymentConfig, "userCodeDeploymentConfig");
         this.userCodeDeploymentConfig = userCodeDeploymentConfig;
         return this;
     }
@@ -844,7 +879,7 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig addLabel(String label) {
-        Preconditions.isNotNull(label, "label");
+        isNotNull(label, "label");
         labels.add(label);
         return this;
     }
@@ -863,14 +898,14 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setLabels(Set<String> labels) {
-        Preconditions.isNotNull(labels, "labels");
+        isNotNull(labels, "labels");
         this.labels.clear();
         this.labels.addAll(labels);
         return this;
     }
 
     public ClientConfig setUserContext(ConcurrentMap<String, Object> userContext) {
-        Preconditions.isNotNull(userContext, "userContext");
+        isNotNull(userContext, "userContext");
         this.userContext.clear();
         this.userContext.putAll(userContext);
         return this;
@@ -899,7 +934,7 @@ public class ClientConfig {
         if (!properties.equals(that.properties)) {
             return false;
         }
-        if (!groupConfig.equals(that.groupConfig)) {
+        if (!clusterName.equals(that.clusterName)) {
             return false;
         }
         if (!securityConfig.equals(that.securityConfig)) {
@@ -964,7 +999,7 @@ public class ClientConfig {
     @SuppressWarnings({"checkstyle:npathcomplexity"})
     public int hashCode() {
         int result = properties.hashCode();
-        result = 31 * result + groupConfig.hashCode();
+        result = 31 * result + clusterName.hashCode();
         result = 31 * result + securityConfig.hashCode();
         result = 31 * result + networkConfig.hashCode();
         result = 31 * result + (loadBalancer != null ? loadBalancer.hashCode() : 0);
@@ -992,7 +1027,7 @@ public class ClientConfig {
     public String toString() {
         return "ClientConfig{"
                 + "properties=" + properties
-                + ", groupConfig=" + groupConfig
+                + ", clusterName=" + clusterName
                 + ", securityConfig=" + securityConfig
                 + ", networkConfig=" + networkConfig
                 + ", loadBalancer=" + loadBalancer

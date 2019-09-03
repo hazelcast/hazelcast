@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.MembershipAdapter;
@@ -54,12 +53,12 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
     private HazelcastInstance client() {
         factory = new TestHazelcastFactory();
         Config config = new Config();
-        String groupAName = "HZ:GROUP";
-        config.getGroupConfig().setName(groupAName);
+        String clusterAName = "HZ:CLUSTER";
+        config.setClusterName(clusterAName);
         factory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig(new GroupConfig(config.getGroupConfig().getName()));
+        clientConfig.setClusterName(config.getClusterName());
         return factory.newHazelcastClient(clientConfig);
     }
 

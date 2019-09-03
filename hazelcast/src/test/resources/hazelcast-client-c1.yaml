@@ -13,7 +13,7 @@
 # limitations under the License.
 
 hazelcast-client:
-  group:
+  cluster:
     name: cluster1
     password: cluster1pass
 
