@@ -283,16 +283,19 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     List<ProbeInstance> getSortedProbeInstances() {
         long modCountLocal = modCount.get();
-        SortedProbeInstances sortedProbeInstances = this.sortedProbeInstances.get();
-        if (sortedProbeInstances.mod < modCountLocal) {
+        final SortedProbeInstances sortedInstancesOld = this.sortedProbeInstances.get();
+        final SortedProbeInstances sortedInstances;
+        if (sortedInstancesOld.mod < modCountLocal) {
             List<ProbeInstance> sorted = new ArrayList<>(probeInstances.values());
             Collections.sort(sorted, COMPARATOR);
-            sortedProbeInstances = new SortedProbeInstances(modCountLocal, sorted);
+            sortedInstances = new SortedProbeInstances(modCountLocal, sorted);
             // if some other thread sorted in the meantime, ignore our sorting
-            this.sortedProbeInstances.compareAndSet(sortedProbeInstances, sortedProbeInstances);
+            this.sortedProbeInstances.compareAndSet(sortedInstancesOld, sortedInstancesOld);
+        } else {
+            sortedInstances = sortedInstancesOld;
         }
         // let's use whatever sorted version we have, it's non-null
-        return sortedProbeInstances.probeInstances;
+        return sortedInstances.probeInstances;
     }
 
     private void render(ProbeRenderer renderer, ProbeInstance probeInstance) {

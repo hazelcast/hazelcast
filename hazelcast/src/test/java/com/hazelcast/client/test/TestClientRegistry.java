@@ -122,7 +122,7 @@ class TestClientRegistry {
             try {
                 HazelcastInstance instance = nodeRegistry.getInstance(address);
                 if (instance == null) {
-                    throw new IOException("Can not connected to " + address + ": instance does not exist");
+                    throw new IOException("Can not connect to " + address + ": instance does not exist");
                 }
                 Address localAddress = new Address(host, ports.incrementAndGet());
                 LockPair lockPair = getLockPair(address);
