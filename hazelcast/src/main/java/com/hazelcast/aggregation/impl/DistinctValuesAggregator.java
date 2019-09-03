@@ -24,6 +24,7 @@ import com.hazelcast.util.MapUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 
 @SuppressFBWarnings("SE_BAD_FIELD")
@@ -86,4 +87,23 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        DistinctValuesAggregator<?, ?> that = (DistinctValuesAggregator<?, ?>) o;
+        return values.equals(that.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), values);
+    }
 }
