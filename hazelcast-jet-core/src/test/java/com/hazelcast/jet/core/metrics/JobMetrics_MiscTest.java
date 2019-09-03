@@ -46,7 +46,6 @@ import java.util.function.Function;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
-import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static java.util.Collections.singletonList;
@@ -116,17 +115,17 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     @Test
     public void when_jobFailedBeforeStarted_then_emptyMetrics() {
         DAG dag = new DAG();
-        RuntimeException exc = new RuntimeException("foo");
+        RuntimeException expected = new RuntimeException("foo");
         // Job will fail in ProcessorSupplier.init method, which is called before InitExecutionOp is
         // sent. That is before any member ever knew of the job.
-        dag.newVertex("v1", new MockPS(MockP::new, 1).setInitError(exc));
+        dag.newVertex("v1", new MockPS(MockP::new, 1).setInitError(expected));
 
         Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
         try {
             job.join();
             fail("job didn't fail");
         } catch (Exception e) {
-            assertExceptionInCauses(exc, e);
+            assertContains(e.toString(), expected.toString());
         }
 
         assertEmptyJobMetrics(job, true);
