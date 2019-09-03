@@ -30,6 +30,7 @@ import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
 /**
@@ -147,7 +148,10 @@ public class QueryTask implements Runnable {
     }
 
     private boolean verifyRaftNodeStatus() {
-        if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
+        if (raftNode.getStatus() == INITIAL) {
+            resultFuture.setResult(new CannotReplicateException(null));
+            return false;
+        } if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
             resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
             return false;
         } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {

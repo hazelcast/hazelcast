@@ -18,12 +18,13 @@ package com.hazelcast.cp.internal.raft.impl.task;
 
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CPSubsystemException;
+import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
-import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.exception.MemberAlreadyExistsException;
 import com.hazelcast.cp.internal.raft.exception.MemberDoesNotExistException;
 import com.hazelcast.cp.internal.raft.exception.MismatchingGroupMembersCommitIndexException;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.cp.internal.raft.impl.command.UpdateRaftGroupMembersCmd;
@@ -35,6 +36,7 @@ import com.hazelcast.logging.ILogger;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
 /**
@@ -132,7 +134,10 @@ public class MembershipChangeTask implements Runnable {
     }
 
     private boolean verifyRaftNodeStatus() {
-        if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
+        if (raftNode.getStatus() == INITIAL) {
+            resultFuture.setResult(new CannotReplicateException(null));
+            return false;
+        } if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
             resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
             logger.severe("Cannot " + membershipChangeMode + " " + member + " with expected members commit index: "
                     + groupMembersCommitIndex + " since raft node is terminated.");
