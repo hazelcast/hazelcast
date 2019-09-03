@@ -106,8 +106,6 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         assertTrue(writer.flushAndResetMap());
         assertTrueEventually(() -> assertFalse(uncheckCall(() -> writer.hasPendingAsyncOps())));
         assertTrue(writer.isEmpty());
-
-        shutdownFactory();
     }
 
     @Test

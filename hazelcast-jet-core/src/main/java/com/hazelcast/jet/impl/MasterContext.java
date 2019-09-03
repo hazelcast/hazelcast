@@ -193,6 +193,7 @@ public class MasterContext {
     }
 
     void updateQuorumSize(int newQuorumSize) {
+        coordinationService().assertOnCoordinatorThread();
         // This method can be called in parallel if multiple members are added. We don't synchronize here,
         // but the worst that can happen is that we write the JobRecord out unnecessarily.
         if (jobExecutionRecord.getQuorumSize() < newQuorumSize) {
@@ -204,6 +205,7 @@ public class MasterContext {
     }
 
     void writeJobExecutionRecord(boolean canCreate) {
+        coordinationService.assertOnCoordinatorThread();
         try {
             coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
                     canCreate);

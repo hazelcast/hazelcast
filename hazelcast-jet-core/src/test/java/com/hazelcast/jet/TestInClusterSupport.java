@@ -33,6 +33,8 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Arrays;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static java.lang.Math.max;
@@ -91,8 +93,10 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     }
 
     @AfterClass
-    public static void tearDown() {
-        factory.terminateAll();
+    public static void tearDown() throws Exception {
+        spawn(() -> factory.terminateAll())
+                .get(1, TimeUnit.MINUTES);
+
         factory = null;
         allJetInstances = null;
         member = null;
@@ -100,13 +104,17 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     }
 
     @After
-    public void after() {
-        for (Job job : allJetInstances()[0].getJobs()) {
-            ditchJob(job, allJetInstances());
-        }
-        for (DistributedObject o : allJetInstances()[0].getHazelcastInstance().getDistributedObjects()) {
-            o.destroy();
-        }
+    public void after() throws Exception {
+        Future future = spawn(() -> {
+            for (Job job : allJetInstances()[0].getJobs()) {
+                ditchJob(job, allJetInstances());
+            }
+            for (DistributedObject o : allJetInstances()[0].getHazelcastInstance().getDistributedObjects()) {
+                o.destroy();
+            }
+        });
+
+        future.get(1, TimeUnit.MINUTES);
     }
 
     protected JetInstance jet() {

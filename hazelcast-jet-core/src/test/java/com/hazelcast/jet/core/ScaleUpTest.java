@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
@@ -25,6 +26,10 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -100,5 +105,27 @@ public class ScaleUpTest extends JetTestSupport {
         sleepSeconds(1);
         addedMember.shutdown();
         assertTrueAllTheTime(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 15);
+    }
+
+    @Test
+    public void when_manyJobs() {
+        setup(1000);
+        List<Job> jobs = new ArrayList<>();
+        // we need to disable metrics due to https://github.com/hazelcast/hazelcast/pull/15504
+        // TODO remove, after https://github.com/hazelcast/hazelcast/pull/15504 is merged
+        JobConfig jobConfig = new JobConfig()
+                .setMetricsEnabled(false);
+        for (int i = 0; i < Runtime.getRuntime().availableProcessors() * 4; i++) {
+            jobs.add(instances[0].newJob(dag, jobConfig));
+        }
+        for (Job job : jobs) {
+            assertJobStatusEventually(job, RUNNING);
+        }
+        logger.info(jobs.size() + " jobs are running, adding a member");
+        createJetMember(config);
+        sleepSeconds(2);
+        for (Job job : jobs) {
+            assertJobStatusEventually(job, RUNNING, 30);
+        }
     }
 }

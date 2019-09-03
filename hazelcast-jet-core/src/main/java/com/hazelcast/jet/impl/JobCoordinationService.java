@@ -109,6 +109,7 @@ public class JobCoordinationService {
      */
     private static final long RETRY_DELAY_IN_MILLIS = SECONDS.toMillis(2);
     private static final ThreadLocal<Boolean> IS_JOB_COORDINATOR_THREAD = ThreadLocal.withInitial(() -> false);
+    private static final int COORDINATOR_THREADS_POOL_SIZE = 4;
 
     private final NodeEngineImpl nodeEngine;
     private final JetService jetService;
@@ -147,65 +148,75 @@ public class JobCoordinationService {
         InternalExecutionService executionService = nodeEngine.getExecutionService();
         HazelcastProperties properties = new HazelcastProperties(config.getProperties());
         long jobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
-        executionService.register(COORDINATOR_EXECUTOR_NAME, 2, Integer.MAX_VALUE, CACHED);
+        executionService.register(COORDINATOR_EXECUTOR_NAME, COORDINATOR_THREADS_POOL_SIZE, Integer.MAX_VALUE, CACHED);
         executionService.scheduleWithRepetition(COORDINATOR_EXECUTOR_NAME, this::scanJobs,
                 0, jobScanPeriodInMillis, MILLISECONDS);
     }
 
     public CompletableFuture<Void> submitJob(long jobId, Data dag, Data serializedConfig) {
-        return submitToCoordinatorThread(() -> {
-            JobConfig config = nodeEngine.getSerializationService().toObject(serializedConfig);
-            assertIsMaster("Cannot submit job " + idToString(jobId) + " to non-master node");
-            checkOperationalState();
-
-            // the order of operations is important.
-
-            // first, check if the job is already completed
-            JobResult jobResult = jobRepository.getJobResult(jobId);
-            if (jobResult != null) {
-                logger.fine("Not starting job " + idToString(jobId) + " since already completed with result: "
-                        + jobResult);
-                return;
-            }
-
-            int quorumSize = config.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
-            String dagJson = dagToJson(jobId, config, dag);
-            JobRecord jobRecord = new JobRecord(jobId, Clock.currentTimeMillis(), dag, dagJson, config);
-            JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize, false);
-            MasterContext masterContext = createMasterContext(jobRecord, jobExecutionRecord);
-
-            boolean hasDuplicateJobName;
-            synchronized (lock) {
+        CompletableFuture<Void> res = new CompletableFuture<>();
+        submitToCoordinatorThread(() -> {
+            MasterContext masterContext;
+            try {
+                JobConfig config = nodeEngine.getSerializationService().toObject(serializedConfig);
                 assertIsMaster("Cannot submit job " + idToString(jobId) + " to non-master node");
                 checkOperationalState();
-                hasDuplicateJobName = config.getName() != null && hasActiveJobWithName(config.getName());
-                if (!hasDuplicateJobName) {
-                    // just try to initiate the coordination
-                    MasterContext prev = masterContexts.putIfAbsent(jobId, masterContext);
-                    if (prev != null) {
-                        logger.fine("Joining to already existing masterContext " + prev.jobIdString());
-                        return;
+
+                // the order of operations is important.
+
+                // first, check if the job is already completed
+                JobResult jobResult = jobRepository.getJobResult(jobId);
+                if (jobResult != null) {
+                    logger.fine("Not starting job " + idToString(jobId) + " since already completed with result: "
+                            + jobResult);
+                    return;
+                }
+
+                int quorumSize = config.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
+                String dagJson = dagToJson(jobId, config, dag);
+                JobRecord jobRecord = new JobRecord(jobId, Clock.currentTimeMillis(), dag, dagJson, config);
+                JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize, false);
+                masterContext = createMasterContext(jobRecord, jobExecutionRecord);
+
+                boolean hasDuplicateJobName;
+                synchronized (lock) {
+                    assertIsMaster("Cannot submit job " + idToString(jobId) + " to non-master node");
+                    checkOperationalState();
+                    hasDuplicateJobName = config.getName() != null && hasActiveJobWithName(config.getName());
+                    if (!hasDuplicateJobName) {
+                        // just try to initiate the coordination
+                        MasterContext prev = masterContexts.putIfAbsent(jobId, masterContext);
+                        if (prev != null) {
+                            logger.fine("Joining to already existing masterContext " + prev.jobIdString());
+                            return;
+                        }
                     }
                 }
+
+                if (hasDuplicateJobName) {
+                    jobRepository.deleteJob(jobId);
+                    throw new JobAlreadyExistsException("Another active job with equal name (" + config.getName()
+                            + ") exists: " + idToString(jobId));
+                }
+
+                // If job is not currently running, it might be that it is just completed
+                if (completeMasterContextIfJobAlreadyCompleted(masterContext)) {
+                    return;
+                }
+
+                // If there is no master context and job result at the same time, it means this is the first submission
+                jobRepository.putNewJobRecord(jobRecord);
+
+                logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
+            } catch (Throwable e) {
+                res.completeExceptionally(e);
+                throw e;
+            } finally {
+                res.complete(null);
             }
-
-            if (hasDuplicateJobName) {
-                jobRepository.deleteJob(jobId);
-                throw new JobAlreadyExistsException("Another active job with equal name (" + config.getName()
-                        + ") exists: " + idToString(jobId));
-            }
-
-            // If job is not currently running, it might be that it is just completed
-            if (completeMasterContextIfJobAlreadyCompleted(masterContext)) {
-                return;
-            }
-
-            // If there is no master context and job result at the same time, it means this is the first submission
-            jobRepository.putNewJobRecord(jobRecord);
-
-            logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
-            nodeEngine.getExecutionService().execute(COORDINATOR_EXECUTOR_NAME, () -> tryStartJob(masterContext));
+            tryStartJob(masterContext);
         });
+        return res;
     }
 
     @SuppressWarnings("WeakerAccess") // used by jet-enterprise
@@ -232,11 +243,13 @@ public class JobCoordinationService {
         synchronized (lock) {
             isClusterEnteringPassiveState = true;
         }
-        CompletableFuture[] futures = masterContexts
-                .values().stream()
-                .map(mc -> mc.jobContext().gracefullyTerminate())
-                .toArray(CompletableFuture[]::new);
-        return CompletableFuture.allOf(futures);
+        return submitToCoordinatorThread(() -> {
+            CompletableFuture[] futures = masterContexts
+                    .values().stream()
+                    .map(mc -> mc.jobContext().gracefullyTerminate())
+                    .toArray(CompletableFuture[]::new);
+            return CompletableFuture.allOf(futures);
+        }).thenCompose(identity());
     }
 
     void clusterChangeDone() {
@@ -733,18 +746,20 @@ public class JobCoordinationService {
             return;
         }
 
-        boolean allSucceeded = true;
-        int dataMembersCount = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR).size();
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        // If the number of partitions is lower than the data member count, some members won't have
-        // any partitions assigned. Jet doesn't use such members.
-        int dataMembersWithPartitionsCount = Math.min(dataMembersCount, partitionCount);
-        for (MasterContext mc : masterContexts.values()) {
-            allSucceeded &= mc.jobContext().maybeScaleUp(dataMembersWithPartitionsCount);
-        }
-        if (!allSucceeded) {
-            scheduleScaleUp(RETRY_DELAY_IN_MILLIS);
-        }
+        submitToCoordinatorThread(() -> {
+            boolean allSucceeded = true;
+            int dataMembersCount = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR).size();
+            int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+            // If the number of partitions is lower than the data member count, some members won't have
+            // any partitions assigned. Jet doesn't use such members.
+            int dataMembersWithPartitionsCount = Math.min(dataMembersCount, partitionCount);
+            for (MasterContext mc : masterContexts.values()) {
+                allSucceeded &= mc.jobContext().maybeScaleUp(dataMembersWithPartitionsCount);
+            }
+            if (!allSucceeded) {
+                scheduleScaleUp(RETRY_DELAY_IN_MILLIS);
+            }
+        });
     }
 
     /**
@@ -946,7 +961,7 @@ public class JobCoordinationService {
         });
     }
 
-    private <T> CompletableFuture<T> submitToCoordinatorThread(Callable<T> action) {
+    <T> CompletableFuture<T> submitToCoordinatorThread(Callable<T> action) {
         // if we are on our thread already, execute directly in a blocking way
         if (IS_JOB_COORDINATOR_THREAD.get()) {
             try {
@@ -966,5 +981,9 @@ public class JobCoordinationService {
             }
         });
         return Util.toCompletableFuture(nodeEngine.getExecutionService().asCompletableFuture(future));
+    }
+
+    void assertOnCoordinatorThread() {
+        assert IS_JOB_COORDINATOR_THREAD.get() : "not on coordinator thread";
     }
 }

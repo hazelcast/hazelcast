@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for tests that share the cluster for all jobs. The subclass must
@@ -79,8 +80,10 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     }
 
     @AfterClass
-    public static void tearDown() {
-        factory.terminateAll();
+    public static void tearDown() throws Exception {
+        spawn(() -> factory.terminateAll())
+                .get(1, TimeUnit.MINUTES);
+
         factory = null;
         instances = null;
         client = null;

@@ -34,14 +34,10 @@ public class JetTest extends JetTestSupport {
                 .setTimeToLiveSeconds(MapConfig.DEFAULT_TTL_SECONDS + 1);
         JetInstance instance = createJetMember(config);
 
-        try {
-            // Then
-            int actualTTL = instance.getConfig().getHazelcastConfig().findMapConfig(INTERNAL_JET_OBJECTS_PREFIX + "fooMap")
-                                    .getTimeToLiveSeconds();
-            assertEquals(MapConfig.DEFAULT_TTL_SECONDS, actualTTL);
-        } finally {
-            shutdownFactory();
-        }
+        // Then
+        int actualTTL = instance.getConfig().getHazelcastConfig().findMapConfig(INTERNAL_JET_OBJECTS_PREFIX + "fooMap")
+                                .getTimeToLiveSeconds();
+        assertEquals(MapConfig.DEFAULT_TTL_SECONDS, actualTTL);
     }
 
 }
