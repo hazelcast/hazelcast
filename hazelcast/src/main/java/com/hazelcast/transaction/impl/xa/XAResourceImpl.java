@@ -22,7 +22,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -112,7 +111,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
                 throw new XAException("Unknown flag! " + flags);
         }
         if (logger.isFinestEnabled()) {
-            logger.finest("Started transaction with xid: " + xid +", flags: " + flags);
+            logger.finest("Started transaction with xid: " + xid + ", flags: " + flags);
         }
     }
 
@@ -136,7 +135,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Ended transaction with xid: " + xid +", flags: " + flags);
+            logger.finest("Ended transaction with xid: " + xid + ", flags: " + flags);
         }
     }
 
@@ -262,6 +261,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         return xaResource.isSameRM(this);
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public Xid[] recover(int flag) throws XAException {
         NodeEngine nodeEngine = getNodeEngine();
