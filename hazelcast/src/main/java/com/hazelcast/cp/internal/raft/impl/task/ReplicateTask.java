@@ -108,7 +108,6 @@ public class ReplicateTask implements Runnable {
     private boolean verifyRaftNodeStatus() {
         if (raftNode.getStatus() == INITIAL) {
             resultFuture.setResult(new CannotReplicateException(null));
-            logger.severe("REPLICATE TASK RECEIVED BEFORE INITIALIZED");
             return false;
         } else if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
             resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
