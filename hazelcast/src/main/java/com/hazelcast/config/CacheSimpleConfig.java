@@ -95,7 +95,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
 
     private transient CacheSimpleConfig readOnly;
 
-    private String quorumName;
+    private String splitBrainProtectionName;
 
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
 
@@ -134,7 +134,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
         this.partitionLostListenerConfigs =
                 new ArrayList<>(cacheSimpleConfig.getPartitionLostListenerConfigs());
-        this.quorumName = cacheSimpleConfig.quorumName;
+        this.splitBrainProtectionName = cacheSimpleConfig.splitBrainProtectionName;
         this.mergePolicyConfig = new MergePolicyConfig(cacheSimpleConfig.mergePolicyConfig);
         this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
         this.eventJournalConfig = new EventJournalConfig(cacheSimpleConfig.eventJournalConfig);
@@ -602,22 +602,22 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     }
 
     /**
-     * Gets the name of the associated quorum if any.
+     * Gets the name of the associated split brain protection if any.
      *
-     * @return the name of the associated quorum if any
+     * @return the name of the associated split brain protection if any
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Associates this cache configuration to a quorum.
+     * Associates this cache configuration to a split brain protection.
      *
-     * @param quorumName name of the desired quorum
+     * @param splitBrainProtectionName name of the desired split brain protection
      * @return the updated CacheSimpleConfig
      */
-    public CacheSimpleConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public CacheSimpleConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -735,7 +735,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         out.writeUTF(inMemoryFormat.name());
         out.writeObject(evictionConfig);
         out.writeObject(wanReplicationRef);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         writeNullableList(partitionLostListenerConfigs, out);
         out.writeObject(mergePolicyConfig);
         out.writeObject(hotRestartConfig);
@@ -763,7 +763,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         evictionConfig = in.readObject();
         wanReplicationRef = in.readObject();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         partitionLostListenerConfigs = readNullableList(in);
         mergePolicyConfig = in.readObject();
         hotRestartConfig = in.readObject();
@@ -839,7 +839,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         if (!Objects.equals(wanReplicationRef, that.wanReplicationRef)) {
             return false;
         }
-        if (!Objects.equals(quorumName, that.quorumName)) {
+        if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
         if (!Objects.equals(partitionLostListenerConfigs, that.partitionLostListenerConfigs)) {
@@ -875,7 +875,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
         result = 31 * result + (evictionConfig != null ? evictionConfig.hashCode() : 0);
         result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (partitionLostListenerConfigs != null ? partitionLostListenerConfigs.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         result = 31 * result + (hotRestartConfig != null ? hotRestartConfig.hashCode() : 0);
@@ -905,7 +905,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
                 + ", cacheEntryListeners=" + cacheEntryListeners
                 + ", evictionConfig=" + evictionConfig
                 + ", wanReplicationRef=" + wanReplicationRef
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", partitionLostListenerConfigs=" + partitionLostListenerConfigs
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", hotRestartConfig=" + hotRestartConfig

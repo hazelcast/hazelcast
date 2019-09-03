@@ -51,7 +51,7 @@ public class ReplicatedMapConfig
     private boolean statisticsEnabled = true;
     private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
     private String name;
-    private String quorumName;
+    private String splitBrainProtectionName;
     private List<ListenerConfig> listenerConfigs;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
@@ -78,7 +78,7 @@ public class ReplicatedMapConfig
         this.asyncFillup = replicatedMapConfig.asyncFillup;
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
         this.mergePolicyConfig = replicatedMapConfig.mergePolicyConfig;
-        this.quorumName = replicatedMapConfig.quorumName;
+        this.splitBrainProtectionName = replicatedMapConfig.splitBrainProtectionName;
     }
 
     /**
@@ -212,22 +212,22 @@ public class ReplicatedMapConfig
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public ReplicatedMapConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public ReplicatedMapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -262,7 +262,7 @@ public class ReplicatedMapConfig
                 + "', inMemoryFormat=" + inMemoryFormat + '\''
                 + ", asyncFillup=" + asyncFillup
                 + ", statisticsEnabled=" + statisticsEnabled
-                + ", quorumName='" + quorumName + '\''
+                + ", splitBrainProtectionName='" + splitBrainProtectionName + '\''
                 + ", mergePolicyConfig='" + mergePolicyConfig + '\''
                 + '}';
     }
@@ -284,7 +284,7 @@ public class ReplicatedMapConfig
         out.writeBoolean(asyncFillup);
         out.writeBoolean(statisticsEnabled);
         writeNullableList(listenerConfigs, out);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
@@ -295,7 +295,7 @@ public class ReplicatedMapConfig
         asyncFillup = in.readBoolean();
         statisticsEnabled = in.readBoolean();
         listenerConfigs = readNullableList(in);
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
     }
 
@@ -322,7 +322,7 @@ public class ReplicatedMapConfig
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (!Objects.equals(quorumName, that.quorumName)) {
+        if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
         if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
@@ -339,7 +339,7 @@ public class ReplicatedMapConfig
         result = 31 * result + (asyncFillup ? 1 : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }

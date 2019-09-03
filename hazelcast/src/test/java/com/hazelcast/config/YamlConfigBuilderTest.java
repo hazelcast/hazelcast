@@ -23,9 +23,9 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
-import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
+import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -494,14 +494,14 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      initial-permits: 1\n"
                 + "    custom:\n"
                 + "      initial-permits: 10\n"
-                + "      quorum-ref: customQuorumRule";
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule";
 
         Config config = buildConfig(yaml);
         SemaphoreConfig defaultConfig = config.getSemaphoreConfig("default");
         SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
         assertEquals(1, defaultConfig.getInitialPermits());
         assertEquals(10, customConfig.getInitialPermits());
-        assertEquals("customQuorumRule", customConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -528,7 +528,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          binary: false\n"
                 + "          memory-limit: 1000\n"
                 + "          bulk-load: 500\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      merge-policy:\n"
                 + "        batch-size: 23\n"
                 + "        class-name: CustomMergePolicy\n"
@@ -567,7 +567,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("1000", storeConfigProperties.getProperty("memory-limit"));
         assertEquals("false", storeConfigProperties.getProperty("binary"));
 
-        assertEquals("customQuorumRule", customQueueConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", customQueueConfig.getSplitBrainProtectionName());
 
         QueueConfig defaultQueueConfig = config.getQueueConfig("default");
         assertEquals(42, defaultQueueConfig.getMaxSize());
@@ -676,15 +676,15 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  lock:\n"
                 + "    default:\n"
-                + "      quorum-ref: quorumRuleWithThreeNodes\n"
+                + "      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes\n"
                 + "    custom:\n"
-                + "      quorum-ref: customQuorumRule\n";
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n";
 
         Config config = buildConfig(yaml);
         LockConfig defaultConfig = config.getLockConfig("default");
         LockConfig customConfig = config.getLockConfig("custom");
-        assertEquals("quorumRuleWithThreeNodes", defaultConfig.getQuorumName());
-        assertEquals("customQuorumRule", customConfig.getQuorumName());
+        assertEquals("splitBrainProtectionRuleWithThreeNodes", defaultConfig.getSplitBrainProtectionName());
+        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -741,7 +741,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        class-name: com.hazelcast.RingbufferStoreImpl\n"
                 + "        properties:\n"
                 + "          store-path: .//tmp//bufferstore\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      merge-policy:\n"
                 + "        class-name: CustomMergePolicy\n"
                 + "        batch-size: 2342\n"
@@ -762,7 +762,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("com.hazelcast.RingbufferStoreImpl", ringbufferStoreConfig.getClassName());
         Properties ringbufferStoreProperties = ringbufferStoreConfig.getProperties();
         assertEquals(".//tmp//bufferstore", ringbufferStoreProperties.get("store-path"));
-        assertEquals("customQuorumRule", ringbufferConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", ringbufferConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = ringbufferConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -782,21 +782,21 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      merge-policy:\n"
                 + "        class-name: CustomMergePolicy\n"
                 + "        batch-size: 23\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "    default:\n"
-                + "      quorum-ref: customQuorumRule2\n";
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule2\n";
 
         Config config = buildConfig(yaml);
         AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
         assertEquals("custom", atomicLongConfig.getName());
-        assertEquals("customQuorumRule", atomicLongConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", atomicLongConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(23, mergePolicyConfig.getBatchSize());
 
         AtomicLongConfig defaultAtomicLongConfig = config.getAtomicLongConfig("default");
-        assertEquals("customQuorumRule2", defaultAtomicLongConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule2", defaultAtomicLongConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -809,21 +809,21 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      merge-policy:\n"
                 + "        class-name: CustomMergePolicy\n"
                 + "        batch-size: 23\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "    default:\n"
-                + "      quorum-ref: customQuorumRule2\n";
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule2\n";
 
         Config config = buildConfig(yaml);
         AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
         assertEquals("custom", atomicReferenceConfig.getName());
-        assertEquals("customQuorumRule", atomicReferenceConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", atomicReferenceConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(23, mergePolicyConfig.getBatchSize());
 
         AtomicReferenceConfig defaultAtomicReferenceConfig = config.getAtomicReferenceConfig("default");
-        assertEquals("customQuorumRule2", defaultAtomicReferenceConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule2", defaultAtomicReferenceConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -833,17 +833,17 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  count-down-latch:\n"
                 + "    custom:\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "    default:\n"
-                + "      quorum-ref: customQuorumRule2\n";
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule2\n";
 
         Config config = buildConfig(yaml);
         CountDownLatchConfig countDownLatchConfig = config.getCountDownLatchConfig("custom");
         assertEquals("custom", countDownLatchConfig.getName());
-        assertEquals("customQuorumRule", countDownLatchConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", countDownLatchConfig.getSplitBrainProtectionName());
 
         CountDownLatchConfig defaultCountDownLatchConfig = config.getCountDownLatchConfig("default");
-        assertEquals("customQuorumRule2", defaultCountDownLatchConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule2", defaultCountDownLatchConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -1815,171 +1815,171 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testQuorumConfig() {
+    public void testSplitBrainProtectionConfig() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
-                + "    myQuorum:\n"
+                + "  split-brain-protection:\n"
+                + "    mySplitBrainProtection:\n"
                 + "      enabled: true\n"
-                + "      quorum-size: 3\n"
-                + "      quorum-function-class-name: com.my.quorum.function\n"
-                + "      quorum-type: READ\n";
+                + "      minimum-cluster-size: 3\n"
+                + "      function-class-name: com.my.splitbrainprotection.function\n"
+                + "      protect-on: READ\n";
 
         Config config = buildConfig(yaml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
 
-        assertTrue("quorum should be enabled", quorumConfig.isEnabled());
-        assertEquals(3, quorumConfig.getSize());
-        assertEquals(QuorumType.READ, quorumConfig.getType());
-        assertEquals("com.my.quorum.function", quorumConfig.getQuorumFunctionClassName());
-        assertTrue(quorumConfig.getListenerConfigs().isEmpty());
+        assertTrue("split brain protection should be enabled", splitBrainProtectionConfig.isEnabled());
+        assertEquals(3, splitBrainProtectionConfig.getMinimumClusterSize());
+        assertEquals(SplitBrainProtectionOn.READ, splitBrainProtectionConfig.getProtectOn());
+        assertEquals("com.my.splitbrainprotection.function", splitBrainProtectionConfig.getFunctionClassName());
+        assertTrue(splitBrainProtectionConfig.getListenerConfigs().isEmpty());
     }
 
     @Override
     @Test
-    public void testQuorumListenerConfig() {
+    public void testSplitBrainProtectionListenerConfig() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
-                + "    myQuorum:\n"
+                + "  split-brain-protection:\n"
+                + "    mySplitBrainProtection:\n"
                 + "      enabled: true\n"
-                + "      quorum-size: 3\n"
-                + "      quorum-listeners:\n"
-                + "         - com.abc.my.quorum.listener\n"
+                + "      minimum-cluster-size: 3\n"
+                + "      listeners:\n"
+                + "         - com.abc.my.splitbrainprotection.listener\n"
                 + "         - com.abc.my.second.listener\n"
-                + "      quorum-function-class-name: com.hazelcast.SomeQuorumFunction\n";
+                + "      function-class-name: com.hazelcast.SomeSplitBrainProtectionFunction\n";
 
         Config config = buildConfig(yaml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
 
-        assertFalse(quorumConfig.getListenerConfigs().isEmpty());
-        assertEquals("com.abc.my.quorum.listener", quorumConfig.getListenerConfigs().get(0).getClassName());
-        assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
-        assertEquals("com.hazelcast.SomeQuorumFunction", quorumConfig.getQuorumFunctionClassName());
+        assertFalse(splitBrainProtectionConfig.getListenerConfigs().isEmpty());
+        assertEquals("com.abc.my.splitbrainprotection.listener", splitBrainProtectionConfig.getListenerConfigs().get(0).getClassName());
+        assertEquals("com.abc.my.second.listener", splitBrainProtectionConfig.getListenerConfigs().get(1).getClassName());
+        assertEquals("com.hazelcast.SomeSplitBrainProtectionFunction", splitBrainProtectionConfig.getFunctionClassName());
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
-    public void testQuorumConfig_whenClassNameAndRecentlyActiveQuorumDefined_exceptionIsThrown() {
+    public void testConfig_whenClassNameAndRecentlyActiveSplitBrainProtectionDefined_exceptionIsThrown() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
-                + "    myQuorum:\n"
+                + "  split-brain-protection:\n"
+                + "    mysplit-brain-protection:\n"
                 + "      enabled: true\n"
-                + "      quorum-size: 3\n"
-                + "      quorum-function-class-name: com.hazelcast.SomeQuorumFunction\n"
-                + "      recently-active-quorum: {}";
+                + "      minimum-cluster-size: 3\n"
+                + "      function-class-name: com.hazelcast.SomeSplitBrainProtectionFunction\n"
+                + "      recently-active-split-brain-protection: {}";
 
         buildConfig(yaml);
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
-    public void testQuorumConfig_whenClassNameAndProbabilisticQuorumDefined_exceptionIsThrown() {
+    public void testConfig_whenClassNameAndProbabilisticSplitBrainProtectionDefined_exceptionIsThrown() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
-                + "    myQuorum:\n"
+                + "  split-brain-protection:\n"
+                + "    mysplit-brain-protection:\n"
                 + "      enabled: true\n"
-                + "      quorum-size: 3\n"
-                + "      quorum-function-class-name: com.hazelcast.SomeQuorumFunction\n"
-                + "      probabilistic-quorum: {}";
+                + "      minimum-cluster-size: 3\n"
+                + "      function-class-name: com.hazelcast.SomeSplitBrainProtectionFunction\n"
+                + "      probabilistic-split-brain-protection: {}";
 
         buildConfig(yaml);
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
-    @Ignore("Schema validation is supposed to fail, two quorum implementation is defined")
-    public void testQuorumConfig_whenBothBuiltinQuorumsDefined_exceptionIsThrown() {
+    @Ignore("Schema validation is supposed to fail, two split brain protection implementation is defined")
+    public void testConfig_whenBothBuiltinSplitBrainProtectionsDefined_exceptionIsThrown() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
-                + "    myQuorum:\n"
+                + "  split-brain-protection:\n"
+                + "    mysplit-brain-protection:\n"
                 + "      enabled: true\n"
-                + "      quorum-size: 3\n"
-                + "      probabilistic-quorum: {}\n"
-                + "      recently-active-quorum: {}\n";
+                + "      minimum-cluster-size: 3\n"
+                + "      probabilistic-split-brain-protection: {}\n"
+                + "      recently-active-split-brain-protection: {}\n";
 
         buildConfig(yaml);
     }
 
     @Override
     @Test
-    public void testQuorumConfig_whenRecentlyActiveQuorum_withDefaultValues() {
+    public void testConfig_whenRecentlyActiveSplitBrainProtection_withDefaultValues() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
-                + "    myQuorum:\n"
+                + "  split-brain-protection:\n"
+                + "    mySplitBrainProtection:\n"
                 + "      enabled: true\n"
-                + "      quorum-size: 3\n"
-                + "      recently-active-quorum: {}";
+                + "      minimum-cluster-size: 3\n"
+                + "      recently-active-split-brain-protection: {}";
 
         Config config = buildConfig(yaml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
-        assertInstanceOf(RecentlyActiveQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
-        RecentlyActiveQuorumFunction quorumFunction = (RecentlyActiveQuorumFunction) quorumConfig
-                .getQuorumFunctionImplementation();
-        assertEquals(RecentlyActiveQuorumConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS,
-                quorumFunction.getHeartbeatToleranceMillis());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
+        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction = (RecentlyActiveSplitBrainProtectionFunction) splitBrainProtectionConfig
+                .getFunctionImplementation();
+        assertEquals(RecentlyActiveSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS,
+                splitBrainProtectionFunction.getHeartbeatToleranceMillis());
     }
 
     @Override
     @Test
-    public void testQuorumConfig_whenRecentlyActiveQuorum_withCustomValues() {
+    public void testConfig_whenRecentlyActiveSplitBrainProtection_withCustomValues() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
-                + "    myQuorum:\n"
+                + "  split-brain-protection:\n"
+                + "    mySplitBrainProtection:\n"
                 + "      enabled: true\n"
-                + "      quorum-size: 3\n"
-                + "      recently-active-quorum:\n"
+                + "      minimum-cluster-size: 3\n"
+                + "      recently-active-split-brain-protection:\n"
                 + "        heartbeat-tolerance-millis: 13000\n";
 
         Config config = buildConfig(yaml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
-        assertEquals(3, quorumConfig.getSize());
-        assertInstanceOf(RecentlyActiveQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
-        RecentlyActiveQuorumFunction quorumFunction = (RecentlyActiveQuorumFunction) quorumConfig
-                .getQuorumFunctionImplementation();
-        assertEquals(13000, quorumFunction.getHeartbeatToleranceMillis());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
+        assertEquals(3, splitBrainProtectionConfig.getMinimumClusterSize());
+        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction = (RecentlyActiveSplitBrainProtectionFunction) splitBrainProtectionConfig
+                .getFunctionImplementation();
+        assertEquals(13000, splitBrainProtectionFunction.getHeartbeatToleranceMillis());
     }
 
     @Override
     @Test
-    public void testQuorumConfig_whenProbabilisticQuorum_withDefaultValues() {
+    public void testConfig_whenProbabilisticSplitBrainProtection_withDefaultValues() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
-                + "    myQuorum:\n"
+                + "  split-brain-protection:\n"
+                + "    mySplitBrainProtection:\n"
                 + "      enabled: true\n"
-                + "      quorum-size: 3\n"
-                + "      probabilistic-quorum: {}";
+                + "      minimum-cluster-size: 3\n"
+                + "      probabilistic-split-brain-protection: {}";
 
         Config config = buildConfig(yaml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
-        assertInstanceOf(ProbabilisticQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
-        ProbabilisticQuorumFunction quorumFunction = (ProbabilisticQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS,
-                quorumFunction.getHeartbeatIntervalMillis());
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS,
-                quorumFunction.getAcceptableHeartbeatPauseMillis());
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_MIN_STD_DEVIATION,
-                quorumFunction.getMinStdDeviationMillis());
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_PHI_THRESHOLD, quorumFunction.getSuspicionThreshold(), 0.01);
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_SAMPLE_SIZE, quorumFunction.getMaxSampleSize());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
+        assertInstanceOf(ProbabilisticSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        ProbabilisticSplitBrainProtectionFunction splitBrainProtectionFunction = (ProbabilisticSplitBrainProtectionFunction) splitBrainProtectionConfig.getFunctionImplementation();
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS,
+                splitBrainProtectionFunction.getHeartbeatIntervalMillis());
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS,
+                splitBrainProtectionFunction.getAcceptableHeartbeatPauseMillis());
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_MIN_STD_DEVIATION,
+                splitBrainProtectionFunction.getMinStdDeviationMillis());
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_PHI_THRESHOLD, splitBrainProtectionFunction.getSuspicionThreshold(), 0.01);
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_SAMPLE_SIZE, splitBrainProtectionFunction.getMaxSampleSize());
     }
 
     @Override
     @Test
-    public void testQuorumConfig_whenProbabilisticQuorum_withCustomValues() {
+    public void testConfig_whenProbabilisticSplitBrainProtection_withCustomValues() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
-                + "    myQuorum:\n"
+                + "  split-brain-protection:\n"
+                + "    mySplitBrainProtection:\n"
                 + "      enabled: true\n"
-                + "      quorum-size: 3\n"
-                + "      probabilistic-quorum:\n"
+                + "      minimum-cluster-size: 3\n"
+                + "      probabilistic-split-brain-protection:\n"
                 + "        acceptable-heartbeat-pause-millis: 37400\n"
                 + "        suspicion-threshold: 3.14592\n"
                 + "        max-sample-size: 42\n"
@@ -1987,14 +1987,14 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        heartbeat-interval-millis: 4321";
 
         Config config = buildConfig(yaml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
-        assertInstanceOf(ProbabilisticQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
-        ProbabilisticQuorumFunction quorumFunction = (ProbabilisticQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
-        assertEquals(4321, quorumFunction.getHeartbeatIntervalMillis());
-        assertEquals(37400, quorumFunction.getAcceptableHeartbeatPauseMillis());
-        assertEquals(1234, quorumFunction.getMinStdDeviationMillis());
-        assertEquals(3.14592d, quorumFunction.getSuspicionThreshold(), 0.001d);
-        assertEquals(42, quorumFunction.getMaxSampleSize());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
+        assertInstanceOf(ProbabilisticSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        ProbabilisticSplitBrainProtectionFunction splitBrainProtectionFunction = (ProbabilisticSplitBrainProtectionFunction) splitBrainProtectionConfig.getFunctionImplementation();
+        assertEquals(4321, splitBrainProtectionFunction.getHeartbeatIntervalMillis());
+        assertEquals(37400, splitBrainProtectionFunction.getAcceptableHeartbeatPauseMillis());
+        assertEquals(1234, splitBrainProtectionFunction.getMinStdDeviationMillis());
+        assertEquals(3.14592d, splitBrainProtectionFunction.getSuspicionThreshold(), 0.001d);
+        assertEquals(42, splitBrainProtectionFunction.getMaxSampleSize());
     }
 
     @Override
@@ -2005,7 +2005,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  cache:\n"
                 + "    foobar:\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      key-type:\n"
                 + "        class-name: java.lang.Object\n"
                 + "      value-type:\n"
@@ -2053,7 +2053,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         CacheSimpleConfig cacheConfig = config.getCacheConfig("foobar");
 
         assertFalse(config.getCacheConfigs().isEmpty());
-        assertEquals("customQuorumRule", cacheConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", cacheConfig.getSplitBrainProtectionName());
         assertEquals("java.lang.Object", cacheConfig.getKeyType());
         assertEquals("java.lang.Object", cacheConfig.getValueType());
         assertFalse(cacheConfig.isStatisticsEnabled());
@@ -2099,7 +2099,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  executor-service:\n"
                 + "    foobar:\n"
                 + "      pool-size: 2\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      statistics-enabled: true\n"
                 + "      queue-capacity: 0\n";
 
@@ -2108,7 +2108,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(config.getExecutorConfigs().isEmpty());
         assertEquals(2, executorConfig.getPoolSize());
-        assertEquals("customQuorumRule", executorConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", executorConfig.getSplitBrainProtectionName());
         assertTrue(executorConfig.isStatisticsEnabled());
         assertEquals(0, executorConfig.getQueueCapacity());
     }
@@ -2123,7 +2123,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      pool-size: 2\n"
                 + "      durability: 3\n"
                 + "      capacity: 4\n"
-                + "      quorum-ref: customQuorumRule\n";
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n";
 
         Config config = buildConfig(yaml);
         DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig("foobar");
@@ -2132,7 +2132,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(2, durableExecutorConfig.getPoolSize());
         assertEquals(3, durableExecutorConfig.getDurability());
         assertEquals(4, durableExecutorConfig.getCapacity());
-        assertEquals("customQuorumRule", durableExecutorConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", durableExecutorConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -2145,7 +2145,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      durability: 4\n"
                 + "      pool-size: 5\n"
                 + "      capacity: 2\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      merge-policy:\n"
                 + "        batch-size: 99\n"
                 + "        class-name: PutIfAbsent";
@@ -2157,7 +2157,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(4, scheduledExecutorConfig.getDurability());
         assertEquals(5, scheduledExecutorConfig.getPoolSize());
         assertEquals(2, scheduledExecutorConfig.getCapacity());
-        assertEquals("customQuorumRule", scheduledExecutorConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", scheduledExecutorConfig.getSplitBrainProtectionName());
         assertEquals(99, scheduledExecutorConfig.getMergePolicyConfig().getBatchSize());
         assertEquals("PutIfAbsent", scheduledExecutorConfig.getMergePolicyConfig().getPolicy());
     }
@@ -2171,7 +2171,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    foobar:\n"
                 + "      backup-count: 2\n"
                 + "      async-backup-count: 3\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      merge-policy:\n"
                 + "        class-name: com.hazelcast.spi.merge.HyperLogLogMergePolicy";
 
@@ -2183,7 +2183,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(3, cardinalityEstimatorConfig.getAsyncBackupCount());
         assertEquals("com.hazelcast.spi.merge.HyperLogLogMergePolicy",
                 cardinalityEstimatorConfig.getMergePolicyConfig().getPolicy());
-        assertEquals("customQuorumRule", cardinalityEstimatorConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", cardinalityEstimatorConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -2195,7 +2195,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    foobar:\n"
                 + "      backup-count: 2\n"
                 + "      async-backup-count: 3\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      merge-policy:\n"
                 + "        class-name: CustomMergePolicy";
 
@@ -2211,7 +2211,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  pn-counter:\n"
                 + "    pn-counter-1:\n"
                 + "      replica-count: 100\n"
-                + "      quorum-ref: quorumRuleWithThreeMembers\n"
+                + "      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers\n"
                 + "      statistics-enabled: false\n";
 
         Config config = buildConfig(yaml);
@@ -2219,7 +2219,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(config.getPNCounterConfigs().isEmpty());
         assertEquals(100, pnCounterConfig.getReplicaCount());
-        assertEquals("quorumRuleWithThreeMembers", pnCounterConfig.getQuorumName());
+        assertEquals("splitBrainProtectionRuleWithThreeMembers", pnCounterConfig.getSplitBrainProtectionName());
         assertFalse(pnCounterConfig.isStatisticsEnabled());
     }
 
@@ -2234,7 +2234,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      async-backup-count: 3\n"
                 + "      binary: false\n"
                 + "      value-collection-type: SET\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      entry-listeners:\n"
                 + "        - class-name: com.hazelcast.examples.EntryListener\n"
                 + "          include-value: true\n"
@@ -2258,7 +2258,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         MergePolicyConfig mergePolicyConfig = multiMapConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals("customQuorumRule", multiMapConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", multiMapConfig.getSplitBrainProtectionName());
         assertEquals(23, mergePolicyConfig.getBatchSize());
     }
 
@@ -2272,7 +2272,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      in-memory-format: BINARY\n"
                 + "      async-fillup: false\n"
                 + "      statistics-enabled: false\n"
-                + "      quorum-ref: CustomQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      merge-policy:\n"
                 + "        batch-size: 2342\n"
                 + "        class-name: CustomMergePolicy\n";
@@ -2284,7 +2284,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(InMemoryFormat.BINARY, replicatedMapConfig.getInMemoryFormat());
         assertFalse(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
-        assertEquals("CustomQuorumRule", replicatedMapConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", replicatedMapConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = replicatedMapConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -2298,7 +2298,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  list:\n"
                 + "    foobar:\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      statistics-enabled: false\n"
                 + "      max-size: 42\n"
                 + "      backup-count: 2\n"
@@ -2314,7 +2314,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         ListConfig listConfig = config.getListConfig("foobar");
 
         assertFalse(config.getListConfigs().isEmpty());
-        assertEquals("customQuorumRule", listConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", listConfig.getSplitBrainProtectionName());
         assertEquals(42, listConfig.getMaxSize());
         assertEquals(2, listConfig.getBackupCount());
         assertEquals(1, listConfig.getAsyncBackupCount());
@@ -2333,7 +2333,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  set:\n"
                 + "    foobar:\n"
-                + "     quorum-ref: customQuorumRule\n"
+                + "     split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "     backup-count: 2\n"
                 + "     async-backup-count: 1\n"
                 + "     max-size: 42\n"
@@ -2348,7 +2348,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         SetConfig setConfig = config.getSetConfig("foobar");
 
         assertFalse(config.getSetConfigs().isEmpty());
-        assertEquals("customQuorumRule", setConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", setConfig.getSplitBrainProtectionName());
         assertEquals(2, setConfig.getBackupCount());
         assertEquals(1, setConfig.getAsyncBackupCount());
         assertEquals(42, setConfig.getMaxSize());
@@ -2368,7 +2368,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    foobar:\n"
-                + "      quorum-ref: customQuorumRule\n"
+                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
                 + "      in-memory-format: BINARY\n"
                 + "      statistics-enabled: true\n"
                 + "      cache-deserialized-values: INDEX-ONLY\n"
@@ -2433,7 +2433,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         MapConfig mapConfig = config.getMapConfig("foobar");
 
         assertFalse(config.getMapConfigs().isEmpty());
-        assertEquals("customQuorumRule", mapConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", mapConfig.getSplitBrainProtectionName());
         assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
         assertTrue(mapConfig.isStatisticsEnabled());
         assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig.getCacheDeserializedValues());
@@ -3433,10 +3433,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testWhitespaceInNonSpaceStrings() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  quorum:\n"
+                + "  split-brain-protection:\n"
                 + "    enabled: true\n"
                 + "    name: q\n"
-                + "    quorum-type:   WRITE   \n";
+                + "    protect-on:   WRITE   \n";
 
         buildConfig(yaml);
     }

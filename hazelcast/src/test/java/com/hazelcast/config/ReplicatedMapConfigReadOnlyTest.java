@@ -62,8 +62,8 @@ public class ReplicatedMapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testSetQuorumName() {
-        getReadOnlyConfig().setQuorumName("myQuorum");
+    public void testSetSplitBrainProtectionName() {
+        getReadOnlyConfig().setSplitBrainProtectionName("mySplitBrainProtection");
     }
 
     @Test(expected = UnsupportedOperationException.class)

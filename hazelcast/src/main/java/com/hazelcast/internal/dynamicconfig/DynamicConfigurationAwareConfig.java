@@ -43,7 +43,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -1046,28 +1046,28 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Map<String, QuorumConfig> getQuorumConfigs() {
-        return staticConfig.getQuorumConfigs();
+    public Map<String, SplitBrainProtectionConfig> getSplitBrainProtectionConfigs() {
+        return staticConfig.getSplitBrainProtectionConfigs();
     }
 
     @Override
-    public QuorumConfig getQuorumConfig(String name) {
-        return staticConfig.getQuorumConfig(name);
+    public SplitBrainProtectionConfig getSplitBrainProtectionConfig(String name) {
+        return staticConfig.getSplitBrainProtectionConfig(name);
     }
 
     @Override
-    public QuorumConfig findQuorumConfig(String name) {
-        return staticConfig.findQuorumConfig(name);
+    public SplitBrainProtectionConfig findSplitBrainProtectionConfig(String name) {
+        return staticConfig.findSplitBrainProtectionConfig(name);
     }
 
     @Override
-    public Config setQuorumConfigs(Map<String, QuorumConfig> quorumConfigs) {
+    public Config setSplitBrainProtectionConfigs(Map<String, SplitBrainProtectionConfig> splitBrainProtectionConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
-    public Config addQuorumConfig(QuorumConfig quorumConfig) {
-        return staticConfig.addQuorumConfig(quorumConfig);
+    public Config addSplitBrainProtectionConfig(SplitBrainProtectionConfig splitBrainProtectionConfig) {
+        return staticConfig.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
     }
 
     @Override

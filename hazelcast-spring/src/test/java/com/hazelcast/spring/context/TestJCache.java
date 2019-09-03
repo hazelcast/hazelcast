@@ -228,14 +228,14 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_ClusterQuorum() {
+    public void cacheConfigXmlTest_ClusterSplitBrainProtection() {
         assertNotNull(instance1);
 
-        CacheSimpleConfig simpleConfig = instance1.getConfig().getCacheConfig("cacheWithQuorumRef");
+        CacheSimpleConfig simpleConfig = instance1.getConfig().getCacheConfig("cacheWithSplitBrainProtectionRef");
 
         assertNotNull(simpleConfig);
 
-        assertEquals("cacheQuorumRefString", simpleConfig.getQuorumName());
+        assertEquals("cacheSplitBrainProtectionRefString", simpleConfig.getSplitBrainProtectionName());
     }
 
     @Test

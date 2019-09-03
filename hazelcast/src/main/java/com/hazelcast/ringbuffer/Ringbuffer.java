@@ -18,6 +18,7 @@ package com.hazelcast.ringbuffer;
 
 import com.hazelcast.collection.BaseQueue;
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
@@ -79,7 +80,7 @@ import java.util.Collection;
  * where {@code lastStoreSequence} is the sequence of the previously last
  * stored item.
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in
  * cluster versions 3.10 and higher.
  *
  * @param <E> The type of the elements that the Ringbuffer contains

@@ -109,8 +109,8 @@
                     <hz:partition-lost-listener class-name="DummyCachePartitionLostListenerImpl"/>
                 </hz:partition-lost-listeners>
             </hz:cache>
-            <hz:cache name="cacheWithQuorumRef">
-                <hz:quorum-ref>cacheQuorumRefString</hz:quorum-ref>
+            <hz:cache name="cacheWithSplitBrainProtectionRef">
+                <hz:split-brain-protection-ref>cacheSplitBrainProtectionRefString</hz:split-brain-protection-ref>
             </hz:cache>
             <hz:cache name="cacheWithDefaultMergePolicy"/>
             <hz:cache name="cacheWithCustomMergePolicy">

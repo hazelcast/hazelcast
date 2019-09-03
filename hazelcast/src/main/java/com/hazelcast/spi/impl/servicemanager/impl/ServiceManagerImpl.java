@@ -46,7 +46,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -125,7 +125,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
-        registerService(QuorumServiceImpl.SERVICE_NAME, nodeEngine.getQuorumService());
+        registerService(SplitBrainProtectionServiceImpl.SERVICE_NAME, nodeEngine.getSplitBrainProtectionService());
         registerService(WanReplicationService.SERVICE_NAME, nodeEngine.getWanReplicationService());
         registerService(EventServiceImpl.SERVICE_NAME, nodeEngine.getEventService());
     }

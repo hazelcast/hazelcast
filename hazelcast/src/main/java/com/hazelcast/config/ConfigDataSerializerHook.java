@@ -82,10 +82,10 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG = 40;
     public static final int SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG = 41;
     public static final int SIMPLE_CACHE_CONFIG_DURATION_CONFIG = 42;
-    public static final int QUORUM_CONFIG = 43;
+    public static final int SPLIT_BRAIN_PROTECTION_CONFIG = 43;
     public static final int MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER = 44;
     public static final int EVENT_JOURNAL_CONFIG = 45;
-    public static final int QUORUM_LISTENER_CONFIG = 46;
+    public static final int SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG = 46;
     public static final int CACHE_PARTITION_LOST_LISTENER_CONFIG = 47;
     public static final int SIMPLE_CACHE_ENTRY_LISTENER_CONFIG = 48;
     public static final int FLAKE_ID_GENERATOR_CONFIG = 49;
@@ -161,11 +161,11 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                 arg -> new CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig();
         constructors[SIMPLE_CACHE_CONFIG_DURATION_CONFIG] =
                 arg -> new CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig();
-        constructors[QUORUM_CONFIG] = arg -> new QuorumConfig();
+        constructors[SPLIT_BRAIN_PROTECTION_CONFIG] = arg -> new SplitBrainProtectionConfig();
         constructors[MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER] =
                 arg -> new EntryListenerConfig.MapListenerToEntryListenerAdapter();
         constructors[EVENT_JOURNAL_CONFIG] = arg -> new EventJournalConfig();
-        constructors[QUORUM_LISTENER_CONFIG] = arg -> new QuorumListenerConfig();
+        constructors[SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG] = arg -> new SplitBrainProtectionListenerConfig();
         constructors[CACHE_PARTITION_LOST_LISTENER_CONFIG] = arg -> new CachePartitionLostListenerConfig();
         constructors[SIMPLE_CACHE_ENTRY_LISTENER_CONFIG] = arg -> new CacheSimpleEntryListenerConfig();
         constructors[FLAKE_ID_GENERATOR_CONFIG] = arg -> new FlakeIdGeneratorConfig();
