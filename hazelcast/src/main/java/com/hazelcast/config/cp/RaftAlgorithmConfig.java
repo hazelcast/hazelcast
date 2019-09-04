@@ -24,31 +24,31 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 public class RaftAlgorithmConfig {
 
     /**
-     * Default leader election timeout in millis.
+     * The default leader election timeout in millis.
      * See {@link #leaderElectionTimeoutInMillis}.
      */
     public static final long DEFAULT_LEADER_ELECTION_TIMEOUT_IN_MILLIS = 2000;
 
     /**
-     * Default leader heartbeat period in millis.
+     * The default leader heartbeat period in millis.
      * See {@link #leaderHeartbeatPeriodInMillis}.
      */
     public static final long DEFAULT_LEADER_HEARTBEAT_PERIOD_IN_MILLIS = 5000;
 
     /**
-     * Default max append request entry count.
+     * The default maximum append request entry count.
      * See {@link #appendRequestMaxEntryCount}.
      */
     public static final int DEFAULT_APPEND_REQUEST_MAX_ENTRY_COUNT = 100;
 
     /**
-     * Default commit index advance to initiate a snapshot.
+     * The default commit index advance count on Raft log to take a snapshot.
      * See {@link #commitIndexAdvanceCountToSnapshot}.
      */
     public static final int DEFAULT_COMMIT_INDEX_ADVANCE_COUNT_TO_SNAPSHOT = 10000;
 
     /**
-     * Default max allowed uncommitted entry count.
+     * The default maximum allowed uncommitted entry count.
      * See {@link #uncommittedEntryCountToRejectNewAppends}.
      */
     public static final int DEFAULT_UNCOMMITTED_ENTRY_COUNT_TO_REJECT_NEW_APPENDS = 100;
@@ -63,6 +63,7 @@ public class RaftAlgorithmConfig {
      */
     public static final long DEFAULT_APPEND_REQUEST_BACKOFF_TIMEOUT_IN_MILLIS = 100;
 
+
     /**
      * Leader election timeout in milliseconds. If a candidate cannot win
      * majority of the votes in time, a new election round is initiated.
@@ -70,20 +71,20 @@ public class RaftAlgorithmConfig {
     private long leaderElectionTimeoutInMillis = DEFAULT_LEADER_ELECTION_TIMEOUT_IN_MILLIS;
 
     /**
-     * Period in milliseconds for a leader to send heartbeat messages to
-     * its followers
+     * Duration in milliseconds for a leader to send periodic heartbeat
+     * messages to its followers.
      */
     private long leaderHeartbeatPeriodInMillis = DEFAULT_LEADER_HEARTBEAT_PERIOD_IN_MILLIS;
 
     /**
      * Maximum number of missed leader heartbeats to trigger
-     * a new leader election
+     * a new leader election.
      */
     private int maxMissedLeaderHeartbeatCount = DEFAULT_MAX_MISSED_LEADER_HEARTBEAT_COUNT;
 
     /**
      * Maximum number of entries that can be sent in a single batch of
-     * append entries request
+     * append entries request.
      */
     private int appendRequestMaxEntryCount = DEFAULT_APPEND_REQUEST_MAX_ENTRY_COUNT;
 
@@ -100,10 +101,10 @@ public class RaftAlgorithmConfig {
     private int uncommittedEntryCountToRejectNewAppends = DEFAULT_UNCOMMITTED_ENTRY_COUNT_TO_REJECT_NEW_APPENDS;
 
     /**
-     * Timeout in milliseconds for append request backoff. After the leader
-     * sends an append request to a follower, it will not send a subsequent
-     * append request until the follower responds to the former request
-     * or this timeout occurs.
+     * Timeout duration in milliseconds to apply backoff on append requests.
+     * After a leader sends an append request to a follower, it will not send
+     * a subsequent append request either until the follower responds or this
+     * timeout occurs.
      */
     private long appendRequestBackoffTimeoutInMillis = DEFAULT_APPEND_REQUEST_BACKOFF_TIMEOUT_IN_MILLIS;
 

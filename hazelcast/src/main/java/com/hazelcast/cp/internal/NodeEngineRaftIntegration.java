@@ -154,7 +154,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
 
     @Override
     public boolean isReachable(RaftEndpoint target) {
-        CPMember targetMember = getCpMember(target);
+        CPMember targetMember = getCPMember(target);
         return targetMember != null && nodeEngine.getClusterService().getMember(targetMember.getAddress()) != null;
     }
 
@@ -245,7 +245,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     }
 
     private boolean send(AsyncRaftOp operation, RaftEndpoint target) {
-        CPMember targetMember = getCpMember(target);
+        CPMember targetMember = getCPMember(target);
         if (targetMember == null || localAddress.equals(targetMember.getAddress())) {
             if (localCPMember.getUuid().equals(target.getUuid())) {
                 throw new IllegalStateException("Cannot send " + operation + " to "
@@ -260,7 +260,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public CPMember getCpMember(RaftEndpoint target) {
+    public CPMember getCPMember(RaftEndpoint target) {
         return invocationManager.getCPMember(target);
     }
 

@@ -1458,6 +1458,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(15, cpSubsystemConfig.getSessionTimeToLiveSeconds());
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
+        assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
         assertTrue(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/custom-dir"), cpSubsystemConfig.getBaseDir().getAbsoluteFile());

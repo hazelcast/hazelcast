@@ -237,9 +237,9 @@ public interface RaftIntegration {
     boolean isLinearizableReadOptimizationEnabled();
 
     /**
-     * TODO
+     * Returns the CP member instance of the given Raft endpoint
      */
-    CPMember getCpMember(RaftEndpoint target);
+    CPMember getCPMember(RaftEndpoint target);
 
     /**
      * Called when RaftNode status changes.

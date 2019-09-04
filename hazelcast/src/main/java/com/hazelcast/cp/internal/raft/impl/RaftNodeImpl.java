@@ -1106,7 +1106,7 @@ public final class RaftNodeImpl implements RaftNode {
                 .append("} [");
 
         for (RaftEndpoint member : state.members()) {
-            CPMember cpMember = raftIntegration.getCpMember(member);
+            CPMember cpMember = raftIntegration.getCPMember(member);
             sb.append("\n\t").append(cpMember != null ? cpMember : member);
             if (state.localEndpoint().equals(member)) {
                 sb.append(" - ").append(state.role()).append(" this");

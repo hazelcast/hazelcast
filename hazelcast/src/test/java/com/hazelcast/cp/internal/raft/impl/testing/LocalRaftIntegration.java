@@ -345,7 +345,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public CPMember getCpMember(RaftEndpoint target) {
+    public CPMember getCPMember(RaftEndpoint target) {
         return null;
     }
 

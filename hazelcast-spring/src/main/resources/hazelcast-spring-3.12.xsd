@@ -4499,14 +4499,13 @@
             <xs:element name="cp-member-count" type="xs:unsignedInt" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of CP Members to initialize the CP Subsystem.
-                        It is 0 by default, meaning that the CP subsystem is disabled.
-                        The CP subsystem is enabled when a positive value is set.
-                        After the CP subsystem is initialized successfully, more CP members can
-                        be added at run-time and number of active CP members can go beyond
-                        the configured CP member count. Number of CP members can be smaller than
-                        total size of the Hazelcast cluster. For instance, you can run
-                        5 CP members in a 20-member Hazelcast cluster.
+                        Number of CP members to initialize CP Subsystem. It is 0 by default,
+                        meaning that CP Subsystem is disabled. CP Subsystem is enabled when
+                        a positive value is set. After CP Subsystem is initialized successfully,
+                        more CP members can be added at run-time and the number of active CP
+                        members can go beyond the configured CP member count. The number of CP
+                        members can be smaller than total member count of the Hazelcast cluster.
+                        For instance, you can run 5 CP members in a 20-member Hazelcast cluster.
                         If set, must be greater than or equal to group-size.
                     </xs:documentation>
                 </xs:annotation>
@@ -4514,7 +4513,7 @@
             <xs:element name="group-size" type="cp-group-size" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of CP members to run CP groups. If set, it must be an odd
+                        Number of CP members to form CP groups. If set, it must be an odd
                         number between 3 and 7. Otherwise, cp-member-count is respected.
                         If set, must be smaller than or equal to cp-member-count.
                     </xs:documentation>
@@ -4557,23 +4556,23 @@
                 <xs:annotation>
                     <xs:documentation>
                         Duration to wait before automatically removing a missing CP member
-                        from the CP subsystem. When a CP member leaves the cluster, it is not
-                        automatically removed from the CP subsystem, since it could be still
+                        from CP Subsystem. When a CP member leaves the cluster, it is not
+                        automatically removed from CP Subsystem, since it could be still
                         alive and left the cluster because of a network partition.
                         On the other hand, if a missing CP member is actually crashed,
                         it creates a danger for its CP groups, because it will be still part of
                         majority calculations. This situation could lead to losing majority of
                         CP groups if multiple CP members leave the cluster over time.
                         With the default configuration, missing CP members will be automatically
-                        removed from the CP subsystem after 4 hours. This feature is very useful
+                        removed from CP Subsystem after 4 hours. This feature is very useful
                         in terms of fault tolerance when CP member count is also configured
                         to be larger than group size. In this case, a missing CP member will be
                         safely replaced in its CP groups with other available CP members
-                        in the CP subsystem. This configuration also implies that no network
+                        in CP Subsystem. This configuration also implies that no network
                         partition is expected to be longer than the configured duration.
                         Must be greater than or equal to session-time-to-live-seconds.
                         If a missing CP member comes back alive after it is automatically
-                        removed from the CP subsystem with this feature, that CP member
+                        removed from CP Subsystem with this feature, that CP member
                         must be terminated manually.
                     </xs:documentation>
                 </xs:annotation>
@@ -4602,15 +4601,27 @@
                 <xs:annotation>
                     <xs:documentation>
                         Flag to denote whether or not CP persistence is enabled.
+                        If enabled, CP members persist their local data to stable storage and
+                        can recover from crashes.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="base-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="cp-data">
                 <xs:annotation>
                     <xs:documentation>
-                        Base directory to store all CP persistence data when persistence-enabled is true.
-                        This directory can be shared between multiple members.
-                        Each member will create a unique directory under base-dir for itself.
+                        Base directory to store all CP data when persistence-enabled
+                        is true. This directory can be shared between multiple CP members.
+                        Each CP member will create a unique directory under base-dir
+                        for itself.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="data-load-timeout-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="120">
+                <xs:annotation>
+                    <xs:documentation>
+                        Timeout duration for CP members to restore their data from disk.
+                        A CP member fails its startup if it cannot complete its CP data restore
+                        process in the configured duration.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4701,10 +4712,10 @@
                         default="100">
                 <xs:annotation>
                     <xs:documentation>
-                        Timeout in milliseconds for append request backoff. After the leader
-                        sends an append request to a follower, it will not send a subsequent
-                        append request until the follower responds to the former request
-                        or this timeout occurs.
+                        Timeout duration in milliseconds to apply backoff on append requests.
+                        After a leader sends an append request to a follower, it will not send
+                        a subsequent append request either until the follower responds or this
+                        timeout occurs.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4724,18 +4735,18 @@
             <xs:element name="jdk-compatible" type="xs:boolean" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        Enables / disables JDK compatibility of the CP ISemaphore.
+                        Enables / disables JDK compatibility of CP ISemaphore.
                         When it is JDK compatible, just as in the Semaphore#release()
                         method, a permit can be released without acquiring it first, because
                         acquired permits are not bound to threads. However, there is no
-                        auto-cleanup of acquired permits upon Hazelcast server/client failures.
-                        If a permit holder fails, its permits must be released manually.
-                        When JDK compatibility is disabled, a HazelcastInstance must
-                        acquire permits before releasing them and it cannot release a permit
-                        that it has mot acquired. It means, you can acquire a permit
-                        from one thread and release it from another thread using the same
-                        HazelcastInstance, but not different instances of
-                        HazelcastInstance. In this mode, acquired permits are
+                        auto-cleanup mechanism for acquired permits upon Hazelcast
+                        server / client failures. If a permit holder fails, its permits must be
+                        released manually. When JDK compatibility is disabled,
+                        a HazelcastInstance must acquire permits before releasing them
+                        and it cannot release a permit that it has not acquired. It means, you
+                        can acquire a permit from one thread and release it from another thread
+                        using the same HazelcastInstance, but not different
+                        HazelcastInstances. In this mode, acquired permits are
                         automatically released upon failure of the holder
                         HazelcastInstance. So there is a minor behavioral difference
                         to the Semaphore#release() method.
