@@ -47,6 +47,10 @@ public final class NopCPPersistenceService implements CPPersistenceService {
     }
 
     @Override
+    public void removeRaftStateStore(@Nonnull RaftGroupId groupId) {
+    }
+
+    @Override
     public void reset() {
     }
 }

@@ -47,6 +47,12 @@ public interface CPPersistenceService {
     RaftStateStore createRaftStateStore(@Nonnull RaftGroupId groupId, @Nullable LogFileStructure logFileStructure);
 
     /**
+     * Removes the store associated with groupId,
+     * removes all persisted state and releases acquired resources.
+     */
+    void removeRaftStateStore(@Nonnull RaftGroupId groupId);
+
+    /**
      * Deletes all persisted data from the storage.
      */
     void reset();

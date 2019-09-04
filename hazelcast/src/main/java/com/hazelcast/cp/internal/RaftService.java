@@ -98,6 +98,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -113,8 +114,6 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
 import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
-import static com.hazelcast.util.FutureUtil.IGNORE_ALL_EXCEPTIONS;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkState;
@@ -191,8 +190,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     @Override
     public void shutdown(boolean terminate) {
         if (getCPPersistenceService().isEnabled()) {
+            List<Future> futures = new ArrayList<Future>(nodes.size());
             for (RaftNode raftNode : nodes.values()) {
-                raftNode.forceSetTerminatedStatus();
+                futures.add(raftNode.forceSetTerminatedStatus());
+            }
+            for (Future future : futures) {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    logger.severe("Error while terminating RaftNode", e);
+                }
             }
         }
     }
@@ -325,8 +332,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         nodes.clear();
 
-        // TODO [basri] fix deadline
-        waitWithDeadline(futures, 30, SECONDS, IGNORE_ALL_EXCEPTIONS);
+        for (ICompletableFuture future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                logger.fine(e);
+            }
+        }
 
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(RaftRemoteService.class)) {
             if (serviceInfo.getService() instanceof RaftManagedService) {
@@ -751,7 +763,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
             if (nodes.putIfAbsent(groupId, node) == null) {
                 if (destroyedGroupIds.contains(groupId)) {
-                    node.forceSetTerminatedStatus();
+                    destroyRaftNode(node);
                     logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed");
                     return;
                 }
@@ -828,7 +840,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             RaftNode node = nodes.remove(groupId);
             deregisterNodeMetrics(groupId);
             if (node != null) {
-                node.forceSetTerminatedStatus();
+                destroyRaftNode(node);
                 if (logger.isFineEnabled()) {
                     logger.fine("Local RaftNode[" + groupId + "] is destroyed.");
                 }
@@ -837,6 +849,22 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             nodeLock.readLock().unlock();
         }
     }
+
+    private void destroyRaftNode(RaftNode node) {
+        final RaftGroupId groupId = (RaftGroupId) node.getGroupId();
+        node.forceSetTerminatedStatus().andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                getCPPersistenceService().removeRaftStateStore(groupId);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                getCPPersistenceService().removeRaftStateStore(groupId);
+            }
+        });
+    }
+
 
     public void stepDownRaftNode(CPGroupId groupId) {
         if (steppedDownGroupIds.contains(groupId) || !hasSameSeed(groupId)) {

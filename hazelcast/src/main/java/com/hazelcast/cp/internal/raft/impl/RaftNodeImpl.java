@@ -1434,4 +1434,8 @@ public final class RaftNodeImpl implements RaftNode {
         }
     }
 
+    @Override
+    public String toString() {
+        return "RaftNode{" + "groupId=" + groupId + ", status=" + status + '}';
+    }
 }
