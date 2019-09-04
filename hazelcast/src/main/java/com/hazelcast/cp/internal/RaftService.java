@@ -977,7 +977,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
-    public void handleActiveCPMembers(RaftGroupId latestMetadataGroupId, long membersCommitIndex,
+    public void handleActiveCPMembers(RaftGroupId receivedMetadataGroupId, long membersCommitIndex,
                                       Collection<CPMemberInfo> members) {
         // TODO [basri] should we check anything related to isStartCompleted() ?
         if (!metadataGroupManager.isDiscoveryCompleted()) {
@@ -997,19 +997,28 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         CPMemberInfo localMember = getLocalCPMember();
         members = replaceLocalMemberIfAddressChanged(membersCommitIndex, members, localMember);
 
-        if (updateInvocationManagerMembers(latestMetadataGroupId.seed(), membersCommitIndex, members)) {
+        if (updateInvocationManagerMembers(receivedMetadataGroupId.seed(), membersCommitIndex, members)) {
             if (logger.isFineEnabled()) {
                 logger.fine("Handled new active CP members list: " + members + ", members commit index: " + membersCommitIndex
-                        + ", METADATA group id seed: " + latestMetadataGroupId.seed());
+                        + ", METADATA group id seed: " + receivedMetadataGroupId.seed());
             }
         }
 
         RaftGroupId metadataGroupId = getMetadataGroupId();
-        if (latestMetadataGroupId.seed() < metadataGroupId.seed() || metadataGroupId.equals(latestMetadataGroupId)) {
+        if (receivedMetadataGroupId.seed() < metadataGroupId.seed() || metadataGroupId.equals(receivedMetadataGroupId)) {
             return;
         }
 
-        if (getRaftNode(latestMetadataGroupId) != null) {
+        if (!isStartCompleted()) {
+            if (!metadataGroupId.equals(receivedMetadataGroupId)) {
+                logger.severe("Restored METADATA groupId: " + metadataGroupId + " is different than received METADATA groupId: "
+                        + receivedMetadataGroupId + ". There must have been a CP Subsystem reset while this member was down...");
+            }
+
+            return;
+        }
+
+        if (getRaftNode(receivedMetadataGroupId) != null) {
             if (logger.isFineEnabled()) {
                 logger.fine(localMember + " is already part of METADATA group but received active CP members!");
             }
@@ -1017,13 +1026,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
 
-        if (!latestMetadataGroupId.equals(metadataGroupId) && getRaftNode(metadataGroupId) != null) {
+        if (!receivedMetadataGroupId.equals(metadataGroupId) && getRaftNode(metadataGroupId) != null) {
             logger.warning(localMember + " was part of " + metadataGroupId + ", but received active CP members for "
-                    + latestMetadataGroupId + ".");
+                    + receivedMetadataGroupId + ".");
             return;
         }
 
-        metadataGroupManager.handleMetadataGroupId(latestMetadataGroupId);
+        metadataGroupManager.handleMetadataGroupId(receivedMetadataGroupId);
     }
 
     private Collection<CPMemberInfo> replaceLocalMemberIfAddressChanged(long membersCommitIndex, Collection<CPMemberInfo> members,

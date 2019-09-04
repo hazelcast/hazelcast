@@ -900,6 +900,16 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     public void handleMetadataGroupId(RaftGroupId newMetadataGroupId) {
         checkNotNull(newMetadataGroupId);
         RaftGroupId metadataGroupId = getMetadataGroupId();
+
+        if (!raftService.isStartCompleted()) {
+            if (!metadataGroupId.equals(newMetadataGroupId)) {
+                logger.severe("Restored METADATA groupId: " + metadataGroupId + " is different than received METADATA groupId: "
+                        + newMetadataGroupId + ". There must have been a CP Subsystem reset while this member was down...");
+            }
+
+            return;
+        }
+
         if (metadataGroupId.seed() >= newMetadataGroupId.seed()) {
             return;
         }
