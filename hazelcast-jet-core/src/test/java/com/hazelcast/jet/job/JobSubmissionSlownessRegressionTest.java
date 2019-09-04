@@ -17,6 +17,7 @@
 package com.hazelcast.jet.job;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -26,6 +27,10 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.test.IgnoredForCoverage;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,10 +40,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static org.junit.Assert.assertTrue;
@@ -124,7 +125,7 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex v1 = dag.newVertex("v", noopP());
         Vertex v2 = dag.newVertex("v2", noopP());
-        dag.edge(Edge.between(v1, v2));
+        dag.edge(Edge.between(v1, v2).setConfig(new EdgeConfig().setQueueSize(1)));
         return dag;
     }
 
