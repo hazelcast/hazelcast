@@ -20,6 +20,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -33,17 +34,13 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static java.util.Collections.newSetFromMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -56,16 +53,17 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    // we must use local parallelism 1 on the stages to avoid wm coalescing
     protected final Function<StreamSourceStage<Integer>, StreamStage<Integer>> withoutTimestampsFn =
-            s -> s.withoutTimestamps().addTimestamps(i -> i + 1, 0);
+            s -> s.withoutTimestamps().setLocalParallelism(1).addTimestamps(i -> i + 1, 0);
     protected final Function<StreamSourceStage<Integer>, StreamStage<Integer>> withNativeTimestampsFn =
-            s -> s.withNativeTimestamps(0);
+            s -> s.withNativeTimestamps(0).setLocalParallelism(1);
     protected final Function<StreamSourceStage<Integer>, StreamStage<Integer>> withTimestampsFn =
-            s -> s.withTimestamps(i -> i + 1, 0);
+            s -> s.withTimestamps(i -> i + 1, 0).setLocalParallelism(1);
 
     @Before
     public void before() {
-        WatermarkLogger.watermarks.clear();
+        WatermarkCollector.watermarks.clear();
     }
 
     @BeforeClass
@@ -104,15 +102,19 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
         }
         stageWithTimestamps
                 .peek()
+                // we use a tumbling window of size 1 to force maximum watermark gap to be 1
+                // this should be removed once https://github.com/hazelcast/hazelcast-jet/issues/1365
+                // fixed. local parallelism should be 1 for the sources to make sure
+                // watermarks don't get coalesced
                 .window(WindowDefinition.tumbling(1))
-                .aggregate(counting())
+                .aggregate(AggregateOperations.counting())
                 .peek()
-                .drainTo(Sinks.fromProcessor("s", ProcessorMetaSupplier.of(WatermarkLogger::new)));
+                .drainTo(Sinks.fromProcessor("wmCollector",
+                        ProcessorMetaSupplier.of(WatermarkCollector::new, 1))
+                );
         Job job = instance.newJob(p);
 
-        HashSet<Long> expectedWmsSet = new HashSet<>(expectedWms);
-
-        RunnableExc assertTask = () -> assertEquals(expectedWmsSet, WatermarkLogger.watermarks);
+        RunnableExc assertTask = () -> assertEquals(expectedWms, WatermarkCollector.watermarks);
         assertTrueEventually(assertTask, 24);
         assertTrueAllTheTime(assertTask, 1);
         assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()));
@@ -121,8 +123,8 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
         job.join();
     }
 
-    private static class WatermarkLogger extends AbstractProcessor {
-        private static Set<Long> watermarks = newSetFromMap(new ConcurrentHashMap<>());
+    private static class WatermarkCollector extends AbstractProcessor {
+        static List<Long> watermarks = new CopyOnWriteArrayList<>();
 
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {
@@ -132,7 +134,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
         @Override
         public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
             watermarks.add(watermark.timestamp());
-            return tryEmit(watermark);
+            return true;
         }
     }
 }
