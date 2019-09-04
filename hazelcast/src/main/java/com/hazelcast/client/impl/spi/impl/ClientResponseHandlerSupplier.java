@@ -214,7 +214,6 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
     }
 
-
     class AsyncResponseHandler implements Consumer<ClientMessage> {
         @Override
         public void accept(ClientMessage message) {

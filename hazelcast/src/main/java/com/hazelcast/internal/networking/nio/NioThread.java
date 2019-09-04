@@ -366,6 +366,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             // we don't need to check for sk.isReadable/sk.isWritable since the pipeline has only registered
             // for events it can handle.
             eventCount.inc();
+            //System.out.println(pipeline+" notified by selectionkey");
             pipeline.process();
         } catch (Throwable t) {
              pipeline.onError(t);

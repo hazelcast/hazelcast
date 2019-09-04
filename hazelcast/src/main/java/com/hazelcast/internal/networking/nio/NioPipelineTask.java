@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import static java.lang.Thread.currentThread;
-
 /**
  * A {@link Runnable} that gets executed on the {@link NioThread} owning the pipeline.
  *
@@ -32,29 +30,32 @@ import static java.lang.Thread.currentThread;
  * make sure the task is send to the right NioThread.
  */
 abstract class NioPipelineTask implements Runnable {
-
-    private final NioPipeline pipeline;
-
-    NioPipelineTask(NioPipeline pipeline) {
-        this.pipeline = pipeline;
-    }
-
     @Override
-    public final void run() {
-        if (pipeline.owner() == currentThread()) {
-            // the task is executed by the proper thread
-            try {
-                run0();
-            } catch (Exception e) {
-                pipeline.onError(e);
-            }
-        } else {
-            // the pipeline is migrating or already has migrated
-            // lets lets reschedule this task on the pipeline so
-            // it will be picked up by the new owner.
-            pipeline.ownerAddTaskAndWakeup(this);
-        }
-    }
+    public void run() {
 
-    protected abstract void run0() throws Exception;
+    }
+    //    private final NioPipeline pipeline;
+//
+//    NioPipelineTask(NioPipeline pipeline) {
+//        this.pipeline = pipeline;
+//    }
+//
+//    @Override
+//    public final void run() {
+//        if (pipeline.owner() == currentThread()) {
+//            // the task is executed by the proper thread
+//            try {
+//                run0();
+//            } catch (Exception e) {
+//                pipeline.onError(e);
+//            }
+//        } else {
+//            // the pipeline is migrating or already has migrated
+//            // lets lets reschedule this task on the pipeline so
+//            // it will be picked up by the new owner.
+//            pipeline.ownerAddTaskAndWakeup(this);
+//        }
+//    }
+//
+//    protected abstract void run0() throws Exception;
 }

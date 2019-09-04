@@ -39,6 +39,8 @@ public interface Counter {
      */
     long inc();
 
+    void set(long value);
+
     /**
      * Increments (or decrements) the counter by the given amount.
      *
