@@ -954,7 +954,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 && localCPMember.toRaftEndpoint().equals(raftNode.getLeader());
     }
 
-    public void updateMemberAddress(long commitIndex, CPMemberInfo member) {
+    public void verifyRestartedMember(long commitIndex, CPMemberInfo member) {
         checkNotNull(member);
         checkMetadataGroupInitSuccessful();
 
@@ -976,10 +976,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
 
         if (!found) {
-            throw new IllegalArgumentException(member + " does not exist!");
+            throw new IllegalStateException(member + " does not exist in the active CP members list!");
         }
 
-        logger.info("Added new " + member + ". New active CP members list: " + newMembers);
+        logger.info("New active CP members list: " + newMembers);
         doSetActiveMembers(commitIndex, newMembers);
     }
 
