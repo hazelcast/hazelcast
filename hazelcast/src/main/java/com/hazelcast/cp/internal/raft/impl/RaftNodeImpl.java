@@ -307,9 +307,7 @@ public final class RaftNodeImpl implements RaftNode {
      * Starts the periodic tasks, such as voting, leader failure-detection, snapshot handling.
      */
     public void start() {
-        if (status == ACTIVE) {
-            return;
-        } else if (status != INITIAL) {
+        if (status != INITIAL) {
             throw new IllegalStateException("Cannot start RaftNode when " + status);
         }
 
@@ -328,12 +326,10 @@ public final class RaftNodeImpl implements RaftNode {
                     + " members: " + state.members());
         }
 
-        raftIntegration.execute(new Runnable() {
+        execute(new Runnable() {
             @Override
             public void run() {
-                if (status == ACTIVE) {
-                    return;
-                } else if (status != INITIAL) {
+                if (status != INITIAL) {
                     throw new IllegalStateException("Cannot start RaftNode when " + status);
                 }
 
@@ -410,14 +406,14 @@ public final class RaftNodeImpl implements RaftNode {
     @Override
     public ICompletableFuture replicate(Object operation) {
         SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
-        raftIntegration.execute(new ReplicateTask(this, operation, resultFuture));
+        execute(new ReplicateTask(this, operation, resultFuture));
         return resultFuture;
     }
 
     @Override
     public ICompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode) {
         SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
-        raftIntegration.execute(new MembershipChangeTask(this, resultFuture, member, mode));
+        execute(new MembershipChangeTask(this, resultFuture, member, mode));
         return resultFuture;
     }
 
