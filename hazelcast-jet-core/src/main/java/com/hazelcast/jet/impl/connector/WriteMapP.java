@@ -103,7 +103,6 @@ public final class WriteMapP<K, V> implements Processor {
         Throwable failure = firstFailure.get();
         if (failure != null) {
             if (failure instanceof HazelcastInstanceNotActiveException) {
-                System.out.println("here");
                 failure = handleInstanceNotActive((HazelcastInstanceNotActiveException) failure, isLocal);
             }
             throw sneakyThrow(failure);
