@@ -76,6 +76,8 @@ public class ClusterHeartbeatManager {
     private static final int HEART_BEAT_INTERVAL_FACTOR = 10;
     private static final int MAX_PING_RETRY_COUNT = 5;
     private static final long MIN_ICMP_INTERVAL_MILLIS = SECONDS.toMillis(1);
+    private static final int DEFAULT_ICMP_TIMEOUT_MILLIS = 1000;
+    private static final int DEFAULT_ICMP_INTERVAL_MILLIS = 1000;
 
     private final ILogger logger;
     private final Lock clusterServiceLock;
@@ -120,8 +122,8 @@ public class ClusterHeartbeatManager {
                 = getActiveMemberNetworkConfig(node.config).getIcmpFailureDetectorConfig();
 
         this.icmpTtl = icmpConfig != null ? icmpConfig.getTtl() : 0;
-        this.icmpTimeoutMillis = icmpConfig != null ? icmpConfig.getTimeoutMilliseconds() : 1000;
-        this.icmpIntervalMillis = icmpConfig != null ? icmpConfig.getIntervalMilliseconds() : 1000;
+        this.icmpTimeoutMillis = icmpConfig != null ? icmpConfig.getTimeoutMilliseconds() : DEFAULT_ICMP_TIMEOUT_MILLIS;
+        this.icmpIntervalMillis = icmpConfig != null ? icmpConfig.getIntervalMilliseconds() : DEFAULT_ICMP_INTERVAL_MILLIS;
         this.icmpMaxAttempts = icmpConfig != null ? icmpConfig.getMaxAttempts() : 3;
         this.icmpEnabled = icmpConfig != null && icmpConfig.isEnabled();
         this.icmpParallelMode = icmpEnabled && icmpConfig.isParallelMode();

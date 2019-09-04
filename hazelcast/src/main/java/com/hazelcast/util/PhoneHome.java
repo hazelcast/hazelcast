@@ -93,7 +93,8 @@ public class PhoneHome {
         }
         try {
             phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService()
-                                                      .scheduleWithRepetition("PhoneHome", () -> phoneHome(hazelcastNode, false), 0, 1, TimeUnit.DAYS);
+                                                      .scheduleWithRepetition("PhoneHome",
+                                                              () -> phoneHome(hazelcastNode, false), 0, 1, TimeUnit.DAYS);
         } catch (RejectedExecutionException e) {
             logger.warning("Could not schedule phone home task! Most probably Hazelcast failed to start.");
         }
