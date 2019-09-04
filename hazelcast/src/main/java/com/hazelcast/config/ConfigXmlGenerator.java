@@ -1100,6 +1100,7 @@ public class ConfigXmlGenerator {
         }
     }
 
+    // TODO: Implement for new indexes
     private static void mapIndexConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
         mapIndexConfigXmlGenerator(gen, m.getMapIndexConfigs());
     }

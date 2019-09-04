@@ -287,6 +287,7 @@ public final class DynamicConfigAddMapConfigCodec {
         request.mapStoreConfig = CodecUtil.decodeNullable(iterator, MapStoreConfigHolderCodec::decode);
         request.nearCacheConfig = CodecUtil.decodeNullable(iterator, NearCacheConfigHolderCodec::decode);
         request.wanReplicationRef = CodecUtil.decodeNullable(iterator, WanReplicationRefCodec::decode);
+        // TODO: Implement client support for both config and dynamic API
         request.mapIndexConfigs = ListMultiFrameCodec.decodeNullable(iterator, MapIndexConfigCodec::decode);
         request.mapAttributeConfigs = ListMultiFrameCodec.decodeNullable(iterator, MapAttributeConfigCodec::decode);
         request.queryCacheConfigs = ListMultiFrameCodec.decodeNullable(iterator, QueryCacheConfigHolderCodec::decode);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
@@ -38,18 +39,19 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.Iterator;
 
-public class AddIndexOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
-
-    private String attributeName;
-    private boolean ordered;
+public class AddIndexOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation,
+    BackupAwareOperation {
+    /** Configuration of the index. */
+    private IndexConfig config;
 
     public AddIndexOperation() {
+        // No-op.
     }
 
-    public AddIndexOperation(String name, String attributeName, boolean ordered) {
+    public AddIndexOperation(String name, IndexConfig config) {
         super(name);
-        this.attributeName = attributeName;
-        this.ordered = ordered;
+
+        this.config = config;
     }
 
     @Override
@@ -69,7 +71,7 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
 
     @Override
     public Operation getBackupOperation() {
-        return new AddIndexBackupOperation(name, attributeName, ordered);
+        return new AddIndexBackupOperation(name, config);
     }
 
     @Override
@@ -83,7 +85,7 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
 
         Indexes indexes = mapContainer.getIndexes(partitionId);
         RecordStoreAdapter recordStoreAdapter = new RecordStoreAdapter(recordStore);
-        InternalIndex index = indexes.addOrGetIndex(attributeName, ordered, indexes.isGlobal() ? null : recordStoreAdapter);
+        InternalIndex index = indexes.addOrGetIndex(config, indexes.isGlobal() ? null : recordStoreAdapter);
         if (index.hasPartitionIndexed(partitionId)) {
             return;
         }
@@ -116,15 +118,13 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(attributeName);
-        out.writeBoolean(ordered);
+        out.writeObject(config);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        attributeName = in.readUTF();
-        ordered = in.readBoolean();
+        config = in.readObject();
     }
 
     @Override

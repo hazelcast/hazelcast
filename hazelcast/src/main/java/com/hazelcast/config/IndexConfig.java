@@ -22,21 +22,30 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-// TODO: Description.
+import java.util.List;
+
+/**
+ * Base class for index configurations. Hazelcast support two types of indexes: sorted index and hash index.
+ * Use their specific classes for configuration.
+ *
+ * @see com.hazelcast.config.SortedIndexConfig
+ * @see com.hazelcast.config.HashIndexConfig
+ * @see com.hazelcast.config.MapConfig#setIndexConfigs(List)
+ */
 public abstract class IndexConfig implements IdentifiedDataSerializable {
+    /** Name of the index. */
     protected String name;
 
     protected IndexConfig() {
         // No-op.
     }
 
+    /**
+     * Gets name of the index.
+     *
+     * @return Name of the index or {@code null} if index name should be generated automatically.
+     */
     public String getName() {
         return name;
-    }
-
-    public IndexConfig setName(String name) {
-        this.name = name;
-
-        return this;
     }
 }

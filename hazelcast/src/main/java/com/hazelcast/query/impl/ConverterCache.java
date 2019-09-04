@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -65,16 +66,17 @@ public final class ConverterCache {
      * @param index the index added.
      */
     public void invalidate(InternalIndex index) {
-        String[] components = index.getComponents();
-        if (components == null) {
-            cache.remove(index.getName());
+        List<IndexComponent> components = index.getComponents();
+        if (components.size() == 1) {
+            cache.remove(components.get(0).getName());
             return;
         }
 
-        for (String component : components) {
-            TypeConverter converter = cache.get(component);
+        for (IndexComponent component : components) {
+            TypeConverter converter = cache.get(component.getName());
+
             if (converter instanceof UnresolvedConverter) {
-                cache.remove(component);
+                cache.remove(component.getName());
             }
         }
     }
@@ -125,15 +127,15 @@ public final class ConverterCache {
 
         // scan composite indexes
         for (InternalIndex index : indexesSnapshot) {
-            String[] components = index.getComponents();
-            if (components == null) {
+            List<IndexComponent> components = index.getComponents();
+            if (components.size() == 1) {
                 // not a composite index
                 continue;
             }
 
-            for (int i = 0; i < components.length; ++i) {
-                String component = components[i];
-                if (!component.equals(attribute)) {
+            for (int i = 0; i < components.size(); ++i) {
+                IndexComponent component = components.get(i);
+                if (!component.getName().equals(attribute)) {
                     // not a component/attribute we are searching for
                     continue;
                 }
@@ -186,7 +188,7 @@ public final class ConverterCache {
 
             if (component == FULLY_UNRESOLVED) {
                 // we got a non-composite index with a null/transient converter
-                assert index.getComponents() == null;
+                assert index.getComponents().size() == 1;
                 TypeConverter converter = index.getConverter();
                 return isNull(converter) ? null : converter;
             }

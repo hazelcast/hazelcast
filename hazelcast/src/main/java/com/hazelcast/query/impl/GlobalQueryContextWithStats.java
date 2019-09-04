@@ -16,12 +16,14 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -95,8 +97,13 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public String[] getComponents() {
+        public List<IndexComponent> getComponents() {
             return delegate.getComponents();
+        }
+
+        @Override
+        public IndexConfig getConfig() {
+            return delegate.getConfig();
         }
 
         @Override

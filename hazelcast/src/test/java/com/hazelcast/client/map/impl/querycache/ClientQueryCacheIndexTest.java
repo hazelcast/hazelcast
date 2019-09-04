@@ -26,6 +26,7 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -82,7 +83,7 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
         }
 
         final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
-        cache.addIndex("id", true);
+        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
 
         // populate map after construction of query cache
         for (int i = putCount; i < 2 * putCount; i++) {
@@ -117,7 +118,7 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
         }
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
-        cache.addIndex("__key", true);
+        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "__key"));
 
         // populate map after construction of query cache
         for (int i = putCount; i < 2 * putCount; i++) {
@@ -144,7 +145,7 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
         }
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
-        cache.addIndex("id", true);
+        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
 
         for (int i = 17; i < putCount; i++) {
             map.remove(i);
@@ -170,7 +171,7 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
         }
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
-        cache.addIndex("id", true);
+        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
 
         for (int i = 17; i < putCount; i++) {
             map.remove(i);
@@ -197,7 +198,7 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
 
         final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
         // here add index to key. (key --> integer; value --> Employee)
-        cache.addIndex("__key", true);
+        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "__key"));
 
         for (int i = 17; i < putCount; i++) {
             map.remove(i);

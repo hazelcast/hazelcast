@@ -16,11 +16,13 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.predicates.PredicateUtils;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -43,7 +45,12 @@ public interface Index {
      * @return the components of this index for composite indexes, {@code null}
      * for single-attribute non-composite indexes.
      */
-    String[] getComponents();
+    List<IndexComponent> getComponents();
+
+    /**
+     * @return Configuration of the index.
+     */
+    IndexConfig getConfig();
 
     /**
      * Tells whether this index is ordered or not.

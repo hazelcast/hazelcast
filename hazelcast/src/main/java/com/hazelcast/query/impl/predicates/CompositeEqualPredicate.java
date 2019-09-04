@@ -19,6 +19,8 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexComponent;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -26,7 +28,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,7 +41,7 @@ import java.util.Set;
 public class CompositeEqualPredicate implements IndexAwarePredicate {
 
     final String indexName;
-    final String[] components;
+    final List<IndexComponent> components;
     final CompositeValue value;
 
     private volatile Predicate fallbackPredicate;
@@ -62,7 +65,12 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
     // for testing purposes
     CompositeEqualPredicate(String indexName, String[] components, CompositeValue value) {
         this.indexName = indexName;
-        this.components = components;
+
+        this.components = new ArrayList<>();
+
+        for (String component : components)
+            this.components.add(new IndexComponent(component, null));
+
         this.value = value;
     }
 
@@ -87,7 +95,7 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
 
     @Override
     public String toString() {
-        return Arrays.toString(components) + " = " + value;
+        return IndexUtils.toString(components) + " = " + value;
     }
 
     @Override
@@ -100,9 +108,9 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
 
         Comparable[] values = value.getComponents();
 
-        Predicate[] predicates = new Predicate[components.length];
-        for (int i = 0; i < components.length; ++i) {
-            predicates[i] = new EqualPredicate(components[i], values[i]);
+        Predicate[] predicates = new Predicate[components.size()];
+        for (int i = 0; i < components.size(); ++i) {
+            predicates[i] = new EqualPredicate(components.get(i).getName(), values[i]);
         }
         fallbackPredicate = new AndPredicate(predicates);
     }

@@ -127,7 +127,9 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
 
     private List<EntryListenerConfig> entryListenerConfigs;
 
+    // TODO: Remove
     private List<MapIndexConfig> indexConfigs;
+    private List<IndexConfig> indexConfigs2;
 
     private transient QueryCacheConfigReadOnly readOnly;
 
@@ -151,6 +153,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         this.evictionConfig = other.evictionConfig;
         this.entryListenerConfigs = other.entryListenerConfigs;
         this.indexConfigs = other.indexConfigs;
+        this.indexConfigs2 = other.indexConfigs2;
     }
 
     /**
@@ -436,6 +439,23 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    public QueryCacheConfig addIndexConfig2(IndexConfig indexConfig) {
+        getIndexConfigs2().add(indexConfig);
+        return this;
+    }
+
+    public List<IndexConfig> getIndexConfigs2() {
+        if (indexConfigs2 == null) {
+            indexConfigs2 = new ArrayList<>();
+        }
+        return indexConfigs2;
+    }
+
+    public QueryCacheConfig setIndexConfigs2(List<IndexConfig> indexConfigs2) {
+        this.indexConfigs2 = indexConfigs2;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "QueryCacheConfig{"
@@ -451,6 +471,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
                 + ", evictionConfig=" + evictionConfig
                 + ", entryListenerConfigs=" + entryListenerConfigs
                 + ", indexConfigs=" + indexConfigs
+                + ", indexConfigs=" + indexConfigs2
                 + '}';
     }
 
@@ -478,6 +499,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         out.writeObject(evictionConfig);
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(indexConfigs, out);
+        writeNullableList(indexConfigs2, out);
     }
 
     @Override
@@ -494,6 +516,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         evictionConfig = in.readObject();
         entryListenerConfigs = readNullableList(in);
         indexConfigs = readNullableList(in);
+        indexConfigs2 = readNullableList(in);
     }
 
     @Override
@@ -542,7 +565,11 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
                 ? !entryListenerConfigs.equals(that.entryListenerConfigs) : that.entryListenerConfigs != null) {
             return false;
         }
-        return indexConfigs != null ? indexConfigs.equals(that.indexConfigs) : that.indexConfigs == null;
+        if (indexConfigs != null
+            ? !indexConfigs.equals(that.indexConfigs) : that.indexConfigs!= null) {
+            return false;
+        }
+        return indexConfigs2 != null ? indexConfigs2.equals(that.indexConfigs2) : that.indexConfigs2 == null;
     }
 
     @Override
@@ -560,6 +587,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         result = 31 * result + (evictionConfig != null ? evictionConfig.hashCode() : 0);
         result = 31 * result + (entryListenerConfigs != null ? entryListenerConfigs.hashCode() : 0);
         result = 31 * result + (indexConfigs != null ? indexConfigs.hashCode() : 0);
+        result = 31 * result + (indexConfigs2 != null ? indexConfigs2.hashCode() : 0);
         return result;
     }
 }
