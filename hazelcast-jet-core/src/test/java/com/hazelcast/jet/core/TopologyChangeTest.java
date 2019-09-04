@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
@@ -224,6 +225,15 @@ public class TopologyChangeTest extends JetTestSupport {
         NoOutputSourceP.proceedLatch.countDown();
 
         assertJobStatusEventually(job, snapshotted ? SUSPENDED : FAILED, 10);
+        if (!snapshotted) {
+            try {
+                job.join();
+                fail("join didn't fail");
+            } catch (Exception e) {
+                assertContains(e.getMessage(), TopologyChangedException.class.getName());
+                assertContains(e.getMessage(), "[127.0.0.1]:5703=" + MemberLeftException.class.getName());
+            }
+        }
     }
 
     @Test
