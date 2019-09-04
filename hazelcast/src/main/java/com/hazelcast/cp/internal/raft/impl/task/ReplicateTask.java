@@ -32,6 +32,8 @@ import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.UPDATING_GROUP_MEMBER_LIST;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
@@ -109,10 +111,10 @@ public class ReplicateTask implements Runnable {
         if (raftNode.getStatus() == INITIAL) {
             resultFuture.setResult(new CannotReplicateException(null));
             return false;
-        } else if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
+        } else if (raftNode.getStatus() == TERMINATED) {
             resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
             return false;
-        } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
+        } else if (raftNode.getStatus() == STEPPED_DOWN) {
             resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
             return false;
         }
