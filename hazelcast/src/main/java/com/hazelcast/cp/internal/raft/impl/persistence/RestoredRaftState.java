@@ -20,6 +20,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,6 +38,7 @@ public class RestoredRaftState {
     private final SnapshotEntry snapshot;
     private final LogEntry[] entries;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public RestoredRaftState(
             @Nonnull RaftEndpoint localEndpoint,
             @Nonnull Collection<RaftEndpoint> initialMembers,
@@ -78,6 +80,7 @@ public class RestoredRaftState {
     }
 
     @Nonnull
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public LogEntry[] entries() {
         return entries;
     }

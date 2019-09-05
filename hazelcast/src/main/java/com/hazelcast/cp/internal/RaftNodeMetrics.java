@@ -17,11 +17,13 @@
 package com.hazelcast.cp.internal;
 
 import com.hazelcast.internal.metrics.Probe;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Container object for single RaftNode metrics.
  */
 @SuppressWarnings("checkstyle:visibilitymodifier")
+@SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public class RaftNodeMetrics {
 
     @Probe
