@@ -18,19 +18,20 @@ package com.hazelcast.jet.examples.spring;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.examples.spring.source.CustomSourceP;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.jet.examples.spring.source.CustomSourceP;
+import com.hazelcast.spring.context.SpringAware;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericXmlApplicationContext;
 
 /**
- * Example of integrating Hazelcast Jet with Spring using xml config.
- * We create spring context from xml using {@code application-context.xml},
- * obtain JetInstance bean from context with the name 'instance' and submit a job.
+ * Example of integrating Hazelcast Jet with Spring using an XML config.
+ * We create the Spring context from an XML config using {@code application-context.xml},
+ * obtain a JetInstance bean from the context with the name 'instance' and submit a job.
  * <p>
- * Job uses a custom source implementation which has {@link com.hazelcast.spring.context.SpringAware}
- * annotation. This enables spring to auto-wire beans to created processors.
+ * Job uses a custom source implementation which has the {@link SpringAware}
+ * annotation. This enables Spring to auto-wire beans to the created processors.
  */
 public class XmlConfigurationSample {
 

@@ -31,7 +31,7 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 
 /**
- * A processor which uses auto-wired dao to find all users and emit them to downstream.
+ * A processor which uses an auto-wired DAO to find all users and emit them to downstream.
  * {@code @SpringAware} annotation enables this auto-wiring functionality.
  */
 @SpringAware
