@@ -134,4 +134,13 @@ public class ProxyFactoryConfig {
         result = 31 * result + (internalClassName != null ? internalClassName.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ProxyFactoryConfig{"
+                + "service='" + service + '\''
+                + ", className='" + className + '\''
+                + ", factoryImpl=" + factoryImpl
+                + '}';
+    }
 }

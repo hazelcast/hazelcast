@@ -145,12 +145,8 @@ public final class GroupConfig {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("GroupConfig [name=").append(this.name).append(", password=");
-        for (int i = 0, len = password.length(); i < len; i++) {
-            builder.append('*');
-        }
-        builder.append("]");
-        return builder.toString();
+        return "GroupConfig{"
+                + "name='" + name + '\''
+                + '}';
     }
 }

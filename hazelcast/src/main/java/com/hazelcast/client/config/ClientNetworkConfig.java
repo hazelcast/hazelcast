@@ -632,4 +632,29 @@ public class ClientNetworkConfig {
         result = 31 * result + clientIcmpPingConfig.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ClientNetworkConfig{"
+                + "addressList=" + addressList
+                + ", smartRouting=" + smartRouting
+                + ", redoOperation=" + redoOperation
+                + ", connectionTimeout=" + connectionTimeout
+                + ", connectionAttemptLimit=" + connectionAttemptLimit
+                + ", connectionAttemptPeriod=" + connectionAttemptPeriod
+                + ", socketInterceptorConfig=" + socketInterceptorConfig
+                + ", socketOptions=" + socketOptions
+                + ", sslConfig=" + sslConfig
+                + ", awsConfig=" + awsConfig
+                + ", gcpConfig=" + gcpConfig
+                + ", azureConfig=" + azureConfig
+                + ", kubernetesConfig=" + kubernetesConfig
+                + ", eurekaConfig=" + eurekaConfig
+                + ", cloudConfig=" + cloudConfig
+                + ", discoveryConfig=" + discoveryConfig
+                + ", outboundPortDefinitions=" + outboundPortDefinitions
+                + ", outboundPorts=" + outboundPorts
+                + ", clientIcmpPingConfig=" + clientIcmpPingConfig
+                + '}';
+    }
 }
