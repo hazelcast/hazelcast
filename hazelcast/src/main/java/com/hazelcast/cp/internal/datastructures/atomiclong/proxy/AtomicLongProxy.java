@@ -16,11 +16,9 @@
 
 package com.hazelcast.cp.internal.datastructures.atomiclong.proxy;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
@@ -36,7 +34,6 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndSetOp
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.LocalGetOp;
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -44,6 +41,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.completingCallback;
 
 /**
  * Server-side Raft-based proxy implementation of {@link IAtomicLong}
@@ -213,31 +211,18 @@ public class AtomicLongProxy implements IAtomicLong {
         }
     }
 
-    public ICompletableFuture<Long> localGetAsync(QueryPolicy queryPolicy) {
-        SimpleCompletableFuture<Long> resultFuture = new SimpleCompletableFuture<>(null, null);
-        ICompletableFuture<Long> localFuture = invocationManager.queryLocally(groupId, new LocalGetOp(objectName), queryPolicy);
+    public InternalCompletableFuture<Long> localGetAsync(QueryPolicy queryPolicy) {
+        InternalCompletableFuture<Long> resultFuture = new InternalCompletableFuture<>();
+        InternalCompletableFuture<Long> localFuture = invocationManager.queryLocally(groupId, new LocalGetOp(objectName),
+                queryPolicy);
 
-        localFuture.andThen(new ExecutionCallback<Long>() {
-            @Override
-            public void onResponse(Long response) {
-                resultFuture.setResult(response);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                ICompletableFuture<Long> future = invocationManager.query(groupId, new LocalGetOp(objectName), queryPolicy);
-                future.andThen(new ExecutionCallback<Long>() {
-                    @Override
-                    public void onResponse(Long response) {
-                        resultFuture.setResult(response);
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        resultFuture.setResult(t);
-                    }
-                });
-
+        localFuture.whenCompleteAsync((response, throwable) -> {
+            if (throwable == null) {
+                resultFuture.complete(response);
+            } else {
+                InternalCompletableFuture<Long> future =
+                        invocationManager.query(groupId, new LocalGetOp(objectName), queryPolicy);
+                future.whenCompleteAsync(completingCallback(resultFuture));
             }
         });
         return resultFuture;

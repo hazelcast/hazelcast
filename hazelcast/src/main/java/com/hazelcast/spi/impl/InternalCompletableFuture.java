@@ -16,36 +16,113 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.function.BiConsumer;
 
 /**
- * A {@link com.hazelcast.core.ICompletableFuture} with more functionality like getting
- * the result without needing to deal with checked exceptions.
+ * An extension to {@link CompletableFuture} supporting a {@code joinInternal()}
+ * variant with more relaxed exception throwing conventions.
  *
- * @param <E>
+ * This is the base class for all internally used {@link CompletableFuture}s.
+ *
+ * Does not perform optional deserialization. Uses {@link ForkJoinPool#commonPool()}
+ * or thread-per-task executor as default async executor, as {@link CompletableFuture} does.
+ *
+ * Provides static factory methods for more specific implementations supporting custom
+ * default async executor or deserialization of completion value.
  */
-public interface InternalCompletableFuture<E> extends ICompletableFuture<E> {
+public class InternalCompletableFuture<V> extends CompletableFuture<V> {
+    public InternalCompletableFuture() {
+    }
 
     /**
-     * Waits for this future to complete.
+     * Similarly to {@link #join()}, returns the value when complete or throws an unchecked exception if
+     * completed exceptionally. Unlike {@link #join()}, checked exceptions are not wrapped in {@link CompletionException};
+     * rather they are wrapped in {@link com.hazelcast.core.HazelcastException}s.
      *
-     * @return the result.
+     * @return the result
      */
-    E join();
+    public V joinInternal() {
+        try {
+            return join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            throw AbstractInvocationFuture.wrapOrPeel(cause);
+        }
+    }
 
-     /**
-     * Completes this future.
-     *
-     * @param value the value to complete this future with.
-     * @return {@code true} if this invocation caused this InternalCompletableFuture to complete, else {@code false}
-     */
-    boolean complete(Object value);
+    public static InternalCompletableFuture newCompletedFuture(Object result) {
+        InternalCompletableFuture future = new InternalCompletableFuture();
+        future.complete(result);
+        return future;
+    }
+
+    public static InternalCompletableFuture newCompletedFuture(Object result, SerializationService serializationService) {
+        InternalCompletableFuture future =
+                new DelegatingCompletableFuture(serializationService, newCompletedFuture(result));
+        return future;
+    }
+
+    public static InternalCompletableFuture newCompletedFuture(Object result, Executor defaultAsyncExecutor) {
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(defaultAsyncExecutor);
+        future.complete(result);
+        return future;
+    }
+
+    public static InternalCompletableFuture newCompletedFuture(Object result,
+                                                               SerializationService serializationService,
+                                                               Executor defaultAsyncExecutor) {
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService,
+                defaultAsyncExecutor, true);
+        future.complete(result);
+        return future;
+    }
+
+    public static InternalCompletableFuture completedExceptionally(Throwable t) {
+        InternalCompletableFuture future = new InternalCompletableFuture();
+        future.completeExceptionally(t);
+        return future;
+    }
+
+    public static InternalCompletableFuture completedExceptionally(Throwable t, Executor defaultAsyncExecutor) {
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(defaultAsyncExecutor);
+        future.completeExceptionally(t);
+        return future;
+    }
+
+    public static <U> InternalCompletableFuture<U> withExecutor(Executor defaultAsyncExecutor) {
+        return new DeserializingCompletableFuture<>(defaultAsyncExecutor);
+    }
+
+    public static <U> InternalCompletableFuture<U> deserializingFuture(SerializationService serializationService,
+                                                                       InternalCompletableFuture<Data> future) {
+        return new DelegatingCompletableFuture<U>(serializationService, future);
+    }
 
     /**
-     * Transitional method, just for the purpose of this PR. Will be removed.
-     * @return
+     *
+     * @param future
+     * @param <U>
+     * @return  a {@link BiConsumer} to be used with {@link CompletableFuture#whenComplete(BiConsumer)} and variants
+     *          that completes the {@code future} given as argument normally or exceptionally, depending on whether
+     *          {@code Throwable} argument is {@code null}
      */
-    default E joinInternal() {
-        return this.join();
+    public static <U> BiConsumer<U, ? super Throwable> completingCallback(CompletableFuture future) {
+        return new BiConsumer<U, Throwable>() {
+            @Override
+            public void accept(U u, Throwable throwable) {
+                if (throwable == null) {
+                    future.complete(u);
+                } else {
+                    future.completeExceptionally(throwable);
+                }
+            }
+        };
     }
 }

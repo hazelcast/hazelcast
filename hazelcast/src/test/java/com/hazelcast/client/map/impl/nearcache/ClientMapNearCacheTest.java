@@ -29,9 +29,9 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
@@ -163,7 +163,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         // generate Near Cache hits with async call
         for (int i = 0; i < size; i++) {
-            Future future = map.getAsync(i);
+            Future future = map.getAsync(i).toCompletableFuture();
             future.get();
         }
         NearCacheStats stats = getNearCacheStats(map);
@@ -1196,9 +1196,9 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 .setInMemoryFormat(InMemoryFormat.OBJECT);
         IMap<Integer, Integer> map = getNearCachedMapFromClient(nearCacheConfig);
 
-        map.getAsync(1).get();
+        map.getAsync(1).toCompletableFuture().get();
         sleepMillis(1000);
-        assertNull(map.getAsync(1).get());
+        assertNull(map.getAsync(1).toCompletableFuture().get());
     }
 
     @Test(expected = IllegalArgumentException.class)

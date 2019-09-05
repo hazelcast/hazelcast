@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -33,7 +34,11 @@ import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.getOperationService;
 
-class CompletableFutureTestUtil {
+public class CompletableFutureTestUtil {
+
+    public static void ignore() {
+        // no-op
+    }
 
     static <T> CompletableFuture<T> invokeSync(HazelcastInstance instance, boolean throwsException) {
         return throwsException ? invokeSync(instance, new Operation() {
@@ -53,13 +58,13 @@ class CompletableFutureTestUtil {
         }) : invokeAsync(instance, new SlowOperation(3000));
     }
 
-    private static <R> CompletableFuture<R> invokeSync(HazelcastInstance instance, Operation operation) {
+    public static <R> InternalCompletableFuture<R> invokeSync(HazelcastInstance instance, Operation operation) {
         OperationService operationService = getOperationService(instance);
         Address local = getAddress(instance);
         return operationService.invokeOnTarget(null, operation, local);
     }
 
-    private static <T> CompletableFuture<T> invokeAsync(HazelcastInstance instance, Operation operation) {
+    public static <T> InternalCompletableFuture<T> invokeAsync(HazelcastInstance instance, Operation operation) {
         OperationServiceImpl operationService = getOperationService(instance);
         Address local = getAddress(instance);
         TargetInvocation invocation = new TargetInvocation(operationService.getInvocationContext(), operation, local,
@@ -89,9 +94,9 @@ class CompletableFutureTestUtil {
         }
     }
 
-    static final class CountingExecutor implements Executor {
-        AtomicInteger counter = new AtomicInteger();
-        AtomicBoolean completed = new AtomicBoolean();
+    public static final class CountingExecutor implements Executor {
+        public AtomicInteger counter = new AtomicInteger();
+        public AtomicBoolean completed = new AtomicBoolean();
 
         @Override
         public void execute(Runnable command) {

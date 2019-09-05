@@ -36,9 +36,9 @@ import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Collections;
@@ -133,8 +133,8 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public SimpleCompletableFuture newCompletableFuture() {
-        return new SimpleCompletableFuture(scheduledExecutor, loggingService.getLogger(getClass()));
+    public InternalCompletableFuture newCompletableFuture() {
+        return new InternalCompletableFuture();
     }
 
     @Override

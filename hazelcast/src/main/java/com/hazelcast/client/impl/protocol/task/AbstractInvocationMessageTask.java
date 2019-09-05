@@ -17,13 +17,15 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-public abstract class AbstractInvocationMessageTask<P> extends AbstractMessageTask<P> implements ExecutionCallback {
+import java.util.function.BiConsumer;
+
+public abstract class AbstractInvocationMessageTask<P> extends AbstractMessageTask<P>
+        implements BiConsumer<Object, Throwable> {
 
     protected AbstractInvocationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -35,22 +37,20 @@ public abstract class AbstractInvocationMessageTask<P> extends AbstractMessageTa
         op.setCallerUuid(endpoint.getUuid());
 
         InvocationBuilder builder = getInvocationBuilder(op)
-                .setExecutionCallback(this)
                 .setResultDeserialized(false);
-        builder.invoke();
+        builder.invoke().whenCompleteAsync(this);
+    }
+
+    @Override
+    public void accept(Object response, Throwable throwable) {
+        if (throwable == null) {
+            sendResponse(response);
+        } else {
+            handleProcessingFailure(throwable);
+        }
     }
 
     protected abstract InvocationBuilder getInvocationBuilder(Operation op);
 
     protected abstract Operation prepareOperation();
-
-    @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
-    }
 }

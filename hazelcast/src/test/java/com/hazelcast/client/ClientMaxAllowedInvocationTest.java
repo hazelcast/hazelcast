@@ -17,18 +17,16 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.map.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.BiConsumer;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -117,32 +116,19 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_andThenInternal() throws ExecutionException, InterruptedException {
-        testMaxAllowed(new RegisterCallback() {
-            @Override
-            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
-                future.andThen(callback);
-            }
-        });
+        testMaxAllowed((future, callback) -> future.whenCompleteAsync(callback));
     }
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_andThen() throws ExecutionException, InterruptedException {
-        testMaxAllowed(new RegisterCallback() {
-            @Override
-            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
-                future.andThen(callback);
-            }
-        });
+        testMaxAllowed((future, callback) -> future.whenCompleteAsync(callback));
     }
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_andThenExecutor() throws ExecutionException, InterruptedException {
-        testMaxAllowed(new RegisterCallback() {
-            @Override
-            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                future.andThen(callback, executor);
-            }
+        testMaxAllowed((future, callback) -> {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            future.whenCompleteAsync(callback, executor);
         });
     }
 
@@ -174,32 +160,19 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_withWaitingCallbacks_andThenInternal() throws ExecutionException, InterruptedException {
-        testMaxAllowed_withWaitingCallbacks(new RegisterCallback() {
-            @Override
-            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
-                future.andThen(callback);
-            }
-        });
+        testMaxAllowed_withWaitingCallbacks((future, callback) -> future.whenCompleteAsync(callback));
     }
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_withWaitingCallbacks_a_andThen() throws ExecutionException, InterruptedException {
-        testMaxAllowed_withWaitingCallbacks(new RegisterCallback() {
-            @Override
-            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
-                future.andThen(callback);
-            }
-        });
+        testMaxAllowed_withWaitingCallbacks((future, callback) -> future.whenCompleteAsync(callback));
     }
 
     @Test(expected = HazelcastOverloadException.class)
     public void testMaxAllowed_withWaitingCallbacks_andThenExecutor() throws ExecutionException, InterruptedException {
-        testMaxAllowed_withWaitingCallbacks(new RegisterCallback() {
-            @Override
-            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                future.andThen(callback, executor);
-            }
+        testMaxAllowed_withWaitingCallbacks((future, callback) -> {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            future.whenCompleteAsync(callback, executor);
         });
     }
 
@@ -229,10 +202,10 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
     }
 
     interface RegisterCallback {
-        void call(ClientDelegatingFuture clientDelegatingFuture, ExecutionCallback countDownLatch);
+        void call(ClientDelegatingFuture clientDelegatingFuture, BiConsumer<Object, Throwable> biConsumer);
     }
 
-    static class SleepyCallback implements ExecutionCallback<ClientMessage> {
+    static class SleepyCallback implements BiConsumer<Object, Throwable> {
         final ILogger logger = Logger.getLogger(getClass());
         final CountDownLatch countDownLatch;
 
@@ -241,20 +214,19 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         }
 
         @Override
-        public void onResponse(ClientMessage response) {
-            try {
-                logger.info("SleepyCallback onResponse entered. Will await for latch.");
-                countDownLatch.await();
-                logger.info("SleepyCallback onResponse latch wait finished.");
-            } catch (InterruptedException e) {
-                //ignored
-                logger.info("SleepyCallback onResponse is interrupted.");
+        public void accept(Object response, Throwable t) {
+            if (t == null) {
+                try {
+                    logger.info("SleepyCallback onResponse entered. Will await for latch.");
+                    countDownLatch.await();
+                    logger.info("SleepyCallback onResponse latch wait finished.");
+                } catch (InterruptedException e) {
+                    //ignored
+                    logger.info("SleepyCallback onResponse is interrupted.");
+                }
+            } else {
+                logger.info("SleepyCallback onFailure is entered.");
             }
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            logger.info("SleepyCallback onFailure is entered.");
         }
     }
 }

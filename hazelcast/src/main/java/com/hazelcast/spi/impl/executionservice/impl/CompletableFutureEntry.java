@@ -16,13 +16,14 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.concurrent.Future;
 
 final class CompletableFutureEntry<V> {
 
-    final BasicCompletableFuture<V> completableFuture;
+    final InternalCompletableFuture<V> completableFuture;
 
     CompletableFutureEntry(Future<V> future, NodeEngine nodeEngine) {
         this.completableFuture = new BasicCompletableFuture<V>(future, nodeEngine);

@@ -50,7 +50,6 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowIfError;
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 import static java.util.concurrent.locks.LockSupport.park;
@@ -59,22 +58,21 @@ import static java.util.concurrent.locks.LockSupport.unpark;
 
 /**
  * Custom implementation of {@link java.util.concurrent.CompletableFuture}.
- * <p>
- * The long term goal is that this whole class can be ripped out and replaced
- * by {@link java.util.concurrent.CompletableFuture} from the JDK. So we need
- * to be very careful with adding more functionality to this class because
- * the more we add, the more
- * difficult the replacement will be.
- * <p>
- * TODO:
- * - thread value protection
- *
  * @param <V>
  */
 @SuppressFBWarnings(value = "DLS_DEAD_STORE_OF_CLASS_LITERAL", justification = "Recommended way to prevent classloading bug")
-public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> implements InternalCompletableFuture<V> {
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
+public abstract class AbstractInvocationFuture<V> extends InternalCompletableFuture<V> {
 
     static final Object UNRESOLVED = new Object();
+    private static final Lookup LOOKUP = MethodHandles.publicLookup();
+    // new Throwable(String message, Throwable cause)
+    private static final MethodType MT_INIT_STRING_THROWABLE = MethodType.methodType(void.class, String.class, Throwable.class);
+    // new Throwable(Throwable cause)
+    private static final MethodType MT_INIT_THROWABLE = MethodType.methodType(void.class, Throwable.class);
+    // new Throwable(String message)
+    private static final MethodType MT_INIT_STRING = MethodType.methodType(void.class, String.class);
+
     private static final AtomicReferenceFieldUpdater<AbstractInvocationFuture, Object> STATE =
             newUpdater(AbstractInvocationFuture.class, Object.class, "state");
 
@@ -97,10 +95,11 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         DEFAULT_ASYNC_EXECUTOR = asyncExecutor;
     }
 
+    protected final ILogger logger;
+
     // todo since we are using FJP.commonPool by default (under conditions), remove this field
     //  so an instance can fit in 64 bytes
-    protected final Executor defaultExecutor;
-    protected final ILogger logger;
+    private final Executor defaultExecutor;
 
     /**
      * This field contains the state of the future. If the future is not
@@ -109,9 +108,6 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
      * <li>{@link #UNRESOLVED}: no response is available.</li>
      * <li>Thread instance: no response is available and a thread has
      * blocked on completion (e.g. future.get)</li>
-     * <li>{@link ExecutionCallback} instance: no response is available
-     * and 1 {@link #andThen(ExecutionCallback)} was done using the default
-     * executor</li>
      * <li>{@link WaitNode} or {@link Waiter} instance: in case of multiple
      * callback registrations or future.gets.</li>
      * </ol>
@@ -150,188 +146,368 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
     // CompletionStage API implementation
     @Override
     public <U> CompletableFuture<U> thenApply(@Nonnull Function<? super V, ? extends U> fn) {
-        return unblockApply(fn, null);
+        return thenApplyAsync(fn, CALLER_RUNS);
     }
 
     @Override
     public <U> CompletableFuture<U> thenApplyAsync(@Nonnull Function<? super V, ? extends U> fn) {
-        return unblockApply(fn, defaultExecutor);
+        return thenApplyAsync(fn, defaultExecutor);
     }
 
     @Override
     public <U> CompletableFuture<U> thenApplyAsync(@Nonnull Function<? super V, ? extends U> fn, Executor executor) {
-        return unblockApply(fn, executor);
+        requireNonNull(fn);
+        requireNonNull(executor);
+        final CompletableFuture<U> future = newCompletableFuture();
+        if (isDone()) {
+            return unblockApply(fn, executor, future);
+        } else {
+            Object result = registerWaiter(new ApplyNode(future, fn), executor);
+            if (result != UNRESOLVED) {
+                unblockApply(fn, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
     public CompletableFuture<Void> thenAccept(@Nonnull Consumer<? super V> action) {
-        return unblockAccept(action, null);
+        return thenAcceptAsync(action, CALLER_RUNS);
     }
 
     @Override
     public CompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super V> action) {
-        return unblockAccept(action, defaultExecutor);
+        return thenAcceptAsync(action, defaultExecutor);
     }
 
     @Override
-    public CompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super V> action, Executor executor) {
-        return unblockAccept(action, executor);
+    public CompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super V> action,
+                                                   @Nonnull Executor executor) {
+        requireNonNull(action);
+        requireNonNull(executor);
+        final CompletableFuture<Void> future = newCompletableFuture();
+        if (isDone()) {
+            return unblockAccept(action, executor, future);
+        } else {
+            Object result = registerWaiter(new AcceptNode<>(future, action), executor);
+            if (result != UNRESOLVED) {
+                unblockAccept(action, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
     public CompletableFuture<Void> thenRun(@Nonnull Runnable action) {
-        return unblockRun(action, null);
+        return thenRunAsync(action, CALLER_RUNS);
     }
 
     @Override
     public CompletableFuture<Void> thenRunAsync(@Nonnull Runnable action) {
-        return unblockRun(action, defaultExecutor);
+        return thenRunAsync(action, defaultExecutor);
     }
 
     @Override
-    public CompletableFuture<Void> thenRunAsync(@Nonnull Runnable action, Executor executor) {
-        return unblockRun(action, executor);
+    public CompletableFuture<Void> thenRunAsync(@Nonnull Runnable action, @Nonnull Executor executor) {
+        requireNonNull(action);
+        requireNonNull(executor);
+        final CompletableFuture<Void> future = newCompletableFuture();
+        if (isDone()) {
+            unblockRun(action, executor, future);
+        } else {
+            Object result = registerWaiter(new RunNode(future, action), executor);
+            if (result != UNRESOLVED) {
+                unblockRun(action, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
     public <U> CompletableFuture<U> handle(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn) {
-        return unblockHandle(fn, null);
+        return handleAsync(fn, CALLER_RUNS);
     }
 
     @Override
     public <U> CompletableFuture<U> handleAsync(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn) {
-        return unblockHandle(fn, defaultExecutor);
+        return handleAsync(fn, defaultExecutor);
     }
 
     @Override
-    public <U> CompletableFuture<U> handleAsync(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn, Executor executor) {
-        return unblockHandle(fn, executor);
+    public <U> CompletableFuture<U> handleAsync(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn,
+                                                @Nonnull Executor executor) {
+        requireNonNull(fn);
+        requireNonNull(executor);
+        final CompletableFuture<U> future = newCompletableFuture();
+        if (isDone()) {
+            unblockHandle(fn, executor, future);
+        } else {
+            Object result = registerWaiter(new HandleNode(future, fn), executor);
+            if (result != UNRESOLVED) {
+                unblockHandle(fn, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
     public CompletableFuture<V> whenComplete(@Nonnull BiConsumer<? super V, ? super Throwable> action) {
-        return unblockWhenComplete(action, null);
+        return whenCompleteAsync(action, CALLER_RUNS);
     }
 
     @Override
     public CompletableFuture<V> whenCompleteAsync(@Nonnull BiConsumer<? super V, ? super Throwable> action) {
-        return unblockWhenComplete(action, defaultExecutor);
+        return whenCompleteAsync(action, defaultExecutor);
     }
 
     @Override
-    public CompletableFuture<V> whenCompleteAsync(@Nonnull BiConsumer<? super V, ? super Throwable> action, Executor executor) {
-        return unblockWhenComplete(action, executor);
+    public CompletableFuture<V> whenCompleteAsync(@Nonnull BiConsumer<? super V, ? super Throwable> action,
+                                                  @Nonnull Executor executor) {
+        requireNonNull(action);
+        requireNonNull(executor);
+        final CompletableFuture<V> future = newCompletableFuture();
+        if (isDone()) {
+            unblockWhenComplete(action, executor, future);
+        } else {
+            Object result = registerWaiter(new WhenCompleteNode(future, action), executor);
+            if (result != UNRESOLVED) {
+                unblockWhenComplete(action, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
     public <U> CompletableFuture<U> thenCompose(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn) {
-        return unblockCompose(fn, null);
+        return thenComposeAsync(fn, CALLER_RUNS);
     }
 
     @Override
     public <U> CompletableFuture<U> thenComposeAsync(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn) {
-        return unblockCompose(fn, defaultExecutor);
+        return thenComposeAsync(fn, defaultExecutor);
     }
 
     @Override
     public <U> CompletableFuture<U> thenComposeAsync(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn,
-                                                   Executor executor) {
-        return unblockCompose(fn, executor);
+                                                     @Nonnull Executor executor) {
+        requireNonNull(fn);
+        requireNonNull(executor);
+        final CompletableFuture<U> future = newCompletableFuture();
+        if (isDone()) {
+            unblockCompose(fn, executor, future);
+        } else {
+            Object result = registerWaiter(new ComposeNode<V, U>(future, fn), executor);
+            if (result != UNRESOLVED) {
+                unblockCompose(fn, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
     public <U, R> CompletableFuture<R> thenCombine(@Nonnull CompletionStage<? extends U> other,
                                                  @Nonnull BiFunction<? super V, ? super U, ? extends R> fn) {
-        return unblockCombine(other, fn, null);
+        return thenCombineAsync(other, fn, CALLER_RUNS);
     }
 
     @Override
-    public <U, R> CompletableFuture<R> thenCombineAsync(CompletionStage<? extends U> other,
-                                                        BiFunction<? super V, ? super U, ? extends R> fn) {
-        return unblockCombine(other, fn, defaultExecutor);
+    public <U, R> CompletableFuture<R> thenCombineAsync(@Nonnull CompletionStage<? extends U> other,
+                                                        @Nonnull BiFunction<? super V, ? super U, ? extends R> fn) {
+        return thenCombineAsync(other, fn, defaultExecutor);
     }
 
     @Override
-    public <U, R> CompletableFuture<R> thenCombineAsync(CompletionStage<? extends U> other,
-                                                      BiFunction<? super V, ? super U, ? extends R> fn, Executor executor) {
-        return unblockCombine(other, fn, executor);
+    public <U, R> CompletableFuture<R> thenCombineAsync(@Nonnull CompletionStage<? extends U> other,
+                                                        @Nonnull BiFunction<? super V, ? super U, ? extends R> fn,
+                                                        @Nonnull Executor executor) {
+        requireNonNull(other);
+        requireNonNull(fn);
+        requireNonNull(executor);
+        final CompletableFuture<R> future = newCompletableFuture();
+        if (isDone()) {
+            unblockCombine(other, fn, executor, future);
+        } else {
+            Object result = registerWaiter(new CombineNode<V, U, R>(future, other.toCompletableFuture(), fn), executor);
+            if (result != UNRESOLVED) {
+                unblockCombine(other, fn, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBoth(CompletionStage<? extends U> other,
-                                                      BiConsumer<? super V, ? super U> action) {
-        return unblockAcceptBoth(other, action, null);
+    public <U> CompletableFuture<Void> thenAcceptBoth(@Nonnull CompletionStage<? extends U> other,
+                                                      @Nonnull BiConsumer<? super V, ? super U> action) {
+        return thenAcceptBothAsync(other, action, CALLER_RUNS);
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
-                                                         BiConsumer<? super V, ? super U> action) {
-        return unblockAcceptBoth(other, action, defaultExecutor);
+    public <U> CompletableFuture<Void> thenAcceptBothAsync(@Nonnull CompletionStage<? extends U> other,
+                                                           @Nonnull BiConsumer<? super V, ? super U> action) {
+        return thenAcceptBothAsync(other, action, defaultExecutor);
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
-                                                         BiConsumer<? super V, ? super U> action, Executor executor) {
-        return unblockAcceptBoth(other, action, executor);
+    public <U> CompletableFuture<Void> thenAcceptBothAsync(@Nonnull CompletionStage<? extends U> other,
+                                                           @Nonnull BiConsumer<? super V, ? super U> action,
+                                                           @Nonnull Executor executor) {
+        requireNonNull(action);
+        requireNonNull(executor);
+        final CompletableFuture<Void> future = newCompletableFuture();
+        final CompletableFuture<? extends U> otherFuture =
+                (other instanceof CompletableFuture) ? (CompletableFuture<? extends U>) other : other.toCompletableFuture();
+
+        if (isDone()) {
+            unblockAcceptBoth(otherFuture, action, executor, future);
+        } else {
+            Object result = registerWaiter(new AcceptBothNode<>(future, otherFuture, action), executor);
+            if (result != UNRESOLVED) {
+                unblockAcceptBoth(otherFuture, action, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
-    public CompletableFuture<Void> runAfterBoth(CompletionStage<?> other, Runnable action) {
-        return unblockRunAfterBoth(other, action, null);
+    public CompletableFuture<Void> runAfterBoth(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
+        return runAfterBothAsync(other, action, CALLER_RUNS);
     }
 
     @Override
-    public CompletableFuture<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action) {
-        return unblockRunAfterBoth(other, action, defaultExecutor);
+    public CompletableFuture<Void> runAfterBothAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
+        return runAfterBothAsync(other, action, defaultExecutor);
     }
 
     @Override
-    public CompletableFuture<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action, Executor executor) {
-        return unblockRunAfterBoth(other, action, executor);
+    public CompletableFuture<Void> runAfterBothAsync(@Nonnull CompletionStage<?> other,
+                                                     @Nonnull Runnable action,
+                                                     @Nonnull Executor executor) {
+        requireNonNull(other);
+        requireNonNull(action);
+        requireNonNull(executor);
+        final CompletableFuture<Void> future = newCompletableFuture();
+        final CompletableFuture<?> otherFuture =
+                (other instanceof CompletableFuture) ? (CompletableFuture<?>) other : other.toCompletableFuture();
+
+        if (isDone()) {
+            unblockRunAfterBoth(otherFuture, action, executor, future);
+        } else {
+            Object result = registerWaiter(new RunAfterBothNode<>(future, otherFuture, action), executor);
+            if (result != UNRESOLVED) {
+                unblockRunAfterBoth(otherFuture, action, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
-    public <U> CompletableFuture<U> applyToEither(CompletionStage<? extends V> other, Function<? super V, U> fn) {
-        return unblockApplyToEither(other, fn, null);
+    public <U> CompletableFuture<U> applyToEither(@Nonnull CompletionStage<? extends V> other,
+                                                  @Nonnull Function<? super V, U> fn) {
+        return applyToEitherAsync(other, fn, CALLER_RUNS);
     }
 
     @Override
-    public <U> CompletableFuture<U> applyToEitherAsync(CompletionStage<? extends V> other, Function<? super V, U> fn) {
-        return unblockApplyToEither(other, fn, defaultExecutor);
+    public <U> CompletableFuture<U> applyToEitherAsync(@Nonnull CompletionStage<? extends V> other,
+                                                       @Nonnull Function<? super V, U> fn) {
+        return applyToEitherAsync(other, fn, defaultExecutor);
     }
 
     @Override
-    public <U> CompletableFuture<U> applyToEitherAsync(CompletionStage<? extends V> other, Function<? super V, U> fn,
-                                                     Executor executor) {
-        return unblockApplyToEither(other, fn, executor);
+    public <U> CompletableFuture<U> applyToEitherAsync(@Nonnull CompletionStage<? extends V> other,
+                                                       @Nonnull Function<? super V, U> fn,
+                                                       @Nonnull Executor executor) {
+        requireNonNull(other);
+        requireNonNull(fn);
+        requireNonNull(executor);
+        final CompletableFuture<U> future = newCompletableFuture();
+        final CompletableFuture<? extends V> otherFuture =
+                (other instanceof CompletableFuture) ? (CompletableFuture<? extends V>) other : other.toCompletableFuture();
+
+        if (isDone()) {
+            unblockApplyToEither(fn, executor, future);
+        } else {
+            ApplyEither<? super V, U> waiter = new ApplyEither<>(future, fn);
+            Object result = registerWaiter(waiter, executor);
+            if (result == UNRESOLVED) {
+                otherFuture.whenCompleteAsync(waiter, executor);
+                return future;
+            } else {
+                unblockApplyToEither(fn, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
-    public CompletableFuture<Void> acceptEither(CompletionStage<? extends V> other, Consumer<? super V> action) {
-        return unblockAcceptEither(other, action, null);
+    public CompletableFuture<Void> acceptEither(@Nonnull CompletionStage<? extends V> other,
+                                                @Nonnull Consumer<? super V> action) {
+        return acceptEitherAsync(other, action, CALLER_RUNS);
     }
 
     @Override
-    public CompletableFuture<Void> acceptEitherAsync(CompletionStage<? extends V> other, Consumer<? super V> action) {
-        return unblockAcceptEither(other, action, defaultExecutor);
+    public CompletableFuture<Void> acceptEitherAsync(@Nonnull CompletionStage<? extends V> other,
+                                                     @Nonnull Consumer<? super V> action) {
+        return acceptEitherAsync(other, action, defaultExecutor);
     }
 
     @Override
-    public CompletableFuture<Void> acceptEitherAsync(CompletionStage<? extends V> other, Consumer<? super V> action,
-                                                   Executor executor) {
-        return unblockAcceptEither(other, action, executor);
+    public CompletableFuture<Void> acceptEitherAsync(@Nonnull CompletionStage<? extends V> other,
+                                                     @Nonnull Consumer<? super V> action,
+                                                     @Nonnull Executor executor) {
+        requireNonNull(other);
+        requireNonNull(action);
+        requireNonNull(executor);
+        final CompletableFuture<Void> future = newCompletableFuture();
+        final CompletableFuture<? extends V> otherFuture =
+                (other instanceof CompletableFuture) ? (CompletableFuture<? extends V>) other : other.toCompletableFuture();
+
+        if (isDone()) {
+            unblockAcceptEither(action, executor, future);
+        } else {
+            AcceptEither<? super V> waiter = new AcceptEither<>(future, action);
+            Object result = registerWaiter(waiter, executor);
+            if (result == UNRESOLVED) {
+                otherFuture.whenCompleteAsync(waiter, executor);
+                return future;
+            } else {
+                unblockAcceptEither(action, executor, future);
+            }
+        }
+        return future;
     }
 
     public CompletableFuture<Void> runAfterEither(CompletionStage<?> other, Runnable action) {
-        return unblockRunAfterEither(other, action, null);
+        return runAfterEitherAsync(other, action, CALLER_RUNS);
     }
 
-    public CompletableFuture<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action) {
-        return unblockRunAfterEither(other, action, defaultExecutor);
+    public CompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
+        return runAfterEitherAsync(other, action, defaultExecutor);
     }
 
-    public CompletableFuture<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action, Executor executor) {
-        return unblockRunAfterEither(other, action, executor);
+    public CompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other,
+                                                       @Nonnull Runnable action,
+                                                       @Nonnull Executor executor) {
+        requireNonNull(other);
+        requireNonNull(action);
+        requireNonNull(executor);
+
+        final CompletableFuture<Void> future = newCompletableFuture();
+        final CompletableFuture<?> otherFuture =
+                (other instanceof CompletableFuture) ? (CompletableFuture<?>) other : other.toCompletableFuture();
+
+        if (isDone()) {
+            unblockRunAfterEither(action, executor, future);
+        } else {
+            RunAfterEither waiter = new RunAfterEither(future, action);
+            Object result = registerWaiter(waiter, executor);
+            if (result == UNRESOLVED) {
+                otherFuture.whenCompleteAsync(waiter, executor);
+                return future;
+            } else {
+                unblockRunAfterEither(action, executor, future);
+            }
+        }
+        return future;
     }
 
     @Override
@@ -388,7 +564,8 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
      *
      * @return the result
      */
-    public final V joinInternal() {
+    @Override
+    public V joinInternal() {
         try {
             return waitForResolution(this::resolveAndThrowForJoinInternal);
         } catch (ExecutionException | InterruptedException e) {
@@ -443,7 +620,6 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         throw newTimeoutException(timeout, unit);
     }
 
-    // TODO override all CompletableFuture API methods
     @Override
     public V getNow(V valueIfAbsent) {
         return (state == UNRESOLVED) ? valueIfAbsent : join();
@@ -493,29 +669,10 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         }
     }
 
-    @Override
-    public void andThen(ExecutionCallback<V> callback) {
-        andThen(callback, defaultExecutor);
-    }
-
-    @Override
-    public void andThen(ExecutionCallback<V> callback, Executor executor) {
-        isNotNull(callback, "callback");
-        isNotNull(executor, "executor");
-
-        Object response = registerWaiter(callback, executor);
-        if (response != UNRESOLVED) {
-            unblock(callback, executor);
-        }
-    }
-
     private void unblockAll(Object waiter, Executor executor) {
         while (waiter != null) {
             if (waiter instanceof Thread) {
                 unpark((Thread) waiter);
-                return;
-            } else if (waiter instanceof ExecutionCallback) {
-                unblock((ExecutionCallback) waiter, executor);
                 return;
             } else if (waiter.getClass() == WaitNode.class) {
                 WaitNode waitNode = (WaitNode) waiter;
@@ -528,25 +685,14 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         }
     }
 
-    private CompletableFuture<Void> unblockAccept(@Nonnull final Consumer<? super V> consumer, Executor executor) {
-        requireNonNull(consumer);
-        Object result = resolve(state);
-        final CompletableFuture<Void> future = newCompletableFuture();
-        while (result == UNRESOLVED) {
-            result = registerWaiter(new AcceptNode(future, consumer), executor);
-            if (result == UNRESOLVED) {
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
-        // result is resolved
-        final Object value = result;
+    protected CompletableFuture<Void> unblockAccept(@Nonnull final Consumer<? super V> consumer,
+                                                    @Nonnull Executor executor,
+                                                    @Nonnull CompletableFuture<Void> future) {
+        final Object value = resolve(state);
         if (cascadeException(value, future)) {
             return future;
         }
-        Executor e = (executor == null) ? CALLER_RUNS : executor;
-        e.execute(() -> {
+        executor.execute(() -> {
             try {
                 consumer.accept((V) value);
                 future.complete(null);
@@ -598,27 +744,6 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         }
     }
 
-    protected void unblock(final ExecutionCallback<V> callback, Executor executor) {
-        try {
-            executor.execute(() -> {
-                try {
-                    Object value = resolve(state);
-                    if (value instanceof ExceptionalResult) {
-                        Throwable error = unwrap((ExceptionalResult) value);
-                        callback.onFailure(error);
-                    } else {
-                        callback.onResponse((V) value);
-                    }
-                } catch (Throwable cause) {
-                    logger.severe("Failed asynchronous execution of execution callback: " + callback
-                            + "for call " + invocationToString(), cause);
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            callback.onFailure(wrapToInstanceNotActiveException(e));
-        }
-    }
-
     protected abstract Exception wrapToInstanceNotActiveException(RejectedExecutionException e);
 
     // this method should not be needed; but there is a difference between client and server how it handles async throwables
@@ -645,11 +770,11 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
     }
 
     /**
-     * todo abstract method, overridden in both subclasses
-     * @param value
+     * @param   value   the resolved state of this future
      * @return  an {@link ExceptionalResult} wrapping a {@link Throwable} in case value is resolved
-     *          to an exception. If the value is an instance of {@link com.hazelcast.nio.serialization.Data}
-     *          it is deserialized
+     *          to an exception, or the normal completion value. Subclasses may choose to treat
+     *          specific normal completion values in a special way (eg deserialize when the completion
+     *          value is an instance of {@code Data}.
      */
     protected Object resolve(Object value) {
         return value;
@@ -660,60 +785,33 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         return returnOrThrowWithJoinConventions(value);
     }
 
-    private <U> CompletableFuture<U> unblockApply(@Nonnull final Function<? super V, ? extends U> function, Executor executor) {
-        requireNonNull(function);
-        Object result = resolve(state);
-        final CompletableFuture<U> future = newCompletableFuture();
-        while (result == UNRESOLVED) {
-            result = registerWaiter(new ApplyNode(future, function), executor);
-            if (result == UNRESOLVED) {
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
-        final Object value = result;
+    protected <U> CompletableFuture<U> unblockApply(@Nonnull final Function<? super V, ? extends U> function,
+                                                    @Nonnull Executor executor,
+                                                    @Nonnull CompletableFuture<U> future) {
+        final Object value = resolve(state);
         if (cascadeException(value, future)) {
             return future;
         }
-        Executor e = (executor == null) ? CALLER_RUNS : executor;
-        e.execute(() -> {
+        executor.execute(() -> {
             future.complete(function.apply((V) value));
         });
         return future;
     }
 
-    private CompletableFuture<Void> unblockRun(@Nonnull final Runnable runnable, Executor executor) {
-        requireNonNull(runnable);
-        Object value = resolve(state);
-        final CompletableFuture<Void> future = newCompletableFuture();
-        while (value == UNRESOLVED) {
-            value = registerWaiter(new RunNode(future, runnable), executor);
-            if (value == UNRESOLVED) {
-                return future;
-            } else {
-                value = resolve(state);
-            }
-        }
+    protected void unblockRun(@Nonnull final Runnable runnable,
+                                                 @Nonnull Executor executor,
+                                                 @Nonnull CompletableFuture<Void> future) {
+        final Object value = resolve(state);
         if (cascadeException(value, future)) {
-            return future;
+            return;
         }
-        return runAfter0(future, runnable, executor);
+        runAfter0(future, runnable, executor);
     }
 
-    private <U> CompletableFuture<U> unblockHandle(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn, Executor executor) {
-        requireNonNull(fn);
-        Object result = resolve(state);
-        final CompletableFuture<U> future = newCompletableFuture();
-
-        while (result == UNRESOLVED) {
-            result = registerWaiter(new HandleNode(future, fn), executor);
-            if (result == UNRESOLVED) {
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
+    protected <U> void unblockHandle(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn,
+                                                     @Nonnull Executor executor,
+                                                     @Nonnull CompletableFuture<U> future) {
+        final Object result = resolve(state);
         V value;
         Throwable throwable;
         if (result instanceof ExceptionalResult) {
@@ -724,62 +822,38 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
             value = (V) result;
         }
 
-        if (executor != null) {
-            executor.execute(() -> {
-                try {
-                    U r = fn.apply(value, throwable);
-                    future.complete(r);
-                } catch (Throwable t) {
-                    future.completeExceptionally(t);
-                }
-            });
-        } else {
+        executor.execute(() -> {
             try {
                 U r = fn.apply(value, throwable);
                 future.complete(r);
             } catch (Throwable t) {
                 future.completeExceptionally(t);
             }
-        }
-        return future;
+        });
     }
 
-    protected CompletableFuture<V> unblockWhenComplete(@Nonnull final BiConsumer<? super V, ? super Throwable> biConsumer,
-                                                       Executor executor) {
-        requireNonNull(biConsumer);
+    protected void unblockWhenComplete(@Nonnull final BiConsumer<? super V, ? super Throwable> biConsumer,
+                                       @Nonnull Executor executor,
+                                       @Nonnull CompletableFuture<V> future) {
         Object result = resolve(state);
-        final CompletableFuture<V> future = newCompletableFuture();
-        for (; ; ) {
-            if (result != UNRESOLVED && isDone()) {
-                V value;
-                Throwable throwable;
-                if (result instanceof ExceptionalResult) {
-                    throwable = ((ExceptionalResult) result).cause;
-                    value = null;
-                } else {
-                    throwable = null;
-                    value = (V) result;
-                }
-                Executor e = (executor == null) ? CALLER_RUNS : executor;
-                e.execute(() -> {
-                    try {
-                        biConsumer.accept((V) value, throwable);
-                    } catch (Throwable t) {
-                        completeExceptionallyWithPriority(future, throwable, t);
-                        return;
-                    }
-                    completeFuture(future, value, throwable);
-                });
-                return future;
-            } else {
-                result = registerWaiter(new WhenCompleteNode(future, biConsumer), executor);
-                if (result == UNRESOLVED) {
-                    return future;
-                } else {
-                    result = resolve(state);
-                }
-            }
+        V value;
+        Throwable throwable;
+        if (result instanceof ExceptionalResult) {
+            throwable = ((ExceptionalResult) result).cause;
+            value = null;
+        } else {
+            throwable = null;
+            value = (V) result;
         }
+        executor.execute(() -> {
+            try {
+                biConsumer.accept((V) value, throwable);
+            } catch (Throwable t) {
+                completeExceptionallyWithPriority(future, throwable, t);
+                return;
+            }
+            completeFuture(future, value, throwable);
+        });
     }
 
     @Override
@@ -812,26 +886,15 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         }
     }
 
-    protected <U> CompletableFuture<U> unblockCompose(@Nonnull final Function<? super V, ? extends CompletionStage<U>> function,
-                                                      Executor executor) {
-        requireNonNull(function);
+    protected <U> void unblockCompose(@Nonnull final Function<? super V, ? extends CompletionStage<U>> function,
+                                                      @Nonnull Executor executor,
+                                                      @Nonnull CompletableFuture<U> future) {
         Object result = resolve(state);
-
-        CompletableFuture<U> future = newCompletableFuture();
-        while (result == UNRESOLVED) {
-            result = registerWaiter(new ComposeNode<>(future, function), executor);
-            if (result == UNRESOLVED) {
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
         if (cascadeException(result, future)) {
-            return future;
+            return;
         }
-        Executor e = (executor == null) ? CALLER_RUNS : executor;
         final V res = (V) result;
-        e.execute(() -> {
+        executor.execute(() -> {
             try {
                 CompletionStage<U> r = function.apply(res);
                 r.whenComplete((v, t) -> {
@@ -845,36 +908,25 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
                 future.completeExceptionally(t);
             }
         });
-        return future;
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
-    protected <U, R> CompletableFuture<R> unblockCombine(@Nonnull CompletionStage<? extends U> other,
+    protected <U, R> void unblockCombine(@Nonnull CompletionStage<? extends U> other,
                                                          @Nonnull final BiFunction<? super V, ? super U, ? extends R> function,
-                                                         Executor executor) {
-        requireNonNull(other);
-        requireNonNull(function);
+                                                         @Nonnull Executor executor,
+                                                         @Nonnull CompletableFuture<R> future) {
         Object result = resolve(state);
         final CompletableFuture<? extends U> otherFuture =
                 (other instanceof CompletableFuture) ? (CompletableFuture<? extends U>) other : other.toCompletableFuture();
 
-        CompletableFuture<R> future = newCompletableFuture();
-        while (result == UNRESOLVED) {
-            CombineNode waiter = new CombineNode(future, otherFuture, function);
-            result = registerWaiter(waiter, executor);
-            if (result == UNRESOLVED) {
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
-        // TODO does this violate contract of exception handling in CompletionStage?
-        //  thenCombine would wait for both futures to complete normally, but does not
-        //  indicate that it is required to wait for both when completed exceptionally
-        // in case this future is completed exceptionally, the result is also exceptionally completed
-        // without checking whether otherFuture is completed or not
+        // CompletionStage#thenCombine specifies to wait both futures for normal completion,
+        // but does not specify that it is required to wait for both when completed exceptionally.
+        // The CompletableFuture#thenCombine implementation actually waits both future completion
+        // even when one of them is completed exceptionally.
+        // In case this future is completed exceptionally, the result is also exceptionally
+        // completed without checking whether otherFuture is completed or not
         if (cascadeException(result, future)) {
-            return future;
+            return;
         }
         final V value = (V) result;
         if (!otherFuture.isDone()) {
@@ -890,19 +942,17 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
                     future.completeExceptionally(e);
                 }
             }, executor);
-            return future;
+            return;
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.exceptionally(t -> {
+            otherFuture.whenComplete((v, t) -> {
                 future.completeExceptionally(t);
-                return null;
             });
-            return future;
+            return;
         }
         U otherValue = otherFuture.join();
-        Executor e = (executor == null) ? CALLER_RUNS : executor;
-        e.execute(() -> {
+        executor.execute(() -> {
             try {
                 R r = function.apply(value, otherValue);
                 future.complete(r);
@@ -910,38 +960,18 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
                 future.completeExceptionally(t);
             }
         });
-        return future;
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
-    private <U> CompletableFuture<Void> unblockAcceptBoth(@Nonnull CompletionStage<? extends U> other,
-                                                            @Nonnull final BiConsumer<? super V, ? super U> action,
-                                                            Executor executor) {
-        requireNonNull(other);
-        requireNonNull(action);
-        Object result = resolve(state);
-        final CompletableFuture<? extends U> otherFuture =
-                (other instanceof CompletableFuture) ? (CompletableFuture<? extends U>) other : other.toCompletableFuture();
-
-        CompletableFuture<Void> future = newCompletableFuture();
-        while (result == UNRESOLVED) {
-            AcceptBothNode waiter = new AcceptBothNode(future, otherFuture, action);
-            result = registerWaiter(waiter, executor);
-            if (result == UNRESOLVED) {
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
-
-        final Object value = result;
-        // TODO does this violate contract of exception handling in CompletionStage?
-        //  thenCombine would wait for both futures to complete normally, but does not
-        //  indicate that it is required to wait for both when completed exceptionally
+    private <U> void unblockAcceptBoth(@Nonnull CompletableFuture<? extends U> otherFuture,
+                                         @Nonnull final BiConsumer<? super V, ? super U> action,
+                                         @Nonnull Executor executor,
+                                         @Nonnull CompletableFuture<Void> future) {
+        final Object value = resolve(state);
         // in case this future is completed exceptionally, the result is also exceptionally completed
         // without checking whether otherFuture is completed or not
         if (cascadeException(value, future)) {
-            return future;
+            return;
         }
         if (!otherFuture.isDone()) {
             // register on other future as waiter and return
@@ -956,19 +986,17 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
                     future.completeExceptionally(e);
                 }
             }, executor);
-            return future;
+            return;
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.exceptionally(t -> {
+            otherFuture.whenComplete((v, t) -> {
                 future.completeExceptionally(t);
-                return null;
             });
-            return future;
+            return;
         }
         U otherValue = otherFuture.join();
-        Executor e = (executor == null) ? CALLER_RUNS : executor;
-        e.execute(() -> {
+        executor.execute(() -> {
             try {
                 action.accept((V) value, otherValue);
                 future.complete(null);
@@ -976,35 +1004,17 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
                 future.completeExceptionally(t);
             }
         });
-        return future;
     }
 
-    protected <U> CompletableFuture<Void> unblockRunAfterBoth(@Nonnull CompletionStage<? extends U> other,
-                                                              @Nonnull final Runnable action,
-                                                              Executor executor) {
-        requireNonNull(other);
-        requireNonNull(action);
+    private void unblockRunAfterBoth(@Nonnull CompletableFuture<?> otherFuture,
+                                       @Nonnull final Runnable action,
+                                       @Nonnull Executor executor,
+                                       @Nonnull CompletableFuture<Void> future) {
         Object result = resolve(state);
-        final CompletableFuture<? extends U> otherFuture =
-                (other instanceof CompletableFuture) ? (CompletableFuture<? extends U>) other : other.toCompletableFuture();
-
-        CompletableFuture<Void> future = newCompletableFuture();
-        while (result == UNRESOLVED) {
-            RunAfterBothNode waiter = new RunAfterBothNode(future, otherFuture, action);
-            result = registerWaiter(waiter, executor);
-            if (result == UNRESOLVED) {
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
-        // TODO does this violate contract of exception handling in CompletionStage?
-        //  thenCombine would wait for both futures to complete normally, but does not
-        //  indicate that it is required to wait for both when completed exceptionally
         // in case this future is completed exceptionally, the result is also exceptionally completed
         // without checking whether otherFuture is completed or not
         if (cascadeException(result, future)) {
-            return future;
+            return;
         }
         if (!otherFuture.isDone()) {
             // register on other future as waiter and return
@@ -1019,95 +1029,42 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
                     future.completeExceptionally(e);
                 }
             }, executor);
-            return future;
+            return;
         }
         // both futures are done
         if (otherFuture.isCompletedExceptionally()) {
-            otherFuture.exceptionally(t -> {
+            otherFuture.whenComplete((v, t) -> {
                 future.completeExceptionally(t);
-                return null;
             });
-            return future;
+            return;
         }
-        return runAfter0(future, action, executor);
+        runAfter0(future, action, executor);
     }
 
-    private <U> CompletableFuture<U> unblockApplyToEither(@Nonnull CompletionStage other,
-                                                            @Nonnull final Function<? super V, U> action,
-                                                            Executor executor) {
-        requireNonNull(other);
-        requireNonNull(action);
+    protected <U> void unblockApplyToEither(@Nonnull final Function<? super V, U> action,
+                                            @Nonnull Executor executor,
+                                            @Nonnull CompletableFuture<U> future) {
         Object result = resolve(state);
-        final CompletableFuture<? extends V> otherFuture =
-                (other instanceof CompletableFuture) ? (CompletableFuture<? extends V>) other : other.toCompletableFuture();
-
-        CompletableFuture<U> future = newCompletableFuture();
-        while (result == UNRESOLVED) {
-            ApplyEither waiter = new ApplyEither(future, action);
-            result = registerWaiter(waiter, executor);
-            if (result == UNRESOLVED) {
-                otherFuture.whenCompleteAsync(waiter, executor);
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
-
         if (cascadeException(result, future)) {
-            return future;
+            return;
         }
-        return applyTo0(future, action, executor, (V) result);
+        applyTo0(future, action, executor, (V) result);
     }
 
-    private CompletableFuture<Void> unblockAcceptEither(@Nonnull CompletionStage other,
-                                                          @Nonnull final Consumer<? super V> action,
-                                                          Executor executor) {
-        requireNonNull(other);
-        requireNonNull(action);
+    protected void unblockAcceptEither(@Nonnull final Consumer<? super V> action,
+                                       @Nonnull Executor executor,
+                                       @Nonnull CompletableFuture<Void> future) {
         Object result = resolve(state);
-        final CompletableFuture<? extends V> otherFuture =
-                (other instanceof CompletableFuture) ? (CompletableFuture<? extends V>) other : other.toCompletableFuture();
-
-        CompletableFuture<Void> future = newCompletableFuture();
-        while (result == UNRESOLVED) {
-            AcceptEither waiter = new AcceptEither(future, action);
-            result = registerWaiter(waiter, executor);
-            if (result == UNRESOLVED) {
-                otherFuture.whenCompleteAsync(waiter, executor);
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
-        // in case this future is completed exceptionally, the result is also exceptionally completed
         if (cascadeException(result, future)) {
-            return future;
+            return;
         }
-        return acceptAfter0(future, action, executor, (V) result);
+        acceptAfter0(future, action, executor, (V) result);
     }
 
-    private CompletableFuture<Void> unblockRunAfterEither(@Nonnull CompletionStage other,
-                                                          @Nonnull final Runnable action,
-                                                          Executor executor) {
-        requireNonNull(other);
-        requireNonNull(action);
+    protected CompletableFuture<Void> unblockRunAfterEither(@Nonnull final Runnable action,
+                                                            @Nonnull Executor executor,
+                                                            @Nonnull CompletableFuture<Void> future) {
         Object result = resolve(state);
-        final CompletableFuture<? extends V> otherFuture =
-                (other instanceof CompletableFuture) ? (CompletableFuture<? extends V>) other : other.toCompletableFuture();
-
-        CompletableFuture<Void> future = newCompletableFuture();
-
-        while (result == UNRESOLVED) {
-            RunAfterEither waiter = new RunAfterEither(future, action);
-            result = registerWaiter(waiter, executor);
-            if (result == UNRESOLVED) {
-                otherFuture.whenCompleteAsync(waiter, executor);
-                return future;
-            } else {
-                result = resolve(state);
-            }
-        }
-        // in case this future is completed exceptionally, the result is also exceptionally completed
         if (cascadeException(result, future)) {
             return future;
         }
@@ -1134,7 +1091,7 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
             }
 
             Object newState;
-            if (oldState == UNRESOLVED && (executor == null || executor == defaultExecutor)) {
+            if (oldState == UNRESOLVED && (executor == null || executor == DEFAULT_ASYNC_EXECUTOR)) {
                 // nothing is syncing on this future, so instead of creating a WaitNode, we just try to cas the waiter
                 newState = waiter;
             } else {
@@ -1210,7 +1167,7 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
             }
             if (compareAndSetState(oldState, value)) {
                 onComplete();
-                unblockAll(oldState, defaultExecutor);
+                unblockAll(oldState, DEFAULT_ASYNC_EXECUTOR);
                 return true;
             }
         }
@@ -1240,9 +1197,10 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         }
     }
 
-    private CompletableFuture<Void> runAfter0(CompletableFuture<Void> result, @Nonnull Runnable action, Executor executor) {
-        Executor e = (executor == null) ? CALLER_RUNS : executor;
-        e.execute(() -> {
+    private CompletableFuture<Void> runAfter0(@Nonnull CompletableFuture<Void> result,
+                                              @Nonnull Runnable action,
+                                              @Nonnull Executor executor) {
+        executor.execute(() -> {
             try {
                 action.run();
                 result.complete(null);
@@ -1253,10 +1211,11 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         return result;
     }
 
-    private CompletableFuture<Void> acceptAfter0(CompletableFuture<Void> result, @Nonnull Consumer<? super V> consumer,
-                                               Executor executor, V value) {
-        Executor e = (executor == null) ? CALLER_RUNS : executor;
-        e.execute(() -> {
+    private CompletableFuture<Void> acceptAfter0(@Nonnull CompletableFuture<Void> result,
+                                                 @Nonnull Consumer<? super V> consumer,
+                                                 @Nonnull Executor executor,
+                                                 V value) {
+        executor.execute(() -> {
             try {
                 consumer.accept(value);
                 result.complete(null);
@@ -1268,10 +1227,10 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
     }
 
     private <U> CompletableFuture<U> applyTo0(@Nonnull CompletableFuture<U> future,
-                                            @Nonnull Function<? super V, U> consumer,
-                                            Executor executor, V value) {
-        Executor e = (executor == null) ? CALLER_RUNS : executor;
-        e.execute(() -> {
+                                              @Nonnull Function<? super V, U> consumer,
+                                              @Nonnull Executor executor,
+                                              V value) {
+        executor.execute(() -> {
             try {
                 future.complete(consumer.apply(value));
             } catch (Throwable t) {
@@ -1282,8 +1241,7 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
     }
 
     <T> CompletableFuture<T> newCompletableFuture() {
-        // todo
-        return new CompletableFuture<T>();
+        return new InternalCompletableFuture<>();
     }
 
     /**
@@ -1296,7 +1254,7 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
      * @param dependent a dependent {@link CompletableFuture}
      * @return          {@code true} in case the dependent was completed exceptionally, otherwise {@code false}
      */
-    public static boolean cascadeException(Object resolved, CompletableFuture dependent) {
+    private static boolean cascadeException(Object resolved, CompletableFuture dependent) {
         if (resolved instanceof ExceptionalResult) {
             dependent.completeExceptionally(wrapInCompletionException((((ExceptionalResult) resolved).cause)));
             return true;
@@ -1304,13 +1262,13 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         return false;
     }
 
-    public static CompletionException wrapInCompletionException(Throwable t) {
+    private static CompletionException wrapInCompletionException(Throwable t) {
         return (t instanceof CompletionException)
                 ? (CompletionException) t
                 : new CompletionException(t);
     }
 
-    private ExceptionalResult wrapThrowable(Object value) {
+    protected static ExceptionalResult wrapThrowable(Object value) {
         if (value instanceof ExceptionalResult) {
             return (ExceptionalResult) value;
         }
@@ -1342,18 +1300,14 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
             this.waiter = waiter;
             this.executor = executor;
         }
+
+        @Override
+        public String toString() {
+            return "WaitNode{" + "waiter=" + waiter + ", next=" + next + ", executor=" + executor + '}';
+        }
     }
 
-    // todo this should be an implementation detail but is currently reused in Invocation.pendingResponse
     public static final class ExceptionalResult {
-        static final Lookup LOOKUP = MethodHandles.publicLookup();
-        // new Throwable(String message, Throwable cause)
-        static final MethodType MT_INIT_STRING_THROWABLE = MethodType.methodType(void.class, String.class, Throwable.class);
-        // new Throwable(Throwable cause)
-        static final MethodType MT_INIT_THROWABLE = MethodType.methodType(void.class, Throwable.class);
-        // new Throwable(String message)
-        static final MethodType MT_INIT_STRING = MethodType.methodType(void.class, String.class);
-
         private final Throwable cause;
 
         public ExceptionalResult(Throwable cause) {
@@ -1405,50 +1359,15 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         public String toString() {
             return "ExceptionalResult{" + "cause=" + cause + '}';
         }
-
-        private static RuntimeException wrapOrPeel(Throwable cause) {
-            if (cause instanceof CancellationException || cause instanceof OperationTimeoutException) {
-                return (RuntimeException) cause;
-            }
-            if (cause instanceof RuntimeException) {
-                return wrapRuntimeException((RuntimeException) cause);
-            }
-            if ((cause instanceof ExecutionException || cause instanceof InvocationTargetException)
-                && cause.getCause() != null) {
-                return wrapOrPeel(cause.getCause());
-            }
-            return new HazelcastException(cause);
-        }
-
-        private static RuntimeException wrapRuntimeException(RuntimeException cause) {
-            if (cause instanceof WrappableException) {
-                return  ((WrappableException) cause).wrap();
-            }
-            Class<? extends Throwable> exceptionClass = cause.getClass();
-            MethodHandle constructor;
-            try {
-                constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING_THROWABLE);
-                return (RuntimeException) constructor.invokeWithArguments(cause.getMessage(), cause);
-            } catch (Throwable ignored) {
-            }
-            try {
-                constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_THROWABLE);
-                return (RuntimeException) constructor.invokeWithArguments(cause);
-            } catch (Throwable ignored) {
-            }
-            try {
-                constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
-                RuntimeException result = (RuntimeException) constructor.invokeWithArguments(cause.getMessage());
-                result.initCause(cause);
-                return result;
-            } catch (Throwable ignored) {
-            }
-            return new HazelcastException(cause);
-        }
     }
 
-    interface Waiter {
-        // marker interface for waiter nodes
+    /**
+     * Marker interface for completions registered on a yet incomplete future.
+     * Also extends {@link java.util.concurrent.CompletableFuture.AsynchronousCompletionTask}
+     * for monitoring & debugging.
+     */
+    interface Waiter extends AsynchronousCompletionTask {
+
     }
 
     // a WaitNode for a Function<V, R>
@@ -1501,11 +1420,11 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
     }
 
     // a WaitNode for a BiFunction<V, T, R>
-    protected static final class HandleNode<V, T, R> implements Waiter {
+    private static final class HandleNode<V, T, R> implements Waiter {
         final CompletableFuture<R> future;
         final BiFunction<V, T, R> biFunction;
 
-        public HandleNode(CompletableFuture<R> future, BiFunction<V, T, R> biFunction) {
+        HandleNode(CompletableFuture<R> future, BiFunction<V, T, R> biFunction) {
             this.future = future;
             this.biFunction = biFunction;
         }
@@ -1523,11 +1442,11 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
     }
 
     // a WaitNode for a BiConsumer<V, T>
-    protected static final class WhenCompleteNode<V, T extends Throwable> implements Waiter {
+    private static final class WhenCompleteNode<V, T extends Throwable> implements Waiter {
         final CompletableFuture<V> future;
         final BiConsumer<V, T> biFunction;
 
-        public WhenCompleteNode(@Nonnull CompletableFuture<V> future, @Nonnull BiConsumer<V, T> biFunction) {
+        WhenCompleteNode(@Nonnull CompletableFuture<V> future, @Nonnull BiConsumer<V, T> biFunction) {
             this.future = future;
             this.biFunction = biFunction;
         }
@@ -1555,7 +1474,7 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
     }
 
     // a WaitNode for a Consumer<? super V>
-    protected static final class AcceptNode<T> implements Waiter {
+    private static final class AcceptNode<T> implements Waiter {
         final CompletableFuture<Void> future;
         final Consumer<T> consumer;
 
@@ -1641,22 +1560,26 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
     protected abstract static class AbstractBiNode<T, U, R> implements Waiter {
         final CompletableFuture<R> result;
         final CompletableFuture<? extends U> otherFuture;
+        final AtomicBoolean executed;
 
-        public AbstractBiNode(CompletableFuture<R> future,
+        AbstractBiNode(CompletableFuture<R> future,
                            CompletableFuture<? extends U> otherFuture) {
             this.result = future;
             this.otherFuture = otherFuture;
+            this.executed = new AtomicBoolean();
         }
 
+        @SuppressWarnings("checkstyle:npathcomplexity")
         public void execute(Executor executor, Object resolved) {
-            // todo do we need additional coordination to avoid having combiner
-            //  executed twice? (once by other future and another time by this??
             if (cascadeException(resolved, result)) {
                 return;
             }
             if (!otherFuture.isDone()) {
                 // register on other future and exit
                 otherFuture.whenCompleteAsync((u, t) -> {
+                    if (!executed.compareAndSet(false, true)) {
+                        return;
+                    }
                     if (t != null) {
                         result.completeExceptionally(t);
                     }
@@ -1667,6 +1590,9 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
                         result.completeExceptionally(e);
                     }
                 }, executor);
+                return;
+            }
+            if (!executed.compareAndSet(false, true)) {
                 return;
             }
             if (otherFuture.isCompletedExceptionally()) {
@@ -1691,10 +1617,10 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         abstract R process(T t, U u);
     }
 
-    protected static final class CombineNode<T, U, R> extends AbstractBiNode<T, U, R> {
+    private static final class CombineNode<T, U, R> extends AbstractBiNode<T, U, R> {
         final BiFunction<? super T, ? super U, ? extends R> function;
 
-        public CombineNode(CompletableFuture<R> future,
+        CombineNode(CompletableFuture<R> future,
                            CompletableFuture<? extends U> otherFuture,
                            BiFunction<? super T, ? super U, ? extends R> function) {
             super(future, otherFuture);
@@ -1707,10 +1633,10 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         }
     }
 
-    protected static final class AcceptBothNode<T, U> extends AbstractBiNode<T, U, Void> {
+    private static final class AcceptBothNode<T, U> extends AbstractBiNode<T, U, Void> {
         final BiConsumer<? super T, ? super U> action;
 
-        public AcceptBothNode(CompletableFuture<Void> future,
+        AcceptBothNode(CompletableFuture<Void> future,
                            CompletableFuture<? extends U> otherFuture,
                               BiConsumer<? super T, ? super U> action) {
             super(future, otherFuture);
@@ -1724,10 +1650,10 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         }
     }
 
-    protected static final class RunAfterBothNode<T, U> extends AbstractBiNode<T, U, Void> {
+    private static final class RunAfterBothNode<T, U> extends AbstractBiNode<T, U, Void> {
         final Runnable action;
 
-        public RunAfterBothNode(CompletableFuture<Void> future,
+        RunAfterBothNode(CompletableFuture<Void> future,
                            CompletableFuture<? extends U> otherFuture,
                               Runnable action) {
             super(future, otherFuture);
@@ -1746,7 +1672,7 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         final CompletableFuture<R> result;
         final AtomicBoolean executed;
 
-        public AbstractEitherNode(CompletableFuture<R> future) {
+        AbstractEitherNode(CompletableFuture<R> future) {
             this.result = future;
             this.executed = new AtomicBoolean();
         }
@@ -1788,10 +1714,10 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         abstract R process(T t);
     }
 
-    protected static final class RunAfterEither<T> extends AbstractEitherNode<T, Void> {
+    private static final class RunAfterEither<T> extends AbstractEitherNode<T, Void> {
         final Runnable action;
 
-        public RunAfterEither(CompletableFuture<Void> future, Runnable action) {
+        RunAfterEither(CompletableFuture<Void> future, Runnable action) {
             super(future);
             this.action = action;
         }
@@ -1803,10 +1729,10 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         }
     }
 
-    protected static final class AcceptEither<T> extends AbstractEitherNode<T, Void> {
+    private static final class AcceptEither<T> extends AbstractEitherNode<T, Void> {
         final Consumer<T> action;
 
-        public AcceptEither(CompletableFuture<Void> future, Consumer<T> action) {
+        AcceptEither(CompletableFuture<Void> future, Consumer<T> action) {
             super(future);
             this.action = action;
         }
@@ -1818,10 +1744,10 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
         }
     }
 
-    protected static final class ApplyEither<T, R> extends AbstractEitherNode<T, R> {
+    private static final class ApplyEither<T, R> extends AbstractEitherNode<T, R> {
         final Function<T, R> action;
 
-        public ApplyEither(CompletableFuture<R> future, Function<T, R> action) {
+        ApplyEither(CompletableFuture<R> future, Function<T, R> action) {
             super(future);
             this.action = action;
         }
@@ -1874,5 +1800,45 @@ public abstract class AbstractInvocationFuture<V> extends CompletableFuture<V> i
 
     interface ValueResolver<E> {
         E resolveAndThrowIfException(Object unresolved) throws ExecutionException, InterruptedException;
+    }
+
+    static RuntimeException wrapOrPeel(Throwable cause) {
+        if (cause instanceof CancellationException || cause instanceof OperationTimeoutException) {
+            return (RuntimeException) cause;
+        }
+        if (cause instanceof RuntimeException) {
+            return wrapRuntimeException((RuntimeException) cause);
+        }
+        if ((cause instanceof ExecutionException || cause instanceof InvocationTargetException)
+                && cause.getCause() != null) {
+            return wrapOrPeel(cause.getCause());
+        }
+        return new HazelcastException(cause);
+    }
+
+    private static RuntimeException wrapRuntimeException(RuntimeException cause) {
+        if (cause instanceof WrappableException) {
+            return  ((WrappableException) cause).wrap();
+        }
+        Class<? extends Throwable> exceptionClass = cause.getClass();
+        MethodHandle constructor;
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING_THROWABLE);
+            return (RuntimeException) constructor.invokeWithArguments(cause.getMessage(), cause);
+        } catch (Throwable ignored) {
+        }
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_THROWABLE);
+            return (RuntimeException) constructor.invokeWithArguments(cause);
+        } catch (Throwable ignored) {
+        }
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
+            RuntimeException result = (RuntimeException) constructor.invokeWithArguments(cause.getMessage());
+            result.initCause(cause);
+            return result;
+        } catch (Throwable ignored) {
+        }
+        return new HazelcastException(cause);
     }
 }

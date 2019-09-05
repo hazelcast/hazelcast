@@ -132,19 +132,19 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testPutAsync() throws ExecutionException, InterruptedException {
-        map.putAsync("key", "value").get();
+        map.putAsync("key", "value").toCompletableFuture().get();
         assertEntryStore("key", "value");
     }
 
     @Test
     public void testPutAsync_withTtl() throws ExecutionException, InterruptedException {
-        map.putAsync("key", "value", 10, TimeUnit.DAYS).get();
+        map.putAsync("key", "value", 10, TimeUnit.DAYS).toCompletableFuture().get();
         assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testPutAsync_withMaxIdle() throws ExecutionException, InterruptedException {
-        map.putAsync("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS).get();
+        map.putAsync("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS).toCompletableFuture().get();
         assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
     }
 
@@ -195,7 +195,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     @Test
     public void testRemoveAsync() throws ExecutionException, InterruptedException {
         map.put("key", "value");
-        map.removeAsync("key").get();
+        map.removeAsync("key").toCompletableFuture().get();
         assertEntryNotStored("key");
     }
 
@@ -247,19 +247,19 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testSetAsync() throws ExecutionException, InterruptedException {
-        map.setAsync("key", "value").get();
+        map.setAsync("key", "value").toCompletableFuture().get();
         assertEntryStore("key", "value");
     }
 
     @Test
     public void testSetAsync_withTtl() throws ExecutionException, InterruptedException {
-        map.setAsync("key", "value", 10, TimeUnit.DAYS).get();
+        map.setAsync("key", "value", 10, TimeUnit.DAYS).toCompletableFuture().get();
         assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
     }
 
     @Test
     public void testSetAsync_withMaxIdle() throws ExecutionException, InterruptedException {
-        map.setAsync("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS).get();
+        map.setAsync("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS).toCompletableFuture().get();
         assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
     }
 

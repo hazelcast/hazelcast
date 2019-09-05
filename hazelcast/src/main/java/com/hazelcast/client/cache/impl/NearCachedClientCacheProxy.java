@@ -35,7 +35,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
@@ -133,7 +132,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         key = serializeKeys ? toData(key) : key;
         V value = (V) getCachedValue(key, false);
         if (value != NOT_CACHED) {
-            return new CompletedFuture<>(getSerializationService(), value, getContext().getExecutionService().getUserExecutor());
+            return InternalCompletableFuture.newCompletedFuture(value);
         }
 
         try {

@@ -152,7 +152,7 @@ public class CacheStatsTest extends CacheTestSupport {
         final long ENTRY_COUNT = 100;
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
-            cache.putAsync(i, "Value-" + i).get();
+            cache.putAsync(i, "Value-" + i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -245,7 +245,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
         assertEqualsEventually(new Callable<Long>() {
             @Override
@@ -309,7 +309,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
-            cache.removeAsync(i).get();
+            cache.removeAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -385,7 +385,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < GET_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -449,7 +449,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < GET_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {

@@ -26,9 +26,9 @@ import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.internal.util.FutureUtil;
 
@@ -151,8 +151,8 @@ public class PartitionServiceProxy implements PartitionService {
         }
         final Address target = member.getAddress();
         final Operation operation = new SafeStateCheckOperation();
-        final InternalCompletableFuture future = nodeEngine.getOperationService()
-                .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
+        final InvocationFuture future = nodeEngine.getOperationService()
+                                                  .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
         boolean safe;
         try {
             final Object result = future.get(10, TimeUnit.SECONDS);

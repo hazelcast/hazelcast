@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.longregister.LongRegisterService;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -59,7 +60,7 @@ public class CompletableFutureBenchmark
 
         hz = (HazelcastInstanceProxy) createHazelcastInstance(config);
 
-        atomicLong = hz.getAtomicLong("test");
+        atomicLong = hz.getDistributedObject(LongRegisterService.SERVICE_NAME, "test");
 
     }
 

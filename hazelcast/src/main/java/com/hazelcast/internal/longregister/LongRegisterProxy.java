@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 /**
  * Partially implements {@link IAtomicLong}.
@@ -62,7 +63,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
     }
 
     @Override
-    public InternalCompletableFuture<Long> addAndGetAsync(long delta) {
+    public InvocationFuture<Long> addAndGetAsync(long delta) {
         Operation operation = new AddAndGetOperation(name, delta).setPartitionId(partitionId);
         return invokeOnPartition(operation);
     }
@@ -83,7 +84,7 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
     }
 
     @Override
-    public InternalCompletableFuture<Void> setAsync(long newValue) {
+    public InvocationFuture<Void> setAsync(long newValue) {
         Operation operation = new SetOperation(name, newValue)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);

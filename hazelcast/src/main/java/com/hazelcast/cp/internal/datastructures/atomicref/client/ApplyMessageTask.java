@@ -18,13 +18,11 @@ package com.hazelcast.cp.internal.datastructures.atomicref.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefApplyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType;
@@ -32,6 +30,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicReferencePermission;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.security.Permission;
 
@@ -40,8 +39,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link ApplyOp}
  */
-public class ApplyMessageTask extends AbstractMessageTask<AtomicRefApplyCodec.RequestParameters>
-        implements ExecutionCallback<Object> {
+public class ApplyMessageTask extends AbstractCPMessageTask<AtomicRefApplyCodec.RequestParameters> {
 
     public ApplyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -54,9 +52,9 @@ public class ApplyMessageTask extends AbstractMessageTask<AtomicRefApplyCodec.Re
         RaftInvocationManager invocationManager = service.getInvocationManager();
         CPGroupId groupId = parameters.groupId;
         RaftOp op = new ApplyOp(parameters.name, parameters.function, returnValueType, parameters.alter);
-        ICompletableFuture<Object> future = parameters.alter
+        InternalCompletableFuture<Object> future = parameters.alter
                 ? invocationManager.invoke(groupId, op) : invocationManager.query(groupId, op, LINEARIZABLE);
-        future.andThen(this);
+        future.whenCompleteAsync(this);
     }
 
     @Override
@@ -100,15 +98,5 @@ public class ApplyMessageTask extends AbstractMessageTask<AtomicRefApplyCodec.Re
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.function};
-    }
-
-    @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

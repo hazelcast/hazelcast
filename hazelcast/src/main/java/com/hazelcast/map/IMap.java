@@ -22,7 +22,6 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.listener.MapListener;
@@ -38,6 +37,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -601,28 +601,28 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     /**
      * Asynchronously gets the given key.
      * <pre>
-     *   ICompletableFuture future = map.getAsync(key);
+     *   CompletionStage future = map.getAsync(key);
      *   // do some other stuff, when ready get the result.
      *   Object value = future.get();
      * </pre>
-     * {@link ICompletableFuture#get()} will block until the actual map.get() completes.
+     * {@link CompletionStage#get()} will block until the actual map.get() completes.
      * If the application requires timely response,
-     * then {@link ICompletableFuture#get(long, TimeUnit)} can be used.
+     * then {@link CompletionStage#get(long, TimeUnit)} can be used.
      * <pre>
      *   try {
-     *     ICompletableFuture future = map.getAsync(key);
+     *     CompletionStage future = map.getAsync(key);
      *     Object value = future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
      *   }
      * </pre>
      * Additionally, the client can schedule an {@link ExecutionCallback} to be invoked upon
-     * completion of the {@code ICompletableFuture} via
-     * {@link ICompletableFuture#andThen(ExecutionCallback)} or
-     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * completion of the {@code CompletionStage} via
+     * {@link CompletionStage#andThen(ExecutionCallback)} or
+     * {@link CompletionStage#andThen(ExecutionCallback, Executor)}:
      * <pre>{@code
      *   // assuming an IMap<String, String>
-     *   ICompletableFuture<String> future = map.getAsync("a");
+     *   CompletionStage<String> future = map.getAsync("a");
      *   future.andThen(new ExecutionCallback<String>() {
      *     public void onResponse(String response) {
      *       // do something with value in response
@@ -649,36 +649,36 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the operation and are propagated to the caller.
      *
      * @param key the key of the map entry
-     * @return ICompletableFuture from which the value of the key can be retrieved
+     * @return CompletionStage from which the value of the key can be retrieved
      * @throws NullPointerException if the specified key is null
-     * @see ICompletableFuture
+     * @see CompletionStage
      */
-    ICompletableFuture<V> getAsync(@Nonnull K key);
+    CompletionStage<V> getAsync(@Nonnull K key);
 
     /**
      * Asynchronously puts the given key and value.
      * <pre>
-     *   ICompletableFuture future = map.putAsync(key, value);
+     *   CompletionStage future = map.putAsync(key, value);
      *   // do some other stuff, when ready get the result.
      *   Object oldValue = future.get();
      * </pre>
-     * ICompletableFuture.get() will block until the actual map.put() completes.
+     * CompletionStage.get() will block until the actual map.put() completes.
      * If the application requires a timely response,
      * then you can use Future.get(timeout, timeunit).
      * <pre>
      *   try {
-     *     ICompletableFuture future = map.putAsync(key, newValue);
+     *     CompletionStage future = map.putAsync(key, newValue);
      *     Object oldValue = future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
      *   }
      * </pre>
      * Additionally, the client can schedule an {@link ExecutionCallback} to be invoked upon
-     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
-     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * completion of the {@code CompletionStage} via {@link CompletionStage#andThen(ExecutionCallback)} or
+     * {@link CompletionStage#andThen(ExecutionCallback, Executor)}:
      * <pre>{@code
      *   // assuming an IMap<String, String>
-     *   ICompletableFuture<String> future = map.putAsync("a", "b");
+     *   CompletionStage<String> future = map.putAsync("a", "b");
      *   future.andThen(new ExecutionCallback<String>() {
      *     public void onResponse(String response) {
      *       // do something with the old value returned by put operation
@@ -719,12 +719,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key   the key of the map entry
      * @param value the new value of the map entry
-     * @return ICompletableFuture from which the old value of the key can be retrieved
+     * @return CompletionStage from which the old value of the key can be retrieved
      * @throws NullPointerException if the specified key or value is null
-     * @see ICompletableFuture
+     * @see CompletionStage
      * @see #setAsync(Object, Object)
      */
-    ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value);
+    CompletionStage<V> putAsync(@Nonnull K key, @Nonnull V value);
 
     /**
      * Asynchronously puts the given key and value into this map with a given TTL (time to live) value.
@@ -733,27 +733,27 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      * <pre>
-     *   ICompletableFuture future = map.putAsync(key, value, ttl, timeunit);
+     *   CompletionStage future = map.putAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when ready get the result
      *   Object oldValue = future.get();
      * </pre>
-     * ICompletableFuture.get() will block until the actual map.put() completes.
+     * CompletionStage.get() will block until the actual map.put() completes.
      * If your application requires a timely response,
      * then you can use Future.get(timeout, timeunit).
      * <pre>
      *   try {
-     *     ICompletableFuture future = map.putAsync(key, newValue, ttl, timeunit);
+     *     CompletionStage future = map.putAsync(key, newValue, ttl, timeunit);
      *     Object oldValue = future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
      *   }
      * </pre>
      * The client can schedule an {@link ExecutionCallback} to be invoked upon
-     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
-     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * completion of the {@code CompletionStage} via {@link CompletionStage#andThen(ExecutionCallback)} or
+     * {@link CompletionStage#andThen(ExecutionCallback, Executor)}:
      * <pre>{@code
      *   // assuming an IMap<String, String>
-     *   ICompletableFuture<String> future = map.putAsync("a", "b", 5, TimeUnit.MINUTES);
+     *   CompletionStage<String> future = map.putAsync("a", "b", 5, TimeUnit.MINUTES);
      *   future.andThen(new ExecutionCallback<String>() {
      *     public void onResponse(String response) {
      *       // do something with old value returned by put operation
@@ -801,12 +801,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param value   the new value of the map entry
      * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
      * @param ttlUnit time unit for the TTL
-     * @return ICompletableFuture from which the old value of the key can be retrieved
+     * @return CompletionStage from which the old value of the key can be retrieved
      * @throws NullPointerException if the specified key or value is null
-     * @see ICompletableFuture
+     * @see CompletionStage
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
-    ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
+    CompletionStage<V> putAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
     /**
      * Asynchronously puts the given key and value into this map with a given
@@ -822,27 +822,27 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * The time precision is limited by 1 second. The MaxIdle that less than 1
      * second can lead to unexpected behaviour.
      * <pre>
-     *   ICompletableFuture future = map.putAsync(key, value, ttl, timeunit);
+     *   CompletionStage future = map.putAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when ready get the result
      *   Object oldValue = future.get();
      * </pre>
-     * ICompletableFuture.get() will block until the actual map.put() completes.
+     * CompletionStage.get() will block until the actual map.put() completes.
      * If your application requires a timely response,
      * then you can use Future.get(timeout, timeunit).
      * <pre>
      *   try {
-     *     ICompletableFuture future = map.putAsync(key, newValue, ttl, timeunit);
+     *     CompletionStage future = map.putAsync(key, newValue, ttl, timeunit);
      *     Object oldValue = future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
      *   }
      * </pre>
      * The client can schedule an {@link ExecutionCallback} to be invoked upon
-     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
-     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * completion of the {@code CompletionStage} via {@link CompletionStage#andThen(ExecutionCallback)} or
+     * {@link CompletionStage#andThen(ExecutionCallback, Executor)}:
      * <pre>{@code
      *   // assuming an IMap<String, String>
-     *   ICompletableFuture<String> future = map.putAsync("a", "b", 5, TimeUnit.MINUTES);
+     *   CompletionStage<String> future = map.putAsync("a", "b", 5, TimeUnit.MINUTES);
      *   future.andThen(new ExecutionCallback<String>() {
      *     public void onResponse(String response) {
      *       // do something with old value returned by put operation
@@ -894,12 +894,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
-     * @return ICompletableFuture from which the old value of the key can be retrieved
+     * @return CompletionStage from which the old value of the key can be retrieved
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
-     * @see ICompletableFuture
+     * @see CompletionStage
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
-    ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value,
+    CompletionStage<V> putAsync(@Nonnull K key, @Nonnull V value,
                                    long ttl, @Nonnull TimeUnit ttlUnit,
                                    long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
@@ -909,26 +909,26 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Similar to the put operation except that set
      * doesn't return the old value, which is more efficient.
      * <pre>{@code
-     *   ICompletableFuture<Void> future = map.setAsync(key, value);
+     *   CompletionStage<Void> future = map.setAsync(key, value);
      *   // do some other stuff, when ready wait for completion
      *   future.get();
      * }</pre>
-     * ICompletableFuture.get() will block until the actual map.set() operation completes.
+     * CompletionStage.get() will block until the actual map.set() operation completes.
      * If your application requires a timely response,
-     * then you can use ICompletableFuture.get(timeout, timeunit).
+     * then you can use CompletionStage.get(timeout, timeunit).
      * <pre>{@code
      *   try {
-     *     ICompletableFuture<Void> future = map.setAsync(key, newValue);
+     *     CompletionStage<Void> future = map.setAsync(key, newValue);
      *     future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
      *   }
      * }</pre>
      * You can also schedule an {@link ExecutionCallback} to be invoked upon
-     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
-     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * completion of the {@code CompletionStage} via {@link CompletionStage#andThen(ExecutionCallback)} or
+     * {@link CompletionStage#andThen(ExecutionCallback, Executor)}:
      * <pre>{@code
-     *   ICompletableFuture<Void> future = map.setAsync("a", "b");
+     *   CompletionStage<Void> future = map.setAsync("a", "b");
      *   future.andThen(new ExecutionCallback<String>() {
      *     public void onResponse(Void response) {
      *       // Set operation was completed
@@ -962,13 +962,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key   the key of the map entry
      * @param value the new value of the map entry
-     * @return ICompletableFuture on which client code can block waiting for the
+     * @return CompletionStage on which client code can block waiting for the
      * operation to complete or provide an {@link ExecutionCallback} to be invoked
      * upon set operation completion
      * @throws NullPointerException if the specified key or value is null
-     * @see ICompletableFuture
+     * @see CompletionStage
      */
-    ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value);
+    CompletionStage<Void> setAsync(@Nonnull K key, @Nonnull V value);
 
     /**
      * Asynchronously puts an entry into this map with a given TTL (time to live) value,
@@ -978,26 +978,26 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
      * <pre>
-     *   ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
+     *   CompletionStage&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when you want to make sure set operation is complete:
      *   future.get();
      * </pre>
-     * ICompletableFuture.get() will block until the actual map set operation completes.
+     * CompletionStage.get() will block until the actual map set operation completes.
      * If your application requires a timely response,
-     * then you can use {@link ICompletableFuture#get(long, TimeUnit)}.
+     * then you can use {@link CompletionStage#get(long, TimeUnit)}.
      * <pre>
      *   try {
-     *     ICompletableFuture&lt;Void&gt; future = map.setAsync(key, newValue, ttl, timeunit);
+     *     CompletionStage&lt;Void&gt; future = map.setAsync(key, newValue, ttl, timeunit);
      *     future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
      *   }
      * </pre>
      * You can also schedule an {@link ExecutionCallback} to be invoked upon
-     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
-     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * completion of the {@code CompletionStage} via {@link CompletionStage#andThen(ExecutionCallback)} or
+     * {@link CompletionStage#andThen(ExecutionCallback, Executor)}:
      * <pre>
-     *   ICompletableFuture&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
+     *   CompletionStage&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
      *   future.andThen(new ExecutionCallback&lt;String&gt;() {
      *     public void onResponse(Void response) {
      *       // Set operation was completed
@@ -1038,13 +1038,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative
      *                means map config default)
      * @param ttlUnit time unit for the TTL
-     * @return ICompletableFuture on which client code can block waiting for the
+     * @return CompletionStage on which client code can block waiting for the
      * operation to complete or provide an {@link ExecutionCallback} to be invoked
      * upon set operation completion
      * @throws NullPointerException if the specified key, value, ttlUnit
-     * @see ICompletableFuture
+     * @see CompletionStage
      */
-    ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
+    CompletionStage<Void> setAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
 
     /**
      * Asynchronously puts an entry into this map with a given TTL (time to live)
@@ -1061,27 +1061,27 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * The time precision is limited by 1 second. The MaxIdle that less than 1
      * second can lead to unexpected behaviour.
      * <pre>
-     *   ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
+     *   CompletionStage&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when you want to make sure set operation is complete:
      *   future.get();
      * </pre>
-     * ICompletableFuture.get() will block until the actual map set operation
+     * CompletionStage.get() will block until the actual map set operation
      * completes. If your application requires a timely response,
-     * then you can use {@link ICompletableFuture#get(long, TimeUnit)}.
+     * then you can use {@link CompletionStage#get(long, TimeUnit)}.
      * <pre>
      *   try {
-     *     ICompletableFuture&lt;Void&gt; future = map.setAsync(key, newValue, ttl, timeunit);
+     *     CompletionStage&lt;Void&gt; future = map.setAsync(key, newValue, ttl, timeunit);
      *     future.get(40, TimeUnit.MILLISECOND);
      *   } catch (TimeoutException t) {
      *     // time wasn't enough
      *   }
      * </pre>
      * You can also schedule an {@link ExecutionCallback} to be invoked upon
-     * completion of the {@code ICompletableFuture} via
-     * {@link ICompletableFuture#andThen(ExecutionCallback)} or
-     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * completion of the {@code CompletionStage} via
+     * {@link CompletionStage#andThen(ExecutionCallback)} or
+     * {@link CompletionStage#andThen(ExecutionCallback, Executor)}:
      * <pre>
-     *   ICompletableFuture&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
+     *   CompletionStage&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
      *   future.andThen(new ExecutionCallback&lt;String&gt;() {
      *     public void onResponse(Void response) {
      *       // Set operation was completed
@@ -1126,21 +1126,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param maxIdle     maximum time for this entry to stay idle in the map.
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
-     * @return ICompletableFuture on which client code can block waiting for the
+     * @return CompletionStage on which client code can block waiting for the
      * operation to complete or provide an {@link ExecutionCallback} to be invoked
      * upon set operation completion
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are {@code null}
-     * @see ICompletableFuture
+     * @see CompletionStage
      */
-    ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value,
+    CompletionStage<Void> setAsync(@Nonnull K key, @Nonnull V value,
                                       long ttl, @Nonnull TimeUnit ttlUnit,
                                       long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
-     * Asynchronously removes the given key, returning an {@link ICompletableFuture}
+     * Asynchronously removes the given key, returning an {@link CompletionStage}
      * on which the caller can provide an {@link ExecutionCallback} to be invoked
      * upon remove operation completion or block waiting for the operation to
-     * complete with {@link ICompletableFuture#get()}.
+     * complete with {@link CompletionStage#get()}.
      * <p>
      * <b>Warning:</b>
      * <p>
@@ -1163,11 +1163,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * capacity.
      *
      * @param key The key of the map entry to remove
-     * @return {@link ICompletableFuture} from which the value removed from the map can be retrieved
+     * @return {@link CompletionStage} from which the value removed from the map can be retrieved
      * @throws NullPointerException if the specified key is {@code null}
-     * @see ICompletableFuture
+     * @see CompletionStage
      */
-    ICompletableFuture<V> removeAsync(@Nonnull K key);
+    CompletionStage<V> removeAsync(@Nonnull K key);
 
     /**
      * Tries to remove the entry with the given key from this map
@@ -2851,9 +2851,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key}.
-     * Returns immediately with a {@link ICompletableFuture} representing that task.
+     * Returns immediately with a {@link CompletionStage} representing that task.
      * <p>
-     * EntryProcessor is not cancellable, so calling ICompletableFuture.cancel() method
+     * EntryProcessor is not cancellable, so calling CompletionStage.cancel() method
      * won't cancel the operation of EntryProcessor.
      * <p>
      * The EntryProcessor may implement the Offloadable and ReadOnly interfaces.
@@ -2923,14 +2923,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
      * @param <R>            return type for entry processor
-     * @return ICompletableFuture on which client code can block waiting for the
+     * @return CompletionStage on which client code can block waiting for the
      * operation to complete or provide an {@link ExecutionCallback} to be invoked
      * upon set operation completion
      * @see Offloadable
      * @see ReadOnly
-     * @see ICompletableFuture
+     * @see CompletionStage
      */
-    <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
+    <R> CompletionStage<R> submitToKey(@Nonnull K key,
                                           @Nonnull EntryProcessor<K, V, R> entryProcessor);
 
     /**

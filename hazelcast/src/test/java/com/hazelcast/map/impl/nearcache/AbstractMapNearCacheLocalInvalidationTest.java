@@ -149,7 +149,7 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
             String oldValue = map.put(key, value);
             // this brings the value into the Near Cache
             String value1 = map.get(key);
-            Future<String> future = map.removeAsync(key);
+            Future<String> future = map.removeAsync(key).toCompletableFuture();
             String removedValue = null;
             try {
                 removedValue = future.get();
@@ -249,7 +249,7 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
 
             // this brings the CACHED_AS_NULL into the Near Cache
             String value1 = map.get(key);
-            Future<String> future = map.putAsync(key, value);
+            Future<String> future = map.putAsync(key, value).toCompletableFuture();
             String oldValue = null;
             try {
                 oldValue = future.get();
@@ -274,7 +274,7 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
 
             // this brings the CACHED_AS_NULL into the Near Cache
             String value1 = map.get(key);
-            Future<Void> future = map.setAsync(key, value);
+            Future<Void> future = map.setAsync(key, value).toCompletableFuture();
             try {
                 future.get();
             } catch (Exception e) {

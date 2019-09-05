@@ -19,7 +19,6 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.instance.impl.Node;
@@ -138,7 +137,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
     }
 
-    private void handleChangeClusterState(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleChangeClusterState(HttpPostCommand command) {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
         String res;
@@ -633,15 +632,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
 
         getCpSubsystemManagementService().promoteToCPMember()
-                                         .andThen(new ExecutionCallback<Void>() {
-                                             @Override
-                                             public void onResponse(Void response) {
+                                         .whenCompleteAsync((response, t) -> {
+                                             if (t == null) {
                                                  command.send200();
                                                  textCommandService.sendResponse(command);
-                                             }
-
-                                             @Override
-                                             public void onFailure(Throwable t) {
+                                             } else {
                                                  logger.warning("Error while promoting CP member.", t);
                                                  command.send500();
                                                  textCommandService.sendResponse(command);
@@ -655,15 +650,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final UUID cpMemberUid = UUID.fromString(uri.substring(prefix.length(), uri.indexOf('/', prefix.length())).trim());
         getCpSubsystem().getCPSubsystemManagementService()
                         .removeCPMember(cpMemberUid)
-                        .andThen(new ExecutionCallback<Void>() {
-                            @Override
-                            public void onResponse(Void response) {
+                        .whenCompleteAsync((respone, t) -> {
+                            if (t == null) {
                                 command.send200();
                                 textCommandService.sendResponse(command);
-                            }
-
-                            @Override
-                            public void onFailure(Throwable t) {
+                            } else {
                                 logger.warning("Error while removing CP member " + cpMemberUid, t);
                                 if (peel(t) instanceof IllegalArgumentException) {
                                     command.send400();
@@ -707,19 +698,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
         getCpSubsystem().getCPSessionManagementService()
                         .forceCloseSession(groupName, sessionId)
-                        .andThen(new ExecutionCallback<Boolean>() {
-                            @Override
-                            public void onResponse(Boolean response) {
+                        .whenCompleteAsync((response, t) -> {
+                            if (t == null) {
                                 if (response) {
                                     command.send200();
                                 } else {
                                     command.send400();
                                 }
                                 textCommandService.sendResponse(command);
-                            }
-
-                            @Override
-                            public void onFailure(Throwable t) {
+                            } else {
                                 logger.warning("Error while closing CP session", t);
                                 command.send500();
                                 textCommandService.sendResponse(command);
@@ -739,22 +726,17 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
         getCpSubsystem().getCPSubsystemManagementService()
                         .forceDestroyCPGroup(groupName)
-                        .andThen(new ExecutionCallback<Void>() {
-                            @Override
-                            public void onResponse(Void response) {
+                        .whenCompleteAsync((response, t) -> {
+                            if (t == null) {
                                 command.send200();
                                 textCommandService.sendResponse(command);
-                            }
-
-                            @Override
-                            public void onFailure(Throwable t) {
+                            } else {
                                 logger.warning("Error while destroying CP group " + groupName, t);
                                 if (peel(t) instanceof IllegalArgumentException) {
                                     command.send400();
                                 } else {
                                     command.send500();
                                 }
-
                                 textCommandService.sendResponse(command);
                             }
                         });
@@ -764,15 +746,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         if (checkCredentials(command)) {
             getCpSubsystem().getCPSubsystemManagementService()
                             .restart()
-                            .andThen(new ExecutionCallback<Void>() {
-                                @Override
-                                public void onResponse(Void response) {
+                            .whenCompleteAsync((response, t) -> {
+                                if (t == null) {
                                     command.send200();
                                     textCommandService.sendResponse(command);
-                                }
-
-                                @Override
-                                public void onFailure(Throwable t) {
+                                } else {
                                     logger.warning("Error while resetting CP subsystem", t);
                                     command.send500();
                                     textCommandService.sendResponse(command);

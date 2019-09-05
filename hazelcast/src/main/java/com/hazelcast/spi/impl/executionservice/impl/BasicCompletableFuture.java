@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.AbstractCompletableFuture;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -39,13 +39,27 @@ import static java.lang.Thread.currentThread;
  * Ensures the transfer of the result from the delegate future to this future
  * on execution of {@link #get()} and {@link #isDone()} methods.
  */
-class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
+class BasicCompletableFuture<V> extends InternalCompletableFuture<V> {
 
     final Future<V> delegate;
 
     BasicCompletableFuture(Future<V> delegate, NodeEngine nodeEngine) {
-        super(nodeEngine, nodeEngine.getLogger(BasicCompletableFuture.class));
         this.delegate = delegate;
+    }
+
+    @Override
+    public V get()
+            throws InterruptedException, ExecutionException {
+        try {
+            return get(Long.MAX_VALUE, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            throw new ExecutionException(e);
+        }
+    }
+
+    @Override
+    public V getNow(V valueIfAbsent) {
+        return super.getNow(valueIfAbsent);
     }
 
     @Override
@@ -53,25 +67,25 @@ class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
         return (V) ensureResultSet(timeout, unit);
     }
 
-    private Object ensureResultSet(long timeout, TimeUnit unit) throws ExecutionException, CancellationException {
+    private Object ensureResultSet(long timeout, TimeUnit unit)
+            throws ExecutionException, CancellationException, TimeoutException {
         Object result = null;
         try {
             result = delegate.get(timeout, unit);
         } catch (TimeoutException ex) {
-            sneakyThrow(ex);
+            throw ex;
         } catch (InterruptedException ex) {
             currentThread().interrupt();
             sneakyThrow(ex);
-        } catch (ExecutionException ex) {
-            setResult(ex);
-            throw ex;
-        } catch (CancellationException ex) {
-            setResult(ex);
+        } catch (ExecutionException | CancellationException ex) {
+            completeExceptionally(ex);
             throw ex;
         } catch (Throwable t) {
             result = t;
+            completeExceptionally(t);
+            sneakyThrow(t);
         }
-        setResult(result);
+        complete((V) result);
         return result;
     }
 
@@ -80,9 +94,7 @@ class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
         if (delegate.isDone()) {
             try {
                 ensureResultSet(Long.MAX_VALUE, TimeUnit.DAYS);
-            } catch (ExecutionException ignored) {
-                ignore(ignored);
-            } catch (CancellationException ignored) {
+            } catch (ExecutionException | CancellationException | TimeoutException ignored) {
                 ignore(ignored);
             }
             return true;
@@ -94,7 +106,9 @@ class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
     @Override
     public boolean isCancelled() {
         if (delegate.isCancelled()) {
-            cancel(true);
+            if (!super.isCancelled()) {
+                cancel(true);
+            }
             return true;
         } else {
             return super.isCancelled();
@@ -102,11 +116,10 @@ class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
     }
 
     @Override
-    public boolean shouldCancel(boolean mayInterruptIfRunning) {
+    public boolean cancel(boolean mayInterruptIfRunning) {
         if (!delegate.isCancelled()) {
             delegate.cancel(mayInterruptIfRunning);
         }
-        return true;
+        return super.cancel(mayInterruptIfRunning);
     }
-
 }

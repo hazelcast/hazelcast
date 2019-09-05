@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.impl.iterator;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import java.util.List;
 
@@ -56,7 +56,7 @@ public class MapPartitionIterator<K, V> extends AbstractMapPartitionIterator<K, 
     }
 
     private <T extends AbstractCursor> T invoke(Operation operation) {
-        final InternalCompletableFuture<T> future =
+        final InvocationFuture<T> future =
                 mapProxy.getOperationService().invokeOnPartition(mapProxy.getServiceName(), operation, partitionId);
         return future.joinInternal();
     }

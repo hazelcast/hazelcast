@@ -19,7 +19,6 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -37,6 +36,7 @@ import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -189,9 +189,9 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         // from now on, "test" group lost the majority
 
         // we triggered removal of the crashed member but we won't be able to commit to the "test" group
-        ICompletableFuture<Void> f = runningInstance.getCPSubsystem()
-                                                    .getCPSubsystemManagementService()
-                                                    .removeCPMember(crashedMember.getUuid());
+        InternalCompletableFuture<Void> f = runningInstance.getCPSubsystem()
+                                                           .getCPSubsystemManagementService()
+                                                           .removeCPMember(crashedMember.getUuid());
 
         // wait until RaftCleanupHandler kicks in and appends ApplyRaftGroupMembersCmd to the leader of the "test" group
         assertTrueEventually(

@@ -184,32 +184,32 @@ public class CacheSplitBrainProtectionWriteTest extends AbstractSplitBrainProtec
 
     @Test
     public void getAndPutAsync_splitBrainProtection() throws Exception {
-        cache(0).getAndPutAsync(1, "").get();
+        cache(0).getAndPutAsync(1, "").toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void getAndPutAsync_noSplitBrainProtection() throws Exception {
-        cache(3).getAndPutAsync(1, "").get();
+        cache(3).getAndPutAsync(1, "").toCompletableFuture().get();
     }
 
     @Test
     public void getAndRemoveAsync_splitBrainProtection() throws Exception {
-        cache(0).getAndRemoveAsync(1).get();
+        cache(0).getAndRemoveAsync(1).toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void getAndRemoveAsync_noSplitBrainProtection() throws Exception {
-        cache(3).getAndRemoveAsync(1).get();
+        cache(3).getAndRemoveAsync(1).toCompletableFuture().get();
     }
 
     @Test
     public void getAndReplaceAsync_splitBrainProtection() throws Exception {
-        cache(0).getAndReplaceAsync(1, "").get();
+        cache(0).getAndReplaceAsync(1, "").toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void getAndReplaceAsync_noSplitBrainProtection() throws Exception {
-        cache(3).getAndReplaceAsync(1, "").get();
+        cache(3).getAndReplaceAsync(1, "").toCompletableFuture().get();
     }
 
     @Test
@@ -239,42 +239,42 @@ public class CacheSplitBrainProtectionWriteTest extends AbstractSplitBrainProtec
 
     @Test
     public void putAsync_splitBrainProtection() throws Exception {
-        cache(0).putAsync(1, "").get();
+        cache(0).putAsync(1, "").toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void putAsync_noSplitBrainProtection() throws Exception {
-        cache(3).putAsync(1, "").get();
+        cache(3).putAsync(1, "").toCompletableFuture().get();
     }
 
     @Test
     public void putIfAbsentAsync_splitBrainProtection() throws Exception {
-        cache(0).putIfAbsentAsync(1, "").get();
+        cache(0).putIfAbsentAsync(1, "").toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void putIfAbsentAsync_noSplitBrainProtection() throws Exception {
-        cache(3).putIfAbsentAsync(1, "").get();
+        cache(3).putIfAbsentAsync(1, "").toCompletableFuture().get();
     }
 
     @Test
     public void removeAsync_splitBrainProtection() throws Exception {
-        cache(0).removeAsync(1).get();
+        cache(0).removeAsync(1).toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void removeAsync_noSplitBrainProtection() throws Exception {
-        cache(3).removeAsync(1).get();
+        cache(3).removeAsync(1).toCompletableFuture().get();
     }
 
     @Test
     public void replaceAsync_splitBrainProtection() throws Exception {
-        cache(0).replaceAsync(1, "").get();
+        cache(0).replaceAsync(1, "").toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void replaceAsync_noSplitBrainProtection() throws Exception {
-        cache(3).replaceAsync(1, "").get();
+        cache(3).replaceAsync(1, "").toCompletableFuture().get();
     }
 
     @Test

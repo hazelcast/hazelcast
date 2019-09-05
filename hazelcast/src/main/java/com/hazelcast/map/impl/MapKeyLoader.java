@@ -17,10 +17,9 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.map.MapLoader;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.operation.KeyLoadStatusOperation;
 import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
@@ -29,9 +28,8 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartition;
@@ -48,11 +46,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static com.hazelcast.logging.Logger.getLogger;
@@ -243,7 +239,7 @@ public class MapKeyLoader {
                 return false;
             });
 
-            execService.asCompletableFuture(sent).andThen(keyLoadFinished);
+            execService.asCompletableFuture(sent).whenCompleteAsync(keyLoadFinished);
         }
 
         return keyLoadFinished;
@@ -267,7 +263,7 @@ public class MapKeyLoader {
                 opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
                         // required since loading may be triggered after migration
                         // and in this case the callback is the only way to get to know if the key load finished or not.
-                        .andThen(loadingFinishedCallback());
+                        .whenCompleteAsync(loadingFinishedCallback());
             });
         }
         return keyLoadFinished;
@@ -278,18 +274,14 @@ public class MapKeyLoader {
      * Returns an execution callback to notify the record store for this map
      * key loader that the key loading has finished.
      */
-    private ExecutionCallback<Boolean> loadingFinishedCallback() {
-        return new ExecutionCallback<Boolean>() {
-            @Override
-            public void onResponse(Boolean loadingFinished) {
+    private BiConsumer<Boolean, Throwable> loadingFinishedCallback() {
+        return (loadingFinished, throwable) -> {
+            if (throwable == null) {
                 if (loadingFinished) {
                     updateLocalKeyLoadStatus(null);
                 }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                updateLocalKeyLoadStatus(t);
+            } else {
+                updateLocalKeyLoadStatus(throwable);
             }
         };
     }
@@ -347,9 +339,9 @@ public class MapKeyLoader {
         if (lastBatch) {
             state.nextOrStay(State.LOADED);
             if (exception != null) {
-                keyLoadFinished.setResult(exception);
+                keyLoadFinished.completeExceptionally(exception);
             } else {
-                keyLoadFinished.setResult(true);
+                keyLoadFinished.complete(true);
             }
         } else if (state.is(State.LOADED)) {
             state.next(State.LOADING);
@@ -385,7 +377,7 @@ public class MapKeyLoader {
             if (state.is(State.LOADING)) {
                 // previous loading was in progress. cancel and start from scratch
                 state.next(State.NOT_LOADED);
-                keyLoadFinished.setResult(false);
+                keyLoadFinished.complete(false);
             }
         }
 
@@ -591,47 +583,38 @@ public class MapKeyLoader {
      * @see #triggerLoading()
      * @see MapLoader#loadAllKeys()
      */
-    private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
-            implements ExecutionCallback<Boolean> {
+    private static final class LoadFinishedFuture extends InternalCompletableFuture<Boolean>
+            implements BiConsumer<Boolean, Throwable> {
 
         private LoadFinishedFuture(Boolean result) {
-            this();
-            setResult(result);
+            this.complete(result);
         }
 
         private LoadFinishedFuture() {
-            super((Executor) null, getLogger(LoadFinishedFuture.class));
         }
 
         @Override
-        public Boolean get(long timeout, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+        public Boolean get(long timeout, TimeUnit timeUnit) {
             if (isDone()) {
-                return getResult();
+                return joinInternal();
             }
             throw new UnsupportedOperationException("Future is not done yet");
         }
 
         @Override
-        public void onResponse(Boolean loaded) {
-            if (loaded) {
-                setResult(true);
-            }
-            // if not loaded yet we wait for the last batch to arrive
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            setResult(t);
-        }
-
-        @Override
-        protected boolean shouldCancel(boolean mayInterruptIfRunning) {
+        public boolean cancel(boolean mayInterruptIfRunning) {
             return false;
         }
 
         @Override
-        protected boolean setResult(Object result) {
-            return super.setResult(result);
+        public void accept(Boolean loaded, Throwable throwable) {
+            if (throwable == null) {
+                if (loaded) {
+                    complete(true);
+                }
+            } else {
+                completeExceptionally(throwable);
+            }
         }
 
         @Override

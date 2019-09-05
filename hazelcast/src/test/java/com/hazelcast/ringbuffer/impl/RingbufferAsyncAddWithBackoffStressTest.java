@@ -122,7 +122,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
             while (!stop.get()) {
                 long sleepMs = 100;
                 for (; ; ) {
-                    long result = ringbuffer.addAsync(produced, FAIL).get();
+                    long result = ringbuffer.addAsync(produced, FAIL).toCompletableFuture().get();
                     if (result != -1) {
                         break;
                     }

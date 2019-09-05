@@ -82,13 +82,13 @@ public class MapSplitBrainProtectionReadTest extends AbstractSplitBrainProtectio
 
     @Test
     public void getAsync_successful_whenSplitBrainProtectionSize_met() throws Exception {
-        map(0).getAsync("foo").get();
+        map(0).getAsync("foo").toCompletableFuture().get();
     }
 
     @Test
     public void getAsync_failing_whenSplitBrainProtectionSize_notMet() throws Exception {
         expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        map(3).getAsync("foo").get();
+        map(3).getAsync("foo").toCompletableFuture().get();
     }
 
     @Test

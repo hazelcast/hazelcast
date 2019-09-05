@@ -64,6 +64,8 @@ public class FinalizeRemoteTransactionOperation extends AbstractXAOperation impl
         }
         final int size = list.size();
 
+        // todo this callback can be extracted to a separate class and used from the point where it is
+        //  needed, ie TransactionLog#invokeAsync
         final ExecutionCallback callback = new ExecutionCallback() {
             AtomicInteger counter = new AtomicInteger();
 

@@ -16,12 +16,9 @@
 
 package com.hazelcast.internal.util.executor;
 
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.spi.impl.DeserializingCompletableFuture;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RunnableFuture;
@@ -29,7 +26,8 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
-public class CompletableFutureTask<V> extends AbstractCompletableFuture<V> implements ICompletableFuture<V>, RunnableFuture<V> {
+public class CompletableFutureTask<V> extends DeserializingCompletableFuture<V>
+        implements RunnableFuture<V> {
 
     private static final AtomicReferenceFieldUpdater<CompletableFutureTask, Thread> RUNNER
             = newUpdater(CompletableFutureTask.class, Thread.class, "runner");
@@ -38,13 +36,13 @@ public class CompletableFutureTask<V> extends AbstractCompletableFuture<V> imple
 
     private volatile Thread runner;
 
-    public CompletableFutureTask(Callable<V> callable, ExecutorService asyncExecutor) {
-        super(asyncExecutor, Logger.getLogger(CompletableFutureTask.class));
+    CompletableFutureTask(Callable<V> callable, ExecutorService asyncExecutor) {
+        super(asyncExecutor);
         this.callable = callable;
     }
 
-    public CompletableFutureTask(Runnable runnable, V result, ExecutorService asyncExecutor) {
-        super(asyncExecutor, Logger.getLogger(CompletableFutureTask.class));
+    CompletableFutureTask(Runnable runnable, V result, ExecutorService asyncExecutor) {
+        super(asyncExecutor);
         this.callable = Executors.callable(runnable, result);
     }
 
@@ -65,10 +63,9 @@ public class CompletableFutureTask<V> extends AbstractCompletableFuture<V> imple
                 Object result = null;
                 try {
                     result = c.call();
+                    complete((V) result);
                 } catch (Throwable ex) {
-                    result = new ExecutionException(ex);
-                } finally {
-                    setResult(result);
+                    completeExceptionally(ex);
                 }
             }
         } finally {
@@ -79,14 +76,16 @@ public class CompletableFutureTask<V> extends AbstractCompletableFuture<V> imple
     }
 
     @Override
-    protected void cancelled(boolean mayInterruptIfRunning) {
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        boolean result = super.cancel(mayInterruptIfRunning);
         // additionally handle the interruption of the executing thread
-        if (mayInterruptIfRunning) {
+        if (result && mayInterruptIfRunning) {
             Thread executingThread = runner;
             if (executingThread != null) {
                 executingThread.interrupt();
             }
         }
+        return result;
     }
 
     @Override

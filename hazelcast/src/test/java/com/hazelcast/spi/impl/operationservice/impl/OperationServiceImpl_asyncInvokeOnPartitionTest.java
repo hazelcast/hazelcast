@@ -16,13 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.nio.serialization.Data;
@@ -69,18 +68,8 @@ public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTe
             Data val = nodeEngine.toData(randomString());
             PutOperation op = new PutOperation((String) entry.getValue(), key, val);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            operationService.asyncInvokeOnPartition(MapService.SERVICE_NAME, op, partitionId,
-                    new ExecutionCallback<Object>() {
-                        @Override
-                        public void onResponse(Object response) {
-                            latch.countDown();
-                        }
-
-                        @Override
-                        public void onFailure(Throwable t) {
-
-                        }
-                    });
+            operationService.invokeOnPartitionAsync(MapService.SERVICE_NAME, op, partitionId)
+                    .thenRun(() -> latch.countDown());
             return null;
         }
 

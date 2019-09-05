@@ -18,10 +18,9 @@ package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreChangeCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.ChangePermitsOp;
 import com.hazelcast.instance.impl.Node;
@@ -36,8 +35,7 @@ import static java.lang.Math.abs;
 /**
  * Client message task for {@link ChangePermitsOp}
  */
-public class ChangePermitsMessageTask extends AbstractMessageTask<SemaphoreChangeCodec.RequestParameters>
-        implements ExecutionCallback<Boolean> {
+public class ChangePermitsMessageTask extends AbstractCPMessageTask<SemaphoreChangeCodec.RequestParameters> {
 
     public ChangePermitsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,7 +46,7 @@ public class ChangePermitsMessageTask extends AbstractMessageTask<SemaphoreChang
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftOp op = new ChangePermitsOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid,
                 parameters.permits);
-        service.getInvocationManager().<Boolean>invoke(parameters.groupId, op).andThen(this);
+        service.getInvocationManager().<Boolean>invoke(parameters.groupId, op).whenCompleteAsync(this);
     }
 
     @Override
@@ -85,15 +83,5 @@ public class ChangePermitsMessageTask extends AbstractMessageTask<SemaphoreChang
     @Override
     public Object[] getParameters() {
         return new Object[]{abs(parameters.permits)};
-    }
-
-    @Override
-    public void onResponse(Boolean response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

@@ -18,9 +18,8 @@ package com.hazelcast.cp.internal.datastructures.lock.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FencedLockGetLockOwnershipCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.lock.LockOwnershipState;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.GetLockOwnershipStateOp;
@@ -36,8 +35,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link GetLockOwnershipStateOp}
  */
-public class GetLockOwnershipStateMessageTask extends AbstractMessageTask<FencedLockGetLockOwnershipCodec.RequestParameters>
-        implements ExecutionCallback<LockOwnershipState> {
+public class GetLockOwnershipStateMessageTask extends AbstractCPMessageTask<FencedLockGetLockOwnershipCodec.RequestParameters> {
 
     public GetLockOwnershipStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,7 +46,7 @@ public class GetLockOwnershipStateMessageTask extends AbstractMessageTask<Fenced
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                .<LockOwnershipState>query(parameters.groupId, new GetLockOwnershipStateOp(parameters.name), LINEARIZABLE)
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
@@ -86,15 +84,5 @@ public class GetLockOwnershipStateMessageTask extends AbstractMessageTask<Fenced
     @Override
     public Object[] getParameters() {
         return new Object[0];
-    }
-
-    @Override
-    public void onResponse(LockOwnershipState response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

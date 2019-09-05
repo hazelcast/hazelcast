@@ -215,7 +215,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testPutAsync_returnValue() throws ExecutionException, InterruptedException {
         testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
-        assertEquals("val", map.putAsync("key", "val2").get());
+        assertEquals("val", map.putAsync("key", "val2").toCompletableFuture().get());
     }
 
     @Test
@@ -239,7 +239,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testRemoveAsync_returnValue() throws ExecutionException, InterruptedException {
         testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
-        assertEquals("val", map.removeAsync("key").get());
+        assertEquals("val", map.removeAsync("key").toCompletableFuture().get());
     }
 
     @Test

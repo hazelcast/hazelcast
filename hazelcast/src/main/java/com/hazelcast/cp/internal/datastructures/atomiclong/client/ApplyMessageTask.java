@@ -18,10 +18,9 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.ApplyOp;
 import com.hazelcast.instance.impl.Node;
@@ -36,8 +35,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link ApplyOp}
  */
-public class ApplyMessageTask extends AbstractMessageTask<AtomicLongApplyCodec.RequestParameters>
-        implements ExecutionCallback<Object> {
+public class ApplyMessageTask extends AbstractCPMessageTask<AtomicLongApplyCodec.RequestParameters> {
 
     public ApplyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,7 +47,7 @@ public class ApplyMessageTask extends AbstractMessageTask<AtomicLongApplyCodec.R
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                .query(parameters.groupId, new ApplyOp<>(parameters.name, function), LINEARIZABLE)
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
@@ -85,15 +83,5 @@ public class ApplyMessageTask extends AbstractMessageTask<AtomicLongApplyCodec.R
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.function};
-    }
-
-    @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

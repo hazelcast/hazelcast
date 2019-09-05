@@ -32,7 +32,6 @@ import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.nio.IOUtil;
@@ -49,6 +48,7 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -826,11 +826,11 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig) {
-        ICompletableFuture future = createCacheConfigOnAllMembersAsync(cacheConfig);
+        InternalCompletableFuture future = createCacheConfigOnAllMembersAsync(cacheConfig);
         FutureUtil.waitForever(singleton(future), RETHROW_EVERYTHING);
     }
 
-    public <K, V> ICompletableFuture createCacheConfigOnAllMembersAsync(PreJoinCacheConfig<K, V> cacheConfig) {
+    public <K, V> InternalCompletableFuture<Object> createCacheConfigOnAllMembersAsync(PreJoinCacheConfig<K, V> cacheConfig) {
         return InvocationUtil.invokeOnStableClusterSerial(getNodeEngine(),
                 new AddCacheConfigOperationSupplier(cacheConfig),
                 MAX_ADD_CACHE_CONFIG_RETRIES);

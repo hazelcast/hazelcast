@@ -18,9 +18,8 @@ package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.InitSemaphoreOp;
 import com.hazelcast.instance.impl.Node;
@@ -33,8 +32,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link InitSemaphoreOp}
  */
-public class InitSemaphoreMessageTask extends AbstractMessageTask<SemaphoreInitCodec.RequestParameters>
-        implements ExecutionCallback<Boolean> {
+public class InitSemaphoreMessageTask extends AbstractCPMessageTask<SemaphoreInitCodec.RequestParameters> {
 
     public InitSemaphoreMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,7 +43,7 @@ public class InitSemaphoreMessageTask extends AbstractMessageTask<SemaphoreInitC
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                .<Boolean>invoke(parameters.groupId, new InitSemaphoreOp(parameters.name, parameters.permits))
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
@@ -81,15 +79,5 @@ public class InitSemaphoreMessageTask extends AbstractMessageTask<SemaphoreInitC
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.permits};
-    }
-
-    @Override
-    public void onResponse(Boolean response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

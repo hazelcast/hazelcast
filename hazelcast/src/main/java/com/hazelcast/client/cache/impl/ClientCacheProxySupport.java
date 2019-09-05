@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
@@ -46,11 +47,9 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -304,7 +303,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         return invoke(req, partitionId, completionId);
     }
 
-    protected <T> ICompletableFuture<T> getAndRemoveAsyncInternal(K key) {
+    protected <T> InternalCompletableFuture<T> getAndRemoveAsyncInternal(K key) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
         validateNotNull(key);
@@ -389,7 +388,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    protected <T> ICompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
+    protected <T> InternalCompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
                                                              boolean hasOldValue, boolean withCompletionEvent, boolean async) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
@@ -421,9 +420,10 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         addCallback(delegatingFuture, callback);
     }
 
-    protected <T> ICompletableFuture<T> replaceAndGetAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
-                                                                   boolean hasOldValue, boolean withCompletionEvent,
-                                                                   boolean async) {
+    protected <T> InternalCompletableFuture<T> replaceAndGetAsyncInternal(K key, V oldValue,
+                                                                          V newValue, ExpiryPolicy expiryPolicy,
+                                                                          boolean hasOldValue, boolean withCompletionEvent,
+                                                                          boolean async) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
         if (hasOldValue) {
@@ -508,7 +508,8 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
 
         CallbackAwareClientDelegatingFuture<V> future = new CallbackAwareClientDelegatingFuture<>(invocationFuture,
                 getSerializationService(), message -> CachePutCodec.decodeResponse(message).response, callback);
-        future.andThen(callback);
+        // todo FIXME transition callback to BiConsumer
+//        future.andThen(callback);
 
         return future;
     }
@@ -764,7 +765,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientMessage request = CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData,
                 completionId);
         try {
-            ICompletableFuture<ClientMessage> future = invoke(request, keyData, completionId);
+            InternalCompletableFuture<ClientMessage> future = invoke(request, keyData, completionId);
             ClientMessage response = getSafely(future);
             Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
             // at client side, we don't know what entry processor does so we ignore it from statistics perspective
@@ -999,16 +1000,12 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
             delegatingFuture = newDelegatingFuture(future, clientMessage -> Boolean.TRUE);
             final Future delFuture = delegatingFuture;
             loadAllCalls.put(delegatingFuture, listener);
-            delegatingFuture.andThen(new ExecutionCallback<V>() {
-                @Override
-                public void onResponse(V response) {
+            delegatingFuture.whenCompleteAsync((response, t) -> {
+                if (t == null) {
                     loadAllCalls.remove(delFuture);
                     onLoadAll(binaryKeys, response, startNanos);
                     listener.onCompletion();
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
+                } else {
                     loadAllCalls.remove(delFuture);
                     handleFailureOnCompletionListener(listener, t);
                 }

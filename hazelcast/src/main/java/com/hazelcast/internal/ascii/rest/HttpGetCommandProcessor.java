@@ -17,9 +17,7 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -33,12 +31,13 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Collection;
 
@@ -193,20 +192,16 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleGetCPGroupIds(final HttpGetCommand command) {
-        ICompletableFuture<Collection<CPGroupId>> f = getCpSubsystemManagementService().getCPGroupIds();
-        f.andThen(new ExecutionCallback<Collection<CPGroupId>>() {
-            @Override
-            public void onResponse(Collection<CPGroupId> groupIds) {
+        InternalCompletableFuture<Collection<CPGroupId>> f = getCpSubsystemManagementService().getCPGroupIds();
+        f.whenCompleteAsync((groupIds, t) -> {
+            if (t == null) {
                 JsonArray arr = new JsonArray();
                 for (CPGroupId groupId : groupIds) {
                     arr.add(toJson(groupId));
                 }
                 command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(arr.toString()));
                 textCommandService.sendResponse(command);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
+            } else {
                 command.send500();
                 textCommandService.sendResponse(command);
             }
@@ -220,9 +215,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         String groupName = uri.substring(prefix.length(), i).trim();
         getCpSubsystem().getCPSessionManagementService()
                         .getAllSessions(groupName)
-                        .andThen(new ExecutionCallback<Collection<CPSession>>() {
-                            @Override
-                            public void onResponse(Collection<CPSession> sessions) {
+                        .whenCompleteAsync((sessions, t) -> {
+                            if (t == null) {
                                 JsonArray sessionsArr = new JsonArray();
                                 for (CPSession session : sessions) {
                                     sessionsArr.add(toJson(session));
@@ -230,10 +224,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
                                 command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(sessionsArr.toString()));
                                 textCommandService.sendResponse(command);
-                            }
-
-                            @Override
-                            public void onFailure(Throwable t) {
+                            } else {
                                 if (peel(t) instanceof IllegalArgumentException) {
                                     command.send404();
                                 } else {
@@ -248,10 +239,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private void handleGetCPGroupByName(final HttpGetCommand command) {
         String prefix = URI_CP_GROUPS_URL + "/";
         String groupName = command.getURI().substring(prefix.length()).trim();
-        ICompletableFuture<CPGroup> f = getCpSubsystemManagementService().getCPGroup(groupName);
-        f.andThen(new ExecutionCallback<CPGroup>() {
-            @Override
-            public void onResponse(CPGroup group) {
+        InternalCompletableFuture<CPGroup> f = getCpSubsystemManagementService().getCPGroup(groupName);
+        f.whenCompleteAsync((group, t) -> {
+            if (t == null) {
                 if (group != null) {
                     JsonObject json = new JsonObject();
                     json.add("id", toJson(group.id()))
@@ -270,10 +260,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 }
 
                 textCommandService.sendResponse(command);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
+            } else {
                 command.send500();
                 textCommandService.sendResponse(command);
             }
@@ -281,10 +268,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleGetCPMembers(final HttpGetCommand command) {
-        ICompletableFuture<Collection<CPMember>> f = getCpSubsystemManagementService().getCPMembers();
-        f.andThen(new ExecutionCallback<Collection<CPMember>>() {
-            @Override
-            public void onResponse(Collection<CPMember> cpMembers) {
+        InternalCompletableFuture<Collection<CPMember>> f = getCpSubsystemManagementService().getCPMembers();
+        f.whenCompleteAsync((cpMembers, t) -> {
+            if (t == null) {
                 JsonArray arr = new JsonArray();
                 for (CPMember cpMember : cpMembers) {
                     arr.add(toJson(cpMember));
@@ -292,10 +278,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
                 command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(arr.toString()));
                 textCommandService.sendResponse(command);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
+            } else {
                 command.send500();
                 textCommandService.sendResponse(command);
             }

@@ -22,12 +22,12 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -52,9 +52,8 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
         for (Member target : targets) {
             Operation op = operationSupplier.get();
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target.getAddress())
-                    .setResultDeserialized(false)
-                    .setExecutionCallback(new SingleTargetCallback(target, callback));
-            builder.invoke();
+                    .setResultDeserialized(false);
+            builder.invoke().whenCompleteAsync(new SingleTargetCallback(target, callback));
         }
     }
 
@@ -97,7 +96,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
         }
     }
 
-    private final class SingleTargetCallback extends SimpleExecutionCallback<Object> {
+    private final class SingleTargetCallback implements BiConsumer<Object, Throwable> {
 
         final Member target;
         final MultiTargetCallback parent;
@@ -108,8 +107,8 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
         }
 
         @Override
-        public void notify(Object object) {
-            parent.notify(target, object);
+        public void accept(Object object, Throwable throwable) {
+            parent.notify(target, throwable == null ? object : throwable);
         }
     }
 }

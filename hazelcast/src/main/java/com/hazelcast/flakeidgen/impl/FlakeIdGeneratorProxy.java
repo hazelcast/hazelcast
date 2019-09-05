@@ -24,8 +24,8 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,8 +134,8 @@ public class FlakeIdGeneratorProxy
         while (true) {
             NewIdBatchOperation op = new NewIdBatchOperation(name, batchSize);
             Member target = getRandomMember();
-            InternalCompletableFuture<Long> future = getNodeEngine().getOperationService()
-                                                                    .invokeOnTarget(getServiceName(), op, target.getAddress());
+            InvocationFuture<Long> future = getNodeEngine().getOperationService()
+                                                           .invokeOnTarget(getServiceName(), op, target.getAddress());
             try {
                 long base = future.joinInternal();
                 return new IdBatchAndWaitTime(new IdBatch(base, INCREMENT, batchSize), 0);
@@ -238,7 +238,7 @@ public class FlakeIdGeneratorProxy
         if (member == null) {
             // if local member is in outOfRangeMembers, use random member
             Set<Member> members = getNodeEngine().getClusterService().getMembers();
-            List<Member> filteredMembers = new ArrayList<Member>(members.size());
+            List<Member> filteredMembers = new ArrayList<>(members.size());
             for (Member m : members) {
                 if (!outOfRangeMembers.contains(m.getUuid())) {
                     filteredMembers.add(m);

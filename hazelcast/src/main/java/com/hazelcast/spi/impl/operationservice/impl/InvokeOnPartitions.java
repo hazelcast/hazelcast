@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
@@ -32,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
@@ -118,7 +118,7 @@ final class InvokeOnPartitions {
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke()
-                    .andThen(new FirstAttemptExecutionCallback(partitions));
+                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions));
         }
     }
 
@@ -133,16 +133,12 @@ final class InvokeOnPartitions {
 
         operationService.createInvocationBuilder(serviceName, operation, partitionId)
                         .invoke()
-                        .andThen(new ExecutionCallback<Object>() {
-                            @Override
-                            public void onResponse(Object response) {
+                        .whenCompleteAsync((response, throwable) -> {
+                            if (throwable == null) {
                                 setPartitionResult(partitionId, response);
                                 decrementLatchAndHandle(1);
-                            }
-
-                            @Override
-                            public void onFailure(Throwable t) {
-                                setPartitionResult(partitionId, t);
+                            } else {
+                                setPartitionResult(partitionId, throwable);
                                 decrementLatchAndHandle(1);
                             }
                         });
@@ -171,7 +167,7 @@ final class InvokeOnPartitions {
         future.complete(result);
     }
 
-    private class FirstAttemptExecutionCallback implements ExecutionCallback<Object> {
+    private class FirstAttemptExecutionCallback implements BiConsumer<Object, Throwable> {
         private final List<Integer> requestedPartitions;
 
         FirstAttemptExecutionCallback(List<Integer> partitions) {
@@ -179,41 +175,42 @@ final class InvokeOnPartitions {
         }
 
         @Override
-        public void onResponse(Object response) {
-            PartitionResponse result = operationService.nodeEngine.toObject(response);
-            Object[] results = result.getResults();
-            int[] responsePartitions = result.getPartitions();
-            assert results.length == responsePartitions.length
-                    : "results.length=" + results.length + ", responsePartitions.length=" + responsePartitions.length;
-            assert results.length <= requestedPartitions.size() : "results.length=" + results.length
-                    + ", but was sent to just " + requestedPartitions.size() + " partitions";
-            if (results.length != requestedPartitions.size()) {
-                logger.fine("Responses received for " + responsePartitions.length + " partitions, but "
-                        + requestedPartitions.size() + " partitions were requested");
-            }
-            int failedPartitionsCnt = 0;
-            for (int i = 0; i < responsePartitions.length; i++) {
-                assert requestedPartitions.contains(responsePartitions[i]) : "Response received for partition "
-                        + responsePartitions[i] + ", but that partition wasn't requested";
-                if (results[i] instanceof Throwable) {
-                    retryPartition(responsePartitions[i]);
-                    failedPartitionsCnt++;
-                } else {
-                    setPartitionResult(responsePartitions[i], results[i]);
+        public void accept(Object response, Throwable throwable) {
+            if (throwable == null) {
+                PartitionResponse result = operationService.nodeEngine.toObject(response);
+                Object[] results = result.getResults();
+                int[] responsePartitions = result.getPartitions();
+                assert results.length == responsePartitions.length
+                        : "results.length=" + results.length + ", responsePartitions.length=" + responsePartitions.length;
+                assert results.length <= requestedPartitions.size()
+                        : "results.length=" + results.length + ", but was sent to just "
+                        + requestedPartitions.size() + " partitions";
+                if (results.length != requestedPartitions.size()) {
+                    logger.fine("Responses received for " + responsePartitions.length + " partitions, but "
+                            + requestedPartitions.size() + " partitions were requested");
                 }
-            }
-            decrementLatchAndHandle(requestedPartitions.size() - failedPartitionsCnt);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            if (operationService.logger.isFinestEnabled()) {
-                operationService.logger.finest(t);
+                int failedPartitionsCnt = 0;
+                for (int i = 0; i < responsePartitions.length; i++) {
+                    assert requestedPartitions.contains(responsePartitions[i])
+                            : "Response received for partition " + responsePartitions[i]
+                            + ", but that partition wasn't requested";
+                    if (results[i] instanceof Throwable) {
+                        retryPartition(responsePartitions[i]);
+                        failedPartitionsCnt++;
+                    } else {
+                        setPartitionResult(responsePartitions[i], results[i]);
+                    }
+                }
+                decrementLatchAndHandle(requestedPartitions.size() - failedPartitionsCnt);
             } else {
-                operationService.logger.warning(t.getMessage());
-            }
-            for (Integer partition : requestedPartitions) {
-                retryPartition(partition);
+                if (operationService.logger.isFinestEnabled()) {
+                    operationService.logger.finest(throwable);
+                } else {
+                    operationService.logger.warning(throwable.getMessage());
+                }
+                for (Integer partition : requestedPartitions) {
+                    retryPartition(partition);
+                }
             }
         }
     }

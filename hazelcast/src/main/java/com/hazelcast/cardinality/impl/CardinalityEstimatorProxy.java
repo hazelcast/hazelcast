@@ -21,9 +21,9 @@ import com.hazelcast.cardinality.impl.operations.AggregateOperation;
 import com.hazelcast.cardinality.impl.operations.EstimateOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -65,7 +65,7 @@ public class CardinalityEstimatorProxy
     }
 
     @Override
-    public InternalCompletableFuture<Void> addAsync(Object obj) {
+    public InvocationFuture<Void> addAsync(Object obj) {
         checkNotNull(obj, "Object is null.");
         Data data = getNodeEngine().getSerializationService().toData(obj);
         Operation operation = new AggregateOperation(name, data.hash64())
@@ -74,7 +74,7 @@ public class CardinalityEstimatorProxy
     }
 
     @Override
-    public InternalCompletableFuture<Long> estimateAsync() {
+    public InvocationFuture<Long> estimateAsync() {
         Operation operation = new EstimateOperation(name)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);

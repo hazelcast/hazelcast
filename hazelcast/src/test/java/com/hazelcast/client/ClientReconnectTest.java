@@ -21,9 +21,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipAdapter;
 import com.hazelcast.cluster.MembershipEvent;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.IMap;
@@ -39,6 +37,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Iterator;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -152,20 +151,13 @@ public class ClientReconnectTest extends HazelcastTestSupport {
 
         IMap<Object, Object> test = client.getMap("test");
         server.shutdown();
-        ICompletableFuture<Object> future = test.putAsync("key", "value");
+        CompletionStage<Object> future = test.putAsync("key", "value");
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Throwable> reference = new AtomicReference<>();
-        future.andThen(new ExecutionCallback<Object>() {
-            @Override
-            public void onResponse(Object response) {
-
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                reference.set(t);
-                latch.countDown();
-            }
+        future.exceptionally(t -> {
+            reference.set(t);
+            latch.countDown();
+            return null;
         });
         assertOpenEventually(latch);
         assertInstanceOf(HazelcastClientNotActiveException.class, reference.get());

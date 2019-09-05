@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
@@ -311,6 +310,18 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
     @Override
     @SuppressWarnings("unchecked")
+    public <E> InvocationFuture<E> invokeOnPartitionAsync(String serviceName, Operation op, int partitionId) {
+        op.setServiceName(serviceName)
+                .setPartitionId(partitionId)
+                .setReplicaIndex(DEFAULT_REPLICA_INDEX);
+
+        return new PartitionInvocation(
+                invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
+                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invokeAsync();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public <E> InvocationFuture<E> invokeOnPartition(Operation op) {
         return new PartitionInvocation(
                 invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
@@ -324,20 +335,6 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
         return new TargetInvocation(invocationContext, op, target, invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback) {
-        op.setServiceName(serviceName).setPartitionId(partitionId).setReplicaIndex(DEFAULT_REPLICA_INDEX);
-
-        InvocationFuture future = new PartitionInvocation(invocationContext, op,
-                invocationMaxRetryCount, invocationRetryPauseMillis,
-                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invokeAsync();
-
-        if (callback != null) {
-            future.andThen(callback);
-        }
     }
 
     @Override

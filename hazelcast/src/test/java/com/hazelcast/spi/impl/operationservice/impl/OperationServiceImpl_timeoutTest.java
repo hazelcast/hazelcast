@@ -16,18 +16,16 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -123,17 +121,11 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(1);
         if (async) {
-            future.andThen(new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
+            future.exceptionally((throwable) -> {
+                if (throwable instanceof OperationTimeoutException) {
+                    latch.countDown();
                 }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    if (t instanceof OperationTimeoutException) {
-                        latch.countDown();
-                    }
-                }
+                return null;
             });
         } else {
             try {
@@ -197,7 +189,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         // invoke on the "local" member
         Address localAddress = getNode(hz1).getThisAddress();
         OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
-        ICompletableFuture<Boolean> future = operationService
+        InternalCompletableFuture<Boolean> future = operationService
                 .invokeOnTarget(null, new SleepingOperation(callTimeoutMillis * 5), localAddress);
 
         // wait more than operation timeout

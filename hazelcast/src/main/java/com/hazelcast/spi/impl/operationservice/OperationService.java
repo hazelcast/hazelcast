@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -119,7 +117,7 @@ public interface OperationService {
 
     <E> InvocationFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
 
-    <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback);
+    <E> InvocationFuture<E> invokeOnPartitionAsync(String serviceName, Operation op, int partitionId);
 
     /**
      * Executes an operation on a partition.

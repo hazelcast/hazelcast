@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.ringbuffer.ReadResultSet;
@@ -35,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -93,9 +93,9 @@ public class AdvancedMapJournalTest extends HazelcastTestSupport {
     private static <K, V> int getJournalSize(IMap<K, V> map) throws ExecutionException, InterruptedException {
         int total = 0;
         for (int i = 0; i < PARTITION_COUNT; i++) {
-            ICompletableFuture<ReadResultSet<Object>> future =
+            CompletionStage<ReadResultSet<Object>> stage =
                     ((MapProxyImpl<K, V>) map).readFromEventJournal(0, 0, 10000, i, null, null);
-            ReadResultSet<Object> resultSet = future.get();
+            ReadResultSet<Object> resultSet = stage.toCompletableFuture().get();
             int readCount = resultSet.readCount();
             total += readCount;
         }

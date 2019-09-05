@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -24,9 +25,8 @@ import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartition
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
@@ -87,7 +87,7 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
             throw rethrow(e);
         }
 
-        complete(new CancellationException());
+        completeExceptionally(new CancellationException());
         return cancelSuccessful;
     }
 
@@ -110,7 +110,7 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
     }
 
     private void waitForRequestToBeSend() throws InterruptedException {
-        ICompletableFuture future = getFuture();
+        InternalCompletableFuture future = getFuture();
         ClientInvocationFuture clientCallFuture = (ClientInvocationFuture) future;
         clientCallFuture.getInvocation().getSendConnectionOrWait();
     }

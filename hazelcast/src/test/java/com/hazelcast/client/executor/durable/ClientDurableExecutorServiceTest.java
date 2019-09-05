@@ -23,7 +23,6 @@ import com.hazelcast.client.test.executor.tasks.FailingCallable;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.DurableExecutorServiceFuture;
@@ -158,14 +157,10 @@ public class ClientDurableExecutorServiceTest {
         DurableExecutorService service = client.getDurableExecutorService(SINGLE_TASK + randomString());
         service.submitToKeyOwner(new SleepingTask(100), key);
         DurableExecutorServiceFuture<String> future = service.submitToKeyOwner(new BasicTestCallable(), key);
-        future.andThen(new ExecutionCallback<String>() {
-            @Override
-            public void onResponse(String response) {
+        future.whenCompleteAsync((response, t) -> {
+            if (t == null) {
                 onResponse.set(true);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
+            } else {
                 onFailureLatch.countDown();
             }
         });
@@ -200,17 +195,11 @@ public class ClientDurableExecutorServiceTest {
         service.submitToKeyOwner(new SleepingTask(100), key);
         DurableExecutorServiceFuture<String> future = service.submitToKeyOwner(new BasicTestCallable(), key);
         final CountDownLatch latch = new CountDownLatch(1);
-        future.andThen(new ExecutionCallback<String>() {
-            @Override
-            public void onResponse(String response) {
+        future.exceptionally(t -> {
+            if (t.getCause() instanceof RejectedExecutionException) {
+                latch.countDown();
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-                if (t.getCause() instanceof RejectedExecutionException) {
-                    latch.countDown();
-                }
-            }
+            return null;
         });
         assertOpenEventually(latch);
         assertTrue(future.isDone());
@@ -271,15 +260,9 @@ public class ClientDurableExecutorServiceTest {
     public void testSubmitFailingCallableException_withExecutionCallback() throws Exception {
         DurableExecutorService service = client.getDurableExecutorService(randomString());
         final CountDownLatch latch = new CountDownLatch(1);
-        service.submit(new FailingCallable()).andThen(new ExecutionCallback<String>() {
-            @Override
-            public void onResponse(String response) {
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                latch.countDown();
-            }
+        service.submit(new FailingCallable()).exceptionally(t -> {
+            latch.countDown();
+            return null;
         });
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }

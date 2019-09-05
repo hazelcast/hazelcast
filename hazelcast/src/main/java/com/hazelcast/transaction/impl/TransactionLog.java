@@ -142,7 +142,14 @@ public class TransactionLog {
             Address target = ((TargetAwareTransactionLogRecord) record).getTarget();
             operationService.invokeOnTarget(op.getServiceName(), op, target);
         } else {
-            operationService.asyncInvokeOnPartition(op.getServiceName(), op, op.getPartitionId(), callback);
+            operationService.invokeOnPartitionAsync(op.getServiceName(), op, op.getPartitionId())
+                            .whenCompleteAsync((v, t) -> {
+                                if (t == null) {
+                                    callback.onResponse(v);
+                                } else {
+                                    callback.onFailure(t);
+                                }
+                            });
         }
     }
 }

@@ -18,11 +18,11 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.DelegatingCompletableFuture;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.util.executor.DelegatingFuture;
 
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
@@ -30,7 +30,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
-final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
+final class CancellableDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     public static final int CANCEL_TRY_COUNT = 50;
     public static final int CANCEL_TRY_PAUSE_MILLIS = 250;
@@ -41,7 +41,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
     private final Address target;
 
     CancellableDelegatingFuture(InternalCompletableFuture future, NodeEngine nodeEngine, UUID uuid, int partitionId) {
-        super(future, nodeEngine.getSerializationService());
+        super(nodeEngine.getSerializationService(), future);
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
         this.partitionId = partitionId;
@@ -49,7 +49,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
     }
 
     CancellableDelegatingFuture(InternalCompletableFuture future, NodeEngine nodeEngine, UUID uuid, Address target) {
-        super(future, nodeEngine.getSerializationService());
+        super(nodeEngine.getSerializationService(), future);
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
         this.target = target;
@@ -58,7 +58,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
 
     CancellableDelegatingFuture(InternalCompletableFuture future, V defaultValue, NodeEngine nodeEngine,
                                 UUID uuid, int partitionId) {
-        super(future, nodeEngine.getSerializationService(), defaultValue);
+        super(nodeEngine.getSerializationService(), future, defaultValue);
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
         this.partitionId = partitionId;
@@ -81,7 +81,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
             throw rethrow(e);
         }
 
-        complete(new CancellationException());
+        completeExceptionally(new CancellationException());
         return cancelSuccessful;
     }
 

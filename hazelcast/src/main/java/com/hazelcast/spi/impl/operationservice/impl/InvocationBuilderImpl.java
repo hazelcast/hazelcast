@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -43,7 +43,7 @@ class InvocationBuilderImpl extends InvocationBuilder {
     }
 
     @Override
-    public InternalCompletableFuture invoke() {
+    public InvocationFuture invoke() {
         op.setServiceName(serviceName);
         Invocation invocation;
         if (target == null) {
@@ -57,9 +57,9 @@ class InvocationBuilderImpl extends InvocationBuilder {
                     callTimeout, resultDeserialized, endpointManager);
         }
 
-        InternalCompletableFuture future = invocation.invoke();
+        InvocationFuture future = invocation.invoke();
         if (executionCallback != null) {
-            future.andThen(executionCallback);
+            future.whenCompleteAsync(new ExecutionCallbackAdapter(executionCallback));
         }
 
         return future;

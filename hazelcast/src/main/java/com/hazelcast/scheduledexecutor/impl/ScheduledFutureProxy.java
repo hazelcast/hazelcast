@@ -16,9 +16,9 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostEvent;
@@ -33,9 +33,9 @@ import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsCanceledOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsDoneOperation;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.Delayed;
@@ -136,7 +136,7 @@ public final class ScheduledFutureProxy<V>
         return this.<Boolean>invoke(op).joinInternal();
     }
 
-    private InternalCompletableFuture<V> get0() {
+    private InvocationFuture<V> get0() {
         checkAccessibleHandler();
         checkAccessibleOwner();
         Operation op = new GetResultOperation<V>(handler);
@@ -170,7 +170,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         Operation op = new DisposeTaskOperation(handler);
-        InternalCompletableFuture future = invoke(op);
+        InvocationFuture future = invoke(op);
         handler = null;
         future.joinInternal();
     }
@@ -224,7 +224,7 @@ public final class ScheduledFutureProxy<V>
         }
     }
 
-    private <T> InternalCompletableFuture<T> invoke(Operation op) {
+    private <T> InvocationFuture<T> invoke(Operation op) {
         if (handler.isAssignedToPartition()) {
             op.setPartitionId(handler.getPartitionId());
             return invokeOnPartition(op);
@@ -233,13 +233,13 @@ public final class ScheduledFutureProxy<V>
         }
     }
 
-    private <T> InternalCompletableFuture<T> invokeOnPartition(Operation op) {
+    private <T> InvocationFuture<T> invokeOnPartition(Operation op) {
         OperationService opService = ((HazelcastInstanceImpl) instance).node.getNodeEngine().getOperationService();
 
         return opService.invokeOnPartition(op);
     }
 
-    private <T> InternalCompletableFuture<T> invokeOnAddress(Operation op, Address address) {
+    private <T> InvocationFuture<T> invokeOnAddress(Operation op, Address address) {
         OperationService opService = ((HazelcastInstanceImpl) instance).node.getNodeEngine().getOperationService();
         return opService.invokeOnTarget(op.getServiceName(), op, address);
     }

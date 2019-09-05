@@ -25,6 +25,9 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.executor.impl.operations.ShutdownOperation;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
@@ -36,10 +39,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
-import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,6 +51,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -65,7 +67,7 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ExecutorServiceProxy
         extends AbstractDistributedObject<DistributedExecutorService>
         implements IExecutorService {
@@ -218,7 +220,7 @@ public class ExecutorServiceProxy
 
         Operation op = new CallableTaskOperation(name, uuid, callableData)
                 .setPartitionId(partitionId);
-        InternalCompletableFuture future = invokeOnPartition(op);
+        InvocationFuture future = invokeOnPartition(op);
         boolean sync = checkSync();
         if (sync) {
             try {
@@ -226,7 +228,7 @@ public class ExecutorServiceProxy
             } catch (Exception exception) {
                 logger.warning(exception);
             }
-            return new CompletedFuture<T>(nodeEngine.getSerializationService(), result, getAsyncExecutor());
+            return InternalCompletableFuture.newCompletedFuture(result);
         }
         return new CancellableDelegatingFuture<T>(future, result, nodeEngine, uuid, partitionId);
     }
@@ -256,13 +258,7 @@ public class ExecutorServiceProxy
                 .setPartitionId(partitionId);
         InternalCompletableFuture future = invokeOnPartition(op);
         if (sync) {
-            Object response;
-            try {
-                response = future.get();
-            } catch (Exception e) {
-                response = e;
-            }
-            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response, getAsyncExecutor());
+            return completedSynchronously(future, nodeEngine.getSerializationService());
         }
         return new CancellableDelegatingFuture<T>(future, nodeEngine, uuid, partitionId);
     }
@@ -319,13 +315,7 @@ public class ExecutorServiceProxy
         InternalCompletableFuture future = nodeEngine.getOperationService()
                 .invokeOnTarget(DistributedExecutorService.SERVICE_NAME, op, target);
         if (sync) {
-            Object response;
-            try {
-                response = future.get();
-            } catch (Exception e) {
-                response = e;
-            }
-            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response, getAsyncExecutor());
+            return completedSynchronously(future, nodeEngine.getSerializationService());
         }
         return new CancellableDelegatingFuture<T>(future, nodeEngine, uuid, target);
     }
@@ -454,13 +444,7 @@ public class ExecutorServiceProxy
             futures.add(submit(task));
         }
         for (Future<T> future : futures) {
-            Object value;
-            try {
-                value = future.get();
-            } catch (ExecutionException e) {
-                value = e;
-            }
-            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
+            result.add(completedSynchronously(future, getNodeEngine().getSerializationService()));
         }
         return result;
     }
@@ -513,19 +497,13 @@ public class ExecutorServiceProxy
                 for (int l = i; l < size; l++) {
                     Future<T> f = futures.get(i);
                     if (f.isDone()) {
-                        Object v;
-                        try {
-                            v = f.get();
-                        } catch (ExecutionException ex) {
-                            v = ex;
-                        }
-                        futures.set(l, new CompletedFuture<T>(getNodeEngine().getSerializationService(), v, getAsyncExecutor()));
+                        futures.set(l, completedSynchronously(f,  getNodeEngine().getSerializationService()));
                     }
                 }
                 break;
             }
 
-            futures.set(i, new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
+            futures.set(i, InternalCompletableFuture.newCompletedFuture(value));
             timeoutNanos -= System.nanoTime() - start;
         }
         return done;
@@ -588,7 +566,7 @@ public class ExecutorServiceProxy
         waitWithDeadline(calls, 3, TimeUnit.SECONDS, shutdownExceptionHandler);
     }
 
-    private InternalCompletableFuture submitShutdownOperation(OperationService operationService, Member member) {
+    private InvocationFuture<Object> submitShutdownOperation(OperationService operationService, Member member) {
         ShutdownOperation op = new ShutdownOperation(name);
         return operationService.invokeOnTarget(getServiceName(), op, member.getAddress());
     }
@@ -638,5 +616,22 @@ public class ExecutorServiceProxy
     @Override
     public String toString() {
         return "IExecutorService{" + "name='" + name + '\'' + '}';
+    }
+
+    // todo this replaces new CompletedFuture which also deserializes the value...
+    private static <V> InternalCompletableFuture<V> completedSynchronously(Future<V> future,
+                                                                           SerializationService serializationService) {
+        try {
+            return InternalCompletableFuture.newCompletedFuture(future.get(), serializationService);
+        } catch (ExecutionException e) {
+            return InternalCompletableFuture.completedExceptionally(e.getCause());
+        } catch (CancellationException e) {
+            InternalCompletableFuture cancelledFuture = new InternalCompletableFuture();
+            future.cancel(true);
+            return cancelledFuture;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return InternalCompletableFuture.completedExceptionally(e);
+        }
     }
 }

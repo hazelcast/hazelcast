@@ -77,7 +77,7 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
 
     @Test
     public void estimateAsync() throws Exception {
-        assertEquals(0, estimator.estimateAsync().get().longValue());
+        assertEquals(0, estimator.estimateAsync().toCompletableFuture().get().longValue());
     }
 
     @Test
@@ -96,16 +96,16 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
 
     @Test
     public void addAsync() throws Exception {
-        estimator.addAsync(1L).get();
-        assertEquals(1L, estimator.estimateAsync().get().longValue());
-        estimator.addAsync(1L).get();
-        estimator.addAsync(1L).get();
-        assertEquals(1L, estimator.estimateAsync().get().longValue());
-        estimator.addAsync(2L).get();
+        estimator.addAsync(1L).toCompletableFuture().get();
+        assertEquals(1L, estimator.estimateAsync().toCompletableFuture().get().longValue());
+        estimator.addAsync(1L).toCompletableFuture().get();
+        estimator.addAsync(1L).toCompletableFuture().get();
+        assertEquals(1L, estimator.estimateAsync().toCompletableFuture().get().longValue());
+        estimator.addAsync(2L).toCompletableFuture().get();
         estimator.addAsync(3L);
-        assertEquals(3L, estimator.estimateAsync().get().longValue());
-        estimator.addAsync("Test").get();
-        assertEquals(4L, estimator.estimateAsync().get().longValue());
+        assertEquals(3L, estimator.estimateAsync().toCompletableFuture().get().longValue());
+        estimator.addAsync("Test").toCompletableFuture().get();
+        assertEquals(4L, estimator.estimateAsync().toCompletableFuture().get().longValue());
     }
 
     @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)

@@ -21,13 +21,12 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -40,7 +39,7 @@ import java.io.IOException;
 public class CacheGetConfigOperation extends AbstractNamedOperation implements IdentifiedDataSerializable, ReadonlyOperation {
 
     private transient volatile Object response;
-    private transient ICompletableFuture createOnAllMembersFuture;
+    private transient InternalCompletableFuture createOnAllMembersFuture;
     private String simpleName;
 
     public CacheGetConfigOperation() {
@@ -71,15 +70,10 @@ public class CacheGetConfigOperation extends AbstractNamedOperation implements I
         }
         response = cacheConfig;
         if (createOnAllMembersFuture != null) {
-            createOnAllMembersFuture.andThen(new ExecutionCallback() {
-
-                @Override
-                public void onResponse(Object asyncResponse) {
+            createOnAllMembersFuture.whenCompleteAsync((asyncResponse, t) -> {
+                if (t == null) {
                     CacheGetConfigOperation.this.sendResponse(response);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
+                } else {
                     CacheGetConfigOperation.this.sendResponse(t);
                 }
             });

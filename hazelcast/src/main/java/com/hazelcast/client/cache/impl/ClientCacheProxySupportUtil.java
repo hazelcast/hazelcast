@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
@@ -29,7 +30,6 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListener
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -84,11 +84,18 @@ final class ClientCacheProxySupportUtil {
         }
     }
 
+    // todo completely remove ExecutionCallback
     static <T> void addCallback(ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
         if (callback == null) {
             return;
         }
-        delegatingFuture.andThen(callback);
+        delegatingFuture.whenCompleteAsync((result, throwable) -> {
+            if (throwable == null) {
+                callback.onResponse(result);
+            } else {
+                callback.onFailure(throwable);
+            }
+        });
     }
 
     static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {

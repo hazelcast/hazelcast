@@ -19,7 +19,6 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
@@ -45,9 +44,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
@@ -434,7 +433,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     assertNull(getFuture(adapter.putAsync(i, value, 1, HOURS), "Could not put value via putAsync() with TTL"));
                     break;
                 case PUT_ASYNC_WITH_EXPIRY_POLICY:
-                    ICompletableFuture<String> future = adapter.putAsync(i, value, expiryPolicy);
+                    CompletionStage<String> future = adapter.putAsync(i, value, expiryPolicy);
                     assertNull(getFuture(future, "Could not put value via putAsync() with ExpiryPolicy"));
                     break;
                 case PUT_TRANSIENT:
@@ -834,7 +833,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     getFuture(adapter.setAsync(i, newValue, 1, HOURS), "Could not set value via setAsync() with TTL");
                     break;
                 case SET_ASYNC_WITH_EXPIRY_POLICY:
-                    ICompletableFuture<Void> voidFuture = adapter.setAsync(i, newValue, expiryPolicy);
+                    CompletionStage<Void> voidFuture = adapter.setAsync(i, newValue, expiryPolicy);
                     getFuture(voidFuture, "Could not set value via setAsync() with ExpiryPolicy");
                     break;
                 case PUT:
@@ -844,11 +843,11 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     assertEquals(value, getFuture(adapter.putAsync(i, newValue), "Could not put value via putAsync()"));
                     break;
                 case PUT_ASYNC_WITH_TTL:
-                    ICompletableFuture<String> ttlFuture = adapter.putAsync(i, newValue, 1, HOURS);
+                    CompletionStage<String> ttlFuture = adapter.putAsync(i, newValue, 1, HOURS);
                     assertEquals(value, getFuture(ttlFuture, "Could not put value via putAsync() with TTL"));
                     break;
                 case PUT_ASYNC_WITH_EXPIRY_POLICY:
-                    ICompletableFuture<String> expiryFuture = adapter.putAsync(i, newValue, expiryPolicy);
+                    CompletionStage<String> expiryFuture = adapter.putAsync(i, newValue, expiryPolicy);
                     assertEquals(value, getFuture(expiryFuture, "Could not put value via putAsync() with ExpiryPolicy"));
                     break;
                 case PUT_TRANSIENT:
@@ -1698,7 +1697,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 }
                 break;
             case GET_ASYNC:
-                List<Future<String>> futures = new ArrayList<Future<String>>(size);
+                List<CompletionStage<String>> futures = new ArrayList<>(size);
                 for (int i = 0; i < size; i++) {
                     futures.add(context.nearCacheAdapter.getAsync(i));
                 }
@@ -1712,7 +1711,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 }
                 break;
             case GET_ALL:
-                Set<Integer> getAllSet = new HashSet<Integer>(size);
+                Set<Integer> getAllSet = new HashSet<>(size);
                 for (int i = 0; i < size; i++) {
                     getAllSet.add(i);
                 }
@@ -1759,7 +1758,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 }
                 break;
             case GET_ALL:
-                Set<Integer> getAllSet = new HashSet<Integer>(size);
+                Set<Integer> getAllSet = new HashSet<>(size);
                 for (int i = 0; i < size; i++) {
                     getAllSet.add(i);
                 }
