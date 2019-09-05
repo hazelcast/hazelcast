@@ -69,6 +69,7 @@ import com.hazelcast.test.starter.HazelcastStarter;
 import com.hazelcast.util.UuidUtil;
 import junit.framework.AssertionFailedError;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
@@ -103,6 +104,7 @@ import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionSe
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.OsHelper.isLinux;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -1687,6 +1689,10 @@ public abstract class HazelcastTestSupport {
 
     public static void assumeThatNoWindowsOS() {
         assumeFalse(System.getProperty("os.name").toLowerCase().contains("windows"));
+    }
+
+    public static void assumeThatLinuxOS() {
+        Assume.assumeTrue("Only Linux platform supported", isLinux());
     }
 
     /**
