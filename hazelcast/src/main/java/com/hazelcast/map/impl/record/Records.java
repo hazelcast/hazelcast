@@ -19,7 +19,10 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import static com.hazelcast.map.impl.record.AbstractRecord.EPOCH_TIME;
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains various factory & helper methods for a {@link com.hazelcast.map.impl.record.Record} object.
@@ -206,6 +209,21 @@ public final class Records {
             }
             return object;
         }
+    }
+
+    public static int toSecondsSinceEpoch(long value) {
+        int diff = Record.NOT_AVAILABLE;
+        if (value > 0) {
+            diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
+        }
+        return diff;
+    }
+
+    public static long fromSecondsSinceEpoch(int seconds) {
+        if (seconds == Record.NOT_AVAILABLE) {
+            return 0L;
+        }
+        return SECONDS.toMillis(seconds) + EPOCH_TIME;
     }
 
 }

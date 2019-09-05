@@ -823,6 +823,7 @@
         <data-load-timeout-seconds>42</data-load-timeout-seconds>
         <parallelism>3</parallelism>
         <validation-timeout-seconds>10</validation-timeout-seconds>
+        <store-metadata>true</store-metadata>
     </hot-restart-persistence>
 
     <event-journal>

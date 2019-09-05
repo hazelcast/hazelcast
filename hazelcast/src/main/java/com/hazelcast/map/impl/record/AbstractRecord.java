@@ -23,7 +23,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
-import static com.hazelcast.util.TimeUtil.zeroOutMs;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -32,18 +31,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @SuppressWarnings({ "checkstyle:methodcount", "VolatileLongOrDoubleField" })
 public abstract class AbstractRecord<V> implements Record<V> {
-
-    /**
-     * Base time to be used for storing time values as diffs (int) rather than full blown epoch based vals (long)
-     * This allows for a space in seconds, of roughly 68 years.
-     *
-     * Reference value (1514764800000) - Monday, January 1, 2018 12:00:00 AM
-     *
-     * The fixed time in the past (instead of {@link System#currentTimeMillis()} prevents any
-     * time discrepancies among nodes, mis-translated as diffs of -1 ie. {@link Record#NOT_AVAILABLE} values.
-     * (see. https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
-     */
-    public static final long EPOCH_TIME = zeroOutMs(1514764800000L);
 
     private static final int NUMBER_OF_LONGS = 2;
     private static final int NUMBER_OF_INTS = 5;
@@ -115,32 +102,32 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getLastAccessTime() {
-        return recomputeWithBaseTime(lastAccessTime);
+        return Records.fromSecondsSinceEpoch(lastAccessTime);
     }
 
     @Override
     public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = stripBaseTime(lastAccessTime);
+        this.lastAccessTime = Records.toSecondsSinceEpoch(lastAccessTime);
     }
 
     @Override
     public long getLastUpdateTime() {
-        return recomputeWithBaseTime(lastUpdateTime);
+        return Records.fromSecondsSinceEpoch(lastUpdateTime);
     }
 
     @Override
     public void setLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime = stripBaseTime(lastUpdateTime);
+        this.lastUpdateTime = Records.toSecondsSinceEpoch(lastUpdateTime);
     }
 
     @Override
     public long getCreationTime() {
-        return recomputeWithBaseTime(creationTime);
+        return Records.fromSecondsSinceEpoch(creationTime);
     }
 
     @Override
     public void setCreationTime(long creationTime) {
-        this.creationTime = stripBaseTime(creationTime);
+        this.creationTime = Records.toSecondsSinceEpoch(creationTime);
     }
 
     @Override
@@ -161,7 +148,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public void onUpdate(long now) {
         version++;
-        lastUpdateTime = stripBaseTime(now);
+        lastUpdateTime = Records.toSecondsSinceEpoch(now);
     }
 
     @Override
@@ -172,7 +159,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public void onAccess(long now) {
         hits++;
-        lastAccessTime = stripBaseTime(now);
+        lastAccessTime = Records.toSecondsSinceEpoch(now);
     }
 
     @Override
@@ -267,24 +254,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
         result = 31 * result + lastAccessTime;
         result = 31 * result + lastUpdateTime;
         return result;
-    }
-
-    protected long recomputeWithBaseTime(int value) {
-        if (value == NOT_AVAILABLE) {
-            return 0L;
-        }
-
-        long exploded = SECONDS.toMillis(value);
-        return exploded + EPOCH_TIME;
-    }
-
-    protected int stripBaseTime(long value) {
-        int diff = NOT_AVAILABLE;
-        if (value > 0) {
-            diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
-        }
-
-        return diff;
     }
 
 }

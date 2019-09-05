@@ -3841,6 +3841,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="store-metadata" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        If set to true, record metadata such as TTL and max-idle will be stored with each record.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>

@@ -1382,6 +1382,7 @@ public class ConfigXmlGenerator {
                 .node("data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds())
                 .node("cluster-data-recovery-policy", hrCfg.getClusterDataRecoveryPolicy())
                 .node("auto-remove-stale-data", hrCfg.isAutoRemoveStaleData())
+                .node("store-metadata", hrCfg.isStoreMetadata())
                 .close();
     }
 

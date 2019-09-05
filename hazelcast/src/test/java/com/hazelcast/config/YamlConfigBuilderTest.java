@@ -2977,7 +2977,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    parallelism: " + parallelism + "\n"
                 + "    validation-timeout-seconds: " + validationTimeout + "\n"
                 + "    data-load-timeout-seconds: " + dataLoadTimeout + "\n"
-                + "    cluster-data-recovery-policy: " + policy + "\n";
+                + "    cluster-data-recovery-policy: " + policy + "\n"
+                + "    store-metadata: true\n";
 
         Config config = new InMemoryYamlConfig(yaml);
         HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
@@ -2989,6 +2990,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(validationTimeout, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
         assertEquals(dataLoadTimeout, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
+        assertTrue(hotRestartPersistenceConfig.isStoreMetadata());
     }
 
     @Override
