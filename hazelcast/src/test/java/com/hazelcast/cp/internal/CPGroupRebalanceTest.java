@@ -1,15 +1,15 @@
 package com.hazelcast.cp.internal;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.operation.GetLeadershipGroupsOp;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -20,62 +20,84 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.test.OverridePropertyRule.set;
+import static com.hazelcast.cp.internal.RaftGroupMembershipManager.LEADERSHIP_BALANCE_TASK_PERIOD;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
 
-    @ClassRule
-    public static final OverridePropertyRule raftLeadershipRebalanceRule
-            = set("hazelcast.raft.leadership.rebalance.period", String.valueOf(Integer.MAX_VALUE));
+    @Override
+    protected Config createConfig(int cpNodeCount, int groupSize) {
+        Config config = super.createConfig(cpNodeCount, groupSize);
+        config.setProperty(LEADERSHIP_BALANCE_TASK_PERIOD.getName(), String.valueOf(Integer.MAX_VALUE));
+        return config;
+    }
 
     @Test
     public void test() throws Exception {
-        HazelcastInstance[] instances = newInstances(7, 3, 0);
+        int cpMemberCount = 7;
+        HazelcastInstance[] instances = newInstances(cpMemberCount, 3, 0);
         waitUntilCPDiscoveryCompleted(instances);
 
-        RaftInvocationManager invocationManager = getRaftService(instances[0]).getInvocationManager();
+        final int leadershipsPerMember = 11;
+        final int extraGroups = 3;
+        final int groupCount = cpMemberCount * leadershipsPerMember + extraGroups;
 
-        Collection<CPGroupId> groupIds = new ArrayList<CPGroupId>();
-        for (int i = 0; i < 77; i++) {
-            RaftGroupId groupId = invocationManager.createRaftGroup("group-" + i).join();
-            groupIds.add(groupId);
-        }
+        createRaftGroups(instances, groupCount);
 
         HazelcastInstance metadataLeader = getLeaderInstance(instances, getMetadataGroupId(instances[0]));
         Collection<CPMember> cpMembers = metadataLeader.getCPSubsystem().getCPSubsystemManagementService().getCPMembers().get();
 
+        System.err.println(leadershipsString(getLeadershipsMap(metadataLeader, cpMembers)));
+
+        rebalanceLeaderships(metadataLeader);
+
+        Map<CPMember, Collection<CPGroupId>> leadershipsMap = getLeadershipsMap(metadataLeader, cpMembers);
+
+        System.err.println(leadershipsString(leadershipsMap));
+
+        for (Entry<CPMember, Collection<CPGroupId>> entry : leadershipsMap.entrySet()) {
+            int count = entry.getValue().size();
+            assertBetween(leadershipsString(leadershipsMap), count, leadershipsPerMember - 1, leadershipsPerMember + extraGroups);
+//            assertThat(leadershipsString(leadershipsMap), count,
+//                    isOneOf(leadershipsPerMember - 1, leadershipsPerMember, leadershipsPerMember + 1));
+        }
+    }
+
+    private void rebalanceLeaderships(HazelcastInstance metadataLeader) {
+        getRaftService(metadataLeader).getMetadataGroupManager().rebalanceGroupLeaderships();
+    }
+
+    private void createRaftGroups(HazelcastInstance[] instances, int groupCount) {
+        RaftInvocationManager invocationManager = getRaftInvocationManager(instances[0]);
+
+        Collection<CPGroupId> groupIds = new ArrayList<CPGroupId>(groupCount);
+        Collection<InternalCompletableFuture<RaftGroupId>> futures
+                = new ArrayList<InternalCompletableFuture<RaftGroupId>>(groupCount);
+
+        for (int i = 0; i < groupCount; i++) {
+            InternalCompletableFuture<RaftGroupId> f = invocationManager.createRaftGroup("group-" + i);
+            futures.add(f);
+        }
+        for (InternalCompletableFuture<RaftGroupId> future : futures) {
+            RaftGroupId groupId = future.join();
+            groupIds.add(groupId);
+        }
         for (CPGroupId groupId : groupIds) {
             // await leader election
             getLeaderInstance(instances, groupId);
         }
-
-        Map<CPMember, Collection<CPGroupId>> leadershipsMap = getLeadershipsMap(metadataLeader, cpMembers);
-        System.err.println("====== LEADERSHIPS ========");
-        for (Entry<CPMember, Collection<CPGroupId>> entry : leadershipsMap.entrySet()) {
-            System.err.println(entry.getKey() + " => " + entry.getValue().size());
-        }
-
-        getRaftService(metadataLeader).getMetadataGroupManager().rebalanceGroupLeaderships();
-
-        leadershipsMap = getLeadershipsMap(metadataLeader, cpMembers);
-        System.err.println("====== LEADERSHIPS ========");
-        for (Entry<CPMember, Collection<CPGroupId>> entry : leadershipsMap.entrySet()) {
-            System.err.println(entry.getKey() + " => " + entry.getValue().size());
-        }
-
-        getRaftService(metadataLeader).getMetadataGroupManager().rebalanceGroupLeaderships();
-
-        System.err.println("====== LEADERSHIPS ========");
-        leadershipsMap = getLeadershipsMap(metadataLeader, cpMembers);
-        for (Entry<CPMember, Collection<CPGroupId>> entry : leadershipsMap.entrySet()) {
-            System.err.println(entry.getKey() + " => " + entry.getValue().size());
-        }
     }
 
-    private Map<CPMember, Collection<CPGroupId>> getLeadershipsMap(HazelcastInstance instance,
-            Collection<CPMember> members) {
+    private String leadershipsString(Map<CPMember, Collection<CPGroupId>> leadershipsMap) {
+        StringBuilder s = new StringBuilder("====== LEADERSHIPS ======\n");
+        for (Entry<CPMember, Collection<CPGroupId>> entry : leadershipsMap.entrySet()) {
+            s.append(entry.getKey()).append(" => ").append(entry.getValue().size()).append('\n');
+        }
+        return s.toString();
+    }
+
+    private Map<CPMember, Collection<CPGroupId>> getLeadershipsMap(HazelcastInstance instance, Collection<CPMember> members) {
         InternalOperationService operationService = getOperationService(instance);
         Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<CPMember, Collection<CPGroupId>>();
 

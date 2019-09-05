@@ -46,6 +46,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -74,8 +75,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 class RaftGroupMembershipManager {
 
     static final long MANAGEMENT_TASK_PERIOD_IN_MILLIS = SECONDS.toMillis(1);
+    static final HazelcastProperty LEADERSHIP_BALANCE_TASK_PERIOD
+            = new HazelcastProperty("hazelcast.raft.leadership.rebalance.period", 60);
     private static final long CHECK_LOCAL_RAFT_NODES_TASK_PERIOD = 10;
-    private static final long LEADERSHIP_BALANCE_TASK_PERIOD = Integer.getInteger("hazelcast.raft.leadership.rebalance.period", 60);
 
     private final NodeEngine nodeEngine;
     private final RaftService raftService;
@@ -104,8 +106,9 @@ class RaftGroupMembershipManager {
                 MANAGEMENT_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
         executionService.scheduleWithRepetition(new CheckLocalRaftNodesTask(), CHECK_LOCAL_RAFT_NODES_TASK_PERIOD,
                 CHECK_LOCAL_RAFT_NODES_TASK_PERIOD, SECONDS);
-        executionService.scheduleWithRepetition(new RaftGroupLeadershipBalanceTask(false), LEADERSHIP_BALANCE_TASK_PERIOD,
-                LEADERSHIP_BALANCE_TASK_PERIOD, SECONDS);
+        int leadershipRebalancePeriod = nodeEngine.getProperties().getInteger(LEADERSHIP_BALANCE_TASK_PERIOD);
+        executionService.scheduleWithRepetition(new RaftGroupLeadershipBalanceTask(), leadershipRebalancePeriod,
+                leadershipRebalancePeriod, SECONDS);
     }
 
     private boolean skipRunningTask() {
@@ -113,7 +116,7 @@ class RaftGroupMembershipManager {
     }
 
     void rebalanceGroupLeaderships() {
-        new RaftGroupLeadershipBalanceTask(true).run();
+        new RaftGroupLeadershipBalanceTask().run();
     }
 
     private class CheckLocalRaftNodesTask implements Runnable {
@@ -458,12 +461,6 @@ class RaftGroupMembershipManager {
 
     private final class RaftGroupLeadershipBalanceTask implements Runnable {
 
-        private final boolean awaitIfRunning;
-
-        private RaftGroupLeadershipBalanceTask(boolean awaitIfRunning) {
-            this.awaitIfRunning = awaitIfRunning;
-        }
-
         @Override
         public void run() {
             if (skipRunningTask()) {
@@ -471,15 +468,7 @@ class RaftGroupMembershipManager {
             }
 
             if (!rebalanceTaskRunning.compareAndSet(false, true)) {
-                while (awaitIfRunning && rebalanceTaskRunning.get()) {
-                    try {
-                        Thread.sleep(MANAGEMENT_TASK_PERIOD_IN_MILLIS);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-                return;
+                throw new IllegalStateException(getClass().getSimpleName() + " is already running!");
             }
 
             try {
@@ -524,7 +513,8 @@ class RaftGroupMembershipManager {
                     return;
                 }
 
-                logger.info("Searching a candidate transfer leadership from " + from + " with " + from.element2 + " leaderships.");
+                logger.info("Searching a candidate transfer leadership from "
+                        + from.element1 + " with " + from.element2 + " leaderships.");
                 Collection<CPGroupSummary> groups = getLeaderGroupsOf(from.element1, leaderships.get(from.element1), allGroups);
 
                 int maxLeaderships;
@@ -543,7 +533,7 @@ class RaftGroupMembershipManager {
                 }
                 Tuple2<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, maxLeaderships);
                 if (to.element1 == null) {
-                    logger.info("No candidate could be found to get leadership from " + from + ". Skipping to next...");
+                    logger.info("No candidate could be found to get leadership from " + from.element1 + ". Skipping to next...");
                     // could not found target member to transfer membership
                     // try to find next leader
                     handledMembers.add(from.element1);
