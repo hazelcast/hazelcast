@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Acquires all available permits at once and returns immediately.
  */
-@Generated("63cdecb3ff2911158873bb6d36f9b484")
+@Generated("706e7fbd141cb94dfda37f81a921cf1b")
 public final class SemaphoreDrainCodec {
     //hex: 0x0D0400
     public static final int REQUEST_MESSAGE_TYPE = 852992;
@@ -121,9 +122,9 @@ public final class SemaphoreDrainCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 

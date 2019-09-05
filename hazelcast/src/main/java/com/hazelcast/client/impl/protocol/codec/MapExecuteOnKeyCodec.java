@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entry mapped by the key. Returns the the object which is result of
  * the process() method of EntryProcessor.
  */
-@Generated("e9815fd395756fcd8a13b4efcbee9d43")
+@Generated("98d6ae01f232880378aa7b0e0e69d574")
 public final class MapExecuteOnKeyCodec {
     //hex: 0x013200
     public static final int REQUEST_MESSAGE_TYPE = 78336;

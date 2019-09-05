@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -38,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The actual replica count may be less, depending on the number of data
  * members in the cluster (members that own data).
  */
-@Generated("d780529451f165bd354f2155181c8099")
+@Generated("bf6d285d7ec9ceeb77fd7bc864ecd690")
 public final class PNCounterGetConfiguredReplicaCountCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
@@ -94,9 +95,9 @@ public final class PNCounterGetConfiguredReplicaCountCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 

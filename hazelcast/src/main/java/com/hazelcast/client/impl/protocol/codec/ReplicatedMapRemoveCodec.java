@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -38,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * null does not necessarily indicate that the map contained no mapping for the key; it's also possible that the map
  * explicitly mapped the key to null. The map will not contain a mapping for the specified key once the call returns.
  */
-@Generated("a2f6a00103b00334a81d02e93ef2ae70")
+@Generated("43c7a0132e0368d60088d39fb85ea854")
 public final class ReplicatedMapRemoveCodec {
     //hex: 0x0E0700
     public static final int REQUEST_MESSAGE_TYPE = 919296;

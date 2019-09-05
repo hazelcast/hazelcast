@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -38,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("6ef79cb46ec2f3a5f09b90453b614efd")
+@Generated("8be9a9b360a059f64b86d58ab3cc6997")
 public final class MapValuesWithPagingPredicateCodec {
     //hex: 0x013900
     public static final int REQUEST_MESSAGE_TYPE = 80128;
@@ -102,7 +103,7 @@ public final class MapValuesWithPagingPredicateCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
+        EntryListCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
         return clientMessage;
     }
 
@@ -111,7 +112,7 @@ public final class MapValuesWithPagingPredicateCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = MapCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return response;
     }
 

@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -38,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw
  * a QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("97dc73069367715afddb0caeb850a216")
+@Generated("78ce2e55ddc851a11b8df7a6945f732f")
 public final class TransactionalMapValuesWithPredicateCodec {
     //hex: 0x101100
     public static final int REQUEST_MESSAGE_TYPE = 1052928;

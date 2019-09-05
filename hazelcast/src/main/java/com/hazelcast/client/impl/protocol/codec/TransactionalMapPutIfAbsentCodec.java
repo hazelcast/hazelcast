@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the specified key is not already associated with a value, associate it with the given value.
  * The object to be put will be accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("d7785b77346f53ca0437923b008c112c")
+@Generated("45feb8ea34bfbf59a778b701ee1e6531")
 public final class TransactionalMapPutIfAbsentCodec {
     //hex: 0x100800
     public static final int REQUEST_MESSAGE_TYPE = 1050624;

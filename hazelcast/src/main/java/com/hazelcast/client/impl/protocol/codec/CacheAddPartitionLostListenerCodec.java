@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -39,7 +40,7 @@ import com.hazelcast.logging.Logger;
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-@Generated("80b99ffc98e2cc1159f8da2d0f84cbd8")
+@Generated("e8fa1b5e63e86f6237e82dc7302a01d1")
 public final class CacheAddPartitionLostListenerCodec {
     //hex: 0x151A00
     public static final int REQUEST_MESSAGE_TYPE = 1382912;
@@ -108,9 +109,9 @@ public final class CacheAddPartitionLostListenerCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 
@@ -130,6 +131,7 @@ public final class CacheAddPartitionLostListenerCodec {
         encodeInt(initialFrame.content, EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET, partitionId);
         encodeUUID(initialFrame.content, EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
+
         return clientMessage;
     }
 

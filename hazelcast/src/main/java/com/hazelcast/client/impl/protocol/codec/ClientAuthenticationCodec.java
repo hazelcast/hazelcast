@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("3a7cb35f3a40d2a66f5e4e318e4a4cc7")
+@Generated("f067463119c1f05e9e20191e1216c7be")
 public final class ClientAuthenticationCodec {
     //hex: 0x000200
     public static final int REQUEST_MESSAGE_TYPE = 512;
@@ -224,14 +225,14 @@ public final class ClientAuthenticationCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.add(initialFrame);
-
         encodeByte(initialFrame.content, RESPONSE_STATUS_FIELD_OFFSET, status);
         encodeUUID(initialFrame.content, RESPONSE_UUID_FIELD_OFFSET, uuid);
         encodeUUID(initialFrame.content, RESPONSE_OWNER_UUID_FIELD_OFFSET, ownerUuid);
         encodeByte(initialFrame.content, RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
         encodeInt(initialFrame.content, RESPONSE_PARTITION_COUNT_FIELD_OFFSET, partitionCount);
         encodeUUID(initialFrame.content, RESPONSE_CLUSTER_ID_FIELD_OFFSET, clusterId);
+        clientMessage.add(initialFrame);
+
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
         ListMultiFrameCodec.encodeNullable(clientMessage, clientUnregisteredMembers, MemberCodec::encode);

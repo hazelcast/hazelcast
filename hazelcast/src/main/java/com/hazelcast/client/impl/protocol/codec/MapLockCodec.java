@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -39,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Scope of the lock is this map only. Acquired lock is only for the key in this map. Locks are re-entrant,
  * so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
  */
-@Generated("07ca588b66153bf39fc3ad46e13f2a9c")
+@Generated("e4edf2a15e1244cbea11c6e84b3d7cd1")
 public final class MapLockCodec {
     //hex: 0x011300
     public static final int REQUEST_MESSAGE_TYPE = 70400;

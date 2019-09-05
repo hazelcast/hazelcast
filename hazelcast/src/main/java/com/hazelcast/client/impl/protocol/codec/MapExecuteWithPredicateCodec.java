@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
  * Returns the results mapped by each key in the map.
  */
-@Generated("ca626b577783103f9ff69e9bd7e052b2")
+@Generated("10f7f70d85a2a0e3713c46e9e85ada77")
 public final class MapExecuteWithPredicateCodec {
     //hex: 0x013500
     public static final int REQUEST_MESSAGE_TYPE = 79104;
@@ -107,7 +108,7 @@ public final class MapExecuteWithPredicateCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
+        EntryListCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
         return clientMessage;
     }
 
@@ -116,7 +117,7 @@ public final class MapExecuteWithPredicateCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = MapCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return response;
     }
 

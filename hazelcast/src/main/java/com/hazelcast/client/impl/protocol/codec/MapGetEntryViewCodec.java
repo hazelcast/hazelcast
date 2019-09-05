@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -37,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method returns a clone of original mapping, modifying the returned value does not change the actual value
  * in the map. One should put modified value back to make changes visible to all nodes.
  */
-@Generated("b3964f09d80377e56c58da54a6204013")
+@Generated("1edf770912567fb2b51d4c2b6ae0cbdd")
 public final class MapGetEntryViewCodec {
     //hex: 0x012100
     public static final int REQUEST_MESSAGE_TYPE = 73984;
@@ -112,9 +113,9 @@ public final class MapGetEntryViewCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeLong(initialFrame.content, RESPONSE_MAX_IDLE_FIELD_OFFSET, maxIdle);
         clientMessage.add(initialFrame);
 
-        encodeLong(initialFrame.content, RESPONSE_MAX_IDLE_FIELD_OFFSET, maxIdle);
         CodecUtil.encodeNullable(clientMessage, response, SimpleEntryViewCodec::encode);
         return clientMessage;
     }

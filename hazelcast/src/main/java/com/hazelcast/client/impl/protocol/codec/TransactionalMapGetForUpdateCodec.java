@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Locks the key and then gets and returns the value to which the specified key is mapped. Lock will be released at
  * the end of the transaction (either commit or rollback).
  */
-@Generated("de3a141952d6a5fb20d9484b40eb253b")
+@Generated("1b4db61eaf277b77c0b345fd4b6c07b1")
 public final class TransactionalMapGetForUpdateCodec {
     //hex: 0x100300
     public static final int REQUEST_MESSAGE_TYPE = 1049344;

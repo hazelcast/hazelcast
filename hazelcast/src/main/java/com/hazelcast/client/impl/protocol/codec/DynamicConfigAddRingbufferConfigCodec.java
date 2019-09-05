@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -37,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a ringbuffer configuration with the given {@code name} already exists, then
  * the new ringbuffer config is ignored and the existing one is preserved.
  */
-@Generated("219d45e897042c7267bd4d736f8f0682")
+@Generated("7d6c2d1d7cf65d75a73eb4751b964de2")
 public final class DynamicConfigAddRingbufferConfigCodec {
     //hex: 0x1E0200
     public static final int REQUEST_MESSAGE_TYPE = 1966592;

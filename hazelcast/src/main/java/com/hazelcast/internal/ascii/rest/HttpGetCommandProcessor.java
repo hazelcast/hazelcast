@@ -320,7 +320,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private JsonObject toJson(CPGroupId groupId) {
-        return new JsonObject().add("name", groupId.name()).add("id", groupId.id());
+        return new JsonObject().add("name", groupId.getName()).add("id", groupId.getId());
     }
 
     private JsonObject toJson(CPMember cpMember) {

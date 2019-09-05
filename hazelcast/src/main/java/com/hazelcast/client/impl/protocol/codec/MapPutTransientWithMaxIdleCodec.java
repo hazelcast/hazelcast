@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Same as put except that MapStore, if defined, will not be called to store/persist the entry.
  * If ttl and maxIdle are 0, then the entry lives forever.
  */
-@Generated("c50dec1840d43e3f7b4b6f138a7b4afb")
+@Generated("5e67d153dde222553f6772914804631b")
 public final class MapPutTransientWithMaxIdleCodec {
     //hex: 0x014B00
     public static final int REQUEST_MESSAGE_TYPE = 84736;

@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -38,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * if the old value is not needed.
  * The object to be set will be accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("eb7f2abb965ba21f465f4fd28bcf473a")
+@Generated("3b3b9001d32cb829af32a1cd05b34913")
 public final class TransactionalMapSetCodec {
     //hex: 0x100700
     public static final int REQUEST_MESSAGE_TYPE = 1050368;

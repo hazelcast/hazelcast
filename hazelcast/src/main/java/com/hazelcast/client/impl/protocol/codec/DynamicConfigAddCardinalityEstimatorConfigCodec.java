@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -37,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cardinality estimator configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("837cf8065e49fcb700b9ee410dc54333")
+@Generated("905230554146bfe31bc2a2b459c2c114")
 public final class DynamicConfigAddCardinalityEstimatorConfigCodec {
     //hex: 0x1E0300
     public static final int REQUEST_MESSAGE_TYPE = 1966848;

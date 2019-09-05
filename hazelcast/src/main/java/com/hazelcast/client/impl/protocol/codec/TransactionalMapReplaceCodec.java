@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the entry for a key only if it is currently mapped to some value. The object to be replaced will be
  * accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("96bdf9cf0569fe90363aadd9e4fa2aab")
+@Generated("75b4cc9467793fdd15dfc272d17815f7")
 public final class TransactionalMapReplaceCodec {
     //hex: 0x100900
     public static final int REQUEST_MESSAGE_TYPE = 1050880;

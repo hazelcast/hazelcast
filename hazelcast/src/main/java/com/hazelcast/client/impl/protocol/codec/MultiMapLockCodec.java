@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -39,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * lock is only for the key in this map.Locks are re-entrant, so if the key is locked N times, then it should be
  * unlocked N times before another thread can acquire it.
  */
-@Generated("35dd87f4976c1608e3b6e96780564203")
+@Generated("1d1732401e87a8c0ae4727e8ea3cf68d")
 public final class MultiMapLockCodec {
     //hex: 0x021000
     public static final int REQUEST_MESSAGE_TYPE = 135168;

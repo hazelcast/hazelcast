@@ -45,11 +45,17 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CodecHashTest {
     private static final String CODEC_DIRECTORY = "src/main/java/com/hazelcast/client/impl/protocol/codec";
+    private static final String CUSTOM_CODEC_DIRECTORY = "src/main/java/com/hazelcast/client/impl/protocol/codec/custom";
     private static final Pattern HASH_PATTERN = Pattern.compile("@Generated\\(\"([a-f0-9]{32})\"\\)");
 
     @Test
     public void testCodecHashCodes() throws IOException, NoSuchAlgorithmException {
         testCodecsInternal(CODEC_DIRECTORY);
+    }
+
+    @Test
+    public void testCustomCodecHashCodes() throws IOException, NoSuchAlgorithmException {
+        testCodecsInternal(CUSTOM_CODEC_DIRECTORY);
     }
 
     public void testCodecsInternal(String codecDirectory) throws IOException, NoSuchAlgorithmException {

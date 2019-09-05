@@ -198,7 +198,7 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
     }
 
     public ICompletableFuture<Collection<CPSession>> getAllSessions(CPGroupId groupId) {
-        checkTrue(!METADATA_CP_GROUP_NAME.equals(groupId.name()), "Cannot query CP sessions on the METADATA CP group!");
+        checkTrue(!METADATA_CP_GROUP_NAME.equals(groupId.getName()), "Cannot query CP sessions on the METADATA CP group!");
         return raftService.getInvocationManager().query(groupId, new GetSessionsOp(), LINEARIZABLE);
     }
 

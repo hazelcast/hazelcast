@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("f431d8c3ba40b7ef58eca8f2c5f06522")
+@Generated("2f05dc7c5b8bbb1ce7453cf7b35197ad")
 public final class XATransactionCreateCodec {
     //hex: 0x160500
     public static final int REQUEST_MESSAGE_TYPE = 1443072;
@@ -55,7 +56,7 @@ public final class XATransactionCreateCodec {
         /**
          * Java XA transaction id as defined in interface javax.transaction.xa.Xid.
          */
-        public javax.transaction.xa.Xid xid;
+        public com.hazelcast.transaction.impl.xa.SerializableXID xid;
 
         /**
          * The timeout in seconds for XA operations such as prepare, commit, rollback.
@@ -98,9 +99,9 @@ public final class XATransactionCreateCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 

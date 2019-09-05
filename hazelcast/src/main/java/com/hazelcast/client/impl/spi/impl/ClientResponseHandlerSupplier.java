@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.builtin.ErrorCodec;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
@@ -32,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec.EXCEPTION_MESSAGE_TYPE;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.onOutOfMemory;
@@ -144,7 +144,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
             return;
         }
 
-        if (ErrorCodec.EXCEPTION_MESSAGE_TYPE == message.getMessageType()) {
+        if (EXCEPTION_MESSAGE_TYPE == message.getMessageType()) {
             future.notifyException(client.getClientExceptionFactory().createException(message));
         } else {
             future.notify(message);

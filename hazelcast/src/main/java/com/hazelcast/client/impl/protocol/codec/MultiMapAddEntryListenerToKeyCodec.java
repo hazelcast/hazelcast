@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -37,7 +38,7 @@ import com.hazelcast.logging.Logger;
  * Adds the specified entry listener for the specified key.The listener will be notified for all
  * add/remove/update/evict events for the specified key only.
  */
-@Generated("c75c14dc649b1a364e3798ed7e267945")
+@Generated("810db12baeb800688a70d66a8b2dfc06")
 public final class MultiMapAddEntryListenerToKeyCodec {
     //hex: 0x020D00
     public static final int REQUEST_MESSAGE_TYPE = 134400;
@@ -121,9 +122,9 @@ public final class MultiMapAddEntryListenerToKeyCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 
@@ -144,6 +145,7 @@ public final class MultiMapAddEntryListenerToKeyCodec {
         encodeUUID(initialFrame.content, EVENT_ENTRY_UUID_FIELD_OFFSET, uuid);
         encodeInt(initialFrame.content, EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET, numberOfAffectedEntries);
         clientMessage.add(initialFrame);
+
         CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, value, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, oldValue, DataCodec::encode);

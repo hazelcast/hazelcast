@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Disposes the result of the execution with the given sequence
  */
-@Generated("28c7e58bbd1466663e222a805be1c044")
+@Generated("97cfd0cf1d8a2a68bf5b64de36b820d7")
 public final class DurableExecutorDisposeResultCodec {
     //hex: 0x1B0500
     public static final int REQUEST_MESSAGE_TYPE = 1770752;

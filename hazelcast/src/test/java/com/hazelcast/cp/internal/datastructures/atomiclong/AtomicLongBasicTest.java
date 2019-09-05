@@ -62,7 +62,7 @@ public class AtomicLongBasicTest extends AbstractAtomicLongBasicTest {
     @Test
     public void testCreate_withDefaultGroup() {
         IAtomicLong atomicLong = createAtomicLong(randomName());
-        assertEquals(DEFAULT_GROUP_NAME, getGroupId(atomicLong).name());
+        assertEquals(DEFAULT_GROUP_NAME, getGroupId(atomicLong).getName());
     }
 
     @Test

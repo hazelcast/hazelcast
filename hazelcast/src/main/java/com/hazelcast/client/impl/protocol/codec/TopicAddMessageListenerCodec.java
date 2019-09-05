@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -37,7 +38,7 @@ import com.hazelcast.logging.Logger;
  * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
  * MessageListener is called. More than one message listener can be added on one instance.
  */
-@Generated("4dbd45679e8d008f504f2e59a38f51cb")
+@Generated("34c59a508c9c986af0d14fbd723cf763")
 public final class TopicAddMessageListenerCodec {
     //hex: 0x040200
     public static final int REQUEST_MESSAGE_TYPE = 262656;
@@ -105,9 +106,9 @@ public final class TopicAddMessageListenerCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 
@@ -127,6 +128,7 @@ public final class TopicAddMessageListenerCodec {
         encodeLong(initialFrame.content, EVENT_TOPIC_PUBLISH_TIME_FIELD_OFFSET, publishTime);
         encodeUUID(initialFrame.content, EVENT_TOPIC_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
+
         DataCodec.encode(clientMessage, item);
         return clientMessage;
     }

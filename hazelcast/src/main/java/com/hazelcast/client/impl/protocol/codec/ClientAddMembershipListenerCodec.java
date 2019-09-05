@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("965d01c87351b02710e652829f8ded15")
+@Generated("38e07c918de3086b55b827a9f1cf11b3")
 public final class ClientAddMembershipListenerCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;
@@ -104,9 +105,9 @@ public final class ClientAddMembershipListenerCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 
@@ -125,6 +126,7 @@ public final class ClientAddMembershipListenerCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET, eventType);
         clientMessage.add(initialFrame);
+
         MemberCodec.encode(clientMessage, member);
         return clientMessage;
     }
@@ -134,6 +136,7 @@ public final class ClientAddMembershipListenerCodec {
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_LIST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
+
         ListMultiFrameCodec.encode(clientMessage, members, MemberCodec::encode);
         return clientMessage;
     }
@@ -144,6 +147,7 @@ public final class ClientAddMembershipListenerCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET, operationType);
         clientMessage.add(initialFrame);
+
         MemberCodec.encode(clientMessage, member);
         ListMultiFrameCodec.encode(clientMessage, members, MemberCodec::encode);
         StringCodec.encode(clientMessage, key);
@@ -166,7 +170,7 @@ public final class ClientAddMembershipListenerCodec {
             if (messageType == EVENT_MEMBER_LIST_MESSAGE_TYPE) {
                 //empty initial frame
                 iterator.next();
-                java.util.List<com.hazelcast.cluster.Member> members = ListMultiFrameCodec.decode(iterator, MemberCodec::decode);
+                java.util.Collection<com.hazelcast.cluster.Member> members = ListMultiFrameCodec.decode(iterator, MemberCodec::decode);
                 handleMemberListEvent(members);
                 return;
             }
@@ -174,7 +178,7 @@ public final class ClientAddMembershipListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int operationType = decodeInt(initialFrame.content, EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET);
                 com.hazelcast.cluster.Member member = MemberCodec.decode(iterator);
-                java.util.List<com.hazelcast.cluster.Member> members = ListMultiFrameCodec.decode(iterator, MemberCodec::decode);
+                java.util.Collection<com.hazelcast.cluster.Member> members = ListMultiFrameCodec.decode(iterator, MemberCodec::decode);
                 java.lang.String key = StringCodec.decode(iterator);
                 java.lang.String value = CodecUtil.decodeNullable(iterator, StringCodec::decode);
                 handleMemberAttributeChangeEvent(member, members, key, operationType, value);

@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import com.hazelcast.logging.Logger;
 /**
  * Adds an entry listener for this map. Listener will get notified for all map add/remove/update/evict events.
  */
-@Generated("f96da007017e9c2b25a499acdaf8c91e")
+@Generated("408333e2f030d50e20af68b20b38d4bc")
 public final class MapAddNearCacheEntryListenerCodec {
     //hex: 0x011D00
     public static final int REQUEST_MESSAGE_TYPE = 72960;
@@ -116,9 +117,9 @@ public final class MapAddNearCacheEntryListenerCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 
@@ -139,6 +140,7 @@ public final class MapAddNearCacheEntryListenerCodec {
         encodeUUID(initialFrame.content, EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET, partitionUuid);
         encodeLong(initialFrame.content, EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET, sequence);
         clientMessage.add(initialFrame);
+
         CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
         return clientMessage;
     }
@@ -148,6 +150,7 @@ public final class MapAddNearCacheEntryListenerCodec {
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
+
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);
         ListUUIDCodec.encode(clientMessage, sourceUuids);
         ListUUIDCodec.encode(clientMessage, partitionUuids);
@@ -172,10 +175,10 @@ public final class MapAddNearCacheEntryListenerCodec {
             if (messageType == EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE) {
                 //empty initial frame
                 iterator.next();
-                java.util.List<com.hazelcast.nio.serialization.Data> keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-                java.util.List<java.util.UUID> sourceUuids = ListUUIDCodec.decode(iterator);
-                java.util.List<java.util.UUID> partitionUuids = ListUUIDCodec.decode(iterator);
-                java.util.List<java.lang.Long> sequences = ListLongCodec.decode(iterator);
+                java.util.Collection<com.hazelcast.nio.serialization.Data> keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+                java.util.Collection<java.util.UUID> sourceUuids = ListUUIDCodec.decode(iterator);
+                java.util.Collection<java.util.UUID> partitionUuids = ListUUIDCodec.decode(iterator);
+                java.util.Collection<java.lang.Long> sequences = ListLongCodec.decode(iterator);
                 handleIMapBatchInvalidationEvent(keys, sourceUuids, partitionUuids, sequences);
                 return;
             }

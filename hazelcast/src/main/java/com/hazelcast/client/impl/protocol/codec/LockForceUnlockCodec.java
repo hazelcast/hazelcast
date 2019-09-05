@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Releases the lock regardless of the lock owner. It always successfully unlocks, never blocks,
  * and returns immediately.
  */
-@Generated("e85a2e1ce10e6a971d67d6244224cfec")
+@Generated("7586997e0bf4093e2b888b50f2b6846a")
 public final class LockForceUnlockCodec {
     //hex: 0x070700
     public static final int REQUEST_MESSAGE_TYPE = 460544;

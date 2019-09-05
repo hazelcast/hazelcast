@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("fc953dc7e161c72c8608a5652f0edde3")
+@Generated("adcc5e9e9774d271136da0ab73a275c8")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x150100
     public static final int REQUEST_MESSAGE_TYPE = 1376512;
@@ -104,9 +105,9 @@ public final class CacheAddEntryListenerCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 
@@ -126,6 +127,7 @@ public final class CacheAddEntryListenerCodec {
         encodeInt(initialFrame.content, EVENT_CACHE_TYPE_FIELD_OFFSET, type);
         encodeInt(initialFrame.content, EVENT_CACHE_COMPLETION_ID_FIELD_OFFSET, completionId);
         clientMessage.add(initialFrame);
+
         ListMultiFrameCodec.encode(clientMessage, keys, CacheEventDataCodec::encode);
         return clientMessage;
     }
@@ -139,7 +141,7 @@ public final class CacheAddEntryListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int type = decodeInt(initialFrame.content, EVENT_CACHE_TYPE_FIELD_OFFSET);
                 int completionId = decodeInt(initialFrame.content, EVENT_CACHE_COMPLETION_ID_FIELD_OFFSET);
-                java.util.List<com.hazelcast.cache.impl.CacheEventData> keys = ListMultiFrameCodec.decode(iterator, CacheEventDataCodec::decode);
+                java.util.Collection<com.hazelcast.cache.impl.CacheEventData> keys = ListMultiFrameCodec.decode(iterator, CacheEventDataCodec::decode);
                 handleCacheEvent(type, keys, completionId);
                 return;
             }

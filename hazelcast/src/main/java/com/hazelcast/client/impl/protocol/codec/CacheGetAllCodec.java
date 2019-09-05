@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -38,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * configured javax.cache.integration.CacheLoader might be called to retrieve the values of the keys from any kind
  * of external resource.
  */
-@Generated("dab3e348f5f466a4d177863f13fee2b9")
+@Generated("f7666a345ad022c8204a124e49794635")
 public final class CacheGetAllCodec {
     //hex: 0x150A00
     public static final int REQUEST_MESSAGE_TYPE = 1378816;
@@ -111,7 +112,7 @@ public final class CacheGetAllCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
+        EntryListCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
         return clientMessage;
     }
 
@@ -120,7 +121,7 @@ public final class CacheGetAllCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = MapCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return response;
     }
 

@@ -42,20 +42,12 @@ public final class ScheduledTaskHandlerImpl
     public ScheduledTaskHandlerImpl() {
     }
 
-    private ScheduledTaskHandlerImpl(int partitionId, String schedulerName, String taskName) {
+    public ScheduledTaskHandlerImpl(Address address, int partitionId, String schedulerName, String taskName) {
         super();
+        this.address = address;
         this.partitionId = partitionId;
         this.schedulerName = schedulerName;
         this.taskName = taskName;
-        this.address = null;
-    }
-
-    private ScheduledTaskHandlerImpl(Address address, String schedulerName, String taskName) {
-        super();
-        this.address = address;
-        this.schedulerName = schedulerName;
-        this.taskName = taskName;
-        this.partitionId = -1;
     }
 
     @Override
@@ -163,11 +155,11 @@ public final class ScheduledTaskHandlerImpl
     }
 
     public static ScheduledTaskHandler of(Address addr, String schedulerName, String taskName) {
-        return new ScheduledTaskHandlerImpl(addr, schedulerName, taskName);
+        return new ScheduledTaskHandlerImpl(addr, -1, schedulerName, taskName);
     }
 
     public static ScheduledTaskHandler of(int partitionId, String schedulerName, String taskName) {
-        return new ScheduledTaskHandlerImpl(partitionId, schedulerName, taskName);
+        return new ScheduledTaskHandlerImpl(null, partitionId, schedulerName, taskName);
     }
 
     public static ScheduledTaskHandler of(String urn) {
@@ -199,7 +191,6 @@ public final class ScheduledTaskHandlerImpl
         String scheduler = parts[2];
         String task = parts[3];
 
-        return addr != null ? new ScheduledTaskHandlerImpl(addr, scheduler, task) : new ScheduledTaskHandlerImpl(partitionId,
-                scheduler, task);
+        return new ScheduledTaskHandlerImpl(addr, partitionId, scheduler, task);
     }
 }

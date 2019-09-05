@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value
  */
-@Generated("d6eb010494e81b5fe1ebf082a249fc9e")
+@Generated("d08a99b549e81fa338996238a581ff70")
 public final class AtomicRefSetCodec {
     //hex: 0x0B0600
     public static final int REQUEST_MESSAGE_TYPE = 722432;

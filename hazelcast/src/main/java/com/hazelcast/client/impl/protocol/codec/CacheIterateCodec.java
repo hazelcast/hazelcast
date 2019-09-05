@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -38,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CacheEntryRemoveListeners notified. java.util.Iterator#next() may return null if the entry is no longer present,
  * has expired or has been evicted.
  */
-@Generated("f4654c84838a4e20abc48c63e9f019ce")
+@Generated("f0ed9248a2e8f67a4429a996d87d095d")
 public final class CacheIterateCodec {
     //hex: 0x150F00
     public static final int REQUEST_MESSAGE_TYPE = 1380096;
@@ -114,9 +115,9 @@ public final class CacheIterateCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, RESPONSE_TABLE_INDEX_FIELD_OFFSET, tableIndex);
         clientMessage.add(initialFrame);
 
-        encodeInt(initialFrame.content, RESPONSE_TABLE_INDEX_FIELD_OFFSET, tableIndex);
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);
         return clientMessage;
     }

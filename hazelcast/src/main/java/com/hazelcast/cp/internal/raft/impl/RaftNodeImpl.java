@@ -865,7 +865,7 @@ public class RaftNodeImpl implements RaftNode {
     public void printMemberState() {
         CPGroupId groupId = state.groupId();
         StringBuilder sb = new StringBuilder("\n\nCP Group Members {")
-                .append("groupId: ").append(groupId.name()).append("(").append(groupId.id()).append(")")
+                .append("groupId: ").append(groupId.getName()).append("(").append(groupId.getId()).append(")")
                 .append(", size:").append(state.memberCount())
                 .append(", term:").append(state.term())
                 .append(", logIndex:").append(state.membersLogIndex())

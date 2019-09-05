@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Commits a heartbeat for the given session on the given cP group and
  * extends its session expiration time.
  */
-@Generated("eaadbb6d3bcde0bdcc8bcf98f4b43e64")
+@Generated("4ff22419d294fc11c92fef9064b331a4")
 public final class CPSessionHeartbeatSessionCodec {
     //hex: 0x220300
     public static final int REQUEST_MESSAGE_TYPE = 2228992;

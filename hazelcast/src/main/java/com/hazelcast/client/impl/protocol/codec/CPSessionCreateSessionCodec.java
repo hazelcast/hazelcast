@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a session for the caller on the given CP group.
  */
-@Generated("8fe5406f833bf903f28937adb9eaf406")
+@Generated("6855538422c81df01b930ea200cce013")
 public final class CPSessionCreateSessionCodec {
     //hex: 0x220100
     public static final int REQUEST_MESSAGE_TYPE = 2228480;
@@ -110,11 +111,11 @@ public final class CPSessionCreateSessionCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.add(initialFrame);
-
         encodeLong(initialFrame.content, RESPONSE_SESSION_ID_FIELD_OFFSET, sessionId);
         encodeLong(initialFrame.content, RESPONSE_TTL_MILLIS_FIELD_OFFSET, ttlMillis);
         encodeLong(initialFrame.content, RESPONSE_HEARTBEAT_MILLIS_FIELD_OFFSET, heartbeatMillis);
+        clientMessage.add(initialFrame);
+
         return clientMessage;
     }
 
