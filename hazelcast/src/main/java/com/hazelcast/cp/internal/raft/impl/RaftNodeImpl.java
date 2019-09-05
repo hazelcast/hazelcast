@@ -126,6 +126,7 @@ public final class RaftNodeImpl implements RaftNode {
     private boolean flushTaskSubmitted;
     private volatile RaftNodeStatus status = INITIAL;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     private RaftNodeImpl(CPGroupId groupId, RaftEndpoint localMember, Collection<RaftEndpoint> members, RaftStateStore stateStore,
                          RaftAlgorithmConfig raftAlgorithmConfig, RaftIntegration raftIntegration) {
         checkNotNull(groupId);
@@ -156,6 +157,7 @@ public final class RaftNodeImpl implements RaftNode {
         }
     }
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     private RaftNodeImpl(CPGroupId groupId, RestoredRaftState restoredState, RaftStateStore stateStore,
                          RaftAlgorithmConfig config, RaftIntegration raftIntegration) {
         checkNotNull(groupId);

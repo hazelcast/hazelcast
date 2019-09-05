@@ -35,9 +35,6 @@ import com.hazelcast.logging.ILogger;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 
-import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
-import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
-import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
 /**
@@ -135,22 +132,23 @@ public class MembershipChangeTask implements Runnable {
     }
 
     private boolean verifyRaftNodeStatus() {
-        if (raftNode.getStatus() == INITIAL) {
-            resultFuture.setResult(new CannotReplicateException(null));
-            return false;
-        } if (raftNode.getStatus() == TERMINATED) {
-            resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
-            logger.severe("Cannot " + membershipChangeMode + " " + member + " with expected members commit index: "
-                    + groupMembersCommitIndex + " since raft node is terminated.");
-            return false;
-        } else if (raftNode.getStatus() == STEPPED_DOWN) {
-            logger.severe("Cannot " + membershipChangeMode + " " + member + " with expected members commit index: "
-                    + groupMembersCommitIndex + " since raft node is stepped down.");
-            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
-            return false;
+        switch (raftNode.getStatus()) {
+            case INITIAL:
+                resultFuture.setResult(new CannotReplicateException(null));
+                return false;
+            case TERMINATED:
+                resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
+                logger.severe("Cannot " + membershipChangeMode + " " + member + " with expected members commit index: "
+                        + groupMembersCommitIndex + " since raft node is terminated.");
+                return false;
+            case STEPPED_DOWN:
+                logger.severe("Cannot " + membershipChangeMode + " " + member + " with expected members commit index: "
+                        + groupMembersCommitIndex + " since raft node is stepped down.");
+                resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
+                return false;
+            default:
+                return true;
         }
-
-        return true;
     }
 
     private boolean isValidGroupMemberCommitIndex() {

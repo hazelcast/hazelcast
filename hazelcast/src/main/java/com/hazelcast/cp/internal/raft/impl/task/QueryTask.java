@@ -29,9 +29,6 @@ import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 
-import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
-import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
-import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
 /**
@@ -149,18 +146,19 @@ public class QueryTask implements Runnable {
     }
 
     private boolean verifyRaftNodeStatus() {
-        if (raftNode.getStatus() == INITIAL) {
-            resultFuture.setResult(new CannotReplicateException(null));
-            return false;
-        } if (raftNode.getStatus() == TERMINATED) {
-            resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
-            return false;
-        } else if (raftNode.getStatus() == STEPPED_DOWN) {
-            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
-            return false;
+        switch (raftNode.getStatus()) {
+            case INITIAL:
+                resultFuture.setResult(new CannotReplicateException(null));
+                return false;
+            case TERMINATED:
+                resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
+                return false;
+            case STEPPED_DOWN:
+                resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
+                return false;
+            default:
+                return true;
         }
-
-        return true;
     }
 
 }

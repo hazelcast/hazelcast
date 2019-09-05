@@ -737,11 +737,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
 
-        if (destroyedGroupIds.contains(groupId)) {
-            logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed");
-            return;
-        }
-
         nodeLock.readLock().lock();
         try {
             if (destroyedGroupIds.contains(groupId)) {
@@ -1063,12 +1058,14 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         metadataGroupManager.handleMetadataGroupId(receivedMetadataGroupId);
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private Collection<CPMemberInfo> replaceLocalMemberIfAddressChanged(long membersCommitIndex, Collection<CPMemberInfo> members,
                                                                         CPMemberInfo localMember) {
         if (localMember != null && !members.contains(localMember)) {
             // If I am present in the received CP member list with another address, I replace my local member.
             // In addition, I will remove any other member that has my address.
-            CPMemberInfo otherMember = null, staleLocalMember = null;
+            CPMemberInfo otherMember = null;
+            CPMemberInfo staleLocalMember = null;
             for (CPMemberInfo m : members) {
                 if (m.getAddress().equals(localMember.getAddress()) && !m.getUuid().equals(localMember.getUuid())) {
                     otherMember = m;
