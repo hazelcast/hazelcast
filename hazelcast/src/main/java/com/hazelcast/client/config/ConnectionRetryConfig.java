@@ -220,12 +220,12 @@ public class ConnectionRetryConfig {
     @Override
     public String toString() {
         return "ConnectionRetryConfig{"
-                + "initialBackoffMillis=" + initialBackoffMillis
+                + "enabled=" + enabled
+                + ", initialBackoffMillis=" + initialBackoffMillis
                 + ", maxBackoffMillis=" + maxBackoffMillis
                 + ", multiplier=" + multiplier
                 + ", failOnMaxBackoff=" + failOnMaxBackoff
                 + ", jitter=" + jitter
-                + ", enabled=" + enabled
                 + '}';
     }
 }
