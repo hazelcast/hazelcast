@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -40,17 +41,17 @@ public class ClientMessageDecoderTest {
 
     private Consumer<ClientMessage> messageConsumer;
     private Connection connection;
-    private SwCounter counter;
+    private SwCounter normalPacketsRead;
     private ClientMessageDecoder decoder;
 
     @Before
     public void setup() {
         messageConsumer = mock(Consumer.class);
         connection = mock(Connection.class);
-        counter = SwCounter.newSwCounter();
+        normalPacketsRead = SwCounter.newSwCounter();
         connection = mock(Connection.class);
         decoder = new ClientMessageDecoder(connection, messageConsumer);
-        //decoder.setNormalPacketsRead(counter);
+        decoder.setNormalPacketsRead(normalPacketsRead);
     }
 
     @Test
@@ -68,5 +69,6 @@ public class ClientMessageDecoderTest {
         decoder.onRead();
 
         verify(messageConsumer).accept(any(ClientMessage.class));
+        assertEquals(1, normalPacketsRead.get());
     }
 }
