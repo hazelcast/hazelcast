@@ -84,7 +84,123 @@ for the previous version can be used without any modification.
 
 Jet currently provides metrics to Management Center and also through
 other means such as JMX. The metrics names may change between MINOR
-versions but not PATCH versions.
+versions but not between PATCH versions.
+
+[appendix]
+= System Properties
+
+The table below lists the system properties supported by Jet. Jet also
+supports the system properties defined by Hazelcast IMDG, please see the
+System properties chapter in Hazelcast IMDG Reference Manual.
+
+NOTE: When you want to reconfigure a system property, you need to
+restart the members for which the property is modified.
+
+[cols="2,1,1,6a"]
+.System Properties
+|===
+|Property Name
+| Default Value
+| Type
+| Description
+
+|`jet.job.scan.period`
+|5000
+|long [milliseconds]
+|Jet will periodically check for new jobs to start and perform cleanup
+of unused resources. This property configures how often this check and
+cleanup will be done. Value is in milliseconds.
+
+|`jet.shutdownhook.enabled`
+|true
+|boolean
+|Whether a JVM shutdown hook is registered to shutdown the node
+gracefully when the process is terminated. The shutdown hook will
+terminate all running jobs and then gracefully terminate the note, in a
+way that is equivalent to calling JetInstance.shutdown().
+
+|`jet.job.results.ttl.seconds`
+|604800 (7 days)
+|long [seconds]
+|Maximum number of time in seconds the job results will be kept in the
+cluster. They will be automatically deleted after this period is
+reached.
+
+|`jet.job.results.max.size`
+|1000
+|integer
+|Maximum number of job results to keep in the cluster, the oldest
+results will be automatically deleted after this size is reached.
+
+|`jet.home`
+|_Jet installation path_
+|string
+|Root of Jet installation. Used as default location for the lossless
+recovery store. By default it will be automatically set to the start of
+the Jet installation path.
+
+|`jet.idle.cooperative.min.microseconds`
+|25
+|long [microseconds]
+|The minimum time in microseconds the cooperative worker threads will
+sleep if none of the tasklets made any progress. Lower values increase
+idle CPU usage but may result in decreased latency. Higher values will
+increase latency and very high values (>10000µs) will also limit
+throughput.
+
+Note: the underlying `LockSupport.parkNanos(long)` call may actually
+sleep longer depending on the operating system (up to 15000µs on
+Windows). See the
+https://hazelcast.com/blog/locksupport-parknanos-under-the-hood-and-the-curious-case-of-parking/[Hazelcast
+blog post] about this subject  for more details.
+
+|`jet.idle.cooperative.max.microseconds`
+|500
+|long [microseconds]
+|The maximum time in microseconds the cooperative worker threads will
+sleep if none of the tasklets made any progress. Lower values increase
+idle CPU usage but may result in decreased latency. Higher values will
+increase latency and very high values (>10000µs) will also limit
+throughput.
+
+Note: the underlying `LockSupport.parkNanos(long)` call may actually
+sleep longer depending on the operating system (up to 15000µs on
+Windows). See the
+https://hazelcast.com/blog/locksupport-parknanos-under-the-hood-and-the-curious-case-of-parking/[Hazelcast
+blog post] about this subject  for more details.
+
+|`jet.idle.noncooperative.min.microseconds`
+|25
+|long [microseconds]
+|The minimum time in microseconds the non-cooperative worker threads
+will sleep if none of the tasklets made any progress. Lower values
+increase idle CPU usage but may result in decreased latency. Higher
+values will increase latency and very high values (>10000µs) will also
+limit throughput.
+
+Note: the underlying `LockSupport.parkNanos(long)` call may actually
+sleep longer depending on the operating system (up to 15000µs on
+Windows). See the
+https://hazelcast.com/blog/locksupport-parknanos-under-the-hood-and-the-curious-case-of-parking/[Hazelcast
+blog post] about this subject  for more details.
+
+|`jet.idle.noncooperative.max.microseconds`
+|5000
+|long [microseconds]
+|The maximum time in microseconds the non-cooperative worker threads
+will sleep if none of the tasklets made any progress. Lower values
+increase idle CPU usage but may result in decreased latency. Higher
+values will increase latency and very high values (>10000µs) will also
+limit throughput.
+
+Note: the underlying `LockSupport.parkNanos(long)` call may actually
+sleep longer depending on the operating system (up to 15000µs on
+Windows). See the
+https://hazelcast.com/blog/locksupport-parknanos-under-the-hood-and-the-curious-case-of-parking/[Hazelcast
+blog post] about this subject  for more details.
+
+|===
+
 
 [appendix]
 = Common Exceptions

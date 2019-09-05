@@ -37,7 +37,7 @@ public final class JetProperties {
     /**
      * Jet will periodically check for new jobs to start and perform cleanup of
      * unused resources. This property configures how often this check and
-     * cleanup will be done.
+     * cleanup will be done. Value is in milliseconds.
      *
      * @since 3.2
      */
