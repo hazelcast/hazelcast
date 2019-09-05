@@ -273,7 +273,16 @@ public class JobCoordinationService {
     public CompletableFuture<Void> joinSubmittedJob(long jobId) {
         checkOperationalState();
         CompletableFuture<CompletableFuture<Void>> future = callWithJob(jobId,
-                mc -> mc.jobContext().jobCompletionFuture(),
+                mc -> mc.jobContext().jobCompletionFuture()
+                        .handle((r, t) -> {
+                            if (t instanceof CancellationException) {
+                                throw sneakyThrow(t);
+                            }
+                            if (t != null) {
+                                throw new JetException(t.toString());
+                            }
+                            return null;
+                        }),
                 JobResult::asCompletableFuture,
                 jobRecord -> {
                     JobExecutionRecord jobExecutionRecord = ensureExecutionRecord(jobId,

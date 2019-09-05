@@ -21,7 +21,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.MockP;
-import com.hazelcast.jet.core.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
@@ -77,7 +76,7 @@ public class ExceptionUtilTest extends JetTestSupport {
             dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
             client.newJob(dag).join();
         } catch (Exception caught) {
-            TestUtil.assertExceptionInCauses(exc, caught);
+            assertContains(caught.toString(), exc.toString());
         }
     }
 
@@ -93,7 +92,6 @@ public class ExceptionUtilTest extends JetTestSupport {
             client.newJob(dag).join();
         } catch (Exception caught) {
             assertThat(caught.toString(), containsString(exc.toString()));
-            TestUtil.assertExceptionInCauses(exc, caught);
         }
     }
 }

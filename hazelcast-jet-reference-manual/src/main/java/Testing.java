@@ -93,17 +93,15 @@ public class Testing {
                 " but instead completed normally"
             );
         } catch (CompletionException e) {
-            Throwable jetException = e.getCause();
-            assertInstanceOf(AssertionCompletedException.class, jetException.getCause());
+            assertContains(e.toString(), AssertionCompletedException.class.getName());
         }
         //end::assertion-completed-exception[]
     }
 
     private static void fail(String s) {
-
     }
 
-    private static void assertInstanceOf(Class c, Object o) {
+    private static void assertContains(String actual, String expectedSubstring) {
     }
 
     private static class Trade {

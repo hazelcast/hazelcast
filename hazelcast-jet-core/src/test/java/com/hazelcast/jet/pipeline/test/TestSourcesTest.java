@@ -61,7 +61,7 @@ public class TestSourcesTest extends PipelineTestSupport {
              }
          }));
 
-        expectedException.expect(AssertionCompletedException.class);
+        expectedException.expectMessage(AssertionCompletedException.class.getName());
         executeAndPeel();
 
     }
@@ -80,7 +80,7 @@ public class TestSourcesTest extends PipelineTestSupport {
              assertTrue("Did not find any window with 10 items: " + windowResults, matched);
          }));
 
-        expectedException.expect(AssertionCompletedException.class);
+        expectedException.expectMessage(AssertionCompletedException.class.getName());
         executeAndPeel();
     }
 
@@ -106,7 +106,7 @@ public class TestSourcesTest extends PipelineTestSupport {
                             (long) windowResults.get(1).result() < itemsPerSecond * 2);
                 }));
 
-        expectedException.expect(AssertionCompletedException.class);
+        expectedException.expectMessage(AssertionCompletedException.class.getName());
         executeAndPeel();
     }
 

@@ -58,7 +58,7 @@ public class AssertionsTest extends PipelineTestSupport {
         p.drawFrom(TestSources.items(4, 3, 2, 1))
          .apply(Assertions.assertOrdered(Arrays.asList(1, 2, 3, 4)));
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
     }
 
@@ -89,7 +89,7 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(Assertions.assertOrdered(Arrays.asList(1, 2, 3, 4)))
                 .drainTo(sinkList());
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
 
         assertEquals(4, assertionSink.size());
@@ -125,7 +125,7 @@ public class AssertionsTest extends PipelineTestSupport {
         p.drawFrom(TestSources.items(3, 2, 1))
          .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 4)));
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
     }
 
@@ -142,7 +142,7 @@ public class AssertionsTest extends PipelineTestSupport {
         p.drawFrom(TestSources.items(1, 3, 2, 3))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3)));
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
     }
 
@@ -151,7 +151,7 @@ public class AssertionsTest extends PipelineTestSupport {
         p.drawFrom(TestSources.items(1, 2, 3))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 3)));
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
     }
 
@@ -182,7 +182,7 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 4)))
                 .drainTo(sinkList());
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
 
         assertEquals(4, assertionSink.size());
@@ -204,7 +204,7 @@ public class AssertionsTest extends PipelineTestSupport {
         p.drawFrom(TestSources.items(4, 1, 2, 3))
          .apply(Assertions.assertContains(Arrays.asList(1, 3, 5)));
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
     }
 
@@ -235,7 +235,7 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(Assertions.assertContains(Arrays.asList(1, 3, 5)))
                 .drainTo(sinkList());
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
 
         assertEquals(4, assertionSink.size());
@@ -258,7 +258,7 @@ public class AssertionsTest extends PipelineTestSupport {
         p.drawFrom(TestSources.items(1))
          .apply(assertCollected(c -> assertTrue("list size must be at least 4", c.size() >= 4)));
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
     }
 
@@ -289,7 +289,7 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(assertCollected(c -> assertTrue("list size must be at least 4", c.size() >= 4)))
                 .drainTo(sinkList());
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
 
         assertEquals(1, assertionSink.size());
@@ -302,7 +302,7 @@ public class AssertionsTest extends PipelineTestSupport {
          .withoutTimestamps()
          .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '0'", c.contains(0L))));
 
-        expectedException.expect(AssertionCompletedException.class);
+        expectedException.expectMessage(AssertionCompletedException.class.getName());
         executeAndPeel();
     }
 
@@ -312,7 +312,7 @@ public class AssertionsTest extends PipelineTestSupport {
          .withoutTimestamps()
          .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '1'", c.contains(1L))));
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
     }
 
@@ -326,7 +326,7 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '0'", c.contains(0L))))
                 .drainTo(sinkList());
 
-        expectedException.expect(AssertionCompletedException.class);
+        expectedException.expectMessage(AssertionCompletedException.class.getName());
         executeAndPeel();
 
         assertFalse(assertionSink.isEmpty());
@@ -342,7 +342,7 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '1'", c.contains(1L))))
                 .drainTo(sinkList());
 
-        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
 
         assertFalse(assertionSink.isEmpty());

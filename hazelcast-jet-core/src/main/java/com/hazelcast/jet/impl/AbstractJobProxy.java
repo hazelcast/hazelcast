@@ -279,7 +279,7 @@ public abstract class AbstractJobProxy<T> implements Job {
         public synchronized void onFailure(Throwable t) {
             Throwable ex = peel(t);
             if (ex instanceof LocalMemberResetException) {
-                String msg = "Job " + idAndName() + " failed because the cluster is performing split-brain merge";
+                String msg = "Job " + idAndName() + " failed because the cluster is performing a split-brain merge";
                 logger.warning(msg, ex);
                 future.internalCompleteExceptionally(new CancellationException(msg));
             } else if (!isRestartable(ex)) {
