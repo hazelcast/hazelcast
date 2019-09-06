@@ -19,13 +19,8 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-
-import java.net.UnknownHostException;
 
 public class ExecutorServiceCancelOnAddressMessageTask
         extends AbstractExecutorServiceCancelMessageTask<ExecutorServiceCancelOnAddressCodec.RequestParameters> {
@@ -35,13 +30,10 @@ public class ExecutorServiceCancelOnAddressMessageTask
     }
 
     @Override
-    protected InvocationBuilder createInvocationBuilder() throws UnknownHostException {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
-        final String serviceName = DistributedExecutorService.SERVICE_NAME;
-        CancellationOperation op = new CancellationOperation(parameters.uuid, parameters.interrupt);
-        return operationService.createInvocationBuilder(serviceName, op, parameters.address);
+    protected Object call() throws Exception {
+        DistributedExecutorService service = getService(getServiceName());
+        return service.cancel(parameters.uuid, parameters.interrupt);
     }
-
 
     @Override
     protected ExecutorServiceCancelOnAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {

@@ -44,31 +44,15 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
 
     private final ClientContext context;
     private final String uuid;
-    private final Address target;
-    private final int partitionId;
     private final String objectName;
 
     IExecutorDelegatingFuture(ClientInvocationFuture future, ClientContext context,
                               String uuid, V defaultValue,
-                              ClientMessageDecoder resultDecoder, String objectName, Address address) {
+                              ClientMessageDecoder resultDecoder, String objectName) {
         super(future, context.getSerializationService(), resultDecoder, defaultValue);
         this.context = context;
         this.uuid = uuid;
-        this.partitionId = -1;
         this.objectName = objectName;
-        this.target = address;
-    }
-
-    IExecutorDelegatingFuture(ClientInvocationFuture future, ClientContext context,
-                              String uuid, V defaultValue,
-                              ClientMessageDecoder resultDecoder, String objectName, int partitionId) {
-        super(future, context.getSerializationService(), resultDecoder, defaultValue);
-        this.context = context;
-        this.uuid = uuid;
-        this.partitionId = partitionId;
-        this.objectName = objectName;
-        this.target = null;
-
     }
 
     @Override
@@ -93,19 +77,13 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
     private boolean invokeCancelRequest(boolean mayInterruptIfRunning) throws InterruptedException, ExecutionException {
         waitForRequestToBeSend();
 
+        Address target = getFuture().getInvocation().getSendConnection().getEndPoint();
+
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
-        if (partitionId > -1) {
-            ClientMessage request =
-                    ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, partitionId, mayInterruptIfRunning);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, partitionId);
-            ClientInvocationFuture f = clientInvocation.invoke();
-            return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get()).response;
-        } else {
-            ClientMessage request = ExecutorServiceCancelOnAddressCodec.encodeRequest(uuid, target, mayInterruptIfRunning);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, target);
-            ClientInvocationFuture f = clientInvocation.invoke();
-            return ExecutorServiceCancelOnAddressCodec.decodeResponse(f.get()).response;
-        }
+        ClientMessage request = ExecutorServiceCancelOnAddressCodec.encodeRequest(uuid, target, mayInterruptIfRunning);
+        ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, target);
+        ClientInvocationFuture f = clientInvocation.invoke();
+        return ExecutorServiceCancelOnAddressCodec.decodeResponse(f.get()).response;
     }
 
     private void waitForRequestToBeSend() throws InterruptedException {

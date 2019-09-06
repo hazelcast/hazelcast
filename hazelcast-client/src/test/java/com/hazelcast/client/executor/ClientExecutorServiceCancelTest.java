@@ -25,6 +25,13 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
+import com.hazelcast.executor.ExecutorServiceTestSupport;
+import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.spi.impl.servicemanager.ServiceManager;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -37,15 +44,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-@Ignore
 /*
  * This test is failing because of order problem between actual invoke and cancel.
  * For random and partition, the reason of broken order is also unknown to me (@sancar)
@@ -82,12 +91,14 @@ public class ClientExecutorServiceCancelTest
     }
 
     @Test(expected = CancellationException.class)
+    @Ignore
     public void testCancel_submitRandom_withSmartRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitRandom(true);
     }
 
     @Test(expected = CancellationException.class)
+    @Ignore
     public void testCancel_submitRandom_withDummyRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitRandom(false);
@@ -145,12 +156,14 @@ public class ClientExecutorServiceCancelTest
     }
 
     @Test(expected = CancellationException.class)
+    @Ignore
     public void testCancel_submitToKeyOwner_withSmartRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToKeyOwner(true);
     }
 
     @Test(expected = CancellationException.class)
+    @Ignore
     public void testCancel_submitToKeyOwner_withDummyRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitToKeyOwner(false);
@@ -166,4 +179,45 @@ public class ClientExecutorServiceCancelTest
         assertTrue(cancelled);
         future.get();
     }
+
+    @Test(expected = CancellationException.class)
+    public void testCancel_submitToKeyOwner_While_Migrating()
+            throws IOException, ExecutionException, InterruptedException {
+        HazelcastInstance client = createClient(true);
+
+        IExecutorService executorService = client.getExecutorService(randomString());
+        String key = ExecutorServiceTestSupport.generateKeyOwnedBy(server1);
+
+        Future<Boolean> future = executorService.submitToKeyOwner(new CancellationAwareTask(SLEEP_TIME), key);
+        awaitTaskStartAtMember(server1);
+
+        InternalPartitionServiceImpl internalPartitionService = (InternalPartitionServiceImpl) TestUtil.getNode(server1)
+                                                                                                       .getPartitionService();
+        int partitionId = internalPartitionService.getPartitionId(key);
+        // Simulate partition thread blokage as if the partition is migrating
+        internalPartitionService.getPartitionStateManager().trySetMigratingFlag(partitionId);
+
+        // The cancel operation should not be blocked due to the blocked partition thread
+        future.cancel(true);
+
+        future.get();
+    }
+
+    private void awaitTaskStartAtMember(HazelcastInstance member) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                ServiceManager serviceManager = TestUtil.getNode(member).getNodeEngine().getServiceManager();
+                DistributedExecutorService distributedExecutorService = serviceManager
+                        .getService(DistributedExecutorService.SERVICE_NAME);
+
+                Map<String, LocalExecutorStats> allStats = distributedExecutorService.getStats();
+                Iterator<LocalExecutorStats> statsIterator = allStats.values().iterator();
+                assertTrue(statsIterator.hasNext());
+                LocalExecutorStats executorStats = statsIterator.next();
+                assertEquals(1, executorStats.getStartedTaskCount());
+            }
+        });
+    }
+
 }

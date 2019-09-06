@@ -425,7 +425,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request =
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        return checkSync(f, uuid, partitionId, preventSync, defaultValue);
+        return checkSync(f, uuid, preventSync, defaultValue);
     }
 
     private <T> void submitToKeyOwnerInternal(Callable<T> task, Object key, ExecutionCallback<T> callback) {
@@ -449,7 +449,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request =
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        return checkSync(f, uuid, partitionId, preventSync, defaultValue);
+        return checkSync(f, uuid, preventSync, defaultValue);
     }
 
     private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
@@ -472,7 +472,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         String uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, taskData, address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
-        return checkSync(f, uuid, address, preventSync, defaultValue);
+        return checkSync(f, uuid, preventSync, defaultValue);
     }
 
     private <T> void submitToTargetInternal(Data taskData, Address address, ExecutionCallback<T> callback) {
@@ -490,8 +490,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return "IExecutorService{" + "name='" + name + '\'' + '}';
     }
 
-    private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid, Address address,
-                                    boolean preventSync, T defaultValue) {
+    private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid, boolean preventSync, T defaultValue) {
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
             Object response = retrieveResultFromMessage(f);
@@ -499,20 +498,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             return new CompletedFuture<T>(getSerializationService(), response, userExecutor);
         } else {
             return new IExecutorDelegatingFuture<T>(f, getContext(), uuid, defaultValue,
-                    SUBMIT_TO_ADDRESS_DECODER, name, address);
-        }
-    }
-
-    private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid, int partitionId,
-                                    boolean preventSync, T defaultValue) {
-        boolean sync = isSyncComputation(preventSync);
-        if (sync) {
-            Object response = retrieveResultFromMessage(f);
-            Executor userExecutor = getContext().getExecutionService().getUserExecutor();
-            return new CompletedFuture<T>(getSerializationService(), response, userExecutor);
-        } else {
-            return new IExecutorDelegatingFuture<T>(f, getContext(), uuid, defaultValue,
-                    SUBMIT_TO_PARTITION_DECODER, name, partitionId);
+                    SUBMIT_TO_ADDRESS_DECODER, name);
         }
     }
 

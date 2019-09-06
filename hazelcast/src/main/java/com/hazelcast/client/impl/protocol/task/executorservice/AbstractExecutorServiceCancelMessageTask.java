@@ -21,58 +21,21 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
 
-import java.net.UnknownHostException;
 import java.security.Permission;
-import java.util.concurrent.ExecutionException;
-
-import static java.lang.Thread.currentThread;
 
 public abstract class AbstractExecutorServiceCancelMessageTask<P> extends AbstractCallableMessageTask<P>
         implements BlockingMessageTask {
-
-    private static final int CANCEL_TRY_COUNT = 50;
-    private static final int CANCEL_TRY_PAUSE_MILLIS = 250;
 
     public AbstractExecutorServiceCancelMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        InvocationBuilder builder = createInvocationBuilder();
-        builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);
-        InternalCompletableFuture future = builder.invoke();
-        boolean result = false;
-        try {
-            result = (Boolean) future.get();
-        } catch (InterruptedException e) {
-            currentThread().interrupt();
-            logException(e);
-        } catch (ExecutionException e) {
-            logException(e);
-        }
-        return result;
-    }
-
-
-    protected abstract InvocationBuilder createInvocationBuilder() throws UnknownHostException;
-
-    private void logException(Exception e) {
-        ILogger logger = nodeEngine.getLogger(AbstractExecutorServiceCancelMessageTask.class);
-        logger.warning(e);
-    }
-
-
-    @Override
     public String getServiceName() {
         return DistributedExecutorService.SERVICE_NAME;
     }
-
 
     @Override
     public Permission getRequiredPermission() {
