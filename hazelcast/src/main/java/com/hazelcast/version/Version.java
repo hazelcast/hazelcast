@@ -59,9 +59,6 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
     }
 
     private Version(int major, int minor) {
-        assert major >= 0 && major <= Byte.MAX_VALUE : "Invalid value: " + major + ", must be in range [0,127]";
-        assert minor >= 0 && minor <= Byte.MAX_VALUE : "Invalid value: " + minor + ", must be in range [0,127]";
-
         this.major = (byte) major;
         this.minor = (byte) minor;
     }
@@ -253,6 +250,7 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
      * @return a packed integer representation of this Version
      */
     private int pack() {
-        return (major << 8 & 0xff00) | (minor & 0xff);
+        // need sign extension here, to properly compare negative versions
+        return (major << 8) | (minor & 0xff);
     }
 }

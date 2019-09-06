@@ -22,34 +22,91 @@ import com.hazelcast.version.Version;
 
 import java.io.OutputStream;
 
+import static com.hazelcast.version.Version.UNKNOWN;
+
 /**
- * Base class for ObjectDataInput that is VersionAware and allows mutating the version.
+ * Base class for ObjectDataInput that is {@link VersionAware} and allows
+ * mutating the version.
  * What the version means it's up to the Serializer/Deserializer.
- * If the serializer supports versioning it may set the version to use for the serialization on this object.
+ * If the serializer supports versioning it may set the version to use for
+ * the serialization on this object.
  */
 abstract class VersionedObjectDataOutput extends OutputStream implements ObjectDataOutput, VersionAware {
-
+    /**
+     * Used for both WAN protocol version and intra-cluster message versioning.
+     * Negative major version numbers indicate that the WAN protocol version is
+     * set while positive major version numbers indicate that the intra-cluster
+     * message version is set.
+     */
     protected Version version = Version.UNKNOWN;
 
     /**
-     * If the serializer supports versioning it may set the version to use for the serialization on this object.
+     * {@inheritDoc}
+     * If the serializer supports versioning it may set the version to use for
+     * the intra-cluster message serialization on this object.
+     * The {@link #version} field is used for both the WAN protocol version and
+     * intra-cluster message versioning so the output stream can only have one
+     * of the {@link #setVersion(Version)} or
+     * {@link #setWanProtocolVersion(Version)} set at a time.
      *
-     * @param version version to set
-     */
-    public void setVersion(Version version) {
-        this.version = version;
-    }
-
-
-    /**
-     * If the serializer supports versioning it may set the version to use for the serialization on this object.
-     * This method makes the version available for the user.
-     *
-     * @return the version of Version.UNKNOWN if the version is unknown to the object.
+     * @return the version of {@link Version#UNKNOWN} if the version is unknown to the object.
      */
     @Override
     public Version getVersion() {
         return version;
     }
 
+    /**
+     * {@inheritDoc}
+     * If the serializer supports versioning it may set the version to use for
+     * the intra-cluster message serialization on this object.
+     * The {@link #version} field is used for both the WAN protocol version and
+     * intra-cluster message versioning so the output stream can only have one
+     * of the {@link #setVersion(Version)} or
+     * {@link #setWanProtocolVersion(Version)} set at a time.
+     *
+     * @param version version to set
+     */
+    @Override
+    public void setVersion(Version version) {
+        this.version = version;
+    }
+
+    /**
+     * Returns the raw, unformatted version set on this instance. On the other
+     * hand, both {@link #getVersion()} and {@link #getWanProtocolVersion()}
+     * will return conditional and formatted versions.
+     *
+     * @return the raw, unformatted version set on this instance
+     */
+    public Version getRawVersion() {
+        return version;
+    }
+
+    /**
+     * {@inheritDoc}
+     * The {@link #version} field is used for both the WAN protocol version and
+     * intra-cluster message versioning so the output stream can only have one
+     * of the {@link #setVersion(Version)} or
+     * {@link #setWanProtocolVersion(Version)} set at a time.
+     */
+    @Override
+    public void setWanProtocolVersion(Version version) {
+        this.version = Version.of(-1 * version.getMajor(), version.getMinor());
+    }
+
+    @Override
+    public Version getWanProtocolVersion() {
+        // WAN protocol version is set when major version is negative
+        return isWanProtocolVersionSet()
+                ? Version.of(-1 * version.getMajor(), version.getMinor())
+                : UNKNOWN;
+    }
+
+    /**
+     * Returns {@code true} if WAN protocol version is set, {@code false} otherwise.
+     */
+    public boolean isWanProtocolVersionSet() {
+        return version.getMajor() < 0;
+    }
 }

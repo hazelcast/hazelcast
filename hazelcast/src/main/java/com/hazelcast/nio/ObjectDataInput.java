@@ -27,7 +27,7 @@ import java.nio.ByteOrder;
 /**
  * Provides serialization methods for arrays of primitive types.
  */
-public interface ObjectDataInput extends DataInput, VersionAware {
+public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVersionAware {
 
     /**
      * @return the byte array read

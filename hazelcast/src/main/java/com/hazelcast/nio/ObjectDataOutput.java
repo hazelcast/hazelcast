@@ -26,7 +26,7 @@ import java.nio.ByteOrder;
 /**
  * Provides serialization methods for arrays by extending DataOutput
  */
-public interface ObjectDataOutput extends DataOutput, VersionAware {
+public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolVersionAware {
 
     /**
      * @param bytes byte array to be written
