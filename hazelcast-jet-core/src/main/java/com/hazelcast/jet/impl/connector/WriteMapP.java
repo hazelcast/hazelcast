@@ -19,16 +19,16 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.connector.HazelcastWriters.ArrayMap;
 import com.hazelcast.jet.impl.util.ImdgUtil;
-import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
@@ -36,19 +36,27 @@ import static com.hazelcast.jet.impl.connector.HazelcastWriters.handleInstanceNo
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 public final class WriteMapP<K, V> implements Processor {
-    private final AtomicInteger numParallelOps = new AtomicInteger();
+    // This is a cooperative processor it will use maximum
+    // local parallelism by default. We also use an incoming
+    // local partitioned edge so each processor deals with a
+    // subset of the partitions. We want to limit the number of
+    // in flight operations since putAll operation can be slow
+    // and bulky, otherwise we may face timeouts.
+    private final AtomicBoolean pendingOp = new AtomicBoolean();
     private final AtomicReference<Throwable> firstFailure = new AtomicReference<>();
     private final HazelcastInstance instance;
     private final String mapName;
     private final boolean isLocal;
+    private final ArrayMap<K, V> buffer = new ArrayMap<>(EdgeConfig.DEFAULT_QUEUE_SIZE);
     private final BiConsumer<Object, Throwable> callback = (r, t) -> {
         if (t != null) {
             firstFailure.compareAndSet(null, t);
         }
-        numParallelOps.decrementAndGet();
+        buffer.clear();
+        pendingOp.set(false);
     };
 
-    private int parallelOpsLimit;
+
     private IMap<K, V> map;
 
     private WriteMapP(HazelcastInstance instance, String mapName) {
@@ -59,12 +67,7 @@ public final class WriteMapP<K, V> implements Processor {
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        // We distribute the local limit to processors. If there's 1 local processor, it
-        // will take the entire maximum. If there are many local processors, each will
-        // get 1. The putAll operation is already bulky, it doesn't help to have many in
-        // parallel.
         map = instance.getMap(mapName);
-        parallelOpsLimit = Math.max(1, Supplier.MAX_LOCAL_PARALLEL_OPS / context.localParallelism());
     }
 
     @Override
@@ -76,10 +79,9 @@ public final class WriteMapP<K, V> implements Processor {
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         checkFailure();
-        if (Util.tryIncrement(numParallelOps, 1, parallelOpsLimit)) {
-            ArrayMap<K, V> inboxAsMap = new ArrayMap<>(inbox.size());
-            inbox.drain(inboxAsMap::add);
-            ImdgUtil.mapPutAllAsync(map, inboxAsMap)
+        if (pendingOp.compareAndSet(false, true)) {
+            inbox.drain(buffer::add);
+            ImdgUtil.mapPutAllAsync(map, buffer)
                     .whenComplete(callback);
         }
     }
@@ -111,7 +113,7 @@ public final class WriteMapP<K, V> implements Processor {
 
     private boolean ensureAllSuccessfullyWritten() {
         try {
-            return numParallelOps.get() == 0;
+            return !pendingOp.get();
         } finally {
             checkFailure();
         }
@@ -119,7 +121,6 @@ public final class WriteMapP<K, V> implements Processor {
 
     public static class Supplier<K, V> extends AbstractHazelcastConnectorSupplier {
         private static final long serialVersionUID = 1L;
-        private static final int MAX_LOCAL_PARALLEL_OPS = 8;
 
         private final String mapName;
 

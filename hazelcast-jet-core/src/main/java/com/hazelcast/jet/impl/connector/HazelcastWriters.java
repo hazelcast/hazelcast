@@ -219,6 +219,11 @@ public final class HazelcastWriters {
             public int size() {
                 return entries.size();
             }
+
+            @Override
+            public void clear() {
+                entries.clear();
+            }
         }
 
         @Override
