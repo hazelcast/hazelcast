@@ -207,11 +207,11 @@ public class ClientExecutorServiceCancelTest
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                ServiceManager serviceManager = TestUtil.getNode(member).getNodeEngine().getServiceManager();
-                DistributedExecutorService distributedExecutorService = serviceManager
+                final ServiceManager serviceManager = TestUtil.getNode(member).getNodeEngine().getServiceManager();
+                final DistributedExecutorService distributedExecutorService = serviceManager
                         .getService(DistributedExecutorService.SERVICE_NAME);
 
-                Map<String, LocalExecutorStats> allStats = distributedExecutorService.getStats();
+                final Map<String, LocalExecutorStats> allStats = distributedExecutorService.getStats();
                 Iterator<LocalExecutorStats> statsIterator = allStats.values().iterator();
                 assertTrue(statsIterator.hasNext());
                 LocalExecutorStats executorStats = statsIterator.next();
