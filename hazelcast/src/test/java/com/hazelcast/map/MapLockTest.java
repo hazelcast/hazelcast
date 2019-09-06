@@ -272,8 +272,8 @@ public class MapLockTest extends HazelcastTestSupport {
         final String val = "val";
 
         final int TTL_SEC = 1;
-        map.put(key, val, TTL_SEC, TimeUnit.SECONDS);
         map.lock(key);
+        map.put(key, val, TTL_SEC, TimeUnit.SECONDS);
 
         sleepSeconds(TTL_SEC * 2);
 
