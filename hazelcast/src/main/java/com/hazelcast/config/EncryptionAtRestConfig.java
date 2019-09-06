@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains configuration for the Hot Restart Persistence at Rest encryption

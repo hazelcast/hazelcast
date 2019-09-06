@@ -18,8 +18,8 @@ package com.hazelcast.config;
 
 import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * HashiCorp Vault Secure Store configuration.

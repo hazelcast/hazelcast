@@ -19,8 +19,8 @@ package com.hazelcast.config;
 import java.io.File;
 import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Java KeyStore Secure Store configuration.
