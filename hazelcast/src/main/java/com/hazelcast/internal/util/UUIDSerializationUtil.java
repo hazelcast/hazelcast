@@ -21,31 +21,30 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.util.UuidUtil.NIL_UUID;
-
 /**
- * Util methods for UUID serialization / deserialization operations
+ * Util methods for UUID serialization / deserialization operations.
  */
 public final class UUIDSerializationUtil {
     private UUIDSerializationUtil() {
     }
 
-    public static void writeUUID(DataOutput out, UUID uid) throws IOException {
-        if (uid == null) {
-            uid = NIL_UUID;
+    public static void writeUUID(DataOutput out, UUID uuid) throws IOException {
+        boolean isNull = uuid == null;
+        out.writeBoolean(isNull);
+        if (isNull) {
+            return;
         }
-        out.writeLong(uid.getLeastSignificantBits());
-        out.writeLong(uid.getMostSignificantBits());
+        out.writeLong(uuid.getLeastSignificantBits());
+        out.writeLong(uuid.getMostSignificantBits());
     }
 
     public static UUID readUUID(DataInput in) throws IOException {
-        long least = in.readLong();
-        long most = in.readLong();
-
-        UUID uuid = new UUID(most, least);
-        if (uuid.equals(NIL_UUID)) {
+        boolean isNull = in.readBoolean();
+        if (isNull) {
             return null;
         }
+        long least = in.readLong();
+        long most = in.readLong();
         return new UUID(most, least);
     }
 }

@@ -57,6 +57,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -70,7 +71,6 @@ import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.processor.EntryProcessor;
 import java.io.Closeable;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -105,9 +105,7 @@ import static java.util.Collections.emptySet;
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
         implements ICacheRecordStore, EvictionListener<Data, R> {
 
-    // We are using type 4 UUID for the UUID generation in our codebase,
-    // so this UUID is guaranteed to be unique since it is type 3 UUID.
-    public static final UUID SOURCE_NOT_AVAILABLE = UUID.nameUUIDFromBytes("<NA>".getBytes(StandardCharsets.UTF_8));
+    public static final UUID SOURCE_NOT_AVAILABLE = UuidUtil.NIL_UUID;
     protected static final int DEFAULT_INITIAL_CAPACITY = 256;
 
     protected final int partitionId;

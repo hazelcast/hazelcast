@@ -26,6 +26,8 @@ import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.transaction.TransactionalSet;
 
+import java.util.UUID;
+
 /**
  * Holder wrapping a Hazelcast TransactionContext.
  * <p>
@@ -89,7 +91,7 @@ class TransactionContextHolder implements TransactionContext {
         transactionContext.resumeTransaction();
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return transactionContext.getTxnId();
     }
 
