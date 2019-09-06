@@ -2805,6 +2805,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     public void testHotRestartEncryptionAtRest_whenJavaKeyStore() {
+        int keySize = 16;
         String keyStorePath = "/tmp/keystore.p12";
         String keyStoreType = "PKCS12";
         String keyStorePassword = "password";
@@ -2818,6 +2819,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      enabled: true\n"
                 + "      algorithm: AES\n"
                 + "      salt: some-salt\n"
+                + "      key-size: " + keySize + "\n"
                 + "      secure-store:\n"
                 + "        keystore:\n"
                 + "          path: " + keyStorePath + "\n"
@@ -2834,6 +2836,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
         assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
         SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
         assertTrue(secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig);
         JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) secureStoreConfig;
@@ -2847,6 +2850,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testHotRestartEncryptionAtRest_whenVault() {
+        int keySize = 16;
         String address = "https://localhost:1234";
         String secretPath = "secret/path";
         String token = "token";
@@ -2859,6 +2863,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      enabled: true\n"
                 + "      algorithm: AES\n"
                 + "      salt: some-salt\n"
+                + "      key-size: " + keySize + "\n"
                 + "      secure-store:\n"
                 + "        vault:\n"
                 + "          address: " + address + "\n"
@@ -2879,6 +2884,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
         assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
         SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
         assertTrue(secureStoreConfig instanceof VaultSecureStoreConfig);
         VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) secureStoreConfig;

@@ -805,6 +805,7 @@
                 <hz:encryption-at-rest enabled="true">
                     <hz:algorithm>AES/CBC/PKCS5Padding</hz:algorithm>
                     <hz:salt>sugar</hz:salt>
+                    <hz:key-size>16</hz:key-size>
                     <hz:secure-store>
                         <hz:vault>
                             <hz:address>http://localhost:1234</hz:address>

@@ -2403,8 +2403,8 @@
         - <encryption-at-rest>:
             Specifies the (optional) encryption settings for Hot Restart persistence. It has the required attribute "enabled"
             to specify whether encryption is enabled. In addition to that, it specifies the symmetric cipher to use (such as
-            AES/CBC/PKCS5Padding), the encryption salt, and, in the <secure-store> sub-element, the configuration of the Secure
-            Store that it will be used to retrieve the encryption keys.
+            AES/CBC/PKCS5Padding), the encryption salt, the key size for generating encryption keys, and, in the <secure-store>
+            sub-element, the configuration of the Secure Store that it will be used to retrieve the encryption keys.
             * <keystore>:
                 Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as
                 PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and
@@ -2424,6 +2424,7 @@
         <encryption-at-rest enabled="true">
             <algorithm>AES/CBC/PKCS5Padding</algorithm>
             <salt>somesalt</salt>
+            <key-size>16</key-size>
             <secure-store>
                 <keystore>
                     <path>/path/to/keystore.file</path>

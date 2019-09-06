@@ -2791,6 +2791,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testHotRestartEncryptionAtRest_whenJavaKeyStore() {
+        int keySize = 16;
         String keyStorePath = "/tmp/keystore.p12";
         String keyStoreType = "PKCS12";
         String keyStorePassword = "password";
@@ -2801,6 +2802,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <encryption-at-rest enabled=\"true\">\n"
                 + "        <algorithm>AES</algorithm>\n"
                 + "        <salt>some-salt</salt>\n"
+                + "        <key-size>" + keySize + "</key-size>\n"
                 + "        <secure-store>\n"
                 + "            <keystore>\n"
                 + "                <path>" + keyStorePath + "</path>\n"
@@ -2822,6 +2824,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
         assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
         SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
         assertTrue(secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig);
         JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) secureStoreConfig;
@@ -2835,6 +2838,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testHotRestartEncryptionAtRest_whenVault() {
+        int keySize = 16;
         String address = "https://localhost:1234";
         String secretPath = "secret/path";
         String token = "token";
@@ -2844,6 +2848,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <encryption-at-rest enabled=\"true\">\n"
                 + "        <algorithm>AES</algorithm>\n"
                 + "        <salt>some-salt</salt>\n"
+                + "        <key-size>" + keySize + "</key-size>\n"
                 + "        <secure-store>\n"
                 + "            <vault>\n"
                 + "                <address>" + address + "</address>\n"
@@ -2872,6 +2877,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
         assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
         SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
         assertTrue(secureStoreConfig instanceof VaultSecureStoreConfig);
         VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) secureStoreConfig;

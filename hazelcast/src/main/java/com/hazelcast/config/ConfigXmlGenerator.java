@@ -1345,7 +1345,8 @@ public class ConfigXmlGenerator {
             gen.node("encryption-at-rest", "enabled", "false");
             return;
         }
-        gen.open("encryption-at-rest", "enabled", encryptionAtRestConfig.isEnabled());
+        gen.open("encryption-at-rest", "enabled", encryptionAtRestConfig.isEnabled())
+           .node("key-size", encryptionAtRestConfig.getKeySize());
         commonSymmetricEncInterceptorConfigXmlBodyGenerator(gen, encryptionAtRestConfig);
         secureStoreXmlGenerator(gen, encryptionAtRestConfig.getSecureStoreConfig());
         gen.close();

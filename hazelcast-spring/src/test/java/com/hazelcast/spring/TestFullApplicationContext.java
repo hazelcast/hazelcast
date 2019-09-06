@@ -1272,6 +1272,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES/CBC/PKCS5Padding", encryptionAtRestConfig.getAlgorithm());
         assertEquals("sugar", encryptionAtRestConfig.getSalt());
+        assertEquals(16, encryptionAtRestConfig.getKeySize());
         assertTrue(encryptionAtRestConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig);
         VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) encryptionAtRestConfig.getSecureStoreConfig();
         assertEquals("http://localhost:1234", vaultConfig.getAddress());
