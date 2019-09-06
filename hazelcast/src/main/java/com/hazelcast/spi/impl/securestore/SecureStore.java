@@ -31,13 +31,6 @@ public interface SecureStore extends Disposable {
      * Returns a list of encryption keys, where the first item represents the current
      * active key and the other items represent previous keys (used for decryption
      * of old chunks).
-     * <p>
-     * The keys are retrieved in the order as specified in the Secure Store
-     * configuration (see the "entries" XML element of the Java KeyStore and Vault
-     * configuration). If any of the keys cannot be found in the Secure Store,
-     * the corresponding list item will be null ("key not found"). This is allowed
-     * except for the very first entry (representing the current key) which must
-     * always exist in the Secure Store.
      */
     @Nonnull
     List<byte[]> retrieveEncryptionKeys();

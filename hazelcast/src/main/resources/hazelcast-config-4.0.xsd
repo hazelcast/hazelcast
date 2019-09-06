@@ -3727,6 +3727,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="key-size" type="xs:int" minOccurs="0" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The key size in bits used when generating encryption keys (optional).
+                        The default value of 0 implies falling back to the cipher-specific
+                        default key size.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="secure-store" type="secure-store">
                 <xs:annotation>
                     <xs:documentation>

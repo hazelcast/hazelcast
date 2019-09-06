@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains configuration for the Hot Restart Persistence at Rest encryption
@@ -27,10 +27,44 @@ public class EncryptionAtRestConfig extends AbstractBasicSymmetricEncryptionConf
 
     private SecureStoreConfig secureStoreConfig = new NoSecureStoreConfig();
 
+    private int keySize;
+
+    /**
+     * Returns the encryption key size in bits.
+     *
+     * @return the encryption key size in bits
+     */
+    public int getKeySize() {
+        return keySize;
+    }
+
+    /**
+     * Sets the encryption key size in bits (non-positive value implies falling back
+     * to the cipher-specific default key length).
+     *
+     * @param keySize the encryption key size in bits
+     * @return the updated config instance
+     */
+    public EncryptionAtRestConfig setKeySize(int keySize) {
+        this.keySize = keySize;
+        return this;
+    }
+
+    /**
+     * Returns the Secure Store configuration.
+     *
+     * @return the Secure Store configuration
+     */
     public SecureStoreConfig getSecureStoreConfig() {
         return secureStoreConfig;
     }
 
+    /**
+     * Sets the Secure Store configuration.
+     *
+     * @param secureStoreConfig the Secure Store configuration
+     * @return the updated config instance
+     */
     public EncryptionAtRestConfig setSecureStoreConfig(SecureStoreConfig secureStoreConfig) {
         checkNotNull(secureStoreConfig, "Secure Store config cannot be null!");
         this.secureStoreConfig = secureStoreConfig;
@@ -39,11 +73,8 @@ public class EncryptionAtRestConfig extends AbstractBasicSymmetricEncryptionConf
 
     @Override
     public String toString() {
-        return "EncryptionAtRestConfig{"
-                + "enabled=" + enabled
-                + ", algorithm='" + algorithm + '\''
-                + ", salt='***'"
-                + ", secureStoreConfig=" + secureStoreConfig + '}';
+        return "EncryptionAtRestConfig{" + "enabled=" + enabled + ", algorithm='" + algorithm + '\'' + ", salt='***'"
+                + ", keySize=" + keySize + ", secureStoreConfig=" + secureStoreConfig + '}';
     }
 
     @Override
@@ -64,6 +95,9 @@ public class EncryptionAtRestConfig extends AbstractBasicSymmetricEncryptionConf
         if (!Objects.equals(salt, other.salt)) {
             return false;
         }
+        if (keySize != other.keySize) {
+            return false;
+        }
         return Objects.equals(secureStoreConfig, other.secureStoreConfig);
     }
 
@@ -72,6 +106,7 @@ public class EncryptionAtRestConfig extends AbstractBasicSymmetricEncryptionConf
         int result = (enabled ? 1 : 0);
         result = 31 * result + (algorithm == null ? 0 : algorithm.hashCode());
         result = 31 * result + (salt == null ? 0 : salt.hashCode());
+        result = 31 * result + keySize;
         result = 31 * result + (secureStoreConfig == null ? 0 : secureStoreConfig.hashCode());
         return result;
     }
