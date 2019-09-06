@@ -21,15 +21,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
- * Definition of an attribute of a sorted index.
- *
- * @see SortedIndexConfig
- * @see MapConfig#setIndexConfigs(List)
+ * A column to be indexed.
  */
-public class SortedIndexAttribute implements IdentifiedDataSerializable {
+public class IndexColumn implements IdentifiedDataSerializable {
     /** Default sort order of the attribute. */
     public static final boolean DEFAULT_ASC = true;
 
@@ -39,7 +35,7 @@ public class SortedIndexAttribute implements IdentifiedDataSerializable {
     /** Whether the attribute is sorted in ascending order. */
     private boolean asc = DEFAULT_ASC;
 
-    public SortedIndexAttribute() {
+    public IndexColumn() {
         // No-op.
     }
 
@@ -48,19 +44,8 @@ public class SortedIndexAttribute implements IdentifiedDataSerializable {
      *
      * @param name Name of the attribute.
      */
-    public SortedIndexAttribute(String name) {
+    public IndexColumn(String name) {
         this.name = name;
-    }
-
-    /**
-     * Creates an index attribute with the given name and sort order.
-     *
-     * @param name Name of the attribute.
-     * @param asc {@code True} if the attribute should be sorted in ascending order, {@code false} otherwise.
-     */
-    public SortedIndexAttribute(String name, boolean asc) {
-        this.name = name;
-        this.asc = asc;
     }
 
     /**
@@ -78,33 +63,8 @@ public class SortedIndexAttribute implements IdentifiedDataSerializable {
      * @param name Name of the attribute.
      * @return This instance for chaining.
      */
-    public SortedIndexAttribute setName(String name) {
+    public IndexColumn setName(String name) {
         this.name = name;
-
-        return this;
-    }
-
-    /**
-     * Gets whether the attribute is sorted in ascending order.
-     * <p>
-     * Defaults to {@link #DEFAULT_ASC}.
-     *
-     * @return {@code True} if the attribute is sorted in ascending order, {@code false} otherwise.
-     */
-    public boolean isAsc() {
-        return asc;
-    }
-
-    /**
-     * Sets whether the attribute is sorted in ascending order.
-     * <p>
-     * Defaults to {@link #DEFAULT_ASC}.
-     *
-     * @param asc {@code True} if the attribute is sorted in ascending order, {@code false} otherwise.
-     * @return This instance for chaining.
-     */
-    public SortedIndexAttribute setAsc(boolean asc) {
-        this.asc = asc;
 
         return this;
     }
@@ -116,7 +76,7 @@ public class SortedIndexAttribute implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return ConfigDataSerializerHook.SORTED_INDEX_ATTRIBUTE;
+        return ConfigDataSerializerHook.INDEX_COLUMN;
     }
 
     @Override
@@ -139,7 +99,7 @@ public class SortedIndexAttribute implements IdentifiedDataSerializable {
         if (o == null || getClass() != o.getClass())
             return false;
 
-        SortedIndexAttribute that = (SortedIndexAttribute) o;
+        IndexColumn that = (IndexColumn)o;
 
         if (asc != that.asc)
             return false;
@@ -158,6 +118,6 @@ public class SortedIndexAttribute implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "SortedIndexAttribute{name=" + name + ", asc=" + asc + '}';
+        return "IndexColumn{name=" + name + ", asc=" + asc + '}';
     }
 }

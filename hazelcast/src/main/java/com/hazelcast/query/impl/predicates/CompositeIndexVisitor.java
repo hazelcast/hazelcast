@@ -18,7 +18,6 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
-import com.hazelcast.query.impl.IndexComponent;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 
@@ -144,7 +143,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
             RangePredicate bestComparison = null;
 
             for (InternalIndex index : compositeIndexes) {
-                List<IndexComponent> components = index.getComponents();
+                List<String> components = index.getComponents();
                 if (components.size() < bestPrefix || !index.isOrdered() && prefixes.size() < components.size()) {
                     // Skip the index if: (a) it has fewer components than the
                     // best found prefix; (b) if index is unordered and we have
@@ -153,7 +152,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
                 }
 
                 int prefix = 0;
-                while (prefix < components.size()&& prefixes.containsKey(components.get(prefix).getName())) {
+                while (prefix < components.size()&& prefixes.containsKey(components.get(prefix))) {
                     ++prefix;
                 }
                 if (prefix == 0) {
@@ -163,7 +162,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
 
                 if (index.isOrdered()) {
                     RangePredicate comparison = prefix < components.size() && comparisons != null ?
-                        comparisons.get(components.get(prefix).getName()) : null;
+                        comparisons.get(components.get(prefix)) : null;
 
                     if (comparison != null) {
                         ++prefix;
@@ -235,7 +234,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
     private static Predicate tryGenerateFastOrdered(Map<String, EqualPredicate> prefixes, Map<String, RangePredicate> comparisons,
                                                     int prefixLength, RangePredicate comparison, InternalIndex index) {
         assert index.isOrdered();
-        List<IndexComponent> components = index.getComponents();
+        List<String> components = index.getComponents();
 
         if (prefixes.size() != prefixLength) {
             // some equal predicate(s) left unmatched
@@ -300,7 +299,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
     private static void addToOutputOrdered(Map<String, EqualPredicate> prefixes, Map<String, RangePredicate> comparisons,
                                            Output output, int prefixLength, RangePredicate comparison, InternalIndex index) {
         assert index.isOrdered();
-        List<IndexComponent> components = index.getComponents();
+        List<String> components = index.getComponents();
 
         if (prefixLength == components.size()) {
             // we got a full match
@@ -322,10 +321,10 @@ public class CompositeIndexVisitor extends AbstractVisitor {
     }
 
     private static Predicate generateEqualPredicate(InternalIndex index, Map<String, EqualPredicate> prefixes, boolean fast) {
-        List<IndexComponent> components = index.getComponents();
+        List<String> components = index.getComponents();
         Comparable[] values = new Comparable[components.size()];
         for (int i = 0; i < components.size(); ++i) {
-            String attribute = components.get(i).getName();
+            String attribute = components.get(i);
 
             values[i] = fast ? prefixes.get(attribute).value : prefixes.remove(attribute).value;
         }
@@ -336,12 +335,12 @@ public class CompositeIndexVisitor extends AbstractVisitor {
                                                     boolean fast) {
         // see CompositeValue docs for more details on what is going on here
 
-        List<IndexComponent> components = index.getComponents();
+        List<String> components = index.getComponents();
 
         Comparable[] from = new Comparable[components.size()];
         Comparable[] to = new Comparable[components.size()];
         for (int i = 0; i < prefixLength; ++i) {
-            String attribute = components.get(i).getName();
+            String attribute = components.get(i);
 
             Comparable value = fast ? prefixes.get(attribute).value : prefixes.remove(attribute).value;
             from[i] = value;
@@ -362,7 +361,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
         assert !(comparison instanceof EqualPredicate);
         assert comparison.getFrom() != NULL && comparison.getTo() != NULL;
 
-        List<IndexComponent> components = index.getComponents();
+        List<String> components = index.getComponents();
         boolean fullyMatched = components.size()== prefixLength + 1;
         boolean hasFrom = comparison.getFrom() != null;
         boolean hasTo = comparison.getTo() != null;
@@ -373,7 +372,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
         Comparable[] from = new Comparable[components.size()];
         Comparable[] to = new Comparable[components.size()];
         for (int i = 0; i < prefixLength; ++i) {
-            String attribute = components.get(i).getName();
+            String attribute = components.get(i);
 
             Comparable value = fast ? prefixes.get(attribute).value : prefixes.remove(attribute).value;
             from[i] = value;

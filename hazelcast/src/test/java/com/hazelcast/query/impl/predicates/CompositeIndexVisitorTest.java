@@ -18,7 +18,6 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
-import com.hazelcast.query.impl.IndexComponent;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -85,11 +84,9 @@ public class CompositeIndexVisitorTest extends VisitorTestSupport {
         visitor = new CompositeIndexVisitor();
     }
 
-    private List<IndexComponent> components(String... names) {
-        List<IndexComponent> res = new ArrayList<>(names.length);
-
-        for (String name : names)
-            res.add(new IndexComponent(name, null));
+    private List<String> components(String... names) {
+        List<String> res = new ArrayList<>(names.length);
+        res.addAll(Arrays.asList(names));
 
         return res;
     }

@@ -18,14 +18,12 @@ package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.HashIndexConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.SortedIndexConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -113,7 +111,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
 import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
@@ -1303,7 +1300,7 @@ abstract class MapProxySupport<K, V>
 
     @Override
     public void addIndex(@Nonnull String attribute, boolean ordered) {
-        IndexConfig config = ordered ? new SortedIndexConfig(attribute) : new HashIndexConfig(attribute);
+        IndexConfig config = IndexUtils.createSimpleIndexConfig(ordered, attribute);
 
         addIndex(config);
     }

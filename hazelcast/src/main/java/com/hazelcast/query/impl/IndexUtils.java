@@ -16,10 +16,9 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.config.HashIndexConfig;
+import com.hazelcast.config.IndexColumn;
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.SortedIndexAttribute;
-import com.hazelcast.config.SortedIndexConfig;
+import com.hazelcast.config.IndexType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +33,7 @@ public class IndexUtils {
     /** Maximum number of attributes allowed in the index. */
     private static final int MAX_ATTRIBUTES = 255;
 
-    /** Pattern to stipe away "this." prefix. */
+    /** Pattern to stripe away "this." prefix. */
     private static final Pattern THIS_PATTERN = Pattern.compile("^this\\.");
 
     /**
@@ -47,7 +46,6 @@ public class IndexUtils {
      */
     public static IndexConfig validateAndNormalize(String mapName, IndexConfig config) {
         assert config != null;
-        assert config instanceof SortedIndexConfig || config instanceof HashIndexConfig;
 
         // Validate attributes.
         List<String> originalAttributeNames = getAttributeNames(config);
@@ -104,53 +102,26 @@ public class IndexUtils {
         if (name != null && name.trim().isEmpty())
             name = null;
 
-        IndexConfig res;
+        IndexConfig newConfig = new IndexConfig().setType(config.getType());
 
-        if (config instanceof SortedIndexConfig) {
-            StringBuilder nameBuilder = name != null ? new StringBuilder(mapName + "_sorted") : null;
+        StringBuilder nameBuilder = name != null ?
+            new StringBuilder(mapName + (config.getType() == IndexType.SORTED ? "_sorted" : "_hash")) : null;
 
-            List<SortedIndexAttribute> originalAttributes = ((SortedIndexConfig)config).getAttributes();
-            List<SortedIndexAttribute> newAttributes = new ArrayList<>(originalAttributes.size());
+        for (int i = 0; i < config.getColumns().size(); i++) {
+            String newColumnName = normalizedAttributeNames.get(i);
 
-            for (int i = 0; i < originalAttributes.size(); i++) {
-                String attributeName = normalizedAttributeNames.get(i);
-                boolean attributeAsc = originalAttributes.get(i).isAsc();
-
-                SortedIndexAttribute newAttribute = new SortedIndexAttribute(attributeName, attributeAsc);
-
-                newAttributes.add(newAttribute);
-
-                if (nameBuilder != null)
-                    nameBuilder.append("_").append(attributeName).append("_").append(attributeAsc ? "asc" : "desc");
-            }
+            newConfig.addColumn(new IndexColumn(newColumnName));
 
             if (nameBuilder != null)
-                name = nameBuilder.toString();
-
-            res = new SortedIndexConfig().setName(name).setAttributes(newAttributes);
-        }
-        else {
-            StringBuilder nameBuilder = name != null ? new StringBuilder(mapName + "_hash") : null;
-
-            List<String> originalAttributes = ((HashIndexConfig)config).getAttributes();
-            List<String> newAttributes = new ArrayList<>(originalAttributes.size());
-
-            for (int i = 0; i < originalAttributes.size(); i++) {
-                String attribute = normalizedAttributeNames.get(i);
-
-                newAttributes.add(attribute);
-
-                if (nameBuilder != null)
-                    nameBuilder.append("_").append(attribute);
-            }
-
-            if (nameBuilder != null)
-                name = nameBuilder.toString();
-
-            res = new HashIndexConfig().setName(name).setAttributes(newAttributes);
+                nameBuilder.append("_").append(newColumnName);
         }
 
-        return res;
+        if (nameBuilder != null)
+            name = nameBuilder.toString();
+
+        newConfig.setName(name);
+
+        return newConfig;
     }
 
     /**
@@ -160,76 +131,26 @@ public class IndexUtils {
      * @return Attribute names.
      */
     private static List<String> getAttributeNames(IndexConfig config) {
-        List<String> res = null;
+        if (config.getColumns().isEmpty())
+            return Collections.emptyList();
 
-        if (config instanceof SortedIndexConfig) {
-            List<SortedIndexAttribute> attributes = ((SortedIndexConfig)config).getAttributes();
+        List<String> res = new ArrayList<>(config.getColumns().size());
 
-            if (attributes != null && !attributes.isEmpty()) {
-                res = new ArrayList<>(attributes.size());
-
-                for (SortedIndexAttribute attribute : attributes)
-                    res.add(attribute.getName());
-            }
-        }
-        else {
-            assert config instanceof HashIndexConfig;
-
-            res = ((HashIndexConfig) config).getAttributes();
-        }
-
-        if (res == null)
-            res = Collections.emptyList();
+        for (IndexColumn column: config.getColumns())
+            res.add(column.getName());
 
         return res;
     }
 
-    public static List<IndexComponent> getComponents(IndexConfig config) {
+    public static List<String> getComponents(IndexConfig config) {
         assert config != null;
-        assert config instanceof SortedIndexConfig || config instanceof HashIndexConfig;
 
-        List<IndexComponent> res;
+        List<String> res = new ArrayList<>(config.getColumns().size());
 
-        if (config instanceof SortedIndexConfig) {
-            SortedIndexConfig config0 = (SortedIndexConfig)config;
-
-            res = new ArrayList<>(config0.getAttributes().size());
-
-            for (SortedIndexAttribute attribute : config0.getAttributes())
-                res.add(new IndexComponent(attribute.getName(), attribute.isAsc()));
-        }
-        else {
-            HashIndexConfig config0 = (HashIndexConfig)config;
-
-            res = new ArrayList<>(config0.getAttributes().size());
-
-            for (String attribute : config0.getAttributes())
-                res.add(new IndexComponent(attribute, null));
-        }
+        for (IndexColumn column : config.getColumns())
+            res.add(column.getName());
 
         return res;
-    }
-
-    public static String toString(List<IndexComponent> components) {
-        if (components.size() == 0)
-            return "[]";
-
-        StringBuilder res = new StringBuilder("[");
-
-        boolean first = true;
-
-        for (IndexComponent component : components) {
-            if (first)
-                first = false;
-            else
-                res.append(", ");
-
-            res.append(component);
-        }
-
-        res.append("]");
-
-        return res.toString();
     }
 
     /**
@@ -240,24 +161,12 @@ public class IndexUtils {
      * @return Index definition.
      */
     public static IndexConfig createSimpleIndexConfig(boolean ordered, String... attributes) {
-        IndexConfig res;
+        IndexConfig res = new IndexConfig();
 
-        if (ordered) {
-            SortedIndexConfig res0 = new SortedIndexConfig();
+        res.setType(ordered ? IndexType.SORTED : IndexType.HASH);
 
-            for (String attribute : attributes)
-                res0.addAttribute(new SortedIndexAttribute(attribute));
-
-            res = res0;
-        }
-        else {
-            HashIndexConfig res0 = new HashIndexConfig();
-
-            for (String attribute : attributes)
-                res0.addAttribute(attribute);
-
-            res = res0;
-        }
+        for (String attribute : attributes)
+            res.addColumn(new IndexColumn(attribute));
 
         return validateAndNormalize(UUID.randomUUID().toString(), res);
     }

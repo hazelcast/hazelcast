@@ -16,10 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.config.HashIndexConfig;
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.SortedIndexAttribute;
-import com.hazelcast.config.SortedIndexConfig;
 import com.hazelcast.query.impl.AttributeIndexRegistry.FirstComponentDecorator;
 import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -195,24 +192,9 @@ public class AttributeIndexRegistryTest {
     }
 
     private static InternalIndex index(boolean ordered, String... components) {
-        IndexConfig config;
+        IndexConfig config = IndexUtils.createSimpleIndexConfig(ordered, components);
 
-        if (ordered) {
-            SortedIndexConfig config0 = new SortedIndexConfig();
-
-            for (String component : components)
-                config0.addAttribute(new SortedIndexAttribute(component));
-
-            config = IndexUtils.validateAndNormalize(UUID.randomUUID().toString(), config0);
-        }
-        else {
-            HashIndexConfig config0 = new HashIndexConfig();
-
-            for (String component : components)
-                config0.addAttribute(component);
-
-            config = IndexUtils.validateAndNormalize(UUID.randomUUID().toString(), config0);
-        }
+        config = IndexUtils.validateAndNormalize(UUID.randomUUID().toString(), config);
 
         InternalIndex index = Mockito.mock(InternalIndex.class);
 

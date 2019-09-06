@@ -19,8 +19,6 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexComponent;
-import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -29,6 +27,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +40,7 @@ import java.util.Set;
 public class CompositeEqualPredicate implements IndexAwarePredicate {
 
     final String indexName;
-    final List<IndexComponent> components;
+    final List<String> components;
     final CompositeValue value;
 
     private volatile Predicate fallbackPredicate;
@@ -67,9 +66,7 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
         this.indexName = indexName;
 
         this.components = new ArrayList<>();
-
-        for (String component : components)
-            this.components.add(new IndexComponent(component, null));
+        this.components.addAll(Arrays.asList(components));
 
         this.value = value;
     }
@@ -95,7 +92,7 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
 
     @Override
     public String toString() {
-        return IndexUtils.toString(components) + " = " + value;
+        return components + " = " + value;
     }
 
     @Override
@@ -110,7 +107,7 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
 
         Predicate[] predicates = new Predicate[components.size()];
         for (int i = 0; i < components.size(); ++i) {
-            predicates[i] = new EqualPredicate(components.get(i).getName(), values[i]);
+            predicates[i] = new EqualPredicate(components.get(i), values[i]);
         }
         fallbackPredicate = new AndPredicate(predicates);
     }

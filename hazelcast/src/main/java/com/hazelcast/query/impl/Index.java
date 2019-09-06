@@ -45,7 +45,7 @@ public interface Index {
      * @return the components of this index for composite indexes, {@code null}
      * for single-attribute non-composite indexes.
      */
-    List<IndexComponent> getComponents();
+    List<String> getComponents();
 
     /**
      * @return Configuration of the index.

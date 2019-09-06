@@ -55,8 +55,8 @@ public class AttributeIndexRegistry {
      * @see Indexes#addOrGetIndex
      */
     public void register(InternalIndex index) {
-        List<IndexComponent> components = index.getComponents();
-        String attribute = components.get(0).getName();
+        List<String> components = index.getComponents();
+        String attribute = components.get(0);
 
         Record record = registry.get(attribute);
         if (record == null) {
@@ -142,7 +142,7 @@ public class AttributeIndexRegistry {
             if (current instanceof FirstComponentDecorator) {
                 // the current index is composite
 
-                List<IndexComponent> candidateComponents = candidate.getComponents();
+                List<String> candidateComponents = candidate.getComponents();
                 if (candidateComponents.size() > 1) {
                     // if the current index has more components, replace it
                     FirstComponentDecorator currentDecorator = (FirstComponentDecorator) current;
@@ -187,7 +187,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public List<IndexComponent> getComponents() {
+        public List<String> getComponents() {
             return null;
         }
 

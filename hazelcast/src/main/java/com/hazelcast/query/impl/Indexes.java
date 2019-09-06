@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.SortedIndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -126,7 +126,7 @@ public class Indexes {
             extractors,
             serializationService,
             indexCopyBehavior,
-            stats.createPerIndexStats(indexConfig instanceof SortedIndexConfig, usesCachedQueryableEntries),
+            stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
             partitionStoreAdapter
         );
 

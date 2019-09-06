@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.SortedIndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.StoreAdapter;
@@ -56,7 +56,7 @@ public abstract class AbstractIndex implements InternalIndex {
     protected final IndexStore indexStore;
     protected final IndexCopyBehavior copyBehavior;
 
-    private final List<IndexComponent> components;
+    private final List<String> components;
     private final IndexConfig config;
     private final boolean ordered;
     private final PerIndexStats stats;
@@ -79,7 +79,7 @@ public abstract class AbstractIndex implements InternalIndex {
     ) {
         this.config = config;
         this.components = IndexUtils.getComponents(config);
-        this.ordered = config instanceof SortedIndexConfig;
+        this.ordered = config.getType() == IndexType.SORTED;
         this.ss = ss;
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
@@ -97,7 +97,7 @@ public abstract class AbstractIndex implements InternalIndex {
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     @Override
-    public List<IndexComponent> getComponents() {
+    public List<String> getComponents() {
         return components;
     }
 
@@ -246,11 +246,11 @@ public abstract class AbstractIndex implements InternalIndex {
 
     private Object extractAttributeValue(Data key, Object value) {
         if (components.size() == 1) {
-            return QueryableEntry.extractAttributeValue(extractors, ss, components.get(0).getName(), key, value, null);
+            return QueryableEntry.extractAttributeValue(extractors, ss, components.get(0), key, value, null);
         } else {
             Comparable[] valueComponents = new Comparable[components.size()];
             for (int i = 0; i < components.size(); ++i) {
-                String attribute = components.get(i).getName();
+                String attribute = components.get(i);
 
                 Object extractedValue = QueryableEntry.extractAttributeValue(extractors, ss, attribute, key, value, null);
                 if (extractedValue instanceof MultiResult) {
@@ -282,14 +282,14 @@ public abstract class AbstractIndex implements InternalIndex {
 
     private TypeConverter obtainConverter(QueryableEntry entry) {
         if (components.size() == 1) {
-            return entry.getConverter(components.get(0).getName());
+            return entry.getConverter(components.get(0));
         } else {
             CompositeConverter existingConverter = (CompositeConverter) converter;
             TypeConverter[] converters = new TypeConverter[components.size()];
             for (int i = 0; i < components.size(); ++i) {
                 TypeConverter existingComponentConverter = getNonTransientComponentConverter(existingConverter, i);
                 if (existingComponentConverter == null) {
-                    converters[i] = entry.getConverter(components.get(i).getName());
+                    converters[i] = entry.getConverter(components.get(i));
                     assert converters[i] != null;
                 } else {
                     // preserve the old one to avoid downgrading

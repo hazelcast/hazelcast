@@ -66,17 +66,17 @@ public final class ConverterCache {
      * @param index the index added.
      */
     public void invalidate(InternalIndex index) {
-        List<IndexComponent> components = index.getComponents();
+        List<String> components = index.getComponents();
         if (components.size() == 1) {
-            cache.remove(components.get(0).getName());
+            cache.remove(components.get(0));
             return;
         }
 
-        for (IndexComponent component : components) {
-            TypeConverter converter = cache.get(component.getName());
+        for (String component : components) {
+            TypeConverter converter = cache.get(component);
 
             if (converter instanceof UnresolvedConverter) {
-                cache.remove(component.getName());
+                cache.remove(component);
             }
         }
     }
@@ -127,15 +127,15 @@ public final class ConverterCache {
 
         // scan composite indexes
         for (InternalIndex index : indexesSnapshot) {
-            List<IndexComponent> components = index.getComponents();
+            List<String> components = index.getComponents();
             if (components.size() == 1) {
                 // not a composite index
                 continue;
             }
 
             for (int i = 0; i < components.size(); ++i) {
-                IndexComponent component = components.get(i);
-                if (!component.getName().equals(attribute)) {
+                String component = components.get(i);
+                if (!component.equals(attribute)) {
                     // not a component/attribute we are searching for
                     continue;
                 }

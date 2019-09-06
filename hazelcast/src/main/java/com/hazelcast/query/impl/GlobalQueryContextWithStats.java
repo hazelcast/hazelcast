@@ -97,7 +97,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public List<IndexComponent> getComponents() {
+        public List<String> getComponents() {
             return delegate.getComponents();
         }
 
