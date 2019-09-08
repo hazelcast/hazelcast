@@ -133,11 +133,13 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
 
         TestEntryLoader entryLoader = new TestEntryLoader();
 
-        for (int i = 0; i < entryCount; i++)
+        for (int i = 0; i < entryCount; i++) {
             entryLoader.putExternally("key" + i, "val" + i, bigExpiry);
+        }
 
-        for (int i = entryCount; i < entryCount * 2; i++)
+        for (int i = entryCount; i < entryCount * 2; i++) {
             entryLoader.putExternally("key" + i, "val" + i, smallExpiry);
+        }
 
         return entryLoader;
     }
