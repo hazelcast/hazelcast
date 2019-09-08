@@ -18,8 +18,9 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapAttributeConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
@@ -61,8 +62,9 @@ public class ExtractorsAndIndexesTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = new Config();
-        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat).addMapIndexConfig(new MapIndexConfig("last", true))
-              .addMapAttributeConfig(new MapAttributeConfig("generated", Extractor.class.getName()));
+        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat)
+            .addIndexConfig(new IndexConfig(IndexType.SORTED, "last"))
+            .addMapAttributeConfig(new MapAttributeConfig("generated", Extractor.class.getName()));
         config.getNativeMemoryConfig().setEnabled(true);
 
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");

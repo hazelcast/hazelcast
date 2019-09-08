@@ -452,6 +452,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         msc.setSize(getIntegerValue("max-size", getTextContent(attributes.getNamedItem("max-size"))));
     }
 
+    // TODO: Fix me
     @Override
     protected void mapIndexesHandle(Node n, MapConfig mapConfig) {
         for (Node indexNode : childElements(n)) {
@@ -506,6 +507,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         queryCacheConfig.setPredicateConfig(predicateConfig);
     }
 
+    // TODO: Fix me
     @Override
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {

@@ -110,7 +110,7 @@ public class IndexUtils {
         for (int i = 0; i < config.getColumns().size(); i++) {
             String newColumnName = normalizedAttributeNames.get(i);
 
-            newConfig.addColumn(new IndexColumn(newColumnName));
+            newConfig.addColumn(newColumnName);
 
             if (nameBuilder != null)
                 nameBuilder.append("_").append(newColumnName);
@@ -166,7 +166,7 @@ public class IndexUtils {
         res.setType(ordered ? IndexType.SORTED : IndexType.HASH);
 
         for (String attribute : attributes)
-            res.addColumn(new IndexColumn(attribute));
+            res.addColumn(attribute);
 
         return validateAndNormalize(UUID.randomUUID().toString(), res);
     }

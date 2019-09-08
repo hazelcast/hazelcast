@@ -17,7 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
@@ -266,8 +267,8 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     private HazelcastInstance createNode(TestHazelcastInstanceFactory instanceFactory) {
         Config config = getConfig().setProperty(GroupProperty.PARTITION_COUNT.getName(), "4");
         config.getMapConfig(mapName)
-              .addMapIndexConfig(new MapIndexConfig("author", false))
-              .addMapIndexConfig(new MapIndexConfig("year", true))
+              .addIndexConfig(new IndexConfig(IndexType.HASH, "author"))
+              .addIndexConfig(new IndexConfig(IndexType.SORTED, "year"))
               .setBackupCount(1);
         return instanceFactory.newHazelcastInstance(config);
     }

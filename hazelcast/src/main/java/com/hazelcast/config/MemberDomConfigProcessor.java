@@ -1960,6 +1960,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         mapConfig.setWanReplicationRef(wanReplicationRef);
     }
 
+    // TODO: Fix me.
     protected void mapIndexesHandle(Node n, MapConfig mapConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
@@ -1971,6 +1972,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
+    // TODO: Fix me.
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {

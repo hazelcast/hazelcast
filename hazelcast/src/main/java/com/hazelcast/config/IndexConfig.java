@@ -58,6 +58,21 @@ public class IndexConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Creates an index configuration of the given type with provided columns.
+     *
+     * @param type Index type.
+     * @param columns Columns to be indexed.
+     */
+    public IndexConfig(IndexType type, String... columns) {
+        setType(type);
+
+        if (columns != null) {
+            for (String column : columns)
+                addColumn(column);
+        }
+    }
+
+    /**
      * Gets name of the index.
      *
      * @return Name of the index or {@code null} if index name should be generated automatically.
@@ -98,7 +113,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @return This instance for chaining.
      */
     public IndexConfig setType(IndexType type) {
-        this.type = checkNotNull(type, "Index type cannot be null.");;
+        this.type = checkNotNull(type, "Index type cannot be null.");
 
         return this;
     }
@@ -125,6 +140,16 @@ public class IndexConfig implements IdentifiedDataSerializable {
         getColumns().add(column);
 
         return this;
+    }
+
+    /**
+     * Adds an index column with the given name and default sort order.
+     *
+     * @param column Column name.
+     * @return This instance for chaining.
+     */
+    public IndexConfig addColumn(String column) {
+        return addColumn(new IndexColumn(column));
     }
 
     /**

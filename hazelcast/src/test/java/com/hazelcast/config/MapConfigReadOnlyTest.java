@@ -92,13 +92,13 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void getMapIndexConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
+    public void getIndexConfigsOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig()
-                .addMapIndexConfig(new MapIndexConfig())
-                .addMapIndexConfig(new MapIndexConfig());
+                .addIndexConfig(new IndexConfig())
+                .addIndexConfig(new IndexConfig());
 
-        List<MapIndexConfig> mapIndexConfigs = config.getAsReadOnly().getMapIndexConfigs();
-        mapIndexConfigs.add(new MapIndexConfig());
+        List<IndexConfig> indexConfigs = config.getAsReadOnly().getIndexConfigs();
+        indexConfigs.add(new IndexConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -251,13 +251,13 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void addMapIndexConfigOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().addMapIndexConfig(new MapIndexConfig());
+    public void addIndexConfigOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().addIndexConfig(new IndexConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setMapIndexConfigsOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setMapIndexConfigs(singletonList(new MapIndexConfig()));
+    public void setIndexConfigsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setIndexConfigs(singletonList(new IndexConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)

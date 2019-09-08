@@ -18,7 +18,8 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -101,8 +102,8 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
     @Test
     public void testOnPreConfiguredIndexes() {
         Config config = getConfig();
-        config.getMapConfig(MAP_NAME).addMapIndexConfig(new MapIndexConfig("this", false));
-        config.getMapConfig(MAP_NAME).addMapIndexConfig(new MapIndexConfig("__key", true));
+        config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.HASH, "this"));
+        config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.SORTED, "__key"));
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         int expectedPartitions = getPartitionService(instance1).getPartitionCount();

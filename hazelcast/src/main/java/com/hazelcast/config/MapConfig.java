@@ -821,9 +821,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (!getPartitionLostListenerConfigs().equals(that.getPartitionLostListenerConfigs())) {
             return false;
         }
-        if (!getMapIndexConfigs().equals(that.getMapIndexConfigs())) {
-            return false;
-        }
         if (!getIndexConfigs().equals(that.getIndexConfigs())) {
             return false;
         }
@@ -869,7 +866,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         result = 31 * result + metadataPolicy.hashCode();
         result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
         result = 31 * result + getEntryListenerConfigs().hashCode();
-        result = 31 * result + getMapIndexConfigs().hashCode();
         result = 31 * result + getIndexConfigs().hashCode();
         result = 31 * result + getMapAttributeConfigs().hashCode();
         result = 31 * result + getQueryCacheConfigs().hashCode();

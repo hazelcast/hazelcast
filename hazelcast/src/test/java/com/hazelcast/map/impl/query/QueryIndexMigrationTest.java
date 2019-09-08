@@ -17,7 +17,8 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
@@ -212,7 +213,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     private Config newConfigWithIndex(String mapName, String attribute) {
         Config config = getTestConfig();
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig(attribute, false));
+        config.getMapConfig(mapName).addIndexConfig(new IndexConfig(IndexType.HASH, attribute));
         return config;
     }
 

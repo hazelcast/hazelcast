@@ -35,6 +35,8 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -867,7 +869,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setMaxIdleSeconds(110)
                 .setQuorumName(randomString())
                 .addMapAttributeConfig(new MapAttributeConfig("attributeName", "com.attribute.extractor"))
-                .addMapIndexConfig(new MapIndexConfig("attr", true))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "attr"))
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)
                 .setStatisticsEnabled(false);

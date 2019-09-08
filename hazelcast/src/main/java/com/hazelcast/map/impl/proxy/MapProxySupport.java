@@ -21,7 +21,6 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEventType;
@@ -307,13 +306,6 @@ abstract class MapProxySupport<K, V>
     }
 
     private void initializeIndexes() {
-        // TODO: Remove this loop.
-        for (MapIndexConfig index : mapConfig.getMapIndexConfigs()) {
-            if (index.getAttribute() != null) {
-                addIndex(index.getAttribute(), index.isOrdered());
-            }
-        }
-
         for (IndexConfig index : mapConfig.getIndexConfigs())
             addIndex(index);
     }

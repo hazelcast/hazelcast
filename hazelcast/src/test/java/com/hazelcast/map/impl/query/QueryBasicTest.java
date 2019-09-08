@@ -18,8 +18,9 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
@@ -911,8 +912,8 @@ public class QueryBasicTest extends HazelcastTestSupport {
         String name = randomMapName();
         Config config = getConfig();
         config.addMapConfig(new MapConfig(name)
-                .addMapIndexConfig(new MapIndexConfig("child.timestamp", false))
-                .addMapIndexConfig(new MapIndexConfig("child.child.timestamp", true)));
+                .addIndexConfig(new IndexConfig(IndexType.HASH, "child.timestamp"))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "child.child.timestamp")));
 
         testQueryUsingNestedPortableObject(config, name);
     }
@@ -922,7 +923,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         String name = randomMapName();
         Config config = getConfig();
         config.addMapConfig(new MapConfig(name)
-                .addMapIndexConfig(new MapIndexConfig("timestamp", true)));
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "timestamp")));
 
         testQueryUsingPortableObject(config, name);
     }
@@ -933,7 +934,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Config config = getConfig();
         config.addMapConfig(new MapConfig(name)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
-                .addMapIndexConfig(new MapIndexConfig("timestamp", true)));
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "timestamp")));
 
         testQueryUsingPortableObject(config, name);
     }
@@ -983,7 +984,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testOptionalUnorderedIndexQuerying() {
         String name = randomMapName();
         Config config = smallInstanceConfig();
-        config.getMapConfig(name).addMapIndexConfig(new MapIndexConfig("attribute", false));
+        config.getMapConfig(name).addIndexConfig(new IndexConfig(IndexType.HASH, "attribute"));
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, ObjectWithOptional<Integer>> map = instance.getMap(name);
 
@@ -1008,7 +1009,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testOptionalOrderedIndexQuerying() {
         String name = randomMapName();
         Config config = smallInstanceConfig();
-        config.getMapConfig(name).addMapIndexConfig(new MapIndexConfig("attribute", true));
+        config.getMapConfig(name).addIndexConfig(new IndexConfig(IndexType.SORTED, "attribute"));
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, ObjectWithOptional<Integer>> map = instance.getMap(name);
 

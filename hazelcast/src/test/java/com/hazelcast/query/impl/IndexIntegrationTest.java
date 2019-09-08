@@ -18,8 +18,9 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -114,12 +115,12 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     @Test
     public void putRemove_withIndex_whereAttributeIsNull() {
         // GIVEN
-        MapIndexConfig mapIndexConfig = new MapIndexConfig();
-        mapIndexConfig.setAttribute("amount");
-        mapIndexConfig.setOrdered(false);
+        IndexConfig mapIndexConfig = new IndexConfig();
+        mapIndexConfig.addColumn("amount");
+        mapIndexConfig.setType(IndexType.HASH);
 
         MapConfig mapConfig = new MapConfig().setName("map");
-        mapConfig.addMapIndexConfig(mapIndexConfig);
+        mapConfig.addIndexConfig(mapIndexConfig);
 
         Config config = new Config();
         config.addMapConfig(mapConfig);

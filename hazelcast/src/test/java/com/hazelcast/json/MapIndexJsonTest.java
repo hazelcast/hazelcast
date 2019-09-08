@@ -18,6 +18,8 @@ package com.hazelcast.json;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
@@ -102,11 +104,11 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
 
     protected Config addIndexConfig(Config config) {
         config.getMapConfig("default")
-                .addMapIndexConfig(new MapIndexConfig("longValue", true))
-                .addMapIndexConfig(new MapIndexConfig("doubleValue", true))
-                .addMapIndexConfig(new MapIndexConfig("nestedObject.nestedLongValue", true))
-                .addMapIndexConfig(new MapIndexConfig("stringValue", true))
-                .addMapIndexConfig(new MapIndexConfig("stringValueArray", true));
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "longValue"))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "doubleValue"))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "nestedObject.nestedLongValue"))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "stringValue"))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "stringValueArray"));
         return config;
     }
 
