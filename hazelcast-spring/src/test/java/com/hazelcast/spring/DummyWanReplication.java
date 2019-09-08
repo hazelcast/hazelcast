@@ -18,14 +18,14 @@ package com.hazelcast.spring;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationPublisher;
 
-public class DummyWanReplication implements WanReplicationEndpoint {
+public class DummyWanReplication implements WanReplicationPublisher {
 
     @Override
-    public void init(Node node, WanReplicationConfig wanReplicationConfig, AbstractWanPublisherConfig wanPublisherConfig) {
+    public void init(WanReplicationConfig wanReplicationConfig,
+                     AbstractWanPublisherConfig wanPublisherConfig) {
     }
 
     @Override
@@ -41,7 +41,7 @@ public class DummyWanReplication implements WanReplicationEndpoint {
     }
 
     @Override
-    public void checkWanReplicationQueues() {
+    public void prepareForReplicationEventPublication() {
     }
 
     @Override

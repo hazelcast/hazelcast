@@ -58,9 +58,9 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     private void handleRemove(MapReplicationRemove replicationRemove) {
-        String mapName = replicationRemove.getMapName();
+        String mapName = replicationRemove.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
-        MapOperation operation = operationProvider.createDeleteOperation(replicationRemove.getMapName(),
+        MapOperation operation = operationProvider.createDeleteOperation(replicationRemove.getObjectName(),
                 replicationRemove.getKey(), true);
 
         try {
@@ -76,7 +76,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
 
     private void handleUpdate(MapReplicationUpdate replicationUpdate) {
         SplitBrainMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
-        String mapName = replicationUpdate.getMapName();
+        String mapName = replicationUpdate.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
 
         SerializationService serializationService = nodeEngine.getSerializationService();

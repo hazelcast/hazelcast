@@ -79,18 +79,16 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
     }
 
     /**
-     * Returns the name of the class implementing the WanReplicationEndpoint.
-     * NOTE: OS and EE have different interfaces that this class should implement.
-     * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
+     * Returns the name of the class implementing
+     * {@link com.hazelcast.wan.WanReplicationPublisher}.
      */
     public String getClassName() {
         return className;
     }
 
     /**
-     * Sets the name of the class implementing the WanReplicationEndpoint.
-     * NOTE: OS and EE have different interfaces that this class should implement.
-     * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
+     * Sets the name of the class implementing
+     * {@link com.hazelcast.wan.WanReplicationPublisher}.
      * To configure the built in WanBatchReplication, please use
      * {@link WanBatchReplicationPublisherConfig} config class.
      *
@@ -103,18 +101,14 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
     }
 
     /**
-     * Returns the implementation of the WanReplicationEndpoint.
-     * NOTE: OS and EE have different interfaces that this object should implement.
-     * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
+     * Returns the implementation of {@link com.hazelcast.wan.WanReplicationPublisher}.
      */
     public Object getImplementation() {
         return implementation;
     }
 
     /**
-     * Sets the implementation of the WanReplicationEndpoint.
-     * NOTE: OS and EE have different interfaces that this object should implement.
-     * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
+     * Sets the implementation of {@link com.hazelcast.wan.WanReplicationPublisher}.
      *
      * @param implementation the implementation for the WAN replication
      * @return this config

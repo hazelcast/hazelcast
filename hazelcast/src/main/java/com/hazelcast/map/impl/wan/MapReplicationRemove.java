@@ -21,13 +21,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.impl.InternalWanReplicationEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
 
-public class MapReplicationRemove implements WanReplicationEvent, IdentifiedDataSerializable {
+public class MapReplicationRemove implements InternalWanReplicationEvent, IdentifiedDataSerializable {
     private String mapName;
     private Data key;
 
@@ -39,22 +41,37 @@ public class MapReplicationRemove implements WanReplicationEvent, IdentifiedData
     public MapReplicationRemove() {
     }
 
-    public String getMapName() {
-        return mapName;
-    }
-
-    public void setMapName(String mapName) {
-        this.mapName = mapName;
-    }
-
     @Override
     public Data getKey() {
         return key;
     }
 
     @Override
+    public Set<String> getGroupNames() {
+        // called only in EE
+        return Collections.emptySet();
+    }
+
+    @Override
+    public int getBackupCount() {
+        // called only in EE
+        return 0;
+    }
+
+    @Override
+    public long getCreationTime() {
+        // called only in EE
+        return 0;
+    }
+
+    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getObjectName() {
+        return mapName;
     }
 
     public void setKey(Data key) {

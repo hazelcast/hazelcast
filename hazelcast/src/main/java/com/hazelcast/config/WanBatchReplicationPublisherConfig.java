@@ -33,7 +33,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * Hazelcast Enterprise). The publisher sends events to another Hazelcast
  * cluster in batches, sending when either when enough events are enqueued
  * or enqueued events have waited for enough time.
- * The endpoint can be a different cluster defined by static IP's or
+ * The publisher can be a different cluster defined by static IP's or
  * discovered using a cloud discovery mechanism.
  *
  * @see DiscoveryConfig
@@ -132,7 +132,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     }
 
     /**
-     * Returns the group name used as an endpoint group name for authentication
+     * Returns the group name used as a publisher group name for authentication
      * on the target endpoint.
      * If there is no separate publisher ID property defined, this group name
      * will also be used as a WAN publisher ID. This ID is then used for

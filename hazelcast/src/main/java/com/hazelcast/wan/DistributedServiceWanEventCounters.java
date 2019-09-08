@@ -31,14 +31,9 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class DistributedServiceWanEventCounters {
     private static final ConstructorFunction<String, DistributedObjectWanEventCounters> EVENT_COUNTER_CONSTRUCTOR_FN
-            = new ConstructorFunction<String, DistributedObjectWanEventCounters>() {
-        @Override
-        public DistributedObjectWanEventCounters createNew(String ignored) {
-            return new DistributedObjectWanEventCounters();
-        }
-    };
+            = ignored -> new DistributedObjectWanEventCounters();
     private final ConcurrentHashMap<String, DistributedObjectWanEventCounters> eventCounterMap
-            = new ConcurrentHashMap<String, DistributedObjectWanEventCounters>();
+            = new ConcurrentHashMap<>();
 
     /**
      * Increment the number of sync events for the {@code distributedObjectName}.

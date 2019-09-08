@@ -310,7 +310,7 @@ hazelcast:
   #                  connection-timeout-seconds: 10
   #                  hz-port: 5702
   # * "custom-publisher":
-  #     Custom implementation of a WAN publisher implementing WanReplicationEndpoint.
+  #     Custom implementation of a WAN publisher implementing WanReplicationPublisher.
   #     * "class-name":
   #     Mandatory config value defining the fully qualified class name of the
   #     WAN publisher implementation.

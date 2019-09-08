@@ -83,7 +83,6 @@ import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RestApiConfig;
@@ -99,6 +98,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
@@ -135,19 +135,19 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
-import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
+import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationPublisher;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -261,7 +261,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private RingbufferStoreFactory dummyRingbufferStoreFactory;
 
     @Autowired
-    private WanReplicationEndpoint wanReplication;
+    private WanReplicationPublisher wanReplication;
 
     @Autowired
     private MembershipListener membershipListener;

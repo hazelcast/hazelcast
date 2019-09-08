@@ -37,8 +37,9 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.impl.InternalWanReplicationEvent;
+import com.hazelcast.wan.impl.WanReplicationPublisherDelegate;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -120,9 +121,10 @@ public class MapEventPublisherImpl implements MapEventPublisher {
      * @param mapName the map name
      * @param event   the event
      */
-    protected void publishWanEvent(String mapName, WanReplicationEvent event) {
+    protected void publishWanEvent(String mapName, InternalWanReplicationEvent event) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        WanReplicationPublisher wanReplicationPublisher = mapContainer.getWanReplicationPublisher();
+        WanReplicationPublisherDelegate wanReplicationPublisher
+                = mapContainer.getWanReplicationDelegate();
         if (isOwnedPartition(event.getKey())) {
             wanReplicationPublisher.publishReplicationEvent(event);
         } else {

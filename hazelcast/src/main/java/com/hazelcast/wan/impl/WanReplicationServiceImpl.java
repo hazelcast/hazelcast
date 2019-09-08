@@ -17,6 +17,7 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
@@ -29,19 +30,20 @@ import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.getOrCreate;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
  * Open source implementation of the {@link WanReplicationService}
@@ -72,8 +74,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
                         throw new InvalidConfigurationException("Built-in batching WAN replication implementation "
                                 + "is only available in Hazelcast enterprise edition.");
                     }
-                    return new WanReplicationPublisherDelegate(name,
-                            createEndpoints(wanReplicationConfig, wanReplicationConfig.getCustomPublisherConfigs()));
+                    return new WanReplicationPublisherDelegate(name, createPublishers(wanReplicationConfig));
                 }
             };
 
@@ -82,39 +83,91 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public WanReplicationPublisher getWanReplicationPublisher(String name) {
+    public WanReplicationPublisherDelegate getWanReplicationPublishers(String name) {
         return getOrPutSynchronized(wanReplications, name, this, publisherDelegateConstructorFunction);
     }
 
-    private WanReplicationEndpoint[] createEndpoints(WanReplicationConfig wanReplicationConfig,
-                                                     Collection<? extends AbstractWanPublisherConfig> publisherConfigs) {
-        WanReplicationEndpoint[] targetEndpoints = new WanReplicationEndpoint[publisherConfigs.size()];
-        int count = 0;
-        for (AbstractWanPublisherConfig pc : publisherConfigs) {
-            final WanReplicationEndpoint target = getOrCreate((WanReplicationEndpoint) pc.getImplementation(),
-                    node.getConfigClassLoader(),
-                    pc.getClassName());
-            if (target == null) {
-                throw new InvalidConfigurationException("Either \'implementation\' or \'className\' "
-                        + "attribute need to be set in the WAN publisher configuration for publisher " + pc);
-            }
-            target.init(node, wanReplicationConfig, pc);
-            targetEndpoints[count++] = target;
+    private ConcurrentMap<String, WanReplicationPublisher> createPublishers(WanReplicationConfig wanConfig) {
+        List<CustomWanPublisherConfig> customPublisherConfigs = wanConfig.getCustomPublisherConfigs();
+        int publisherCount = customPublisherConfigs.size();
+
+        if (publisherCount == 0) {
+            return createConcurrentHashMap(1);
         }
 
-        return targetEndpoints;
+        ConcurrentMap<String, WanReplicationPublisher> publishers = createConcurrentHashMap(publisherCount);
+        Map<String, AbstractWanPublisherConfig> publisherConfigs = createHashMap(publisherCount);
+
+        customPublisherConfigs.forEach(
+                publisherConfig -> {
+                    String publisherId = getPublisherIdOrGroupName(publisherConfig);
+                    if (publishers.containsKey(publisherId)) {
+                        throw new InvalidConfigurationException(
+                                "Detected duplicate publisher ID '" + publisherId + "' for a single WAN replication config");
+                    }
+
+                    WanReplicationPublisher publisher = createPublisher(publisherConfig);
+                    publishers.put(publisherId, publisher);
+                    publisherConfigs.put(publisherId, publisherConfig);
+                });
+
+        for (Entry<String, WanReplicationPublisher> publisherEntry : publishers.entrySet()) {
+            String publisherId = publisherEntry.getKey();
+            WanReplicationPublisher publisher = publisherEntry.getValue();
+            node.getSerializationService().getManagedContext().initialize(publisher);
+            publisher.init(wanConfig, publisherConfigs.get(publisherId));
+        }
+
+        return publishers;
+    }
+
+    /**
+     * Instantiates a {@link WanReplicationPublisher} from the provided publisher
+     * configuration.
+     *
+     * @param publisherConfig the WAN publisher configuration
+     * @return the WAN replication publisher
+     * @throws InvalidConfigurationException if the method was unable to create the publisher because there was no
+     *                                       implementation or class name defined on the config
+     */
+    private WanReplicationPublisher createPublisher(AbstractWanPublisherConfig publisherConfig) {
+        WanReplicationPublisher publisher = getOrCreate(
+                (WanReplicationPublisher) publisherConfig.getImplementation(),
+                node.getConfigClassLoader(),
+                publisherConfig.getClassName());
+        if (publisher == null) {
+            throw new InvalidConfigurationException("Either \'implementation\' or \'className\' "
+                    + "attribute need to be set in the WAN publisher configuration for publisher " + publisherConfig);
+        }
+        return publisher;
+    }
+
+    /**
+     * Returns the publisher ID for the given WAN publisher configuration which
+     * is then used for identifying the WAN publisher in a WAN replication
+     * scheme.
+     * If the publisher ID is empty, returns the publisher group name.
+     *
+     * @param publisherConfig the WAN replication publisher configuration
+     * @return the publisher ID or group name
+     */
+    public static String getPublisherIdOrGroupName(AbstractWanPublisherConfig publisherConfig) {
+        String publisherId = publisherConfig.getPublisherId();
+        if (!isNullOrEmptyAfterTrim(publisherId)) {
+            return publisherId;
+        } else if (publisherConfig instanceof WanBatchReplicationPublisherConfig) {
+            return ((WanBatchReplicationPublisherConfig) publisherConfig).getGroupName();
+        }
+        return null;
     }
 
     @Override
     public void shutdown() {
         synchronized (this) {
-            for (WanReplicationPublisherDelegate wanReplication : wanReplications.values()) {
-                final WanReplicationEndpoint[] endpoints = wanReplication.getEndpoints();
-                if (endpoints != null) {
-                    for (WanReplicationEndpoint endpoint : endpoints) {
-                        if (endpoint != null) {
-                            endpoint.shutdown();
-                        }
+            for (WanReplicationPublisherDelegate delegate : wanReplications.values()) {
+                for (WanReplicationPublisher publisher : delegate.getPublishers()) {
+                    if (publisher != null) {
+                        publisher.shutdown();
                     }
                 }
             }
