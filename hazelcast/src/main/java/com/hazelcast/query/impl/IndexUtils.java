@@ -16,15 +16,22 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.ConfigXmlGenerator;
+import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.IndexColumn;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
+
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 
 /**
  * Utility methods for indexes.
@@ -169,6 +176,109 @@ public class IndexUtils {
             res.addColumn(attribute);
 
         return validateAndNormalize(UUID.randomUUID().toString(), res);
+    }
+
+    public static void generateXml(ConfigXmlGenerator.XmlGenerator gen, List<IndexConfig> indexConfigs) {
+        if (indexConfigs.isEmpty())
+            return;
+
+        gen.open("indexes");
+        for (IndexConfig indexCfg : indexConfigs) {
+            if (indexCfg.getName() != null) {
+                gen.open("index", "name", indexCfg.getName(), "type", indexCfg.getType().name().toLowerCase());
+            }
+            else {
+                gen.open("index", "type", indexCfg.getType().name().toLowerCase());
+            }
+
+            gen.open("columns");
+
+            for (IndexColumn column : indexCfg.getColumns()) {
+                gen.node("column", column.getName());
+            }
+
+            gen.close();
+            gen.close();
+        }
+        gen.close();
+    }
+
+    public static IndexConfig getIndexConfigFromXml(Node indexNode, boolean domLevel3) {
+        NamedNodeMap attrs = indexNode.getAttributes();
+
+        String name = DomConfigHelper.getTextContent(attrs.getNamedItem("name"), domLevel3);
+
+        if (name.isEmpty())
+            name = null;
+
+        String typeStr = DomConfigHelper.getTextContent(attrs.getNamedItem("type"), domLevel3);
+
+        if (typeStr.isEmpty())
+            typeStr = IndexConfig.DEFAULT_TYPE.name();
+
+        typeStr = typeStr.toLowerCase();
+
+        IndexType type;
+
+        if (typeStr.equals(IndexType.SORTED.name().toLowerCase()))
+            type = IndexType.SORTED;
+        else if (typeStr.equals(IndexType.HASH.name().toLowerCase()))
+            type = IndexType.HASH;
+        else
+            throw new IllegalArgumentException("Unsupported index type: " + typeStr);
+
+        IndexConfig res = new IndexConfig().setName(name).setType(type);
+
+        for (Node columnsNode : childElements(indexNode)) {
+            if ("columns".equals(cleanNodeName(columnsNode))) {
+                for (Node columnNode : childElements(columnsNode)) {
+                    if ("column".equals(cleanNodeName(columnNode))) {
+                        String column = DomConfigHelper.getTextContent(columnNode, domLevel3);
+
+                        res.addColumn(column);
+                    }
+                }
+            }
+        }
+
+        return res;
+    }
+
+    public static IndexConfig getIndexConfigFromYaml(Node indexNode, boolean domLevel3) {
+        NamedNodeMap attrs = indexNode.getAttributes();
+
+        String name = DomConfigHelper.getTextContent(attrs.getNamedItem("name"), domLevel3);
+
+        if (name.isEmpty())
+            name = null;
+
+        String typeStr = DomConfigHelper.getTextContent(attrs.getNamedItem("type"), domLevel3);
+
+        if (typeStr.isEmpty())
+            typeStr = IndexConfig.DEFAULT_TYPE.name();
+
+        typeStr = typeStr.toLowerCase();
+
+        IndexType type;
+
+        if (typeStr.equals(IndexType.SORTED.name().toLowerCase()))
+            type = IndexType.SORTED;
+        else if (typeStr.equals(IndexType.HASH.name().toLowerCase()))
+            type = IndexType.HASH;
+        else
+            throw new IllegalArgumentException("Unsupported index type: " + typeStr);
+
+        IndexConfig res = new IndexConfig().setName(name).setType(type);
+
+        for (Node columnsNode : childElements(indexNode)) {
+            for (Node columnNode : childElements(columnsNode)) {
+                String column = columnNode.getNodeName();
+
+                res.addColumn(column);
+            }
+        }
+
+        return res;
     }
 
     private IndexUtils() {

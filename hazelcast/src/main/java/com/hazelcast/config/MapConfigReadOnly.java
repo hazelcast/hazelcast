@@ -75,16 +75,6 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public List<MapIndexConfig> getMapIndexConfigs() {
-        final List<MapIndexConfig> mapIndexConfigs = super.getMapIndexConfigs();
-        final List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
-        for (MapIndexConfig mapIndexConfig : mapIndexConfigs) {
-            readOnlyMapIndexConfigs.add(mapIndexConfig.getAsReadOnly());
-        }
-        return Collections.unmodifiableList(readOnlyMapIndexConfigs);
-    }
-
-    @Override
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {
         final PartitioningStrategyConfig partitioningStrategyConfig = super.getPartitioningStrategyConfig();
         if (partitioningStrategyConfig == null) {
@@ -239,16 +229,6 @@ public class MapConfigReadOnly extends MapConfig {
 
     @Override
     public MapConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
         throw throwReadOnly();
     }
 

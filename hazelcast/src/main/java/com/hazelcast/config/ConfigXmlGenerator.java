@@ -27,6 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
 import com.hazelcast.util.CollectionUtil;
@@ -891,7 +892,7 @@ public class ConfigXmlGenerator {
             mapStoreConfigXmlGenerator(gen, m);
             mapNearCacheConfigXmlGenerator(gen, m.getNearCacheConfig());
             wanReplicationConfigXmlGenerator(gen, m.getWanReplicationRef());
-            mapIndexConfigXmlGenerator(gen, m);
+            indexConfigXmlGenerator(gen, m);
             mapAttributeConfigXmlGenerator(gen, m);
             entryListenerConfigXmlGenerator(gen, m);
             mapPartitionLostListenerConfigXmlGenerator(gen, m);
@@ -1053,7 +1054,7 @@ public class ConfigXmlGenerator {
                 gen.node("buffer-size", queryCacheConfig.getBufferSize());
 
                 evictionConfigXmlGenerator(gen, queryCacheConfig.getEvictionConfig());
-                mapIndexConfigXmlGenerator(gen, queryCacheConfig.getIndexConfigs());
+                IndexUtils.generateXml(gen, queryCacheConfig.getIndexConfigs());
                 mapQueryCachePredicateConfigXmlGenerator(gen, queryCacheConfig);
 
                 entryListenerConfigXmlGenerator(gen, queryCacheConfig.getEntryListenerConfigs());
@@ -1100,16 +1101,29 @@ public class ConfigXmlGenerator {
         }
     }
 
-    // TODO: Implement for new indexes
-    private static void mapIndexConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
-        mapIndexConfigXmlGenerator(gen, m.getMapIndexConfigs());
+    private static void indexConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
+        IndexUtils.generateXml(gen, m.getIndexConfigs());
     }
 
-    private static void mapIndexConfigXmlGenerator(XmlGenerator gen, List<MapIndexConfig> mapIndexConfigs) {
-        if (!mapIndexConfigs.isEmpty()) {
+    private static void indexConfigXmlGenerator(XmlGenerator gen, List<IndexConfig> indexConfigs) {
+        if (!indexConfigs.isEmpty()) {
             gen.open("indexes");
-            for (MapIndexConfig indexCfg : mapIndexConfigs) {
-                gen.node("index", indexCfg.getAttribute(), "ordered", indexCfg.isOrdered());
+            for (IndexConfig indexCfg : indexConfigs) {
+                if (indexCfg.getName() != null) {
+                    gen.open("index", "name", indexCfg.getName(), "type", indexCfg.getType().name().toLowerCase());
+                }
+                else {
+                    gen.open("index", "type", indexCfg.getType().name().toLowerCase());
+                }
+
+                gen.open("columns");
+
+                for (IndexColumn column : indexCfg.getColumns()) {
+                    gen.node("column", column.getName());
+                }
+
+                gen.close();
+                gen.close();
             }
             gen.close();
         }

@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.EvictionListener;
@@ -89,7 +88,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
         assert indexes.isGlobal();
 
-        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs2())
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs())
             indexes.addOrGetIndex(indexConfig, null);
     }
 

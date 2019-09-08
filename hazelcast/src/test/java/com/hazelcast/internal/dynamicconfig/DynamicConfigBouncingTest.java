@@ -25,7 +25,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -111,7 +110,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig("queryCacheName")
                 .setBatchSize(100)
-                .addIndexConfig(new MapIndexConfig("attribute", false))
+                .addIndexConfig(new IndexConfig(IndexType.HASH, "attribute"))
                 .addEntryListenerConfig(new EntryListenerConfig("foo.bar.Classname", false, true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT);
 

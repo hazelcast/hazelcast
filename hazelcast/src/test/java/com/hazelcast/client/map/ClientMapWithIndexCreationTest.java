@@ -20,8 +20,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.client.util.StaticLB;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -57,11 +58,11 @@ public class ClientMapWithIndexCreationTest extends HazelcastTestSupport {
         Config config = new XmlConfigBuilder().build();
 
         MapConfig mapConfig = config.getMapConfig("test");
-        List<MapIndexConfig> mapIndexConfigs = mapConfig.getMapIndexConfigs();
+        List<IndexConfig> mapIndexConfigs = mapConfig.getIndexConfigs();
 
-        MapIndexConfig mapIndexConfig = new MapIndexConfig();
-        mapIndexConfig.setAttribute("name");
-        mapIndexConfig.setOrdered(true);
+        IndexConfig mapIndexConfig = new IndexConfig();
+        mapIndexConfig.addColumn("name");
+        mapIndexConfig.setType(IndexType.SORTED);
         mapIndexConfigs.add(mapIndexConfig);
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);

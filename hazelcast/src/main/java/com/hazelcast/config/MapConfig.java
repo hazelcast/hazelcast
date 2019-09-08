@@ -105,7 +105,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     private WanReplicationRef wanReplicationRef;
     private List<EntryListenerConfig> entryListenerConfigs;
     private List<MapPartitionLostListenerConfig> partitionLostListenerConfigs;
-    private List<MapIndexConfig> mapIndexConfigs;
     private List<IndexConfig> indexConfigs;
     private List<MapAttributeConfig> mapAttributeConfigs;
     private List<QueryCacheConfig> queryCacheConfigs;
@@ -145,7 +144,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         this.entryListenerConfigs = new ArrayList<>(config.getEntryListenerConfigs());
         this.partitionLostListenerConfigs =
                 new ArrayList<>(config.getPartitionLostListenerConfigs());
-        this.mapIndexConfigs = new ArrayList<>(config.getMapIndexConfigs());
         this.indexConfigs = new ArrayList<>(config.getIndexConfigs());
         this.mapAttributeConfigs = new ArrayList<>(config.getMapAttributeConfigs());
         this.queryCacheConfigs = new ArrayList<>(config.getQueryCacheConfigs());
@@ -528,23 +526,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         return this;
     }
 
-    public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
-        getMapIndexConfigs().add(mapIndexConfig);
-        return this;
-    }
-
-    public List<MapIndexConfig> getMapIndexConfigs() {
-        if (mapIndexConfigs == null) {
-            mapIndexConfigs = new ArrayList<>();
-        }
-        return mapIndexConfigs;
-    }
-
-    public MapConfig setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
-        this.mapIndexConfigs = mapIndexConfigs;
-        return this;
-    }
-
     public MapConfig addIndexConfig(IndexConfig indexConfig) {
         getIndexConfigs().add(indexConfig);
         return this;
@@ -901,7 +882,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", wanReplicationRef=" + wanReplicationRef
                 + ", entryListenerConfigs=" + entryListenerConfigs
-                + ", mapIndexConfigs=" + mapIndexConfigs
                 + ", indexConfigs=" + indexConfigs
                 + ", mapAttributeConfigs=" + mapAttributeConfigs
                 + ", quorumName=" + quorumName
@@ -939,7 +919,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         out.writeObject(wanReplicationRef);
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(partitionLostListenerConfigs, out);
-        writeNullableList(mapIndexConfigs, out);
         writeNullableList(indexConfigs, out);
         writeNullableList(mapAttributeConfigs, out);
         writeNullableList(queryCacheConfigs, out);
@@ -971,7 +950,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         wanReplicationRef = in.readObject();
         entryListenerConfigs = readNullableList(in);
         partitionLostListenerConfigs = readNullableList(in);
-        mapIndexConfigs = readNullableList(in);
         indexConfigs = readNullableList(in);
         mapAttributeConfigs = readNullableList(in);
         queryCacheConfigs = readNullableList(in);

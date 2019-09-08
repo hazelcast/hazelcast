@@ -1296,7 +1296,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
-        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs2()) {
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
             assertEquals("name", indexConfig.getColumns().get(0).getName());
             assertFalse(indexConfig.getType() == IndexType.SORTED);
         }

@@ -39,6 +39,8 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.HotRestartConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -126,7 +128,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -688,7 +689,7 @@ public class ReferenceObjects {
     public static EvictionConfigHolder evictionConfig;
     public static NearCachePreloaderConfig nearCachePreloaderConfig;
     public static NearCacheConfigHolder nearCacheConfig;
-    public static List<MapIndexConfig> mapIndexConfigs;
+    public static List<IndexConfig> indexConfigs;
     public static List<MapAttributeConfig> mapAttributeConfigs;
     public static List<QueryCacheConfigHolder> queryCacheConfigs;
     public static TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
@@ -746,8 +747,8 @@ public class ReferenceObjects {
         nearCacheConfig = new NearCacheConfigHolder("nearCache", "BINARY", false, true, 139, 156, evictionConfig,
                 false, "INVALIDATE", nearCachePreloaderConfig);
 
-        mapIndexConfigs = new ArrayList<MapIndexConfig>();
-        mapIndexConfigs.add(new MapIndexConfig("attr", false));
+        indexConfigs = new ArrayList<IndexConfig>();
+        indexConfigs.add(new IndexConfig(IndexType.HASH, "attr"));
 
         mapAttributeConfigs = new ArrayList<MapAttributeConfig>();
         mapAttributeConfigs.add(new MapAttributeConfig("attr", "com.hazelcast.AttributeExtractor"));
@@ -756,7 +757,7 @@ public class ReferenceObjects {
         QueryCacheConfigHolder queryCacheConfig = new QueryCacheConfigHolder();
         queryCacheConfig.setPredicateConfigHolder(new PredicateConfigHolder("com.hazelcast.Predicate", "name LIKE 'Fred%'",
                 serializationService.toData(Predicates.alwaysTrue())));
-        queryCacheConfig.setIndexConfigs(mapIndexConfigs);
+        queryCacheConfig.setIndexConfigs(indexConfigs);
         queryCacheConfig.setListenerConfigs(listenerConfigs);
         queryCacheConfig.setEvictionConfigHolder(evictionConfig);
         queryCacheConfig.setInMemoryFormat("BINARY");

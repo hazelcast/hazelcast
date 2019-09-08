@@ -78,7 +78,8 @@ public class AddMapConfigMessageTask
             MapEvictionPolicy evictionPolicy = serializationService.toObject(parameters.mapEvictionPolicy);
             config.setMapEvictionPolicy(evictionPolicy);
         }
-        config.setMapIndexConfigs(parameters.mapIndexConfigs);
+        // TODO 15265: Replace with index config.
+        // config.setMapIndexConfigs(parameters.mapIndexConfigs);
         if (parameters.mapStoreConfig != null) {
             config.setMapStoreConfig(parameters.mapStoreConfig.asMapStoreConfig(serializationService));
         }

@@ -72,6 +72,14 @@ public class IndexConfig implements IdentifiedDataSerializable {
         }
     }
 
+    public IndexConfig(IndexConfig other) {
+        this.name = other.name;
+        this.type = other.type;
+
+        for (IndexColumn column : other.columns)
+            addColumn(new IndexColumn(column.getName()));
+    }
+
     /**
      * Gets name of the index.
      *

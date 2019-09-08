@@ -422,36 +422,19 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         return this;
     }
 
-    public QueryCacheConfig addIndexConfig(MapIndexConfig mapIndexConfig) {
-        getIndexConfigs().add(mapIndexConfig);
+    public QueryCacheConfig addIndexConfig(IndexConfig indexConfig) {
+        getIndexConfigs().add(indexConfig);
         return this;
     }
 
-    public List<MapIndexConfig> getIndexConfigs() {
-        if (indexConfigs == null) {
-            indexConfigs = new ArrayList<MapIndexConfig>();
-        }
-        return indexConfigs;
-    }
-
-    public QueryCacheConfig setIndexConfigs(List<MapIndexConfig> indexConfigs) {
-        this.indexConfigs = indexConfigs;
-        return this;
-    }
-
-    public QueryCacheConfig addIndexConfig2(IndexConfig indexConfig) {
-        getIndexConfigs2().add(indexConfig);
-        return this;
-    }
-
-    public List<IndexConfig> getIndexConfigs2() {
+    public List<IndexConfig> getIndexConfigs() {
         if (indexConfigs2 == null) {
             indexConfigs2 = new ArrayList<>();
         }
         return indexConfigs2;
     }
 
-    public QueryCacheConfig setIndexConfigs2(List<IndexConfig> indexConfigs2) {
+    public QueryCacheConfig setIndexConfigs(List<IndexConfig> indexConfigs2) {
         this.indexConfigs2 = indexConfigs2;
         return this;
     }

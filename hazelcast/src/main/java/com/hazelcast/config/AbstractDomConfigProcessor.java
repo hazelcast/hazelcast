@@ -47,7 +47,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     /**
      * Tells whether the traversed DOM is a level 3 one
      */
-    private final boolean domLevel3;
+    protected final boolean domLevel3;
 
     protected AbstractDomConfigProcessor(boolean domLevel3) {
         this.domLevel3 = domLevel3;

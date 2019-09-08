@@ -24,6 +24,7 @@ import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
+import com.hazelcast.query.impl.IndexUtils;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -452,14 +453,12 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         msc.setSize(getIntegerValue("max-size", getTextContent(attributes.getNamedItem("max-size"))));
     }
 
-    // TODO: Fix me
     @Override
     protected void mapIndexesHandle(Node n, MapConfig mapConfig) {
         for (Node indexNode : childElements(n)) {
-            NamedNodeMap attrs = indexNode.getAttributes();
-            boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
-            String attribute = indexNode.getNodeName();
-            mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered));
+            IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3);
+
+            mapConfig.addIndexConfig(indexConfig);
         }
     }
 
@@ -507,16 +506,16 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         queryCacheConfig.setPredicateConfig(predicateConfig);
     }
 
-    // TODO: Fix me
     @Override
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
-            NamedNodeMap attrs = indexNode.getAttributes();
-            boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
-            String attribute = indexNode.getNodeName();
-            queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
+            IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3);
+
+            queryCacheConfig.addIndexConfig(indexConfig);
         }
     }
+
+
 
     @Override
     protected void handleMemberGroup(Node node, Config config) {
