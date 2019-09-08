@@ -40,7 +40,8 @@ import static org.junit.Assert.assertTrue;
 public class EntryLoaderInitializationTest extends HazelcastTestSupport {
 
     private static final int ENTRY_COUNT = 10;
-    private static final long TTL = 5;
+    private static final long BIG_TTL = 3600;
+    private static final long SMALL_TTL = 5;
 
     @Test
     public void testEagerEntryLoaderInitializesValues() {
@@ -58,8 +59,7 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
 
     @Test
     public void testEagerEntryLoaderInitializesValues_withExpirationTime() {
-        TestEntryLoader entryLoader =
-            createAndInitializeEntryLoader(ENTRY_COUNT, System.currentTimeMillis() + TTL * 1000);
+        TestEntryLoader entryLoader = createAndInitializeEntryLoaderWithExpiry(ENTRY_COUNT);
 
         HazelcastInstance instance = createHazelcastInstance(createConfig(EAGER, entryLoader));
         IMap<String, String> map = instance.getMap(randomMapName());
@@ -70,8 +70,8 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
             assertEquals("val" + i, map.get("key" + i));
         }
         assertEquals(0, entryLoader.getLoadCallCount());
-        sleepAtLeastSeconds(TTL + 1);
-        for (int i = 0; i < ENTRY_COUNT; i++) {
+        sleepAtLeastSeconds(SMALL_TTL + 2);
+        for (int i = ENTRY_COUNT; i < ENTRY_COUNT * 2; i++) {
             assertNull(map.get("key" + i));
         }
 
@@ -97,8 +97,7 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
 
     @Test
     public void testLazyEntryLoaderInitializesAfterAccess_withExpirationTime() {
-        TestEntryLoader entryLoader =
-            createAndInitializeEntryLoader(ENTRY_COUNT, System.currentTimeMillis() + TTL * 1000);
+        TestEntryLoader entryLoader = createAndInitializeEntryLoaderWithExpiry(ENTRY_COUNT);
 
         HazelcastInstance instance = createHazelcastInstance(createConfig(LAZY, entryLoader));
         IMap<String, String> map = instance.getMap(randomMapName());
@@ -109,8 +108,8 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
             assertEquals("val" + i, map.get("key" + i));
         }
         assertEquals(0, entryLoader.getLoadCallCount());
-        sleepAtLeastSeconds(TTL + 1);
-        for (int i = 0; i < ENTRY_COUNT; i++) {
+        sleepAtLeastSeconds(SMALL_TTL + 2);
+        for (int i = ENTRY_COUNT; i < ENTRY_COUNT * 2; i++) {
             assertNull(map.get("key" + i));
         }
 
@@ -128,11 +127,18 @@ public class EntryLoaderInitializationTest extends HazelcastTestSupport {
         return config;
     }
 
-    private TestEntryLoader createAndInitializeEntryLoader(int entryCount, long expirationTime) {
+    private TestEntryLoader createAndInitializeEntryLoaderWithExpiry(int entryCount) {
+        long bigExpiry = System.currentTimeMillis() + BIG_TTL * 1000;
+        long smallExpiry = System.currentTimeMillis() + SMALL_TTL * 1000;
+
         TestEntryLoader entryLoader = new TestEntryLoader();
-        for (int i = 0; i < entryCount; i++) {
-            entryLoader.putExternally("key" + i, "val" + i, expirationTime);
-        }
+
+        for (int i = 0; i < entryCount; i++)
+            entryLoader.putExternally("key" + i, "val" + i, bigExpiry);
+
+        for (int i = entryCount; i < entryCount * 2; i++)
+            entryLoader.putExternally("key" + i, "val" + i, smallExpiry);
+
         return entryLoader;
     }
 
