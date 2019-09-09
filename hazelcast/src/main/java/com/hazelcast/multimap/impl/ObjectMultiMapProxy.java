@@ -26,9 +26,9 @@ import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
@@ -141,7 +141,7 @@ public class ObjectMultiMapProxy<K, V>
     @Nonnull
     @Override
     public Set<K> localKeySet() {
-        ensureQuorumPresent(QuorumType.READ);
+        ensureNoSplitBrain(SplitBrainProtectionOn.READ);
         Set<Data> dataKeySet = localKeySetInternal();
         return toObjectSet(dataKeySet);
     }
@@ -346,7 +346,7 @@ public class ObjectMultiMapProxy<K, V>
         return keySet;
     }
 
-    private void ensureQuorumPresent(QuorumType requiredQuorumPermissionType) {
-        getService().ensureQuorumPresent(name, requiredQuorumPermissionType);
+    private void ensureNoSplitBrain(SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+        getService().ensureNoSplitBrain(name, requiredSplitBrainProtectionPermissionType);
     }
 }

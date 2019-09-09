@@ -93,7 +93,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
     private String name;
-    private String quorumName;
+    private String splitBrainProtectionName;
     private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
     private MapEvictionPolicy mapEvictionPolicy;
@@ -149,7 +149,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         this.queryCacheConfigs = new ArrayList<>(config.getQueryCacheConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
-        this.quorumName = config.quorumName;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
@@ -722,12 +722,12 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         return cacheDeserializedValues;
     }
 
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
-    public MapConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public MapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -816,7 +816,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
                 : that.partitioningStrategyConfig != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         if (!merkleTreeConfig.equals(that.merkleTreeConfig)) {
@@ -853,7 +854,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         result = 31 * result + getPartitionLostListenerConfigs().hashCode();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (partitioningStrategyConfig != null ? partitioningStrategyConfig.hashCode() : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + merkleTreeConfig.hashCode();
         result = 31 * result + eventJournalConfig.hashCode();
         result = 31 * result + hotRestartConfig.hashCode();
@@ -884,7 +885,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
                 + ", entryListenerConfigs=" + entryListenerConfigs
                 + ", indexConfigs=" + indexConfigs
                 + ", mapAttributeConfigs=" + mapAttributeConfigs
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", queryCacheConfigs=" + queryCacheConfigs
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
                 + '}';
@@ -924,7 +925,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         writeNullableList(queryCacheConfigs, out);
         out.writeBoolean(statisticsEnabled);
         out.writeObject(partitioningStrategyConfig);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         out.writeObject(hotRestartConfig);
         out.writeObject(merkleTreeConfig);
         out.writeObject(eventJournalConfig);
@@ -955,7 +956,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         queryCacheConfigs = readNullableList(in);
         statisticsEnabled = in.readBoolean();
         partitioningStrategyConfig = in.readObject();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         hotRestartConfig = in.readObject();
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();

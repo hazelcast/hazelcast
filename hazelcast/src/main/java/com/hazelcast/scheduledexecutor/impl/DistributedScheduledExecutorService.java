@@ -20,16 +20,17 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
-import com.hazelcast.internal.services.QuorumAwareService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -39,7 +40,6 @@ import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
@@ -66,8 +66,8 @@ import static java.util.Collections.synchronizedSet;
  * Scheduled executor service, middle-man responsible for managing Scheduled Executor containers.
  */
 public class DistributedScheduledExecutorService
-        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService,
-        MembershipAwareService {
+        implements ManagedService, RemoteService, MigrationAwareService, SplitBrainProtectionAwareService,
+        SplitBrainHandlerService, MembershipAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
     public static final int MEMBER_BIN = -1;
@@ -79,14 +79,15 @@ public class DistributedScheduledExecutorService
             synchronizedSet(newSetFromMap(new WeakHashMap<ScheduledFutureProxy, Boolean>()));
     private final AtomicBoolean migrationMode = new AtomicBoolean();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
             ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-            String quorumName = executorConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
+            String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
 
@@ -179,7 +180,7 @@ public class DistributedScheduledExecutorService
         }
 
         resetPartitionOrMemberBinContainer(name);
-        quorumConfigCache.remove(name);
+        splitBrainProtectionConfigCache.remove(name);
     }
 
     public void shutdownExecutor(String name) {
@@ -300,9 +301,10 @@ public class DistributedScheduledExecutorService
     }
 
     @Override
-    public String getQuorumName(final String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    public String getSplitBrainProtectionName(final String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 
     private class Merger extends AbstractContainerMerger<ScheduledExecutorContainer,

@@ -27,7 +27,6 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.NotifiableEventListener;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
-import com.hazelcast.internal.services.QuorumAwareService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.ReplicationSupportingService;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -38,6 +37,7 @@ import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -72,15 +72,15 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
  * @see MapReplicationSupportingService
  * @see MapStatisticsAwareService
  * @see MapPartitionAwareService
- * @see MapQuorumAwareService
+ * @see MapSplitBrainProtectionAwareService
  * @see MapClientAwareService
  * @see MapServiceContext
  */
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
-        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener,
-        LockInterceptorService<Data> {
+        PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService, NotifiableEventListener,
+        ClusterStateListener, LockInterceptorService<Data> {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -95,7 +95,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected StatisticsAwareService statisticsAwareService;
     protected PartitionAwareService partitionAwareService;
     protected ClientAwareService clientAwareService;
-    protected MapQuorumAwareService quorumAwareService;
+    protected MapSplitBrainProtectionAwareService splitBrainProtectionAwareService;
     protected MapServiceContext mapServiceContext;
 
     public MapService() {
@@ -170,7 +170,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public void destroyDistributedObject(String objectName) {
         remoteService.destroyDistributedObject(objectName);
-        quorumAwareService.onDestroy(objectName);
+        splitBrainProtectionAwareService.onDestroy(objectName);
     }
 
     @Override
@@ -204,8 +204,8 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public String getQuorumName(String name) {
-        return quorumAwareService.getQuorumName(name);
+    public String getSplitBrainProtectionName(String name) {
+        return splitBrainProtectionAwareService.getSplitBrainProtectionName(name);
     }
 
     public MapServiceContext getMapServiceContext() {

@@ -138,7 +138,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
                 .addQueryCacheConfig(queryCacheConfig)
                 .setStatisticsEnabled(false)
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig("foo.bar.Class"))
-                .setQuorumName("quorum");
+                .setSplitBrainProtectionName("split-brain-protection");
     }
 
     private static class MyEntryUpdatedListener implements EntryUpdatedListener, Serializable {

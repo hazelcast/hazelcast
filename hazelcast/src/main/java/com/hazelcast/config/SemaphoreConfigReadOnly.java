@@ -48,7 +48,7 @@ public class SemaphoreConfigReadOnly extends SemaphoreConfig {
     }
 
     @Override
-    public SemaphoreConfig setQuorumName(String quorumName) {
+    public SemaphoreConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
     }
 }

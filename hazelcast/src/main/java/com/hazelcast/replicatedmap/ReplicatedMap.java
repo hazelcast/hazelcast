@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
@@ -38,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * <p>When a new node joins the cluster, the new node initially will request existing
  * values from older nodes and replicate them locally.</p>
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster versions 3.10 and higher.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values

@@ -50,7 +50,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.TerminatedLifecycleService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
@@ -248,7 +248,7 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     }
 
     @Override
-    public QuorumService getQuorumService() {
+    public SplitBrainProtectionService getSplitBrainProtectionService() {
         throw new UnsupportedOperationException();
     }
 

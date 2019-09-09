@@ -24,10 +24,14 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 public class DeleteOperation extends BaseRemoveOperation {
+
+    // package private for testing purposes
+    boolean disableWanReplicationEvent;
     private boolean success;
 
     public DeleteOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
-        super(name, dataKey, disableWanReplicationEvent);
+        super(name, dataKey);
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
     public DeleteOperation() {
@@ -36,6 +40,11 @@ public class DeleteOperation extends BaseRemoveOperation {
     @Override
     protected void runInternal() {
         success = recordStore.delete(dataKey, getCallerProvenance());
+    }
+
+    @Override
+    protected boolean disableWanReplicationEvent() {
+        return disableWanReplicationEvent;
     }
 
     @Override

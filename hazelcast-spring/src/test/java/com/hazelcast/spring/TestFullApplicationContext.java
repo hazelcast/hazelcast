@@ -84,7 +84,7 @@ import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RestApiConfig;
@@ -136,9 +136,9 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
-import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
+import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
@@ -356,7 +356,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 fail("unknown attribute!");
             }
         }
-        assertEquals("my-quorum", testMapConfig.getQuorumName());
+        assertEquals("my-split-brain-protection", testMapConfig.getSplitBrainProtectionName());
         MergePolicyConfig mergePolicyConfig = testMapConfig.getMergePolicyConfig();
         assertNotNull(mergePolicyConfig);
         assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
@@ -490,7 +490,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2500, qConfig.getMaxSize());
         assertFalse(qConfig.isStatisticsEnabled());
         assertEquals(100, qConfig.getEmptyQueueTtl());
-        assertEquals("my-quorum", qConfig.getQuorumName());
+        assertEquals("my-split-brain-protection", qConfig.getSplitBrainProtectionName());
         MergePolicyConfig mergePolicyConfig = qConfig.getMergePolicyConfig();
         assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(2342, mergePolicyConfig.getBatchSize());
@@ -525,7 +525,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         LockConfig lockConfig = config.getLockConfig("lock");
         assertNotNull(lockConfig);
         assertEquals("lock", lockConfig.getName());
-        assertEquals("my-quorum", lockConfig.getQuorumName());
+        assertEquals("my-split-brain-protection", lockConfig.getSplitBrainProtectionName());
     }
 
     @Test
@@ -574,7 +574,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(testPNCounter);
         assertEquals("testPNCounter", testPNCounter.getName());
         assertEquals(100, testPNCounter.getReplicaCount());
-        assertEquals("my-quorum", testPNCounter.getQuorumName());
+        assertEquals("my-split-brain-protection", testPNCounter.getSplitBrainProtectionName());
         assertFalse(testPNCounter.isStatisticsEnabled());
     }
 
@@ -624,7 +624,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         CountDownLatchConfig testCountDownLatch = config.getCountDownLatchConfig("testCountDownLatch");
         assertNotNull(testCountDownLatch);
         assertEquals("testCountDownLatch", testCountDownLatch.getName());
-        assertEquals("my-quorum", testCountDownLatch.getQuorumName());
+        assertEquals("my-split-brain-protection", testCountDownLatch.getSplitBrainProtectionName());
     }
 
     @Test
@@ -1193,7 +1193,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(InMemoryFormat.OBJECT, replicatedMapConfig.getInMemoryFormat());
         assertFalse(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
-        assertEquals("my-quorum", replicatedMapConfig.getQuorumName());
+        assertEquals("my-split-brain-protection", replicatedMapConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = replicatedMapConfig.getMergePolicyConfig();
         assertNotNull(mergePolicyConfig);
@@ -1216,57 +1216,57 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQuorumConfig() {
+    public void testSplitBrainProtectionConfig() {
         assertNotNull(config);
-        assertEquals(3, config.getQuorumConfigs().size());
-        QuorumConfig quorumConfig = config.getQuorumConfig("my-quorum");
-        assertNotNull(quorumConfig);
-        assertEquals("my-quorum", quorumConfig.getName());
-        assertEquals("com.hazelcast.spring.DummyQuorumFunction", quorumConfig.getQuorumFunctionClassName());
-        assertTrue(quorumConfig.isEnabled());
-        assertEquals(2, quorumConfig.getSize());
-        assertEquals(2, quorumConfig.getListenerConfigs().size());
-        assertEquals(QuorumType.READ, quorumConfig.getType());
-        assertEquals("com.hazelcast.spring.DummyQuorumListener", quorumConfig.getListenerConfigs().get(0).getClassName());
-        assertNotNull(quorumConfig.getListenerConfigs().get(1).getImplementation());
+        assertEquals(3, config.getSplitBrainProtectionConfigs().size());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("my-split-brain-protection");
+        assertNotNull(splitBrainProtectionConfig);
+        assertEquals("my-split-brain-protection", splitBrainProtectionConfig.getName());
+        assertEquals("com.hazelcast.spring.DummySplitBrainProtectionFunction", splitBrainProtectionConfig.getFunctionClassName());
+        assertTrue(splitBrainProtectionConfig.isEnabled());
+        assertEquals(2, splitBrainProtectionConfig.getMinimumClusterSize());
+        assertEquals(2, splitBrainProtectionConfig.getListenerConfigs().size());
+        assertEquals(SplitBrainProtectionOn.READ, splitBrainProtectionConfig.getProtectOn());
+        assertEquals("com.hazelcast.spring.DummySplitBrainProtectionListener", splitBrainProtectionConfig.getListenerConfigs().get(0).getClassName());
+        assertNotNull(splitBrainProtectionConfig.getListenerConfigs().get(1).getImplementation());
     }
 
     @Test
-    public void testProbabilisticQuorumConfig() {
-        QuorumConfig probabilisticQuorumConfig = config.getQuorumConfig("probabilistic-quorum");
-        assertNotNull(probabilisticQuorumConfig);
-        assertEquals("probabilistic-quorum", probabilisticQuorumConfig.getName());
-        assertNotNull(probabilisticQuorumConfig.getQuorumFunctionImplementation());
-        assertInstanceOf(ProbabilisticQuorumFunction.class, probabilisticQuorumConfig.getQuorumFunctionImplementation());
-        assertTrue(probabilisticQuorumConfig.isEnabled());
-        assertEquals(3, probabilisticQuorumConfig.getSize());
-        assertEquals(2, probabilisticQuorumConfig.getListenerConfigs().size());
-        assertEquals(QuorumType.READ_WRITE, probabilisticQuorumConfig.getType());
-        assertEquals("com.hazelcast.spring.DummyQuorumListener",
-                probabilisticQuorumConfig.getListenerConfigs().get(0).getClassName());
-        assertNotNull(probabilisticQuorumConfig.getListenerConfigs().get(1).getImplementation());
-        ProbabilisticQuorumFunction quorumFunction =
-                (ProbabilisticQuorumFunction) probabilisticQuorumConfig.getQuorumFunctionImplementation();
-        assertEquals(11, quorumFunction.getSuspicionThreshold(), 0.001d);
-        assertEquals(31415, quorumFunction.getAcceptableHeartbeatPauseMillis());
-        assertEquals(42, quorumFunction.getMaxSampleSize());
-        assertEquals(77123, quorumFunction.getHeartbeatIntervalMillis());
-        assertEquals(1000, quorumFunction.getMinStdDeviationMillis());
+    public void testProbabilisticSplitBrainProtectionConfig() {
+        SplitBrainProtectionConfig probabilisticSplitBrainProtectionConfig = config.getSplitBrainProtectionConfig("probabilistic-split-brain-protection");
+        assertNotNull(probabilisticSplitBrainProtectionConfig);
+        assertEquals("probabilistic-split-brain-protection", probabilisticSplitBrainProtectionConfig.getName());
+        assertNotNull(probabilisticSplitBrainProtectionConfig.getFunctionImplementation());
+        assertInstanceOf(ProbabilisticSplitBrainProtectionFunction.class, probabilisticSplitBrainProtectionConfig.getFunctionImplementation());
+        assertTrue(probabilisticSplitBrainProtectionConfig.isEnabled());
+        assertEquals(3, probabilisticSplitBrainProtectionConfig.getMinimumClusterSize());
+        assertEquals(2, probabilisticSplitBrainProtectionConfig.getListenerConfigs().size());
+        assertEquals(SplitBrainProtectionOn.READ_WRITE, probabilisticSplitBrainProtectionConfig.getProtectOn());
+        assertEquals("com.hazelcast.spring.DummySplitBrainProtectionListener",
+                probabilisticSplitBrainProtectionConfig.getListenerConfigs().get(0).getClassName());
+        assertNotNull(probabilisticSplitBrainProtectionConfig.getListenerConfigs().get(1).getImplementation());
+        ProbabilisticSplitBrainProtectionFunction splitBrainProtectionFunction =
+                (ProbabilisticSplitBrainProtectionFunction) probabilisticSplitBrainProtectionConfig.getFunctionImplementation();
+        assertEquals(11, splitBrainProtectionFunction.getSuspicionThreshold(), 0.001d);
+        assertEquals(31415, splitBrainProtectionFunction.getAcceptableHeartbeatPauseMillis());
+        assertEquals(42, splitBrainProtectionFunction.getMaxSampleSize());
+        assertEquals(77123, splitBrainProtectionFunction.getHeartbeatIntervalMillis());
+        assertEquals(1000, splitBrainProtectionFunction.getMinStdDeviationMillis());
     }
 
     @Test
-    public void testRecentlyActiveQuorumConfig() {
-        QuorumConfig recentlyActiveQuorumConfig = config.getQuorumConfig("recently-active-quorum");
-        assertNotNull(recentlyActiveQuorumConfig);
-        assertEquals("recently-active-quorum", recentlyActiveQuorumConfig.getName());
-        assertNotNull(recentlyActiveQuorumConfig.getQuorumFunctionImplementation());
-        assertInstanceOf(RecentlyActiveQuorumFunction.class, recentlyActiveQuorumConfig.getQuorumFunctionImplementation());
-        assertTrue(recentlyActiveQuorumConfig.isEnabled());
-        assertEquals(5, recentlyActiveQuorumConfig.getSize());
-        assertEquals(QuorumType.READ_WRITE, recentlyActiveQuorumConfig.getType());
-        RecentlyActiveQuorumFunction quorumFunction =
-                (RecentlyActiveQuorumFunction) recentlyActiveQuorumConfig.getQuorumFunctionImplementation();
-        assertEquals(5123, quorumFunction.getHeartbeatToleranceMillis());
+    public void testRecentlyActiveSplitBrainProtectionConfig() {
+        SplitBrainProtectionConfig recentlyActiveSplitBrainProtectionConfig = config.getSplitBrainProtectionConfig("recently-active-split-brain-protection");
+        assertNotNull(recentlyActiveSplitBrainProtectionConfig);
+        assertEquals("recently-active-split-brain-protection", recentlyActiveSplitBrainProtectionConfig.getName());
+        assertNotNull(recentlyActiveSplitBrainProtectionConfig.getFunctionImplementation());
+        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class, recentlyActiveSplitBrainProtectionConfig.getFunctionImplementation());
+        assertTrue(recentlyActiveSplitBrainProtectionConfig.isEnabled());
+        assertEquals(5, recentlyActiveSplitBrainProtectionConfig.getMinimumClusterSize());
+        assertEquals(SplitBrainProtectionOn.READ_WRITE, recentlyActiveSplitBrainProtectionConfig.getProtectOn());
+        RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction =
+                (RecentlyActiveSplitBrainProtectionFunction) recentlyActiveSplitBrainProtectionConfig.getFunctionImplementation();
+        assertEquals(5123, splitBrainProtectionFunction.getHeartbeatToleranceMillis());
     }
 
     @Test

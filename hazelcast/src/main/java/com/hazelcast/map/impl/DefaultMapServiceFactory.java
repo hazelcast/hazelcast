@@ -107,8 +107,8 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
     }
 
     @Override
-    MapQuorumAwareService createQuorumAwareService() {
-        return new MapQuorumAwareService(getMapServiceContext());
+    MapSplitBrainProtectionAwareService createSplitBrainProtectionAwareService() {
+        return new MapSplitBrainProtectionAwareService(getMapServiceContext());
     }
 
     @Override

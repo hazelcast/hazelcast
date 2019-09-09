@@ -53,7 +53,7 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
     }
 
     @Override
-    public ReplicatedMapConfig setQuorumName(String quorumName) {
+    public ReplicatedMapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw throwReadOnly();
     }
 

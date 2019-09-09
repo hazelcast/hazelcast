@@ -129,7 +129,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -701,7 +701,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public QuorumService getQuorumService() {
+    public SplitBrainProtectionService getSplitBrainProtectionService() {
         throw new UnsupportedOperationException();
     }
 

@@ -23,6 +23,15 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreInfo;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.LockInterceptorService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
@@ -31,21 +40,11 @@ import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumService;
-import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.internal.services.LockInterceptorService;
-import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.internal.services.QuorumAwareService;
-import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.services.SplitBrainHandlerService;
-import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -55,7 +54,8 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConstructorFunction;
@@ -89,7 +89,7 @@ import static java.lang.Thread.currentThread;
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
                                         EventPublishingService<EventData, EntryListener>, TransactionalService,
                                         StatisticsAwareService<LocalMultiMapStats>,
-                                        QuorumAwareService, SplitBrainHandlerService, LockInterceptorService<Data> {
+        SplitBrainProtectionAwareService, SplitBrainHandlerService, LockInterceptorService<Data> {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
 
@@ -106,16 +106,17 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             = key -> new LocalMultiMapStatsImpl();
     private final MultiMapEventsDispatcher dispatcher;
     private final MultiMapEventsPublisher publisher;
-    private final QuorumService quorumService;
+    private final SplitBrainProtectionService splitBrainProtectionService;
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
             MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
-            String quorumName = multiMapConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
+            String splitBrainProtectionName = multiMapConfig.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
 
@@ -125,7 +126,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         this.partitionContainers = new MultiMapPartitionContainer[partitionCount];
         this.dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService());
         this.publisher = new MultiMapEventsPublisher(nodeEngine);
-        this.quorumService = nodeEngine.getQuorumService();
+        this.splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
     }
 
     @Override
@@ -199,7 +200,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             }
         }
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
-        quorumConfigCache.remove(name);
+        splitBrainProtectionConfigCache.remove(name);
     }
 
     public Set<Data> localKeySet(String name) {
@@ -481,14 +482,16 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public String getQuorumName(String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    public String getSplitBrainProtectionName(String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 
-    public void ensureQuorumPresent(String distributedObjectName, QuorumType requiredQuorumPermissionType) {
-        quorumService.ensureQuorumPresent(getQuorumName(distributedObjectName), requiredQuorumPermissionType);
+    public void ensureNoSplitBrain(String distributedObjectName,
+                                   SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+        splitBrainProtectionService.ensureNoSplitBrain(getSplitBrainProtectionName(distributedObjectName),
+                requiredSplitBrainProtectionPermissionType);
     }
 
     @Override

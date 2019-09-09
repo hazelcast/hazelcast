@@ -25,8 +25,8 @@ public class TxnDeleteBackupOperation extends RemoveBackupOperation {
     public TxnDeleteBackupOperation() {
     }
 
-    public TxnDeleteBackupOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
-        super(name, dataKey, disableWanReplicationEvent);
+    public TxnDeleteBackupOperation(String name, Data dataKey) {
+        super(name, dataKey, false);
     }
 
     @Override

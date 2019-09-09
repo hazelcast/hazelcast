@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -47,7 +48,7 @@ import java.util.concurrent.TimeUnit;
  * </li>
  * </ul>
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster versions 3.10 and higher.
  *
  * @param <K> type of the multimap key
  * @param <V> type of the multimap value

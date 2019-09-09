@@ -150,4 +150,13 @@ public class ClientConnectionStrategyConfig {
         result = 31 * result + (connectionRetryConfig != null ? connectionRetryConfig.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ClientConnectionStrategyConfig{"
+                + "asyncStart=" + asyncStart
+                + ", reconnectMode=" + reconnectMode
+                + ", connectionRetryConfig=" + connectionRetryConfig
+                + '}';
+    }
 }

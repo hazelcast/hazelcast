@@ -30,8 +30,17 @@ public final class CodecUtil {
     }
 
     public static void fastForwardToEndFrame(ListIterator<ClientMessage.Frame> iterator) {
-        for (ClientMessage.Frame frame = iterator.next(); !frame.isEndFrame(); ) {
+        // We are starting from 1 because of the BEGIN_FRAME we read
+        // in the beginning of the decode method
+        int numberOfExpectedEndFrames = 1;
+        ClientMessage.Frame frame;
+        while (numberOfExpectedEndFrames != 0) {
             frame = iterator.next();
+            if (frame.isEndFrame()) {
+                numberOfExpectedEndFrames--;
+            } else if (frame.isBeginFrame()) {
+                numberOfExpectedEndFrames++;
+            }
         }
     }
 

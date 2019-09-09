@@ -27,9 +27,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
+import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
-import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.MapUtil;
 
@@ -162,7 +162,7 @@ public class ConfigXmlGenerator {
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
         pnCounterXmlGenerator(gen, config);
-        quorumXmlGenerator(gen, config);
+        splitBrainProtectionXmlGenerator(gen, config);
         cpSubsystemConfig(gen, config);
         userCodeDeploymentConfig(gen, config);
 
@@ -199,7 +199,7 @@ public class ConfigXmlGenerator {
                         .node("max-size", config.getMaxSize())
                         .node("backup-count", config.getBackupCount())
                         .node("async-backup-count", config.getAsyncBackupCount())
-                        .node("quorum-ref", config.getQuorumName());
+                        .node("split-brain-protection-ref", config.getSplitBrainProtectionName());
                 appendItemListenerConfigs(gen, config.getItemListenerConfigs());
                 MergePolicyConfig mergePolicyConfig = config.getMergePolicyConfig();
                 gen.node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
@@ -216,7 +216,7 @@ public class ConfigXmlGenerator {
                     .node("in-memory-format", r.getInMemoryFormat())
                     .node("async-fillup", r.isAsyncFillup())
                     .node("statistics-enabled", r.isStatisticsEnabled())
-                    .node("quorum-ref", r.getQuorumName())
+                    .node("split-brain-protection-ref", r.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize());
 
             if (!r.getListenerConfigs().isEmpty()) {
@@ -439,7 +439,7 @@ public class ConfigXmlGenerator {
                     .node("statistics-enabled", ex.isStatisticsEnabled())
                     .node("pool-size", ex.getPoolSize())
                     .node("queue-capacity", ex.getQueueCapacity())
-                    .node("quorum-ref", ex.getQuorumName())
+                    .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
                     .close();
         }
     }
@@ -450,7 +450,7 @@ public class ConfigXmlGenerator {
                     .node("pool-size", ex.getPoolSize())
                     .node("durability", ex.getDurability())
                     .node("capacity", ex.getCapacity())
-                    .node("quorum-ref", ex.getQuorumName())
+                    .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
                     .close();
         }
     }
@@ -463,7 +463,7 @@ public class ConfigXmlGenerator {
                     .node("pool-size", ex.getPoolSize())
                     .node("durability", ex.getDurability())
                     .node("capacity", ex.getCapacity())
-                    .node("quorum-ref", ex.getQuorumName())
+                    .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
         }
@@ -476,7 +476,7 @@ public class ConfigXmlGenerator {
             gen.open("cardinality-estimator", "name", ex.getName())
                     .node("backup-count", ex.getBackupCount())
                     .node("async-backup-count", ex.getAsyncBackupCount())
-                    .node("quorum-ref", ex.getQuorumName())
+                    .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
         }
@@ -486,7 +486,7 @@ public class ConfigXmlGenerator {
         for (PNCounterConfig counterConfig : config.getPNCounterConfigs().values()) {
             gen.open("pn-counter", "name", counterConfig.getName())
                     .node("replica-count", counterConfig.getReplicaCount())
-                    .node("quorum-ref", counterConfig.getQuorumName())
+                    .node("split-brain-protection-ref", counterConfig.getSplitBrainProtectionName())
                     .node("statistics-enabled", counterConfig.isStatisticsEnabled())
                     .close();
         }
@@ -498,7 +498,7 @@ public class ConfigXmlGenerator {
                     .node("initial-permits", sc.getInitialPermits())
                     .node("backup-count", sc.getBackupCount())
                     .node("async-backup-count", sc.getAsyncBackupCount())
-                    .node("quorum-ref", sc.getQuorumName())
+                    .node("split-brain-protection-ref", sc.getSplitBrainProtectionName())
                     .close();
         }
     }
@@ -506,7 +506,7 @@ public class ConfigXmlGenerator {
     private static void countDownLatchXmlGenerator(XmlGenerator gen, Config config) {
         for (CountDownLatchConfig lc : config.getCountDownLatchConfigs().values()) {
             gen.open("count-down-latch", "name", lc.getName())
-                    .node("quorum-ref", lc.getQuorumName())
+                    .node("split-brain-protection-ref", lc.getSplitBrainProtectionName())
                     .close();
         }
     }
@@ -554,7 +554,7 @@ public class ConfigXmlGenerator {
                     .node("async-backup-count", mm.getAsyncBackupCount())
                     .node("statistics-enabled", mm.isStatisticsEnabled())
                     .node("binary", mm.isBinary())
-                    .node("quorum-ref", mm.getQuorumName())
+                    .node("split-brain-protection-ref", mm.getSplitBrainProtectionName())
                     .node("value-collection-type", mm.getValueCollectionType());
 
             entryListenerConfigXmlGenerator(gen, mm.getEntryListenerConfigs());
@@ -583,7 +583,7 @@ public class ConfigXmlGenerator {
                         .close();
             }
             MergePolicyConfig mergePolicyConfig = q.getMergePolicyConfig();
-            gen.node("quorum-ref", q.getQuorumName())
+            gen.node("split-brain-protection-ref", q.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
         }
@@ -592,7 +592,7 @@ public class ConfigXmlGenerator {
     private static void lockXmlGenerator(XmlGenerator gen, Config config) {
         for (LockConfig c : config.getLockConfigs().values()) {
             gen.open("lock", "name", c.getName())
-                    .node("quorum-ref", c.getQuorumName())
+                    .node("split-brain-protection-ref", c.getSplitBrainProtectionName())
                     .close();
         }
     }
@@ -605,7 +605,7 @@ public class ConfigXmlGenerator {
                     .node("time-to-live-seconds", rbConfig.getTimeToLiveSeconds())
                     .node("backup-count", rbConfig.getBackupCount())
                     .node("async-backup-count", rbConfig.getAsyncBackupCount())
-                    .node("quorum-ref", rbConfig.getQuorumName())
+                    .node("split-brain-protection-ref", rbConfig.getSplitBrainProtectionName())
                     .node("in-memory-format", rbConfig.getInMemoryFormat());
 
             RingbufferStoreConfig storeConfig = rbConfig.getRingbufferStoreConfig();
@@ -628,7 +628,7 @@ public class ConfigXmlGenerator {
             MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
             gen.open("atomic-long", "name", atomicLongConfig.getName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
-                    .node("quorum-ref", atomicLongConfig.getQuorumName())
+                    .node("split-brain-protection-ref", atomicLongConfig.getSplitBrainProtectionName())
                     .close();
         }
     }
@@ -639,7 +639,7 @@ public class ConfigXmlGenerator {
             MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
             gen.open("atomic-reference", "name", atomicReferenceConfig.getName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
-                    .node("quorum-ref", atomicReferenceConfig.getQuorumName())
+                    .node("split-brain-protection-ref", atomicReferenceConfig.getSplitBrainProtectionName())
                     .close();
         }
     }
@@ -882,7 +882,7 @@ public class ConfigXmlGenerator {
                             "policy", m.getMaxSizeConfig().getMaxSizePolicy())
                     .node("merge-policy", mergePolicyConfig.getPolicy(),
                             "batch-size", mergePolicyConfig.getBatchSize())
-                    .node("quorum-ref", m.getQuorumName())
+                    .node("split-brain-protection-ref", m.getSplitBrainProtectionName())
                     .node("read-backup-data", m.isReadBackupData())
                     .node("metadata-policy", m.getMetadataPolicy());
 
@@ -959,7 +959,7 @@ public class ConfigXmlGenerator {
             evictionConfigXmlGenerator(gen, c.getEvictionConfig());
             wanReplicationConfigXmlGenerator(gen, c.getWanReplicationRef());
 
-            gen.node("quorum-ref", c.getQuorumName());
+            gen.node("split-brain-protection-ref", c.getSplitBrainProtectionName());
             cachePartitionLostListenerConfigXmlGenerator(gen, c.getPartitionLostListenerConfigs());
 
             gen.node("merge-policy", c.getMergePolicyConfig().getPolicy());
@@ -1430,21 +1430,21 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void quorumXmlGenerator(XmlGenerator gen, Config config) {
-        for (QuorumConfig quorumConfig : config.getQuorumConfigs().values()) {
-            gen.open("quorum", "name", quorumConfig.getName(),
-                    "enabled", quorumConfig.isEnabled())
-                    .node("quorum-size", quorumConfig.getSize())
-                    .node("quorum-type", quorumConfig.getType());
-            if (!quorumConfig.getListenerConfigs().isEmpty()) {
-                gen.open("quorum-listeners");
-                for (QuorumListenerConfig listenerConfig : quorumConfig.getListenerConfigs()) {
-                    gen.node("quorum-listener", classNameOrImplClass(listenerConfig.getClassName(),
+    private static void splitBrainProtectionXmlGenerator(XmlGenerator gen, Config config) {
+        for (SplitBrainProtectionConfig splitBrainProtectionConfig : config.getSplitBrainProtectionConfigs().values()) {
+            gen.open("split-brain-protection", "name", splitBrainProtectionConfig.getName(),
+                    "enabled", splitBrainProtectionConfig.isEnabled())
+                    .node("minimum-cluster-size", splitBrainProtectionConfig.getMinimumClusterSize())
+                    .node("protect-on", splitBrainProtectionConfig.getProtectOn());
+            if (!splitBrainProtectionConfig.getListenerConfigs().isEmpty()) {
+                gen.open("listeners");
+                for (SplitBrainProtectionListenerConfig listenerConfig : splitBrainProtectionConfig.getListenerConfigs()) {
+                    gen.node("listener", classNameOrImplClass(listenerConfig.getClassName(),
                             listenerConfig.getImplementation()));
                 }
                 gen.close();
             }
-            handleQuorumFunction(gen, quorumConfig);
+            handleSplitBrainProtectionFunction(gen, splitBrainProtectionConfig);
             gen.close();
         }
     }
@@ -1503,27 +1503,36 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void handleQuorumFunction(XmlGenerator gen, QuorumConfig quorumConfig) {
-        if (quorumConfig.getQuorumFunctionImplementation() instanceof ProbabilisticQuorumFunction) {
-            ProbabilisticQuorumFunction qf = (ProbabilisticQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
+    private static void handleSplitBrainProtectionFunction(XmlGenerator gen,
+                                                           SplitBrainProtectionConfig splitBrainProtectionConfig) {
+        if (splitBrainProtectionConfig.
+                getFunctionImplementation() instanceof ProbabilisticSplitBrainProtectionFunction) {
+            ProbabilisticSplitBrainProtectionFunction qf =
+                    (ProbabilisticSplitBrainProtectionFunction)
+                            splitBrainProtectionConfig.getFunctionImplementation();
             long acceptableHeartbeatPause = qf.getAcceptableHeartbeatPauseMillis();
             double threshold = qf.getSuspicionThreshold();
             int maxSampleSize = qf.getMaxSampleSize();
             long minStdDeviation = qf.getMinStdDeviationMillis();
             long firstHeartbeatEstimate = qf.getHeartbeatIntervalMillis();
-            gen.open("probabilistic-quorum", "acceptable-heartbeat-pause-millis", acceptableHeartbeatPause,
+            gen.open("probabilistic-split-brain-protection", "acceptable-heartbeat-pause-millis", acceptableHeartbeatPause,
                     "suspicion-threshold", threshold,
                     "max-sample-size", maxSampleSize,
                     "min-std-deviation-millis", minStdDeviation,
                     "heartbeat-interval-millis", firstHeartbeatEstimate);
             gen.close();
-        } else if (quorumConfig.getQuorumFunctionImplementation() instanceof RecentlyActiveQuorumFunction) {
-            RecentlyActiveQuorumFunction qf = (RecentlyActiveQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
-            gen.open("recently-active-quorum", "heartbeat-tolerance-millis", qf.getHeartbeatToleranceMillis());
+        } else if (splitBrainProtectionConfig.
+                getFunctionImplementation() instanceof RecentlyActiveSplitBrainProtectionFunction) {
+            RecentlyActiveSplitBrainProtectionFunction qf =
+                    (RecentlyActiveSplitBrainProtectionFunction)
+                            splitBrainProtectionConfig.getFunctionImplementation();
+            gen.open("recently-active-split-brain-protection", "heartbeat-tolerance-millis",
+                    qf.getHeartbeatToleranceMillis());
             gen.close();
         } else {
-            gen.node("quorum-function-class-name", classNameOrImplClass(quorumConfig.getQuorumFunctionClassName(),
-                    quorumConfig.getQuorumFunctionImplementation()));
+            gen.node("function-class-name",
+                    classNameOrImplClass(splitBrainProtectionConfig.getFunctionClassName(),
+                    splitBrainProtectionConfig.getFunctionImplementation()));
         }
     }
 

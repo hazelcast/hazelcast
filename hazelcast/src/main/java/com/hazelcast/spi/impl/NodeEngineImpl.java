@@ -39,6 +39,7 @@ import com.hazelcast.internal.metrics.metricsets.StatisticsAwareMetricsSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
@@ -50,7 +51,6 @@ import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -70,7 +70,7 @@ import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.version.MemberVersion;
@@ -118,7 +118,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final TransactionManagerServiceImpl transactionManagerService;
     private final WanReplicationService wanReplicationService;
     private final Consumer<Packet> packetDispatcher;
-    private final QuorumServiceImpl quorumService;
+    private final SplitBrainProtectionServiceImpl splitBrainProtectionService;
     private final Diagnostics diagnostics;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
@@ -154,7 +154,7 @@ public class NodeEngineImpl implements NodeEngine {
                     operationService.getInvocationMonitor(),
                     eventService,
                     getJetPacketConsumer(node.getNodeExtension()));
-            this.quorumService = new QuorumServiceImpl(this);
+            this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
             this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
@@ -224,7 +224,7 @@ public class NodeEngineImpl implements NodeEngine {
         serviceManager.start();
         proxyService.init();
         operationService.start();
-        quorumService.start();
+        splitBrainProtectionService.start();
         diagnostics.start();
 
         node.getNodeExtension().registerPlugins(diagnostics);
@@ -324,8 +324,8 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public QuorumServiceImpl getQuorumService() {
-        return quorumService;
+    public SplitBrainProtectionServiceImpl getSplitBrainProtectionService() {
+        return splitBrainProtectionService;
     }
 
     @Override

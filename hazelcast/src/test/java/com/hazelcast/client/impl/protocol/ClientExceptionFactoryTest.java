@@ -40,7 +40,7 @@ import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -216,7 +216,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new PartitionMigratingException(randomString())},
                 new Object[]{new QueryException(randomString())},
                 new Object[]{new QueryResultSizeExceededException(randomString())},
-                new Object[]{new QuorumException(randomString())},
+                new Object[]{new SplitBrainProtectionException(randomString())},
                 new Object[]{new ReachedMaxSizeException(randomString())},
                 new Object[]{new RejectedExecutionException(randomString())},
                 new Object[]{new ResponseAlreadySentException(randomString())},

@@ -983,4 +983,29 @@ public class ClientConfig {
         result = 31 * result + userContext.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ClientConfig{"
+                + "properties=" + properties
+                + ", groupConfig=" + groupConfig
+                + ", securityConfig=" + securityConfig
+                + ", networkConfig=" + networkConfig
+                + ", loadBalancer=" + loadBalancer
+                + ", listenerConfigs=" + listenerConfigs
+                + ", executorPoolSize=" + executorPoolSize
+                + ", instanceName='" + instanceName + '\''
+                + ", configPatternMatcher=" + configPatternMatcher
+                + ", nearCacheConfigMap=" + nearCacheConfigMap
+                + ", reliableTopicConfigMap=" + reliableTopicConfigMap
+                + ", queryCacheConfigs=" + queryCacheConfigs
+                + ", serializationConfig=" + serializationConfig
+                + ", nativeMemoryConfig=" + nativeMemoryConfig
+                + ", proxyFactoryConfigs=" + proxyFactoryConfigs
+                + ", connectionStrategyConfig=" + connectionStrategyConfig
+                + ", userCodeDeploymentConfig=" + userCodeDeploymentConfig
+                + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
+                + ", labels=" + labels
+                + '}';
+    }
 }

@@ -125,7 +125,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  ast.logging,org.osgi.framework,com.hazelcast.osgi,com.hazelcast.insta
  nce,com.hazelcast.cardinality,com.hazelcast.mapreduce,com.hazelcast.r
  ingbuffer,com.hazelcast.core,com.hazelcast.scheduledexecutor,com.haze
- lcast.quorum,com.hazelcast.util,com.hazelcast.config,com.hazelcast.tr
+ lcast.splitbrainprotection,com.hazelcast.util,com.hazelcast.config,com.hazelcast.tr
  ansaction,com.hazelcast.durableexecutor,javax.script,com.hazelcast.ni
  o,com.hazelcast.internal.management";version="3.8.0.SNAPSHOT",com.haz
  elcast.internal.management.operation;uses:="com.hazelcast.internal.ma
@@ -378,7 +378,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  com.hazelcast.map.merge;uses:="com.hazelcast.map.impl,com.hazelcast.c
  ore,com.hazelcast.nio.serialization,com.hazelcast.nio,com.hazelcast.l
  ogging,com.hazelcast.spi,com.hazelcast.util";version="3.8.0.SNAPSHOT"
- ,com.hazelcast.quorum;uses:="com.hazelcast.core,com.hazelcast.transac
+ ,com.hazelcast.splitbrainprotection;uses:="com.hazelcast.core,com.hazelcast.transac
  tion";version="3.8.0.SNAPSHOT",com.hazelcast.internal.util.collection
  ;uses:="com.hazelcast.internal.memory,com.hazelcast.internal.util.has
  hslot,com.hazelcast.internal.util.hashslot.impl,com.hazelcast.nio";ve
@@ -423,7 +423,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  m.hazelcast.spi.impl.servicemanager.impl,com.hazelcast.spi.impl.execu
  tionservice.impl,com.hazelcast.internal.management,com.hazelcast.inte
  rnal.usercodedeployment,com.hazelcast.spi.impl.packetdispatcher.
- impl,com.hazelcast.quorum,com.hazelcast.spi.impl.eventservice,com.haz
+ impl,com.hazelcast.splitbrainprotection,com.hazelcast.spi.impl.eventservice,com.haz
  elcast.internal.metrics.metricsets,com.hazelcast.spi.serialization,co
  m.hazelcast.wan,com.hazelcast.spi.impl.executionservice,com.hazelcast
  .spi.impl.operationparker.impl,com.hazelcast.internal.cluster.impl,co
@@ -438,7 +438,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  g,com.hazelcast.spi.impl.proxyservice,com.hazelcast.spi.exception,com
  .hazelcast.transaction,com.hazelcast.spi.impl.packetdispatcher,com.ha
  zelcast.spi.impl.eventservice.impl.operations,com.hazelcast.spi.impl.
- proxyservice.impl,com.hazelcast.quorum.impl,com.hazelcast.version,com
+ proxyservice.impl,com.hazelcast.splitbrainprotection.impl,com.hazelcast.version,com
  .hazelcast.spi.impl.proxyservice.impl.operations,com.hazelcast.spi.im
  pl.operationservice.impl.operations,com.hazelcast.spi.impl.operations
  ervice.impl.responses,com.hazelcast.internal.serialization.impl,com.h
@@ -678,13 +678,13 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  n.strategy,com.hazelcast.spi.impl.packetdispatcher,com.hazelcast.cach
  e,com.hazelcast.spi.exception,com.hazelcast.internal.jmx,com.hazelcas
  t.internal.partition.impl,com.hazelcast.cardinality,com.hazelcast.map
- reduce,com.hazelcast.ringbuffer,com.hazelcast.quorum,com.hazelcast.co
+ reduce,com.hazelcast.ringbuffer,com.hazelcast.splitbrainprotection,com.hazelcast.co
  ncurrent.idgen,com.hazelcast.transaction.impl.xa,com.hazelcast.topic.
  impl,com.hazelcast.topic.impl.reliable,com.hazelcast.cp.internal.datastructures.unsafe.concurrent.atomi
  creference,com.hazelcast.replicatedmap.impl,com.hazelcast.collection.
  impl.set,com.hazelcast.scheduledexecutor.impl,com.hazelcast.concurren
  t.atomiclong,com.hazelcast.collection.impl.queue,com.hazelcast.collec
- tion.impl.list,com.hazelcast.ringbuffer.impl,com.hazelcast.quorum.imp
+ tion.impl.list,com.hazelcast.ringbuffer.impl,com.hazelcast.splitbrainprotection.imp
  l,com.hazelcast.cp.internal.datastructures.unsafe.concurrent.countdownlatch,com.hazelcast.spi,com.hazel
  cast.client.impl,com.hazelcast.internal.diagnostics,com.hazelcast.mul
  timap.impl,com.hazelcast.durableexecutor.impl,com.hazelcast.scheduled
@@ -889,7 +889,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  vice.impl.operations,com.hazelcast.spi.serialization,com.hazelcast.in
  ternal.cluster.impl,com.hazelcast.client.impl.protocol.task,com.hazel
  cast.spi.impl.operationparker,com.hazelcast.internal.serialization.im
- pl,com.hazelcast.quorum.impl,com.hazelcast.internal.management.dto,co
+ pl,com.hazelcast.splitbrainprotection.impl,com.hazelcast.internal.management.dto,co
  m.hazelcast.spi.impl.operationservice,com.hazelcast.spi.impl.operatio
  nexecutor.slowoperationdetector,com.hazelcast.spi.partition";version=
  "3.8.0.SNAPSHOT",com.hazelcast.cache.impl;uses:="com.hazelcast.loggin
@@ -990,7 +990,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  zelcast.partition.strategy,com.hazelcast.spi.serialization,com.hazelc
  ast.nio,com.hazelcast.util,com.hazelcast.spi.annotation,com.hazelcast
  .util.executor,com.hazelcast.internal.partition,com.hazelcast.cluster
- ,com.hazelcast.instance,com.hazelcast.logging,com.hazelcast.quorum,co
+ ,com.hazelcast.instance,com.hazelcast.logging,com.hazelcast.splitbrainprotection,co
  m.hazelcast.spi.properties,com.hazelcast.config,com.hazelcast.wan,com
  .hazelcast.transaction,com.hazelcast.internal.cluster,com.hazelcast.v
  ersion,com.hazelcast.spi.exception,com.hazelcast.spi.impl,org.w3c.dom
@@ -1263,7 +1263,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  cluster.impl,com.hazelcast.config,com.hazelcast.spi.exception,com.haz
  elcast.core,javax.cache.integration,com.hazelcast.nio.serialization,c
  om.hazelcast.util,javax.cache.processor,com.hazelcast.query,com.hazel
- cast.map,com.hazelcast.quorum,com.hazelcast.mapreduce,com.hazelcast.r
+ cast.map,com.hazelcast.splitbrainprotection,com.hazelcast.mapreduce,com.hazelcast.r
  ingbuffer,com.hazelcast.topic,com.hazelcast.transaction,javax.transac
  tion.xa,javax.security.auth.login,com.hazelcast.client,javax.security
  .auth.callback,com.hazelcast.partition,com.hazelcast.replicatedmap,co
@@ -1389,8 +1389,8 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  on.impl.xa.operations;uses:="com.hazelcast.transaction.impl,com.hazel
  cast.spi,com.hazelcast.nio.serialization,com.hazelcast.transaction.im
  pl.xa,com.hazelcast.nio,com.hazelcast.spi.impl,com.hazelcast.core,jav
- ax.transaction.xa";version="3.8.0.SNAPSHOT",com.hazelcast.quorum.impl
- ;uses:="com.hazelcast.quorum,com.hazelcast.core,com.hazelcast.logging
+ ax.transaction.xa";version="3.8.0.SNAPSHOT",com.hazelcast.splitbrainprotection.impl
+ ;uses:="com.hazelcast.splitbrainprotection,com.hazelcast.core,com.hazelcast.logging
  ,com.hazelcast.spi,com.hazelcast.spi.impl.eventservice,com.hazelcast.
  util,com.hazelcast.config,com.hazelcast.cluster.memberselector,com.ha
  zelcast.internal.cluster,com.hazelcast.nio,com.hazelcast.spi.impl,com
@@ -1507,7 +1507,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  elcast.map.listener,com.hazelcast.config,com.hazelcast.instance,com.h
  azelcast.logging,com.hazelcast.cardinality,com.hazelcast.mapreduce,co
  m.hazelcast.ringbuffer,com.hazelcast.scheduledexecutor,com.hazelcast.
- quorum,com.hazelcast.durableexecutor,com.hazelcast.cache,com.hazelcas
+ splitbrainprotection,com.hazelcast.durableexecutor,com.hazelcast.cache,com.hazelcas
  t.monitor,com.hazelcast.nio.serialization.impl,com.hazelcast.query,co
  m.hazelcast.aggregation,com.hazelcast.mapreduce.aggregation,com.hazel
  cast.map.impl,com.hazelcast.map,com.hazelcast.projection,com.hazelcas
@@ -1554,7 +1554,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  c,com.hazelcast.map.listener,com.hazelcast.security,com.hazelcast.spi
  .discovery.integration,com.hazelcast.spi.discovery,com.hazelcast.spi.
  annotation,com.hazelcast.mapreduce,com.hazelcast.query,com.hazelcast.
- map.merge,com.hazelcast.map.eviction,com.hazelcast.quorum,com.hazelca
+ map.merge,com.hazelcast.map.eviction,com.hazelcast.splitbrainprotection,com.hazelca
  st.replicatedmap.merge,com.hazelcast.spi,javax.xml.parsers,com.hazelc
  ast.internal.config";version="3.8.0.SNAPSHOT",com.hazelcast.internal.
  nearcache.impl;uses:="com.hazelcast.config,com.hazelcast.spi,com.haze
@@ -1606,7 +1606,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  com.hazelcast.collection.impl.queue,com.hazelcast.collection.impl.lis
  t,com.hazelcast.ringbuffer.impl,com.hazelcast.spi.impl.proxyservice.i
  mpl,com.hazelcast.executor.impl,com.hazelcast.mapreduce.impl,com.haze
- lcast.concurrent.semaphore,com.hazelcast.quorum.impl";version="3.8.0.
+ lcast.concurrent.semaphore,com.hazelcast.splitbrainprotection.impl";version="3.8.0.
  SNAPSHOT",com.hazelcast.cp.internal.datastructures.unsafe.concurrent.semaphore;uses:="com.hazelcast.nio
  .serialization,com.hazelcast.config,com.hazelcast.nio,com.hazelcast.c
  oncurrent.semaphore.operations,com.hazelcast.internal.serialization.i

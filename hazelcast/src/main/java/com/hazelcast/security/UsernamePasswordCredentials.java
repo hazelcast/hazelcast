@@ -85,7 +85,7 @@ public class UsernamePasswordCredentials implements PasswordCredentials, Portabl
 
     @Override
     public String toString() {
-        return "UsernamePasswordCredentials [name=" + getName() + "]";
+        return "UsernamePasswordCredentials{name=" + name + "}";
     }
 
     @Override

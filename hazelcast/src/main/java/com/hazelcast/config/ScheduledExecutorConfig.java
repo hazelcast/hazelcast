@@ -57,7 +57,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
-    private String quorumName;
+    private String splitBrainProtectionName;
 
     private transient ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
 
@@ -74,19 +74,19 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         this(name, durability, capacity, poolSize, null, new MergePolicyConfig());
     }
 
-    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String quorumName,
+    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String splitBrainProtectionName,
                                    MergePolicyConfig mergePolicyConfig) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
         this.capacity = capacity;
-        this.quorumName = quorumName;
+        this.splitBrainProtectionName = splitBrainProtectionName;
         this.mergePolicyConfig = mergePolicyConfig;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
-        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(), config.getQuorumName(),
-                config.getMergePolicyConfig());
+        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(),
+                config.getSplitBrainProtectionName(), config.getMergePolicyConfig());
     }
 
     /**
@@ -175,22 +175,22 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public ScheduledExecutorConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public ScheduledExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -226,7 +226,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
                 + ", durability=" + durability
                 + ", poolSize=" + poolSize
                 + ", capacity=" + capacity
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
     }
@@ -254,7 +254,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         out.writeInt(durability);
         out.writeInt(capacity);
         out.writeInt(poolSize);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
@@ -264,7 +264,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         durability = in.readInt();
         capacity = in.readInt();
         poolSize = in.readInt();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
     }
 
@@ -289,7 +289,8 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         if (poolSize != that.poolSize) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
@@ -304,7 +305,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         result = 31 * result + durability;
         result = 31 * result + capacity;
         result = 31 * result + poolSize;
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
@@ -337,7 +338,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         }
 
         @Override
-        public ScheduledExecutorConfig setQuorumName(String quorumName) {
+        public ScheduledExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
             throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
         }
 
