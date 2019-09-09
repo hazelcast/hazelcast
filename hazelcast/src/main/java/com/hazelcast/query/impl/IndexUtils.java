@@ -270,12 +270,12 @@ public class IndexUtils {
 
         IndexConfig res = new IndexConfig().setName(name).setType(type);
 
-        for (Node columnsNode : childElements(indexNode)) {
-            for (Node columnNode : childElements(columnsNode)) {
-                String column = columnNode.getNodeName();
+        Node columnsNode = attrs.getNamedItem("columns");
 
-                res.addColumn(column);
-            }
+        for (Node columnNode : childElements(columnsNode)) {
+            String column = columnNode.getNodeValue();
+
+            res.addColumn(column);
         }
 
         return res;

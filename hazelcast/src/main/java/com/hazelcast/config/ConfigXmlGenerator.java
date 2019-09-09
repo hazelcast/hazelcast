@@ -1105,30 +1105,6 @@ public class ConfigXmlGenerator {
         IndexUtils.generateXml(gen, m.getIndexConfigs());
     }
 
-    private static void indexConfigXmlGenerator(XmlGenerator gen, List<IndexConfig> indexConfigs) {
-        if (!indexConfigs.isEmpty()) {
-            gen.open("indexes");
-            for (IndexConfig indexCfg : indexConfigs) {
-                if (indexCfg.getName() != null) {
-                    gen.open("index", "name", indexCfg.getName(), "type", indexCfg.getType().name().toLowerCase());
-                }
-                else {
-                    gen.open("index", "type", indexCfg.getType().name().toLowerCase());
-                }
-
-                gen.open("columns");
-
-                for (IndexColumn column : indexCfg.getColumns()) {
-                    gen.node("column", column.getName());
-                }
-
-                gen.close();
-                gen.close();
-            }
-            gen.close();
-        }
-    }
-
     private static void mapAttributeConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
         if (!m.getMapAttributeConfigs().isEmpty()) {
             gen.open("attributes");

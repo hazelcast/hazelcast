@@ -2417,8 +2417,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            - com.example.SampleFilter\n"
                 + "          republishing-enabled: false\n"
                 + "      indexes:\n"
-                + "        age:\n"
-                + "          ordered: true\n"
+                + "        - columns:\n"
+                + "          - \"age\"\n"
                 + "      attributes:\n"
                 + "        currency:\n"
                 + "          extractor: com.bank.CurrencyExtractor\n"
@@ -2507,10 +2507,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "    people:\n"
                 + "      indexes:\n"
-                + "        name:\n"
-                + "          ordered: false\n"
-                + "        age:\n"
-                + "          ordered: true\n";
+                + "        - type: HASH\n"
+                + "          columns:\n"
+                + "            - \"name\"\n"
+                + "        - columns:\n"
+                + "          - \"age\"\n";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("people");
@@ -2617,8 +2618,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          coalesce: false\n"
                 + "          populate: true\n"
                 + "          indexes:\n"
-                + "            name:\n"
-                + "              ordered: false\n"
+                + "            - type: HASH\n"
+                + "              columns:\n"
+                + "                - \"name\"\n"
                 + "          predicate:\n"
                 + "            class-name: com.hazelcast.examples.SimplePredicate\n"
                 + "          eviction:\n"

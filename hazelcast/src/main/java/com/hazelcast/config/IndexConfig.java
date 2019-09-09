@@ -16,9 +16,7 @@
 
 package com.hazelcast.config;
 
-// TODO: From Matko:
-// TODO: https://github.com/hazelcast/hazelcast/blob/108939ae3c5077d91adc134d87620dde5990cfeb/hazelcast/src/main/resources/hazelcast-config-4.0.xsd#L1743-L1747
-// TODO: https://github.com/hazelcast/hazelcast/blob/108939ae3c5077d91adc134d87620dde5990cfeb/hazelcast/src/main/resources/hazelcast-config-4.0.xsd#L3590-L3650
+// TODO: Checklist https://github.com/hazelcast/hazelcast/issues/11913
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

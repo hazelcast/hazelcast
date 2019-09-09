@@ -25,6 +25,7 @@ import java.io.IOException;
 /**
  * A column to be indexed.
  */
+// TODO 15265: Check if asc=false throws an exception.
 public class IndexColumn implements IdentifiedDataSerializable {
     /** Default sort order of the attribute. */
     public static final boolean DEFAULT_ASC = true;
@@ -45,7 +46,7 @@ public class IndexColumn implements IdentifiedDataSerializable {
      * @param name Name of the attribute.
      */
     public IndexColumn(String name) {
-        this.name = name;
+        setName(name);
     }
 
     /**
@@ -64,6 +65,7 @@ public class IndexColumn implements IdentifiedDataSerializable {
      * @return This instance for chaining.
      */
     public IndexColumn setName(String name) {
+        // TODO 15265: Check for null/empty?
         this.name = name;
 
         return this;
