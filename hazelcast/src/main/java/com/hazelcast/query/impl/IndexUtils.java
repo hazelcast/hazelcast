@@ -111,7 +111,7 @@ public class IndexUtils {
 
         IndexConfig newConfig = new IndexConfig().setType(config.getType());
 
-        StringBuilder nameBuilder = name != null ?
+        StringBuilder nameBuilder = name == null ?
             new StringBuilder(mapName + (config.getType() == IndexType.SORTED ? "_sorted" : "_hash")) : null;
 
         for (int i = 0; i < config.getColumns().size(); i++) {
