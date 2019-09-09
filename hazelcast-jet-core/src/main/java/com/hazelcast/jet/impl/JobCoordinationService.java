@@ -94,7 +94,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * A service that handles MasterContexts on the coordinator member.
@@ -344,20 +343,22 @@ public class JobCoordinationService {
     }
 
     /**
-     * Return the job IDs of jobs with given name, sorted by {active/completed, creation time}, active & newest first.
+     * Return the job IDs of jobs with the given name, sorted by
+     * {active/completed, creation time}, active & newest first.
      */
     public CompletableFuture<List<Long>> getJobIds(@Nonnull String name) {
         assertIsMaster("Cannot query list of job ids on non-master node");
 
         return submitToCoordinatorThread(() -> {
-            Map<Long, Long> jobs = jobRepository.getJobResults(name).stream()
-                    .collect(toMap(JobResult::getJobId, JobResult::getCreationTime));
-
+            Map<Long, Long> jobs = new HashMap<>();
             for (MasterContext ctx : masterContexts.values()) {
                 if (name.equals(ctx.jobConfig().getName())) {
-                    jobs.putIfAbsent(ctx.jobId(), Long.MAX_VALUE);
+                    jobs.put(ctx.jobId(), Long.MAX_VALUE);
                 }
             }
+
+            jobRepository.getJobResults(name)
+                         .forEach(jobResult -> jobs.put(jobResult.getJobId(), jobResult.getCreationTime()));
 
             return jobs.entrySet().stream()
                        .sorted(comparing(Entry<Long, Long>::getValue).reversed())

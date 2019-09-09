@@ -64,7 +64,7 @@ public class NonSmartClientTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobSubmitted_Then_executedSuccessfully() {
+    public void when_jobSubmitted_then_executedSuccessfully() {
         //Given
         String sourceName = "source";
         String sinkName = "sink";
@@ -81,7 +81,7 @@ public class NonSmartClientTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobSubmitted_Then_jobCanBeFetchedByIdOrName() {
+    public void when_jobSubmitted_then_jobCanBeFetchedByIdOrName() {
         //Given
         String jobName = randomName();
 
@@ -107,7 +107,7 @@ public class NonSmartClientTest extends JetTestSupport {
 
 
     @Test
-    public void when_jobSuspended_Then_jobStatusIsSuspended() {
+    public void when_jobSuspended_then_jobStatusIsSuspended() {
         //Given
         Job job = startJobAndVerifyItIsRunning();
 
@@ -119,7 +119,7 @@ public class NonSmartClientTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobResumed_Then_jobStatusIsRunning() {
+    public void when_jobResumed_then_jobStatusIsRunning() {
         //Given
         Job job = startJobAndVerifyItIsRunning();
         job.suspend();
@@ -134,7 +134,7 @@ public class NonSmartClientTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobCancelled_Then_jobStatusIsCompleted() {
+    public void when_jobCancelled_then_jobStatusIsCompleted() {
         //Given
         Job job = startJobAndVerifyItIsRunning();
 
@@ -146,7 +146,7 @@ public class NonSmartClientTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobSummaryListIsAsked_Then_jobSummaryListReturned() {
+    public void when_jobSummaryListIsAsked_then_jobSummaryListReturned() {
         //Given
         startJobAndVerifyItIsRunning();
 

@@ -26,6 +26,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Operation sent from master to members to start execution of a job. It is
  * sent after {@link InitExecutionOperation} was successful on all members.
+ * The operation doesn't complete immediately, it completes when the execution
+ * completes on the member.
  */
 public class StartExecutionOperation extends AsyncJobOperation {
 
