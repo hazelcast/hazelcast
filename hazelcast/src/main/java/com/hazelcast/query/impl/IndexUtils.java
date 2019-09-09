@@ -213,19 +213,7 @@ public class IndexUtils {
 
         String typeStr = DomConfigHelper.getTextContent(attrs.getNamedItem("type"), domLevel3);
 
-        if (typeStr.isEmpty())
-            typeStr = IndexConfig.DEFAULT_TYPE.name();
-
-        typeStr = typeStr.toLowerCase();
-
-        IndexType type;
-
-        if (typeStr.equals(IndexType.SORTED.name().toLowerCase()))
-            type = IndexType.SORTED;
-        else if (typeStr.equals(IndexType.HASH.name().toLowerCase()))
-            type = IndexType.HASH;
-        else
-            throw new IllegalArgumentException("Unsupported index type: " + typeStr);
+        IndexType type = getIndexTypeFromXmlName(typeStr);
 
         IndexConfig res = new IndexConfig().setName(name).setType(type);
 
@@ -242,6 +230,20 @@ public class IndexUtils {
         }
 
         return res;
+    }
+
+    public static IndexType getIndexTypeFromXmlName(String typeStr) {
+        if (typeStr == null || typeStr.isEmpty())
+            typeStr = IndexConfig.DEFAULT_TYPE.name();
+
+        typeStr = typeStr.toLowerCase();
+
+        if (typeStr.equals(IndexType.SORTED.name().toLowerCase()))
+            return IndexType.SORTED;
+        else if (typeStr.equals(IndexType.HASH.name().toLowerCase()))
+            return IndexType.HASH;
+        else
+            throw new IllegalArgumentException("Unsupported index type: " + typeStr);
     }
 
     public static IndexConfig getIndexConfigFromYaml(Node indexNode, boolean domLevel3) {

@@ -228,7 +228,11 @@
                 <hz:in-memory-format>OBJECT</hz:in-memory-format>
                 <hz:include-value>false</hz:include-value>
                 <hz:indexes>
-                    <hz:index attribute="name" ordered="false"></hz:index>
+                    <hz:index type="HASH">
+                        <hz:columns>
+                            <hz:column>name</hz:column>
+                        </hz:columns>
+                    </hz:index>
                 </hz:indexes>
             </hz:query-cache>
         </hz:query-caches>
