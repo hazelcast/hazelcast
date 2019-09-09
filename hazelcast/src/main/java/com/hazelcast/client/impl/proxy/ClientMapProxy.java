@@ -138,6 +138,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
@@ -159,7 +160,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
@@ -1432,14 +1432,16 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public void addIndex(@Nonnull String attribute, boolean ordered) {
-        validateIndexAttribute(attribute);
-        ClientMessage request = MapAddIndexCodec.encodeRequest(name, attribute, ordered);
-        invoke(request);
+        IndexConfig config = IndexUtils.createSimpleIndexConfig(ordered, attribute);
+
+        addIndex(config);
     }
 
     @Override
     public void addIndex(IndexConfig indexConfig) {
-        // TODO: Implement me (new codec?)
+        // TODO 15265
+//        ClientMessage request = MapAddIndexCodec.encodeRequest(name, indexConfig);
+//        invoke(request);
     }
 
     @Override
