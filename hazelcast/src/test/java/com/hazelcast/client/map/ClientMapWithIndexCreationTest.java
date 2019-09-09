@@ -58,12 +58,12 @@ public class ClientMapWithIndexCreationTest extends HazelcastTestSupport {
         Config config = new XmlConfigBuilder().build();
 
         MapConfig mapConfig = config.getMapConfig("test");
-        List<IndexConfig> mapIndexConfigs = mapConfig.getIndexConfigs();
+        List<IndexConfig> indexConfigs = mapConfig.getIndexConfigs();
 
-        IndexConfig mapIndexConfig = new IndexConfig();
-        mapIndexConfig.addColumn("name");
-        mapIndexConfig.setType(IndexType.SORTED);
-        mapIndexConfigs.add(mapIndexConfig);
+        IndexConfig indexConfig = new IndexConfig();
+        indexConfig.addColumn("name");
+        indexConfig.setType(IndexType.SORTED);
+        indexConfigs.add(indexConfig);
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);

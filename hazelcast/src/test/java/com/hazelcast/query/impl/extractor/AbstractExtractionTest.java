@@ -105,10 +105,10 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
      */
     private void setupIndexes(Config config, Query query) {
         if (index != Index.NO_INDEX) {
-            IndexConfig mapIndexConfig = new IndexConfig();
-            mapIndexConfig.addColumn(query.expression);
-            mapIndexConfig.setType(index == Index.ORDERED ? IndexType.SORTED : IndexType.HASH);
-            config.getMapConfig("map").addIndexConfig(mapIndexConfig);
+            IndexConfig indexConfig = new IndexConfig();
+            indexConfig.addColumn(query.expression);
+            indexConfig.setType(index == Index.ORDERED ? IndexType.SORTED : IndexType.HASH);
+            config.getMapConfig("map").addIndexConfig(indexConfig);
         }
     }
 

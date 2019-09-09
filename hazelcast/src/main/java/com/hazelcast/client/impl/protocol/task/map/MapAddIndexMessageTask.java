@@ -19,9 +19,6 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddIndexCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
-import com.hazelcast.config.IndexColumn;
-import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.IndexType;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
@@ -42,13 +39,7 @@ public class MapAddIndexMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        // TODO 15265: Fix this (generalize).
-        IndexConfig config = new IndexConfig();
-
-        config.setType(parameters.ordered ? IndexType.SORTED : IndexType.HASH);
-        config.addColumn(new IndexColumn(parameters.attribute));
-
-        return new AddIndexOperationFactory(parameters.name, config);
+        return new AddIndexOperationFactory(parameters.name, parameters.indexConfig);
     }
 
     @Override
@@ -86,6 +77,6 @@ public class MapAddIndexMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.attribute, parameters.ordered};
+        return null;
     }
 }

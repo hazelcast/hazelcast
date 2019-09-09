@@ -32,13 +32,13 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  * with the {@link MapConfig}. The reason to create an map index is to speed up searches for
  * particular map entries.
  */
+// TODO 15265: Remove all usages.
 public class MapIndexConfig implements IdentifiedDataSerializable {
 
     private static final ILogger LOG = Logger.getLogger(MapIndexConfig.class);
 
     private String attribute;
     private boolean ordered;
-    private transient MapIndexConfigReadOnly readOnly;
 
     /**
      * Creates a MapIndexConfig without an attribute and with ordered set to {@code false}.
@@ -62,19 +62,6 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
     public MapIndexConfig(MapIndexConfig config) {
         attribute = config.getAttribute();
         ordered = config.isOrdered();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MapIndexConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapIndexConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
@@ -152,7 +139,7 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return ConfigDataSerializerHook.MAP_INDEX_CONFIG;
+        return 0;
     }
 
     @Override

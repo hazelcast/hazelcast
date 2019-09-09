@@ -43,7 +43,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapAttributeConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
@@ -196,8 +195,8 @@ public class ReferenceObjects {
         if (a instanceof ListenerConfigHolder && b instanceof ListenerConfigHolder) {
             return isEqual((ListenerConfigHolder) a, (ListenerConfigHolder) b);
         }
-        if (a instanceof MapIndexConfig && b instanceof MapIndexConfig) {
-            return isEqual((MapIndexConfig) a, (MapIndexConfig) b);
+        if (a instanceof IndexConfig && b instanceof IndexConfig) {
+            return isEqual((IndexConfig) a, (IndexConfig) b);
         }
         if (a instanceof MapAttributeConfig && b instanceof MapAttributeConfig) {
             return isEqual((MapAttributeConfig) a, (MapAttributeConfig) b);
@@ -341,7 +340,7 @@ public class ReferenceObjects {
                 : b.getListenerImplementation() == null;
     }
 
-    public static boolean isEqual(MapIndexConfig a, MapIndexConfig that) {
+    public static boolean isEqual(IndexConfig a, IndexConfig that) {
         if (a == that) {
             return true;
         }
@@ -349,11 +348,15 @@ public class ReferenceObjects {
             return false;
         }
 
-        if (a.isOrdered() != that.isOrdered()) {
+        if (a.getType() != that.getType()) {
             return false;
         }
-        return a.getAttribute() != null ? a.getAttribute().equals(that.getAttribute())
-                : that.getAttribute() == null;
+
+        if (a.getName() != null ? !a.getName().equals(that.getName()) : that.getName() != null) {
+            return false;
+        }
+
+        return a.getColumns() != null ? a.getColumns().equals(that.getColumns()) : that.getColumns() == null;
     }
 
     public static boolean isEqual(MapAttributeConfig a, MapAttributeConfig that) {
