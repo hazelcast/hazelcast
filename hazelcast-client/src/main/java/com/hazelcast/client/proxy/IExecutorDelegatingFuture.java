@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
-import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;

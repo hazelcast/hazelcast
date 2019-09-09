@@ -203,7 +203,7 @@ public class ClientExecutorServiceCancelTest
         future.get();
     }
 
-    private void awaitTaskStartAtMember(HazelcastInstance member) {
+    private void awaitTaskStartAtMember(final HazelcastInstance member) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
