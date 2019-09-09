@@ -185,10 +185,10 @@ public class IndexUtils {
         gen.open("indexes");
         for (IndexConfig indexCfg : indexConfigs) {
             if (indexCfg.getName() != null) {
-                gen.open("index", "name", indexCfg.getName(), "type", indexCfg.getType().name().toLowerCase());
+                gen.open("index", "name", indexCfg.getName(), "type", indexCfg.getType().name());
             }
             else {
-                gen.open("index", "type", indexCfg.getType().name().toLowerCase());
+                gen.open("index", "type", indexCfg.getType().name());
             }
 
             gen.open("columns");

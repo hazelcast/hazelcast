@@ -208,7 +208,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
         IndexConfig that = (IndexConfig) o;
 
-        if (name != null ? name.equals(that.name) : that.name == null)
+        if (name != null ? !name.equals(that.name) : that.name != null)
             return false;
 
         return getColumns().equals(that.getColumns());
