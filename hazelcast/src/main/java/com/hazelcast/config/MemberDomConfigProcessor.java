@@ -29,8 +29,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;

@@ -2621,12 +2621,23 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="index">
-        <xs:simpleContent>
-            <xs:extension base="xs:string">
-                <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
-            </xs:extension>
-        </xs:simpleContent>
+        <xs:all>
+            <xs:element name="columns" type="index-columns"/>
+        </xs:all>
+        <xs:attribute name="name"/>
+        <xs:attribute name="type" type="index-type" default="SORTED"/>
     </xs:complexType>
+    <xs:complexType name="index-columns">
+        <xs:sequence>
+            <xs:element name="column" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="index-type">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="SORTED"/>
+            <xs:enumeration value="HASH"/>
+        </xs:restriction>
+    </xs:simpleType>
     <xs:complexType name="map-attribute">
         <xs:simpleContent>
             <xs:extension base="xs:string">
