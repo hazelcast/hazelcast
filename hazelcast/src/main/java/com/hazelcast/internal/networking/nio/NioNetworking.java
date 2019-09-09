@@ -281,14 +281,10 @@ public final class NioNetworking implements Networking {
 
         NioInboundPipeline inboundPipeline = newInboundPipeline(channel);
         NioOutboundPipeline outboundPipeline = newOutboundPipeline(channel);
-
-        channels.add(channel);
-
         channel.init(inboundPipeline, outboundPipeline);
-
         ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
-
         channel.addCloseListener(channelCloseListener);
+        channels.add(channel);
         return channel;
     }
 
