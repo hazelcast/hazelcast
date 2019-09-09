@@ -1439,9 +1439,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public void addIndex(IndexConfig indexConfig) {
-        // TODO 15265
-//        ClientMessage request = MapAddIndexCodec.encodeRequest(name, indexConfig);
-//        invoke(request);
+        IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
+
+        ClientMessage request = MapAddIndexCodec.encodeRequest(name, indexConfig0);
+        invoke(request);
     }
 
     @Override

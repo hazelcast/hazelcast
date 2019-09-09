@@ -17,7 +17,8 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexColumn;
+import com.hazelcast.map.impl.IndexColumnInternal;
 import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
@@ -28,36 +29,36 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
 
-public final class MapIndexConfigCodec {
-    private static final int ORDERED_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = ORDERED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+public final class IndexColumnCodec {
+    private static final int ASC_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = ASC_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
 
-    private MapIndexConfigCodec() {
+    private IndexColumnCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, MapIndexConfig config) {
+    public static void encode(ClientMessage clientMessage, IndexColumn config) {
         clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeBoolean(initialFrame.content, ORDERED_OFFSET, config.isOrdered());
+        encodeBoolean(initialFrame.content, ASC_OFFSET, config.isAscending());
         clientMessage.add(initialFrame);
 
-        StringCodec.encode(clientMessage, config.getAttribute());
+        StringCodec.encode(clientMessage, config.getName());
 
         clientMessage.add(END_FRAME);
     }
 
-    public static MapIndexConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static IndexColumn decode(ListIterator<ClientMessage.Frame> iterator) {
         // begin frame
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean ordered = decodeBoolean(initialFrame.content, ORDERED_OFFSET);
+        boolean asc = decodeBoolean(initialFrame.content, ASC_OFFSET);
 
-        String attribute = StringCodec.decode(iterator);
+        String column = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return new MapIndexConfig(attribute, ordered);
+        return new IndexColumn(new IndexColumnInternal().setAsc(asc).setName(column));
     }
 }

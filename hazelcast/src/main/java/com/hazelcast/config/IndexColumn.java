@@ -34,7 +34,7 @@ public class IndexColumn implements IdentifiedDataSerializable {
     private String name;
 
     /** Whether the attribute is sorted in ascending order. */
-    private boolean asc = DEFAULT_ASC;
+    protected boolean asc = DEFAULT_ASC;
 
     public IndexColumn() {
         // No-op.
@@ -47,6 +47,11 @@ public class IndexColumn implements IdentifiedDataSerializable {
      */
     public IndexColumn(String name) {
         setName(name);
+    }
+
+    public IndexColumn(IndexColumn other) {
+        this.name = other.name;
+        this.asc = other.asc;
     }
 
     /**
@@ -69,6 +74,10 @@ public class IndexColumn implements IdentifiedDataSerializable {
         this.name = name;
 
         return this;
+    }
+
+    public boolean isAscending() {
+        return asc;
     }
 
     @Override

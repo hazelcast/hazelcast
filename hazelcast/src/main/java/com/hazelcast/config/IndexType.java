@@ -49,7 +49,7 @@ public enum IndexType {
      *
      * @return the IndexType as an enum
      */
-    public static IndexType getByType(final int id) {
+    public static IndexType getById(final int id) {
         for (IndexType type : values()) {
             if (type.id == id) {
                 return type;

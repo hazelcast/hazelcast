@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-// TODO: Checklist https://github.com/hazelcast/hazelcast/issues/11913
+// TODO 15265: Checklist https://github.com/hazelcast/hazelcast/issues/11913
+// TODO 15265: Read-only classes
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

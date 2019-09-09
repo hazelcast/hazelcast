@@ -168,9 +168,9 @@ public final class DynamicConfigAddMapConfigCodec {
         public com.hazelcast.config.WanReplicationRef wanReplicationRef;
 
         /**
-         * map index configurations
+         * index configurations
          */
-        public java.util.List<com.hazelcast.config.MapIndexConfig> mapIndexConfigs;
+        public java.util.List<com.hazelcast.config.IndexConfig> indexConfigs;
 
         /**
          * map attributes
@@ -220,7 +220,7 @@ public final class DynamicConfigAddMapConfigCodec {
         public int metadataPolicy;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, java.lang.String evictionPolicy, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, java.lang.String inMemoryFormat, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, java.lang.String splitBrainProtectionName, com.hazelcast.nio.serialization.Data mapEvictionPolicy, java.lang.String maxSizeConfigMaxSizePolicy, int maxSizeConfigSize, com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, com.hazelcast.config.WanReplicationRef wanReplicationRef, java.util.Collection<com.hazelcast.config.MapIndexConfig> mapIndexConfigs, java.util.Collection<com.hazelcast.config.MapAttributeConfig> mapAttributeConfigs, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, java.lang.String partitioningStrategyClassName, com.hazelcast.nio.serialization.Data partitioningStrategyImplementation, com.hazelcast.config.HotRestartConfig hotRestartConfig, com.hazelcast.config.EventJournalConfig eventJournalConfig, com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int mergeBatchSize, int metadataPolicy) {
+    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, java.lang.String evictionPolicy, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, java.lang.String inMemoryFormat, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, java.lang.String splitBrainProtectionName, com.hazelcast.nio.serialization.Data mapEvictionPolicy, java.lang.String maxSizeConfigMaxSizePolicy, int maxSizeConfigSize, com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, com.hazelcast.config.WanReplicationRef wanReplicationRef, java.util.Collection<com.hazelcast.config.IndexConfig> indexConfigs, java.util.Collection<com.hazelcast.config.MapAttributeConfig> mapAttributeConfigs, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, java.lang.String partitioningStrategyClassName, com.hazelcast.nio.serialization.Data partitioningStrategyImplementation, com.hazelcast.config.HotRestartConfig hotRestartConfig, com.hazelcast.config.EventJournalConfig eventJournalConfig, com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int mergeBatchSize, int metadataPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -250,7 +250,7 @@ public final class DynamicConfigAddMapConfigCodec {
         CodecUtil.encodeNullable(clientMessage, mapStoreConfig, MapStoreConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, nearCacheConfig, NearCacheConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, wanReplicationRef, WanReplicationRefCodec::encode);
-        ListMultiFrameCodec.encodeNullable(clientMessage, mapIndexConfigs, MapIndexConfigCodec::encode);
+        ListMultiFrameCodec.encodeNullable(clientMessage, indexConfigs, IndexConfigCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, mapAttributeConfigs, MapAttributeConfigCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, queryCacheConfigs, QueryCacheConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, partitioningStrategyClassName, StringCodec::encode);
@@ -287,8 +287,7 @@ public final class DynamicConfigAddMapConfigCodec {
         request.mapStoreConfig = CodecUtil.decodeNullable(iterator, MapStoreConfigHolderCodec::decode);
         request.nearCacheConfig = CodecUtil.decodeNullable(iterator, NearCacheConfigHolderCodec::decode);
         request.wanReplicationRef = CodecUtil.decodeNullable(iterator, WanReplicationRefCodec::decode);
-        // TODO: Implement client support for both config and dynamic API
-        request.mapIndexConfigs = ListMultiFrameCodec.decodeNullable(iterator, MapIndexConfigCodec::decode);
+        request.indexConfigs = ListMultiFrameCodec.decodeNullable(iterator, IndexConfigCodec::decode);
         request.mapAttributeConfigs = ListMultiFrameCodec.decodeNullable(iterator, MapAttributeConfigCodec::decode);
         request.queryCacheConfigs = ListMultiFrameCodec.decodeNullable(iterator, QueryCacheConfigHolderCodec::decode);
         request.partitioningStrategyClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
