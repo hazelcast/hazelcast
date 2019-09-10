@@ -16,10 +16,8 @@
 
 package com.hazelcast.config;
 
-// TODO 15265: Checklist https://github.com/hazelcast/hazelcast/issues/11913
 // TODO 15265: Tests for XML and YAML and Spring, w/ and w/o defaults
 // TODO 15265: Tests for read-only
-// TODO 15265: Review all usages of old "addIndex" API!
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

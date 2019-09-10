@@ -25,7 +25,6 @@ import java.io.IOException;
 /**
  * A column to be indexed.
  */
-// TODO 15265: Check if asc=false throws an exception.
 public class IndexColumn implements IdentifiedDataSerializable {
     /** Default sort order of the attribute. */
     public static final boolean DEFAULT_ASC = true;

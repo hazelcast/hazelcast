@@ -2595,6 +2595,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param ordered   {@code true} if index should be ordered,
      *                  {@code false} otherwise.
      */
+    // TODO 15265: Add a ticket to remove this method or make the signature better: (IndexType, String...).
     void addIndex(@Nonnull String attribute, boolean ordered);
 
     // TODO 15265: JavaDoc
