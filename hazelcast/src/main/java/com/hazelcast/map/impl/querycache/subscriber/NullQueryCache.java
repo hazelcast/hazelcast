@@ -66,11 +66,6 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public Indexes getIndexes() {
-        return null;
-    }
-
-    @Override
     public void clear() {
     }
 

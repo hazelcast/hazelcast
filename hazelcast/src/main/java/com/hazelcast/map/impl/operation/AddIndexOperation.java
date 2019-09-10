@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -51,7 +52,7 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
     public AddIndexOperation(String name, IndexConfig config) {
         super(name);
 
-        this.config = config;
+        this.config = IndexUtils.validateAndNormalize(name, config);
     }
 
     @Override

@@ -456,12 +456,11 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public void addIndex(IndexConfig config) {
-        String name = delegate.getName() + "_" + cacheName;
-
-        IndexConfig config0 = IndexUtils.validateAndNormalize(name, config);
-
         assert indexes.isGlobal();
-        getIndexes().addOrGetIndex(config0, null);
+
+        IndexConfig config0 = getNormalizedIndexConfig(config);
+
+        indexes.addOrGetIndex(config0, null);
 
         InternalSerializationService serializationService = context.getSerializationService();
 
@@ -483,11 +482,6 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public IMap getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public Indexes getIndexes() {
-        return indexes;
     }
 
     @Override

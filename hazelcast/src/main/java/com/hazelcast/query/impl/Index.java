@@ -20,7 +20,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.impl.predicates.PredicateUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -31,13 +30,7 @@ import java.util.Set;
 public interface Index {
 
     /**
-     * @return the canonical name of this index: for single-attribute
-     * non-composite indexes, it's the attribute name itself stripping an
-     * unnecessary "this." qualifier, if any; for composite indexes, it's a
-     * comma-separated list of index components with a single space character
-     * going after every comma, any unnecessary "this." qualifiers are stripped.
-     * @see PredicateUtils#canonicalizeAttribute
-     * @see PredicateUtils#constructCanonicalCompositeIndexName
+     * @return Index name.
      */
     String getName();
 

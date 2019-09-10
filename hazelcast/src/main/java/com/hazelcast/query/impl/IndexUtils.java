@@ -80,7 +80,7 @@ public class IndexUtils {
                     ", attribute=" + originalAttributeName + ']');
             }
 
-            String normalizedAttributeName = THIS_PATTERN.matcher(originalAttributeName).replaceFirst("");
+            String normalizedAttributeName = canonicalizeAttribute(originalAttributeName);
 
             assert !normalizedAttributeName.isEmpty();
 
@@ -129,6 +129,17 @@ public class IndexUtils {
         newConfig.setName(name);
 
         return newConfig;
+    }
+
+    /**
+     * Produces canonical attribute representation by stripping an unnecessary
+     * "this." qualifier from the passed attribute, if any.
+     *
+     * @param attribute the attribute to canonicalize.
+     * @return the canonicalized attribute representation.
+     */
+    public static String canonicalizeAttribute(String attribute) {
+        return THIS_PATTERN.matcher(attribute).replaceFirst("");
     }
 
     /**

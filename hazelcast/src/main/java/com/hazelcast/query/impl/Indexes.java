@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
-import com.hazelcast.query.impl.predicates.PredicateUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
@@ -153,16 +152,8 @@ public class Indexes {
     public void recordIndexDefinition(IndexConfig config) {
         String name = config.getName();
 
-        if (definitions.containsKey(name) || indexesByName.containsKey(name)) {
-            return;
-        }
+        assert name != null && !name.isEmpty();
 
-        String[] components = PredicateUtils.parseOutCompositeIndexComponents(name);
-        if (components == null) {
-            name = PredicateUtils.canonicalizeAttribute(name);
-        } else {
-            name = PredicateUtils.constructCanonicalCompositeIndexName(components);
-        }
         if (definitions.containsKey(name) || indexesByName.containsKey(name)) {
             return;
         }

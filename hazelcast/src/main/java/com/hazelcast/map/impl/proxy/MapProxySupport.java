@@ -1331,10 +1331,8 @@ abstract class MapProxySupport<K, V>
 
     @Override
     public void addIndex(IndexConfig indexConfig) {
-        IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
-
         try {
-            AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
+            AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig);
 
             operationService.invokeOnAllPartitions(SERVICE_NAME,
                 new BinaryOperationFactory(addIndexOperation, getNodeEngine())

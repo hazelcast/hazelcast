@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
+import static com.hazelcast.query.impl.IndexUtils.canonicalizeAttribute;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 
 /**
