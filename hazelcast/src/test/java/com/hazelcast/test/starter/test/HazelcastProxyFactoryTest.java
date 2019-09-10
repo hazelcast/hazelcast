@@ -22,6 +22,7 @@ import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader;
 import com.hazelcast.test.starter.HazelcastProxyFactory;
 import com.hazelcast.test.starter.HazelcastStarter;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -63,6 +64,7 @@ public class HazelcastProxyFactoryTest {
     }
 
     @Test
+    @Ignore("To be enabled with 4.x instances - see https://github.com/hazelcast/hazelcast/issues/15457")
     public void testProxyHazelcastInstanceClasses_ofSameVersion_areSame() {
         HazelcastInstance hz1 = HazelcastStarter.newHazelcastInstance("3.8");
         HazelcastInstance hz2 = HazelcastStarter.newHazelcastInstance("3.8");

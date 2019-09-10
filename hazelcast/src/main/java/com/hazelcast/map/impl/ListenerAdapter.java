@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.map.IMap;
 
 /**
@@ -23,7 +24,7 @@ import com.hazelcast.map.IMap;
  * by {@link IMap} internals.
  * <p>
  * Also every {@link com.hazelcast.map.listener.MapListener} should be wrapped
- * in a {@link com.hazelcast.map.impl.ListenerAdapter} before {@link com.hazelcast.spi.EventService} registration.
+ * in a {@link com.hazelcast.map.impl.ListenerAdapter} before {@link EventService} registration.
  */
 public interface ListenerAdapter<T> {
 

@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.Collection;
 import java.util.Collections;

@@ -25,7 +25,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,12 +59,9 @@ public class ClientPartitionListenerService {
 
     private ClientMessage getPartitionsMessage() {
         PartitionTableView partitionTableView = nodeEngine.getPartitionService().createPartitionTableView();
-        Collection<Map.Entry<Address, List<Integer>>> partitions = getPartitions(partitionTableView);
+        Map<Address, List<Integer>> partitions = getPartitions(partitionTableView);
         int partitionStateVersion = partitionTableView.getVersion();
-        ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodePartitionsEvent(partitions, partitionStateVersion);
-        clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-        clientMessage.setVersion(ClientMessage.VERSION);
-        return clientMessage;
+        return ClientAddPartitionListenerCodec.encodePartitionsEvent(partitions.entrySet(), partitionStateVersion);
     }
 
     public void registerPartitionListener(ClientEndpoint clientEndpoint, long correlationId) {
@@ -86,7 +82,7 @@ public class ClientPartitionListenerService {
      * @param partitionTableView will be converted to address-&gt;partitions mapping
      * @return address-&gt;partitions mapping, where address is the client address of the member
      */
-    public Collection<Map.Entry<Address, List<Integer>>> getPartitions(PartitionTableView partitionTableView) {
+    public Map<Address, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
 
         Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
 
@@ -95,12 +91,12 @@ public class ClientPartitionListenerService {
             PartitionReplica owner = partitionTableView.getReplica(partitionId, 0);
             if (owner == null) {
                 partitionsMap.clear();
-                return partitionsMap.entrySet();
+                return partitionsMap;
             }
             Address clientOwnerAddress = clientAddressOf(owner.address());
             if (clientOwnerAddress == null) {
                 partitionsMap.clear();
-                return partitionsMap.entrySet();
+                return partitionsMap;
             }
             List<Integer> indexes = partitionsMap.get(clientOwnerAddress);
             if (indexes == null) {
@@ -109,7 +105,7 @@ public class ClientPartitionListenerService {
             }
             indexes.add(partitionId);
         }
-        return partitionsMap.entrySet();
+        return partitionsMap;
     }
 
     private Address clientAddressOf(Address memberAddress) {

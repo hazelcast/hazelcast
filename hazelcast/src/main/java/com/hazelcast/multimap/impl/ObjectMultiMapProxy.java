@@ -26,9 +26,9 @@ import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
@@ -98,6 +98,7 @@ public class ObjectMultiMapProxy<K, V>
         return putInternal(dataKey, dataValue, -1);
     }
 
+    @Nonnull
     @Override
     public Collection<V> get(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
@@ -119,6 +120,7 @@ public class ObjectMultiMapProxy<K, V>
         return removeInternal(dataKey, dataValue);
     }
 
+    @Nonnull
     @Override
     public Collection<V> remove(@Nonnull Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
@@ -136,19 +138,22 @@ public class ObjectMultiMapProxy<K, V>
         deleteInternal(dataKey);
     }
 
+    @Nonnull
     @Override
     public Set<K> localKeySet() {
-        ensureQuorumPresent(QuorumType.READ);
+        ensureNoSplitBrain(SplitBrainProtectionOn.READ);
         Set<Data> dataKeySet = localKeySetInternal();
         return toObjectSet(dataKeySet);
     }
 
+    @Nonnull
     @Override
     public Set<K> keySet() {
         Set<Data> dataKeySet = keySetInternal();
         return toObjectSet(dataKeySet);
     }
 
+    @Nonnull
     @Override
     public Collection<V> values() {
         NodeEngine nodeEngine = getNodeEngine();
@@ -164,6 +169,7 @@ public class ObjectMultiMapProxy<K, V>
         return values;
     }
 
+    @Nonnull
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
         NodeEngine nodeEngine = getNodeEngine();
@@ -218,12 +224,14 @@ public class ObjectMultiMapProxy<K, V>
         return countInternal(dataKey);
     }
 
+    @Nonnull
     @Override
     public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return getService().addListener(name, listener, null, false, true);
     }
 
+    @Nonnull
     @Override
     public String addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -236,6 +244,7 @@ public class ObjectMultiMapProxy<K, V>
         return getService().removeListener(name, registrationId);
     }
 
+    @Nonnull
     @Override
     public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -322,6 +331,7 @@ public class ObjectMultiMapProxy<K, V>
         lockSupport.forceUnlock(nodeEngine, dataKey);
     }
 
+    @Nonnull
     @Override
     public LocalMultiMapStats getLocalMultiMapStats() {
         return getService().createStats(name);
@@ -336,7 +346,7 @@ public class ObjectMultiMapProxy<K, V>
         return keySet;
     }
 
-    private void ensureQuorumPresent(QuorumType requiredQuorumPermissionType) {
-        getService().ensureQuorumPresent(name, requiredQuorumPermissionType);
+    private void ensureNoSplitBrain(SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+        getService().ensureNoSplitBrain(name, requiredSplitBrainProtectionPermissionType);
     }
 }

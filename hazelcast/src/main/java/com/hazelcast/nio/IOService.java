@@ -28,7 +28,7 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.properties.HazelcastProperties;
 

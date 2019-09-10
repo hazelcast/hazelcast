@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.io.IOException;
 

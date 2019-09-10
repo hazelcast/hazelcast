@@ -129,7 +129,7 @@ public final class ReflectionUtils {
         return clazz.getName().equals(arg.getClass().getName());
     }
 
-    public static Object getFieldValueReflectively(Object arg, String fieldName) throws IllegalAccessException {
+    public static <T> T getFieldValueReflectively(Object arg, String fieldName) throws IllegalAccessException {
         checkNotNull(arg, "Argument cannot be null");
         checkHasText(fieldName, "Field name cannot be null");
 
@@ -141,7 +141,7 @@ public final class ReflectionUtils {
         }
 
         field.setAccessible(true);
-        return field.get(arg);
+        return (T) field.get(arg);
     }
 
     public static void setFieldValueReflectively(Object arg, String fieldName, Object newValue) throws IllegalAccessException {

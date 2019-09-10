@@ -17,7 +17,6 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.config.WANQueueFullBehavior;
-import com.hazelcast.config.WanPublisherConfig;
 
 /**
  * This interface offers the implementation of different kinds of replication techniques like
@@ -26,36 +25,37 @@ import com.hazelcast.config.WanPublisherConfig;
 public interface WanReplicationPublisher {
 
     /**
-     * Publish the {@code eventObject} WAN replication event. The event may be dropped if queue capacity has been reached.
+     * Publish the {@code eventObject} WAN replication event. The event may be
+     * dropped if queue capacity has been reached.
      *
-     * @param serviceName the service publishing the event
      * @param eventObject the replication event
      */
-    void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject);
+    void publishReplicationEvent(WanReplicationEvent eventObject);
 
     /**
-     * Publish the {@code eventObject} WAN replication event backup. The event may be dropped if queue capacity has been reached.
+     * Publish the {@code eventObject} WAN replication event backup. The event
+     * may be dropped if queue capacity has been reached.
      *
-     * @param serviceName the service publishing the event
      * @param eventObject the replication backup event
      */
-    void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject);
+    void publishReplicationEventBackup(WanReplicationEvent eventObject);
 
     /**
-     * Publishes the {@code wanReplicationEvent} on this publisher. This can be used to forward received events
-     * on the target cluster.
+     * Publishes the {@code wanReplicationEvent} on this publisher. This can be
+     * used to forward received events on the target cluster.
      *
      * @param wanReplicationEvent the WAN event to publish
      */
-    void publishReplicationEvent(WanReplicationEvent wanReplicationEvent);
+    void republishReplicationEvent(WanReplicationEvent wanReplicationEvent);
 
     /**
      * Checks the size of the WAN replication queue and throws an
      * exception if it has been reached or crossed.
      *
      * @throws WANReplicationQueueFullException if queue capacity has been reached and
-     *                                          {@link WanPublisherConfig#getQueueFullBehavior()} is
-     *                                          set to {@link WANQueueFullBehavior#THROW_EXCEPTION}
+     *                                          {@link
+     *                                          com.hazelcast.config.WanBatchReplicationPublisherConfig#getQueueFullBehavior()}
+     *                                          is set to {@link WANQueueFullBehavior#THROW_EXCEPTION}
      */
     void checkWanReplicationQueues();
 

@@ -16,25 +16,25 @@
 
 package com.hazelcast.cp.internal.datastructures.unsafe.atomicreference;
 
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.operations.AtomicReferenceReplicationOperation;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.operations.MergeOperation;
-import com.hazelcast.config.AtomicReferenceConfig;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicReferenceMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
@@ -51,7 +51,8 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class AtomicReferenceService
-        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
+        implements ManagedService, RemoteService, MigrationAwareService, SplitBrainProtectionAwareService,
+        SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:atomicReferenceService";
 
@@ -66,18 +67,20 @@ public class AtomicReferenceService
                 }
             };
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            AtomicReferenceConfig config = nodeEngine.getConfig().findAtomicReferenceConfig(name);
-            String quorumName = config.getQuorumName();
-            // the quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
-            return quorumName == null ? NULL_OBJECT : quorumName;
-        }
-    };
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
+                @Override
+                public Object createNew(String name) {
+                    AtomicReferenceConfig config = nodeEngine.getConfig().findAtomicReferenceConfig(name);
+                    String splitBrainProtectionName = config.getSplitBrainProtectionName();
+                    // the splitBrainProtectionName will be null if there is no split brain protection defined
+                    // for this data structure, but the SplitBrainProtectionService is active, due to another
+                    // data structure with a split brain protection configuration
+                    return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                }
+            };
 
     private NodeEngine nodeEngine;
 
@@ -118,7 +121,7 @@ public class AtomicReferenceService
     @Override
     public void destroyDistributedObject(String name) {
         containers.remove(name);
-        quorumConfigCache.remove(name);
+        splitBrainProtectionConfigCache.remove(name);
     }
 
     @Override
@@ -181,10 +184,10 @@ public class AtomicReferenceService
     }
 
     @Override
-    public String getQuorumName(String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    public String getSplitBrainProtectionName(String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 
     @Override

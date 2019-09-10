@@ -22,7 +22,7 @@ import java.lang.reflect.Constructor;
 
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-@HazelcastStarterConstructor(classNames = {"com.hazelcast.spi.DistributedObjectNamespace"})
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.internal.services.DistributedObjectNamespace"})
 public class DistributedObjectNamespaceConstructor extends AbstractStarterObjectConstructor {
 
     public DistributedObjectNamespaceConstructor(Class<?> targetClass) {

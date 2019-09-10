@@ -142,12 +142,12 @@ public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
     }
 
     @Override
-    public CacheSimpleConfig setQuorumName(String quorumName) {
+    public CacheSimpleConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
     @Override
-    public void setMergePolicy(String mergePolicy) {
+    public CacheSimpleConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

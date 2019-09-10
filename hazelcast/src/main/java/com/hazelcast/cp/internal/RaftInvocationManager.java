@@ -33,8 +33,8 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
@@ -50,7 +50,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.shuffle;
 
 /**

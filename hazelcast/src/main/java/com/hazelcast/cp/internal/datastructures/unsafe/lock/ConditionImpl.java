@@ -21,9 +21,9 @@ import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.BeforeAwa
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.SignalOperation;
 import com.hazelcast.cp.lock.ICondition;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;

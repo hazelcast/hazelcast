@@ -25,7 +25,7 @@ import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 

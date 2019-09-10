@@ -59,7 +59,6 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
         root.add("maxSizePolicy", config.getMaxSizeConfig().getMaxSizePolicy().toString());
         root.add("readBackupData", config.isReadBackupData());
         root.add("evictionPolicy", config.getEvictionPolicy().name());
-        root.add("mergePolicy", config.getMergePolicy());
         return root;
     }
 
@@ -76,7 +75,6 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
                 .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(getString(json, "maxSizePolicy"))));
         config.setReadBackupData(getBoolean(json, "readBackupData"));
         config.setEvictionPolicy(EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
-        config.setMergePolicy(getString(json, "mergePolicy"));
     }
 
     @Override
@@ -94,7 +92,6 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
                         .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
         config.setReadBackupData(in.readBoolean());
         config.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
-        config.setMergePolicy(in.readUTF());
     }
 
     @Override
@@ -109,7 +106,6 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
         out.writeUTF(config.getMaxSizeConfig().getMaxSizePolicy().toString());
         out.writeBoolean(config.isReadBackupData());
         out.writeUTF(config.getEvictionPolicy().name());
-        out.writeUTF(config.getMergePolicy());
     }
 
     public MapConfig getMapConfig() {

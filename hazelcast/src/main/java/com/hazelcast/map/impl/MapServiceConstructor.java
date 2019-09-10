@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
 
 /**

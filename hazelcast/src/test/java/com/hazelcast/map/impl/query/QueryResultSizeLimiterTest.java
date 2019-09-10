@@ -22,7 +22,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;

@@ -18,8 +18,8 @@ package com.hazelcast.cp.internal.datastructures.unsafe.idgen;
 
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.NodeEngine;
 
 public class IdGeneratorProxy
         extends AbstractDistributedObject<IdGeneratorService>

@@ -16,32 +16,32 @@
 
 package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.config.LockConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.LocalLockCleanupOperation;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.LockReplicationOperation;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.UnlockOperation;
-import com.hazelcast.config.LockConfig;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.services.ClientAwareService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.MemberAttributeServiceEvent;
+import com.hazelcast.internal.services.MembershipAwareService;
+import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.ClientAwareService;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MemberAttributeServiceEvent;
-import com.hazelcast.spi.MembershipAwareService;
-import com.hazelcast.spi.MembershipServiceEvent;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
@@ -58,7 +58,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 @SuppressWarnings("checkstyle:methodcount")
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
-        FragmentedMigrationAwareService, ClientAwareService, QuorumAwareService {
+        FragmentedMigrationAwareService, ClientAwareService, SplitBrainProtectionAwareService {
 
     private static final Object NULL_OBJECT = new Object();
 
@@ -67,14 +67,15 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     private final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
             = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
             LockConfig lockConfig = nodeEngine.getConfig().findLockConfig(name);
-            String quorumName = lockConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
+            String splitBrainProtectionName = lockConfig.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
 
@@ -360,7 +361,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 }
             });
         }
-        quorumConfigCache.remove(objectId);
+        splitBrainProtectionConfigCache.remove(objectId);
     }
 
     @Override
@@ -373,9 +374,9 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     }
 
     @Override
-    public String getQuorumName(String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    public String getSplitBrainProtectionName(String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 }

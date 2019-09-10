@@ -94,7 +94,7 @@ public class MultiMapConfigReadOnly extends MultiMapConfig {
     }
 
     @Override
-    public MultiMapConfig setQuorumName(String quorumName) {
+    public MultiMapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
     }
 

@@ -61,7 +61,7 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
         ReplicatedMapService service = getService();
         AbstractReplicatedRecordStore store
                 = (AbstractReplicatedRecordStore) service.getReplicatedRecordStore(name, true, getPartitionId());
-        InternalReplicatedMapStorage<K, V> newStorage = new InternalReplicatedMapStorage<K, V>();
+        InternalReplicatedMapStorage<K, V> newStorage = new InternalReplicatedMapStorage<>();
         for (RecordMigrationInfo record : recordSet) {
             K key = (K) store.marshall(record.getKey());
             V value = (V) store.marshall(record.getValue());
@@ -83,7 +83,7 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
     }
 
     private ReplicatedRecord<K, V> buildReplicatedRecord(K key, V value, long ttlMillis) {
-        return new ReplicatedRecord<K, V>(key, value, ttlMillis);
+        return new ReplicatedRecord<>(key, value, ttlMillis);
     }
 
     @Override

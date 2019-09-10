@@ -29,8 +29,8 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -248,6 +248,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         ringbuffer.destroy();
     }
 
+    @Nonnull
     @Override
     public LocalTopicStats getLocalTopicStats() {
         return localTopicStats;

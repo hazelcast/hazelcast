@@ -18,7 +18,7 @@ package com.hazelcast.internal.management;
 
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.config.Config;
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;

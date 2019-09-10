@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.lock.operations;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 public class GetRemainingLeaseTimeOperation extends AbstractLockOperation implements ReadonlyOperation {

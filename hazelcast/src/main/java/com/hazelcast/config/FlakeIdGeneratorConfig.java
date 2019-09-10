@@ -35,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  *
  * @since 3.10
  */
-public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
+public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable , NamedConfig {
 
     /**
      * Default value for {@link #getPrefetchCount()}.
@@ -110,8 +110,9 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * Sets the name or name pattern for this config. Must not be modified after this
      * instance is added to {@link Config}.
      */
-    public void setName(String name) {
+    public FlakeIdGeneratorConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
     /**

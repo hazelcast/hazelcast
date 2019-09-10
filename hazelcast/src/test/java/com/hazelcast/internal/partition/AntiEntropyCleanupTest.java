@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;

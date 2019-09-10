@@ -16,11 +16,11 @@
 
 package com.hazelcast.executor.impl;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
@@ -30,13 +30,13 @@ import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
-import com.hazelcast.quorum.QuorumException;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -79,10 +79,10 @@ public class ExecutorServiceProxy
         @Override
         public void handleException(Throwable throwable) {
             if (throwable != null) {
-                if (throwable instanceof QuorumException) {
+                if (throwable instanceof SplitBrainProtectionException) {
                     sneakyThrow(throwable);
                 }
-                if (throwable.getCause() instanceof QuorumException) {
+                if (throwable.getCause() instanceof SplitBrainProtectionException) {
                     sneakyThrow(throwable.getCause());
                 }
             }

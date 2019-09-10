@@ -33,7 +33,7 @@ import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.util.Collection;

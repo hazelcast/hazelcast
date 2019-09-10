@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.util.Clock;

@@ -17,8 +17,9 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.ConfigCompatibilityChecker.WanReplicationConfigChecker;
+import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,10 +42,11 @@ public class WanReplicationConfigDTOTest {
         WanReplicationConfig expected = new WanReplicationConfig()
                 .setName("myName")
                 .setWanConsumerConfig(new WanConsumerConfig())
-                .addWanPublisherConfig(new WanPublisherConfig()
+                .addWanBatchReplicationPublisherConfig(new WanBatchReplicationPublisherConfig()
                         .setGroupName("group1"))
-                .addWanPublisherConfig(new WanPublisherConfig()
-                        .setGroupName("group2"));
+                .addCustomPublisherConfig(new CustomWanPublisherConfig()
+                        .setPublisherId("group2")
+                        .setClassName("className"));
 
         WanReplicationConfig actual = cloneThroughJson(expected);
 

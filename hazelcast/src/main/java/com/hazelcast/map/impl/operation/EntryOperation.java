@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockWaitNotifyKey;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastException;
@@ -29,19 +28,18 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
-import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -51,9 +49,9 @@ import java.io.IOException;
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
-import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static java.lang.String.format;
@@ -136,7 +134,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * GOTCHA: This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class EntryOperation extends KeyBasedMapOperation
+public class EntryOperation extends LockAwareOperation
         implements BackupAwareOperation, BlockingOperation, MutatingOperation {
 
     private static final int SET_UNLOCK_FAST_RETRY_LIMIT = 10;
@@ -199,11 +197,6 @@ public class EntryOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(getServiceNamespace(), dataKey);
-    }
-
-    @Override
     public boolean shouldWait() {
         // optimisation for ReadOnly processors -> they will not wait for the lock
         if (entryProcessor instanceof ReadOnly) {
@@ -218,7 +211,7 @@ public class EntryOperation extends KeyBasedMapOperation
         //at this point we cannot offload. the entry is locked or the EP does not support offload
         //if the entry is locked by us then we can still run the EP on the partition thread
         offload = false;
-        return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
+        return super.shouldWait();
     }
 
     private boolean isOffloadingRequested(EntryProcessor entryProcessor) {

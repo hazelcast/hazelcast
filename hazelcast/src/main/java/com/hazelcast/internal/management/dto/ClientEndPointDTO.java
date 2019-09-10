@@ -16,13 +16,15 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,20 +37,40 @@ import static com.hazelcast.util.JsonUtil.getString;
 public class ClientEndPointDTO implements JsonSerializable {
 
     public String uuid;
+
+    /**
+     * Client's socket address as "hostname:port"
+     */
     public String address;
     public String clientType;
     public String name;
     public Set<String> labels;
+
+    /**
+     * Client's IP address (without port) or {@code null} if client's address is unresolved
+     */
+    public String ipAddress;
+
+    /**
+     * Client's FQDN if we're able to resolve it, host name if not. {@code null} if client's address is unresolved
+     */
+    public String canonicalHostName;
 
     public ClientEndPointDTO() {
     }
 
     public ClientEndPointDTO(Client client) {
         this.uuid = client.getUuid();
-        this.address = client.getSocketAddress().getHostName() + ":" + client.getSocketAddress().getPort();
         this.clientType = client.getClientType().toString();
         this.name = client.getName();
         this.labels = client.getLabels();
+
+        InetSocketAddress socketAddress = client.getSocketAddress();
+        this.address = socketAddress.getHostName() + ":" + socketAddress.getPort();
+
+        InetAddress address = socketAddress.getAddress();
+        this.ipAddress = address != null ? address.getHostAddress() : null;
+        this.canonicalHostName = address != null ? address.getCanonicalHostName() : null;
     }
 
     @Override
@@ -63,6 +85,8 @@ public class ClientEndPointDTO implements JsonSerializable {
             labelsObject.add(label);
         }
         root.add("labels", labelsObject);
+        root.add("ipAddress", ipAddress);
+        root.add("canonicalHostName", canonicalHostName);
         return root;
     }
 
@@ -77,5 +101,7 @@ public class ClientEndPointDTO implements JsonSerializable {
         for (JsonValue labelValue : labelsArray) {
             labels.add(labelValue.asString());
         }
+        ipAddress = getString(json, "ipAddress", null);
+        canonicalHostName = getString(json, "canonicalHostName", null);
     }
 }

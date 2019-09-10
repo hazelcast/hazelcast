@@ -21,7 +21,7 @@ import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.datastructures.AbstractAtomicRegisterSnapshotTest;
 import com.hazelcast.cp.internal.datastructures.lock.operation.GetLockOwnershipStateOp;
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

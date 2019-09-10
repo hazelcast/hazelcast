@@ -20,18 +20,29 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+
 public class PutOperation extends BasePutOperation implements MutatingOperation {
 
     public PutOperation() {
     }
 
-    public PutOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
-        super(name, dataKey, value, ttl, maxIdle);
+    public PutOperation(String name, Data dataKey, Data value) {
+        super(name, dataKey, value);
     }
 
     @Override
     protected void runInternal() {
-        oldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, ttl, maxIdle));
+        oldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, getTtl(), getMaxIdle()));
+    }
+
+    protected long getTtl() {
+        return DEFAULT_TTL;
+    }
+
+    protected long getMaxIdle() {
+        return DEFAULT_MAX_IDLE;
     }
 
     @Override

@@ -23,11 +23,11 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
@@ -183,7 +183,8 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected NearCacheConfig newNearCacheConfigWithEntryCountEviction(EvictionPolicy evictionPolicy, int size) {
         return newNearCacheConfig()
                 .setCacheLocalEntries(true)
-                .setEvictionConfig(new EvictionConfig(size, ENTRY_COUNT, evictionPolicy));
+                .setEvictionConfig(new EvictionConfig().setSize(size)
+                        .setMaximumSizePolicy(ENTRY_COUNT).setEvictionPolicy(evictionPolicy));
     }
 
     protected NearCacheConfig newNearCacheConfig() {

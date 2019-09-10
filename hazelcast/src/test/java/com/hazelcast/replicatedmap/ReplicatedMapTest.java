@@ -895,7 +895,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void putNullKey() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
@@ -903,7 +903,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         map1.put(null, 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void removeNullKey() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
@@ -919,7 +919,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         assertFalse(map1.removeEntryListener("2"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void removeNullListener() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();

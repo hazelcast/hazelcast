@@ -22,9 +22,9 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.HashSet;

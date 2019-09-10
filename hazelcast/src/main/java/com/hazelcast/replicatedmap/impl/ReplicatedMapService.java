@@ -16,6 +16,8 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
@@ -23,36 +25,34 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.quorum.QuorumService;
-import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersionOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.replicatedmap.merge.MergePolicyProvider;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
@@ -78,7 +78,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
-        MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService<LocalReplicatedMapStats>, QuorumAwareService {
+        MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService<LocalReplicatedMapStats>,
+        SplitBrainProtectionAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final int INVOCATION_TRY_COUNT = 3;
@@ -89,14 +90,15 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     private final AntiEntropyTask antiEntropyTask = new AntiEntropyTask();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
             ReplicatedMapConfig lockConfig = nodeEngine.getConfig().findReplicatedMapConfig(name);
-            String quorumName = lockConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
+            String splitBrainProtectionName = lockConfig.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
 
@@ -106,13 +108,13 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final InternalPartitionServiceImpl partitionService;
     private final ClusterService clusterService;
     private final OperationService operationService;
-    private final QuorumService quorumService;
+    private final SplitBrainProtectionService splitBrainProtectionService;
     private final ReplicatedMapEventPublishingService eventPublishingService;
     private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
     private final LocalReplicatedMapStatsProvider statsProvider;
+    private final SplitBrainMergePolicyProvider mergePolicyProvider;
 
     private ScheduledFuture antiEntropyFuture;
-    private MergePolicyProvider mergePolicyProvider;
 
     public ReplicatedMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -123,8 +125,8 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         this.partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         this.eventPublishingService = new ReplicatedMapEventPublishingService(this);
         this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this);
-        this.quorumService = nodeEngine.getQuorumService();
-        this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
+        this.splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
+        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         this.statsProvider = new LocalReplicatedMapStatsProvider(config, partitionContainers);
     }
 
@@ -162,6 +164,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     /**
      * Gets the {@link LocalReplicatedMapStatsImpl} implementation of {@link LocalReplicatedMapStats} for the provided
      * {@param name} of the replicated map. This is used for operations that mutate replicated map's local statistics.
+     *
      * @param name of the replicated map.
      * @return replicated map's local statistics object.
      */
@@ -172,6 +175,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     /**
      * Gets the replicated map's local statistics. If the statistics is disabled so method returns always the same object which is
      * empty and immutable.
+     *
      * @param name of the replicated map.
      * @return replicated map's local statistics object.
      */
@@ -206,7 +210,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             partitionContainers[i].destroy(objectName);
         }
-        quorumConfigCache.remove(objectName);
+        splitBrainProtectionConfigCache.remove(objectName);
     }
 
     @Override
@@ -214,7 +218,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         eventPublishingService.dispatchEvent(event, listener);
     }
 
-    @SuppressWarnings("deprecation")
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
         return config.findReplicatedMapConfig(name);
     }
@@ -237,7 +240,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     public Collection<ReplicatedRecordStore> getAllReplicatedRecordStores(String name) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        ArrayList<ReplicatedRecordStore> stores = new ArrayList<ReplicatedRecordStore>(partitionCount);
+        ArrayList<ReplicatedRecordStore> stores = new ArrayList<>(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             PartitionContainer partitionContainer = partitionContainers[i];
             if (partitionContainer == null) {
@@ -254,7 +257,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     private Collection<Address> getMemberAddresses(MemberSelector memberSelector) {
         Collection<Member> members = clusterService.getMembers(memberSelector);
-        Collection<Address> addresses = new ArrayList<Address>(members.size());
+        Collection<Address> addresses = new ArrayList<>(members.size());
         for (Member member : members) {
             addresses.add(member.getAddress());
         }
@@ -336,7 +339,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     public Map<String, LocalReplicatedMapStats> getStats() {
         Collection<String> maps = getNodeEngine().getProxyService().getDistributedObjectNames(SERVICE_NAME);
         Map<String, LocalReplicatedMapStats> mapStats = new
-                HashMap<String, LocalReplicatedMapStats>(maps.size());
+                HashMap<>(maps.size());
         for (String map : maps) {
             mapStats.put(map, getLocalReplicatedMapStats(map));
         }
@@ -344,13 +347,16 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     @Override
-    public String getQuorumName(String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    public String getSplitBrainProtectionName(String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 
-    public void ensureQuorumPresent(String distributedObjectName, QuorumType requiredQuorumPermissionType) {
-        quorumService.ensureQuorumPresent(getQuorumName(distributedObjectName), requiredQuorumPermissionType);
+    public void ensureNoSplitBrain(String distributedObjectName,
+                                   SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+        splitBrainProtectionService.ensureNoSplitBrain(getSplitBrainProtectionName(distributedObjectName),
+                requiredSplitBrainProtectionPermissionType);
     }
 
     // needed for a test
@@ -377,7 +383,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             if (nodeEngine.getLocalMember().isLiteMember() || clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
                 return;
             }
-            Collection<Address> addresses = new ArrayList<Address>(getMemberAddresses(DATA_MEMBER_SELECTOR));
+            Collection<Address> addresses = new ArrayList<>(getMemberAddresses(DATA_MEMBER_SELECTOR));
             addresses.remove(nodeEngine.getThisAddress());
             for (int i = 0; i < partitionContainers.length; i++) {
                 Address thisAddress = nodeEngine.getThisAddress();

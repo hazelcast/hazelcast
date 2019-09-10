@@ -16,12 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.query.Query;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -58,7 +56,7 @@ public interface MapOperationProvider {
 
     MapOperation createReplaceIfSameOperation(String name, Data dataKey, Data expect, Data update);
 
-    MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent);
+    MapOperation createRemoveOperation(String name, Data key);
 
     /**
      * Creates a delete operation for an entry with key equal to {@code key} from the map named {@code name}.
@@ -111,11 +109,9 @@ public interface MapOperationProvider {
 
     MapOperation createTxnSetOperation(String name, Data dataKey, Data value, long version, long ttl);
 
-    MapOperation createLegacyMergeOperation(String name, EntryView<Data, Data> entryView, MapMergePolicy policy,
-                                            boolean disableWanReplicationEvent);
-
     MapOperation createMergeOperation(String name, MapMergeTypes mergingValue,
-                                      SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy, boolean disableWanReplicationEvent);
+                                      SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                                      boolean disableWanReplicationEvent);
 
     MapOperation createMapFlushOperation(String name);
 

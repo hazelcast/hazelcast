@@ -16,13 +16,16 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.InvalidConfigurationException;
+
 /**
  * Behaviour when detects a configuration conflict while registering a new dynamic configuraiton.
  *
  */
 public enum ConfigCheckMode {
     /**
-     * Throw {@link com.hazelcast.config.ConfigurationException} when a configuration conflict is detected
+     * Throw {@link InvalidConfigurationException} when a configuration conflict
+     * is detected
      *
      */
     THROW_EXCEPTION,

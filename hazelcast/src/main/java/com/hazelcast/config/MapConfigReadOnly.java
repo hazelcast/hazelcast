@@ -213,11 +213,6 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig setMergePolicy(String mergePolicy) {
-        throw throwReadOnly();
-    }
-
-    @Override
     public MapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         throw throwReadOnly();
     }
@@ -283,7 +278,7 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig setQuorumName(String quorumName) {
+    public MapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw throwReadOnly();
     }
 

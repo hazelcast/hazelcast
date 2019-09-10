@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the API for the {@link com.hazelcast.spi.impl.executionservice.InternalExecutionService}.
+ * Contains the API for the {@link com.hazelcast.spi.impl.executionservice.ExecutionService}.
  */
 package com.hazelcast.spi.impl.executionservice;

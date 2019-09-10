@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.function.Function;
 

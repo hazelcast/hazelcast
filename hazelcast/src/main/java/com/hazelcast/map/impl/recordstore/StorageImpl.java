@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;

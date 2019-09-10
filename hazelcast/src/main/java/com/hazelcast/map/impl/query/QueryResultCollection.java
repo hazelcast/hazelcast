@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.util.AbstractSet;

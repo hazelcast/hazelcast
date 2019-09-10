@@ -31,7 +31,7 @@ public interface ScheduledEntryProcessor<K, V> {
      * Imagine you are implementing this for dirty records: if mapStore.storeAll
      * throws an exception, you might want to reschedule the failed records.
      *
-     * @param scheduler the EntryTskScheduler
+     * @param scheduler the EntryTaskScheduler
      * @param entries the entries (key and value) to process
      */
     void process(EntryTaskScheduler<K, V> scheduler, Collection<ScheduledEntry<K, V>> entries);

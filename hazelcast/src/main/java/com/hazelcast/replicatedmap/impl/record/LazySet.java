@@ -57,7 +57,7 @@ class LazySet<K, V, R> implements Set<R> {
 
     @Override
     public Object[] toArray() {
-        List<Object> result = new ArrayList<Object>(storage.values().size());
+        List<Object> result = new ArrayList<>(storage.values().size());
         for (R r : this) {
             // we cannot use addAll() here, since it results in StackOverflowError
             //noinspection UseBulkOperation
@@ -69,7 +69,7 @@ class LazySet<K, V, R> implements Set<R> {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
-        List<Object> result = new ArrayList<Object>(storage.values().size());
+        List<Object> result = new ArrayList<>(storage.values().size());
         for (R r : this) {
             // we cannot use addAll() here, since it results in StackOverflowError
             //noinspection UseBulkOperation

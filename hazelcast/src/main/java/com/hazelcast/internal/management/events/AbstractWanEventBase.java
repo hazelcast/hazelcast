@@ -23,10 +23,22 @@ abstract class AbstractWanEventBase extends AbstractEventBase {
     protected final String targetGroupName;
     protected final String mapName;
 
-    protected AbstractWanEventBase(String wanReplicationName, String targetGroupName, String mapName) {
+    AbstractWanEventBase(String wanReplicationName, String targetGroupName, String mapName) {
         this.wanReplicationName = wanReplicationName;
         this.targetGroupName = targetGroupName;
         this.mapName = mapName;
+    }
+
+    public String getWanReplicationName() {
+        return wanReplicationName;
+    }
+
+    public String getTargetGroupName() {
+        return targetGroupName;
+    }
+
+    public String getMapName() {
+        return mapName;
     }
 
     @Override

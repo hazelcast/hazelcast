@@ -28,8 +28,8 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.security.Permission;
 

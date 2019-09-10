@@ -28,7 +28,7 @@ import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetCoun
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetRoundOp;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.TrySetCountOp;
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.concurrent.TimeUnit;
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;

@@ -26,7 +26,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.nio.ByteOrder;

@@ -31,9 +31,9 @@ import com.hazelcast.cp.internal.datastructures.atomicref.operation.GetOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.SetOp;
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.NO_RETURN_VALUE;
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.RETURN_NEW_VALUE;

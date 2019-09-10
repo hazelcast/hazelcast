@@ -17,17 +17,17 @@
 package com.hazelcast.executor.impl;
 
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedExecutorService implements ManagedService, RemoteService,
-        StatisticsAwareService<LocalExecutorStats>, QuorumAwareService {
+        StatisticsAwareService<LocalExecutorStats>, SplitBrainProtectionAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -72,14 +72,15 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     private final ConstructorFunction<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction
             = key -> new LocalExecutorStatsImpl();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
             ExecutorConfig executorConfig = nodeEngine.getConfig().findExecutorConfig(name);
-            String quorumName = executorConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
+            String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
 
@@ -176,7 +177,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         executionService.shutdownExecutor(name);
         statsMap.remove(name);
         executorConfigCache.remove(name);
-        quorumConfigCache.remove(name);
+        splitBrainProtectionConfigCache.remove(name);
     }
 
     LocalExecutorStatsImpl getLocalExecutorStats(String name) {
@@ -227,14 +228,14 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public String getQuorumName(final String name) {
+    public String getSplitBrainProtectionName(final String name) {
         if (name == null) {
             // see CancellationOperation#getName()
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 
     private final class Processor extends FutureTask implements Runnable {

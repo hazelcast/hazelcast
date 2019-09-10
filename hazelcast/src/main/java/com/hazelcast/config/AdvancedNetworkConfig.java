@@ -110,9 +110,10 @@ public class AdvancedNetworkConfig {
      * // setup WAN replication
      * WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
      * // WAN publisher config references endpoint config by name
-     * WanPublisherConfig publisherConfig = new WanPublisherConfig().setEndpoint("wan-tokyo");
-     * publisherConfig.getProperties().put("endpoints", "tokyo.hazelcast.com:8765");
-     * wanReplicationConfig.addWanPublisherConfig(publisherConfig);
+     * WanBatchReplicationPublisherConfig publisherConfig = new WanBatchReplicationPublisherConfig()
+     *                 .setEndpoint("wan-tokyo")
+     *                 .setTargetEndpoints("tokyo.hazelcast.com:8765");
+     * wanReplicationConfig.addWanBatchReplicationPublisherConfig(publisherConfig);
      * config.addWanReplicationConfig(wanReplicationConfig);
      *
      * HazelcastInstance active = Hazelcast.newHazelcastInstance(config);

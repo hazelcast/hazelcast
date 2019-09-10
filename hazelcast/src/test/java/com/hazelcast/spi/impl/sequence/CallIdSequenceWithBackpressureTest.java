@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyPriorityOperation;
@@ -40,7 +41,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
-    CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
+    CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000, ConcurrencyDetection.createDisabled());
 
     @Test
     public void test() {
@@ -69,7 +70,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
     @Test
     public void next_whenNoCapacity_thenBlockTillCapacity() throws InterruptedException {
-        sequence = new CallIdSequenceWithBackpressure(1, 60000);
+        sequence = new CallIdSequenceWithBackpressure(1, 60000, ConcurrencyDetection.createDisabled());
         final long oldLastCallId = sequence.getLastCallId();
 
         final CountDownLatch nextCalledLatch = new CountDownLatch(1);
@@ -94,7 +95,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
     @Test
     public void next_whenNoCapacity_thenBlockTillTimeout() {
-        sequence = new CallIdSequenceWithBackpressure(1, 2000);
+        sequence = new CallIdSequenceWithBackpressure(1, 2000, ConcurrencyDetection.createDisabled());
 
         // first invocation consumes the available call ID
         nextCallId(sequence, false);
@@ -112,7 +113,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
     @Test
     public void when_overCapacityButPriorityItem_then_noBackpressure() {
-        final CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(1, 60000);
+        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(1, 60000, ConcurrencyDetection.createDisabled());
 
         // occupy the single call ID slot
         nextCallId(sequence, true);

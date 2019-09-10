@@ -18,7 +18,7 @@ package com.hazelcast.collection.impl.txnqueue;
 
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 
 import javax.annotation.Nonnull;

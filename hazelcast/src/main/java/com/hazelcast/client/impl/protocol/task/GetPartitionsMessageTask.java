@@ -26,7 +26,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -46,9 +45,9 @@ public class GetPartitionsMessageTask
         service.firstArrangement();
         PartitionTableView partitionTableView = service.createPartitionTableView();
         int partitionStateVersion = partitionTableView.getVersion();
-        Collection<Map.Entry<Address, List<Integer>>> partitions =
-                clientEngine.getPartitionListenerService().getPartitions(partitionTableView);
-        return ClientGetPartitionsCodec.encodeResponse(partitions, partitionStateVersion);
+
+        Map<Address, List<Integer>> partitions = clientEngine.getPartitionListenerService().getPartitions(partitionTableView);
+        return ClientGetPartitionsCodec.encodeResponse(partitions.entrySet(), partitionStateVersion);
     }
 
     @Override

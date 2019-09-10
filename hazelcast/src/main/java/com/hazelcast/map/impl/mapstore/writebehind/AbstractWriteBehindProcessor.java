@@ -21,7 +21,7 @@ import com.hazelcast.map.MapStore;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.List;
 import java.util.Map;

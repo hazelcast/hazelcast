@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.io.IOException;
 

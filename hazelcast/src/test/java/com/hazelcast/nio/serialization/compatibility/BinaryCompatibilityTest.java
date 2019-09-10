@@ -24,7 +24,7 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -41,10 +41,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.nio.ByteOrder;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID;
@@ -190,9 +190,9 @@ public class BinaryCompatibilityTest {
             }
             return true;
         }
-        if (a instanceof List && b instanceof List) {
-            ListIterator e1 = ((List) a).listIterator();
-            ListIterator e2 = ((List) b).listIterator();
+        if (a instanceof Collection && b instanceof Collection) {
+            Iterator e1 = ((Collection) a).iterator();
+            Iterator e2 = ((Collection) b).iterator();
             while (e1.hasNext() && e2.hasNext()) {
                 Object o1 = e1.next();
                 Object o2 = e2.next();

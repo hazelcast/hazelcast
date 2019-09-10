@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.cluster.Joiner;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.nio.NetworkingService;

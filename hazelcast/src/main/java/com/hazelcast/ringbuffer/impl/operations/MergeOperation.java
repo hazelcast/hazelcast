@@ -32,14 +32,14 @@ import com.hazelcast.ringbuffer.impl.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.spi.merge.RingbufferMergeData;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 

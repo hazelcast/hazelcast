@@ -20,20 +20,20 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
@@ -51,7 +51,8 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class CardinalityEstimatorService
-        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
+        implements ManagedService, RemoteService, MigrationAwareService, SplitBrainProtectionAwareService,
+        SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:cardinalityEstimatorService";
 
@@ -75,14 +76,15 @@ public class CardinalityEstimatorService
                 }
             };
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
             CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);
-            String quorumName = config.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
+            String splitBrainProtectionName = config.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
 
@@ -120,7 +122,7 @@ public class CardinalityEstimatorService
     @Override
     public void destroyDistributedObject(String objectName) {
         containers.remove(objectName);
-        quorumConfigCache.remove(objectName);
+        splitBrainProtectionConfigCache.remove(objectName);
     }
 
     @Override
@@ -178,9 +180,10 @@ public class CardinalityEstimatorService
     }
 
     @Override
-    public String getQuorumName(String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    public String getSplitBrainProtectionName(String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 
     @Override

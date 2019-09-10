@@ -45,8 +45,8 @@ import com.hazelcast.internal.partition.operation.PublishCompletedMigrationsOper
 import com.hazelcast.internal.partition.operation.ShutdownResponseOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.exception.TargetNotMemberException;

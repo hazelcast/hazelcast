@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 import static java.util.Collections.unmodifiableSet;
@@ -133,6 +134,10 @@ public class HazelcastProperties {
             }
         }
 
+        Function<HazelcastProperties, ?> function = property.getFunction();
+        if (function != null) {
+            return "" + function.apply(this);
+        }
         return property.getDefaultValue();
     }
 
@@ -254,7 +259,7 @@ public class HazelcastProperties {
      * Returns the configured value of a {@link HazelcastProperty} converted to milliseconds if
      * it is positive, otherwise returns the passed default value.
      *
-     * @param property the {@link HazelcastProperty} to get the value from
+     * @param property     the {@link HazelcastProperty} to get the value from
      * @param defaultValue the default value to return if property has non positive value.
      * @return the value in milliseconds if it is positive, otherwise the passed default value.
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}

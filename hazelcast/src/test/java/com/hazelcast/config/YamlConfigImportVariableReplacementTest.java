@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,7 +34,6 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -204,27 +202,6 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  import:\n"
                 + "    - notexisting.yaml";
         buildConfig(yaml, null);
-    }
-
-    @Override
-    @Test(expected = HazelcastException.class)
-    public void testImportFromNonHazelcastConfigThrowsException() throws Exception {
-        File file = createConfigFile("mymap", "config");
-        FileOutputStream os = new FileOutputStream(file);
-        String mapConfig = ""
-                + "non-hazelcast:\n"
-                + "  map:\n"
-                + "    mymap:\n"
-                + "      backup-count: 3";
-        writeStringToStreamAndClose(os, mapConfig);
-
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  import:\n"
-                + "    - file:///" + file.getAbsolutePath();
-
-        Config config = buildConfig(yaml, null);
-        assertNull(config.getMapConfig("mymap"));
     }
 
     @Override
@@ -485,8 +462,8 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    with-prefix-${env}: with-prefix-local";
 
         Config config = buildConfig(yaml, "env", "local");
-        assertEquals(config.getProperty("local-with-suffix"), "local-with-suffix");
-        assertEquals(config.getProperty("with-prefix-local"), "with-prefix-local");
+        assertEquals("local-with-suffix", config.getProperty("local-with-suffix"));
+        assertEquals("with-prefix-local", config.getProperty("with-prefix-local"));
     }
 
     @Override
@@ -506,8 +483,28 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  import:\n"
                 + "    - file:///" + "${file}";
         Config config = buildConfig(yaml, "file", file.getAbsolutePath());
-        assertEquals(config.getProperty("prop1"), "value1");
-        assertEquals(config.getProperty("prop2"), "value2");
+        assertEquals("value1", config.getProperty("prop1"));
+        assertEquals("value2", config.getProperty("prop2"));
+    }
+
+    @Test
+    public void testImportNoHazelcastRootNode() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "properties:\n"
+                + "  prop1: value1\n"
+                + "  prop2: value2\n";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "import:\n"
+                + "  - file:///" + "${file}\n"
+                + "instance-name: my-instance";
+        Config config = buildConfig(yaml, "file", file.getAbsolutePath());
+        assertEquals("my-instance", config.getInstanceName());
+        assertEquals("value1", config.getProperty("prop1"));
+        assertEquals("value2", config.getProperty("prop2"));
     }
 
     @Override

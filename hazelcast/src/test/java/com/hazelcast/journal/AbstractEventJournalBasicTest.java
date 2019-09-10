@@ -27,7 +27,7 @@ import com.hazelcast.journal.EventJournalEventAdapter.EventType;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;

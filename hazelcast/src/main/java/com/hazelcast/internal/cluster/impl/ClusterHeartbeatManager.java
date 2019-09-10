@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
@@ -33,13 +33,13 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ICMPHelper;
 
@@ -51,8 +51,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXECUTOR_NAME;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXECUTOR_NAME;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
@@ -403,7 +403,7 @@ public class ClusterHeartbeatManager {
 
         MembershipManager membershipManager = clusterService.getMembershipManager();
         membershipManager.clearMemberSuspicion(member.getAddress(), "Valid heartbeat");
-        nodeEngine.getQuorumService().onHeartbeat(member, timestamp);
+        nodeEngine.getSplitBrainProtectionService().onHeartbeat(member, timestamp);
     }
 
     /**
@@ -650,11 +650,11 @@ public class ClusterHeartbeatManager {
 
     /** Reset all heartbeats to the current cluster time. Called when system clock jump is detected. */
     private void resetHeartbeats() {
-        QuorumServiceImpl quorumService = nodeEngine.getQuorumService();
+        SplitBrainProtectionServiceImpl splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
         long now = clusterClock.getClusterTime();
         for (MemberImpl member : clusterService.getMemberImpls()) {
             heartbeatFailureDetector.heartbeat(member, now);
-            quorumService.onHeartbeat(member, now);
+            splitBrainProtectionService.onHeartbeat(member, now);
         }
     }
 
@@ -718,7 +718,7 @@ public class ClusterHeartbeatManager {
 
     private class PeriodicPingTask
             extends PingTask {
-        final QuorumServiceImpl quorumService = nodeEngine.getQuorumService();
+        final SplitBrainProtectionServiceImpl splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
 
         PeriodicPingTask(Member member) {
             super(member);
@@ -730,13 +730,13 @@ public class ClusterHeartbeatManager {
             if (doPing(address, Level.FINE)) {
                 boolean pingRestored = (icmpFailureDetector.heartbeat(member) > 0);
                 if (pingRestored) {
-                    quorumService.onPingRestored(member);
+                    splitBrainProtectionService.onPingRestored(member);
                 }
                 return;
             }
 
             icmpFailureDetector.logAttempt(member);
-            quorumService.onPingLost(member);
+            splitBrainProtectionService.onPingLost(member);
 
             // host not reachable
             String reason = format("%s could not ping %s", node.getThisAddress(), address);

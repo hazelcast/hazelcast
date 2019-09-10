@@ -22,22 +22,32 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 public class SetOperation extends BasePutOperation implements MutatingOperation {
 
-    private boolean newRecord;
+    private transient boolean newRecord;
 
     public SetOperation() {
     }
 
-    public SetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
-        super(name, dataKey, value, ttl, maxIdle);
+    public SetOperation(String name, Data dataKey, Data value) {
+        super(name, dataKey, value);
     }
 
     @Override
     protected void runInternal() {
-        oldValue = recordStore.set(dataKey, dataValue, ttl, maxIdle);
+        oldValue = recordStore.set(dataKey, dataValue, getTtl(), getMaxIdle());
         newRecord = oldValue == null;
+    }
+
+    protected long getTtl() {
+        return DEFAULT_TTL;
+    }
+
+    protected long getMaxIdle() {
+        return DEFAULT_MAX_IDLE;
     }
 
     @Override

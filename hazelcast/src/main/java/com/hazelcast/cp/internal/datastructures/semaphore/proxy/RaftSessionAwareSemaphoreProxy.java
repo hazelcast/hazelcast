@@ -32,8 +32,8 @@ import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectO
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.session.SessionAwareProxy;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.util.Clock;
 
 import java.util.UUID;

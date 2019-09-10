@@ -17,7 +17,7 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.client.api.ClientService;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
@@ -40,7 +40,7 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -523,16 +523,16 @@ public class HazelcastOSGiInstanceTest {
     }
 
     @Test
-    public void getQuorumServiceCalledSuccessfullyOverOSGiInstance() {
-        QuorumService mockQuorumService = mock(QuorumService.class);
+    public void getSplitBrainProtectionServiceCalledSuccessfullyOverOSGiInstance() {
+        SplitBrainProtectionService mockSplitBrainProtectionService = mock(SplitBrainProtectionService.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getQuorumService()).thenReturn(mockQuorumService);
+        when(mockHazelcastInstance.getSplitBrainProtectionService()).thenReturn(mockSplitBrainProtectionService);
 
-        assertEquals(mockQuorumService, hazelcastOSGiInstance.getQuorumService());
+        assertEquals(mockSplitBrainProtectionService, hazelcastOSGiInstance.getSplitBrainProtectionService());
 
-        verify(mockHazelcastInstance).getQuorumService();
+        verify(mockHazelcastInstance).getSplitBrainProtectionService();
     }
 
     @Test

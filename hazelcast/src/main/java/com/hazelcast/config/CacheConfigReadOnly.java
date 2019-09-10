@@ -33,7 +33,6 @@ import java.util.Set;
  *
  * @param <K> type of the key
  * @param <V> type of the value
- *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 @BinaryInterface
@@ -76,8 +75,8 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public String getQuorumName() {
-        return super.getQuorumName();
+    public String getSplitBrainProtectionName() {
+        return super.getSplitBrainProtectionName();
     }
 
     @Override
@@ -159,7 +158,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfig<K, V> setQuorumName(String quorumName) {
+    public CacheConfig<K, V> setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw throwReadOnly();
     }
 
@@ -175,7 +174,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public void setMergePolicy(String mergePolicy) {
+    public CacheConfig<K, V> setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         throw throwReadOnly();
     }
 

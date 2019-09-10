@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
-import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
@@ -29,6 +28,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
 import java.security.Permission;
 
@@ -54,10 +54,10 @@ public class CacheCreateConfigMessageTask
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
 
         if (cacheConfig != null) {
-            CacheMergePolicyProvider mergePolicyProvider = cacheService.getMergePolicyProvider();
+            SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
             checkCacheConfig(cacheConfig, mergePolicyProvider);
 
-            Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
+            Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicyConfig().getPolicy());
             checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
                     true, logger);
 

@@ -42,13 +42,32 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanArraySerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.CharArraySerializer;
@@ -64,6 +83,7 @@ import static com.hazelcast.internal.serialization.impl.ConstantSerializers.Long
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortArraySerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.StringSerializer;
+import static com.hazelcast.internal.serialization.impl.ConstantSerializers.UuidSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.TheByteArraySerializer;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.EE_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.IDS_FLAG;
@@ -157,6 +177,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(Float.class, new FloatSerializer());
         registerConstant(Double.class, new DoubleSerializer());
         registerConstant(String.class, new StringSerializer());
+        registerConstant(UUID.class, new UuidSerializer());
         //Arrays of primitives and String
         registerConstant(byte[].class, new TheByteArraySerializer());
         registerConstant(boolean[].class, new BooleanArraySerializer());
@@ -171,13 +192,34 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
     private void registerJavaTypeSerializers() {
         //Java extensions: more serializers
+        registerConstant(Class.class, new ClassSerializer());
         registerConstant(Date.class, new DateSerializer());
         registerConstant(BigInteger.class, new BigIntegerSerializer());
         registerConstant(BigDecimal.class, new BigDecimalSerializer());
-        registerConstant(Class.class, new ClassSerializer());
         registerConstant(Enum.class, new EnumSerializer());
+
         registerConstant(ArrayList.class, new ArrayListStreamSerializer());
         registerConstant(LinkedList.class, new LinkedListStreamSerializer());
+        registerConstant(CopyOnWriteArrayList.class, new CopyOnWriteArrayListStreamSerializer());
+
+        registerConstant(HashMap.class, new HashMapStreamSerializer());
+        registerConstant(ConcurrentSkipListMap.class, new ConcurrentSkipListMapStreamSerializer());
+        registerConstant(ConcurrentHashMap.class, new ConcurrentHashMapStreamSerializer());
+        registerConstant(LinkedHashMap.class, new LinkedHashMapStreamSerializer());
+        registerConstant(TreeMap.class, new TreeMapStreamSerializer());
+
+        registerConstant(HashSet.class, new HashSetStreamSerializer());
+        registerConstant(TreeSet.class, new TreeSetStreamSerializer());
+        registerConstant(LinkedHashSet.class, new LinkedHashSetStreamSerializer());
+        registerConstant(CopyOnWriteArraySet.class, new CopyOnWriteArraySetStreamSerializer());
+        registerConstant(ConcurrentSkipListSet.class, new ConcurrentSkipListSetStreamSerializer());
+        registerConstant(ArrayDeque.class, new ArrayDequeStreamSerializer());
+        registerConstant(LinkedBlockingQueue.class, new LinkedBlockingQueueStreamSerializer());
+        registerConstant(ArrayBlockingQueue.class, new ArrayBlockingQueueStreamSerializer());
+        registerConstant(PriorityBlockingQueue.class, new PriorityBlockingQueueStreamSerializer());
+        registerConstant(DelayQueue.class, new DelayQueueStreamSerializer());
+        registerConstant(SynchronousQueue.class, new SynchronousQueueStreamSerializer());
+        registerConstant(LinkedTransferQueue.class, new LinkedTransferQueueStreamSerializer());
 
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);

@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.ConfigurableService;
+import com.hazelcast.internal.services.ConfigurableService;
 
 /**
  * @author mdogan 6/24/13

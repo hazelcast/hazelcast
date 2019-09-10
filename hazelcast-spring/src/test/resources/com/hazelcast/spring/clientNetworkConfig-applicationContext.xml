@@ -160,9 +160,9 @@
         <hz:near-cache name="default"
                        time-to-live-seconds="1"
                        max-idle-seconds="70"
-                       eviction-policy="LRU"
-                       max-size="4000"
-                       invalidate-on-change="true"/>
+                       invalidate-on-change="true">
+            <hz:eviction eviction-policy="LRU" size="4000"/>
+        </hz:near-cache>
 
 
     </hz:client>

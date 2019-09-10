@@ -37,23 +37,8 @@ public class ReplicatedMapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testSetReplicatorExecutorService() {
-        getReadOnlyConfig().setReplicatorExecutorService(null);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void testSetName() {
         getReadOnlyConfig().setName("anyName");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSetReplicationDelayMillis() {
-        getReadOnlyConfig().setReplicationDelayMillis(23);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSetConcurrencyLevel() {
-        getReadOnlyConfig().setConcurrencyLevel(42);
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -77,13 +62,8 @@ public class ReplicatedMapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testSetQuorumName() {
-        getReadOnlyConfig().setQuorumName("myQuorum");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSetMergePolicy() {
-        getReadOnlyConfig().setMergePolicy("MyMergePolicy");
+    public void testSetSplitBrainProtectionName() {
+        getReadOnlyConfig().setSplitBrainProtectionName("mySplitBrainProtection");
     }
 
     @Test(expected = UnsupportedOperationException.class)

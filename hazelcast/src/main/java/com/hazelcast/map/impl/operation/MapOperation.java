@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -32,10 +34,8 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.List;
@@ -62,11 +62,6 @@ public abstract class MapOperation extends AbstractNamedOperation
     protected transient boolean createRecordStoreOnDemand = true;
     protected transient boolean disposeDeferredBlocks = true;
 
-    /**
-     * Used by wan-replication-service to disable wan-replication event publishing
-     * otherwise in active-active scenarios infinite loop of event forwarding can be seen.
-     */
-    protected boolean disableWanReplicationEvent;
     private transient boolean canPublishWanEvent;
 
     public MapOperation() {
@@ -149,7 +144,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     protected final CallerProvenance getCallerProvenance() {
-        return disableWanReplicationEvent ? CallerProvenance.WAN : CallerProvenance.NOT_WAN;
+        return disableWanReplicationEvent() ? CallerProvenance.WAN : CallerProvenance.NOT_WAN;
     }
 
     private RecordStore getRecordStoreOrNull() {
@@ -204,7 +199,7 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     private boolean canPublishWanEvent(MapContainer mapContainer) {
         boolean canPublishWanEvent = mapContainer.isWanReplicationEnabled()
-                && !disableWanReplicationEvent;
+                && !disableWanReplicationEvent();
 
         if (canPublishWanEvent) {
             mapContainer.getWanReplicationPublisher().checkWanReplicationQueues();
@@ -336,5 +331,9 @@ public abstract class MapOperation extends AbstractNamedOperation
         }
 
         mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
+    }
+
+    protected boolean disableWanReplicationEvent() {
+        return false;
     }
 }

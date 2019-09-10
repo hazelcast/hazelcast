@@ -21,7 +21,8 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 
@@ -30,9 +31,8 @@ import java.util.concurrent.Executor;
 /**
  * AbstractPartitionMessageTask
  */
-public abstract class AbstractPartitionMessageTask<P>
-        extends AbstractMessageTask<P>
-        implements ExecutionCallback, Executor {
+public abstract class AbstractPartitionMessageTask<P> extends AbstractMessageTask<P>
+        implements ExecutionCallback, Executor, PartitionSpecificRunnable {
 
     protected AbstractPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -54,6 +54,11 @@ public abstract class AbstractPartitionMessageTask<P>
      * Called on node side, after sending the response to the client.
      */
     protected void afterResponse() {
+    }
+
+    @Override
+    public int getPartitionId() {
+        return clientMessage.getPartitionId();
     }
 
     @Override

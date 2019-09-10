@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

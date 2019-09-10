@@ -20,7 +20,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -29,12 +29,14 @@ import com.hazelcast.ringbuffer.impl.operations.AddOperation;
 import com.hazelcast.ringbuffer.impl.operations.GenericOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReadOneOperation;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
@@ -58,8 +60,8 @@ import static java.lang.String.format;
 public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferService> implements Ringbuffer<E> {
 
     /**
-     * The maximum number of items that can be retrieved in 1 go using the {@link #readManyAsync(long, int, int, IFunction)}
-     * method.
+     * The maximum number of items that can be retrieved in 1 go using the
+     * {@link #readManyAsync(long, int, int, IFunction)} method.
      */
     public static final int MAX_BATCH_SIZE = 1000;
 
@@ -90,7 +92,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
 
     @Override
     public long capacity() {
-        getService().ensureQuorumPresent(name, QuorumType.READ);
+        getService().ensureNoSplitBrain(name, SplitBrainProtectionOn.READ);
         return config.getCapacity();
     }
 
@@ -123,7 +125,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         // we don't need to make a remote call if ttl is not set since in this case the remaining
         // capacity will always be equal to the capacity.
         if (config.getTimeToLiveSeconds() == 0) {
-            getService().ensureQuorumPresent(name, QuorumType.READ);
+            getService().ensureNoSplitBrain(name, SplitBrainProtectionOn.READ);
             return config.getCapacity();
         }
 
@@ -134,7 +136,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
     }
 
     @Override
-    public long add(E item) {
+    public long add(@Nonnull E item) {
         checkNotNull(item, "item can't be null");
 
         Operation op = new AddOperation(name, toData(item), OVERWRITE)
@@ -144,7 +146,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
     }
 
     @Override
-    public ICompletableFuture<Long> addAsync(E item, OverflowPolicy overflowPolicy) {
+    public ICompletableFuture<Long> addAsync(@Nonnull E item, @Nonnull OverflowPolicy overflowPolicy) {
         checkNotNull(item, "item can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
 
@@ -168,7 +170,8 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
     }
 
     @Override
-    public ICompletableFuture<Long> addAllAsync(Collection<? extends E> collection, OverflowPolicy overflowPolicy) {
+    public ICompletableFuture<Long> addAllAsync(@Nonnull Collection<? extends E> collection,
+                                                @Nonnull OverflowPolicy overflowPolicy) {
         checkNotNull(collection, "collection can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
         checkFalse(collection.isEmpty(), "collection can't be empty");
@@ -178,8 +181,8 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
                 .setPartitionId(partitionId);
         OperationService operationService = getOperationService();
         return operationService.createInvocationBuilder(null, op, partitionId)
-                .setCallTimeout(Long.MAX_VALUE)
-                .invoke();
+                               .setCallTimeout(Long.MAX_VALUE)
+                               .invoke();
     }
 
     private Data[] toDataArray(Collection<? extends E> collection) {
@@ -195,19 +198,19 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
 
     @Override
     public ICompletableFuture<ReadResultSet<E>> readManyAsync(long startSequence, int minCount, int maxCount,
-                                                              IFunction<E, Boolean> filter) {
+                                                              @Nullable IFunction<E, Boolean> filter) {
         checkSequence(startSequence);
         checkNotNegative(minCount, "minCount can't be smaller than 0");
         checkTrue(maxCount >= minCount, "maxCount should be equal or larger than minCount");
         checkTrue(maxCount <= config.getCapacity(), "the maxCount should be smaller than or equal to the capacity");
         checkTrue(maxCount <= MAX_BATCH_SIZE, "maxCount can't be larger than " + MAX_BATCH_SIZE);
 
-        Operation op = new ReadManyOperation<E>(name, startSequence, minCount, maxCount, filter)
+        Operation op = new ReadManyOperation<>(name, startSequence, minCount, maxCount, filter)
                 .setPartitionId(partitionId);
         OperationService operationService = getOperationService();
         return operationService.createInvocationBuilder(null, op, partitionId)
-                .setCallTimeout(Long.MAX_VALUE)
-                .invoke();
+                               .setCallTimeout(Long.MAX_VALUE)
+                               .invoke();
     }
 
     private static void checkSequence(long sequence) {

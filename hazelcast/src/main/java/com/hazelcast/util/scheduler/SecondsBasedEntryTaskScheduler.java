@@ -16,17 +16,17 @@
 
 package com.hazelcast.util.scheduler;
 
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -50,11 +50,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
 
     /**
-     * hash-map initial capacity
-     */
-    public static final int INITIAL_CAPACITY = 10;
-
-    /**
      * @see #ceilToSecond(long)
      */
     public static final double FACTOR = 1000d;
@@ -73,16 +68,11 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
         }
     };
 
-    /**
-     * Map of keys to duration between this class being loaded and the time the key is scheduled
-     */
-    private final Map<Object, Integer> secondsOfKeys = new HashMap<Object, Integer>(1000);
-    /**
-     * Map from duration (see {@link #findRelativeSecond(long)} to scheduled key to scheduled entry map.
-     */
-    private final Map<Integer, Map<Object, ScheduledEntry<K, V>>> scheduledEntries
-            = new HashMap<Integer, Map<Object, ScheduledEntry<K, V>>>(1000);
-    private final Map<Integer, ScheduledFuture> scheduledTaskMap = new HashMap<Integer, ScheduledFuture>(1000);
+    /** Map from entry key to the scheduler responsible for this key */
+    private HashMap<K, PerKeyScheduler> keys = new HashMap<>();
+    /** Map from second to the group of entries to be processed in this second */
+    private HashMap<Integer, ScheduledGroup> groups = new HashMap<>();
+
     private final AtomicLong uniqueIdGenerator = new AtomicLong();
     private final Object mutex = new Object();
 
@@ -99,303 +89,301 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
 
     @Override
     public boolean schedule(long delayMillis, K key, V value) {
-        if (scheduleType.equals(ScheduleType.POSTPONE)) {
-            return schedulePostponeEntry(delayMillis, key, value);
-        } else if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-            return scheduleEntry(delayMillis, key, value);
-        }
-        throw new RuntimeException("Undefined schedule type.");
-    }
-
-    private boolean schedulePostponeEntry(long delayMillis, K key, V value) {
         int delaySeconds = ceilToSecond(delayMillis);
-        Integer newSecond = findRelativeSecond(delayMillis);
+        int second = findRelativeSecond(delayMillis);
+        long id = uniqueIdGenerator.incrementAndGet();
         synchronized (mutex) {
-            Integer existingSecond = secondsOfKeys.put(key, newSecond);
-            if (existingSecond != null) {
-                if (existingSecond.equals(newSecond)) {
-                    return false;
+            ScheduledEntry<K, V> entry = new ScheduledEntry<>(key, value, delayMillis, delaySeconds, id);
+            PerKeyScheduler keyScheduler = keys.get(key);
+            if (keyScheduler == null) {
+                switch (scheduleType) {
+                    case POSTPONE: keyScheduler = new PerKeyPostponeScheduler(key); break;
+                    case FOR_EACH: keyScheduler = new PerKeyForEachScheduler(key); break;
+                    default: throw new RuntimeException("Undefined schedule type.");
                 }
-                removeKeyFromSecond(key, existingSecond);
+                keys.put(key, keyScheduler);
             }
-            long id = uniqueIdGenerator.incrementAndGet();
-            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id);
-            doSchedule(key, scheduledEntry, newSecond);
+            ScheduledGroup group = groups.get(second);
+            if (group == null) {
+                Runnable groupExecutor = () -> executeGroup(second);
+                ScheduledFuture executorFuture = taskScheduler.schedule(groupExecutor, delaySeconds, TimeUnit.SECONDS);
+                group = new ScheduledGroup(second, executorFuture);
+                groups.put(second, group);
+            }
+            return keyScheduler.schedule(entry, group);
         }
-        return true;
     }
 
-    private boolean scheduleEntry(long delayMillis, K key, V value) {
-        int delaySeconds = ceilToSecond(delayMillis);
-        Integer newSecond = findRelativeSecond(delayMillis);
+    private void executeGroup(int second) {
+        List<ScheduledEntry<K, V>> entries;
         synchronized (mutex) {
-            long id = uniqueIdGenerator.incrementAndGet();
-            Object compositeKey = new CompositeKey(key, id);
-            secondsOfKeys.put(compositeKey, newSecond);
-            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id);
-            doSchedule(compositeKey, scheduledEntry, newSecond);
+            ScheduledGroup group = groups.remove(second);
+            if (group == null) {
+                // group removed in meantime
+                return;
+            }
+            entries = new ArrayList<>(group.listEntries());
+            for (ScheduledEntry<K, V> entry : entries) {
+                keys.get(entry.getKey()).executed(entry);
+            }
         }
-        return true;
+        entries.sort(SCHEDULED_ENTRIES_COMPARATOR);
+        entryProcessor.process(this, entries);
     }
 
-    private void doSchedule(Object mapKey, ScheduledEntry<K, V> entry, Integer second) {
-        Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-        boolean shouldSchedule = false;
-        if (entries == null) {
-            entries = new HashMap<Object, ScheduledEntry<K, V>>(INITIAL_CAPACITY);
-            scheduledEntries.put(second, entries);
-
-            // we created the second
-            // so we will schedule its execution
-            shouldSchedule = true;
-        }
-        entries.put(mapKey, entry);
-        if (shouldSchedule) {
-            schedule(second, entry.getActualDelaySeconds());
+    @Override
+    public ScheduledEntry<K, V> get(K key) {
+        synchronized (mutex) {
+            PerKeyScheduler keyScheduler = keys.get(key);
+            return keyScheduler != null ? keyScheduler.get() : null;
         }
     }
 
     @Override
     public ScheduledEntry<K, V> cancel(K key) {
         synchronized (mutex) {
-            if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-                return cancelByCompositeKey(key);
-            }
-            Integer second = secondsOfKeys.remove(key);
-            if (second == null) {
-                return null;
-            }
-            Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-            if (entries == null) {
-                return null;
-            }
-            return cancelAndCleanUpIfEmpty(second, entries, key);
+            PerKeyScheduler keyScheduler = keys.get(key);
+            return keyScheduler != null ? keyScheduler.cancel() : null;
         }
     }
 
     @Override
     public int cancelIfExists(K key, V value) {
         synchronized (mutex) {
-            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, 0, 0, 0);
-
-            if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-                return cancelByCompositeKey(key, scheduledEntry);
-            }
-
-            Integer second = secondsOfKeys.remove(key);
-            if (second == null) {
-                return 0;
-            }
-            Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-            if (entries == null) {
-                return 0;
-            }
-
-            return cancelAndCleanUpIfEmpty(second, entries, key, scheduledEntry) ? 1 : 0;
+            PerKeyScheduler keyScheduler = keys.get(key);
+            return keyScheduler != null ? keyScheduler.cancelIfExists(value) : 0;
         }
     }
 
-    // in the case of composite keys this method will return only one scheduled entry with no ordering guarantee
+    /**
+     * Decides how to schedule entries for a given key, and keeps track of what have been scheduled for the key.
+     */
+    private abstract class PerKeyScheduler {
+        abstract boolean schedule(ScheduledEntry<K, V> entry, ScheduledGroup group);
+        abstract ScheduledEntry<K, V> get();
+        abstract ScheduledEntry<K, V> cancel();
+        abstract int cancelIfExists(V value);
+        abstract void executed(ScheduledEntry<K, V> entry);
+    }
+
+    /**
+     * Manages scheduling where there should be just one entry per key, and any subsequent scheduling request
+     * for this key just postpones the execution, according to the delay specified in new request.
+     * @see ScheduleType#POSTPONE
+     */
+    private final class PerKeyPostponeScheduler extends PerKeyScheduler {
+        final K key;
+        Long id;
+        ScheduledGroup group;
+
+        PerKeyPostponeScheduler(K key) {
+            this.key = key;
+        }
+
+        boolean schedule(ScheduledEntry<K, V> newEntry, ScheduledGroup newGroup) {
+            if (newGroup == group) {
+                // no reschedule if in the same second
+                return false;
+            }
+            if (group != null) {
+                // unschedule previous entry
+                group.removeEntry(id);
+            }
+            id = newEntry.getScheduleId();
+            group = newGroup;
+            newGroup.addEntry(id, newEntry);
+            return true;
+        }
+
+        ScheduledEntry<K, V> get() {
+            return group.getEntry(id);
+        }
+
+        ScheduledEntry<K, V> cancel() {
+            ScheduledEntry<K, V> entry = group.removeEntry(id);
+            keys.remove(key);
+            return entry;
+        }
+
+        int cancelIfExists(V value) {
+            ScheduledEntry<K, V> entry = group.getEntry(id);
+            if (Objects.equals(entry.getValue(), value)) {
+                group.removeEntry(id);
+                keys.remove(key);
+                return 1;
+            }
+            return 0;
+        }
+
+        void executed(ScheduledEntry<K, V> entry) {
+            assert entry.getScheduleId() == id;
+            // no need to remove entry from group, whole group is being executed and will be removed
+            keys.remove(key);
+        }
+    }
+
+    /**
+     * Manages scheduling where each scheduled entry for given key should be executed when its time comes.
+     * @see ScheduleType#FOR_EACH
+     */
+    private final class PerKeyForEachScheduler extends PerKeyScheduler {
+        final K key;
+        final Map<Long, ScheduledGroup> idToGroupMap = new HashMap<>();
+
+        PerKeyForEachScheduler(K key) {
+            this.key = key;
+        }
+
+        boolean schedule(ScheduledEntry<K, V> entry, ScheduledGroup group) {
+            Long id = entry.getScheduleId();
+            idToGroupMap.put(id, group);
+            group.addEntry(id, entry);
+            return true;
+        }
+
+        ScheduledEntry<K, V> get() {
+            ScheduledEntry<K, V> entry = null;
+            for (Map.Entry<Long, ScheduledGroup> idToGroup : idToGroupMap.entrySet()) {
+                Long id = idToGroup.getKey();
+                ScheduledGroup group = idToGroup.getValue();
+                entry = group.getEntry(id);
+            }
+            assert entry != null;
+            return entry;
+        }
+
+        ScheduledEntry<K, V> cancel() {
+            ScheduledEntry<K, V> entry = null;
+            for (Map.Entry<Long, ScheduledGroup> idToGroup : idToGroupMap.entrySet()) {
+                Long id = idToGroup.getKey();
+                ScheduledGroup group = idToGroup.getValue();
+                entry = group.removeEntry(id);
+            }
+            keys.remove(key);
+            assert entry != null;
+            return entry;
+        }
+
+        int cancelIfExists(V value) {
+            int cancelled = 0;
+            Iterator<Map.Entry<Long, ScheduledGroup>> iterator = idToGroupMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<Long, ScheduledGroup> idToGroup = iterator.next();
+                Long id = idToGroup.getKey();
+                ScheduledGroup group = idToGroup.getValue();
+                ScheduledEntry<K, V> entry = group.getEntry(id);
+                if (Objects.equals(entry.getValue(), value)) {
+                    group.removeEntry(id);
+                    iterator.remove();
+                    cancelled++;
+                }
+            }
+            if (idToGroupMap.isEmpty()) {
+                keys.remove(key);
+            }
+            return cancelled;
+        }
+
+        void executed(ScheduledEntry<K, V> entry) {
+            idToGroupMap.remove(entry.getScheduleId());
+            // no need to remove entry from group, whole group is being executed and will be removed
+            if (idToGroupMap.isEmpty()) {
+                keys.remove(key);
+            }
+        }
+    }
+
+    /**
+     * Group of entries scheduled for execution in the same second.
+     */
+    private final class ScheduledGroup {
+        final int second;
+        final ScheduledFuture executor;
+        final Map<Long, ScheduledEntry<K, V>> idToEntryMap = new HashMap<>();
+
+        private ScheduledGroup(int second, ScheduledFuture executor) {
+            this.second = second;
+            this.executor = executor;
+        }
+
+        private void addEntry(Long id, ScheduledEntry<K, V> entry) {
+            idToEntryMap.put(id, entry);
+        }
+
+        private ScheduledEntry<K, V> getEntry(Long id) {
+            return idToEntryMap.get(id);
+        }
+
+        private Collection<ScheduledEntry<K, V>> listEntries() {
+            return idToEntryMap.values();
+        }
+
+        private int countEntries() {
+            return idToEntryMap.size();
+        }
+
+        private ScheduledEntry<K, V> removeEntry(Long id) {
+            ScheduledEntry<K, V> entry = idToEntryMap.remove(id);
+            if (idToEntryMap.isEmpty()) {
+                executor.cancel(false);
+                groups.remove(second);
+            }
+            return entry;
+        }
+    }
+
     @Override
-    public ScheduledEntry<K, V> get(K key) {
-        synchronized (mutex) {
-            if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-                return getByCompositeKey(key);
-            }
-            Integer second = secondsOfKeys.get(key);
-            if (second != null) {
-                Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-                if (entries != null) {
-                    return entries.get(key);
-                }
-            }
-            return null;
-        }
-    }
-
-    private ScheduledEntry<K, V> cancelByCompositeKey(K key) {
-        Set<CompositeKey> candidateKeys = getCompositeKeys(key);
-
-        ScheduledEntry<K, V> result = null;
-        for (CompositeKey compositeKey : candidateKeys) {
-            Integer second = secondsOfKeys.remove(compositeKey);
-            if (second == null) {
-                continue;
-            }
-            Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-            if (entries == null) {
-                continue;
-            }
-            result = cancelAndCleanUpIfEmpty(second, entries, compositeKey);
-        }
-        return result;
-    }
-
-    private int cancelByCompositeKey(K key, ScheduledEntry<K, V> entryToRemove) {
-        int cancelled = 0;
-        for (CompositeKey compositeKey : getCompositeKeys(key)) {
-            Integer second = secondsOfKeys.remove(compositeKey);
-            if (second == null) {
-                continue;
-            }
-            Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-            if (entries == null) {
-                continue;
-            }
-
-            if (cancelAndCleanUpIfEmpty(second, entries, compositeKey, entryToRemove)) {
-                cancelled++;
-            }
-        }
-        return cancelled;
-    }
-
-    /**
-     * Return all composite keys with the given {@code key}
-     */
-    private Set<CompositeKey> getCompositeKeys(K key) {
-        Set<CompositeKey> candidateKeys = new HashSet<CompositeKey>();
-        for (Object keyObj : secondsOfKeys.keySet()) {
-            CompositeKey compositeKey = (CompositeKey) keyObj;
-            if (compositeKey.getKey().equals(key)) {
-                candidateKeys.add(compositeKey);
-            }
-        }
-        return candidateKeys;
-    }
-
-    /**
-     * Returns one scheduled entry for the given {@code key} with no guaranteed ordering
-     */
-    public ScheduledEntry<K, V> getByCompositeKey(K key) {
-        Set<CompositeKey> candidateKeys = getCompositeKeys(key);
-        ScheduledEntry<K, V> result = null;
-        for (CompositeKey compositeKey : candidateKeys) {
-            Integer second = secondsOfKeys.get(compositeKey);
-            if (second != null) {
-                Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-                if (entries != null) {
-                    result = entries.get(compositeKey);
-                }
-            }
-        }
-        return result;
-    }
-
-    private void removeKeyFromSecond(Object key, Integer existingSecond) {
-        Map<Object, ScheduledEntry<K, V>> scheduledKeys = scheduledEntries.get(existingSecond);
-        if (scheduledKeys != null) {
-            cancelAndCleanUpIfEmpty(existingSecond, scheduledKeys, key);
-        }
-    }
-
-    /**
-     * Removes the entry from being scheduled to be evicted.
-     * <p>
-     * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
-     * <p>
-     * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
-     * <p>
-     * Returns associated scheduled entry.
-     *
-     * @param second  second at which this entry was scheduled to be evicted
-     * @param entries entries which were already scheduled to be evicted for this second
-     * @param key     entry key
-     * @return associated scheduled entry
-     */
-    private ScheduledEntry<K, V> cancelAndCleanUpIfEmpty(Integer second, Map<Object, ScheduledEntry<K, V>> entries, Object key) {
-        ScheduledEntry<K, V> result = entries.remove(key);
-        cleanUpScheduledFuturesIfEmpty(second, entries);
-        return result;
-    }
-
-    /**
-     * Removes the entry if it exists from being scheduled to be evicted.
-     * <p>
-     * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
-     * <p>
-     * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
-     * <p>
-     * Returns associated scheduled entry.
-     *
-     * @param second        second at which this entry was scheduled to be evicted
-     * @param entries       entries which were already scheduled to be evicted for this second
-     * @param key           entry key
-     * @param entryToRemove entry value that is expected to exist in the map
-     * @return true if entryToRemove exists in the map and removed
-     */
-    private boolean cancelAndCleanUpIfEmpty(Integer second, Map<Object, ScheduledEntry<K, V>> entries, Object key,
-                                            ScheduledEntry<K, V> entryToRemove) {
-        ScheduledEntry<K, V> entry = entries.get(key);
-        if (entry == null || !entry.equals(entryToRemove)) {
-            return false;
-        }
-        entries.remove(key);
-        cleanUpScheduledFuturesIfEmpty(second, entries);
-        return true;
-    }
-
-    /**
-     * Cancels the scheduled future and removes the entries map for the given second If no entries are left
-     * <p>
-     * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
-     * <p>
-     * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
-     *
-     * @param second  second at which this entry was scheduled to be evicted
-     * @param entries entries which were already scheduled to be evicted for this second
-     */
-    private void cleanUpScheduledFuturesIfEmpty(Integer second, Map<Object, ScheduledEntry<K, V>> entries) {
-        if (entries.isEmpty()) {
-            scheduledEntries.remove(second);
-
-            ScheduledFuture removedFeature = scheduledTaskMap.remove(second);
-            if (removedFeature != null) {
-                removedFeature.cancel(false);
-            }
-        }
-    }
-
-    private void schedule(Integer second, int delaySeconds) {
-        EntryProcessorExecutor command = new EntryProcessorExecutor(second);
-        ScheduledFuture scheduledFuture = taskScheduler.schedule(command, delaySeconds, TimeUnit.SECONDS);
-        scheduledTaskMap.put(second, scheduledFuture);
-    }
-
     public void cancelAll() {
         synchronized (mutex) {
-            secondsOfKeys.clear();
-            scheduledEntries.clear();
-            for (ScheduledFuture task : scheduledTaskMap.values()) {
-                task.cancel(false);
+            for (ScheduledGroup group : groups.values()) {
+                group.executor.cancel(false);
             }
-            scheduledTaskMap.clear();
+            groups.clear();
+            keys.clear();
         }
     }
 
     @Override
     public String toString() {
         return "EntryTaskScheduler{"
-                + "secondsOfKeys="
-                + secondsOfKeys.size()
-                + ", scheduledEntries ["
-                + scheduledEntries.size()
-                + "] ="
-                + scheduledEntries.keySet()
+                + "numberOfEntries="
+                + size()
+                + ", numberOfKeys="
+                + keys.size()
+                + ", numberOfGroups="
+                + groups.size()
                 + '}';
     }
 
-    // just for testing
-    public int size() {
+    /**
+     * Returns number of scheduled entries.
+     */
+    // exposed for testing
+    int size() {
         synchronized (mutex) {
-            return secondsOfKeys.size();
+            int size = 0;
+            for (ScheduledGroup group : groups.values()) {
+                size += group.countEntries();
+            }
+            return size;
+        }
+    }
+
+    /**
+     * Returns {@code true} if there are no scheduled entries.
+     */
+    // exposed for testing
+    public boolean isEmpty() {
+        synchronized (mutex) {
+            // check every collection for emptiness to make sure no memory is leaking
+            return groups.isEmpty() && keys.isEmpty();
         }
     }
 
     /**
      * Returns the duration in seconds between the time this class was loaded and now+{@code delayMillis}
      */
-    // package private for testing
+    // exposed for testing
     static int findRelativeSecond(long delayMillis) {
         long now = Clock.currentTimeMillis();
         long d = (now + delayMillis - INITIAL_TIME_MILLIS);
@@ -404,43 +392,5 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
 
     private static int ceilToSecond(long delayMillis) {
         return (int) Math.ceil(delayMillis / FACTOR);
-    }
-
-    private static <K, V> List<ScheduledEntry<K, V>> sortForEntryProcessing(List<ScheduledEntry<K, V>> coll) {
-        if (coll == null || coll.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Collections.sort(coll, SCHEDULED_ENTRIES_COMPARATOR);
-        return coll;
-    }
-
-    private final class EntryProcessorExecutor implements Runnable {
-        private final Integer second;
-
-        private EntryProcessorExecutor(Integer second) {
-            this.second = second;
-        }
-
-        @Override
-        public void run() {
-            List<ScheduledEntry<K, V>> values;
-            synchronized (mutex) {
-                scheduledTaskMap.remove(second);
-                Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
-                if (entries == null || entries.isEmpty()) {
-                    return;
-                }
-                values = new ArrayList<ScheduledEntry<K, V>>(entries.size());
-                for (Map.Entry<Object, ScheduledEntry<K, V>> entry : entries.entrySet()) {
-                    Integer removed = secondsOfKeys.remove(entry.getKey());
-                    if (removed != null) {
-                        values.add(entry.getValue());
-                    }
-                }
-            }
-            //sort entries asc by schedule times and send to processor.
-            entryProcessor.process(SecondsBasedEntryTaskScheduler.this, sortForEntryProcessing(values));
-        }
     }
 }

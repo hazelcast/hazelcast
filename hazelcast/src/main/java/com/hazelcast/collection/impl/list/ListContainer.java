@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.collection.TxCollectionItem;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.ArrayList;
 import java.util.HashMap;

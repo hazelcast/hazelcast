@@ -56,8 +56,7 @@ public class AddSetConfigMessageTask
                     adaptListenerConfigs(parameters.listenerConfigs);
             config.setItemListenerConfigs(itemListenerConfigs);
         }
-        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
-                parameters.mergeBatchSize);
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         config.setMergePolicyConfig(mergePolicyConfig);
         return config;
     }

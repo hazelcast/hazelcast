@@ -22,9 +22,9 @@ import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.operations
 import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.ExecutionException;
