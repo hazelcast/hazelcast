@@ -263,6 +263,23 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
+    public MapConfig addIndexConfig(IndexConfig indexConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public List<IndexConfig> getIndexConfigs() {
+        List<IndexConfig> configs = super.getIndexConfigs();
+        List<IndexConfig> res = new ArrayList<>(configs.size());
+
+        for (IndexConfig config : configs) {
+            res.add(config.getAsReadOnly());
+        }
+
+        return Collections.unmodifiableList(res);
+    }
+
+    @Override
     public MapConfig setIndexConfigs(List<IndexConfig> indexConfigs) {
         throw throwReadOnly();
     }

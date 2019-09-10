@@ -36,6 +36,8 @@ public class IndexColumn implements IdentifiedDataSerializable {
     /** Whether the attribute is sorted in ascending order. */
     protected boolean asc = DEFAULT_ASC;
 
+    private transient IndexColumnReadOnly readOnly;
+
     public IndexColumn() {
         // No-op.
     }
@@ -78,6 +80,19 @@ public class IndexColumn implements IdentifiedDataSerializable {
 
     public boolean isAscending() {
         return asc;
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
+     */
+    public IndexColumn getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new IndexColumnReadOnly(this);
+        }
+        return readOnly;
     }
 
     @Override

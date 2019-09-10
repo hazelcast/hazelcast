@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 // TODO 15265: Checklist https://github.com/hazelcast/hazelcast/issues/11913
-// TODO 15265: Read-only classes
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -51,6 +50,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
     /** Indexed columns. */
     private List<IndexColumn> columns;
+
+    private transient IndexConfigReadOnly readOnly;
 
     public IndexConfig() {
         // No-op.
@@ -174,6 +175,19 @@ public class IndexConfig implements IdentifiedDataSerializable {
         this.columns = columns;
 
         return this;
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
+     */
+    public IndexConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new IndexConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     @Override
