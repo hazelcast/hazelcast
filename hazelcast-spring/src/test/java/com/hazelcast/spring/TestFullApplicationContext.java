@@ -339,9 +339,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2, testMapConfig.getIndexConfigs().size());
         for (IndexConfig index : testMapConfig.getIndexConfigs()) {
             if ("name".equals(index.getColumns().get(0).getName())) {
-                assertFalse(index.getType() == IndexType.SORTED);
+                assertEquals(IndexType.HASH, index.getType());
+                assertNull(index.getName());
             } else if ("age".equals(index.getColumns().get(0).getName())) {
-                assertTrue(index.getType() == IndexType.SORTED);
+                assertEquals(IndexType.SORTED, index.getType());
+                assertEquals("sortedIndex", index.getName());
+                assertEquals("name", index.getColumns().get(1).getName());
             } else {
                 fail("unknown index!");
             }

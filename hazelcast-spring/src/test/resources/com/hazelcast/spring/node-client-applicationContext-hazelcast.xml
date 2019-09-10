@@ -233,6 +233,12 @@
                             <hz:column>name</hz:column>
                         </hz:columns>
                     </hz:index>
+                    <hz:index name="sortedIndex">
+                        <hz:columns>
+                            <hz:column>age</hz:column>
+                            <hz:column>name</hz:column>
+                        </hz:columns>
+                    </hz:index>
                 </hz:indexes>
             </hz:query-cache>
         </hz:query-caches>
