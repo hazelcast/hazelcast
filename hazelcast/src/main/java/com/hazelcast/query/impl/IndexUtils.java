@@ -21,13 +21,13 @@ import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.IndexColumn;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.util.UuidUtil;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.config.DomConfigHelper.childElements;
@@ -43,6 +43,10 @@ public final class IndexUtils {
     /** Pattern to stripe away "this." prefix. */
     private static final Pattern THIS_PATTERN = Pattern.compile("^this\\.");
 
+    private IndexUtils() {
+        // No-op.
+    }
+
     /**
      * Validate provided index config and normalize it's name and attribute names.
      *
@@ -51,6 +55,7 @@ public final class IndexUtils {
      * @return Normalized index config.
      * @throws IllegalArgumentException If index configuration is invalid.
      */
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public static IndexConfig validateAndNormalize(String mapName, IndexConfig config) {
         assert config != null;
 
@@ -62,8 +67,8 @@ public final class IndexUtils {
         }
 
         if (originalAttributeNames.size() > MAX_ATTRIBUTES) {
-            throw new IllegalArgumentException("Index cannot have more than " + MAX_ATTRIBUTES +
-                " attributes: " + config);
+            throw new IllegalArgumentException("Index cannot have more than " + MAX_ATTRIBUTES
+                + " attributes: " + config);
         }
 
         List<String> normalizedAttributeNames = new ArrayList<>(originalAttributeNames.size());
@@ -80,8 +85,8 @@ public final class IndexUtils {
             }
 
             if (originalAttributeName.endsWith(".")) {
-                throw new IllegalArgumentException("Invalid attribute name [config=" + config +
-                    ", attribute=" + originalAttributeName + ']');
+                throw new IllegalArgumentException("Invalid attribute name [config=" + config
+                    + ", attribute=" + originalAttributeName + ']');
             }
 
             String normalizedAttributeName = canonicalizeAttribute(originalAttributeName);
@@ -94,13 +99,12 @@ public final class IndexUtils {
                 String duplicateOriginalAttributeName = originalAttributeNames.get(existingIdx);
 
                 if (duplicateOriginalAttributeName.equals(originalAttributeName)) {
-                    throw new IllegalArgumentException("Duplicate attribute name [config=" + config +
-                        ", attribute=" + originalAttributeName + ']');
-                }
-                else {
-                    throw new IllegalArgumentException("Duplicated attribute names [config=" + config +
-                        ", attribute1=" + duplicateOriginalAttributeName +
-                        ", attribute2=" + originalAttributeName + ']');
+                    throw new IllegalArgumentException("Duplicate attribute name [config=" + config
+                        + ", attribute=" + originalAttributeName + ']');
+                } else {
+                    throw new IllegalArgumentException("Duplicated attribute names [config=" + config
+                        + ", attribute1=" + duplicateOriginalAttributeName + ", attribute2=" + originalAttributeName
+                        + ']');
                 }
             }
 
@@ -121,8 +125,8 @@ public final class IndexUtils {
         List<String> normalizedAttributeNames) {
         IndexConfig newConfig = new IndexConfig().setType(indexType);
 
-        StringBuilder nameBuilder = indexName == null ?
-            new StringBuilder(mapName + (indexType == IndexType.SORTED ? "_sorted" : "_hash")) : null;
+        StringBuilder nameBuilder = indexName == null
+            ? new StringBuilder(mapName + (indexType == IndexType.SORTED ? "_sorted" : "_hash")) : null;
 
         for (String newColumnName : normalizedAttributeNames) {
             newConfig.addColumn(newColumnName);
@@ -200,19 +204,19 @@ public final class IndexUtils {
             res.addColumn(attribute);
         }
 
-        return validateAndNormalize(UUID.randomUUID().toString(), res);
+        return validateAndNormalize(UuidUtil.newUnsecureUUID().toString(), res);
     }
 
     public static void generateXml(ConfigXmlGenerator.XmlGenerator gen, List<IndexConfig> indexConfigs) {
-        if (indexConfigs.isEmpty())
+        if (indexConfigs.isEmpty()) {
             return;
+        }
 
         gen.open("indexes");
         for (IndexConfig indexCfg : indexConfigs) {
             if (indexCfg.getName() != null) {
                 gen.open("index", "name", indexCfg.getName(), "type", indexCfg.getType().name());
-            }
-            else {
+            } else {
                 gen.open("index", "type", indexCfg.getType().name());
             }
 
@@ -259,18 +263,17 @@ public final class IndexUtils {
     }
 
     public static IndexType getIndexTypeFromXmlName(String typeStr) {
-        if (typeStr == null || typeStr.isEmpty())
+        if (typeStr == null || typeStr.isEmpty()) {
             typeStr = IndexConfig.DEFAULT_TYPE.name();
+        }
 
         typeStr = typeStr.toLowerCase();
 
         if (typeStr.equals(IndexType.SORTED.name().toLowerCase())) {
             return IndexType.SORTED;
-        }
-        else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
+        } else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
             return IndexType.HASH;
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("Unsupported index type: " + typeStr);
         }
     }
@@ -296,11 +299,9 @@ public final class IndexUtils {
 
         if (typeStr.equals(IndexType.SORTED.name().toLowerCase())) {
             type = IndexType.SORTED;
-        }
-        else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
+        } else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
             type = IndexType.HASH;
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("Unsupported index type: " + typeStr);
         }
 
@@ -315,9 +316,5 @@ public final class IndexUtils {
         }
 
         return res;
-    }
-
-    private IndexUtils() {
-        // No-op.
     }
 }

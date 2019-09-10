@@ -56,8 +56,9 @@ public class MapIndexInfo implements IdentifiedDataSerializable {
         out.writeUTF(mapName);
         out.writeInt(indexConfigs.size());
 
-        for (IndexConfig indexConfig : indexConfigs)
+        for (IndexConfig indexConfig : indexConfigs) {
             out.writeObject(indexConfig);
+        }
     }
 
     @Override

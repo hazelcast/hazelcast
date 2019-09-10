@@ -88,7 +88,7 @@ public final class ConverterCache {
         cache.clear();
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:returncount"})
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
     private TypeConverter tryResolve(String attribute, UnresolvedConverter unresolved) {
         // The main idea here is to avoid scanning indexes on every invocation.
         // Unresolved converters are represented as UnresolvedConverter instances

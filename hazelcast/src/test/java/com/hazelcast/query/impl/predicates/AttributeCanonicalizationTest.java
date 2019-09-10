@@ -111,8 +111,7 @@ public class AttributeCanonicalizationTest {
 
         if (indexType == IndexType.SORTED) {
             expName.append("_sorted");
-        }
-        else {
+        } else {
             expName.append("_hash");
         }
 

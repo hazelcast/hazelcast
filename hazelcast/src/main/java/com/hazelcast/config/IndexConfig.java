@@ -181,8 +181,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public IndexConfig setColumns(List<IndexColumn> columns) {
         if (columns == null || columns.isEmpty()) {
             columns = null;
-        }
-        else {
+        } else {
             columns = new ArrayList<>(columns);
         }
 

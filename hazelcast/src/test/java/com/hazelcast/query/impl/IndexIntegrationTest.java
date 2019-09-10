@@ -227,8 +227,9 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
             Indexes indexes = mapContainer.getIndexes(partitionId);
 
             for (InternalIndex index : indexes.getIndexes()) {
-                if (index.getComponents().contains(IndexUtils.canonicalizeAttribute(attribute)))
+                if (index.getComponents().contains(IndexUtils.canonicalizeAttribute(attribute))) {
                     result.add(index);
+                }
             }
         }
         return result;

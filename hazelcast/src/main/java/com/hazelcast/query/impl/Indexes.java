@@ -166,8 +166,9 @@ public class Indexes {
      * indexes.
      */
     public void createIndexesFromRecordedDefinitions(StoreAdapter partitionStoreAdapter) {
-        for (Map.Entry<String, IndexConfig> definition : definitions.entrySet())
+        for (Map.Entry<String, IndexConfig> definition : definitions.entrySet()) {
             addOrGetIndex(definition.getValue(), partitionStoreAdapter);
+        }
 
         definitions.clear();
     }

@@ -1337,8 +1337,7 @@ abstract class MapProxySupport<K, V>
 
             operationService.invokeOnAllPartitions(SERVICE_NAME,
                 new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             throw rethrow(t);
         }
     }
