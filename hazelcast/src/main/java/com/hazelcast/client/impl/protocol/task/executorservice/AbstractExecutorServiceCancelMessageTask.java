@@ -17,16 +17,14 @@
 package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
 
-public abstract class AbstractExecutorServiceCancelMessageTask<P> extends AbstractCallableMessageTask<P>
-        implements BlockingMessageTask {
+public abstract class AbstractExecutorServiceCancelMessageTask<P> extends AbstractPartitionMessageTask<P> {
 
     public AbstractExecutorServiceCancelMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

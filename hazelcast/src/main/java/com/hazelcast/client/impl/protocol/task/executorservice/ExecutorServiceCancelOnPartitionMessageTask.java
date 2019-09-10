@@ -18,9 +18,10 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
-import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.Operation;
 
 public class ExecutorServiceCancelOnPartitionMessageTask
         extends AbstractExecutorServiceCancelMessageTask<ExecutorServiceCancelOnPartitionCodec.RequestParameters> {
@@ -30,16 +31,14 @@ public class ExecutorServiceCancelOnPartitionMessageTask
     }
 
     @Override
-    protected Object call() throws Exception {
-        DistributedExecutorService service = getService(getServiceName());
-        return service.cancel(parameters.uuid, parameters.interrupt);
+    protected Operation prepareOperation() {
+        return new CancellationOperation(parameters.uuid, parameters.interrupt);
     }
 
     @Override
     protected ExecutorServiceCancelOnPartitionCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return ExecutorServiceCancelOnPartitionCodec.decodeRequest(clientMessage);
     }
-
 
     protected ClientMessage encodeResponse(Object response) {
         return ExecutorServiceCancelOnPartitionCodec.encodeResponse((Boolean) response);
