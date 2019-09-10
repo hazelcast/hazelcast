@@ -58,6 +58,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.function.ComparatorEx.naturalOrder;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
@@ -267,7 +268,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                     )
                     .append(entry(broadcastKey(Keys.NEXT_WIN_TO_EMIT), nextWinToEmit))
                     .onFirstNull(() -> {
-                        logFine(getLogger(), "Saved nextWinToEmit: %s", nextWinToEmit);
+                        logFinest(getLogger(), "Saved nextWinToEmit: %s", nextWinToEmit);
                         snapshotTraverser = null;
                     });
         }

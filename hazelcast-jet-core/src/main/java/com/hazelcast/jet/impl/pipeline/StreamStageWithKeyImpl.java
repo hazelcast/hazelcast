@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.pipeline;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
@@ -31,7 +30,6 @@ import com.hazelcast.jet.pipeline.StreamStageWithKey;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
 public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> implements StreamStageWithKey<T, K> {
@@ -49,30 +47,48 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     }
 
     @Nonnull @Override
-    public <S, R> StreamStage<Entry<K, R>> mapStateful(
+    public <S, R> StreamStage<R> mapStateful(
             long ttl,
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
-        return attachMapStateful(ttl, createFn, mapFn);
+        return attachMapStateful(ttl, createFn, mapFn, onEvictFn);
     }
 
     @Nonnull @Override
-    public <S> StreamStage<Entry<K, T>> filterStateful(
+    public <S, R> StreamStage<R> mapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
+    ) {
+        return attachMapStateful(0, createFn, mapFn, null);
+    }
+
+    @Nonnull @Override
+    public <S> StreamStage<T> filterStateful(
             long ttl,
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
-        return attachMapStateful(ttl, createFn, (s, t) -> filterFn.test(s, t) ? t : null);
+        return attachMapStateful(ttl, createFn, (s, k, t) -> filterFn.test(s, t) ? t : null, null);
     }
 
     @Nonnull @Override
-    public <S, R> StreamStage<Entry<K, R>> flatMapStateful(
+    public <S, R> StreamStage<R> flatMapStateful(
             long ttl,
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
-        return attachFlatMapStateful(ttl, createFn, flatMapFn);
+        return attachFlatMapStateful(ttl, createFn, flatMapFn, onEvictFn);
+    }
+
+    @Nonnull @Override
+    public <S, R> StreamStage<R> flatMapStateful(
+            @Nonnull SupplierEx<? extends S> createFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
+    ) {
+        return attachFlatMapStateful(0, createFn, flatMapFn, null);
     }
 
     @Nonnull @Override

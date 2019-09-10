@@ -19,6 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -98,7 +99,9 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      *
      * @param flatMapFn a stateless flatmapping function, whose result type is
-     *                  Jet's {@link Traverser}
+     *                  Jet's {@link Traverser}. It must not return null
+     *                  traverser, but can return an {@linkplain
+     *                  Traversers#empty() empty traverser}.
      * @param <R> the type of items in the result's traversers
      * @return the newly attached stage
      */
@@ -112,14 +115,25 @@ public interface GeneralStage<T> extends Stage {
      * createFn} returns the object that holds the state. Jet passes this
      * object along with each input item to {@code mapFn}, which can update
      * the object's state. The state object will be included in the state
-     * snapshot, so it survives job restarts. For this reason the object must
-     * be serializable.
+     * snapshot, so it survives job restarts. For this reason it must be
+     * serializable.
      * <p>
-     * Sample usage:
-     * <pre>{<code
+     * This sample takes a stream of {@code long} numbers representing request
+     * latencies and outputs the cumulative latency of all requests so far:
+     * <pre>{@code
+     * StreamStage<Long> cumulativeLatency = latencies.mapStateful(
+     *         LongAccumulator::new,
+     *         (sum, latency) -> {
+     *             sum.add(latency);
+     *             return sum.get();
+     *         }
+     * );
+     * }</pre>
+     * This code has the same result as {@link #rollingAggregate
+     * latencies.rollingAggregate(summing())}.
      *
-     * @param createFn the function that returns the state object
-     * @param mapFn    the function that receives the state object and the input item and
+     * @param createFn function that returns the state object
+     * @param mapFn    function that receives the state object and the input item and
      *                 outputs the result item. It may modify the state object.
      * @param <S>      type of the state object
      * @param <R>      type of the result
@@ -135,14 +149,22 @@ public interface GeneralStage<T> extends Stage {
      * createFn} returns the object that holds the state. Jet passes this
      * object along with each input item to {@code filterFn}, which can update
      * the object's state. The state object will be included in the state
-     * snapshot, so it survives job restarts. For this reason the object must
-     * be serializable.
+     * snapshot, so it survives job restarts. For this reason it must be
+     * serializable.
      * <p>
-     * Sample usage:
-     * <pre>{<code
+     * This sample decimates the input (throws out every 10th item):
+     * <pre>{@code
+     * GeneralStage<String> decimated = input.filterStateful(
+     *         LongAccumulator::new,
+     *         (counter, item) -> {
+     *             counter.add(1);
+     *             return counter.get() % 10 != 0;
+     *         }
+     * );
+     * }</pre>
      *
-     * @param createFn the function that returns the state object
-     * @param filterFn the function that receives the state object and the input item and
+     * @param createFn function that returns the state object
+     * @param filterFn function that receives the state object and the input item and
      *                 produces the boolean result. It may modify the state object.
      * @param <S>      type of the state object
      */
@@ -157,15 +179,28 @@ public interface GeneralStage<T> extends Stage {
      * createFn} returns the object that holds the state. Jet passes this
      * object along with each input item to {@code flatMapFn}, which can update
      * the object's state. The state object will be included in the state
-     * snapshot, so it survives job restarts. For this reason the object must
-     * be serializable.
+     * snapshot, so it survives job restarts. For this reason it must be
+     * serializable.
      * <p>
-     * Sample usage:
-     * <pre>{<code
+     * This sample inserts a punctuation mark (a special string) after every
+     * 10th input string:
+     * <pre>{@code
+     * GeneralStage<String> punctuated = input.flatMapStateful(
+     *         LongAccumulator::new,
+     *         (counter, item) -> {
+     *             counter.add(1);
+     *             return counter.get() % 10 == 0
+     *                     ? Traversers.traverseItems("punctuation", item)
+     *                     : Traversers.singleton(item);
+     *         }
+     * );
+     * }</pre>
      *
-     * @param createFn  the function that returns the state object
-     * @param flatMapFn the function that receives the state object and the input item and
-     *                  outputs the result items. It may modify the state object.
+     * @param createFn  function that returns the state object
+     * @param flatMapFn function that receives the state object and the input item and
+     *                  outputs the result items. It may modify the state
+     *                  object. It must not return null traverser, but can
+     *                  return an {@linkplain Traversers#empty() empty traverser}.
      * @param <S>       type of the state object
      * @param <R>       type of the result
      */
@@ -398,8 +433,9 @@ public interface GeneralStage<T> extends Stage {
      * duplicate updates.
      *
      * @param contextFactory the context factory
-     * @param flatMapFn a stateless flatmapping function, whose result type is
-     *                  Jet's {@link Traverser}
+     * @param flatMapFn a stateless flatmapping function, whose result type is Jet's {@link
+     *                  Traverser}. It must not return null traverser, but can return an
+     *                  {@linkplain Traversers#empty() empty traverser}.
      * @param <C> type of context object
      * @param <R> the type of items in the result's traversers
      * @return the newly attached stage
@@ -443,7 +479,9 @@ public interface GeneralStage<T> extends Stage {
      *
      * @param contextFactory the context factory
      * @param flatMapAsyncFn a stateless flatmapping function. Can map to null
-     *      (return a null future)
+     *      (return a null future). The future must not return a null
+     *      traverser, but can return an {@linkplain Traversers#empty() empty
+     *      traverser}.
      * @param <C> type of context object
      * @param <R> the type of the returned stage
      * @return the newly attached stage

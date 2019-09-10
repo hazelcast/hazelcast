@@ -415,9 +415,9 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         BatchStage<Entry<Integer, Long>> stage = batchStageFromList(input)
                 .groupingKey(i -> i % 2)
-                .mapStateful(LongAccumulator::new, (acc, i) -> {
+                .mapStateful(LongAccumulator::new, (acc, k, i) -> {
                     acc.add(i);
-                    return acc.get();
+                    return entry(k, acc.get());
                 });
 
         // Then
@@ -442,9 +442,9 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         BatchStage<Entry<Integer, Long>> stage = batchStageFromList(input)
                 .groupingKey(i -> i % 2)
-                .mapStateful(LongAccumulator::new, (acc, i) -> {
+                .mapStateful(LongAccumulator::new, (acc, k, i) -> {
                     acc.addAllowingOverflow(1);
-                    return (acc.get() == input.size() / 2) ? acc.get() : null;
+                    return (acc.get() == input.size() / 2) ? entry(k, acc.get()) : null;
                 });
 
         // Then
@@ -487,7 +487,7 @@ public class BatchStageTest extends PipelineTestSupport {
         List<Integer> input = sequence(itemCount);
 
         // When
-        BatchStage<Entry<Integer, Integer>> stage = batchStageFromList(input)
+        BatchStage<Integer> stage = batchStageFromList(input)
                 .groupingKey(i -> i % 2)
                 .filterStateful(LongAccumulator::new, (acc, i) -> {
                     acc.add(i);
@@ -497,20 +497,20 @@ public class BatchStageTest extends PipelineTestSupport {
         // Then
         stage.drainTo(sink);
         execute();
-        Function<Entry<Integer, Integer>, String> formatFn = e ->
-                String.format("%d %04d", e.getKey(), e.getValue());
+        Function<Integer, String> formatFn = i -> String.format("%d %04d", i % 2, i);
         assertEquals(
                 streamToString(
                         input.stream()
                              .map(i -> {
-                                 int key = i % 2;
-                                 long n = i / 2 + 1;
-                                 long sum = (key + i) * n / 2;
-                                 return sum % 2 == 0 ? entry(key, i) : null;
+                                 // Using direct formula to sum the sequence of even/odd numbers:
+                                 int first = i % 2;
+                                 long count = i / 2 + 1;
+                                 long sum = (first + i) * count / 2;
+                                 return sum % 2 == 0 ? i : null;
                              })
                              .filter(Objects::nonNull),
                         formatFn),
-                streamToString(sinkStreamOfEntry(), formatFn)
+                streamToString(sinkStreamOf(Integer.class), formatFn)
         );
     }
 
@@ -566,9 +566,9 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         BatchStage<Entry<Integer, Long>> stage = batchStageFromList(input)
                 .groupingKey(i -> i % 2)
-                .flatMapStateful(LongAccumulator::new, (acc, i) -> {
+                .flatMapStateful(LongAccumulator::new, (acc, k, i) -> {
                     acc.add(i);
-                    return traverseItems(acc.get(), acc.get());
+                    return traverseItems(entry(k, acc.get()), entry(k, acc.get()));
                 });
 
         // Then

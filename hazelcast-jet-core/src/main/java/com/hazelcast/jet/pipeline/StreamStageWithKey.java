@@ -18,12 +18,14 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
@@ -33,6 +35,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+
+import static com.hazelcast.jet.Util.entry;
 
 /**
  * An intermediate step while constructing a pieline transform that
@@ -60,41 +64,63 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * object along with each input item to {@code mapFn}, which can update
      * the object's state. For each grouping key there's a separate state
      * object. The state object will be included in the state snapshot, so it
-     * survives job restarts. For this reason the object must be serializable.
+     * survives job restarts. For this reason it must be serializable.
      * <p>
      * If the given {@code ttl} is greater than zero, Jet will consider the
-     * state object stale if its time-to-live has expired. The state object
-     * has a timestamp attached to it: the top timestamp of any event with the
-     * same key seen so far. Upon seeing another event, Jet compares the state
-     * timestamp with the current watermark. If it is less than {@code wm - ttl},
-     * it discards the state object and creates a new one before processing the
-     * event.
+     * state object stale if its time-to-live has expired. The state object for
+     * a given key has a timestamp attached to it: the top timestamp of any
+     * event with that key seen so far. Whenever the watermark advances, Jet
+     * discards all state objects with a timestamp less than {@code wm - ttl}.
+     * Just before discarding the state object, Jet calls {@code onEvictFn} on
+     * it. The function can return an output item that will be emitted, or
+     * {@code null} if it doesn't need to emit an item. If TTL is used, Jet
+     * also drops late events; otherwise, all events are processed.
      * <p>
-     * Sample usage:
-     * <pre>{<code
-     *
+     * This sample takes a stream of pairs {@code (serverId, latency)}
+     * representing the latencies of serving individual requests and keeps
+     * track, separately for each server, of the total latency accumulated over
+     * individual sessions &mdash; bursts of server activity separated
+     * by quiet periods of one minute or more. For each input item it outputs
+     * the accumulated latency so far and when a session ends, it outputs a
+     * special entry that reports the total latency for that session.
+     * <pre>{@code
+     * StreamStage<Entry<String, Long>> latencies = null;
+     * StreamStage<Entry<String, Long>> cumulativeLatencies = latencies
+     *         .groupingKey(Entry::getKey)
+     *         .mapStateful(
+     *                 MINUTES.toMillis(1),
+     *                 LongAccumulator::new,
+     *                 (sum, key, entry) -> {
+     *                     sum.add(entry.getValue());
+     *                     return entry(key, sum.get());
+     *                 },
+     *                 (sum, key, time) -> entry(String.format(
+     *                         "%s:totalForSession:%d", key, time), sum.get())
+     *         );
      * }</pre>
      *
-     * @param createFn the function that returns the state object
-     * @param mapFn    the function that receives the state object and the input item and
-     *                 outputs the result item. It may modify the state object.
-     * @param <S>      type of the state object
-     * @param <R>      type of the result
+     * @param ttl        time-to-live for each state object, disabled if zero or less
+     * @param createFn   function that returns the state object
+     * @param mapFn      function that receives the state object and the input item and
+     *                   outputs the result item. It may modify the state object.
+     * @param onEvictFn  function that Jet calls when evicting a state object
+     *
+     * @param <S>        type of the state object
+     * @param <R>        type of the result
      */
     @Nonnull
-    <S, R> StreamStage<Entry<K, R>> mapStateful(
+    <S, R> StreamStage<R> mapStateful(
             long ttl,
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     );
 
     @Nonnull @Override
-    default <S, R> StreamStage<Entry<K, R>> mapStateful(
+    <S, R> StreamStage<R> mapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
-    ) {
-        return mapStateful(0, createFn, mapFn);
-    }
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
+    );
 
     /**
      * Attaches a stage that performs a stateful filtering operation. {@code
@@ -102,7 +128,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * object along with each input item to {@code filterFn}, which can update
      * the object's state. For each grouping key there's a separate state
      * object. The state object will be included in the state snapshot, so it
-     * survives job restarts. For this reason the object must be serializable.
+     * survives job restarts. For this reason it must be serializable.
      * <p>
      * If the given {@code ttl} is greater than zero, Jet will consider the
      * state object stale if its time-to-live has expired. The state object
@@ -110,27 +136,45 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * same key seen so far. Upon seeing another event, Jet compares the state
      * timestamp with the current watermark. If it is less than {@code wm - ttl},
      * it discards the state object and creates a new one before processing the
-     * event.
+     * event. If TTL is used, Jet also drops late events; otherwise, all events
+     * are processed.
      * <p>
-     * Sample usage:
-     * <pre>{<code
-     *
+     * This sample receives a stream of pairs {@code (serverId, requestLatency)}
+     * that represent the latencies of individual requests served by a cluster
+     * of servers. It emits the record-breaking (worst so far) latencies for
+     * each server independently and resets the score after one minute of
+     * inactivity on a given server.
+     * <pre>{@code
+     * StreamStage<Entry<String, Long>> latencies;
+     * StreamStage<Entry<String, Long>> topLatencies = latencies
+     *         .groupingKey(Entry::getKey)
+     *         .filterStateful(
+     *                 MINUTES.toMillis(1),
+     *                 LongAccumulator::new,
+     *                 (topLatencyState, entry) -> {
+     *                     long currLatency = entry.getValue();
+     *                     long topLatency = topLatencyState.get();
+     *                     topLatencyState.set(Math.max(currLatency, topLatency));
+     *                     return currLatency > topLatency;
+     *                 }
+     *         );
      * }</pre>
      *
-     * @param createFn the function that returns the state object
+     * @param ttl      time-to-live for each state object, disabled if zero or less
+     * @param createFn function that returns the state object
      * @param filterFn predicate that receives the state object and the input item and
      *                 outputs a boolean value. It may modify the state object.
      * @param <S>      type of the state object
      */
     @Nonnull
-    <S> StreamStage<Entry<K, T>> filterStateful(
+    <S> StreamStage<T> filterStateful(
             long ttl,
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     );
 
     @Nonnull @Override
-    default <S> StreamStage<Entry<K, T>> filterStateful(
+    default <S> StreamStage<T> filterStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
@@ -143,41 +187,60 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * object along with each input item to {@code flatMapFn}, which can update
      * the object's state. For each grouping key there's a separate state
      * object. The state object will be included in the state snapshot, so it
-     * survives job restarts. For this reason the object must be serializable.
+     * survives job restarts. For this reason it must be serializable.
      * <p>
      * If the given {@code ttl} is greater than zero, Jet will consider the
-     * state object stale if its time-to-live has expired. The state object
-     * has a timestamp attached to it: the top timestamp of any event with the
-     * same key seen so far. Upon seeing another event, Jet compares the state
-     * timestamp with the current watermark. If it is less than {@code wm - ttl},
-     * it discards the state object and creates a new one before processing the
-     * event.
+     * state object stale if its time-to-live has expired. The state object for
+     * a given key has a timestamp attached to it: the top timestamp of any
+     * event with that key seen so far. Whenever the watermark advances, Jet
+     * discards all state objects with a timestamp less than {@code wm - ttl}.
+     * Just before discarding the state object, Jet calls {@code onEvictFn} on
+     * it. The function returns a traverser over the items it wants to emit, or
+     * it can return an {@linkplain Traversers#empty() empty traverser}. If TTL
+     * is used, Jet also drops late events; otherwise, all events are
+     * processed.
      * <p>
-     * Sample usage:
-     * <pre>{<code
-     *
+     * This sample groups a stream of strings by length and inserts punctuation
+     * (a special string) after every 10th string in each group, or after one
+     * minute elapses without further input for a given key:
+     * <pre>{@code
+     * StreamStage<String> punctuated = input
+     *         .groupingKey(String::length)
+     *         .flatMapStateful(
+     *                 MINUTES.toMillis(1),
+     *                 LongAccumulator::new,
+     *                 (counter, key, item) -> {
+     *                     counter.add(1);
+     *                     return counter.get() % 10 == 0
+     *                             ? Traversers.traverseItems("punctuation" + key, item)
+     *                             : Traversers.singleton(item);
+     *                 },
+     *                 (counter, key, wm) -> Traversers.singleton("punctuation" + key)
+     *         );
      * }</pre>
      *
-     * @param createFn the function that returns the state object
-     * @param flatMapFn the function that receives the state object and the input item and
-     *                  outputs the result items. It may modify the state object.
-     * @param <S>      type of the state object
-     * @param <R>      type of the result
+     * @param ttl        time-to-live for each state object, disabled if zero or less
+     * @param createFn   function that returns the state object
+     * @param flatMapFn  function that receives the state object and the input item and
+     *                   outputs the result items. It may modify the state object.
+     * @param onEvictFn  function that Jet calls when evicting a state object
+     *
+     * @param <S>        type of the state object
+     * @param <R>        type of the result
      */
     @Nonnull
-    <S, R> StreamStage<Entry<K, R>> flatMapStateful(
+    <S, R> StreamStage<R> flatMapStateful(
             long ttl,
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
+            @Nonnull TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     );
 
     @Nonnull @Override
-    default <S, R> StreamStage<Entry<K, R>> flatMapStateful(
+     <S, R> StreamStage<R> flatMapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
-    ) {
-        return flatMapStateful(0, createFn, flatMapFn);
-    }
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
+    );
 
     @Nonnull @Override
     default <A, R> StreamStage<Entry<K, R>> rollingAggregate(
@@ -193,14 +256,13 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * the accumulator and outputs the current result of aggregation (as
      * returned by the {@link AggregateOperation1#exportFn() export} primitive).
      * <p>
-     * Sample usage:
+     * This sample takes a stream of items and gives rolling counts of items of
+     * each color:
      * <pre>{@code
      * StreamStage<Entry<Color, Long>> aggregated = items
      *         .groupingKey(Item::getColor)
      *         .rollingAggregate(AggregateOperations.counting());
      * }</pre>
-     * For example, if your input is {@code {2, 7, 8, -5}}, the output will be
-     * {@code {2, 9, 17, 12}}.
      * <p>
      * If the given {@code ttl} is greater than zero, Jet will consider the
      * accumulator object stale if its time-to-live has expired. The
@@ -223,10 +285,11 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     ) {
         BiConsumer<? super A, ? super T> accumulateFn = aggrOp.accumulateFn();
         Function<? super A, ? extends R> exportFn = aggrOp.exportFn();
-        return mapStateful(ttl, aggrOp.createFn(), (acc, item) -> {
+        FunctionEx<? super T, ? extends K> keyFn = keyFn();
+        return mapStateful(ttl, aggrOp.createFn(), (acc, key, item) -> {
             accumulateFn.accept(acc, item);
-            return exportFn.apply(acc);
-        });
+            return entry(keyFn.apply(item), exportFn.apply(acc));
+        }, (state, key, wm) -> null);
     }
 
     @Nonnull @Override

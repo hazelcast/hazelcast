@@ -222,9 +222,10 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         int sessionLength = 4;
         int sessionTimeout = 2;
         // Sample input: [0, 1, 2, 3,   6, 7, 8, 9,   12, 13, 14, 15,  ...]
-        List<Integer> input = sequence(itemCount).stream()
-                                                 .map(ts -> ts + (ts / sessionLength) * sessionTimeout)
-                                                 .collect(toList());
+        List<Integer> input = sequence(itemCount / sessionLength * sessionLength)
+                .stream()
+                .map(ts -> ts + (ts / sessionLength) * sessionTimeout)
+                .collect(toList());
         BiFunction<Long, Long, String> formatFn = (timestamp, sum) -> String.format("(%04d, %04d)", timestamp, sum);
 
         // When

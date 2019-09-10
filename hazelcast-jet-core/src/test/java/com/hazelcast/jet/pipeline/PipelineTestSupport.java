@@ -26,8 +26,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
-import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.nio.Address;
 import org.junit.Before;
 
@@ -54,7 +54,7 @@ import static java.util.stream.Collectors.toMap;
 @SuppressWarnings("WeakerAccess")
 public abstract class PipelineTestSupport extends TestInClusterSupport {
 
-    protected int itemCount = 1_000;
+    protected int itemCount = 1024;
     protected final String srcName = journaledMapName();
     protected final String sinkName = randomName();
 

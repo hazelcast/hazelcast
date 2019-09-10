@@ -288,7 +288,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         final int sessionLength = 4;
         final int sessionTimeout = 2;
         WindowTestFixture fx = new WindowTestFixture(false);
-        fx.input = fx.input
+        fx.input = sequence(itemCount / sessionLength * sessionLength)
                 .stream()
                 .map(ts -> ts + (ts / sessionLength) * sessionTimeout)
                 .collect(toList());

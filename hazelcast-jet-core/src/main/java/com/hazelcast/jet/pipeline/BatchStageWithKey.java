@@ -65,21 +65,21 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     BatchStage<T> distinct();
 
     @Nonnull @Override
-    <S, R> BatchStage<Entry<K, R>> mapStateful(
+    <S, R> BatchStage<R> mapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     );
 
     @Nonnull @Override
-    <S> BatchStage<Entry<K, T>> filterStateful(
+    <S> BatchStage<T> filterStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     );
 
     @Nonnull @Override
-    <S, R> BatchStage<Entry<K, R>> flatMapStateful(
+    <S, R> BatchStage<R> flatMapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     );
 
     @Nonnull @Override

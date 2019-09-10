@@ -229,8 +229,8 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             snapshotTraverser = traverseStream(snapshotStream)
                     .onFirstNull(() -> {
                         snapshotTraverser = null;
-                        if (getLogger().isFineEnabled()) {
-                            getLogger().fine("Finished saving snapshot." +
+                        if (getLogger().isFinestEnabled()) {
+                            getLogger().finest("Finished saving snapshot." +
                                     " Saved offsets: " + offsets() + ", Saved watermarks: " + watermarks());
                         }
                     });

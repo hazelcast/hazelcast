@@ -23,7 +23,6 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
@@ -53,27 +52,27 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
     }
 
     @Nonnull @Override
-    public <S, R> BatchStage<Entry<K, R>> mapStateful(
+    public <S, R> BatchStage<R> mapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     ) {
-        return attachMapStateful(0, createFn, mapFn);
+        return attachMapStateful(0, createFn, mapFn, null);
     }
 
     @Nonnull @Override
-    public <S> BatchStage<Entry<K, T>> filterStateful(
+    public <S> BatchStage<T> filterStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
-        return attachMapStateful(0, createFn, (s, t) -> filterFn.test(s, t) ? t : null);
+        return attachMapStateful(0, createFn, (s, k, t) -> filterFn.test(s, t) ? t : null, null);
     }
 
     @Nonnull @Override
-    public <S, R> BatchStage<Entry<K, R>> flatMapStateful(
+    public <S, R> BatchStage<R> flatMapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
-        return attachFlatMapStateful(0, createFn, flatMapFn);
+        return attachFlatMapStateful(0, createFn, flatMapFn, null);
     }
 
     @Nonnull @Override

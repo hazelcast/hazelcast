@@ -62,6 +62,7 @@ import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
+import static java.lang.Math.min;
 import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
@@ -601,9 +602,9 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<Entry<Integer, Long>> stage = streamStageFromList(input)
                 .groupingKey(i -> i % 2)
-                .mapStateful(LongAccumulator::new, (acc, i) -> {
+                .mapStateful(LongAccumulator::new, (acc, k, i) -> {
                     acc.add(i);
-                    return acc.get();
+                    return entry(k, acc.get());
                 });
 
         // Then
@@ -621,6 +622,32 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
+    public void mapStateful_withEvictFn() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        int ttl = 1;
+        String evictedSignal = "evicted";
+
+        // When
+        StreamStage<Entry<Integer, String>> stage = streamStageFromList(input)
+                .groupingKey(i -> min(1, i))
+                .mapStateful(
+                        ttl,
+                        Object::new,
+                        (acc, k, i) -> null,
+                        (acc, k, wm) -> entry(k, evictedSignal));
+
+        // Then
+        stage.drainTo(sink);
+        execute();
+        Function<Entry<Integer, String>, String> formatFn = e -> String.format("%d %s", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(Stream.of(entry(0, evictedSignal)), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn)
+        );
+    }
+
+    @Test
     public void mapStateful_keyed_returningNull() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -628,10 +655,10 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<Entry<Integer, Long>> stage = streamStageFromList(input)
             .groupingKey(i -> i % 2)
-            .mapStateful(LongAccumulator::new, (acc, i) -> {
+            .mapStateful(LongAccumulator::new, (acc, k, i) -> {
                 acc.addAllowingOverflow(1);
                 if (acc.get() == input.size() / 2) {
-                    return acc.get();
+                    return entry(k, acc.get());
                 }
                 return null;
             });
@@ -676,7 +703,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         List<Integer> input = sequence(itemCount);
 
         // When
-        StreamStage<Entry<Integer, Integer>> stage = streamStageFromList(input)
+        StreamStage<Integer> stage = streamStageFromList(input)
                 .groupingKey(i -> i % 2)
                 .filterStateful(LongAccumulator::new, (acc, i) -> {
                     acc.add(i);
@@ -686,20 +713,20 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // Then
         stage.drainTo(sink);
         execute();
-        Function<Entry<Integer, Integer>, String> formatFn = e ->
-                String.format("%d %04d", e.getKey(), e.getValue());
+        Function<Integer, String> formatFn = i -> String.format("%d %04d", i % 2, i);
         assertEquals(
                 streamToString(
                         input.stream()
                              .map(i -> {
-                                 int key = i % 2;
-                                 long n = i / 2 + 1;
-                                 long sum = (key + i) * n / 2;
-                                 return sum % 2 == 0 ? entry(key, i) : null;
+                                 // Using direct formula to sum the sequence of even/odd numbers:
+                                 int first = i % 2;
+                                 long count = i / 2 + 1;
+                                 long sum = (first + i) * count / 2;
+                                 return sum % 2 == 0 ? i : null;
                              })
                              .filter(Objects::nonNull),
                         formatFn),
-                streamToString(sinkStreamOfEntry(), formatFn)
+                streamToString(sinkStreamOf(Integer.class), formatFn)
         );
     }
 
@@ -739,9 +766,9 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<Entry<Integer, Long>> stage = streamStageFromList(input)
                 .groupingKey(i -> i % 2)
-                .flatMapStateful(LongAccumulator::new, (acc, i) -> {
+                .flatMapStateful(LongAccumulator::new, (acc, k, i) -> {
                     acc.add(i);
-                    return traverseItems(acc.get(), acc.get());
+                    return traverseItems(entry(k, acc.get()), entry(k, acc.get()));
                 });
 
         // Then

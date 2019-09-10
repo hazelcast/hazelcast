@@ -52,6 +52,7 @@ import com.hazelcast.jet.impl.processor.TransformUsingContextP;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
@@ -724,7 +725,10 @@ public final class Processors {
      * <p>
      * This processor is stateless.
      *
-     * @param flatMapFn a stateless function that maps the received item to a traverser over output items
+     * @param flatMapFn a stateless function that maps the received item
+     *                 to a traverser over output items. It must not return
+     *                 null traverser, but can return an {@linkplain
+     *                 Traversers#empty() empty traverser}.
      * @param <T> received item type
      * @param <R> emitted item type
      */
@@ -761,29 +765,36 @@ public final class Processors {
      * @param <K>               type of the key
      * @param <S>               type of the state object
      * @param <R>               type of the mapping function's result
-     * @param <OUT>             type of the vertex's output
      */
     @Nonnull
-    public static <T, K, S, R, OUT> SupplierEx<Processor> mapStatefulP(
+    public static <T, K, S, R> SupplierEx<Processor> mapStatefulP(
             long ttl,
             @Nonnull FunctionEx<? super T, ? extends K> keyFn,
             @Nonnull ToLongFunctionEx<? super T> timestampFn,
             @Nonnull Supplier<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> statefulMapFn,
-            @Nonnull TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> statefulMapFn,
+            @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
         return () -> {
-            final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
-            return new TransformStatefulP<T, K, S, R, OUT>(
+            final ResettableSingletonTraverser<R> mainTrav = new ResettableSingletonTraverser<>();
+            final ResettableSingletonTraverser<R> evictTrav = new ResettableSingletonTraverser<>();
+            // SpotBugs bug: https://github.com/spotbugs/spotbugs/issues/844
+            @SuppressWarnings("UnnecessaryLocalVariable")
+            TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFnCopy = onEvictFn;
+            return new TransformStatefulP<T, K, S, R>(
                     ttl,
                     keyFn,
                     timestampFn,
                     createFn,
-                    (state, item) -> {
-                        trav.accept(statefulMapFn.apply(state, item));
-                        return trav;
+                    (state, key, item) -> {
+                        mainTrav.accept(statefulMapFn.apply(state, key, item));
+                        return mainTrav;
                     },
-                    mapToOutputFn);
+                    onEvictFnCopy != null ? (s, k, wm) -> {
+                        evictTrav.accept(onEvictFnCopy.apply(s, k, wm));
+                        return evictTrav;
+                    } : null
+            );
         };
     }
 
@@ -812,24 +823,24 @@ public final class Processors {
      * @param <K>               type of the key
      * @param <S>               type of the state object
      * @param <R>               type of the mapping function's result
-     * @param <OUT>             type of the vertex's output
      */
     @Nonnull
-    public static <T, K, S, R, OUT> SupplierEx<Processor> flatMapStatefulP(
+    public static <T, K, S, R> SupplierEx<Processor> flatMapStatefulP(
             long ttl,
             @Nonnull FunctionEx<? super T, ? extends K> keyFn,
             @Nonnull ToLongFunctionEx<? super T> timestampFn,
             @Nonnull Supplier<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> statefulFlatMapFn,
-            @Nonnull TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> statefulFlatMapFn,
+            @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
-        return () -> new TransformStatefulP<T, K, S, R, OUT>(
+        return () -> new TransformStatefulP<>(
                 ttl,
                 keyFn,
                 timestampFn,
                 createFn,
                 statefulFlatMapFn,
-                mapToOutputFn);
+                onEvictFn
+        );
     }
 
     /**

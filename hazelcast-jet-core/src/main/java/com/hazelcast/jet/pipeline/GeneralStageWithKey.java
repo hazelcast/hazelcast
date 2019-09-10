@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -35,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.toCompletableFuture;
 
 /**
@@ -58,39 +60,62 @@ public interface GeneralStageWithKey<T, K> {
     /**
      * Attaches a stage that performs a stateful mapping operation. {@code
      * createFn} returns the object that holds the state. Jet passes this
-     * object along with each input item to {@code mapFn}, which can update
-     * the object's state. For each grouping key there's a separate state
-     * object. The state object will be included in the state snapshot, so it
-     * survives job restarts. For this reason the object must be serializable.
+     * object along with each input item and its key to {@code mapFn}, which
+     * can update the object's state. For each grouping key there's a separate
+     * state object. The state object will be included in the state snapshot,
+     * so it survives job restarts. For this reason it must be serializable.
      * <p>
-     * Sample usage:
-     * <pre>{<code
-     *
+     * This sample takes a stream of pairs {@code (serverId, latency)}
+     * representing the latencies of serving individual requests and outputs
+     * the cumulative latency of all handled requests so far, for each
+     * server separately:
+     * <pre>{@code
+     * GeneralStage<Entry<String, Long>> latencies;
+     * GeneralStage<Entry<String, Long>> cumulativeLatencies = latencies
+     *         .groupingKey(Entry::getKey)
+     *         .mapStateful(
+     *                 LongAccumulator::new,
+     *                 (sum, key, entry) -> {
+     *                     sum.add(entry.getValue());
+     *                     return entry(key, sum.get());
+     *                 }
+     *         );
      * }</pre>
+     * This code has the same result as {@link #rollingAggregate
+     * latencies.groupingKey(Entry::getKey).rollingAggregate(summing())}.
      *
-     * @param createFn the function that returns the state object
-     * @param mapFn    the function that receives the state object and the input item and
+     * @param createFn function that returns the state object
+     * @param mapFn    function that receives the state object and the input item and
      *                 outputs the result item. It may modify the state object.
      * @param <S>      type of the state object
      * @param <R>      type of the result
      */
     @Nonnull
-    <S, R> GeneralStage<Entry<K, R>> mapStateful(
+    <S, R> GeneralStage<R> mapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     );
 
     /**
      * Attaches a stage that performs a stateful filtering operation. {@code
      * createFn} returns the object that holds the state. Jet passes this
-     * object along with each input item to {@code filterFn}, which can update
-     * the object's state. For each grouping key there's a separate state
-     * object. The state object will be included in the state snapshot, so it
-     * survives job restarts. For this reason the object must be serializable.
+     * object along with each input item and its key to {@code filterFn}, which
+     * can update the object's state. For each grouping key there's a separate
+     * state object. The state object will be included in the state snapshot,
+     * so it survives job restarts. For this reason it must be serializable.
      * <p>
-     * Sample usage:
-     * <pre>{<code
-     *
+     * This sample groups a stream of strings by length and decimates each
+     * group (throws out every 10th string of each length):
+     * <pre>{@code
+     * GeneralStage<String> decimated = input
+     *         .groupingKey(String::length)
+     *         .filterStateful(
+     *                 LongAccumulator::new,
+     *                 (counter, item) -> {
+     *                     counter.add(1);
+     *                     return counter.get() % 10 != 0;
+     *                 }
+     *         );
      * }</pre>
      *
      * @param createFn function that returns the state object
@@ -99,7 +124,7 @@ public interface GeneralStageWithKey<T, K> {
      * @param <S>      type of the state object
      */
     @Nonnull
-    <S> GeneralStage<Entry<K, T>> filterStateful(
+    <S> GeneralStage<T> filterStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     );
@@ -107,26 +132,40 @@ public interface GeneralStageWithKey<T, K> {
     /**
      * Attaches a stage that performs a stateful flat-mapping operation. {@code
      * createFn} returns the object that holds the state. Jet passes this
-     * object along with each input item to {@code flatMapFn}, which can update
-     * the object's state. For each grouping key there's a separate state
-     * object. The state object will be included in the state snapshot, so it
-     * survives job restarts. For this reason the object must be serializable.
+     * object along with each input item and its key to {@code flatMapFn},
+     * which can update the object's state. For each grouping key there's a
+     * separate state object. The state object will be included in the state
+     * snapshot, so it survives job restarts. For this reason it must be
+     * serializable.
      * <p>
-     * Sample usage:
-     * <pre>{<code
-     *
+     * This sample groups a stream of strings by length and inserts punctuation
+     * (a special string) after every 10th string in each group:
+     * <pre>{@code
+     * GeneralStage<String> punctuated = input
+     *         .groupingKey(String::length)
+     *         .flatMapStateful(
+     *                 LongAccumulator::new,
+     *                 (counter, key, item) -> {
+     *                     counter.add(1);
+     *                     return counter.get() % 10 == 0
+     *                             ? Traversers.traverseItems("punctuation" + key, item)
+     *                             : Traversers.singleton(item);
+     *                 }
+     *         );
      * }</pre>
      *
-     * @param createFn  the function that returns the state object
-     * @param flatMapFn the function that receives the state object and the input item and
-     *                  outputs the result items. It may modify the state object.
+     * @param createFn  function that returns the state object
+     * @param flatMapFn function that receives the state object and the input item and
+     *                  outputs the result items. It may modify the state
+     *                  object. It must not return null traverser, but can
+     *                  return an {@linkplain Traversers#empty() empty traverser}.
      * @param <S>       type of the state object
      * @param <R>       type of the result
      */
     @Nonnull
-    <S, R> GeneralStage<Entry<K, R>> flatMapStateful(
+    <S, R> GeneralStage<R> flatMapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     );
 
     /**
@@ -157,9 +196,9 @@ public interface GeneralStageWithKey<T, K> {
     ) {
         BiConsumer<? super A, ? super T> accumulateFn = aggrOp.accumulateFn();
         Function<? super A, ? extends R> exportFn = aggrOp.exportFn();
-        return mapStateful(aggrOp.createFn(), (acc, item) -> {
+        return mapStateful(aggrOp.createFn(), (acc, key, item) -> {
             accumulateFn.accept(acc, item);
-            return exportFn.apply(acc);
+            return entry(key, exportFn.apply(acc));
         });
     }
 
@@ -349,7 +388,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param <C> type of context object
      * @param <R> type of the output items
      * @param contextFactory the context factory
-     * @param flatMapFn a stateless flatmapping function
+     * @param flatMapFn a stateless flatmapping function. It must not return
+     *                 null traverser, but can return an {@linkplain
+     *                 Traversers#empty() empty traverser}.
      * @return the newly attached stage
      */
     @Nonnull
@@ -384,7 +425,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param <R> the type of the returned stage
      * @param contextFactory the context factory
      * @param flatMapAsyncFn a stateless flatmapping function. Can map to null
-     *      (return a null future)
+     *                      (return a null future), but the future must not
+     *                      return null traverser, but can return an {@linkplain
+     *                      Traversers#empty() empty traverser}.
      * @return the newly attached stage
      */
     @Nonnull

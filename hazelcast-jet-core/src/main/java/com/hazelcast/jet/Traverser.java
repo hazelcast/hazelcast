@@ -95,6 +95,9 @@ public interface Traverser<T> {
      * Returns a traverser that will apply the given mapping function to each
      * item retrieved from this traverser and emit all the items from the
      * resulting traversers, which must be <em>null-terminated</em>.
+     * <p>
+     * The function must not return null traverser, but can return an {@linkplain
+     * Traversers#empty() empty traverser}.
      */
     @Nonnull
     @CheckReturnValue
