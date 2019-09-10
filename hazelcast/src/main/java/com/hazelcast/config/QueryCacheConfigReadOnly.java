@@ -106,4 +106,26 @@ class QueryCacheConfigReadOnly extends QueryCacheConfig {
     public QueryCacheConfig setCoalesce(boolean coalesce) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
+
+    @Override
+    public QueryCacheConfig addIndexConfig(IndexConfig indexConfig) {
+        throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+    }
+
+    @Override
+    public List<IndexConfig> getIndexConfigs() {
+        List<IndexConfig> configs = super.getIndexConfigs();
+        List<IndexConfig> res = new ArrayList<>(configs.size());
+
+        for (IndexConfig config : configs) {
+            res.add(config.getAsReadOnly());
+        }
+
+        return Collections.unmodifiableList(res);
+    }
+
+    @Override
+    public QueryCacheConfig setIndexConfigs(List<IndexConfig> indexConfigs) {
+        throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+    }
 }
