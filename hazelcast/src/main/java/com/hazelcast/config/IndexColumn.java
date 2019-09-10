@@ -80,6 +80,13 @@ public class IndexColumn implements IdentifiedDataSerializable {
         return asc;
     }
 
+    public IndexColumn setAscending(boolean asc) {
+        // TODO 15265: Do not allow false at the moment.
+        this.asc = asc;
+
+        return this;
+    }
+
     /**
      * Gets immutable version of this configuration.
      *

@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.IndexColumn;
-import com.hazelcast.map.impl.IndexColumnInternal;
 import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
@@ -59,6 +58,6 @@ public final class IndexColumnCodec {
 
         fastForwardToEndFrame(iterator);
 
-        return new IndexColumn(new IndexColumnInternal().setAsc(asc).setName(column));
+        return new IndexColumn(new IndexColumn().setAscending(asc).setName(column));
     }
 }

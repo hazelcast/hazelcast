@@ -103,12 +103,16 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
 
     protected Config addIndexConfig(Config config) {
         config.getMapConfig("default")
-                .addIndexConfig(new IndexConfig(IndexType.SORTED, "longValue"))
-                .addIndexConfig(new IndexConfig(IndexType.SORTED, "doubleValue"))
-                .addIndexConfig(new IndexConfig(IndexType.SORTED, "nestedObject.nestedLongValue"))
-                .addIndexConfig(new IndexConfig(IndexType.SORTED, "stringValue"))
-                .addIndexConfig(new IndexConfig(IndexType.SORTED, "stringValueArray"));
+                .addIndexConfig(sortedIndexConfig("longValue"))
+                .addIndexConfig(sortedIndexConfig("doubleValue"))
+                .addIndexConfig(sortedIndexConfig("nestedObject.nestedLongValue"))
+                .addIndexConfig(sortedIndexConfig("stringValue"))
+                .addIndexConfig(sortedIndexConfig("stringValueArray"));
         return config;
+    }
+
+    private static IndexConfig sortedIndexConfig(String attribute) {
+        return new IndexConfig(IndexType.SORTED, attribute).setName(attribute);
     }
 
     @Test

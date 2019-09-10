@@ -134,8 +134,8 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         instances[0] = instanceFactory.newHazelcastInstance(config);
         IMap<Integer, Book> bookMap = instances[0].getMap(mapName);
         fillMap(bookMap);
-        bookMap.addIndex("author", false);
-        bookMap.addIndex("year", true);
+        bookMap.addIndex(getIndexConfig("author", false));
+        bookMap.addIndex(getIndexConfig("year", true));
         assertEquals(BOOK_COUNT, bookMap.size());
 
         // THEN indexes are migrated and populated on all members
@@ -267,8 +267,8 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     private HazelcastInstance createNode(TestHazelcastInstanceFactory instanceFactory) {
         Config config = getConfig().setProperty(GroupProperty.PARTITION_COUNT.getName(), "4");
         config.getMapConfig(mapName)
-              .addIndexConfig(new IndexConfig(IndexType.HASH, "author"))
-              .addIndexConfig(new IndexConfig(IndexType.SORTED, "year"))
+              .addIndexConfig(getIndexConfig("author", false))
+              .addIndexConfig(getIndexConfig("year", true))
               .setBackupCount(1);
         return instanceFactory.newHazelcastInstance(config);
     }
@@ -360,5 +360,9 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
     private static String getAuthorNameByKey(int key) {
         return String.valueOf(key % 7);
+    }
+
+    private static IndexConfig getIndexConfig(String attribute, boolean ordered) {
+        return new IndexConfig(ordered ? IndexType.SORTED : IndexType.HASH, attribute).setName(attribute);
     }
 }
