@@ -126,7 +126,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
     private EvictionConfig evictionConfig = new EvictionConfig();
 
     private List<EntryListenerConfig> entryListenerConfigs;
-    
+
     private List<IndexConfig> indexConfigs;
 
     private transient QueryCacheConfigReadOnly readOnly;

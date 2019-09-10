@@ -152,7 +152,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
                 }
 
                 int prefix = 0;
-                while (prefix < components.size()&& prefixes.containsKey(components.get(prefix))) {
+                while (prefix < components.size() && prefixes.containsKey(components.get(prefix))) {
                     ++prefix;
                 }
                 if (prefix == 0) {
@@ -161,8 +161,8 @@ public class CompositeIndexVisitor extends AbstractVisitor {
                 }
 
                 if (index.isOrdered()) {
-                    RangePredicate comparison = prefix < components.size() && comparisons != null ?
-                        comparisons.get(components.get(prefix)) : null;
+                    RangePredicate comparison = prefix < components.size() && comparisons != null
+                        ? comparisons.get(components.get(prefix)) : null;
 
                     if (comparison != null) {
                         ++prefix;
@@ -175,7 +175,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
                     } else if (prefix == bestPrefix) {
                         // the matched prefix is at least of length 1
                         assert bestIndex != null;
-                        if (bestIndex.isOrdered() && bestIndex.getComponents().size()> components.size()) {
+                        if (bestIndex.isOrdered() && bestIndex.getComponents().size() > components.size()) {
                             // prefer shorter indexes over longer ones
                             bestIndex = index;
                             bestComparison = comparison;
@@ -362,7 +362,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
         assert comparison.getFrom() != NULL && comparison.getTo() != NULL;
 
         List<String> components = index.getComponents();
-        boolean fullyMatched = components.size()== prefixLength + 1;
+        boolean fullyMatched = components.size() == prefixLength + 1;
         boolean hasFrom = comparison.getFrom() != null;
         boolean hasTo = comparison.getTo() != null;
         assert hasFrom || hasTo;

@@ -101,17 +101,20 @@ public class AttributeCanonicalizationTest {
     private void checkIndex(Indexes indexes, IndexType indexType, String[] attributes, String[] expAttributes) {
         IndexConfig config = new IndexConfig().setType(indexType);
 
-        for (String attribute : attributes)
+        for (String attribute : attributes) {
             config.addColumn(attribute);
+        }
 
         IndexConfig normalizedConfig = IndexUtils.validateAndNormalize("map", config);
 
         StringBuilder expName = new StringBuilder("map");
 
-        if (indexType == IndexType.SORTED)
+        if (indexType == IndexType.SORTED) {
             expName.append("_sorted");
-        else
+        }
+        else {
             expName.append("_hash");
+        }
 
         for (int i = 0; i < expAttributes.length; i++) {
             String expAttribute = expAttributes[i];

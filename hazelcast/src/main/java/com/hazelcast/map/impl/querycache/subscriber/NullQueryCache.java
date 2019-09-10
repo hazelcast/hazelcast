@@ -21,7 +21,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.util.Collection;

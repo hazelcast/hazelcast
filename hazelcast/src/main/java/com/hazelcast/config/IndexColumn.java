@@ -114,16 +114,19 @@ public class IndexColumn implements IdentifiedDataSerializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
+        }
 
-        if (o == null || getClass() != o.getClass())
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
 
-        IndexColumn that = (IndexColumn)o;
+        IndexColumn that = (IndexColumn) o;
 
-        if (asc != that.asc)
+        if (asc != that.asc) {
             return false;
+        }
 
         return name != null ? name.equals(that.name) : that.name == null;
     }

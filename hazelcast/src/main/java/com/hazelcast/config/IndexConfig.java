@@ -68,8 +68,9 @@ public class IndexConfig implements IdentifiedDataSerializable {
         setType(type);
 
         if (columns != null) {
-            for (String column : columns)
+            for (String column : columns) {
                 addColumn(column);
+            }
         }
     }
 
@@ -77,8 +78,9 @@ public class IndexConfig implements IdentifiedDataSerializable {
         this.name = other.name;
         this.type = other.type;
 
-        for (IndexColumn column : other.getColumns())
+        for (IndexColumn column : other.getColumns()) {
             addColumnInternal(new IndexColumn(column.getName()));
+        }
     }
 
     /**
@@ -133,8 +135,9 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @return Index columns.
      */
     public List<IndexColumn> getColumns() {
-        if (columns == null)
+        if (columns == null) {
             columns = new ArrayList<>();
+        }
 
         return columns;
     }
@@ -162,8 +165,9 @@ public class IndexConfig implements IdentifiedDataSerializable {
     }
 
     protected void addColumnInternal(IndexColumn column) {
-        if (columns == null)
+        if (columns == null) {
             columns = new ArrayList<>(1);
+        }
 
         columns.add(column);
     }
@@ -175,10 +179,12 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @return This instance for chaining.
      */
     public IndexConfig setColumns(List<IndexColumn> columns) {
-        if (columns == null || columns.isEmpty())
+        if (columns == null || columns.isEmpty()) {
             columns = null;
-        else
+        }
+        else {
             columns = new ArrayList<>(columns);
+        }
 
         this.columns = columns;
 
@@ -219,16 +225,19 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
+        }
 
-        if (o == null || getClass() != o.getClass())
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
 
         IndexConfig that = (IndexConfig) o;
 
-        if (name != null ? !name.equals(that.name) : that.name != null)
+        if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
+        }
 
         return getColumns().equals(that.getColumns());
     }

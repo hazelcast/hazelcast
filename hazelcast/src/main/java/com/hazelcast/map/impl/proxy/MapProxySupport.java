@@ -306,8 +306,9 @@ abstract class MapProxySupport<K, V>
     }
 
     private void initializeIndexes() {
-        for (IndexConfig index : mapConfig.getIndexConfigs())
+        for (IndexConfig index : mapConfig.getIndexConfigs()) {
             addIndex(index);
+        }
     }
 
     private void initializeMapStoreLoad() {
@@ -1026,7 +1027,7 @@ abstract class MapProxySupport<K, V>
             }
         }
         if (index == 0) {
-            return new SimpleCompletedFuture<>((Void)null);
+            return new SimpleCompletedFuture<>((Void) null);
         }
         // trim partition array to real size
         if (index < size) {
@@ -1045,7 +1046,7 @@ abstract class MapProxySupport<K, V>
             entriesPerPartition[partitionId] = null;
         }
         if (totalSize == 0) {
-            return new SimpleCompletedFuture<>((Void)null);
+            return new SimpleCompletedFuture<>((Void) null);
         }
 
         OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries);
@@ -1335,8 +1336,7 @@ abstract class MapProxySupport<K, V>
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig);
 
             operationService.invokeOnAllPartitions(SERVICE_NAME,
-                new BinaryOperationFactory(addIndexOperation, getNodeEngine())
-            );
+                new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
         }
         catch (Throwable t) {
             throw rethrow(t);

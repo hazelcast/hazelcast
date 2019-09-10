@@ -36,7 +36,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 /**
  * Utility methods for indexes.
  */
-public class IndexUtils {
+public final class IndexUtils {
     /** Maximum number of attributes allowed in the index. */
     private static final int MAX_ATTRIBUTES = 255;
 
@@ -57,23 +57,27 @@ public class IndexUtils {
         // Validate attributes.
         List<String> originalAttributeNames = getAttributeNames(config);
 
-        if (originalAttributeNames.isEmpty())
+        if (originalAttributeNames.isEmpty()) {
             throw new IllegalArgumentException("Index must have at least one attribute: " + config);
+        }
 
-        if (originalAttributeNames.size() > MAX_ATTRIBUTES)
+        if (originalAttributeNames.size() > MAX_ATTRIBUTES) {
             throw new IllegalArgumentException("Index cannot have more than " + MAX_ATTRIBUTES +
                 " attributes: " + config);
+        }
 
         List<String> normalizedAttributeNames = new ArrayList<>(originalAttributeNames.size());
 
         for (String originalAttributeName : originalAttributeNames) {
-            if (originalAttributeName == null)
+            if (originalAttributeName == null) {
                 throw new IllegalArgumentException("Attribute name cannot be null: " + config);
+            }
 
             originalAttributeName = originalAttributeName.trim();
 
-            if (originalAttributeName.isEmpty())
+            if (originalAttributeName.isEmpty()) {
                 throw new IllegalArgumentException("Attribute name cannot be empty: " + config);
+            }
 
             if (originalAttributeName.endsWith(".")) {
                 throw new IllegalArgumentException("Invalid attribute name [config=" + config +
@@ -106,27 +110,33 @@ public class IndexUtils {
         // Construct final index.
         String name = config.getName();
 
-        if (name != null && name.trim().isEmpty())
+        if (name != null && name.trim().isEmpty()) {
             name = null;
-
-        IndexConfig newConfig = new IndexConfig().setType(config.getType());
-
-        StringBuilder nameBuilder = name == null ?
-            new StringBuilder(mapName + (config.getType() == IndexType.SORTED ? "_sorted" : "_hash")) : null;
-
-        for (int i = 0; i < config.getColumns().size(); i++) {
-            String newColumnName = normalizedAttributeNames.get(i);
-
-            newConfig.addColumn(newColumnName);
-
-            if (nameBuilder != null)
-                nameBuilder.append("_").append(newColumnName);
         }
 
-        if (nameBuilder != null)
-            name = nameBuilder.toString();
+        return buildNormalizedConfig(mapName, config.getType(), name, normalizedAttributeNames);
+    }
 
-        newConfig.setName(name);
+    private static IndexConfig buildNormalizedConfig(String mapName, IndexType indexType, String indexName,
+        List<String> normalizedAttributeNames) {
+        IndexConfig newConfig = new IndexConfig().setType(indexType);
+
+        StringBuilder nameBuilder = indexName == null ?
+            new StringBuilder(mapName + (indexType == IndexType.SORTED ? "_sorted" : "_hash")) : null;
+
+        for (String newColumnName : normalizedAttributeNames) {
+            newConfig.addColumn(newColumnName);
+
+            if (nameBuilder != null) {
+                nameBuilder.append("_").append(newColumnName);
+            }
+        }
+
+        if (nameBuilder != null) {
+            indexName = nameBuilder.toString();
+        }
+
+        newConfig.setName(indexName);
 
         return newConfig;
     }
@@ -136,7 +146,7 @@ public class IndexUtils {
      * "this." qualifier from the passed attribute, if any.
      *
      * @param attribute the attribute to canonicalize.
-     * @return the canonicalized attribute representation.
+     * @return the canonical attribute representation.
      */
     public static String canonicalizeAttribute(String attribute) {
         return THIS_PATTERN.matcher(attribute).replaceFirst("");
@@ -149,13 +159,15 @@ public class IndexUtils {
      * @return Attribute names.
      */
     private static List<String> getAttributeNames(IndexConfig config) {
-        if (config.getColumns().isEmpty())
+        if (config.getColumns().isEmpty()) {
             return Collections.emptyList();
+        }
 
         List<String> res = new ArrayList<>(config.getColumns().size());
 
-        for (IndexColumn column: config.getColumns())
+        for (IndexColumn column: config.getColumns()) {
             res.add(column.getName());
+        }
 
         return res;
     }
@@ -165,8 +177,9 @@ public class IndexUtils {
 
         List<String> res = new ArrayList<>(config.getColumns().size());
 
-        for (IndexColumn column : config.getColumns())
+        for (IndexColumn column : config.getColumns()) {
             res.add(column.getName());
+        }
 
         return res;
     }
@@ -183,8 +196,9 @@ public class IndexUtils {
 
         res.setType(ordered ? IndexType.SORTED : IndexType.HASH);
 
-        for (String attribute : attributes)
+        for (String attribute : attributes) {
             res.addColumn(attribute);
+        }
 
         return validateAndNormalize(UUID.randomUUID().toString(), res);
     }
@@ -219,8 +233,9 @@ public class IndexUtils {
 
         String name = DomConfigHelper.getTextContent(attrs.getNamedItem("name"), domLevel3);
 
-        if (name.isEmpty())
+        if (name.isEmpty()) {
             name = null;
+        }
 
         String typeStr = DomConfigHelper.getTextContent(attrs.getNamedItem("type"), domLevel3);
 
@@ -249,12 +264,15 @@ public class IndexUtils {
 
         typeStr = typeStr.toLowerCase();
 
-        if (typeStr.equals(IndexType.SORTED.name().toLowerCase()))
+        if (typeStr.equals(IndexType.SORTED.name().toLowerCase())) {
             return IndexType.SORTED;
-        else if (typeStr.equals(IndexType.HASH.name().toLowerCase()))
+        }
+        else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
             return IndexType.HASH;
-        else
+        }
+        else {
             throw new IllegalArgumentException("Unsupported index type: " + typeStr);
+        }
     }
 
     public static IndexConfig getIndexConfigFromYaml(Node indexNode, boolean domLevel3) {
@@ -262,24 +280,29 @@ public class IndexUtils {
 
         String name = DomConfigHelper.getTextContent(attrs.getNamedItem("name"), domLevel3);
 
-        if (name.isEmpty())
+        if (name.isEmpty()) {
             name = null;
+        }
 
         String typeStr = DomConfigHelper.getTextContent(attrs.getNamedItem("type"), domLevel3);
 
-        if (typeStr.isEmpty())
+        if (typeStr.isEmpty()) {
             typeStr = IndexConfig.DEFAULT_TYPE.name();
+        }
 
         typeStr = typeStr.toLowerCase();
 
         IndexType type;
 
-        if (typeStr.equals(IndexType.SORTED.name().toLowerCase()))
+        if (typeStr.equals(IndexType.SORTED.name().toLowerCase())) {
             type = IndexType.SORTED;
-        else if (typeStr.equals(IndexType.HASH.name().toLowerCase()))
+        }
+        else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
             type = IndexType.HASH;
-        else
+        }
+        else {
             throw new IllegalArgumentException("Unsupported index type: " + typeStr);
+        }
 
         IndexConfig res = new IndexConfig().setName(name).setType(type);
 
