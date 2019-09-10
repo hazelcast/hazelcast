@@ -215,9 +215,9 @@ public class ClientExecutorServiceCancelTest
         Future<Boolean> future = executorService.submitToKeyOwner(new CancellationAwareTask(SLEEP_TIME), key);
         awaitTaskStartAtMember(server1, 1);
 
-        InternalPartitionServiceImpl internalPartitionService = (InternalPartitionServiceImpl) TestUtil.getNode(server1)
+        final InternalPartitionServiceImpl internalPartitionService = (InternalPartitionServiceImpl) TestUtil.getNode(server1)
                                                                                                        .getPartitionService();
-        int partitionId = internalPartitionService.getPartitionId(key);
+        final int partitionId = internalPartitionService.getPartitionId(key);
         // Simulate partition thread blockage as if the partition is migrating
         internalPartitionService.getPartitionStateManager().trySetMigratingFlag(partitionId);
 
@@ -284,7 +284,7 @@ public class ClientExecutorServiceCancelTest
         future.get();
     }
 
-    private void awaitTaskStartAtMember(final HazelcastInstance member, long startedTaskCount) {
+    private void awaitTaskStartAtMember(final HazelcastInstance member, final long startedTaskCount) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -295,7 +295,7 @@ public class ClientExecutorServiceCancelTest
         });
     }
 
-    private void awaitTaskCancelAtMember(final HazelcastInstance member, long cancelledTaskCount) {
+    private void awaitTaskCancelAtMember(final HazelcastInstance member, final long cancelledTaskCount) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
