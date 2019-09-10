@@ -50,41 +50,31 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
     @Test
     public void test_atomicLong_whenCPSubsystemNotConfigured() {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        thrown.expect(HazelcastException.class);
-
-        instance.getCPSubsystem().getAtomicLong("long");
+        assertNotNull(instance.getCPSubsystem().getAtomicLong("long"));
     }
 
     @Test
     public void test_atomicReference_whenCPSubsystemNotConfigured() {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        thrown.expect(HazelcastException.class);
-
-        instance.getCPSubsystem().getAtomicReference("ref");
+        assertNotNull(instance.getCPSubsystem().getAtomicReference("ref"));
     }
 
     @Test
     public void test_lock_whenCPSubsystemNotConfigured() {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        thrown.expect(HazelcastException.class);
-
-        instance.getCPSubsystem().getLock("lock");
+        assertNotNull(instance.getCPSubsystem().getLock("lock"));
     }
 
     @Test
     public void test_semaphore_whenCPSubsystemNotConfigured() {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        thrown.expect(HazelcastException.class);
-
-        instance.getCPSubsystem().getSemaphore("semaphore");
+        assertNotNull(instance.getCPSubsystem().getSemaphore("semaphore"));
     }
 
     @Test
     public void test_countDownLatch_whenCPSubsystemNotConfigured() {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        thrown.expect(HazelcastException.class);
-
-        instance.getCPSubsystem().getAtomicLong("latch");
+        assertNotNull(instance.getCPSubsystem().getCountDownLatch("latch"));
     }
 
     @Test

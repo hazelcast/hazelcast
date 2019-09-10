@@ -18,7 +18,6 @@ package com.hazelcast.client.cp.internal;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -57,8 +56,6 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
     public void test_atomicLong_whenCPSubsystemNotConfigured() {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
-        thrown.expect(HazelcastException.class);
-
         client.getCPSubsystem().getAtomicLong("long");
     }
 
@@ -66,8 +63,6 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
     public void test_atomicReference_whenCPSubsystemNotConfigured() {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
-        thrown.expect(HazelcastException.class);
-
         client.getCPSubsystem().getAtomicReference("ref");
     }
 
@@ -75,8 +70,6 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
     public void test_lock_whenCPSubsystemNotConfigured() {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
-        thrown.expect(HazelcastException.class);
-
         client.getCPSubsystem().getLock("lock");
     }
 
@@ -84,8 +77,6 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
     public void test_semaphore_whenCPSubsystemNotConfigured() {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
-        thrown.expect(HazelcastException.class);
-
         client.getCPSubsystem().getSemaphore("semaphore");
     }
 
@@ -93,8 +84,6 @@ public class CPSubsystemImplTest extends HazelcastTestSupport {
     public void test_countDownLatch_whenCPSubsystemNotConfigured() {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
-        thrown.expect(HazelcastException.class);
-
         client.getCPSubsystem().getAtomicLong("latch");
     }
 
