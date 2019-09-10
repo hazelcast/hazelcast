@@ -184,7 +184,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[AWS_CONFIG] = arg -> new AwsConfig();
         constructors[DISCOVERY_CONFIG] = arg -> new DiscoveryConfig();
         constructors[DISCOVERY_STRATEGY_CONFIG] = arg -> new DiscoveryStrategyConfig();
-        constructors[INDEX_COLUMN] = arg -> new IndexColumn();
+        constructors[INDEX_COLUMN] = arg -> new IndexColumnConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

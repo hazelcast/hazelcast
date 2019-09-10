@@ -42,11 +42,11 @@ public class IndexConfigReadOnly extends IndexConfig {
     }
 
     @Override
-    public List<IndexColumn> getColumns() {
-        List<IndexColumn> columns = super.getColumns();
-        List<IndexColumn> res = new ArrayList<>(columns.size());
+    public List<IndexColumnConfig> getColumns() {
+        List<IndexColumnConfig> columns = super.getColumns();
+        List<IndexColumnConfig> res = new ArrayList<>(columns.size());
 
-        for (IndexColumn column : columns) {
+        for (IndexColumnConfig column : columns) {
             res.add(column.getAsReadOnly());
         }
 
@@ -54,7 +54,7 @@ public class IndexConfigReadOnly extends IndexConfig {
     }
 
     @Override
-    public IndexConfig addColumn(IndexColumn column) {
+    public IndexConfig addColumn(IndexColumnConfig column) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
@@ -64,12 +64,12 @@ public class IndexConfigReadOnly extends IndexConfig {
     }
 
     @Override
-    protected void addColumnInternal(IndexColumn column) {
+    protected void addColumnInternal(IndexColumnConfig column) {
         super.addColumnInternal(column.getAsReadOnly());
     }
 
     @Override
-    public IndexConfig setColumns(List<IndexColumn> columns) {
+    public IndexConfig setColumns(List<IndexColumnConfig> columns) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

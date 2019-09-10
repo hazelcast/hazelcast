@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DomConfigHelper;
-import com.hazelcast.config.IndexColumn;
+import com.hazelcast.config.IndexColumnConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.util.UuidUtil;
@@ -169,7 +169,7 @@ public final class IndexUtils {
 
         List<String> res = new ArrayList<>(config.getColumns().size());
 
-        for (IndexColumn column: config.getColumns()) {
+        for (IndexColumnConfig column: config.getColumns()) {
             res.add(column.getName());
         }
 
@@ -181,7 +181,7 @@ public final class IndexUtils {
 
         List<String> res = new ArrayList<>(config.getColumns().size());
 
-        for (IndexColumn column : config.getColumns()) {
+        for (IndexColumnConfig column : config.getColumns()) {
             res.add(column.getName());
         }
 
@@ -222,7 +222,7 @@ public final class IndexUtils {
 
             gen.open("columns");
 
-            for (IndexColumn column : indexCfg.getColumns()) {
+            for (IndexColumnConfig column : indexCfg.getColumns()) {
                 gen.node("column", column.getName());
             }
 

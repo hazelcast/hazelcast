@@ -36,7 +36,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Use their specific classes for configuration.
  *
  * @see com.hazelcast.config.IndexType
- * @see com.hazelcast.config.IndexColumn
+ * @see IndexColumnConfig
  * @see com.hazelcast.config.MapConfig#setIndexConfigs(List)
  */
 public class IndexConfig implements IdentifiedDataSerializable {
@@ -50,7 +50,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
     private IndexType type = DEFAULT_TYPE;
 
     /** Indexed columns. */
-    private List<IndexColumn> columns;
+    private List<IndexColumnConfig> columns;
 
     public IndexConfig() {
         // No-op.
@@ -76,8 +76,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
         this.name = other.name;
         this.type = other.type;
 
-        for (IndexColumn column : other.getColumns()) {
-            addColumnInternal(new IndexColumn(column.getName()));
+        for (IndexColumnConfig column : other.getColumns()) {
+            addColumnInternal(new IndexColumnConfig(column.getName()));
         }
     }
 
@@ -132,7 +132,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
      *
      * @return Index columns.
      */
-    public List<IndexColumn> getColumns() {
+    public List<IndexColumnConfig> getColumns() {
         if (columns == null) {
             columns = new ArrayList<>();
         }
@@ -147,7 +147,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @return This instance for chaining.
      */
     public IndexConfig addColumn(String column) {
-        return addColumn(new IndexColumn(column));
+        return addColumn(new IndexColumnConfig(column));
     }
 
     /**
@@ -156,13 +156,13 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @param column Index column.
      * @return This instance for chaining.
      */
-    public IndexConfig addColumn(IndexColumn column) {
+    public IndexConfig addColumn(IndexColumnConfig column) {
         addColumnInternal(column);
 
         return this;
     }
 
-    protected void addColumnInternal(IndexColumn column) {
+    protected void addColumnInternal(IndexColumnConfig column) {
         if (columns == null) {
             columns = new ArrayList<>(1);
         }
@@ -176,7 +176,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @param columns Index columns.
      * @return This instance for chaining.
      */
-    public IndexConfig setColumns(List<IndexColumn> columns) {
+    public IndexConfig setColumns(List<IndexColumnConfig> columns) {
         if (columns == null || columns.isEmpty()) {
             columns = null;
         } else {

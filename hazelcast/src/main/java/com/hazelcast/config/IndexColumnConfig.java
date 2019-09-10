@@ -25,7 +25,7 @@ import java.io.IOException;
 /**
  * A column to be indexed.
  */
-public class IndexColumn implements IdentifiedDataSerializable {
+public class IndexColumnConfig implements IdentifiedDataSerializable {
     /** Default sort order of the attribute. */
     public static final boolean DEFAULT_ASC = true;
 
@@ -35,7 +35,7 @@ public class IndexColumn implements IdentifiedDataSerializable {
     /** Whether the attribute is sorted in ascending order. */
     protected boolean asc = DEFAULT_ASC;
 
-    public IndexColumn() {
+    public IndexColumnConfig() {
         // No-op.
     }
 
@@ -44,11 +44,11 @@ public class IndexColumn implements IdentifiedDataSerializable {
      *
      * @param name Name of the attribute.
      */
-    public IndexColumn(String name) {
+    public IndexColumnConfig(String name) {
         setName(name);
     }
 
-    public IndexColumn(IndexColumn other) {
+    public IndexColumnConfig(IndexColumnConfig other) {
         this.name = other.name;
         this.asc = other.asc;
     }
@@ -68,7 +68,7 @@ public class IndexColumn implements IdentifiedDataSerializable {
      * @param name Name of the attribute.
      * @return This instance for chaining.
      */
-    public IndexColumn setName(String name) {
+    public IndexColumnConfig setName(String name) {
         // TODO 15265: Check for null/empty?
         this.name = name;
 
@@ -79,7 +79,7 @@ public class IndexColumn implements IdentifiedDataSerializable {
         return asc;
     }
 
-    public IndexColumn setAscending(boolean asc) {
+    public IndexColumnConfig setAscending(boolean asc) {
         // TODO 15265: Do not allow false at the moment.
         this.asc = asc;
 
@@ -92,8 +92,8 @@ public class IndexColumn implements IdentifiedDataSerializable {
      * @return immutable version of this configuration
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
-    public IndexColumn getAsReadOnly() {
-        return new IndexColumnReadOnly(this);
+    public IndexColumnConfig getAsReadOnly() {
+        return new IndexColumnConfigReadOnly(this);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class IndexColumn implements IdentifiedDataSerializable {
             return false;
         }
 
-        IndexColumn that = (IndexColumn) o;
+        IndexColumnConfig that = (IndexColumnConfig) o;
 
         if (asc != that.asc) {
             return false;
@@ -148,6 +148,6 @@ public class IndexColumn implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "IndexColumn{name=" + name + ", asc=" + asc + '}';
+        return "IndexColumnConfig{name=" + name + ", asc=" + asc + '}';
     }
 }
