@@ -18,13 +18,18 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
+import java.security.Permission;
+
 public class ExecutorServiceCancelOnAddressMessageTask
-        extends AbstractExecutorServiceCancelMessageTask<ExecutorServiceCancelOnAddressCodec.RequestParameters> {
+        extends AbstractAddressMessageTask<ExecutorServiceCancelOnAddressCodec.RequestParameters> {
 
     public ExecutorServiceCancelOnAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -33,6 +38,11 @@ public class ExecutorServiceCancelOnAddressMessageTask
     @Override
     protected Operation prepareOperation() {
         return new CancellationOperation(parameters.uuid, parameters.interrupt);
+    }
+
+    @Override
+    protected Address getAddress() {
+        return parameters.address;
     }
 
     @Override
@@ -52,4 +62,23 @@ public class ExecutorServiceCancelOnAddressMessageTask
         return null;
     }
 
+    @Override
+    public String getServiceName() {
+        return DistributedExecutorService.SERVICE_NAME;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "cancel";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
 }
