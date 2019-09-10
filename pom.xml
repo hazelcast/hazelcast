@@ -38,6 +38,7 @@
         <module>hazelcast-jet-reference-manual</module>
         <module>hazelcast-jet-spring</module>
         <module>hazelcast-jet-avro</module>
+        <module>hazelcast-jet-s3</module>
         <module>examples</module>
     </modules>
 

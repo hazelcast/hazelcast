@@ -135,8 +135,9 @@ samples using the Core API.
 - [File Streaming Source](files/src/main/java/com/hazelcast/jet/examples/files/AccessLogStreamAnalyzer.java)
   - analyze the data being appended to log files while the Jet job is
     running
-- [File Sink](file-io/src/main/java/com/hazelcast/jet/examples/AccessLogAnalyzer.java)
-  - variant with [Avro serialization](file-io/src/main/java/com/hazelcast/jet/examples/avro/AvroSink.java)
+- [File Sink](files/src/main/java/com/hazelcast/jet/examples/files/AccessLogAnalyzer.java)
+  - variant with [Avro serialization](files/src/main/java/com/hazelcast/jet/examples/files/avro/AvroSink.java)
+- [Amazon AWS S3 Source and Sink](/files/src/main/java/com/hazelcast/jet/examples/files/s3/S3WordCount.java)
 
 ## Custom Sources and Sinks
 - [Custom Source](source-sink-builder/src/main/java/com/hazelcast/jet/examples/sourcebuilder/HttpSource.java):

@@ -34,5 +34,15 @@
             <artifactId>hazelcast-jet-avro</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-s3</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet.examples</groupId>
+            <artifactId>hazelcast-jet-examples-wordcount</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

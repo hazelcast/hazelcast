@@ -141,6 +141,11 @@
             <artifactId>hazelcast-jet-spring</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-s3</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
 
         <!-- optional dependencies -->
         <dependency>
