@@ -65,7 +65,6 @@ import static org.junit.Assert.fail;
  * Additionally, tests whether IDS instanced obtained from DS factories
  * have the same ID as the one reported by their `getClassId` method and that F_ID/ID combinations are unique.
  */
-// TODO 15265: Decide what to do with this "ReadOnly" thing.
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
 public class DataSerializableConventionsTest {
