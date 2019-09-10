@@ -54,8 +54,6 @@ public class IndexConfig implements IdentifiedDataSerializable {
     /** Indexed columns. */
     private List<IndexColumn> columns;
 
-    private transient IndexConfigReadOnly readOnly;
-
     public IndexConfig() {
         // No-op.
     }
@@ -80,7 +78,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         this.type = other.type;
 
         for (IndexColumn column : other.getColumns())
-            addColumn(new IndexColumn(column.getName()));
+            addColumnInternal(new IndexColumn(column.getName()));
     }
 
     /**
@@ -142,18 +140,6 @@ public class IndexConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds an index column.
-     *
-     * @param column Index column.
-     * @return This instance for chaining.
-     */
-    public IndexConfig addColumn(IndexColumn column) {
-        getColumns().add(column);
-
-        return this;
-    }
-
-    /**
      * Adds an index column with the given name and default sort order.
      *
      * @param column Column name.
@@ -161,6 +147,25 @@ public class IndexConfig implements IdentifiedDataSerializable {
      */
     public IndexConfig addColumn(String column) {
         return addColumn(new IndexColumn(column));
+    }
+
+    /**
+     * Adds an index column.
+     *
+     * @param column Index column.
+     * @return This instance for chaining.
+     */
+    public IndexConfig addColumn(IndexColumn column) {
+        addColumnInternal(column);
+
+        return this;
+    }
+
+    protected void addColumnInternal(IndexColumn column) {
+        if (columns == null)
+            columns = new ArrayList<>(1);
+
+        columns.add(column);
     }
 
     /**
@@ -187,10 +192,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public IndexConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new IndexConfigReadOnly(this);
-        }
-        return readOnly;
+        return new IndexConfigReadOnly(this);
     }
 
     @Override

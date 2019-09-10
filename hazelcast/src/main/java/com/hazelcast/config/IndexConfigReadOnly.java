@@ -64,6 +64,11 @@ public class IndexConfigReadOnly extends IndexConfig {
     }
 
     @Override
+    protected void addColumnInternal(IndexColumn column) {
+        super.addColumnInternal(column.getAsReadOnly());
+    }
+
+    @Override
     public IndexConfig setColumns(List<IndexColumn> columns) {
         throw new UnsupportedOperationException("This config is read-only");
     }

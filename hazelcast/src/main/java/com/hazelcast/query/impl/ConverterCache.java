@@ -113,11 +113,21 @@ public final class ConverterCache {
         }
 
         // try non-composite index first, if any
-        InternalIndex nonCompositeIndex = indexes.getIndex(attribute);
-        if (nonCompositeIndex != null) {
-            TypeConverter converter = nonCompositeIndex.getConverter();
+        for (InternalIndex index : indexesSnapshot) {
+            List<String> components = index.getComponents();
+            if (components.size() != 1) {
+                // composite index will be checked later.
+                continue;
+            }
+
+            if (!components.get(0).equals(attribute)) {
+                // not a component/attribute we are searching for
+                continue;
+            }
+
+            TypeConverter converter = index.getConverter();
             if (isNull(converter)) {
-                cache.put(attribute, new UnresolvedConverter(nonCompositeIndex, FULLY_UNRESOLVED));
+                cache.put(attribute, new UnresolvedConverter(index, FULLY_UNRESOLVED));
                 return null;
             } else {
                 cache.put(attribute, converter);
