@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.Predicate;
@@ -189,14 +190,16 @@ public class IndexesTest {
     public void testNoDuplicateIndexes() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
 
-        InternalIndex index = indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "a"), null);
-        assertNotNull(index);
-        assertSame(index, indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "a"), null));
+        IndexConfig config1 = IndexUtils.createSimpleIndexConfig(false, "a");
 
-        index = indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "a", "b"), null);
+        InternalIndex index = indexes.addOrGetIndex(config1, null);
         assertNotNull(index);
-        assertSame(index, indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "a", "b"), null));
-        assertSame(index, indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "this.a", "b"), null));
+        assertSame(index, indexes.addOrGetIndex(config1, null));
+
+        IndexConfig config2 = IndexUtils.createSimpleIndexConfig(false, "a", "b");
+
+        index = indexes.addOrGetIndex(config2, null);
+        assertNotNull(index);
+        assertSame(index, indexes.addOrGetIndex(config2, null));
     }
-
 }

@@ -102,21 +102,25 @@ public class IndexTest {
 
     @Test
     public void testRemoveEnumIndex() {
+        IndexConfig config = IndexUtils.createSimpleIndexConfig(false, "favoriteCity");
+
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
-        is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "favoriteCity"), null);
+        is.addOrGetIndex(config, null);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
-        assertNotNull(is.getIndex("favoriteCity"));
+        assertNotNull(is.getIndex(config.getName()));
         Record record = recordFactory.newRecord(key, value);
         is.removeEntry(key, Records.getValueOrCachedValue(record, ss), Index.OperationSource.USER);
-        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
+        assertEquals(0, is.getIndex(config.getName()).getRecords(SerializableWithEnum.City.ISTANBUL).size());
     }
 
     @Test
     public void testUpdateEnumIndex() {
+        IndexConfig config = IndexUtils.createSimpleIndexConfig(false, "favoriteCity");
+
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
-        is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "favoriteCity"), null);
+        is.addOrGetIndex(config, null);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -124,8 +128,8 @@ public class IndexTest {
         Data newValue = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.KRAKOW));
         is.putEntry(new QueryEntry(ss, key, newValue, newExtractor()), value, Index.OperationSource.USER);
 
-        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
-        assertEquals(1, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.KRAKOW).size());
+        assertEquals(0, is.getIndex(config.getName()).getRecords(SerializableWithEnum.City.ISTANBUL).size());
+        assertEquals(1, is.getIndex(config.getName()).getRecords(SerializableWithEnum.City.KRAKOW).size());
     }
 
     protected Extractors newExtractor() {
