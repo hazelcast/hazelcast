@@ -75,8 +75,8 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public String getQuorumName() {
-        return super.getQuorumName();
+    public String getSplitBrainProtectionName() {
+        return super.getSplitBrainProtectionName();
     }
 
     @Override
@@ -158,7 +158,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfig<K, V> setQuorumName(String quorumName) {
+    public CacheConfig<K, V> setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw throwReadOnly();
     }
 

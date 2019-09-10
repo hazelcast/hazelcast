@@ -30,6 +30,15 @@ public final class OsHelper {
     }
 
     /**
+     * Returns {@code true} if the system is Linux.
+     *
+     * @return {@code true} if the current system is Linux.
+     */
+    public static boolean isLinux() {
+        return OS.contains("nux");
+    }
+
+    /**
      * Returns {@code true} if the system is from Unix family.
      *
      * @return {@code true} if the current system is Unix/Linux/AIX.

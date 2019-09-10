@@ -216,4 +216,16 @@ public class ConnectionRetryConfig {
         result = 31 * result + (enabled ? 1 : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ConnectionRetryConfig{"
+                + "enabled=" + enabled
+                + ", initialBackoffMillis=" + initialBackoffMillis
+                + ", maxBackoffMillis=" + maxBackoffMillis
+                + ", multiplier=" + multiplier
+                + ", failOnMaxBackoff=" + failOnMaxBackoff
+                + ", jitter=" + jitter
+                + '}';
+    }
 }

@@ -56,7 +56,7 @@ enum ConfigSections {
     SECURITY("security", false),
     MEMBER_ATTRIBUTES("member-attributes", false),
     NATIVE_MEMORY("native-memory", false),
-    QUORUM("quorum", true),
+    SPLIT_BRAIN_PROTECTION("split-brain-protection", true),
     LITE_MEMBER("lite-member", false),
     HOT_RESTART_PERSISTENCE("hot-restart-persistence", false),
     USER_CODE_DEPLOYMENT("user-code-deployment", false),

@@ -28,7 +28,7 @@ import java.util.List;
 public class ClientFailoverConfig {
 
     private int tryCount = Integer.MAX_VALUE;
-    private List<ClientConfig> clientConfigs = new LinkedList<ClientConfig>();
+    private List<ClientConfig> clientConfigs = new LinkedList<>();
 
     public ClientFailoverConfig() {
 
@@ -55,5 +55,13 @@ public class ClientFailoverConfig {
 
     public int getTryCount() {
         return tryCount;
+    }
+
+    @Override
+    public String toString() {
+        return "ClientFailoverConfig{"
+                + "tryCount=" + tryCount
+                + ", clientConfigs=" + clientConfigs
+                + '}';
     }
 }

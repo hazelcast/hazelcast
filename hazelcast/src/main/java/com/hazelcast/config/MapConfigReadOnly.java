@@ -278,7 +278,7 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig setQuorumName(String quorumName) {
+    public MapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw throwReadOnly();
     }
 

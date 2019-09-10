@@ -70,7 +70,7 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig().setEnabled(false);
-    private String quorumName;
+    private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     public RingbufferConfig() {
@@ -104,7 +104,7 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
             this.ringbufferStoreConfig = new RingbufferStoreConfig(config.ringbufferStoreConfig);
         }
         this.mergePolicyConfig = config.mergePolicyConfig;
-        this.quorumName = config.quorumName;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
     }
 
     /**
@@ -341,22 +341,22 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public RingbufferConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public RingbufferConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -394,7 +394,7 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", ringbufferStoreConfig=" + ringbufferStoreConfig
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
     }
@@ -418,7 +418,7 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
         out.writeInt(timeToLiveSeconds);
         out.writeUTF(inMemoryFormat.name());
         out.writeObject(ringbufferStoreConfig);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
@@ -431,7 +431,7 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
         timeToLiveSeconds = in.readInt();
         inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         ringbufferStoreConfig = in.readObject();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
     }
 
@@ -468,7 +468,8 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
                 : that.ringbufferStoreConfig != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
@@ -483,7 +484,7 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
         result = 31 * result + timeToLiveSeconds;
         result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
         result = 31 * result + (ringbufferStoreConfig != null ? ringbufferStoreConfig.hashCode() : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
@@ -548,7 +549,7 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
         }
 
         @Override
-        public RingbufferConfig setQuorumName(String quorumName) {
+        public RingbufferConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
             throw throwReadOnly();
         }
 

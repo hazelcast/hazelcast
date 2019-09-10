@@ -17,11 +17,12 @@
 package com.hazelcast.transaction;
 
 import com.hazelcast.collection.ISet;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 
 /**
  * Transactional implementation of {@link ISet}.
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in
  * cluster versions 3.10 and higher.
  *
  * @param <E> the type of elements maintained by this set

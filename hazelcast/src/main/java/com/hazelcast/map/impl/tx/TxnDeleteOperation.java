@@ -104,7 +104,7 @@ public class TxnDeleteOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnDeleteBackupOperation(name, dataKey, disableWanReplicationEvent);
+        return new TxnDeleteBackupOperation(name, dataKey);
     }
 
     @Override

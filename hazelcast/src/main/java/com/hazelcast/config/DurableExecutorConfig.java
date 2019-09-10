@@ -54,7 +54,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
 
     private int capacity = DEFAULT_RING_BUFFER_CAPACITY;
 
-    private String quorumName;
+    private String splitBrainProtectionName;
 
     private transient DurableExecutorConfigReadOnly readOnly;
 
@@ -69,16 +69,17 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         this(name, poolSize, durability, capacity, null);
     }
 
-    public DurableExecutorConfig(String name, int poolSize, int durability, int capacity, String quorumName) {
+    public DurableExecutorConfig(String name, int poolSize, int durability, int capacity, String splitBrainProtectionName) {
         this.name = name;
         this.poolSize = poolSize;
         this.durability = durability;
         this.capacity = capacity;
-        this.quorumName = quorumName;
+        this.splitBrainProtectionName = splitBrainProtectionName;
     }
 
     public DurableExecutorConfig(DurableExecutorConfig config) {
-        this(config.getName(), config.getPoolSize(), config.getDurability(), config.getCapacity(), config.getQuorumName());
+        this(config.getName(), config.getPoolSize(), config.getDurability(), config.getCapacity(),
+                config.getSplitBrainProtectionName());
     }
 
     /**
@@ -163,22 +164,22 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public DurableExecutorConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public DurableExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -189,7 +190,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
                 + "name='" + name + '\''
                 + ", poolSize=" + poolSize
                 + ", capacity=" + capacity
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + '}';
     }
 
@@ -216,7 +217,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         out.writeInt(poolSize);
         out.writeInt(durability);
         out.writeInt(capacity);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
     }
 
     @Override
@@ -225,7 +226,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         poolSize = in.readInt();
         durability = in.readInt();
         capacity = in.readInt();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
     }
 
     @Override
@@ -248,7 +249,8 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         if (capacity != that.capacity) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         return name.equals(that.name);
@@ -260,7 +262,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         result = 31 * result + poolSize;
         result = 31 * result + durability;
         result = 31 * result + capacity;
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
     }
 
@@ -292,7 +294,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         }
 
         @Override
-        public DurableExecutorConfig setQuorumName(String quorumName) {
+        public DurableExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
             throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
         }
     }

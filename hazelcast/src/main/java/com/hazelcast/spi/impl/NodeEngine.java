@@ -21,20 +21,20 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -107,11 +107,11 @@ public interface NodeEngine {
     WanReplicationService getWanReplicationService();
 
     /**
-     * Gets the QuorumService.
+     * Gets the SplitBrainProtectionService.
      *
-     * @return the QuorumService
+     * @return the SplitBrainProtectionService
      */
-    QuorumService getQuorumService();
+    SplitBrainProtectionService getSplitBrainProtectionService();
 
     /**
      * Gets the TransactionManagerService.
@@ -162,7 +162,7 @@ public interface NodeEngine {
 
     /**
      * Returns the Config ClassLoader. This class loader will be used for instantiation of all classes defined by the
-     * configuration (e.g. listeners, policies, stores, partitioning strategies, quorum functions, ...).
+     * configuration (e.g. listeners, policies, stores, partitioning strategies, split brain protection functions, ...).
      * <p>
      * TODO: add more documentation what the purpose is of the config classloader
      *

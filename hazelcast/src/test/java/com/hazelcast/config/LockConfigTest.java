@@ -47,24 +47,24 @@ public class LockConfigTest {
     @Test
     public void testConstructor_withLockConfig() {
         config.setName("myName");
-        config.setQuorumName("myQuorum");
+        config.setSplitBrainProtectionName("mySplitBrainProtection");
 
         LockConfig cloned = new LockConfig(config);
 
         assertEquals(config.getName(), cloned.getName());
-        assertEquals(config.getQuorumName(), cloned.getQuorumName());
+        assertEquals(config.getSplitBrainProtectionName(), cloned.getSplitBrainProtectionName());
     }
 
     @Test
     public void testConstructor_withLockConfigAndOverriddenName() {
         config.setName("myName");
-        config.setQuorumName("myQuorum");
+        config.setSplitBrainProtectionName("mySplitBrainProtection");
 
         LockConfig cloned = new LockConfig("newName", config);
 
         assertEquals("newName", cloned.getName());
         assertNotEquals(config.getName(), cloned.getName());
-        assertEquals(config.getQuorumName(), cloned.getQuorumName());
+        assertEquals(config.getSplitBrainProtectionName(), cloned.getSplitBrainProtectionName());
     }
 
     @Test

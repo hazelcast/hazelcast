@@ -806,17 +806,17 @@ hazelcast:
   # The number of executor threads per member for the executor. Its default value is 8.
   # * "queue-capacity":
   # Task queue capacity of the executor. Its default value is 0, meaning Integer.MAX_VALUE.
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
-  # "quorum-ref"'s value
-  # as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  # "split-brain-protection-ref"'s value
+  # as the "split-brain-protection"'s name.
   #
   executor-service:
     default:
       statistics-enabled: true
       pool-size: 16
       queue-capacity: 0
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST DURABLE EXECUTOR SERVICE CONFIGURATION =====
@@ -830,17 +830,17 @@ hazelcast:
   #     Durability of the executor. The default value is 1.
   # * "capacity":
   # Capacity of the executor task per partition. The default value is 100.
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set
-  # the "quorum-ref"'s value
-  #     as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
+  # the "split-brain-protection-ref"'s value
+  #     as the "split-brain-protection"'s name.
   #
   durable-executor-service:
     default:
       pool-size: 16
       durability: 1
       capacity: 100
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST SCHEDULED EXECUTOR SERVICE CONFIGURATION =====
@@ -855,9 +855,9 @@ hazelcast:
   # * "capacity":
   #     Capacity of the scheduled executor. The default value is 100.
   #     This is the maximum number of tasks for a given scheduled executor on a particular partition.
-  # * "quorum-ref":
-  #     Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set
-  #     the "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
+  #     the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   # * "merge-policy":
   #     The default policy is PutIfAbsentMergePolicy with a batch size of 100.
   #     This is the policy used when merging entries from sub-clusters (after split-brain recovery).
@@ -867,7 +867,7 @@ hazelcast:
       pool-size: 16
       durability: 1
       capacity: 100
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -886,9 +886,9 @@ hazelcast:
   #     Number of asynchronous backups. For example, if 1 is set as the backup-count,
   #    then the cardinality estimation will be copied to one other JVM for
   #    fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
-  # * "quorum-ref":
-  #    Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set
-  #    the "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  #    Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
+  #    the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   # * "merge-policy":
   #     The default policy is `com.hazelcast.spi.merge.HyperLogLogMergePolicy` with a batch size of 100.
   #     This is the policy used when merging estimators from sub-clusters (after split-brain recovery).
@@ -897,7 +897,7 @@ hazelcast:
     default:
       backup-count: 1
       async-backup-count: 0
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 102
         class-name: PutIfAbsentMergePolicy
@@ -945,9 +945,9 @@ hazelcast:
   # - bulk-load:
   #     Size of the bulks loaded from QueueStore when the queue is initialized. Its default
   #     value is 250.
-  # * "quorum-ref":
-  #     Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set
-  #     the "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
+  #     the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   queue:
     default:
@@ -965,7 +965,7 @@ hazelcast:
           binary: false
           memory-limit: 1000
           bulk-load: 500
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -1248,9 +1248,9 @@ hazelcast:
   #     "local" to true if you want to listen to the entries on the local member.
   # * "partition-lost-listeners":
   #     Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface.
-  # * "quorum-ref":
-  # Adds the quorum for this map which you configure using the "quorum" element. You should set the "quorum-ref"'s value
-  # as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the split brain protection for this map which you configure using the "split-brain-protection" element.
+  # You should set the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   map:
     default:
@@ -1320,7 +1320,7 @@ hazelcast:
           local: false
       partition-lost-listeners:
         - com.your-package.YourPartitionLostListener
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       #
       # ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
       #
@@ -1383,9 +1383,9 @@ hazelcast:
   # By default, BINARY in-memory format is used, meaning that the object is stored in a serialized form.
   # You can set the element "binary" to false, then, the OBJECT in-memory format is used.
   # It has also the following sub-elements:
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
-  # "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   multimap:
     default:
@@ -1397,7 +1397,7 @@ hazelcast:
         - class-name: com.hazelcast.examples.EntryListener
           include-value: true
           local: true
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -1427,9 +1427,9 @@ hazelcast:
   #     Adds listeners (listener classes) for the replicated map entries.
   #     You can also set its attribute "include-value" to true if you want the entry event to contain the item values,
   #     and you can set its attribute "local" to true if you want to listen to the entries on the local member.
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
-  # "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   replicatedmap:
     replicatedMap1:
@@ -1440,7 +1440,7 @@ hazelcast:
         - class-name: com.hazelcast.examples.EntryListener
           include-value: true
           local: true
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 100
         class-name: LatestAccessMergePolicy
@@ -1555,9 +1555,9 @@ hazelcast:
   #         target one.
   #         com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
   #         the source cache to the target cache unless the incoming entry is not null.
-  # * "quorum-ref":
-  #     Adds the quorum for this cache which you configure using the "quorum" element. You should set the
-  #     "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  #     Adds the split brain protection for this cache which you configure using the "split-brain-protection" element.
+  #     You should set the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   # * "partition-lost-listeners":
   #     Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface.
   # * "merge-policy":
@@ -1629,12 +1629,12 @@ hazelcast:
         max-size-policy: ENTRY_COUNT
         eviction-policy: LFU
       wan-replication-ref:
-        name: my-wan-cluster-batch
-        merge-policy: PassThroughMergePolicy
-        republishing-enabled: true
-        filters:
-          - com.example.SampleFilter
-      quorum-ref: quorumRuleWithThreeNodes
+         name: my-wan-cluster-batch
+         merge-policy: PassThroughMergePolicy
+         republishing-enabled: true
+         filters:
+           - com.example.SampleFilter
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       partition-lost-listeners:
         - com.your-package.YourPartitionLostListener
       merge-policy:
@@ -1668,9 +1668,9 @@ hazelcast:
   # * "item-listeners":
   # Adds listeners (listener classes) for the List items using its sub-element "item-listener". You can
   # also set its attribute "include-value" to true if you want the item event to contain the item values.
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
-  # "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   list:
     default:
@@ -1681,7 +1681,7 @@ hazelcast:
       item-listeners:
         - class-name: com.hazelcast.examples.ItemListener
           include-value: true
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -1705,9 +1705,9 @@ hazelcast:
   # * "item-listeners":
   # Adds listeners (listener classes) for the Set items. You can
   # also set its attribute "include-value" to true if you want the item event to contain the item values.
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
-  # "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   set:
     default:
@@ -1717,7 +1717,7 @@ hazelcast:
       item-listeners:
         - class-name: com.hazelcast.examples.ItemListener
           include-value: true
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -1842,16 +1842,16 @@ hazelcast:
   #     are copied to one other member for fail-safety. Its default value is 1.
   # * "async-backup-count":
   # Number of asynchronous backups. Its default value is 0.
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
-  # "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   semaphore:
     default:
       initial-permits: 0
       backup-count: 1
       async-backup-count: 0
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST COUNT-DOWN-LATCH CONFIGURATION =====
@@ -1859,13 +1859,13 @@ hazelcast:
   # Configuration element's name is "count-down-latch". It has the required attribute "name" with which you
   # can specify the name of your CountDownLatch. This attribute's default value is "default".
   # It has the following sub-elements:
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
-  # "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   count-down-latch:
     default:
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST LOCK CONFIGURATION =====
@@ -1873,13 +1873,14 @@ hazelcast:
   # Configuration element's name is "lock". It has the required attribute "name" with which you
   # can specify the name of your Lock. This attribute's default value is "default".
   # It has the following sub-elements:
-  # * "quorum-ref":
-  #     Adds the quorum for this lock which you configure using the "quorum" element. You should set the "quorum-ref"'s value
-  #     as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  #     Adds the split brain protection for this lock which you configure using the "split-brain-protection" element.
+  #     You should set the "split-brain-protection-ref"'s value
+  #     as the "split-brain-protection"'s name.
   #
   lock:
     default:
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
 
   #
@@ -1924,10 +1925,10 @@ hazelcast:
   # * "ringbuffer-store":
   #     Includes the Ringbuffer store factory class name and property configurations.
   #     The store format is the same as the in-memory-format for the Ringbuffer.
-  # * "quorum-ref":
+  # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure
-  #     using the "quorum" element. You should set the "quorum-ref"'s value as
-  #     the "quorum"'s name.
+  #     using the "split-brain-protection" element. You should set the "split-brain-protection-ref"'s value as
+  #     the "split-brain-protection"'s name.
   #
   ringbuffer:
     default:
@@ -1941,7 +1942,7 @@ hazelcast:
         properties:
           prop1: prop1-value
           prop2: prop2-value
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         class-name: PutIfAbsentMergePolicy
 
@@ -2005,16 +2006,16 @@ hazelcast:
   # Configuration element's name is "atomic-long". It has the required attribute "name" with which you
   # can specify the name of your IAtomicLong. This attribute's default value is "default".
   # It has the following sub-elements:
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
-  # "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   atomic-long:
     default:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST ATOMIC REFERENCE CONFIGURATION =====
@@ -2022,16 +2023,16 @@ hazelcast:
   # Configuration element's name is "atomic-reference". It has the required attribute "name" with which you
   # can specify the name of your IAtomicReference. This attribute's default value is "default".
   # It has the following sub-elements:
-  # * "quorum-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set the
-  # "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
+  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   #
   atomic-reference:
     default:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST LISTENER CONFIGURATIONS =====
@@ -2364,43 +2365,44 @@ hazelcast:
       type: int
       value: 1033
   #
-  # ===== HAZELCAST QUORUM CONFIGURATION =====
+  # ===== HAZELCAST SPLIT BRAIN PROTECTION CONFIGURATION =====
   #
-  # Configuration element's name is "quorum".
+  # Configuration element's name is "split-brain-protection".
   # It has the following attributes:
   # * name:
-  #     Name of your quorum. This name will be given as the value for "quorum-ref" element in the data structure
-  #     configuration for which you want to define a quorum. Currently, IMap, TransactionalMap and Cache
-  #     structures support quorum.
+  #     Name of your split brain protection. This name will be given as the value for "split-brain-protection-ref"
+  #     element in the data structure configuration for which you want to define a split brain protection.
+  #     Currently, IMap, TransactionalMap and Cache structures support split brain protection.
   # * enabled:
-  #     Specifies whether this quorum is enabled.
+  #     Specifies whether this split brain protection is enabled.
   #
   # It has the following sub-elements:
-  # * "quorum-size":
+  # * "minimum-cluster-size":
   #     The minimum number of members required in a cluster for the cluster to remain in an
   # operational state. If the number of members is below the defined minimum at any time,
-  # the operations are rejected and the rejected operations return a QuorumException to
+  # the operations are rejected and the rejected operations return a SplitBrainProtectionException to
   # their callers.
-  # * "quorum-type":
-  #     Specifies for which operations the quorum will be applied. Available values are
+  # * "protect-on":
+  #     Specifies for which operations the split brain protection will be applied. Available values are
   #     READ, WRITE and READ_WRITE.
-  # * "quorum-function-class-name":
-  #     Name of the class that you develop by implementing Hazelcast's QuorumFunction interface to
-  #     conclude the absence/presence of your quorum. This function is triggered when any change happens to
-  #     the member list.
-  # * "quorum-listeners":
-  #     Provides the list of quorum listeners that you can register to be notified about quorum results.
-  #     Each listener is specified by "quorum-listener" sub-element. Quorum listeners are local to the member
+  # * "function-class-name":
+  #     Name of the class that you develop by implementing Hazelcast's SplitBrainProtectionFunction interface to
+  #     conclude the absence/presence of your split brain protection. This function is triggered when any change
+  #     happens to the member list.
+  # * "listeners":
+  #     Provides the list of split brain protection listeners that you can register to be notified about
+  #     split brain protection results.
+  #     Each listener is specified by "listener" sub-element. Split brain protection listeners are local to the member
   #     that they are registered, so they receive only events occurred on that local member.
   #
-  quorum:
-    quorumRuleWithThreeMembers:
+  split-brain-protection:
+    splitBrainProtectionRuleWithThreeMembers:
       enabled: true
-      quorum-size: 3
-      quorum-type: READ_WRITE
-      quorum-function-class-name: com.your-package.AbsPresMyQuorum
-      quorum-listeners:
-        - com.your-package.ThreeMemberQuorumListener
+      minimum-cluster-size: 3
+      protect-on: READ_WRITE
+      function-class-name: com.your-package.AbsPresMySplitBrainProtection
+      listeners:
+        - com.your-package.ThreeMemberSplitBrainProtectionListener
   #
   # ===== HAZELCAST LITE MEMBER CONFIGURATION =====
   #
@@ -2531,16 +2533,16 @@ hazelcast:
   #    asynchronously between replicas.
   #    The number must be greater than 1 and up to 2147483647 (Integer.MAX_VALUE).
   #    The default value is 2147483647 (Integer.MAX_VALUE).
-  # * "quorum-ref":
-  #    Adds the Split Brain Protection for this data-structure which you configure using the "quorum" element. You should set
-  #    the "quorum-ref"'s value as the "quorum"'s name.
+  # * "split-brain-protection-ref":
+  #    Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
+  #    the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
   # * "statistics-enabled":
   #     When you enable it, you can retrieve the PN counter statistics. Its default value is true.
   #
   pn-counter:
     default:
       replica-count: 2147483647
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       statistics-enabled: true
 
   #

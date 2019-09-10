@@ -22,13 +22,13 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
@@ -77,6 +77,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
@@ -110,7 +111,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public V put(@Nonnull K key, @Nonnull V value) {
-        return put(key, value, -1, TimeUnit.MILLISECONDS);
+        return put(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -150,7 +151,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public V putIfAbsent(@Nonnull K key, @Nonnull V value) {
-        return putIfAbsent(key, value, -1, TimeUnit.MILLISECONDS);
+        return putIfAbsent(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -224,7 +225,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public void set(@Nonnull K key, @Nonnull V value) {
-        set(key, value, -1, TimeUnit.MILLISECONDS);
+        set(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -347,7 +348,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value) {
-        return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
+        return putAsync(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -370,7 +371,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(ttlUnit, NULL_TTL_UNIT_IS_NOT_ALLOWED);
-        checkNotNull(ttlUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
+        checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
         return new DelegatingFuture<>(
@@ -380,7 +381,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value) {
-        return setAsync(key, value, -1, TimeUnit.MILLISECONDS);
+        return setAsync(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -403,7 +404,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(ttlUnit, NULL_TTL_UNIT_IS_NOT_ALLOWED);
-        checkNotNull(ttlUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
+        checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
         return new DelegatingFuture<>(

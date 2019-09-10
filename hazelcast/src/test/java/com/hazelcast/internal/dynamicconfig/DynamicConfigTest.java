@@ -163,7 +163,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     @Test
     public void testLockConfig() {
         LockConfig config = new LockConfig(name);
-        config.setQuorumName(randomString());
+        config.setSplitBrainProtectionName(randomString());
 
         driver.getConfig().addLockConfig(config);
 
@@ -796,7 +796,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         // TODO add journal config when client protocol for map codec is updated
         CacheSimpleConfig config = new CacheSimpleConfig()
                 .setName(name)
-                .setQuorumName("quorum")
+                .setSplitBrainProtectionName("split-brain-protection")
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setBackupCount(3)
                 .setAsyncBackupCount(2)
@@ -865,7 +865,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setMaxSizeConfig(new MaxSizeConfig(4096, MaxSizeConfig.MaxSizePolicy.PER_NODE))
                 .setTimeToLiveSeconds(220)
                 .setMaxIdleSeconds(110)
-                .setQuorumName(randomString())
+                .setSplitBrainProtectionName(randomString())
                 .addMapAttributeConfig(new MapAttributeConfig("attributeName", "com.attribute.extractor"))
                 .addMapIndexConfig(new MapIndexConfig("attr", true))
                 .setMetadataPolicy(MetadataPolicy.OFF)
@@ -944,7 +944,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setEmptyQueueTtl(10)
                 .setQueueStoreConfig(new QueueStoreConfig().setClassName("foo.bar.ImplName").setEnabled(true))
                 .setStatisticsEnabled(false)
-                .setQuorumName("myQuorum")
+                .setSplitBrainProtectionName("mySplitBrainProtection")
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
     }
 
@@ -959,7 +959,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setEmptyQueueTtl(10)
                 .setQueueStoreConfig(new QueueStoreConfig().setClassName("foo.bar.ImplName").setEnabled(true))
                 .setStatisticsEnabled(false)
-                .setQuorumName("myQuorum");
+                .setSplitBrainProtectionName("mySplitBrainProtection");
     }
 
     private ListenerConfig getListenerConfig_byClassName() {

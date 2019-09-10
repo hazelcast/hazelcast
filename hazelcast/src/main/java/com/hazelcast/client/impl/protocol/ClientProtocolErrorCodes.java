@@ -66,7 +66,7 @@ public final class ClientProtocolErrorCodes {
     public static final int PARTITION_MIGRATING = 41;
     public static final int QUERY = 42;
     public static final int QUERY_RESULT_SIZE_EXCEEDED = 43;
-    public static final int QUORUM = 44;
+    public static final int SPLIT_BRAIN_PROTECTION = 44;
     public static final int REACHED_MAX_SIZE = 45;
     public static final int REJECTED_EXECUTION = 46;
     public static final int REMOTE_MAP_REDUCE = 47;

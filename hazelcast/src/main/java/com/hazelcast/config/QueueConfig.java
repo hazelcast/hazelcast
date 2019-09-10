@@ -67,7 +67,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     private int emptyQueueTtl = DEFAULT_EMPTY_QUEUE_TTL;
     private QueueStoreConfig queueStoreConfig;
     private boolean statisticsEnabled = true;
-    private String quorumName;
+    private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
     private transient QueueConfigReadOnly readOnly;
 
@@ -86,7 +86,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         this.maxSize = config.maxSize;
         this.emptyQueueTtl = config.emptyQueueTtl;
         this.statisticsEnabled = config.statisticsEnabled;
-        this.quorumName = config.quorumName;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
@@ -299,22 +299,22 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     }
 
     /**
-     * Returns the quorum name for queue operations.
+     * Returns the split brain protection name for queue operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for queue operations.
+     * Sets the split brain protection name for queue operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated queue configuration
      */
-    public QueueConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public QueueConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -377,7 +377,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         out.writeInt(emptyQueueTtl);
         out.writeObject(queueStoreConfig);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
@@ -391,7 +391,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         emptyQueueTtl = in.readInt();
         queueStoreConfig = in.readObject();
         statisticsEnabled = in.readBoolean();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
     }
 
@@ -430,7 +430,8 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         if (queueStoreConfig != null ? !queueStoreConfig.equals(that.queueStoreConfig) : that.queueStoreConfig != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
@@ -446,7 +447,7 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         result = 31 * result + emptyQueueTtl;
         result = 31 * result + (queueStoreConfig != null ? queueStoreConfig.hashCode() : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }

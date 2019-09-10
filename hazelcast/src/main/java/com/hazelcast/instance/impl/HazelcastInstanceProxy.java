@@ -46,7 +46,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -232,8 +232,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
-    public QuorumService getQuorumService() {
-        return getOriginal().getQuorumService();
+    public SplitBrainProtectionService getSplitBrainProtectionService() {
+        return getOriginal().getSplitBrainProtectionService();
     }
 
     @Override

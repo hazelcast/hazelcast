@@ -24,8 +24,8 @@ import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.EmptyLocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
 import com.hazelcast.replicatedmap.impl.operation.PutAllOperation;
@@ -58,7 +58,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.quorum.QuorumType.READ;
+import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -184,7 +184,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public int size() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         int size = 0;
         for (ReplicatedRecordStore store : stores) {
@@ -195,7 +195,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public boolean isEmpty() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         for (ReplicatedRecordStore store : stores) {
             if (!store.isEmpty()) {
@@ -207,7 +207,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public boolean containsKey(@Nonnull Object key) {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         int partitionId = partitionService.getPartitionId(key);
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, partitionId);
@@ -216,7 +216,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public boolean containsValue(@Nonnull Object value) {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         for (ReplicatedRecordStore store : stores) {
@@ -229,7 +229,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public V get(@Nonnull Object key) {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         int partitionId = partitionService.getPartitionId(key);
         ReplicatedRecordStore store = service.getReplicatedRecordStore(getName(), false, partitionId);
@@ -408,7 +408,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Nonnull
     @Override
     public Set<K> keySet() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         Set<K> keySet = createHashSet(Math.max(KEY_SET_MIN_SIZE, stores.size() * KEY_SET_STORE_MULTIPLE));
         for (ReplicatedRecordStore store : stores) {
@@ -420,7 +420,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Nonnull
     @Override
     public Collection<V> values() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         Collection<V> values = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
@@ -432,7 +432,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Nonnull
     @Override
     public Collection<V> values(@Nullable Comparator<V> comparator) {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         List<V> values = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
@@ -446,7 +446,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         List<Entry> entries = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
@@ -484,7 +484,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         return stats;
     }
 
-    private void ensureQuorumPresent(QuorumType requiredQuorumPermissionType) {
-        service.ensureQuorumPresent(name, requiredQuorumPermissionType);
+    private void ensureNoSplitBrain(SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+        service.ensureNoSplitBrain(name, requiredSplitBrainProtectionPermissionType);
     }
 }

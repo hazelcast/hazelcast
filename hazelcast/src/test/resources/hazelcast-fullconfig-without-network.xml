@@ -153,25 +153,25 @@
         <statistics-enabled>false</statistics-enabled>
         <pool-size>16</pool-size>
         <queue-capacity>1000</queue-capacity>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </executor-service>
     <durable-executor-service name="dummy">
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>10</capacity>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </durable-executor-service>
     <scheduled-executor-service name="dummy">
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>50</capacity>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="10">PutIfAbsentMergePolicy</merge-policy>
     </scheduled-executor-service>
     <cardinality-estimator name="dummy">
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="50">HyperLogLogMergePolicy</merge-policy>
     </cardinality-estimator>
 
@@ -201,7 +201,7 @@
             </properties>
         </queue-store>
 
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </queue>
 
@@ -396,7 +396,7 @@
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </multimap>
 
@@ -404,7 +404,7 @@
         <in-memory-format>BINARY</in-memory-format>
         <async-fillup>false</async-fillup>
         <statistics-enabled>false</statistics-enabled>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
         <entry-listeners>
             <entry-listener include-value="false" local="true">DummyListener</entry-listener>
@@ -419,7 +419,7 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </list>
 
@@ -431,7 +431,7 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </set>
 
@@ -458,25 +458,25 @@
         <initial-permits>10</initial-permits>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </semaphore>
 
     <lock name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </lock>
 
     <atomic-long name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-long>
 
     <atomic-reference name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-reference>
 
     <count-down-latch name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </count-down-latch>
 
     <ringbuffer name="default">
@@ -485,7 +485,7 @@
         <async-backup-count>1</async-backup-count>
         <time-to-live-seconds>29</time-to-live-seconds>
         <in-memory-format>OBJECT</in-memory-format>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </ringbuffer>
 
@@ -525,7 +525,7 @@
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
             </filters>
         </wan-replication-ref>
-        <quorum-ref>DummyQuorum</quorum-ref>
+        <split-brain-protection-ref>DummySplitBrainProtection</split-brain-protection-ref>
         <merge-policy>DummyMergePolicy</merge-policy>
         <partition-lost-listeners>
             <partition-lost-listener>DummyListener</partition-lost-listener>
@@ -762,10 +762,10 @@
     </member-attributes>
 
 
-    <quorum name="quorumRuleWithThreeMembers" enabled="true">
-        <quorum-size>3</quorum-size>
-        <quorum-type>READ_WRITE</quorum-type>
-    </quorum>
+    <split-brain-protection name="splitBrainProtectionRuleWithThreeMembers" enabled="true">
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+    </split-brain-protection>
 
     <crdt-replication>
         <replication-period-millis>1000</replication-period-millis>
@@ -774,27 +774,27 @@
 
     <pn-counter name="pn-counter-1">
         <replica-count>100</replica-count>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <statistics-enabled>false</statistics-enabled>
     </pn-counter>
 
-    <quorum enabled="true" name="member-count-quorum">
-        <quorum-type>READ_WRITE</quorum-type>
-        <quorum-size>3</quorum-size>
-        <member-count-quorum/>
-    </quorum>
+    <split-brain-protection enabled="true" name="member-count-split-brain-protection">
+        <protect-on>READ_WRITE</protect-on>
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <member-count-split-brain-protection/>
+    </split-brain-protection>
 
-    <quorum enabled="true" name="probabilistic-quorum">
-        <quorum-size>3</quorum-size>
-        <quorum-type>READ_WRITE</quorum-type>
-        <probabilistic-quorum acceptable-heartbeat-pause-millis="100" max-sample-size="20" suspicion-threshold="10" />
-    </quorum>
+    <split-brain-protection enabled="true" name="probabilistic-split-brain-protection">
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+        <probabilistic-split-brain-protection acceptable-heartbeat-pause-millis="100" max-sample-size="20" suspicion-threshold="10" />
+    </split-brain-protection>
 
-    <quorum enabled="true" name="recently-active-quorum">
-        <quorum-size>4</quorum-size>
-        <quorum-type>READ_WRITE</quorum-type>
-        <recently-active-quorum heartbeat-tolerance-millis="60000" />
-    </quorum>
+    <split-brain-protection enabled="true" name="recently-active-split-brain-protection">
+        <minimum-cluster-size>4</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+        <recently-active-split-brain-protection heartbeat-tolerance-millis="60000" />
+    </split-brain-protection>
 
     <hot-restart-persistence enabled="false">
         <backup-dir>backup-dir</backup-dir>

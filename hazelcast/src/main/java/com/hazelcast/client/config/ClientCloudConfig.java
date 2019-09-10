@@ -89,4 +89,11 @@ public class ClientCloudConfig {
         result = 31 * result + (enabled ? 1 : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ClientCloudConfig{"
+                + "enabled=" + enabled
+                + '}';
+    }
 }

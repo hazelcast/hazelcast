@@ -61,7 +61,7 @@ public abstract class CacheConfigHelper {
     public static CacheConfig newCompleteCacheConfig(String name) {
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setName(name);
-        cacheConfig.setQuorumName("quorum");
+        cacheConfig.setSplitBrainProtectionName("split-brain-protection");
         cacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         cacheConfig.setBackupCount(3);
         cacheConfig.setAsyncBackupCount(2);

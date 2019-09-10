@@ -83,7 +83,7 @@ public class SetConfigReadOnly extends SetConfig {
     }
 
     @Override
-    public SetConfig setQuorumName(String quorumName) {
+    public SetConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
 }

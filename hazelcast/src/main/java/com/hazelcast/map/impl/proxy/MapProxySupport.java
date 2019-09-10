@@ -398,12 +398,21 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected Data putInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected Data putInternal(Object key, Data valueData,
+                               long ttl, TimeUnit ttlUnit,
+                               long maxIdle, TimeUnit maxIdleUnit) {
+
         Data keyData = toDataWithStrategy(key);
-        long timeInMillis = timeInMsOrOneIfResultIsZero(ttl, ttlUnit);
-        long maxIdleInMillis = timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit);
-        MapOperation operation = operationProvider.createPutOperation(name, keyData, value, timeInMillis, maxIdleInMillis);
+        MapOperation operation = newPutOperation(keyData, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
         return (Data) invokeOperation(keyData, operation);
+    }
+
+    private MapOperation newPutOperation(Data keyData, Data valueData,
+                                         long ttl, TimeUnit timeunit,
+                                         long maxIdle, TimeUnit maxIdleUnit) {
+        return operationProvider.createPutOperation(name, keyData, valueData,
+                timeInMsOrOneIfResultIsZero(ttl, timeunit),
+                timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
     }
 
     protected boolean tryPutInternal(Object key, Data value, long timeout, TimeUnit timeunit) {
@@ -413,22 +422,37 @@ abstract class MapProxySupport<K, V>
         return (Boolean) invokeOperation(keyData, operation);
     }
 
-    protected Data putIfAbsentInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected Data putIfAbsentInternal(Object key, Data value,
+                                       long ttl, TimeUnit ttlUnit,
+                                       long maxIdle, TimeUnit maxIdleUnit) {
+
         Data keyData = toDataWithStrategy(key);
-        long timeInMillis = timeInMsOrOneIfResultIsZero(ttl, ttlUnit);
-        long maxIdleInMillis = timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit);
-        MapOperation operation = operationProvider
-                .createPutIfAbsentOperation(name, keyData, value, timeInMillis, maxIdleInMillis);
+        MapOperation operation = newPutIfAbsentOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
         return (Data) invokeOperation(keyData, operation);
     }
 
-    protected void putTransientInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+    private MapOperation newPutIfAbsentOperation(Data keyData, Data valueData,
+                                                 long ttl, TimeUnit timeunit,
+                                                 long maxIdle, TimeUnit maxIdleUnit) {
+        return operationProvider.createPutIfAbsentOperation(name, keyData, valueData,
+                timeInMsOrOneIfResultIsZero(ttl, timeunit),
+                timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+    }
+
+    protected void putTransientInternal(Object key, Data value,
+                                        long ttl, TimeUnit ttlUnit,
+                                        long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
-        long timeInMillis = timeInMsOrOneIfResultIsZero(ttl, ttlUnit);
-        long maxIdleInMillis = timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit);
-        MapOperation operation = operationProvider
-                .createPutTransientOperation(name, keyData, value, timeInMillis, maxIdleInMillis);
+        MapOperation operation = newPutTransientOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
         invokeOperation(keyData, operation);
+    }
+
+    private MapOperation newPutTransientOperation(Data keyData, Data valueData,
+                                                  long ttl, TimeUnit timeunit,
+                                                  long maxIdle, TimeUnit maxIdleUnit) {
+        return operationProvider.createPutTransientOperation(name, keyData, valueData,
+                timeInMsOrOneIfResultIsZero(ttl, timeunit),
+                timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
     }
 
     private Object invokeOperation(Data key, MapOperation operation) {
@@ -457,12 +481,12 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected InternalCompletableFuture<Data> putAsyncInternal(Object key, Data value, long ttl, TimeUnit ttlUnit,
+    protected InternalCompletableFuture<Data> putAsyncInternal(Object key, Data valueData,
+                                                               long ttl, TimeUnit ttlUnit,
                                                                long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
-        MapOperation operation = operationProvider.createPutOperation(name, keyData, value,
-                timeInMsOrOneIfResultIsZero(ttl, ttlUnit), timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+        MapOperation operation = newPutOperation(keyData, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
         operation.setThreadId(getThreadId());
         try {
             long startTimeNanos = System.nanoTime();
@@ -477,13 +501,14 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected InternalCompletableFuture<Data> setAsyncInternal(Object key, Data value, long ttl, TimeUnit timeunit,
+    protected InternalCompletableFuture<Data> setAsyncInternal(Object key, Data valueData, long ttl, TimeUnit timeunit,
                                                                long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
-        MapOperation operation = operationProvider.createSetOperation(name, keyData, value,
-                timeInMsOrOneIfResultIsZero(ttl, timeunit), timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+
+        MapOperation operation = newSetOperation(keyData, valueData, ttl, timeunit, maxIdle, maxIdleUnit);
         operation.setThreadId(getThreadId());
+
         try {
             final InternalCompletableFuture<Data> result;
             if (statisticsEnabled) {
@@ -515,11 +540,18 @@ abstract class MapProxySupport<K, V>
 
     // WARNING: when UpdateEvent is fired it does *NOT* contain the oldValue
     // see this: https://github.com/hazelcast/hazelcast/pull/6088#issuecomment-136025968
-    protected void setInternal(Object key, Data value, long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected void setInternal(Object key, Data valueData, long ttl, TimeUnit timeunit, long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
-        MapOperation operation = operationProvider.createSetOperation(name, keyData, value,
-                timeInMsOrOneIfResultIsZero(ttl, timeunit), timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+        MapOperation operation = newSetOperation(keyData, valueData, ttl, timeunit, maxIdle, maxIdleUnit);
         invokeOperation(keyData, operation);
+    }
+
+    private MapOperation newSetOperation(Data keyData, Data valueData,
+                                         long ttl, TimeUnit timeunit,
+                                         long maxIdle, TimeUnit maxIdleUnit) {
+        return operationProvider.createSetOperation(name, keyData, valueData,
+                timeInMsOrOneIfResultIsZero(ttl, timeunit),
+                timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
     }
 
     /**
@@ -595,7 +627,7 @@ abstract class MapProxySupport<K, V>
 
     protected Data removeInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
-        MapOperation operation = operationProvider.createRemoveOperation(name, keyData, false);
+        MapOperation operation = operationProvider.createRemoveOperation(name, keyData);
         return (Data) invokeOperation(keyData, operation);
     }
 
@@ -653,7 +685,7 @@ abstract class MapProxySupport<K, V>
     protected InternalCompletableFuture<Data> removeAsyncInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
-        MapOperation operation = operationProvider.createRemoveOperation(name, keyData, false);
+        MapOperation operation = operationProvider.createRemoveOperation(name, keyData);
         operation.setThreadId(getThreadId());
         try {
             long startTimeNanos = System.nanoTime();

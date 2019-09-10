@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp;
 
-import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 
@@ -70,9 +70,10 @@ import java.util.concurrent.TimeUnit;
  * the associated countdown actors after a split-brain heal has taken place,
  * and take steps to re-orchestrate if needed.
  * <p>
- * This {@link ICountDownLatch} impl also supports Quorum {@link QuorumConfig}
- * in cluster versions 3.10 and higher. However, Hazelcast quorums do not
- * guarantee strong consistency under failure scenarios.
+ * This {@link ICountDownLatch} impl also supports split brain protection
+ * {@link SplitBrainProtectionConfig} in cluster versions 3.10 and higher.
+ * However, Hazelcast split brain protections do not guarantee strong consistency
+ * under failure scenarios.
  * <p>
  * The second {@link ICountDownLatch} impl is a new one introduced with the
  * {@link CPSubsystem} in version 3.12. It is accessed via

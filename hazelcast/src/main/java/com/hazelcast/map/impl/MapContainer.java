@@ -81,7 +81,7 @@ import static java.lang.System.getProperty;
 public class MapContainer {
 
     protected final String name;
-    protected final String quorumName;
+    protected final String splitBrainProtectionName;
     // on-heap indexes are global, meaning there is only one index per map,
     // stored in the mapContainer, so if globalIndexes is null it means that
     // global index is not in use
@@ -123,7 +123,7 @@ public class MapContainer {
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.partitioningStrategy = createPartitioningStrategy();
-        this.quorumName = mapConfig.getQuorumName();
+        this.splitBrainProtectionName = mapConfig.getSplitBrainProtectionName();
         this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
         this.objectNamespace = MapService.getObjectNamespace(name);
@@ -368,8 +368,8 @@ public class MapContainer {
         return name;
     }
 
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     public Function<Object, Data> toData() {

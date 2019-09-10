@@ -115,7 +115,7 @@ public class Config {
 
     private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
-    private final Map<String, QuorumConfig> quorumConfigs = new ConcurrentHashMap<String, QuorumConfig>();
+    private final Map<String, SplitBrainProtectionConfig> splitBrainProtectionConfigs = new ConcurrentHashMap<>();
 
     private final Map<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
 
@@ -2474,12 +2474,12 @@ public class Config {
      *
      * @return the split-brain protection configurations mapped by config name
      */
-    public Map<String, QuorumConfig> getQuorumConfigs() {
-        return quorumConfigs;
+    public Map<String, SplitBrainProtectionConfig> getSplitBrainProtectionConfigs() {
+        return splitBrainProtectionConfigs;
     }
 
     /**
-     * Returns the QuorumConfig for the given name, creating one
+     * Returns the {@link SplitBrainProtectionConfig} for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
      * The configuration is found by matching the configuration name
@@ -2492,7 +2492,7 @@ public class Config {
      * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
-     * {@link #addQuorumConfig(QuorumConfig)}.
+     * {@link #addSplitBrainProtectionConfig(SplitBrainProtectionConfig)}.
      * <p>
      * Because it adds new configurations if they are not already present,
      * this method is intended to be used before this config is used to
@@ -2507,8 +2507,8 @@ public class Config {
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
      */
-    public QuorumConfig getQuorumConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, quorumConfigs, name, QuorumConfig.class);
+    public SplitBrainProtectionConfig getSplitBrainProtectionConfig(String name) {
+        return ConfigUtils.getConfig(configPatternMatcher, splitBrainProtectionConfigs, name, SplitBrainProtectionConfig.class);
     }
 
     /**
@@ -2529,13 +2529,13 @@ public class Config {
      * @see #getConfigPatternMatcher()
      * @see EvictionConfig#setSize(int)
      */
-    public QuorumConfig findQuorumConfig(String name) {
+    public SplitBrainProtectionConfig findSplitBrainProtectionConfig(String name) {
         name = getBaseName(name);
-        QuorumConfig config = lookupByPattern(configPatternMatcher, quorumConfigs, name);
+        SplitBrainProtectionConfig config = lookupByPattern(configPatternMatcher, splitBrainProtectionConfigs, name);
         if (config != null) {
             return config;
         }
-        return getQuorumConfig("default");
+        return getSplitBrainProtectionConfig("default");
     }
 
     /**
@@ -2543,13 +2543,13 @@ public class Config {
      * name. The config name may be a pattern with which the configuration
      * will be obtained in the future.
      *
-     * @param quorumConfigs the split-brain protection configuration map to set
+     * @param splitBrainProtectionConfigs the split-brain protection configuration map to set
      * @return this config instance
      */
-    public Config setQuorumConfigs(Map<String, QuorumConfig> quorumConfigs) {
-        this.quorumConfigs.clear();
-        this.quorumConfigs.putAll(quorumConfigs);
-        for (final Entry<String, QuorumConfig> entry : this.quorumConfigs.entrySet()) {
+    public Config setSplitBrainProtectionConfigs(Map<String, SplitBrainProtectionConfig> splitBrainProtectionConfigs) {
+        this.splitBrainProtectionConfigs.clear();
+        this.splitBrainProtectionConfigs.putAll(splitBrainProtectionConfigs);
+        for (final Entry<String, SplitBrainProtectionConfig> entry : this.splitBrainProtectionConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -2558,13 +2558,13 @@ public class Config {
     /**
      * Adds the split-brain protection configuration.
      * The configuration is saved under the config name defined by
-     * {@link QuorumConfig#getName()}.
+     * {@link SplitBrainProtectionConfig#getName()}.
      *
-     * @param quorumConfig split-brain protection config to add
+     * @param splitBrainProtectionConfig split-brain protection config to add
      * @return this config instance
      */
-    public Config addQuorumConfig(QuorumConfig quorumConfig) {
-        quorumConfigs.put(quorumConfig.getName(), quorumConfig);
+    public Config addSplitBrainProtectionConfig(SplitBrainProtectionConfig splitBrainProtectionConfig) {
+        splitBrainProtectionConfigs.put(splitBrainProtectionConfig.getName(), splitBrainProtectionConfig);
         return this;
     }
 

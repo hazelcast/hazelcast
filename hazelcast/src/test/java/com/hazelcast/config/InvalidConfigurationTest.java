@@ -449,7 +449,7 @@ public class InvalidConfigurationTest {
                 + "</network>\n"
 
                 + "<queue name=\"default\">\n"
-                + "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>"
+                + "<split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>"
                 + "<max-size>0</max-size>\n"
                 + "<backup-count>${queue-backup-count}</backup-count>\n"
                 + "<async-backup-count>${queue-async-backup-count}</async-backup-count>\n"
@@ -515,7 +515,7 @@ public class InvalidConfigurationTest {
                 + "</semaphore>\n"
 
                 + "<lock name=\"default\">\n"
-                + "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>\n"
+                + "<split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>\n"
                 + "</lock>"
 
                 + "    <ringbuffer name=\"default\">\n"
