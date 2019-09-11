@@ -16,12 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -29,26 +26,55 @@ import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionOptions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.startsWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexCreateStaticTest extends HazelcastTestSupport {
 
     protected static final String MAP_NAME = "map";
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    @Parameterized.Parameters(name = "Executing: {0}")
+    public static Collection<Object[]> parameters() {
+
+        TransactionOptions onePhaseOption = TransactionOptions.getDefault();
+        onePhaseOption.setTransactionType(ONE_PHASE);
+
+        TransactionOptions twoPhaseOption = TransactionOptions.getDefault();
+        twoPhaseOption.setTransactionType(TWO_PHASE);
+
+        List<Object[]> res = new ArrayList<>();
+
+        res.add(new Object[] { new StaticMemberHandler() });
+        res.add(new Object[] { new DynamicMemberHandler() });
+
+        return res;
+    }
+
+    @Parameterized.Parameter(0)
+    public static Handler handler;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -134,31 +160,33 @@ public class IndexCreateStaticTest extends HazelcastTestSupport {
     }
 
     private void checkIndex(IndexConfig... indexConfigs) {
-        HazelcastInstanceProxy member = createMap(indexConfigs);
+        List<HazelcastInstanceProxy> members = handler.initialize(indexConfigs);
 
-        MapService service = member.getOriginal().node.nodeEngine.getService(MapService.SERVICE_NAME);
-        MapServiceContext mapServiceContext = service.getMapServiceContext();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(MAP_NAME);
+        for (HazelcastInstanceProxy member : members) {
+            MapService service = member.getOriginal().node.nodeEngine.getService(MapService.SERVICE_NAME);
+            MapServiceContext mapServiceContext = service.getMapServiceContext();
+            MapContainer mapContainer = mapServiceContext.getMapContainer(MAP_NAME);
 
-        Indexes indexes = mapContainer.getIndexes();
+            Indexes indexes = mapContainer.getIndexes();
 
-        assertEquals(indexConfigs.length, indexes.getIndexes().length);
+            assertEquals(indexConfigs.length, indexes.getIndexes().length);
 
-        for (IndexConfig indexConfig : indexConfigs) {
-            String expectedName = getExpectedName(indexConfig);
+            for (IndexConfig indexConfig : indexConfigs) {
+                String expectedName = getExpectedName(indexConfig);
 
-            InternalIndex index = indexes.getIndex(expectedName);
+                InternalIndex index = indexes.getIndex(expectedName);
 
-            assertNotNull("Index not found: " + expectedName, index);
+                assertNotNull("Index not found: " + expectedName, index);
 
-            assertEquals(indexConfig.getType() == IndexType.SORTED, index.isOrdered());
-            assertEquals(indexConfig.getColumns().size(), index.getComponents().size());
+                assertEquals(indexConfig.getType() == IndexType.SORTED, index.isOrdered());
+                assertEquals(indexConfig.getColumns().size(), index.getComponents().size());
 
-            for (int i = 0; i < indexConfig.getColumns().size(); i++) {
-                IndexColumnConfig expColumn = indexConfig.getColumns().get(i);
-                String componentName = index.getComponents().get(i);
+                for (int i = 0; i < indexConfig.getColumns().size(); i++) {
+                    IndexColumnConfig expColumn = indexConfig.getColumns().get(i);
+                    String componentName = index.getComponents().get(i);
 
-                assertEquals(IndexUtils.canonicalizeAttribute(expColumn.getName()), componentName);
+                    assertEquals(IndexUtils.canonicalizeAttribute(expColumn.getName()), componentName);
+                }
             }
         }
     }
@@ -168,21 +196,7 @@ public class IndexCreateStaticTest extends HazelcastTestSupport {
         thrown.expect(exceptionClass);
         thrown.expectMessage(startsWith(exceptionMessage));
 
-        createMap(indexConfigs);
-    }
-
-    protected HazelcastInstanceProxy createMap(IndexConfig... indexConfigs) {
-        MapConfig mapConfig = new MapConfig(MAP_NAME);
-
-        for (IndexConfig indexConfig : indexConfigs) {
-            mapConfig.addIndexConfig(indexConfig);
-        }
-
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(new Config().addMapConfig(mapConfig));
-
-        member.getMap(MAP_NAME);
-
-        return (HazelcastInstanceProxy)member;
+        handler.initialize(indexConfigs);
     }
 
     private static IndexConfig createNamedConfig(String name, String... columns) {
@@ -216,5 +230,49 @@ public class IndexCreateStaticTest extends HazelcastTestSupport {
             res.append("_").append(IndexUtils.canonicalizeAttribute(column.getName()));
 
         return res.toString();
+    }
+
+    private interface Handler {
+        List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs);
+    }
+
+    private static class StaticMemberHandler implements Handler {
+        @Override
+        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
+            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+            MapConfig mapConfig = new MapConfig(MAP_NAME);
+
+            for (IndexConfig indexConfig : indexConfigs) {
+                mapConfig.addIndexConfig(indexConfig);
+            }
+
+            Config config = new Config().addMapConfig(mapConfig);
+
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+
+            member.getMap(MAP_NAME);
+
+            return Collections.singletonList(member);
+        }
+    }
+
+    private static class DynamicMemberHandler implements Handler {
+        @Override
+        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
+            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+            Config config = new Config();
+
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+
+            IMap map = member.getMap(MAP_NAME);
+
+            for (IndexConfig indexConfig : indexConfigs) {
+                map.addIndex(indexConfig);
+            }
+
+            return Collections.singletonList(member);
+        }
     }
 }
