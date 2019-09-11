@@ -16,8 +16,6 @@
 
 package com.hazelcast.config;
 
-// TODO 15265: Tests for XML and YAML and Spring, w/ and w/o defaults
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
