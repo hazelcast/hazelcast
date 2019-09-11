@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.internal.matchers.Null;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
