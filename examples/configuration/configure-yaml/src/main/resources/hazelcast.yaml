@@ -1,0 +1,9 @@
+hazelcast:
+  network:
+    port:
+      port: 7000
+    interfaces:
+      - 127.0.0.1
+  group:
+    name: dev-configured-from-yaml
+    password: 1234

@@ -1,0 +1,7 @@
+hazelcast-client:
+  network:
+    cluster-members:
+      - 127.0.0.1:7000
+  group:
+    name: dev-configured-from-yaml
+    password: 1234

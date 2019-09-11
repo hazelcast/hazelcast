@@ -96,6 +96,12 @@ samples using the Core API.
   - hash-join an unbounded stream with two batch streams in one step
   - print the results on the console
 
+## Configuration
+
+- [XML Configuration](configuration/configure-xml)
+- [YAML Configuration](configuration/configure-yaml)
+- [Logging Configuration](configuration/configure-logging)
+
 ## Job Management
 
 - [Suspend/Resume a Job](job-management/src/main/java/com/hazelcast/jet/examples/jobmanagement/JobSuspendResume.java)
@@ -120,6 +126,7 @@ samples using the Core API.
 
 - [Kafka Source](kafka/src/main/java/com/hazelcast/jet/examples/kafka/KafkaSource.java)
   - variant with [Avro Serialization](kafka/src/main/java/com/hazelcast/jet/examples/kafka/avro/KafkaAvroSource.java)
+  - variant with [JSON Serialization](kafka/src/main/java/com/hazelcast/jet/examples/kafka/json/KafkaJsonSource.java)
 - [Kafka Sink](kafka/src/main/java/com/hazelcast/jet/examples/kafka/KafkaSink.java)
 - [Hadoop Distributed File System (HDFS) Source and Sink](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/HadoopWordCount.java)
   - variant with [Avro Serialization](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/avro/HadoopAvro.java)

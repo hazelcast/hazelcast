@@ -35,6 +35,7 @@
 
     <modules>
         <module>co-group</module>
+        <module>configuration</module>
         <module>early-window-results</module>
         <module>enrichment</module>
         <module>event-journal</module>
