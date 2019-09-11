@@ -1385,7 +1385,7 @@
                 <indexes>
                     <index>
                         <columns>
-                            <column>...</column>
+                            <column>name</column>
                         </columns>
                     </index>
                 </indexes>

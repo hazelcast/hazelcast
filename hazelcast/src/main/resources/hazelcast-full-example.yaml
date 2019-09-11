@@ -1371,7 +1371,7 @@ hazelcast:
             eviction-policy: LFU
           indexes:
             - columns:
-              - "..."
+              - "name"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #

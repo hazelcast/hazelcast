@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,7 +55,7 @@ import static org.mockito.ArgumentMatchers.startsWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexCreateTest extends HazelcastTestSupport {
 
-    protected static final String MAP_NAME = "map";
+    private static final String MAP_NAME = "map";
 
     @Parameterized.Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
@@ -81,6 +82,13 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
 
     @Test
     public void testNoColumns() {
@@ -163,7 +171,7 @@ public class IndexCreateTest extends HazelcastTestSupport {
     }
 
     private void checkIndex(IndexConfig... indexConfigs) {
-        List<HazelcastInstanceProxy> members = handler.initialize(indexConfigs);
+        List<HazelcastInstanceProxy> members = handler.initialize(hazelcastFactory, indexConfigs);
 
         for (HazelcastInstanceProxy member : members) {
             MapService service = member.getOriginal().node.nodeEngine.getService(MapService.SERVICE_NAME);
@@ -199,7 +207,7 @@ public class IndexCreateTest extends HazelcastTestSupport {
         thrown.expect(exceptionClass);
         thrown.expectMessage(startsWith(exceptionMessage));
 
-        handler.initialize(indexConfigs);
+        handler.initialize(hazelcastFactory, indexConfigs);
     }
 
     private static IndexConfig createNamedConfig(String name, String... columns) {
@@ -239,14 +247,13 @@ public class IndexCreateTest extends HazelcastTestSupport {
     }
 
     private interface Handler {
-        List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs);
+        List<HazelcastInstanceProxy> initialize(TestHazelcastFactory hazelcastFactory, IndexConfig... indexConfigs);
     }
 
     private static class StaticMapMemberHandler implements Handler {
         @Override
-        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
-            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
+        public List<HazelcastInstanceProxy> initialize(TestHazelcastFactory hazelcastFactory,
+            IndexConfig... indexConfigs) {
             MapConfig mapConfig = new MapConfig(MAP_NAME);
 
             for (IndexConfig indexConfig : indexConfigs) {
@@ -266,9 +273,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
     private static class DynamicMapMemberHandler implements Handler {
         @Override
-        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
-            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
+        public List<HazelcastInstanceProxy> initialize(TestHazelcastFactory hazelcastFactory,
+            IndexConfig... indexConfigs) {
             Config config = new Config();
 
             HazelcastInstanceProxy member = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
@@ -290,9 +296,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
     private static class DynamicIndexMemberHandler implements Handler {
         @Override
-        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
-            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
+        public List<HazelcastInstanceProxy> initialize(TestHazelcastFactory hazelcastFactory,
+            IndexConfig... indexConfigs) {
             Config config = new Config();
 
             HazelcastInstanceProxy member = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
@@ -310,9 +315,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
     private static class DynamicMapClientHandler implements Handler {
         @Override
-        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
-            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
+        public List<HazelcastInstanceProxy> initialize(TestHazelcastFactory hazelcastFactory,
+            IndexConfig... indexConfigs) {
             Config config = new Config();
 
             HazelcastInstanceProxy member = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
@@ -335,9 +339,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
     private static class DynamicIndexClientHandler implements Handler {
         @Override
-        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
-            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
+        public List<HazelcastInstanceProxy> initialize(TestHazelcastFactory hazelcastFactory,
+            IndexConfig... indexConfigs) {
             Config config = new Config();
 
             HazelcastInstanceProxy member = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
