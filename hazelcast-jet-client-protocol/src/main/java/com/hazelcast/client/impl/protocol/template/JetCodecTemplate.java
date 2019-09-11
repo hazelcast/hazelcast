@@ -30,13 +30,13 @@ public interface JetCodecTemplate {
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void terminateJob(long jobId, int terminateMode);
 
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.INTEGER)
+    @Request(id = 3, retryable = true, response = ResponseMessageConst.INTEGER)
     Object getJobStatus(long jobId);
 
     @Request(id = 4, retryable = true, response = ResponseMessageConst.LIST_LONG)
     Object getJobIds();
 
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 5, retryable = true, response = ResponseMessageConst.VOID)
     void joinSubmittedJob(long jobId);
 
     @Request(id = 6, retryable = true, response = ResponseMessageConst.LIST_LONG)
@@ -45,7 +45,7 @@ public interface JetCodecTemplate {
     @Request(id = 7, retryable = true, response = ResponseMessageConst.LONG)
     long getJobSubmissionTime(long jobId);
 
-    @Request(id = 8, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 8, retryable = true, response = ResponseMessageConst.DATA)
     Object getJobConfig(long jobId);
 
     @Request(id = 9, retryable = true, response = ResponseMessageConst.DATA)
