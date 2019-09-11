@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 // TODO 15265: Tests for XML and YAML and Spring, w/ and w/o defaults
-// TODO 15265: Tests for index creation (dynamic and static)
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -185,6 +184,11 @@ public class IndexConfig implements IdentifiedDataSerializable {
             columns = null;
         } else {
             columns = new ArrayList<>(columns);
+        }
+
+        for (IndexColumnConfig column : columns) {
+            if (column == null)
+                throw new NullPointerException("Column cannot be null.");
         }
 
         this.columns = columns;

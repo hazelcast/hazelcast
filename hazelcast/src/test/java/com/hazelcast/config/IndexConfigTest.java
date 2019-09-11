@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -76,6 +77,11 @@ public class IndexConfigTest {
     @Test(expected = NullPointerException.class)
     public void testTypeNull() {
         new IndexConfig().setType(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testColumnElementNull() {
+        new IndexConfig().setColumns(Collections.singletonList(null));
     }
 
     @Test(expected = NullPointerException.class)

@@ -38,7 +38,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  */
 public final class IndexUtils {
     /** Maximum number of columns allowed in the index. */
-    private static final int MAX_COLUMNS = 255;
+    public static final int MAX_COLUMNS = 255;
 
     /** Pattern to stripe away "this." prefix. */
     private static final Pattern THIS_PATTERN = Pattern.compile("^this\\.");
@@ -88,12 +88,12 @@ public final class IndexUtils {
                 String duplicateOriginalColumnName = originalColumnNames.get(existingIdx);
 
                 if (duplicateOriginalColumnName.equals(originalColumnName)) {
-                    throw new IllegalArgumentException("Duplicate column name [config=" + config
-                        + ", column=" + originalColumnName + ']');
+                    throw new IllegalArgumentException("Duplicate column name [columnName=" + originalColumnName
+                        + ", indexConfig=" + config + ']');
                 } else {
-                    throw new IllegalArgumentException("Duplicate column names [config=" + config
-                        + ", column1=" + duplicateOriginalColumnName + ", column2=" + originalColumnName
-                        + ']');
+                    throw new IllegalArgumentException("Duplicate column names ["
+                        + "columnName1=" + duplicateOriginalColumnName + ", columnName2=" + originalColumnName
+                        + ", indexConfig=" + config + ']');
                 }
             }
 
@@ -191,7 +191,11 @@ public final class IndexUtils {
 
         List<String> res = new ArrayList<>(config.getColumns().size());
 
-        for (IndexColumnConfig column: config.getColumns()) {
+        for (IndexColumnConfig column : config.getColumns()) {
+            if (column == null) {
+                throw new NullPointerException("Column cannot be null [indexConfig=" + config + ']');
+            }
+
             res.add(column.getName());
         }
 
