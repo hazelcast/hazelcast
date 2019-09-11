@@ -174,7 +174,7 @@ public final class IndexUtils {
         }
 
         if (columnName0.endsWith(".")) {
-            throw new IllegalArgumentException("Column name cannot end with dot: " + columnName + ']');
+            throw new IllegalArgumentException("Column name cannot end with dot: " + columnName);
         }
     }
 
