@@ -35,7 +35,7 @@ public abstract class SessionAwareProxy {
         return groupId;
     }
 
-    protected final Long getOrCreateUniqueThreadId(RaftGroupId groupId) {
+    protected final Long getOrCreateUniqueThreadId() {
         return sessionManager.getOrCreateUniqueThreadId(groupId);
     }
 

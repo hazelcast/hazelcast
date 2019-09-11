@@ -55,7 +55,7 @@ public class RaftInvocation extends Invocation<CPMember> {
         this.raftInvocationContext = raftInvocationContext;
         this.groupId = groupId;
 
-        int partitionId = context.partitionService.getPartitionId(groupId.id());
+        int partitionId = raftInvocationContext.getCPGroupPartitionId(groupId);
         op.setPartitionId(partitionId);
     }
 

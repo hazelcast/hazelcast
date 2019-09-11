@@ -670,9 +670,9 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         ReplicatedMapService service = (ReplicatedMapService) replicatedMapProxy.getService();
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(mapName);
         for (ReplicatedRecordStore store : stores) {
-            assertEquals(0,
+            assertTrue(
                     ((SecondsBasedEntryTaskScheduler) ((AbstractBaseReplicatedRecordStore) store)
-                            .getTtlEvictionScheduler()).size());
+                            .getTtlEvictionScheduler()).isEmpty());
         }
     }
 

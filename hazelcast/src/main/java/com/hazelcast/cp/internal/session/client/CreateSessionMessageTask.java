@@ -18,36 +18,34 @@ package com.hazelcast.cp.internal.session.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSessionCreateSessionCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.client.impl.protocol.codec.CPSessionCreateSessionCodec.RequestParameters;
+import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.session.SessionResponse;
 import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-
-import java.security.Permission;
+import com.hazelcast.util.Clock;
 
 import static com.hazelcast.cp.session.CPSession.CPSessionOwnerType.CLIENT;
 
 /**
  * Client message task for {@link CreateSessionOp}
  */
-public class CreateSessionMessageTask extends AbstractMessageTask<CPSessionCreateSessionCodec.RequestParameters>
-        implements ExecutionCallback<SessionResponse> {
+public class CreateSessionMessageTask extends AbstractSessionMessageTask<RequestParameters, SessionResponse> {
 
     public CreateSessionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        RaftOp op = new CreateSessionOp(connection.getEndPoint(), parameters.endpointName, CLIENT, System.currentTimeMillis());
-        service.getInvocationManager()
-                .<SessionResponse>invoke(parameters.groupId, op)
-                .andThen(this);
+    CPGroupId getGroupId() {
+        return parameters.groupId;
+    }
+
+    @Override
+    RaftOp getRaftOp() {
+        return new CreateSessionOp(connection.getEndPoint(), parameters.endpointName, CLIENT, Clock.currentTimeMillis());
     }
 
     @Override
@@ -60,40 +58,5 @@ public class CreateSessionMessageTask extends AbstractMessageTask<CPSessionCreat
         SessionResponse session = (SessionResponse) response;
         return CPSessionCreateSessionCodec.encodeResponse(session.getSessionId(), session.getTtlMillis(),
                 session.getHeartbeatMillis());
-    }
-
-    @Override
-    public String getServiceName() {
-        return RaftService.SERVICE_NAME;
-    }
-
-    @Override
-    public String getDistributedObjectName() {
-        return null;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
-
-    @Override
-    public String getMethodName() {
-        return "create";
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
-    }
-
-    @Override
-    public void onResponse(SessionResponse response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

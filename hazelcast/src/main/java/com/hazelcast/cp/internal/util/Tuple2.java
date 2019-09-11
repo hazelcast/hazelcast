@@ -38,6 +38,14 @@ public final class Tuple2<X, Y> {
         return new Tuple2<>(element1, element2);
     }
 
+    public X element1() {
+        return element1;
+    }
+
+    public Y element2() {
+        return element2;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -18,14 +18,13 @@ package com.hazelcast.client.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSessionlessSemaphoreBasicTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,6 +35,8 @@ import static org.junit.Assert.assertFalse;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RaftSessionlessSemaphoreClientBasicTest extends RaftSessionlessSemaphoreBasicTest {
 
+    private HazelcastInstance client;
+
     @Override
     protected TestHazelcastInstanceFactory createTestFactory() {
         return new TestHazelcastFactory();
@@ -45,13 +46,13 @@ public class RaftSessionlessSemaphoreClientBasicTest extends RaftSessionlessSema
     protected HazelcastInstance[] createInstances() {
         HazelcastInstance[] instances = super.createInstances();
         TestHazelcastFactory f = (TestHazelcastFactory) factory;
-        semaphoreInstance = f.newHazelcastClient();
+        client = f.newHazelcastClient();
         return instances;
     }
 
-    @After
-    public void shutdown() {
-        factory.terminateAll();
+    @Override
+    protected ISemaphore createSemaphore() {
+        return client.getCPSubsystem().getSemaphore(objectName + "@group");
     }
 
     @Override
@@ -61,7 +62,8 @@ public class RaftSessionlessSemaphoreClientBasicTest extends RaftSessionlessSema
 
     @Test
     public void testAcquireOnMultipleProxies() {
-        ISemaphore semaphore2 = ((TestHazelcastFactory) factory).newHazelcastClient().getCPSubsystem().getSemaphore(proxyName);
+        ISemaphore semaphore2 = ((TestHazelcastFactory) factory).newHazelcastClient()
+                .getCPSubsystem().getSemaphore(semaphore.getName());
 
         semaphore.init(1);
         semaphore.tryAcquire(1);
