@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -513,14 +514,14 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         logger.info("exception after completion", excAfterComplete);
 
         // Then
-        while (excBeforeComplete != null || excAfterComplete != null) {
-            assertNotNull("excBeforeComplete is null", excBeforeComplete);
-            assertNotNull("excAfterComplete is null", excAfterComplete);
-            assertEquals(excBeforeComplete.getClass(), excAfterComplete.getClass());
-            assertEquals(excBeforeComplete.getMessage(), excAfterComplete.getMessage());
-            excBeforeComplete = excBeforeComplete.getCause();
-            excAfterComplete = excAfterComplete.getCause();
-        }
+        assertInstanceOf(CompletionException.class, excBeforeComplete);
+        assertInstanceOf(CompletionException.class, excAfterComplete);
+
+        Throwable causeBefore = excBeforeComplete.getCause();
+        Throwable causeAfter = excAfterComplete.getCause();
+
+        assertEquals(causeBefore.getClass(), causeAfter.getClass());
+        assertEquals(causeBefore.getMessage(), causeAfter.getMessage());
     }
 
     private void when_deserializationOnMasterFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {

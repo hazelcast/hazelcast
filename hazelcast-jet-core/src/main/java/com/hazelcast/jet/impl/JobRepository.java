@@ -296,7 +296,7 @@ public class JobRepository {
         JobConfig config = jobRecord.getConfig();
         long creationTime = jobRecord.getCreationTime();
         JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, completionTime,
-                error != null ? error.toString() : null);
+                toErrorMsg(error));
 
         if (terminalMetrics != null) {
             List<RawJobMetrics> prevMetrics = jobMetrics.put(jobId, terminalMetrics);
@@ -383,7 +383,17 @@ public class JobRepository {
         logger.fine("Job cleanup took " + TimeUnit.NANOSECONDS.toMillis(elapsed) + "ms");
     }
 
-    private long jobIdFromMapName(String map, String prefix) {
+    private static String toErrorMsg(@Nullable Throwable error) {
+        if (error == null) {
+            return null;
+        }
+        if (error.getClass().equals(JetException.class) && error.getMessage() != null) {
+            return error.getMessage();
+        }
+        return error.toString();
+    }
+
+    private static long jobIdFromMapName(String map, String prefix) {
         int idx = prefix.length();
         String jobId = map.substring(idx, idx + JOB_ID_STRING_LENGTH);
         return idFromString(jobId);

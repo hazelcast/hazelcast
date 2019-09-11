@@ -274,13 +274,13 @@ public class JobCoordinationService {
         CompletableFuture<CompletableFuture<Void>> future = callWithJob(jobId,
                 mc -> mc.jobContext().jobCompletionFuture()
                         .handle((r, t) -> {
-                            if (t instanceof CancellationException) {
+                            if (t == null) {
+                                return null;
+                            }
+                            if (t instanceof CancellationException || t instanceof JetException) {
                                 throw sneakyThrow(t);
                             }
-                            if (t != null) {
-                                throw new JetException(t.toString());
-                            }
-                            return null;
+                            throw new JetException(t.toString(), t);
                         }),
                 JobResult::asCompletableFuture,
                 jobRecord -> {

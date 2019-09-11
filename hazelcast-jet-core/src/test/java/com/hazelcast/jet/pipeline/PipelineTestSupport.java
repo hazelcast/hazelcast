@@ -23,7 +23,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -92,11 +91,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         try {
             return execute();
         } catch (CompletionException e) {
-            Throwable t = peel(e);
-            if (t instanceof JetException && t.getCause() != null) {
-                t = t.getCause();
-            }
-            throw t;
+            throw peel(e);
         }
     }
 
