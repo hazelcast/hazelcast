@@ -2569,7 +2569,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *   }
      * </pre>
      * If you are querying your values mostly based on age and active then
-     * you should consider indexing these fields.
+     * you may consider indexing these fields.
      * <pre>
      *   IMap imap = Hazelcast.getMap("employees");
      *   imap.addIndex("age", true);        // ordered, since we have ranged queries for this field
@@ -2595,10 +2595,48 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param ordered   {@code true} if index should be ordered,
      *                  {@code false} otherwise.
      */
-    // TODO 15265: Add a ticket to remove this method or make the signature better: (IndexType, String...).
     void addIndex(@Nonnull String attribute, boolean ordered);
 
-    // TODO 15265: JavaDoc
+    /**
+     * Adds an index to this map for the specified entries so
+     * that queries can run faster.
+     * <p>
+     * Let's say your map values are Employee objects.
+     * <pre>
+     *   public class Employee implements Serializable {
+     *     private boolean active = false;
+     *     private int age;
+     *     private String name = null;
+     *     // other fields
+     *
+     *     // getters setter
+     *   }
+     * </pre>
+     * If you are querying your values mostly based on age and active then
+     * you may consider indexing these fields.
+     * <pre>
+     *   IMap imap = Hazelcast.getMap("employees");
+     *   imap.addIndex(new IndexConfig(IndexType.SORTED, "age"));  // Sorted index for range queries
+     *   imap.addIndex(new IndexConfig(IndexType.HASH, "active")); // Hash index for equality predicates
+     * </pre>
+     * Index attribute should either have a getter method or be public.
+     * You should also make sure to add the indexes before adding
+     * entries to this map.
+     * <p>
+     * <b>Time to Index</b>
+     * <p>
+     * Indexing time is executed in parallel on each partition by operation threads. The Map
+     * is not blocked during this operation.
+     * <p>
+     * The time taken in proportional to the size of the Map and the number Members.
+     * <p>
+     * <b>Searches while indexes are being built</b>
+     * <p>
+     * Until the index finishes being created, any searches for the attribute will use a full Map scan,
+     * thus avoiding using a partially built index and returning incorrect results.
+     *
+     * @param indexConfig Index configuration.
+     */
     void addIndex(IndexConfig indexConfig);
 
     /**

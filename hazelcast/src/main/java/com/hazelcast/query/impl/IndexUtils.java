@@ -37,8 +37,8 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  * Utility methods for indexes.
  */
 public final class IndexUtils {
-    /** Maximum number of attributes allowed in the index. */
-    private static final int MAX_ATTRIBUTES = 255;
+    /** Maximum number of columns allowed in the index. */
+    private static final int MAX_COLUMNS = 255;
 
     /** Pattern to stripe away "this." prefix. */
     private static final Pattern THIS_PATTERN = Pattern.compile("^this\\.");
@@ -48,7 +48,7 @@ public final class IndexUtils {
     }
 
     /**
-     * Validate provided index config and normalize it's name and attribute names.
+     * Validate provided index config and normalize it's name and column names.
      *
      * @param mapName Name of the map
      * @param config Index config.
@@ -59,56 +59,45 @@ public final class IndexUtils {
     public static IndexConfig validateAndNormalize(String mapName, IndexConfig config) {
         assert config != null;
 
-        // Validate attributes.
-        List<String> originalAttributeNames = getAttributeNames(config);
+        // Validate columns.
+        List<String> originalColumnNames = getColumnNames(config);
 
-        if (originalAttributeNames.isEmpty()) {
-            throw new IllegalArgumentException("Index must have at least one attribute: " + config);
+        if (originalColumnNames.isEmpty()) {
+            throw new IllegalArgumentException("Index must have at least one column: " + config);
         }
 
-        if (originalAttributeNames.size() > MAX_ATTRIBUTES) {
-            throw new IllegalArgumentException("Index cannot have more than " + MAX_ATTRIBUTES
-                + " attributes: " + config);
+        if (originalColumnNames.size() > MAX_COLUMNS) {
+            throw new IllegalArgumentException("Index cannot have more than " + MAX_COLUMNS
+                + " columns: " + config);
         }
 
-        List<String> normalizedAttributeNames = new ArrayList<>(originalAttributeNames.size());
+        List<String> normalizedColumnNames = new ArrayList<>(originalColumnNames.size());
 
-        for (String originalAttributeName : originalAttributeNames) {
-            if (originalAttributeName == null) {
-                throw new IllegalArgumentException("Attribute name cannot be null: " + config);
-            }
+        for (String originalColumnName : originalColumnNames) {
+            validateColumn(config, originalColumnName);
 
-            originalAttributeName = originalAttributeName.trim();
+            originalColumnName = originalColumnName.trim();
 
-            if (originalAttributeName.isEmpty()) {
-                throw new IllegalArgumentException("Attribute name cannot be empty: " + config);
-            }
+            String normalizedColumnName = canonicalizeAttribute(originalColumnName);
 
-            if (originalAttributeName.endsWith(".")) {
-                throw new IllegalArgumentException("Invalid attribute name [config=" + config
-                    + ", attribute=" + originalAttributeName + ']');
-            }
+            assert !normalizedColumnName.isEmpty();
 
-            String normalizedAttributeName = canonicalizeAttribute(originalAttributeName);
-
-            assert !normalizedAttributeName.isEmpty();
-
-            int existingIdx = normalizedAttributeNames.indexOf(normalizedAttributeName);
+            int existingIdx = normalizedColumnNames.indexOf(normalizedColumnName);
 
             if (existingIdx != -1) {
-                String duplicateOriginalAttributeName = originalAttributeNames.get(existingIdx);
+                String duplicateOriginalColumnName = originalColumnNames.get(existingIdx);
 
-                if (duplicateOriginalAttributeName.equals(originalAttributeName)) {
-                    throw new IllegalArgumentException("Duplicate attribute name [config=" + config
-                        + ", attribute=" + originalAttributeName + ']');
+                if (duplicateOriginalColumnName.equals(originalColumnName)) {
+                    throw new IllegalArgumentException("Duplicate column name [config=" + config
+                        + ", column=" + originalColumnName + ']');
                 } else {
-                    throw new IllegalArgumentException("Duplicated attribute names [config=" + config
-                        + ", attribute1=" + duplicateOriginalAttributeName + ", attribute2=" + originalAttributeName
+                    throw new IllegalArgumentException("Duplicate column names [config=" + config
+                        + ", column1=" + duplicateOriginalColumnName + ", column2=" + originalColumnName
                         + ']');
                 }
             }
 
-            normalizedAttributeNames.add(normalizedAttributeName);
+            normalizedColumnNames.add(normalizedColumnName);
         }
 
         // Construct final index.
@@ -118,17 +107,17 @@ public final class IndexUtils {
             name = null;
         }
 
-        return buildNormalizedConfig(mapName, config.getType(), name, normalizedAttributeNames);
+        return buildNormalizedConfig(mapName, config.getType(), name, normalizedColumnNames);
     }
 
     private static IndexConfig buildNormalizedConfig(String mapName, IndexType indexType, String indexName,
-        List<String> normalizedAttributeNames) {
+        List<String> normalizedColumnNames) {
         IndexConfig newConfig = new IndexConfig().setType(indexType);
 
         StringBuilder nameBuilder = indexName == null
             ? new StringBuilder(mapName + (indexType == IndexType.SORTED ? "_sorted" : "_hash")) : null;
 
-        for (String newColumnName : normalizedAttributeNames) {
+        for (String newColumnName : normalizedColumnNames) {
             newConfig.addColumn(newColumnName);
 
             if (nameBuilder != null) {
@@ -146,23 +135,56 @@ public final class IndexUtils {
     }
 
     /**
-     * Produces canonical attribute representation by stripping an unnecessary
-     * "this." qualifier from the passed attribute, if any.
+     * Validate column name.
      *
-     * @param attribute the attribute to canonicalize.
-     * @return the canonical attribute representation.
+     * @param config Index config.
+     * @param columnName Column name.
      */
-    public static String canonicalizeAttribute(String attribute) {
-        return THIS_PATTERN.matcher(attribute).replaceFirst("");
+    public static void validateColumn(IndexConfig config, String columnName) {
+        if (columnName == null) {
+            throw new NullPointerException("Column name cannot be null: " + config);
+        }
+
+        String columnName0 = columnName.trim();
+
+        if (columnName0.isEmpty()) {
+            throw new IllegalArgumentException("Column name cannot be empty: " + config);
+        }
+
+        if (columnName0.endsWith(".")) {
+            throw new IllegalArgumentException("Column name cannot end with dot [config=" + config
+                + ", column=" + columnName + ']');
+        }
     }
 
     /**
-     * Get attribute names of the given index.
+     * Validate column name.
+     *
+     * @param columnName Column name.
+     */
+    public static void validateColumn(String columnName) {
+        if (columnName == null) {
+            throw new NullPointerException("Column name cannot be null.");
+        }
+
+        String columnName0 = columnName.trim();
+
+        if (columnName0.isEmpty()) {
+            throw new IllegalArgumentException("Column name cannot be empty.");
+        }
+
+        if (columnName0.endsWith(".")) {
+            throw new IllegalArgumentException("Column name cannot end with dot: " + columnName + ']');
+        }
+    }
+
+    /**
+     * Get column names of the given index.
      *
      * @param config Index config.
-     * @return Attribute names.
+     * @return Column names.
      */
-    private static List<String> getAttributeNames(IndexConfig config) {
+    private static List<String> getColumnNames(IndexConfig config) {
         if (config.getColumns().isEmpty()) {
             return Collections.emptyList();
         }
@@ -174,6 +196,17 @@ public final class IndexUtils {
         }
 
         return res;
+    }
+
+    /**
+     * Produces canonical attribute representation by stripping an unnecessary
+     * "this." qualifier from the passed attribute, if any.
+     *
+     * @param attribute the attribute to canonicalize.
+     * @return the canonical attribute representation.
+     */
+    public static String canonicalizeAttribute(String attribute) {
+        return THIS_PATTERN.matcher(attribute).replaceFirst("");
     }
 
     public static List<String> getComponents(IndexConfig config) {
@@ -189,19 +222,19 @@ public final class IndexUtils {
     }
 
     /**
-     * Create simple index definition with only one attribute. For testing purposes only.
+     * Create simple index definition with the given columns. For testing purposes only.
      *
      * @param ordered Whether the index should be ordered.
-     * @param attributes Attribute names.
+     * @param columns Column names.
      * @return Index definition.
      */
-    public static IndexConfig createSimpleIndexConfig(boolean ordered, String... attributes) {
+    public static IndexConfig createSimpleIndexConfig(boolean ordered, String... columns) {
         IndexConfig res = new IndexConfig();
 
         res.setType(ordered ? IndexType.SORTED : IndexType.HASH);
 
-        for (String attribute : attributes) {
-            res.addColumn(attribute);
+        for (String column : columns) {
+            res.addColumn(column);
         }
 
         return validateAndNormalize(UuidUtil.newUnsecureUUID().toString(), res);

@@ -30,4 +30,9 @@ public class IndexColumnConfigReadOnly extends IndexColumnConfig {
     public IndexColumnConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only");
     }
+
+    @Override
+    public IndexColumnConfig setAscending(boolean asc) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
 }

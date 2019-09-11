@@ -19,11 +19,12 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.IndexUtils;
 
 import java.io.IOException;
 
 /**
- * A column to be indexed.
+ * A column to be indexed. Column name could be
  */
 public class IndexColumnConfig implements IdentifiedDataSerializable {
     /** Default sort order of the attribute. */
@@ -69,18 +70,39 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
      * @return This instance for chaining.
      */
     public IndexColumnConfig setName(String name) {
-        // TODO 15265: Check for null/empty?
+        IndexUtils.validateColumn(name);
+
         this.name = name;
 
         return this;
     }
 
+    /**
+     * Gets whether the column should be indexed in ascending order. Applicable only to {@link IndexType#SORTED}
+     * index, ignored by other index types.
+     * <p>
+     * Only ascending order is supported at the moment.
+     *
+     * @return {@code True} if the column should be indexed in ascending order, {@code false} otherwise.
+     */
     public boolean isAscending() {
         return asc;
     }
 
+    /**
+     * Sets whether the column should be indexed in ascending order. Applicable only to {@link IndexType#SORTED}
+     * index, ignored by other index types.
+     * <p>
+     * Only ascending order is supported at the moment.
+     *
+     * @param asc {@code True} if the column should be indexed in ascending order, {@code false} otherwise.
+     * @return This instance for chaining.
+     */
+    @SuppressWarnings("ConstantConditions")
     public IndexColumnConfig setAscending(boolean asc) {
-        // TODO 15265: Do not allow false at the moment.
+        if (!asc)
+            throw new IllegalArgumentException("Only ascending order is supported at the moment.");
+
         this.asc = asc;
 
         return this;

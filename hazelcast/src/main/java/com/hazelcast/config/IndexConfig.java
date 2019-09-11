@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 // TODO 15265: Tests for XML and YAML and Spring, w/ and w/o defaults
-// TODO 15265: Tests for read-only
+// TODO 15265: Tests for index creation (dynamic and static)
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,11 +32,15 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeN
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Base class for index configurations. Hazelcast support two types of indexes: sorted index and hash index.
- * Use their specific classes for configuration.
+ * Configuration of an index. Hazelcast support two types of indexes: sorted index and hash index.
+ * Sorted indexes could be used with equality and range predicates and have logarithmic search time.
+ * Hash indexes could be used with equality predicates and have constant search time assuming the hash
+ * function of the indexed field disperses the elements properly.
+ * <p>
+ * Index could be created on one or more columns.
  *
  * @see com.hazelcast.config.IndexType
- * @see IndexColumnConfig
+ * @see com.hazelcast.config.IndexColumnConfig
  * @see com.hazelcast.config.MapConfig#setIndexConfigs(List)
  */
 public class IndexConfig implements IdentifiedDataSerializable {
