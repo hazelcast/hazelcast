@@ -24,10 +24,10 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.MutableInteger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -36,7 +36,6 @@ import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_COU
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
-import static com.hazelcast.util.HashUtil.hashToIndex;
 
 /**
  * A {@link Supplier} for {@link Supplier} instance that processes responses for client
@@ -58,13 +57,6 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     // expert setting; we don't want to expose this to the public
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
-
-    private static final ThreadLocal<MutableInteger> INT_HOLDER = new ThreadLocal<MutableInteger>() {
-        @Override
-        protected MutableInteger initialValue() {
-            return new MutableInteger();
-        }
-    };
 
     private final AbstractClientInvocationService invocationService;
     private final ResponseThread[] responseThreads;
@@ -155,8 +147,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         if (responseThreads.length == 1) {
             return responseThreads[0];
         } else {
-            int index = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
-            return responseThreads[index];
+            return responseThreads[ThreadLocalRandom.current().nextInt(responseThreads.length)];
         }
     }
 

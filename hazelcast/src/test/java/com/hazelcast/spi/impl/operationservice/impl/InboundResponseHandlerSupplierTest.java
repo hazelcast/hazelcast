@@ -24,7 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.AsyncMultithreadedResponseHandler;
+import com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.AsyncMultiThreadedResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.AsyncSingleThreadedResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
@@ -92,7 +92,7 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
     @Test
     public void get_whenMultipleResponseThreads() {
         supplier = newSupplier(2);
-        assertInstanceOf(AsyncMultithreadedResponseHandler.class, supplier.get());
+        assertInstanceOf(AsyncMultiThreadedResponseHandler.class, supplier.get());
     }
 
     @Test(expected = IllegalArgumentException.class)

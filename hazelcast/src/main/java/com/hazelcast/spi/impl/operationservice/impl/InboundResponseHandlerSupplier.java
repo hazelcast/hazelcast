@@ -26,12 +26,12 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.MutableInteger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.BusySpinIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -39,7 +39,6 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.properties.GroupProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -74,8 +73,6 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
 
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
-
-    private static final ThreadLocal<MutableInteger> INT_HOLDER = ThreadLocal.withInitial(MutableInteger::new);
 
     private static final long IDLE_MAX_SPINS = 20;
     private static final long IDLE_MAX_YIELDS = 50;
@@ -124,7 +121,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
 
             this.responseHandler = responseThreadCount == 1
                     ? new AsyncSingleThreadedResponseHandler()
-                    : new AsyncMultithreadedResponseHandler();
+                    : new AsyncMultiThreadedResponseHandler();
         }
     }
 
@@ -237,11 +234,11 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         }
     }
 
-    final class AsyncMultithreadedResponseHandler implements Consumer<Packet> {
+    final class AsyncMultiThreadedResponseHandler implements Consumer<Packet> {
         @Override
         public void accept(Packet packet) {
-            int threadIndex = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
-            responseThreads[threadIndex].responseQueue.add(packet);
+            ResponseThread responseThread = responseThreads[ThreadLocalRandom.current().nextInt(responseThreads.length)];
+            responseThread.responseQueue.add(packet);
         }
     }
 
