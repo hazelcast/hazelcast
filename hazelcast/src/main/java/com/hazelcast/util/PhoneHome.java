@@ -16,16 +16,16 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.client.ClientType;
+import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.GroupProperty;
 
@@ -41,6 +41,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -83,13 +84,7 @@ public class PhoneHome {
         logger = hazelcastNode.getLogger(PhoneHome.class);
     }
 
-    @SuppressWarnings("deprecation")
     public void check(final Node hazelcastNode) {
-        if (!hazelcastNode.getProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
-            logger.warning(GroupProperty.VERSION_CHECK_ENABLED.getName() + " property is deprecated. Please use "
-                    + GroupProperty.PHONE_HOME_ENABLED.getName() + " instead to disable phone home.");
-            return;
-        }
         if (!hazelcastNode.getProperties().getBoolean(GroupProperty.PHONE_HOME_ENABLED)) {
             return;
         }
@@ -98,11 +93,8 @@ public class PhoneHome {
         }
         try {
             phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService()
-                    .scheduleWithRepetition("PhoneHome", new Runnable() {
-                        public void run() {
-                            phoneHome(hazelcastNode, false);
-                        }
-                    }, 0, 1, TimeUnit.DAYS);
+                                                      .scheduleWithRepetition("PhoneHome",
+                                                              () -> phoneHome(hazelcastNode, false), 0, 1, TimeUnit.DAYS);
         } catch (RejectedExecutionException e) {
             logger.warning("Could not schedule phone home task! Most probably Hazelcast failed to start.");
         }
@@ -144,7 +136,8 @@ public class PhoneHome {
      * Performs a phone request for {@code node} and returns the generated request
      * parameters. If {@code pretend} is {@code true}, only returns the parameters
      * without actually performing the request.
-     * @param node the node for which to make the phone home request
+     *
+     * @param node    the node for which to make the phone home request
      * @param pretend if {@code true}, do not perform the request
      * @return the generated request parameters
      */
@@ -280,7 +273,7 @@ public class PhoneHome {
             inputStream = connection.getInputStream();
             responseCode = connection.getResponseCode();
 
-            reader = new InputStreamReader(inputStream, "UTF-8");
+            reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
             JsonObject mcPhoneHomeInfoJson = Json.parse(reader).asObject();
             version = getString(mcPhoneHomeInfoJson, "mcVersion");
             license = getString(mcPhoneHomeInfoJson, "mcLicense", null);
@@ -322,7 +315,7 @@ public class PhoneHome {
     public static class PhoneHomeParameterCreator {
 
         private final StringBuilder builder;
-        private final Map<String, String> parameters = new HashMap<String, String>();
+        private final Map<String, String> parameters = new HashMap<>();
         private boolean hasParameterBefore;
 
         public PhoneHomeParameterCreator() {
