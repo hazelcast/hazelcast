@@ -118,6 +118,16 @@ public class AbstractChannelTest {
         public boolean write(OutboundFrame frame) {
             return false;
         }
+
+        @Override
+        public long bytesRead() {
+            return 0;
+        }
+
+        @Override
+        public long bytesWritten() {
+            return 0;
+        }
     }
 
     private static class TestChannelCloseListener implements ChannelCloseListener {

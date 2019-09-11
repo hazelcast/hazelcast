@@ -28,6 +28,8 @@ import java.util.Set;
  * configuration uses a single server socket to listen for all kinds of protocol
  * types configured, while {@link com.hazelcast.config.AdvancedNetworkConfig} allows
  * configuration of multiple server sockets.
+ * <p>
+ * Note: names of this enum are used for stats sent to Management Center, do not rename.
  *
  * @see com.hazelcast.config.NetworkConfig
  * @see com.hazelcast.config.AdvancedNetworkConfig
