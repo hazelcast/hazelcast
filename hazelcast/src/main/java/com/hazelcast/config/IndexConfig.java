@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
@@ -180,8 +181,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @return This instance for chaining.
      */
     public IndexConfig setColumns(List<IndexColumnConfig> columns) {
-        if (columns == null || columns.isEmpty()) {
-            columns = null;
+        if (columns == null) {
+            columns = Collections.emptyList();
         } else {
             columns = new ArrayList<>(columns);
         }

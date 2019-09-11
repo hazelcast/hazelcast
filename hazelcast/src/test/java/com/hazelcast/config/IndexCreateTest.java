@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
@@ -25,7 +26,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,8 +39,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
@@ -52,7 +52,7 @@ import static org.mockito.ArgumentMatchers.startsWith;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IndexCreateStaticTest extends HazelcastTestSupport {
+public class IndexCreateTest extends HazelcastTestSupport {
 
     protected static final String MAP_NAME = "map";
 
@@ -67,13 +67,16 @@ public class IndexCreateStaticTest extends HazelcastTestSupport {
 
         List<Object[]> res = new ArrayList<>();
 
-        res.add(new Object[] { new StaticMemberHandler() });
-        res.add(new Object[] { new DynamicMemberHandler() });
+        res.add(new Object[] { new StaticMapMemberHandler() });
+        res.add(new Object[] { new DynamicMapMemberHandler() });
+        res.add(new Object[] { new DynamicIndexMemberHandler() });
+        res.add(new Object[] { new DynamicMapClientHandler() });
+        res.add(new Object[] { new DynamicIndexClientHandler() });
 
         return res;
     }
 
-    @Parameterized.Parameter(0)
+    @Parameterized.Parameter
     public static Handler handler;
 
     @Rule
@@ -236,7 +239,7 @@ public class IndexCreateStaticTest extends HazelcastTestSupport {
         List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs);
     }
 
-    private static class StaticMemberHandler implements Handler {
+    private static class StaticMapMemberHandler implements Handler {
         @Override
         public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
             TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -250,14 +253,15 @@ public class IndexCreateStaticTest extends HazelcastTestSupport {
             Config config = new Config().addMapConfig(mapConfig);
 
             HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
 
             member.getMap(MAP_NAME);
 
-            return Collections.singletonList(member);
+            return Arrays.asList(member, member2);
         }
     }
 
-    private static class DynamicMemberHandler implements Handler {
+    private static class DynamicMapMemberHandler implements Handler {
         @Override
         public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
             TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -265,6 +269,31 @@ public class IndexCreateStaticTest extends HazelcastTestSupport {
             Config config = new Config();
 
             HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+
+            MapConfig mapConfig = new MapConfig(MAP_NAME);
+
+            for (IndexConfig indexConfig : indexConfigs) {
+                mapConfig.addIndexConfig(indexConfig);
+            }
+
+            member.getConfig().addMapConfig(mapConfig);
+
+            member.getMap(MAP_NAME);
+
+            return Arrays.asList(member, member2);
+        }
+    }
+
+    private static class DynamicIndexMemberHandler implements Handler {
+        @Override
+        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
+            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+            Config config = new Config();
+
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
 
             IMap map = member.getMap(MAP_NAME);
 
@@ -272,7 +301,53 @@ public class IndexCreateStaticTest extends HazelcastTestSupport {
                 map.addIndex(indexConfig);
             }
 
-            return Collections.singletonList(member);
+            return Arrays.asList(member, member2);
+        }
+    }
+
+    private static class DynamicMapClientHandler implements Handler {
+        @Override
+        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
+            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+            Config config = new Config();
+
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+            MapConfig mapConfig = new MapConfig(MAP_NAME);
+
+            for (IndexConfig indexConfig : indexConfigs) {
+                mapConfig.addIndexConfig(indexConfig);
+            }
+
+            client.getConfig().addMapConfig(mapConfig);
+
+            client.getMap(MAP_NAME);
+
+            return Arrays.asList(member, member2);
+        }
+    }
+
+    private static class DynamicIndexClientHandler implements Handler {
+        @Override
+        public List<HazelcastInstanceProxy> initialize(IndexConfig... indexConfigs) {
+            TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+            Config config = new Config();
+
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+            IMap map = client.getMap(MAP_NAME);
+
+            for (IndexConfig indexConfig : indexConfigs) {
+                map.addIndex(indexConfig);
+            }
+
+            return Arrays.asList(member, member2);
         }
     }
 }
