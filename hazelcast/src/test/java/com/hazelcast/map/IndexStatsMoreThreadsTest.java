@@ -18,6 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -76,7 +78,7 @@ public class IndexStatsMoreThreadsTest extends HazelcastTestSupport {
         double expectedEqual = 1.0 - 1.0 / entryCount;
         double expectedGreaterEqual = 1.0 - ((double) lessEqualCount) / entryCount;
 
-        map.addIndex("this", false);
+        map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("this"));
         for (int i = 0; i < entryCount; ++i) {
             map.put(i, i);
         }
@@ -119,7 +121,7 @@ public class IndexStatsMoreThreadsTest extends HazelcastTestSupport {
 
     @Test
     public void testIndexMapStatsWithMoreThreads() throws InterruptedException {
-        map.addIndex("this", false);
+        map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("this"));
 
         assertEquals(0, valueStats().getInsertCount());
         assertEquals(0, valueStats().getUpdateCount());
