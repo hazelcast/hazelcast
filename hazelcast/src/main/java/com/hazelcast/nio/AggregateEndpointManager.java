@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.networking.nio.PerProtocolNetworkStats;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.util.Collection;
@@ -26,5 +27,9 @@ public interface AggregateEndpointManager
     Collection<TcpIpConnection> getConnections();
 
     Collection<TcpIpConnection> getActiveConnections();
+
+    PerProtocolNetworkStats getInboundNetworkStats();
+
+    PerProtocolNetworkStats getOutboundNetworkStats();
 
 }
