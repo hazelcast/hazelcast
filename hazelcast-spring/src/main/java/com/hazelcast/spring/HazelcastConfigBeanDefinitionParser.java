@@ -57,7 +57,6 @@ import com.hazelcast.config.MCMutualAuthConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
@@ -1294,11 +1293,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("indexes".equals(nodeName)) {
                     ManagedList<BeanDefinition> indexes = new ManagedList<BeanDefinition>();
                     for (Node indexNode : childElements(childNode)) {
-                        BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(MapIndexConfig.class);
-                        fillAttributeValues(indexNode, indexConfBuilder);
-                        indexes.add(indexConfBuilder.getBeanDefinition());
+                        handleIndex(indexes, indexNode);
                     }
-                    mapConfigBuilder.addPropertyValue("mapIndexConfigs", indexes);
+                    mapConfigBuilder.addPropertyValue("indexConfigs", indexes);
                 } else if ("attributes".equals(nodeName)) {
                     ManagedList<BeanDefinition> attributes = new ManagedList<BeanDefinition>();
                     for (Node attributeNode : childElements(childNode)) {
@@ -1448,9 +1445,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("indexes".equals(nodeName)) {
                     ManagedList<BeanDefinition> indexes = new ManagedList<BeanDefinition>();
                     for (Node indexNode : childElements(node)) {
-                        BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(MapIndexConfig.class);
-                        fillAttributeValues(indexNode, indexConfBuilder);
-                        indexes.add(indexConfBuilder.getBeanDefinition());
+                        handleIndex(indexes, indexNode);
                     }
                     builder.addPropertyValue("indexConfigs", indexes);
                 } else if ("eviction".equals(nodeName)) {

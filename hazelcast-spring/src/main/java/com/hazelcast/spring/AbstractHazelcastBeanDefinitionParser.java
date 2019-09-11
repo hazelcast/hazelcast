@@ -25,12 +25,16 @@ import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.IndexColumnConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanReference;
@@ -493,6 +497,42 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
             discoveryConfigBuilder.addPropertyValue("discoveryStrategyConfigs", discoveryStrategyConfigs);
             joinConfigBuilder.addPropertyValue("discoveryConfig", discoveryConfigBuilder.getBeanDefinition());
+        }
+
+        protected void handleIndex(ManagedList<BeanDefinition> indexes, Node indexNode) {
+            BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(IndexConfig.class);
+
+            NamedNodeMap attributes = indexNode.getAttributes();
+
+            // Resolve name.
+            String name = getTextContent(attributes.getNamedItem("name"));
+            indexConfBuilder.addPropertyValue("name", name.isEmpty() ? null : name);
+
+            // Resolve type.
+            String typeStr = getTextContent(attributes.getNamedItem("type"));
+            IndexType type = IndexUtils.getIndexTypeFromXmlName(typeStr);
+            indexConfBuilder.addPropertyValue("type", type);
+
+            // Resolve columns.
+            ManagedList<BeanDefinition> columns = new ManagedList<BeanDefinition>();
+
+            for (Node columnsNode : childElements(indexNode)) {
+                if ("columns".equals(cleanNodeName(columnsNode))) {
+                    for (Node columnNode : childElements(columnsNode)) {
+                        if ("column".equals(cleanNodeName(columnNode))) {
+                            BeanDefinitionBuilder columnBuilder = createBeanBuilder(IndexColumnConfig.class);
+
+                            columnBuilder.addPropertyValue("name", getTextContent(columnNode));
+
+                            columns.add(columnBuilder.getBeanDefinition());
+                        }
+                    }
+                }
+            }
+
+            indexConfBuilder.addPropertyValue("columns", columns);
+
+            indexes.add(indexConfBuilder.getBeanDefinition());
         }
 
         private void handleDiscoveryServiceProvider(Node node, BeanDefinitionBuilder discoveryConfigBuilder) {

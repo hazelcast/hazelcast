@@ -18,6 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -74,8 +76,8 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
 
     @Test
     public void testHitAndQueryCounting_WhenAllIndexesHit() {
-        map.addIndex("employees[0].id", true);
-        map.addIndex("employees[any].id", true);
+        addIndex(map, "employees[0].id", true);
+        addIndex(map, "employees[any].id", true);
 
         assertEquals(0, stats().getQueryCount());
         assertEquals(0, stats().getIndexedQueryCount());
@@ -106,8 +108,8 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
 
     @Test
     public void testHitAndQueryCounting_WhenSingleNumberIndexHit() {
-        map.addIndex("employees[0].id", true);
-        map.addIndex("employees[any].id", true);
+        addIndex(map, "employees[0].id", true);
+        addIndex(map, "employees[any].id", true);
 
         assertEquals(0, stats().getQueryCount());
         assertEquals(0, stats().getIndexedQueryCount());
@@ -135,8 +137,8 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
 
     @Test
     public void testHitAndQueryCounting_WhenSingleAnyIndexHit() {
-        map.addIndex("employees[0].id", true);
-        map.addIndex("employees[any].id", true);
+        addIndex(map, "employees[0].id", true);
+        addIndex(map, "employees[any].id", true);
 
         assertEquals(0, stats().getQueryCount());
         assertEquals(0, stats().getIndexedQueryCount());
@@ -164,8 +166,8 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
 
     @Test
     public void testHitCounting_WhenIndexHitMultipleTimes() {
-        map.addIndex("employees[0].id", true);
-        map.addIndex("employees[any].id", true);
+        addIndex(map, "employees[0].id", true);
+        addIndex(map, "employees[any].id", true);
 
         assertEquals(0, stats().getQueryCount());
         assertEquals(0, stats().getIndexedQueryCount());
@@ -202,8 +204,8 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
 
         int iterations = 100;
 
-        map.addIndex("employees[0].id", true);
-        map.addIndex("employees[any].id", true);
+        addIndex(map, "employees[0].id", true);
+        addIndex(map, "employees[any].id", true);
         for (int i = 0; i < 50; i++) {
             Employee[] persons = new Employee[EMPLOYEE_ARRAY_SIZE];
             for (int j = 0; j < EMPLOYEE_ARRAY_SIZE; j++) {
@@ -247,8 +249,8 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
 
     @Test
     public void testOperationsCounting() {
-        map.addIndex("employees[0].id", true);
-        map.addIndex("employees[any].id", true);
+        addIndex(map, "employees[0].id", true);
+        addIndex(map, "employees[any].id", true);
 
         for (int i = 0; i < 100; i++) {
             Employee[] persons = new Employee[EMPLOYEE_ARRAY_SIZE];
@@ -307,6 +309,12 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
         assertEquals(expectedInserts, valueStats("employees[any].id").getInsertCount());
         assertEquals(expectedUpdates, valueStats("employees[any].id").getUpdateCount());
         assertEquals(expectedRemoves, valueStats("employees[any].id").getRemoveCount());
+    }
+
+    private static void addIndex(IMap map, String attribute, boolean ordered) {
+        IndexConfig config = new IndexConfig(ordered ? IndexType.SORTED : IndexType.HASH, attribute).setName(attribute);
+
+        map.addIndex(config);
     }
 
     private static class Employee implements Serializable {
@@ -384,6 +392,5 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
             }
             return true;
         }
-
     }
 }

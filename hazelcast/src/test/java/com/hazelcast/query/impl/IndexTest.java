@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -101,21 +102,25 @@ public class IndexTest {
 
     @Test
     public void testRemoveEnumIndex() {
+        IndexConfig config = IndexUtils.createSimpleIndexConfig(false, "favoriteCity");
+
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
-        is.addOrGetIndex("favoriteCity", false, null);
+        is.addOrGetIndex(config, null);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
-        assertNotNull(is.getIndex("favoriteCity"));
+        assertNotNull(is.getIndex(config.getName()));
         Record record = recordFactory.newRecord(key, value);
         is.removeEntry(key, Records.getValueOrCachedValue(record, ss), Index.OperationSource.USER);
-        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
+        assertEquals(0, is.getIndex(config.getName()).getRecords(SerializableWithEnum.City.ISTANBUL).size());
     }
 
     @Test
     public void testUpdateEnumIndex() {
+        IndexConfig config = IndexUtils.createSimpleIndexConfig(false, "favoriteCity");
+
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
-        is.addOrGetIndex("favoriteCity", false, null);
+        is.addOrGetIndex(config, null);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -123,8 +128,8 @@ public class IndexTest {
         Data newValue = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.KRAKOW));
         is.putEntry(new QueryEntry(ss, key, newValue, newExtractor()), value, Index.OperationSource.USER);
 
-        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
-        assertEquals(1, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.KRAKOW).size());
+        assertEquals(0, is.getIndex(config.getName()).getRecords(SerializableWithEnum.City.ISTANBUL).size());
+        assertEquals(1, is.getIndex(config.getName()).getRecords(SerializableWithEnum.City.KRAKOW).size());
     }
 
     protected Extractors newExtractor() {
@@ -134,9 +139,9 @@ public class IndexTest {
     @Test
     public void testIndex() throws QueryException {
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
-        Index dIndex = is.addOrGetIndex("d", false, null);
-        Index boolIndex = is.addOrGetIndex("bool", false, null);
-        Index strIndex = is.addOrGetIndex("str", false, null);
+        Index dIndex = is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "d"), null);
+        Index boolIndex = is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "bool"), null);
+        Index strIndex = is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "str"), null);
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
@@ -197,7 +202,7 @@ public class IndexTest {
     @Test
     public void testIndexWithNull() throws QueryException {
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
-        Index strIndex = is.addOrGetIndex("str", true, null);
+        Index strIndex = is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(true, "str"), null);
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
@@ -464,9 +469,10 @@ public class IndexTest {
     }
 
     private void testIt(boolean ordered) {
-        IndexImpl index =
-                new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), null, ordered, ss, newExtractor(), copyBehavior,
-                        PerIndexStats.EMPTY);
+        IndexConfig config = IndexUtils.createSimpleIndexConfig(ordered, QueryConstants.THIS_ATTRIBUTE_NAME.value());
+
+        IndexImpl index = new IndexImpl(config, ss, newExtractor(), copyBehavior, PerIndexStats.EMPTY);
+
         assertEquals(0, index.getRecords(0L).size());
         assertEquals(0, index.getRecords(0L, true, 1000L, true).size());
         QueryRecord record5 = newRecord(5L, 55L);

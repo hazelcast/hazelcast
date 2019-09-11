@@ -26,7 +26,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,7 +44,7 @@ import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 public class CompositeRangePredicate implements IndexAwarePredicate {
 
     final String indexName;
-    final String[] components;
+    final List<String> components;
 
     final CompositeValue from;
     final boolean fromInclusive;
@@ -90,7 +92,9 @@ public class CompositeRangePredicate implements IndexAwarePredicate {
     CompositeRangePredicate(String indexName, String[] components, CompositeValue from, boolean fromInclusive, CompositeValue to,
                             boolean toInclusive, int prefixLength) {
         this.indexName = indexName;
-        this.components = components;
+
+        this.components = new ArrayList<>();
+        this.components.addAll(Arrays.asList(components));
 
         this.from = from;
         this.fromInclusive = fromInclusive;
@@ -127,7 +131,7 @@ public class CompositeRangePredicate implements IndexAwarePredicate {
 
     @Override
     public String toString() {
-        return Arrays.toString(components) + " in " + (fromInclusive ? "[" : "(") + from + ", " + to + (toInclusive ? "]" : ")");
+        return components + " in " + (fromInclusive ? "[" : "(") + from + ", " + to + (toInclusive ? "]" : ")");
     }
 
     private void generateFallbackPredicate() {
@@ -142,15 +146,15 @@ public class CompositeRangePredicate implements IndexAwarePredicate {
         Predicate[] predicates = new Predicate[hasComparison ? prefixLength + 1 : prefixLength];
         for (int i = 0; i < prefixLength; ++i) {
             assert fromValues[i] == toValues[i];
-            predicates[i] = new EqualPredicate(components[i], fromValues[i]);
+            predicates[i] = new EqualPredicate(components.get(i), fromValues[i]);
         }
 
         if (hasComparison) {
-            String comparisonComponent = components[prefixLength];
+            String comparisonComponent = components.get(prefixLength);
             boolean comparisonFromInclusive =
-                    fromInclusive || prefixLength < components.length - 1 && fromValues[prefixLength + 1] == NEGATIVE_INFINITY;
+                    fromInclusive || prefixLength < components.size() - 1 && fromValues[prefixLength + 1] == NEGATIVE_INFINITY;
             boolean comparisonToInclusive =
-                    toInclusive || prefixLength < components.length - 1 && toValues[prefixLength + 1] == POSITIVE_INFINITY;
+                    toInclusive || prefixLength < components.size() - 1 && toValues[prefixLength + 1] == POSITIVE_INFINITY;
 
             if (isFinite(comparisonFrom) && isFinite(comparisonTo)) {
                 predicates[prefixLength] =

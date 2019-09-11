@@ -18,8 +18,9 @@ package com.hazelcast.map.merge;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
@@ -72,8 +73,7 @@ public class NoIndexLossAfterSplitBrainHealTest extends SplitBrainTestSupport {
     protected Config config() {
         return super.config().addMapConfig(new MapConfig()
                 .setName(MAP_NAME).setInMemoryFormat(inMemoryFormat)
-                .addMapIndexConfig(new MapIndexConfig()
-                        .setAttribute("value").setOrdered(true)));
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "value")));
     }
 
     @Override

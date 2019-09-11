@@ -39,11 +39,11 @@ public class QueryCacheConfigReadOnlyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void getIndexConfigsOfReadOnlyQueryCacheConfigShouldReturnUnmodifiable() {
         QueryCacheConfig config = new QueryCacheConfig()
-                .addIndexConfig(new MapIndexConfig())
-                .addIndexConfig(new MapIndexConfig());
+                .addIndexConfig(new IndexConfig())
+                .addIndexConfig(new IndexConfig());
 
-        List<MapIndexConfig> indexConfigs = config.getAsReadOnly().getIndexConfigs();
-        indexConfigs.add(new MapIndexConfig());
+        List<IndexConfig> indexConfigs = config.getAsReadOnly().getIndexConfigs();
+        indexConfigs.add(new IndexConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -98,7 +98,7 @@ public class QueryCacheConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setIndexConfigsOfReadOnlyMapStoreConfigShouldFail() {
-        getReadOnlyConfig().setIndexConfigs(singletonList(new MapIndexConfig()));
+        getReadOnlyConfig().setIndexConfigs(singletonList(new IndexConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)

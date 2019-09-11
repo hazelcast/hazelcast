@@ -33,16 +33,6 @@ class QueryCacheConfigReadOnly extends QueryCacheConfig {
     }
 
     @Override
-    public List<MapIndexConfig> getIndexConfigs() {
-        List<MapIndexConfig> mapIndexConfigs = super.getIndexConfigs();
-        List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
-        for (MapIndexConfig mapIndexConfig : mapIndexConfigs) {
-            readOnlyMapIndexConfigs.add(mapIndexConfig.getAsReadOnly());
-        }
-        return Collections.unmodifiableList(readOnlyMapIndexConfigs);
-    }
-
-    @Override
     public List<EntryListenerConfig> getEntryListenerConfigs() {
         List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
         List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
@@ -93,11 +83,6 @@ class QueryCacheConfigReadOnly extends QueryCacheConfig {
     }
 
     @Override
-    public QueryCacheConfig setIndexConfigs(List<MapIndexConfig> indexConfigs) {
-        throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
-    }
-
-    @Override
     public QueryCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
@@ -119,6 +104,28 @@ class QueryCacheConfigReadOnly extends QueryCacheConfig {
 
     @Override
     public QueryCacheConfig setCoalesce(boolean coalesce) {
+        throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+    }
+
+    @Override
+    public QueryCacheConfig addIndexConfig(IndexConfig indexConfig) {
+        throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+    }
+
+    @Override
+    public List<IndexConfig> getIndexConfigs() {
+        List<IndexConfig> configs = super.getIndexConfigs();
+        List<IndexConfig> res = new ArrayList<>(configs.size());
+
+        for (IndexConfig config : configs) {
+            res.add(config.getAsReadOnly());
+        }
+
+        return Collections.unmodifiableList(res);
+    }
+
+    @Override
+    public QueryCacheConfig setIndexConfigs(List<IndexConfig> indexConfigs) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
 }

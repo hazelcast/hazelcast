@@ -18,8 +18,9 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -114,12 +115,12 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     @Test
     public void putRemove_withIndex_whereAttributeIsNull() {
         // GIVEN
-        MapIndexConfig mapIndexConfig = new MapIndexConfig();
-        mapIndexConfig.setAttribute("amount");
-        mapIndexConfig.setOrdered(false);
+        IndexConfig indexConfig = new IndexConfig();
+        indexConfig.addColumn("amount");
+        indexConfig.setType(IndexType.HASH);
 
         MapConfig mapConfig = new MapConfig().setName("map");
-        mapConfig.addMapIndexConfig(mapIndexConfig);
+        mapConfig.addIndexConfig(indexConfig);
 
         Config config = new Config();
         config.addMapConfig(mapConfig);
@@ -224,7 +225,12 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         List<Index> result = new ArrayList<>();
         for (int partitionId : mapServiceContext.getOwnedPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
-            result.add(indexes.getIndex(attribute));
+
+            for (InternalIndex index : indexes.getIndexes()) {
+                if (index.getComponents().contains(IndexUtils.canonicalizeAttribute(attribute))) {
+                    result.add(index);
+                }
+            }
         }
         return result;
     }

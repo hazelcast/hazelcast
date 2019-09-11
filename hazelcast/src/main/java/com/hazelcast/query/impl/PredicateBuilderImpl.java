@@ -133,7 +133,7 @@ public class PredicateBuilderImpl implements PredicateBuilder, EntryObject, Inde
     @Override
     public EntryObject get(String attribute) {
         if (KEY_ATTRIBUTE_NAME.value().equals(getAttribute())) {
-            setAttribute(KEY_ATTRIBUTE_NAME.value() + "#" + attribute);
+            setAttribute(KEY_ATTRIBUTE_NAME.value() + "." + attribute);
         } else {
             setAttribute(attribute);
         }

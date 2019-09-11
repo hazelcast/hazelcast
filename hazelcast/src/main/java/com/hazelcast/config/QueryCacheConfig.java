@@ -127,7 +127,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
 
     private List<EntryListenerConfig> entryListenerConfigs;
 
-    private List<MapIndexConfig> indexConfigs;
+    private List<IndexConfig> indexConfigs;
 
     private transient QueryCacheConfigReadOnly readOnly;
 
@@ -419,19 +419,19 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         return this;
     }
 
-    public QueryCacheConfig addIndexConfig(MapIndexConfig mapIndexConfig) {
-        getIndexConfigs().add(mapIndexConfig);
+    public QueryCacheConfig addIndexConfig(IndexConfig indexConfig) {
+        getIndexConfigs().add(indexConfig);
         return this;
     }
 
-    public List<MapIndexConfig> getIndexConfigs() {
+    public List<IndexConfig> getIndexConfigs() {
         if (indexConfigs == null) {
-            indexConfigs = new ArrayList<MapIndexConfig>();
+            indexConfigs = new ArrayList<>();
         }
         return indexConfigs;
     }
 
-    public QueryCacheConfig setIndexConfigs(List<MapIndexConfig> indexConfigs) {
+    public QueryCacheConfig setIndexConfigs(List<IndexConfig> indexConfigs) {
         this.indexConfigs = indexConfigs;
         return this;
     }

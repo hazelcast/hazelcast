@@ -18,9 +18,10 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -742,8 +743,8 @@ public class MapLoaderTest extends HazelcastTestSupport {
         Config config = getConfig();
 
         MapConfig mapConfig = config.getMapConfig(mapName);
-        List<MapIndexConfig> indexConfigs = mapConfig.getMapIndexConfigs();
-        indexConfigs.add(new MapIndexConfig("name", true));
+        List<IndexConfig> indexConfigs = mapConfig.getIndexConfigs();
+        indexConfigs.add(new IndexConfig(IndexType.SORTED, "name"));
 
         MapStoreConfig storeConfig = new MapStoreConfig();
         storeConfig.setFactoryImplementation(loader);

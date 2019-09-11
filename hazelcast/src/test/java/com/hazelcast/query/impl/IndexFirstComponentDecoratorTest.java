@@ -43,11 +43,22 @@ public class IndexFirstComponentDecoratorTest {
     public void before() {
         serializationService = new DefaultSerializationServiceBuilder().build();
         Extractors extractors = Extractors.newBuilder(serializationService).build();
-        expected = new IndexImpl("this", null, true, serializationService, extractors, IndexCopyBehavior.COPY_ON_READ,
-                PerIndexStats.EMPTY);
-        InternalIndex compositeIndex =
-                new IndexImpl("this, __key", new String[]{"this", "__key"}, true, serializationService, extractors,
-                        IndexCopyBehavior.COPY_ON_READ, PerIndexStats.EMPTY);
+        expected = new IndexImpl(
+            IndexUtils.createSimpleIndexConfig(true, "this"),
+            serializationService,
+            extractors,
+            IndexCopyBehavior.COPY_ON_READ,
+            PerIndexStats.EMPTY
+        );
+
+        InternalIndex compositeIndex = new IndexImpl(
+            IndexUtils.createSimpleIndexConfig(true, "this", "__key"),
+            serializationService,
+            extractors,
+            IndexCopyBehavior.COPY_ON_READ,
+            PerIndexStats.EMPTY
+        );
+
         actual = new AttributeIndexRegistry.FirstComponentDecorator(compositeIndex);
 
         for (int i = 0; i < 100; ++i) {

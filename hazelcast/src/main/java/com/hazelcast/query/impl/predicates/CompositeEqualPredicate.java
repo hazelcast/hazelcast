@@ -26,7 +26,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,7 +40,7 @@ import java.util.Set;
 public class CompositeEqualPredicate implements IndexAwarePredicate {
 
     final String indexName;
-    final String[] components;
+    final List<String> components;
     final CompositeValue value;
 
     private volatile Predicate fallbackPredicate;
@@ -62,7 +64,10 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
     // for testing purposes
     CompositeEqualPredicate(String indexName, String[] components, CompositeValue value) {
         this.indexName = indexName;
-        this.components = components;
+
+        this.components = new ArrayList<>();
+        this.components.addAll(Arrays.asList(components));
+
         this.value = value;
     }
 
@@ -87,7 +92,7 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
 
     @Override
     public String toString() {
-        return Arrays.toString(components) + " = " + value;
+        return components + " = " + value;
     }
 
     @Override
@@ -100,9 +105,9 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
 
         Comparable[] values = value.getComponents();
 
-        Predicate[] predicates = new Predicate[components.length];
-        for (int i = 0; i < components.length; ++i) {
-            predicates[i] = new EqualPredicate(components[i], values[i]);
+        Predicate[] predicates = new Predicate[components.size()];
+        for (int i = 0; i < components.size(); ++i) {
+            predicates[i] = new EqualPredicate(components.get(i), values[i]);
         }
         fallbackPredicate = new AndPredicate(predicates);
     }

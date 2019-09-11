@@ -2372,8 +2372,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <republishing-enabled>false</republishing-enabled>\n"
                 + "          </wan-replication-ref>"
                 + "        <indexes>\n"
-                + "            <index ordered=\"true\">age</index>\n"
-                + "          </indexes>"
+                + "          <index>\n"
+                + "            <columns>\n"
+                + "              <column>age</column>\n"
+                + "            </columns>\n"
+                + "          </index>\n"
+                + "        </indexes>"
                 + "        <attributes>\n"
                 + "            <attribute extractor=\"com.bank.CurrencyExtractor\">currency</attribute>\n"
                 + "           </attributes>"
@@ -2403,9 +2407,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
         assertTrue(mapConfig.isReadBackupData());
-        assertEquals(1, mapConfig.getMapIndexConfigs().size());
-        assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
-        assertTrue(mapConfig.getMapIndexConfigs().get(0).isOrdered());
+        assertEquals(1, mapConfig.getIndexConfigs().size());
+        assertEquals("age", mapConfig.getIndexConfigs().get(0).getColumns().get(0).getName());
+        assertTrue(mapConfig.getIndexConfigs().get(0).getType() == IndexType.SORTED);
         assertEquals(1, mapConfig.getMapAttributeConfigs().size());
         assertEquals("com.bank.CurrencyExtractor", mapConfig.getMapAttributeConfigs().get(0).getExtractor());
         assertEquals("currency", mapConfig.getMapAttributeConfigs().get(0).getName());
@@ -2461,8 +2465,16 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <indexes>\n"
-                + "           <index ordered=\"false\">name</index>\n"
-                + "           <index ordered=\"true\">age</index>\n"
+                + "           <index type=\"HASH\">\n"
+                + "               <columns>\n"
+                + "                   <column>name</column>\n"
+                + "               </columns>\n"
+                + "           </index>\n"
+                + "           <index>\n"
+                + "               <columns>\n"
+                + "                   <column>age</column>\n"
+                + "               </columns>\n"
+                + "           </index>\n"
                 + "       </indexes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2470,14 +2482,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getMapIndexConfigs().isEmpty());
-        assertIndexEqual("name", false, mapConfig.getMapIndexConfigs().get(0));
-        assertIndexEqual("age", true, mapConfig.getMapIndexConfigs().get(1));
+        assertFalse(mapConfig.getIndexConfigs().isEmpty());
+        assertIndexEqual("name", false, mapConfig.getIndexConfigs().get(0));
+        assertIndexEqual("age", true, mapConfig.getIndexConfigs().get(1));
     }
 
-    private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, MapIndexConfig indexConfig) {
-        assertEquals(expectedAttribute, indexConfig.getAttribute());
-        assertEquals(expectedOrdered, indexConfig.isOrdered());
+    private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, IndexConfig indexConfig) {
+        assertEquals(expectedAttribute, indexConfig.getColumns().get(0).getName());
+        assertEquals(expectedOrdered, indexConfig.getType() == IndexType.SORTED);
     }
 
     @Override
@@ -2579,7 +2591,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<coalesce>false</coalesce>"
                 + "<populate>true</populate>"
                 + "<indexes>"
-                + "<index ordered=\"false\">name</index>"
+                + "<index type=\"HASH\"><columns><column>name</column></columns></index>"
                 + "</indexes>"
                 + "<predicate type=\"class-name\"> "
                 + "com.hazelcast.examples.SimplePredicate"
@@ -2695,9 +2707,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
-        for (MapIndexConfig mapIndexConfig : queryCacheConfig.getIndexConfigs()) {
-            assertEquals("name", mapIndexConfig.getAttribute());
-            assertFalse(mapIndexConfig.isOrdered());
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
+            assertEquals("name", indexConfig.getColumns().get(0).getName());
+            assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
     }
 

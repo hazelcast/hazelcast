@@ -75,16 +75,6 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public List<MapIndexConfig> getMapIndexConfigs() {
-        final List<MapIndexConfig> mapIndexConfigs = super.getMapIndexConfigs();
-        final List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
-        for (MapIndexConfig mapIndexConfig : mapIndexConfigs) {
-            readOnlyMapIndexConfigs.add(mapIndexConfig.getAsReadOnly());
-        }
-        return Collections.unmodifiableList(readOnlyMapIndexConfigs);
-    }
-
-    @Override
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {
         final PartitioningStrategyConfig partitioningStrategyConfig = super.getPartitioningStrategyConfig();
         if (partitioningStrategyConfig == null) {
@@ -243,16 +233,6 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
-        throw throwReadOnly();
-    }
-
-    @Override
     public MapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitioningStrategyConfig) {
         throw throwReadOnly();
     }
@@ -279,6 +259,28 @@ public class MapConfigReadOnly extends MapConfig {
 
     @Override
     public MapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public MapConfig addIndexConfig(IndexConfig indexConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public List<IndexConfig> getIndexConfigs() {
+        List<IndexConfig> configs = super.getIndexConfigs();
+        List<IndexConfig> res = new ArrayList<>(configs.size());
+
+        for (IndexConfig config : configs) {
+            res.add(config.getAsReadOnly());
+        }
+
+        return Collections.unmodifiableList(res);
+    }
+
+    @Override
+    public MapConfig setIndexConfigs(List<IndexConfig> indexConfigs) {
         throw throwReadOnly();
     }
 

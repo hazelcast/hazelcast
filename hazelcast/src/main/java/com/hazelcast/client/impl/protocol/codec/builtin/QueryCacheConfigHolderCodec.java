@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolde
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.PredicateConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.nio.Bits;
 
 import java.util.List;
@@ -64,7 +64,7 @@ public final class QueryCacheConfigHolderCodec {
         PredicateConfigHolderCodec.encode(clientMessage, configHolder.getPredicateConfigHolder());
         EvictionConfigHolderCodec.encode(clientMessage, configHolder.getEvictionConfigHolder());
         ListMultiFrameCodec.encodeNullable(clientMessage, configHolder.getListenerConfigs(), ListenerConfigHolderCodec::encode);
-        ListMultiFrameCodec.encodeNullable(clientMessage, configHolder.getIndexConfigs(), MapIndexConfigCodec::encode);
+        ListMultiFrameCodec.encodeNullable(clientMessage, configHolder.getIndexConfigs(), IndexConfigCodec::encode);
 
         clientMessage.add(END_FRAME);
     }
@@ -86,7 +86,7 @@ public final class QueryCacheConfigHolderCodec {
         PredicateConfigHolder predicateConfigHolder = PredicateConfigHolderCodec.decode(iterator);
         EvictionConfigHolder evictionConfigHolder = EvictionConfigHolderCodec.decode(iterator);
         List<ListenerConfigHolder> listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
-        List<MapIndexConfig> indexConfigs = ListMultiFrameCodec.decodeNullable(iterator, MapIndexConfigCodec::decode);
+        List<IndexConfig> indexConfigs = ListMultiFrameCodec.decodeNullable(iterator, IndexConfigCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

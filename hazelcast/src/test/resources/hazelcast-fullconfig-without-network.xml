@@ -348,8 +348,16 @@
         </wan-replication-ref>
 
         <indexes>
-            <index ordered="false">name</index>
-            <index ordered="true">age</index>
+            <index type="HASH">
+                <columns>
+                    <column>name</column>
+                </columns>
+            </index>
+            <index>
+                <columns>
+                    <column>age</column>
+                </columns>
+            </index>
         </indexes>
 
         <attributes>
@@ -380,8 +388,16 @@
                 <populate>true</populate>
                 <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"/>
                 <indexes>
-                    <index ordered="false">name</index>
-                    <index ordered="true">age</index>
+                    <index type="HASH">
+                        <columns>
+                            <column>name</column>
+                        </columns>
+                    </index>
+                    <index>
+                        <columns>
+                            <column>age</column>
+                        </columns>
+                    </index>
                 </indexes>
             </query-cache>
         </query-caches>

@@ -17,23 +17,22 @@
 package com.hazelcast.config;
 
 /**
- * Contains the configuration for a index of Map.
+ * Read-only counterpart of the {@link IndexColumnConfig}
  *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
-public class MapIndexConfigReadOnly extends MapIndexConfig {
-
-    public MapIndexConfigReadOnly(MapIndexConfig config) {
-        super(config);
+public class IndexColumnConfigReadOnly extends IndexColumnConfig {
+    IndexColumnConfigReadOnly(IndexColumnConfig other) {
+        super(other);
     }
 
     @Override
-    public MapIndexConfig setAttribute(String attribute) {
+    public IndexColumnConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public MapIndexConfig setOrdered(boolean ordered) {
+    public IndexColumnConfig setAscending(boolean asc) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

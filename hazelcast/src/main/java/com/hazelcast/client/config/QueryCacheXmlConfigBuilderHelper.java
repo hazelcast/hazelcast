@@ -16,8 +16,10 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.query.impl.IndexUtils;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -78,7 +80,9 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
-                handleIndexNode(queryCacheConfig, indexNode);
+                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3);
+
+                queryCacheConfig.addIndexConfig(indexConfig);
             }
         }
     }

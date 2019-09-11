@@ -17,47 +17,53 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexColumnConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.nio.Bits;
 
+import java.util.List;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
-public final class MapIndexConfigCodec {
-    private static final int ORDERED_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = ORDERED_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+public final class IndexConfigCodec {
+    private static final int TYPE_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = TYPE_OFFSET + Bits.INT_SIZE_IN_BYTES;
 
-    private MapIndexConfigCodec() {
+    private IndexConfigCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, MapIndexConfig config) {
+    public static void encode(ClientMessage clientMessage, IndexConfig config) {
         clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeBoolean(initialFrame.content, ORDERED_OFFSET, config.isOrdered());
+        encodeInt(initialFrame.content, TYPE_OFFSET, config.getType().getId());
         clientMessage.add(initialFrame);
 
-        StringCodec.encode(clientMessage, config.getAttribute());
+        CodecUtil.encodeNullable(clientMessage, config.getName(), StringCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, config.getColumns(), IndexColumnConfigCodec::encode);
 
         clientMessage.add(END_FRAME);
     }
 
-    public static MapIndexConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static IndexConfig decode(ListIterator<ClientMessage.Frame> iterator) {
         // begin frame
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean ordered = decodeBoolean(initialFrame.content, ORDERED_OFFSET);
+        int type = decodeInt(initialFrame.content, TYPE_OFFSET);
 
-        String attribute = StringCodec.decode(iterator);
+        String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+
+        List<IndexColumnConfig> columns = ListMultiFrameCodec.decode(iterator, IndexColumnConfigCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return new MapIndexConfig(attribute, ordered);
+        return new IndexConfig().setName(name).setType(IndexType.getById(type)).setColumns(columns);
     }
 }
