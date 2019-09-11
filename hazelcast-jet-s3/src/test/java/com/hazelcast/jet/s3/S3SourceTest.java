@@ -20,6 +20,7 @@ import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 @Category(NightlyTest.class)
@@ -33,7 +34,9 @@ public class S3SourceTest extends S3TestBase {
     }
 
     SupplierEx<S3Client> clientSupplier() {
-        return S3Client::create;
+        return () -> S3Client.builder()
+                             .region(Region.US_EAST_1)
+                             .build();
     }
 
 }
