@@ -186,8 +186,9 @@ public class IndexConfig implements IdentifiedDataSerializable {
         }
 
         for (IndexColumnConfig column : columns) {
-            if (column == null)
+            if (column == null) {
                 throw new NullPointerException("Column cannot be null.");
+            }
         }
 
         this.columns = columns;

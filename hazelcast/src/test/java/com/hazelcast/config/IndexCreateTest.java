@@ -219,18 +219,21 @@ public class IndexCreateTest extends HazelcastTestSupport {
     }
 
     private static String getExpectedName(IndexConfig config) {
-        if (config.getName() != null && !config.getName().trim().isEmpty())
+        if (config.getName() != null && !config.getName().trim().isEmpty()) {
             return config.getName();
+        }
 
         StringBuilder res = new StringBuilder(MAP_NAME).append("_");
 
-        if (config.getType() == IndexType.SORTED)
+        if (config.getType() == IndexType.SORTED) {
             res.append("sorted");
-        else
+        } else {
             res.append("hash");
+        }
 
-        for (IndexColumnConfig column : config.getColumns())
+        for (IndexColumnConfig column : config.getColumns()) {
             res.append("_").append(IndexUtils.canonicalizeAttribute(column.getName()));
+        }
 
         return res.toString();
     }
@@ -252,8 +255,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
             Config config = new Config().addMapConfig(mapConfig);
 
-            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
-            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
 
             member.getMap(MAP_NAME);
 
@@ -268,8 +271,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
             Config config = new Config();
 
-            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
-            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
 
             MapConfig mapConfig = new MapConfig(MAP_NAME);
 
@@ -292,8 +295,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
             Config config = new Config();
 
-            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
-            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
 
             IMap map = member.getMap(MAP_NAME);
 
@@ -312,8 +315,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
             Config config = new Config();
 
-            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
-            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
             HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
             MapConfig mapConfig = new MapConfig(MAP_NAME);
@@ -337,8 +340,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
             Config config = new Config();
 
-            HazelcastInstanceProxy member = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
-            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy)hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
+            HazelcastInstanceProxy member2 = (HazelcastInstanceProxy) hazelcastFactory.newHazelcastInstance(config);
             HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
             IMap map = client.getMap(MAP_NAME);

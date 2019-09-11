@@ -100,8 +100,9 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
      */
     @SuppressWarnings("ConstantConditions")
     public IndexColumnConfig setAscending(boolean asc) {
-        if (!asc)
+        if (!asc) {
             throw new IllegalArgumentException("Only ascending order is supported at the moment.");
+        }
 
         this.asc = asc;
 
