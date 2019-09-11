@@ -153,6 +153,20 @@ public final class AssertionSinks {
      * used to terminate the job so that you can {@code join()} it. This also
      * requires that there are no other assertions in the job as this one can
      * complete the job before the other ones succeeded.
+     * <p>
+     * The assertion can be validated as follows:
+     * <pre>{@code
+     * try {
+     *     jetInstance.newJob(p).join();
+     *     Assert.fail("Job should have completed with an AssertionCompletedException, " +
+     *             "but completed normally");
+     * } catch (CompletionException e) {
+     *     String errorMsg = e.getCause().getMessage();
+     *     Assert.assertTrue(
+     *             "Job was expected to complete with AssertionCompletedException, but completed with: " + e.getCause(),
+     *             errorMsg.contains(AssertionCompletedException.class.getName())
+     *     );
+     * }</pre>
      *
      * @param timeoutSeconds timeout in seconds, after which any assertion error will be propagated
      * @param assertFn assertion to execute periodically
