@@ -25,6 +25,15 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
+import com.hazelcast.executor.ExecutorServiceTestSupport;
+import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.spi.impl.servicemanager.ServiceManager;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -37,15 +46,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-@Ignore
 /*
  * This test is failing because of order problem between actual invoke and cancel.
  * For random and partition, the reason of broken order is also unknown to me (@sancar)
@@ -82,12 +93,14 @@ public class ClientExecutorServiceCancelTest
     }
 
     @Test(expected = CancellationException.class)
+    @Ignore
     public void testCancel_submitRandom_withSmartRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitRandom(true);
     }
 
     @Test(expected = CancellationException.class)
+    @Ignore
     public void testCancel_submitRandom_withDummyRouting()
             throws ExecutionException, InterruptedException, IOException {
         testCancel_submitRandom(false);
@@ -145,25 +158,162 @@ public class ClientExecutorServiceCancelTest
     }
 
     @Test(expected = CancellationException.class)
+    @Ignore
     public void testCancel_submitToKeyOwner_withSmartRouting()
             throws ExecutionException, InterruptedException, IOException {
-        testCancel_submitToKeyOwner(true);
+        testCancel_submitToKeyOwner(true, false);
     }
 
     @Test(expected = CancellationException.class)
+    @Ignore
     public void testCancel_submitToKeyOwner_withDummyRouting()
             throws ExecutionException, InterruptedException, IOException {
-        testCancel_submitToKeyOwner(false);
+        testCancel_submitToKeyOwner(false, false);
     }
 
-    private void testCancel_submitToKeyOwner(boolean smartRouting)
+    @Test(expected = CancellationException.class)
+    public void testCancel_submitToKeyOwner_withSmartRouting_WaitTaskStart()
+            throws ExecutionException, InterruptedException, IOException {
+        testCancel_submitToKeyOwner(true, true);
+    }
+
+    @Test(expected = CancellationException.class)
+    public void testCancel_submitToKeyOwner_withDummyRouting_WaitTaskStart()
+            throws ExecutionException, InterruptedException, IOException {
+        testCancel_submitToKeyOwner(false, true);
+    }
+
+    private void testCancel_submitToKeyOwner(boolean smartRouting, boolean waitTaskStart)
             throws ExecutionException, InterruptedException, IOException {
         HazelcastInstance client = createClient(smartRouting);
 
         IExecutorService executorService = client.getExecutorService(randomString());
-        Future<Boolean> future = executorService.submitToKeyOwner(new CancellationAwareTask(SLEEP_TIME), randomString());
+        String key = generateKeyOwnedBy(server1);
+
+        Future<Boolean> future = executorService.submitToKeyOwner(new CancellationAwareTask(SLEEP_TIME), key);
+
+        if (waitTaskStart) {
+            awaitTaskStartAtMember(server1, 1);
+        }
+
         boolean cancelled = future.cancel(true);
         assertTrue(cancelled);
+
+        awaitTaskCancelAtMember(server1, 1);
+
         future.get();
+    }
+
+    @Test(expected = CancellationException.class)
+    public void testCancel_submitToKeyOwner_Should_Be_Retried_While_Migrating()
+            throws IOException, ExecutionException, InterruptedException {
+        HazelcastInstance client = createClient(true);
+
+        IExecutorService executorService = client.getExecutorService(randomString());
+        String key = ExecutorServiceTestSupport.generateKeyOwnedBy(server1);
+
+        Future<Boolean> future = executorService.submitToKeyOwner(new CancellationAwareTask(SLEEP_TIME), key);
+        awaitTaskStartAtMember(server1, 1);
+
+        final InternalPartitionServiceImpl internalPartitionService = (InternalPartitionServiceImpl) TestUtil.getNode(server1)
+                                                                                                       .getPartitionService();
+        final int partitionId = internalPartitionService.getPartitionId(key);
+        // Simulate partition thread blockage as if the partition is migrating
+        internalPartitionService.getPartitionStateManager().trySetMigratingFlag(partitionId);
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                sleepSeconds(2);
+
+                // Simulate migration completion
+                internalPartitionService.getPartitionStateManager().clearMigratingFlag(partitionId);
+
+            }
+        });
+
+        // The cancel operation should not be blocked due to the blocked partition thread
+        future.cancel(true);
+
+        future.get();
+    }
+
+    @Test(expected = CancellationException.class)
+    public void testCancel_submitToKeyOwner_Should_Not_Block_Migration()
+            throws IOException, ExecutionException, InterruptedException {
+        server2.shutdown();
+
+        HazelcastInstance client = createClient(true);
+
+        warmUpPartitions(server1);
+
+        IExecutorService executorService = client.getExecutorService(randomString());
+        String key = ExecutorServiceTestSupport.generateKeyOwnedBy(server1);
+
+        final Future<Boolean> future = executorService.submitToKeyOwner(new CancellationAwareTask(SLEEP_TIME), key);
+        awaitTaskStartAtMember(server1, 1);
+
+        InternalPartitionServiceImpl internalPartitionService = (InternalPartitionServiceImpl) TestUtil.getNode(server1)
+                                                                                                       .getPartitionService();
+        final int partitionId = internalPartitionService.getPartitionId(key);
+        // Simulate partition thread blockage as if the partition is migrating
+        internalPartitionService.setInternalMigrationListener(new InternalMigrationListener() {
+            @Override
+            public void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo) {
+                int migratingPartitionId = migrationInfo.getPartitionId();
+                if (migratingPartitionId == partitionId) {
+                    spawn(new Runnable() {
+                        @Override
+                        public void run() {
+                            future.cancel(true);
+                        }
+                    });
+
+                    //sleep enough so that the ExecutorServiceCancelOnPartitionMessageTask actually starts
+                    // This test is time sensitive
+                    sleepSeconds(3);
+                }
+            }
+        });
+
+        // Start the second member to initiate migration
+        server2 = hazelcastFactory.newHazelcastInstance();
+
+        waitAllForSafeState(server1, server2);
+
+        future.get();
+    }
+
+    private void awaitTaskStartAtMember(final HazelcastInstance member, final long startedTaskCount) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                LocalExecutorStats executorStats = getMemberLocalExecutorStats(member);
+                assertEquals(startedTaskCount, executorStats.getStartedTaskCount());
+            }
+        });
+    }
+
+    private void awaitTaskCancelAtMember(final HazelcastInstance member, final long cancelledTaskCount) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                LocalExecutorStats executorStats = getMemberLocalExecutorStats(member);
+                assertEquals(cancelledTaskCount, executorStats.getCancelledTaskCount());
+            }
+        });
+    }
+
+    protected LocalExecutorStats getMemberLocalExecutorStats(HazelcastInstance member) {
+        final ServiceManager serviceManager = TestUtil.getNode(member).getNodeEngine().getServiceManager();
+        final DistributedExecutorService distributedExecutorService = serviceManager
+                .getService(DistributedExecutorService.SERVICE_NAME);
+
+        final Map<String, LocalExecutorStats> allStats = distributedExecutorService.getStats();
+        Iterator<LocalExecutorStats> statsIterator = allStats.values().iterator();
+        assertTrue(statsIterator.hasNext());
+        return statsIterator.next();
     }
 }
