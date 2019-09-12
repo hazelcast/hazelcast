@@ -46,8 +46,7 @@ public final class AdvancedNetworkStats {
     }
 
     public void setBytesTransceivedForProtocol(ProtocolType protocolType, long bytes) {
-        AtomicLong value = bytesTransceived.get(protocolType);
-        value.lazySet(bytes);
+        bytesTransceived.get(protocolType).lazySet(bytes);
     }
 
     // used for tests only

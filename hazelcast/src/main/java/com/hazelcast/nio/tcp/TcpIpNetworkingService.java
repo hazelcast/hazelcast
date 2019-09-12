@@ -18,7 +18,6 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.cp.internal.util.Tuple2;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -185,7 +184,7 @@ public class TcpIpNetworkingService
         // TODO check if metrics need to be deregistered and task needs to be stopped
         if (metricsRegistryScheduled.compareAndSet(false, true)
                 && metricsRegistry.minimumLevel().isEnabled(ProbeLevel.DEBUG)) {
-            metricsRegistry.scheduleAtFixedRate(new RefreshStatsTask(), 1, SECONDS, ProbeLevel.INFO);
+            metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
         }
 
         live = true;
@@ -308,32 +307,29 @@ public class TcpIpNetworkingService
         registry.destroy();
     }
 
-    private class RefreshStatsTask implements Runnable {
+    private class RefreshNetworkStatsTask implements Runnable {
 
         @Override
         public void run() {
-            Tuple2<MutableLong, MutableLong> rwCounters = Tuple2.of(new MutableLong(), new MutableLong());
-            for (ProtocolType protocolType : ProtocolType.values()) {
-                bytesTransceivedForProtocol(protocolType, rwCounters);
-                inboundNetworkStats.setBytesTransceivedForProtocol(protocolType, rwCounters.element1.value);
-                outboundNetworkStats.setBytesTransceivedForProtocol(protocolType, rwCounters.element2.value);
-            }
-        }
-
-        private void bytesTransceivedForProtocol(ProtocolType protocolType, Tuple2<MutableLong, MutableLong> rwCounters) {
-            rwCounters.element1.value = 0;
-            rwCounters.element2.value = 0;
-            networking.forEachChannel(new Consumer<Channel>() {
-                @Override
-                public void accept(Channel channel) {
-                    ProtocolType type = (ProtocolType) channel.attributeMap().get(ProtocolType.class);
-                    if (type == null || type != protocolType) {
-                        return;
+            MutableLong bytesRead = new MutableLong();
+            MutableLong bytesWritten = new MutableLong();
+            for (ProtocolType protocolType : ProtocolType.valuesAsSet()) {
+                bytesRead.value = 0;
+                bytesWritten.value = 0;
+                networking.forEachChannel(new Consumer<Channel>() {
+                    @Override
+                    public void accept(Channel channel) {
+                        ProtocolType type = (ProtocolType) channel.attributeMap().get(ProtocolType.class);
+                        if (type == null || type != protocolType) {
+                            return;
+                        }
+                        bytesRead.value += channel.bytesRead();
+                        bytesWritten.value += channel.bytesWritten();
                     }
-                    rwCounters.element1.value += channel.bytesRead();
-                    rwCounters.element2.value += channel.bytesWritten();
-                }
-            });
+                });
+                inboundNetworkStats.setBytesTransceivedForProtocol(protocolType, bytesRead.value);
+                outboundNetworkStats.setBytesTransceivedForProtocol(protocolType, bytesWritten.value);
+            }
         }
 
     }
