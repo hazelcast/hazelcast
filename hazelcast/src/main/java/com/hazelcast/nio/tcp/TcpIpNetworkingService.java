@@ -71,6 +71,7 @@ public class TcpIpNetworkingService
             new ConcurrentHashMap<EndpointQualifier, EndpointManager<TcpIpConnection>>();
     private final TcpIpUnifiedEndpointManager unifiedEndpointManager;
     private final AggregateEndpointManager aggregateEndpointManager;
+    private final boolean advancedNetworkingEnabled;
     private final AdvancedNetworkStats inboundNetworkStats = new AdvancedNetworkStats();
     private final AdvancedNetworkStats outboundNetworkStats = new AdvancedNetworkStats();
 
@@ -120,6 +121,7 @@ public class TcpIpNetworkingService
         }
 
         metricsRegistry.scanAndRegister(this, "tcp.connection");
+        advancedNetworkingEnabled = config.getAdvancedNetworkConfig().isEnabled();
     }
 
     private void initEndpointManager(Config config, IOService ioService,
@@ -183,9 +185,11 @@ public class TcpIpNetworkingService
         networking.start();
         startAcceptor();
 
-        inboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesReceived");
-        outboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesSend");
-        metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
+        if (advancedNetworkingEnabled) {
+            inboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesReceived");
+            outboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesSend");
+            metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
+        }
     }
 
     @Override
@@ -196,8 +200,10 @@ public class TcpIpNetworkingService
         live = false;
         logger.finest("Stopping Networking Service");
 
-        metricsRegistry.deregister(inboundNetworkStats);
-        metricsRegistry.deregister(outboundNetworkStats);
+        if (advancedNetworkingEnabled) {
+            metricsRegistry.deregister(inboundNetworkStats);
+            metricsRegistry.deregister(outboundNetworkStats);
+        }
 
         shutdownAcceptor();
         if (unifiedEndpointManager != null) {

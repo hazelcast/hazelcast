@@ -60,14 +60,14 @@ public interface NetworkingService<T extends Connection> {
     EndpointManager<T> getEndpointManager(EndpointQualifier qualifier);
 
     /**
-     * Gets network stats for incoming traffic
+     * Gets network stats for incoming traffic. Stats are updated only when Advanced Networking is enabled.
      *
      * @return network stats for incoming traffic per-protocol
      */
     AdvancedNetworkStats getInboundNetworkStats();
 
     /**
-     * Gets network stats for outgoing traffic
+     * Gets network stats for outgoing traffic. Stats are updated only when Advanced Networking is enabled.
      *
      * @return network stats for outgoing traffic per-protocol
      */
