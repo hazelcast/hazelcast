@@ -21,7 +21,6 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import net.spy.memcached.ConnectionFactory;
@@ -37,7 +36,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.Collections;
 
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -122,22 +120,6 @@ public class AdvancedNetworkingCommunicationIntegrationTest extends AbstractAdva
                 newHzInstance.shutdown();
             }
         }
-    }
-
-    private Config prepareJoinConfigForSecondMember(int port) {
-        Config config = smallInstanceConfig();
-        config.getAdvancedNetworkConfig().setEnabled(true);
-        JoinConfig join = config.getAdvancedNetworkConfig().getJoin();
-        join.getTcpIpConfig().addMember("127.0.0.1:" + port).setEnabled(true);
-        join.getMulticastConfig().setEnabled(false);
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        return config;
-    }
-
-    private void configureTcpIpConfig(Config config) {
-        JoinConfig join = config.getAdvancedNetworkConfig().getJoin();
-        join.getTcpIpConfig().addMember("127.0.0.1:" + NOT_OPENED_PORT).setEnabled(true);
-        join.getMulticastConfig().setEnabled(false);
     }
 
     private void testRestCallFailsOnPort(HazelcastInstance hz, int port) throws IOException {
