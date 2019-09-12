@@ -278,7 +278,6 @@ public final class NioNetworking implements Networking {
 
     @Override
     public void forEachChannel(Consumer<Channel> consumer) {
-        // TODO check what happens after shutdown
         for (Channel ch : channels) {
             consumer.accept(ch);
         }

@@ -71,6 +71,8 @@ public interface Networking {
 
     /**
      * Iterates over all registered channels using the provided consumer.
+     * <p>
+     * Implementations of this method must be thread-safe.
      *
      * @param consumer consumer used for iterating
      */
