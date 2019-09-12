@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.core.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -57,7 +58,15 @@ public class MigrationWatcher {
     private String registerMembershipListener(HazelcastInstance instance) {
         return instance.getCluster().addMembershipListener(new MembershipListener() {
             @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
+            public void memberAdded(MembershipEvent event) {
+                Endpoint endpoint = instance.getLocalEndpoint();
+                if (endpoint != null && endpoint.getUuid() != null
+                        && endpoint.getUuid().equals(event.getMember().getUuid())) {
+                    // Ignore self. This listener is executed in an async way. When executing for the
+                    // local member, jobs can be already running before we get to increment the counter.
+                    // This solves the issue if there's just 1 member.
+                    return;
+                }
                 changeCount.incrementAndGet();
             }
 
