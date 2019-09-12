@@ -42,8 +42,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-
 /**
  * Concurrent, distributed, observable and queryable map.
  * <p>
