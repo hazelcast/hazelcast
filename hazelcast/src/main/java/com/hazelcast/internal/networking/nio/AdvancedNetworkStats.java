@@ -18,6 +18,7 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -25,6 +26,8 @@ import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.util.JsonUtil.getObject;
 
 /**
  * Stats per {@link ProtocolType} for a single direction of network traffic (inbound or outbound).
@@ -34,14 +37,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link com.hazelcast.config.EndpointConfig} is added for the {@link ProtocolType} in question.
  */
 @PrivateApi
-public final class AdvancedNetworkStats {
+public final class AdvancedNetworkStats implements JsonSerializable {
 
     private final EnumMap<ProtocolType, AtomicLong> bytesTransceived;
 
     public AdvancedNetworkStats() {
         bytesTransceived = new EnumMap<ProtocolType, AtomicLong>(ProtocolType.class);
-        for (ProtocolType protocolType : ProtocolType.values()) {
-            bytesTransceived.put(protocolType, new AtomicLong());
+        for (ProtocolType type : ProtocolType.valuesAsSet()) {
+            bytesTransceived.put(type, new AtomicLong());
         }
     }
 
@@ -62,12 +65,12 @@ public final class AdvancedNetworkStats {
      * @param prefix          prefix for the probe names to be registered
      */
     public void registerMetrics(MetricsRegistry metricsRegistry, String prefix) {
-        for (final ProtocolType protocolType : ProtocolType.values()) {
-            metricsRegistry.register(this, prefix + "." + protocolType.name(), ProbeLevel.INFO,
+        for (final ProtocolType type : ProtocolType.valuesAsSet()) {
+            metricsRegistry.register(this, prefix + "." + type.name(), ProbeLevel.INFO,
                     new LongProbeFunction<AdvancedNetworkStats>() {
                         @Override
                         public long get(AdvancedNetworkStats source) {
-                            return bytesTransceived.get(protocolType).get();
+                            return bytesTransceived.get(type).get();
                         }
                     });
         }
@@ -78,15 +81,32 @@ public final class AdvancedNetworkStats {
      *
      * @return the JSON representation of this object
      */
+    @Override
     public JsonObject toJson() {
         JsonObject bytesTransceivedJson = new JsonObject();
-        for (ProtocolType protocolType : ProtocolType.values()) {
-            bytesTransceivedJson.add(protocolType.name(), bytesTransceived.get(protocolType).get());
+        for (ProtocolType type : ProtocolType.valuesAsSet()) {
+            bytesTransceivedJson.add(type.name(), bytesTransceived.get(type).get());
         }
 
         JsonObject result = new JsonObject();
         result.add("bytesTransceived", bytesTransceivedJson);
         return result;
+    }
+
+    /**
+     * Extracts the state from the given {@code json} object and mutates the
+     * state of this object.
+     *
+     * @param json the JSON object carrying state for this object
+     */
+    @Override
+    public void fromJson(JsonObject json) {
+        JsonObject bytesTransceivedJson = getObject(json, "bytesTransceived", null);
+        if (bytesTransceivedJson != null) {
+            for (ProtocolType type : ProtocolType.valuesAsSet()) {
+                bytesTransceived.get(type).set(bytesTransceivedJson.getLong(type.name(), 0));
+            }
+        }
     }
 
 }

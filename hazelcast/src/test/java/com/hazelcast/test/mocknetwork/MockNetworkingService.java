@@ -72,6 +72,8 @@ class MockNetworkingService
 
     private final EndpointManager mockEndpointMgr;
     private final AggregateEndpointManager mockAggrEndpointManager;
+    private final AdvancedNetworkStats inboundNetworkStats = new AdvancedNetworkStats();
+    private final AdvancedNetworkStats outboundNetworkStats = new AdvancedNetworkStats();
 
     MockNetworkingService(IOService ioService, Node node, TestNodeRegistry testNodeRegistry) {
         this.ioService = ioService;
@@ -397,12 +399,12 @@ class MockNetworkingService
 
     @Override
     public AdvancedNetworkStats getInboundNetworkStats() {
-        return null;
+        return inboundNetworkStats;
     }
 
     @Override
     public AdvancedNetworkStats getOutboundNetworkStats() {
-        return null;
+        return outboundNetworkStats;
     }
 
 }

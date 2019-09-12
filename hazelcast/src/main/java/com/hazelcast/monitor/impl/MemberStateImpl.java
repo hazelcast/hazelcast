@@ -540,6 +540,16 @@ public class MemberStateImpl implements MemberState {
         for (JsonObject.Member next : getObject(json, "clientStats")) {
             clientStats.put(next.getName(), next.getValue().asString());
         }
+        JsonObject jsonInboundNetworkStats = getObject(json, "inboundNetworkStats", null);
+        if (jsonInboundNetworkStats != null) {
+            inboundNetworkStats = new AdvancedNetworkStats();
+            inboundNetworkStats.fromJson(jsonInboundNetworkStats);
+        }
+        JsonObject jsonOutboundNetworkStats = getObject(json, "outboundNetworkStats", null);
+        if (jsonOutboundNetworkStats != null) {
+            outboundNetworkStats = new AdvancedNetworkStats();
+            outboundNetworkStats.fromJson(jsonOutboundNetworkStats);
+        }
     }
 
     @Override
