@@ -311,9 +311,9 @@ public class TcpIpNetworkingService
 
         @Override
         public void run() {
-            MutableLong bytesRead = new MutableLong();
-            MutableLong bytesWritten = new MutableLong();
-            for (ProtocolType protocolType : ProtocolType.valuesAsSet()) {
+            final MutableLong bytesRead = new MutableLong();
+            final MutableLong bytesWritten = new MutableLong();
+            for (final ProtocolType protocolType : ProtocolType.valuesAsSet()) {
                 bytesRead.value = 0;
                 bytesWritten.value = 0;
                 networking.forEachChannel(new Consumer<Channel>() {
