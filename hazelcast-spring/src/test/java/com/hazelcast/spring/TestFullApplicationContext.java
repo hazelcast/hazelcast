@@ -338,13 +338,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(testMapConfig.isReadBackupData());
         assertEquals(2, testMapConfig.getIndexConfigs().size());
         for (IndexConfig index : testMapConfig.getIndexConfigs()) {
-            if ("name".equals(index.getColumns().get(0).getName())) {
+            if ("name".equals(index.getAttributes().get(0).getName())) {
                 assertEquals(IndexType.HASH, index.getType());
                 assertNull(index.getName());
-            } else if ("age".equals(index.getColumns().get(0).getName())) {
+            } else if ("age".equals(index.getAttributes().get(0).getName())) {
                 assertEquals(IndexType.SORTED, index.getType());
                 assertEquals("sortedIndex", index.getName());
-                assertEquals("name", index.getColumns().get(1).getName());
+                assertEquals("name", index.getAttributes().get(1).getName());
             } else {
                 fail("unknown index!");
             }
@@ -1300,7 +1300,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
         for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
-            assertEquals("name", indexConfig.getColumns().get(0).getName());
+            assertEquals("name", indexConfig.getAttributes().get(0).getName());
             assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
     }

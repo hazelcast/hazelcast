@@ -61,7 +61,7 @@ public class ClientMapWithIndexCreationTest extends HazelcastTestSupport {
         List<IndexConfig> indexConfigs = mapConfig.getIndexConfigs();
 
         IndexConfig indexConfig = new IndexConfig();
-        indexConfig.addColumn("name");
+        indexConfig.addAttribute("name");
         indexConfig.setType(IndexType.SORTED);
         indexConfigs.add(indexConfig);
 

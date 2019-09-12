@@ -273,9 +273,9 @@
                       comparator-class-name="com.hazelcast.examples.MyEvictionComparator"/>
             <indexes>
                 <index type="HASH">
-                    <columns>
-                        <column>name</column>
-                    </columns>
+                    <attributes>
+                        <attribute>name</attribute>
+                    </attributes>
                 </index>
             </indexes>
         </query-cache>

@@ -25,7 +25,7 @@ import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.IndexColumnConfig;
+import com.hazelcast.config.IndexAttributeConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -520,7 +520,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 if ("columns".equals(cleanNodeName(columnsNode))) {
                     for (Node columnNode : childElements(columnsNode)) {
                         if ("column".equals(cleanNodeName(columnNode))) {
-                            BeanDefinitionBuilder columnBuilder = createBeanBuilder(IndexColumnConfig.class);
+                            BeanDefinitionBuilder columnBuilder = createBeanBuilder(IndexAttributeConfig.class);
 
                             columnBuilder.addPropertyValue("name", getTextContent(columnNode));
 

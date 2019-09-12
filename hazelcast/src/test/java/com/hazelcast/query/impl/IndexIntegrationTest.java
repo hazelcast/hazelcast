@@ -116,7 +116,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     public void putRemove_withIndex_whereAttributeIsNull() {
         // GIVEN
         IndexConfig indexConfig = new IndexConfig();
-        indexConfig.addColumn("amount");
+        indexConfig.addAttribute("amount");
         indexConfig.setType(IndexType.HASH);
 
         MapConfig mapConfig = new MapConfig().setName("map");

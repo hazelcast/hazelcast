@@ -1316,14 +1316,14 @@
         </wan-replication-ref>
         <indexes>
             <index type="HASH">
-                <columns>
-                    <column>name</column>
-                </columns>
+                <attributes>
+                    <attribute>name</attribute>
+                </attributes>
             </index>
             <index>
-                <columns>
-                    <column>age</column>
-                </columns>
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
             </index>
         </indexes>
         <attributes>
@@ -1384,9 +1384,9 @@
                 <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
                 <indexes>
                     <index>
-                        <columns>
-                            <column>name</column>
-                        </columns>
+                        <attributes>
+                            <attribute>name</attribute>
+                        </attributes>
                     </index>
                 </indexes>
             </query-cache>

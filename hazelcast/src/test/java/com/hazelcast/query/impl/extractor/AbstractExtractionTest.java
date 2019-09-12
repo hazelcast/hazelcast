@@ -108,7 +108,7 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
             IndexConfig indexConfig = new IndexConfig();
 
             for (String column : query.expression.split(",")) {
-                indexConfig.addColumn(column);
+                indexConfig.addAttribute(column);
             }
 
             indexConfig.setType(index == Index.ORDERED ? IndexType.SORTED : IndexType.HASH);

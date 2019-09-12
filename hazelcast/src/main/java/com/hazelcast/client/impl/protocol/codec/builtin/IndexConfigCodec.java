@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.IndexColumnConfig;
+import com.hazelcast.config.IndexAttributeConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.nio.Bits;
@@ -46,7 +46,7 @@ public final class IndexConfigCodec {
         clientMessage.add(initialFrame);
 
         CodecUtil.encodeNullable(clientMessage, config.getName(), StringCodec::encode);
-        ListMultiFrameCodec.encode(clientMessage, config.getColumns(), IndexColumnConfigCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, config.getAttributes(), IndexAttributeConfigCodec::encode);
 
         clientMessage.add(END_FRAME);
     }
@@ -60,10 +60,10 @@ public final class IndexConfigCodec {
 
         String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
-        List<IndexColumnConfig> columns = ListMultiFrameCodec.decode(iterator, IndexColumnConfigCodec::decode);
+        List<IndexAttributeConfig> columns = ListMultiFrameCodec.decode(iterator, IndexAttributeConfigCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return new IndexConfig().setName(name).setType(IndexType.getById(type)).setColumns(columns);
+        return new IndexConfig().setName(name).setType(IndexType.getById(type)).setAttributes(columns);
     }
 }

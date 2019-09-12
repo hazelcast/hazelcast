@@ -262,7 +262,7 @@ hazelcast-client:
         comparator-class-name: com.hazelcast.examples.MyEvictionComparator
       indexes:
         - type: HASH
-          columns:
+          attributes:
             - "name"
     query-cache-sql-predicate:
       map-name: map-name

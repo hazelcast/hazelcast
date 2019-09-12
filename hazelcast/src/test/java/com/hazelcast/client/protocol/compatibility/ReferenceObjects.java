@@ -356,7 +356,7 @@ public class ReferenceObjects {
             return false;
         }
 
-        return a.getColumns() != null ? a.getColumns().equals(that.getColumns()) : that.getColumns() == null;
+        return a.getAttributes() != null ? a.getAttributes().equals(that.getAttributes()) : that.getAttributes() == null;
     }
 
     public static boolean isEqual(MapAttributeConfig a, MapAttributeConfig that) {

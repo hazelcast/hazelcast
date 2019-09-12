@@ -349,14 +349,14 @@
 
         <indexes>
             <index type="HASH">
-                <columns>
-                    <column>name</column>
-                </columns>
+                <attributes>
+                    <attribute>name</attribute>
+                </attributes>
             </index>
             <index>
-                <columns>
-                    <column>age</column>
-                </columns>
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
             </index>
         </indexes>
 
@@ -389,14 +389,14 @@
                 <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"/>
                 <indexes>
                     <index type="HASH">
-                        <columns>
-                            <column>name</column>
-                        </columns>
+                        <attributes>
+                            <attribute>name</attribute>
+                        </attributes>
                     </index>
                     <index>
-                        <columns>
-                            <column>age</column>
-                        </columns>
+                        <attributes>
+                            <attribute>age</attribute>
+                        </attributes>
                     </index>
                 </indexes>
             </query-cache>

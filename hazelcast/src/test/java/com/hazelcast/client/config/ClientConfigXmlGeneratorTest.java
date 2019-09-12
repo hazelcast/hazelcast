@@ -401,7 +401,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 ).addIndexConfig(
                 new IndexConfig()
                         .setType(IndexType.SORTED)
-                        .addColumn(randomString())
+                        .addAttribute(randomString())
         ).addEntryListenerConfig(
                 (EntryListenerConfig) new EntryListenerConfig()
                         .setIncludeValue(true)

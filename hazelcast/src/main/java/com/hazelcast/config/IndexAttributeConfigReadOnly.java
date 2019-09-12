@@ -17,22 +17,22 @@
 package com.hazelcast.config;
 
 /**
- * Read-only counterpart of the {@link IndexColumnConfig}
+ * Read-only counterpart of the {@link IndexAttributeConfig}
  *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
-public class IndexColumnConfigReadOnly extends IndexColumnConfig {
-    IndexColumnConfigReadOnly(IndexColumnConfig other) {
+public class IndexAttributeConfigReadOnly extends IndexAttributeConfig {
+    IndexAttributeConfigReadOnly(IndexAttributeConfig other) {
         super(other);
     }
 
     @Override
-    public IndexColumnConfig setName(String name) {
+    public IndexAttributeConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public IndexColumnConfig setAscending(boolean asc) {
+    public IndexAttributeConfig setAscending(boolean asc) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

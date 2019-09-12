@@ -23,10 +23,10 @@
     <map name="map">
         <indexes>
             <index name="testIndex">
-                <columns>
-                    <column>__key</column>
-                    <column>__key.length</column>
-                </columns>
+                <attributes>
+                    <attribute>__key</attribute>
+                    <attribute>__key.length</attribute>
+                </attributes>
             </index>
         </indexes>
     </map>

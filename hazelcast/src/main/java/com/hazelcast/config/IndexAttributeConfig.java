@@ -24,9 +24,9 @@ import com.hazelcast.query.impl.IndexUtils;
 import java.io.IOException;
 
 /**
- * A column to be indexed. Column name could be
+ * An attribute to be indexed.
  */
-public class IndexColumnConfig implements IdentifiedDataSerializable {
+public class IndexAttributeConfig implements IdentifiedDataSerializable {
     /** Default sort order of the attribute. */
     public static final boolean DEFAULT_ASC = true;
 
@@ -36,7 +36,7 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
     /** Whether the attribute is sorted in ascending order. */
     protected boolean asc = DEFAULT_ASC;
 
-    public IndexColumnConfig() {
+    public IndexAttributeConfig() {
         // No-op.
     }
 
@@ -45,11 +45,11 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
      *
      * @param name Name of the attribute.
      */
-    public IndexColumnConfig(String name) {
+    public IndexAttributeConfig(String name) {
         setName(name);
     }
 
-    public IndexColumnConfig(IndexColumnConfig other) {
+    public IndexAttributeConfig(IndexAttributeConfig other) {
         this.name = other.name;
         this.asc = other.asc;
     }
@@ -69,8 +69,8 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
      * @param name Name of the attribute.
      * @return This instance for chaining.
      */
-    public IndexColumnConfig setName(String name) {
-        IndexUtils.validateColumn(name);
+    public IndexAttributeConfig setName(String name) {
+        IndexUtils.validateAttribute(name);
 
         this.name = name;
 
@@ -78,28 +78,28 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Gets whether the column should be indexed in ascending order. Applicable only to {@link IndexType#SORTED}
+     * Gets whether the attribute should be indexed in ascending order. Applicable only to {@link IndexType#SORTED}
      * index, ignored by other index types.
      * <p>
      * Only ascending order is supported at the moment.
      *
-     * @return {@code True} if the column should be indexed in ascending order, {@code false} otherwise.
+     * @return {@code True} if the attribute should be indexed in ascending order, {@code false} otherwise.
      */
     public boolean isAscending() {
         return asc;
     }
 
     /**
-     * Sets whether the column should be indexed in ascending order. Applicable only to {@link IndexType#SORTED}
+     * Sets whether the attribute should be indexed in ascending order. Applicable only to {@link IndexType#SORTED}
      * index, ignored by other index types.
      * <p>
      * Only ascending order is supported at the moment.
      *
-     * @param asc {@code True} if the column should be indexed in ascending order, {@code false} otherwise.
+     * @param asc {@code True} if the attribute should be indexed in ascending order, {@code false} otherwise.
      * @return This instance for chaining.
      */
     @SuppressWarnings("ConstantConditions")
-    public IndexColumnConfig setAscending(boolean asc) {
+    public IndexAttributeConfig setAscending(boolean asc) {
         if (!asc) {
             throw new IllegalArgumentException("Only ascending order is supported at the moment.");
         }
@@ -115,8 +115,8 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
      * @return immutable version of this configuration
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
-    public IndexColumnConfig getAsReadOnly() {
-        return new IndexColumnConfigReadOnly(this);
+    public IndexAttributeConfig getAsReadOnly() {
+        return new IndexAttributeConfigReadOnly(this);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return ConfigDataSerializerHook.INDEX_COLUMN;
+        return ConfigDataSerializerHook.INDEX_ATTRIBUTE;
     }
 
     @Override
@@ -151,7 +151,7 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
             return false;
         }
 
-        IndexColumnConfig that = (IndexColumnConfig) o;
+        IndexAttributeConfig that = (IndexAttributeConfig) o;
 
         if (asc != that.asc) {
             return false;
@@ -171,6 +171,6 @@ public class IndexColumnConfig implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "IndexColumnConfig{name=" + name + ", asc=" + asc + '}';
+        return "IndexAttributeConfig{name=" + name + ", asc=" + asc + '}';
     }
 }

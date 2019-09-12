@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.map.impl.query;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexAttributeConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.map.IMap;
@@ -91,82 +96,82 @@ public class IndexCreateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNoColumns() {
-        checkIndexFailed(IllegalArgumentException.class, "Index must have at least one column",
+    public void testNoAttributes() {
+        checkIndexFailed(IllegalArgumentException.class, "Index must have at least one attribute",
             createConfig());
     }
 
     @Test
-    public void testTooManyColumns() {
+    public void testTooManyAttributes() {
         IndexConfig config = new IndexConfig();
 
-        for (int i = 0; i < IndexUtils.MAX_COLUMNS + 1; i++) {
-            config.addColumn("col" + i);
+        for (int i = 0; i < IndexUtils.MAX_ATTRIBUTES + 1; i++) {
+            config.addAttribute("col" + i);
         }
 
         checkIndexFailed(IllegalArgumentException.class,
-            "Index cannot have more than " + IndexUtils.MAX_COLUMNS + " columns", config);
+            "Index cannot have more than " + IndexUtils.MAX_ATTRIBUTES + " attributes", config);
     }
 
     @Test
-    public void testDuplicateColumnName1() {
-        checkIndexFailed(IllegalArgumentException.class, "Duplicate column name [columnName=bad",
+    public void testDuplicateAttributeName1() {
+        checkIndexFailed(IllegalArgumentException.class, "Duplicate attribute name [attributeName=bad",
             createConfig("bad", "bad"));
     }
 
     @Test
-    public void testDuplicateColumnName2() {
-        checkIndexFailed(IllegalArgumentException.class, "Duplicate column name [columnName=bad",
+    public void testDuplicateAttributeName2() {
+        checkIndexFailed(IllegalArgumentException.class, "Duplicate attribute name [attributeName=bad",
             createConfig("good", "bad", "bad"));
     }
 
     @Test
-    public void testDuplicateColumnName3() {
-        checkIndexFailed(IllegalArgumentException.class, "Duplicate column name [columnName=bad",
+    public void testDuplicateAttributeName3() {
+        checkIndexFailed(IllegalArgumentException.class, "Duplicate attribute name [attributeName=bad",
             createConfig("bad", "good", "bad"));
     }
 
     @Test
-    public void testDuplicateColumnName4() {
-        checkIndexFailed(IllegalArgumentException.class, "Duplicate column name [columnName=bad",
+    public void testDuplicateAttributeName4() {
+        checkIndexFailed(IllegalArgumentException.class, "Duplicate attribute name [attributeName=bad",
             createConfig("bad", "bad", "good"));
     }
 
     @Test
-    public void testDuplicateColumnNameMasked1() {
-        checkIndexFailed(IllegalArgumentException.class, "Duplicate column names [columnName1=bad, columnName2=this.bad",
-            createConfig("bad", "this.bad"));
+    public void testDuplicateAttributeNameMasked1() {
+        checkIndexFailed(IllegalArgumentException.class,
+            "Duplicate attribute names [attributeName1=bad, attributeName2=this.bad", createConfig("bad", "this.bad"));
     }
 
     @Test
-    public void testDuplicateColumnNameMasked2() {
-        checkIndexFailed(IllegalArgumentException.class, "Duplicate column names [columnName1=this.bad, columnName2=bad",
-            createConfig("this.bad", "bad"));
+    public void testDuplicateAttributeNameMasked2() {
+        checkIndexFailed(IllegalArgumentException.class,
+            "Duplicate attribute names [attributeName1=this.bad, attributeName2=bad", createConfig("this.bad", "bad"));
     }
 
     @Test
-    public void testDuplicateColumnNameMasked3() {
-        checkIndexFailed(IllegalArgumentException.class, "Duplicate column name [columnName=this.bad",
+    public void testDuplicateAttributeNameMasked3() {
+        checkIndexFailed(IllegalArgumentException.class, "Duplicate attribute name [attributeName=this.bad",
             createConfig("this.bad", "this.bad"));
     }
 
     @Test
-    public void testSingleColumn() {
+    public void testSingleAttribute() {
         checkIndex(createConfig("col1"), createConfig("this.col2"));
     }
 
     @Test
-    public void testSingleColumnWithName() {
+    public void testSingleAttributeWithName() {
         checkIndex(createNamedConfig("index", "col"), createNamedConfig("index2", "this.col2"));
     }
 
     @Test
-    public void testMultipleColumns() {
+    public void testMultipleAttributes() {
         checkIndex(createConfig("col1, this.col2"));
     }
 
     @Test
-    public void testMultipleColumnsWithName() {
+    public void testMultipleAttributesWithName() {
         checkIndex(createNamedConfig("index", "col1, this.col2"));
     }
 
@@ -190,13 +195,13 @@ public class IndexCreateTest extends HazelcastTestSupport {
                 assertNotNull("Index not found: " + expectedName, index);
 
                 assertEquals(indexConfig.getType() == IndexType.SORTED, index.isOrdered());
-                assertEquals(indexConfig.getColumns().size(), index.getComponents().size());
+                assertEquals(indexConfig.getAttributes().size(), index.getComponents().size());
 
-                for (int i = 0; i < indexConfig.getColumns().size(); i++) {
-                    IndexColumnConfig expColumn = indexConfig.getColumns().get(i);
+                for (int i = 0; i < indexConfig.getAttributes().size(); i++) {
+                    IndexAttributeConfig expAttribute = indexConfig.getAttributes().get(i);
                     String componentName = index.getComponents().get(i);
 
-                    assertEquals(IndexUtils.canonicalizeAttribute(expColumn.getName()), componentName);
+                    assertEquals(IndexUtils.canonicalizeAttribute(expAttribute.getName()), componentName);
                 }
             }
         }
@@ -210,16 +215,16 @@ public class IndexCreateTest extends HazelcastTestSupport {
         handler.initialize(hazelcastFactory, indexConfigs);
     }
 
-    private static IndexConfig createNamedConfig(String name, String... columns) {
-        return createConfig(columns).setName(name);
+    private static IndexConfig createNamedConfig(String name, String... attributes) {
+        return createConfig(attributes).setName(name);
     }
 
-    private static IndexConfig createConfig(String... columns) {
+    private static IndexConfig createConfig(String... attributes) {
         IndexConfig config = new IndexConfig();
 
-        if (columns != null) {
-            for (String column : columns) {
-                config.addColumn(column);
+        if (attributes != null) {
+            for (String attribute : attributes) {
+                config.addAttribute(attribute);
             }
         }
 
@@ -239,8 +244,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
             res.append("hash");
         }
 
-        for (IndexColumnConfig column : config.getColumns()) {
-            res.append("_").append(IndexUtils.canonicalizeAttribute(column.getName()));
+        for (IndexAttributeConfig attribute : config.getAttributes()) {
+            res.append("_").append(IndexUtils.canonicalizeAttribute(attribute.getName()));
         }
 
         return res.toString();

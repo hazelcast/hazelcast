@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.IndexColumnConfig;
+import com.hazelcast.config.IndexAttributeConfig;
 import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
@@ -28,14 +28,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
 
-public final class IndexColumnConfigCodec {
+public final class IndexAttributeConfigCodec {
     private static final int ASC_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ASC_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
 
-    private IndexColumnConfigCodec() {
+    private IndexAttributeConfigCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, IndexColumnConfig config) {
+    public static void encode(ClientMessage clientMessage, IndexAttributeConfig config) {
         clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
@@ -47,7 +47,7 @@ public final class IndexColumnConfigCodec {
         clientMessage.add(END_FRAME);
     }
 
-    public static IndexColumnConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static IndexAttributeConfig decode(ListIterator<ClientMessage.Frame> iterator) {
         // begin frame
         iterator.next();
 
@@ -58,6 +58,6 @@ public final class IndexColumnConfigCodec {
 
         fastForwardToEndFrame(iterator);
 
-        return new IndexColumnConfig(new IndexColumnConfig().setAscending(asc).setName(column));
+        return new IndexAttributeConfig(new IndexAttributeConfig().setAscending(asc).setName(column));
     }
 }

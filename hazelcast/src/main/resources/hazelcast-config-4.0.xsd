@@ -2622,14 +2622,14 @@
     </xs:complexType>
     <xs:complexType name="index">
         <xs:all>
-            <xs:element name="columns" type="index-columns"/>
+            <xs:element name="attributes" type="index-attributes"/>
         </xs:all>
         <xs:attribute name="name"/>
         <xs:attribute name="type" type="index-type" default="SORTED"/>
     </xs:complexType>
-    <xs:complexType name="index-columns">
+    <xs:complexType name="index-attributes">
         <xs:sequence>
-            <xs:element name="column" type="xs:string" maxOccurs="unbounded"/>
+            <xs:element name="attribute" type="xs:string" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
     <xs:simpleType name="index-type">

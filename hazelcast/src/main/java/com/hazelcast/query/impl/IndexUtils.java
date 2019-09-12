@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DomConfigHelper;
-import com.hazelcast.config.IndexColumnConfig;
+import com.hazelcast.config.IndexAttributeConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.util.UuidUtil;
@@ -37,8 +37,8 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  * Utility methods for indexes.
  */
 public final class IndexUtils {
-    /** Maximum number of columns allowed in the index. */
-    public static final int MAX_COLUMNS = 255;
+    /** Maximum number of attributes allowed in the index. */
+    public static final int MAX_ATTRIBUTES = 255;
 
     /** Pattern to stripe away "this." prefix. */
     private static final Pattern THIS_PATTERN = Pattern.compile("^this\\.");
@@ -48,7 +48,7 @@ public final class IndexUtils {
     }
 
     /**
-     * Validate provided index config and normalize it's name and column names.
+     * Validate provided index config and normalize it's name and attribute names.
      *
      * @param mapName Name of the map
      * @param config Index config.
@@ -59,45 +59,45 @@ public final class IndexUtils {
     public static IndexConfig validateAndNormalize(String mapName, IndexConfig config) {
         assert config != null;
 
-        // Validate columns.
-        List<String> originalColumnNames = getColumnNames(config);
+        // Validate attributes.
+        List<String> originalAttributeNames = getAttributeNames(config);
 
-        if (originalColumnNames.isEmpty()) {
-            throw new IllegalArgumentException("Index must have at least one column: " + config);
+        if (originalAttributeNames.isEmpty()) {
+            throw new IllegalArgumentException("Index must have at least one attribute: " + config);
         }
 
-        if (originalColumnNames.size() > MAX_COLUMNS) {
-            throw new IllegalArgumentException("Index cannot have more than " + MAX_COLUMNS
-                + " columns: " + config);
+        if (originalAttributeNames.size() > MAX_ATTRIBUTES) {
+            throw new IllegalArgumentException("Index cannot have more than " + MAX_ATTRIBUTES
+                + " attributes: " + config);
         }
 
-        List<String> normalizedColumnNames = new ArrayList<>(originalColumnNames.size());
+        List<String> normalizedAttributeNames = new ArrayList<>(originalAttributeNames.size());
 
-        for (String originalColumnName : originalColumnNames) {
-            validateColumn(config, originalColumnName);
+        for (String originalAttributeName : originalAttributeNames) {
+            validateAttribute(config, originalAttributeName);
 
-            originalColumnName = originalColumnName.trim();
+            originalAttributeName = originalAttributeName.trim();
 
-            String normalizedColumnName = canonicalizeAttribute(originalColumnName);
+            String normalizedAttributeName = canonicalizeAttribute(originalAttributeName);
 
-            assert !normalizedColumnName.isEmpty();
+            assert !normalizedAttributeName.isEmpty();
 
-            int existingIdx = normalizedColumnNames.indexOf(normalizedColumnName);
+            int existingIdx = normalizedAttributeNames.indexOf(normalizedAttributeName);
 
             if (existingIdx != -1) {
-                String duplicateOriginalColumnName = originalColumnNames.get(existingIdx);
+                String duplicateOriginalAttributeName = originalAttributeNames.get(existingIdx);
 
-                if (duplicateOriginalColumnName.equals(originalColumnName)) {
-                    throw new IllegalArgumentException("Duplicate column name [columnName=" + originalColumnName
-                        + ", indexConfig=" + config + ']');
+                if (duplicateOriginalAttributeName.equals(originalAttributeName)) {
+                    throw new IllegalArgumentException("Duplicate attribute name [attributeName="
+                        + originalAttributeName + ", indexConfig=" + config + ']');
                 } else {
-                    throw new IllegalArgumentException("Duplicate column names ["
-                        + "columnName1=" + duplicateOriginalColumnName + ", columnName2=" + originalColumnName
-                        + ", indexConfig=" + config + ']');
+                    throw new IllegalArgumentException("Duplicate attribute names ["
+                        + "attributeName1=" + duplicateOriginalAttributeName + ", attributeName2="
+                        + originalAttributeName + ", indexConfig=" + config + ']');
                 }
             }
 
-            normalizedColumnNames.add(normalizedColumnName);
+            normalizedAttributeNames.add(normalizedAttributeName);
         }
 
         // Construct final index.
@@ -107,21 +107,21 @@ public final class IndexUtils {
             name = null;
         }
 
-        return buildNormalizedConfig(mapName, config.getType(), name, normalizedColumnNames);
+        return buildNormalizedConfig(mapName, config.getType(), name, normalizedAttributeNames);
     }
 
     private static IndexConfig buildNormalizedConfig(String mapName, IndexType indexType, String indexName,
-        List<String> normalizedColumnNames) {
+        List<String> normalizedAttributeNames) {
         IndexConfig newConfig = new IndexConfig().setType(indexType);
 
         StringBuilder nameBuilder = indexName == null
             ? new StringBuilder(mapName + (indexType == IndexType.SORTED ? "_sorted" : "_hash")) : null;
 
-        for (String newColumnName : normalizedColumnNames) {
-            newConfig.addColumn(newColumnName);
+        for (String normalizedAttributeName : normalizedAttributeNames) {
+            newConfig.addAttribute(normalizedAttributeName);
 
             if (nameBuilder != null) {
-                nameBuilder.append("_").append(newColumnName);
+                nameBuilder.append("_").append(normalizedAttributeName);
             }
         }
 
@@ -135,68 +135,68 @@ public final class IndexUtils {
     }
 
     /**
-     * Validate column name.
+     * Validate attribute name.
      *
      * @param config Index config.
-     * @param columnName Column name.
+     * @param attributeName Attribute name.
      */
-    public static void validateColumn(IndexConfig config, String columnName) {
-        if (columnName == null) {
-            throw new NullPointerException("Column name cannot be null: " + config);
+    public static void validateAttribute(IndexConfig config, String attributeName) {
+        if (attributeName == null) {
+            throw new NullPointerException("Attribute name cannot be null: " + config);
         }
 
-        String columnName0 = columnName.trim();
+        String attributeName0 = attributeName.trim();
 
-        if (columnName0.isEmpty()) {
-            throw new IllegalArgumentException("Column name cannot be empty: " + config);
+        if (attributeName0.isEmpty()) {
+            throw new IllegalArgumentException("Attribute name cannot be empty: " + config);
         }
 
-        if (columnName0.endsWith(".")) {
-            throw new IllegalArgumentException("Column name cannot end with dot [config=" + config
-                + ", column=" + columnName + ']');
+        if (attributeName0.endsWith(".")) {
+            throw new IllegalArgumentException("Attribute name cannot end with dot [config=" + config
+                + ", attribute=" + attributeName + ']');
         }
     }
 
     /**
-     * Validate column name.
+     * Validate attribute name.
      *
-     * @param columnName Column name.
+     * @param attributeName Attribute name.
      */
-    public static void validateColumn(String columnName) {
-        if (columnName == null) {
-            throw new NullPointerException("Column name cannot be null.");
+    public static void validateAttribute(String attributeName) {
+        if (attributeName == null) {
+            throw new NullPointerException("Attribute name cannot be null.");
         }
 
-        String columnName0 = columnName.trim();
+        String attributeName0 = attributeName.trim();
 
-        if (columnName0.isEmpty()) {
-            throw new IllegalArgumentException("Column name cannot be empty.");
+        if (attributeName0.isEmpty()) {
+            throw new IllegalArgumentException("Attribute name cannot be empty.");
         }
 
-        if (columnName0.endsWith(".")) {
-            throw new IllegalArgumentException("Column name cannot end with dot: " + columnName);
+        if (attributeName0.endsWith(".")) {
+            throw new IllegalArgumentException("Attribute name cannot end with dot: " + attributeName);
         }
     }
 
     /**
-     * Get column names of the given index.
+     * Get attribute names of the given index.
      *
      * @param config Index config.
-     * @return Column names.
+     * @return Attribute names.
      */
-    private static List<String> getColumnNames(IndexConfig config) {
-        if (config.getColumns().isEmpty()) {
+    private static List<String> getAttributeNames(IndexConfig config) {
+        if (config.getAttributes().isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<String> res = new ArrayList<>(config.getColumns().size());
+        List<String> res = new ArrayList<>(config.getAttributes().size());
 
-        for (IndexColumnConfig column : config.getColumns()) {
-            if (column == null) {
-                throw new NullPointerException("Column cannot be null [indexConfig=" + config + ']');
+        for (IndexAttributeConfig attribute : config.getAttributes()) {
+            if (attribute == null) {
+                throw new NullPointerException("Attribute cannot be null [indexConfig=" + config + ']');
             }
 
-            res.add(column.getName());
+            res.add(attribute.getName());
         }
 
         return res;
@@ -216,29 +216,29 @@ public final class IndexUtils {
     public static List<String> getComponents(IndexConfig config) {
         assert config != null;
 
-        List<String> res = new ArrayList<>(config.getColumns().size());
+        List<String> res = new ArrayList<>(config.getAttributes().size());
 
-        for (IndexColumnConfig column : config.getColumns()) {
-            res.add(column.getName());
+        for (IndexAttributeConfig attributes : config.getAttributes()) {
+            res.add(attributes.getName());
         }
 
         return res;
     }
 
     /**
-     * Create simple index definition with the given columns. For testing purposes only.
+     * Create simple index definition with the given attributes. For testing purposes only.
      *
      * @param ordered Whether the index should be ordered.
-     * @param columns Column names.
+     * @param attributes Attribute names.
      * @return Index definition.
      */
-    public static IndexConfig createSimpleIndexConfig(boolean ordered, String... columns) {
+    public static IndexConfig createSimpleIndexConfig(boolean ordered, String... attributes) {
         IndexConfig res = new IndexConfig();
 
         res.setType(ordered ? IndexType.SORTED : IndexType.HASH);
 
-        for (String column : columns) {
-            res.addColumn(column);
+        for (String attribute : attributes) {
+            res.addAttribute(attribute);
         }
 
         return validateAndNormalize(UuidUtil.newUnsecureUUID().toString(), res);
@@ -257,10 +257,10 @@ public final class IndexUtils {
                 gen.open("index", "type", indexCfg.getType().name());
             }
 
-            gen.open("columns");
+            gen.open("attributes");
 
-            for (IndexColumnConfig column : indexCfg.getColumns()) {
-                gen.node("column", column.getName());
+            for (IndexAttributeConfig attribute : indexCfg.getAttributes()) {
+                gen.node("attribute", attribute.getName());
             }
 
             gen.close();
@@ -284,13 +284,13 @@ public final class IndexUtils {
 
         IndexConfig res = new IndexConfig().setName(name).setType(type);
 
-        for (Node columnsNode : childElements(indexNode)) {
-            if ("columns".equals(cleanNodeName(columnsNode))) {
-                for (Node columnNode : childElements(columnsNode)) {
-                    if ("column".equals(cleanNodeName(columnNode))) {
-                        String column = DomConfigHelper.getTextContent(columnNode, domLevel3);
+        for (Node attributesNode : childElements(indexNode)) {
+            if ("attributes".equals(cleanNodeName(attributesNode))) {
+                for (Node attributeNode : childElements(attributesNode)) {
+                    if ("attribute".equals(cleanNodeName(attributeNode))) {
+                        String attribute = DomConfigHelper.getTextContent(attributeNode, domLevel3);
 
-                        res.addColumn(column);
+                        res.addAttribute(attribute);
                     }
                 }
             }
@@ -344,12 +344,12 @@ public final class IndexUtils {
 
         IndexConfig res = new IndexConfig().setName(name).setType(type);
 
-        Node columnsNode = attrs.getNamedItem("columns");
+        Node attributesNode = attrs.getNamedItem("attributes");
 
-        for (Node columnNode : childElements(columnsNode)) {
-            String column = columnNode.getNodeValue();
+        for (Node attributeNode : childElements(attributesNode)) {
+            String attribute = attributeNode.getNodeValue();
 
-            res.addColumn(column);
+            res.addAttribute(attribute);
         }
 
         return res;

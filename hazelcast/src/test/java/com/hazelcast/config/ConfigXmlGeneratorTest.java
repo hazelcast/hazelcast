@@ -948,7 +948,7 @@ public class ConfigXmlGeneratorTest {
                 .setSize(10)
                 .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
 
-        IndexConfig indexConfig = new IndexConfig().addColumn("attribute").setType(IndexType.SORTED);
+        IndexConfig indexConfig = new IndexConfig().addAttribute("attribute").setType(IndexType.SORTED);
 
         EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.entrylistener", false, false);
 

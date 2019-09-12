@@ -406,15 +406,15 @@ public class TestClientApplicationContext {
         IndexConfig hashIndex = queryCacheConfig.getIndexConfigs().get(0);
         assertEquals(IndexType.HASH, hashIndex.getType());
         assertNull(hashIndex.getName());
-        assertEquals(1, hashIndex.getColumns().size());
-        assertEquals("name", hashIndex.getColumns().get(0).getName());
+        assertEquals(1, hashIndex.getAttributes().size());
+        assertEquals("name", hashIndex.getAttributes().get(0).getName());
 
         IndexConfig sortedIndex = queryCacheConfig.getIndexConfigs().get(1);
         assertEquals(IndexType.SORTED, sortedIndex.getType());
         assertEquals("sortedIndex", sortedIndex.getName());
-        assertEquals(2, sortedIndex.getColumns().size());
-        assertEquals("age", sortedIndex.getColumns().get(0).getName());
-        assertEquals("name", sortedIndex.getColumns().get(1).getName());
+        assertEquals(2, sortedIndex.getAttributes().size());
+        assertEquals("age", sortedIndex.getAttributes().get(0).getName());
+        assertEquals("name", sortedIndex.getAttributes().get(1).getName());
     }
 
     @Test

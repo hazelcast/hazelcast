@@ -102,7 +102,7 @@ public class AttributeCanonicalizationTest {
         IndexConfig config = new IndexConfig().setType(indexType);
 
         for (String attribute : attributes) {
-            config.addColumn(attribute);
+            config.addAttribute(attribute);
         }
 
         IndexConfig normalizedConfig = IndexUtils.validateAndNormalize("map", config);
@@ -117,7 +117,7 @@ public class AttributeCanonicalizationTest {
 
         for (int i = 0; i < expAttributes.length; i++) {
             String expAttribute = expAttributes[i];
-            String attribute = normalizedConfig.getColumns().get(i).getName();
+            String attribute = normalizedConfig.getAttributes().get(i).getName();
 
             assertEquals(expAttribute, attribute);
 

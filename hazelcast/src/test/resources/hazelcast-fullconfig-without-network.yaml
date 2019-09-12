@@ -330,9 +330,9 @@ hazelcast:
 
       indexes:
         - type: HASH
-          columns:
+          attributes:
             - "name"
-        - columns:
+        - attributes:
           - "age"
 
       attributes:
@@ -370,9 +370,9 @@ hazelcast:
             size: 10000
           indexes:
             - type: HASH
-              columns:
+              attributes:
                 - "name"
-            - columns:
+            - attributes:
               - "age"
 
   multimap:

@@ -56,21 +56,21 @@ public class IndexConfigTest {
     private void checkIndexQuality(IndexConfig config1, IndexConfig config2, boolean expected) {
         assertEquals(expected, config1.equals(config2));
 
-        config1.addColumn("col1");
-        config2.addColumn("col1");
+        config1.addAttribute("col1");
+        config2.addAttribute("col1");
         assertEquals(expected, config1.equals(config2));
 
-        config1.addColumn("col2");
-        config2.addColumn("col2");
+        config1.addAttribute("col2");
+        config2.addAttribute("col2");
         assertEquals(expected, config1.equals(config2));
 
-        List<IndexColumnConfig> cols = new LinkedList<>();
-        cols.add(new IndexColumnConfig("col1"));
-        cols.add(new IndexColumnConfig("col2"));
-        config2.setColumns(cols);
+        List<IndexAttributeConfig> cols = new LinkedList<>();
+        cols.add(new IndexAttributeConfig("col1"));
+        cols.add(new IndexAttributeConfig("col2"));
+        config2.setAttributes(cols);
         assertEquals(expected, config1.equals(config2));
 
-        config2.addColumn("col3");
+        config2.addAttribute("col3");
         assertEquals(config1, config2);
     }
 
@@ -81,21 +81,21 @@ public class IndexConfigTest {
 
     @Test(expected = NullPointerException.class)
     public void testColumnElementNull() {
-        new IndexConfig().setColumns(Collections.singletonList(null));
+        new IndexConfig().setAttributes(Collections.singletonList(null));
     }
 
     @Test(expected = NullPointerException.class)
     public void testColumnNameNull() {
-        new IndexColumnConfig().setName(null);
+        new IndexAttributeConfig().setName(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testColumnNameEmpty() {
-        new IndexColumnConfig("");
+        new IndexAttributeConfig("");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testColumnDescending() {
-        new IndexColumnConfig().setAscending(false);
+        new IndexAttributeConfig().setAscending(false);
     }
 }

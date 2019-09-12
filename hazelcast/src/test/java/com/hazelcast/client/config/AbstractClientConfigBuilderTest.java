@@ -245,7 +245,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertFalse(queryCacheClassPredicateConfig.isCoalesce());
         assertTrue(queryCacheClassPredicateConfig.isPopulate());
         for (IndexConfig indexConfig : queryCacheClassPredicateConfig.getIndexConfigs()) {
-            assertEquals("name", indexConfig.getColumns().get(0).getName());
+            assertEquals("name", indexConfig.getAttributes().get(0).getName());
             assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
 

@@ -35,10 +35,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Hash indexes could be used with equality predicates and have constant search time assuming the hash
  * function of the indexed field disperses the elements properly.
  * <p>
- * Index could be created on one or more columns.
+ * Index could be created on one or more attributes.
  *
  * @see com.hazelcast.config.IndexType
- * @see com.hazelcast.config.IndexColumnConfig
+ * @see IndexAttributeConfig
  * @see com.hazelcast.config.MapConfig#setIndexConfigs(List)
  */
 public class IndexConfig implements IdentifiedDataSerializable {
@@ -51,25 +51,25 @@ public class IndexConfig implements IdentifiedDataSerializable {
     /** Type of the index. */
     private IndexType type = DEFAULT_TYPE;
 
-    /** Indexed columns. */
-    private List<IndexColumnConfig> columns;
+    /** Indexed attributes. */
+    private List<IndexAttributeConfig> attributes;
 
     public IndexConfig() {
         // No-op.
     }
 
     /**
-     * Creates an index configuration of the given type with provided columns.
+     * Creates an index configuration of the given type with provided attributes.
      *
      * @param type Index type.
-     * @param columns Columns to be indexed.
+     * @param attributes Attributes to be indexed.
      */
-    public IndexConfig(IndexType type, String... columns) {
+    public IndexConfig(IndexType type, String... attributes) {
         setType(type);
 
-        if (columns != null) {
-            for (String column : columns) {
-                addColumn(column);
+        if (attributes != null) {
+            for (String attribute : attributes) {
+                addAttribute(attribute);
             }
         }
     }
@@ -78,8 +78,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
         this.name = other.name;
         this.type = other.type;
 
-        for (IndexColumnConfig column : other.getColumns()) {
-            addColumnInternal(new IndexColumnConfig(column.getName()));
+        for (IndexAttributeConfig attribute : other.getAttributes()) {
+            addAttributeInternal(new IndexAttributeConfig(attribute.getName()));
         }
     }
 
@@ -130,68 +130,68 @@ public class IndexConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Gets index columns.
+     * Gets index attributes.
      *
-     * @return Index columns.
+     * @return Index attributes.
      */
-    public List<IndexColumnConfig> getColumns() {
-        if (columns == null) {
-            columns = new ArrayList<>();
+    public List<IndexAttributeConfig> getAttributes() {
+        if (attributes == null) {
+            attributes = new ArrayList<>();
         }
 
-        return columns;
+        return attributes;
     }
 
     /**
-     * Adds an index column with the given name and default sort order.
+     * Adds an index attribute with the given name and default sort order.
      *
-     * @param column Column name.
+     * @param attribute Attribute name.
      * @return This instance for chaining.
      */
-    public IndexConfig addColumn(String column) {
-        return addColumn(new IndexColumnConfig(column));
+    public IndexConfig addAttribute(String attribute) {
+        return addAttribute(new IndexAttributeConfig(attribute));
     }
 
     /**
-     * Adds an index column.
+     * Adds an index attribute.
      *
-     * @param column Index column.
+     * @param attribute Index attribute.
      * @return This instance for chaining.
      */
-    public IndexConfig addColumn(IndexColumnConfig column) {
-        addColumnInternal(column);
+    public IndexConfig addAttribute(IndexAttributeConfig attribute) {
+        addAttributeInternal(attribute);
 
         return this;
     }
 
-    protected void addColumnInternal(IndexColumnConfig column) {
-        if (columns == null) {
-            columns = new ArrayList<>(1);
+    protected void addAttributeInternal(IndexAttributeConfig attribute) {
+        if (attributes == null) {
+            attributes = new ArrayList<>(1);
         }
 
-        columns.add(column);
+        attributes.add(attribute);
     }
 
     /**
-     * Sets index columns.
+     * Sets index attributes.
      *
-     * @param columns Index columns.
+     * @param attributes Index attributes.
      * @return This instance for chaining.
      */
-    public IndexConfig setColumns(List<IndexColumnConfig> columns) {
-        if (columns == null) {
-            columns = Collections.emptyList();
+    public IndexConfig setAttributes(List<IndexAttributeConfig> attributes) {
+        if (attributes == null) {
+            attributes = Collections.emptyList();
         } else {
-            columns = new ArrayList<>(columns);
+            attributes = new ArrayList<>(attributes);
         }
 
-        for (IndexColumnConfig column : columns) {
-            if (column == null) {
-                throw new NullPointerException("Column cannot be null.");
+        for (IndexAttributeConfig attribute : attributes) {
+            if (attribute == null) {
+                throw new NullPointerException("Attribute cannot be null.");
             }
         }
 
-        this.columns = columns;
+        this.attributes = attributes;
 
         return this;
     }
@@ -219,13 +219,13 @@ public class IndexConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        writeNullableList(columns, out);
+        writeNullableList(attributes, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        columns = readNullableList(in);
+        attributes = readNullableList(in);
     }
 
     @Override
@@ -244,20 +244,20 @@ public class IndexConfig implements IdentifiedDataSerializable {
             return false;
         }
 
-        return getColumns().equals(that.getColumns());
+        return getAttributes().equals(that.getAttributes());
     }
 
     @Override
     public int hashCode() {
         int result = (name != null ? name.hashCode() : 0);
 
-        result = 31 * result + getColumns().hashCode();
+        result = 31 * result + getAttributes().hashCode();
 
         return result;
     }
 
     @Override
     public String toString() {
-        return "IndexConfig{name=" + name + ", type=" + type + ", columns=" + getColumns() + '}';
+        return "IndexConfig{name=" + name + ", type=" + type + ", attributes=" + getAttributes() + '}';
     }
 }
