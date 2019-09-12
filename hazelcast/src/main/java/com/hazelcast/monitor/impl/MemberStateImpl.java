@@ -25,7 +25,7 @@ import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
-import com.hazelcast.internal.networking.nio.AggregateNetworkStats;
+import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -86,8 +86,8 @@ public class MemberStateImpl implements MemberState {
     private HotRestartState hotRestartState = new HotRestartStateImpl();
     private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
     private WanSyncState wanSyncState = new WanSyncStateImpl();
-    private AggregateNetworkStats inboundNetworkStats = new AggregateNetworkStats();
-    private AggregateNetworkStats outboundNetworkStats = new AggregateNetworkStats();
+    private AdvancedNetworkStats inboundNetworkStats = new AdvancedNetworkStats();
+    private AdvancedNetworkStats outboundNetworkStats = new AdvancedNetworkStats();
 
     public MemberStateImpl() {
     }
@@ -319,19 +319,19 @@ public class MemberStateImpl implements MemberState {
         this.clientStats = clientStats;
     }
 
-    public AggregateNetworkStats getInboundNetworkStats() {
+    public AdvancedNetworkStats getInboundNetworkStats() {
         return inboundNetworkStats;
     }
 
-    public void setInboundNetworkStats(AggregateNetworkStats inboundNetworkStats) {
+    public void setInboundNetworkStats(AdvancedNetworkStats inboundNetworkStats) {
         this.inboundNetworkStats = inboundNetworkStats;
     }
 
-    public AggregateNetworkStats getOutboundNetworkStats() {
+    public AdvancedNetworkStats getOutboundNetworkStats() {
         return outboundNetworkStats;
     }
 
-    public void setOutboundNetworkStats(AggregateNetworkStats outboundNetworkStats) {
+    public void setOutboundNetworkStats(AdvancedNetworkStats outboundNetworkStats) {
         this.outboundNetworkStats = outboundNetworkStats;
     }
 

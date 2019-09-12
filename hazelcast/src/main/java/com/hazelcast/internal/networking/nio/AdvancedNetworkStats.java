@@ -29,17 +29,16 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Stats per {@link ProtocolType} for a single direction of network traffic (inbound or outbound).
  * <p>
- * Stores number of bytes sent or received per {@link ProtocolType}
- * depending on whether it is for inbound or outbound traffic. Works
- * only when Advanced Networking is enabled and {@link com.hazelcast.config.EndpointConfig}
- * is added for the {@link ProtocolType} in question.
+ * Stores number of bytes sent or received per {@link ProtocolType} depending on whether it is
+ * for inbound or outbound traffic. Works only when Advanced Networking is enabled and
+ * {@link com.hazelcast.config.EndpointConfig} is added for the {@link ProtocolType} in question.
  */
 @PrivateApi
-public final class AggregateNetworkStats {
+public final class AdvancedNetworkStats {
 
     private final EnumMap<ProtocolType, AtomicLong> bytesTransceived;
 
-    public AggregateNetworkStats() {
+    public AdvancedNetworkStats() {
         bytesTransceived = new EnumMap<ProtocolType, AtomicLong>(ProtocolType.class);
         for (ProtocolType protocolType : ProtocolType.values()) {
             bytesTransceived.put(protocolType, new AtomicLong());
@@ -66,9 +65,9 @@ public final class AggregateNetworkStats {
     public void registerMetrics(MetricsRegistry metricsRegistry, String prefix) {
         for (final ProtocolType protocolType : ProtocolType.values()) {
             metricsRegistry.register(this, prefix + "." + protocolType.name(), ProbeLevel.INFO,
-                    new LongProbeFunction<AggregateNetworkStats>() {
+                    new LongProbeFunction<AdvancedNetworkStats>() {
                         @Override
-                        public long get(AggregateNetworkStats source) {
+                        public long get(AdvancedNetworkStats source) {
                             return bytesTransceived.get(protocolType).get();
                         }
                     });
@@ -90,4 +89,5 @@ public final class AggregateNetworkStats {
         result.add("bytesTransceived", bytesTransceivedJson);
         return result;
     }
+
 }

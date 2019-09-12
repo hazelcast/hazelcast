@@ -27,7 +27,7 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
-import com.hazelcast.internal.networking.nio.AggregateNetworkStats;
+import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -75,8 +75,8 @@ public class TcpIpNetworkingService
             new ConcurrentHashMap<EndpointQualifier, EndpointManager<TcpIpConnection>>();
     private final TcpIpUnifiedEndpointManager unifiedEndpointManager;
     private final AggregateEndpointManager aggregateEndpointManager;
-    private final AggregateNetworkStats inboundNetworkStats = new AggregateNetworkStats();
-    private final AggregateNetworkStats outboundNetworkStats = new AggregateNetworkStats();
+    private final AdvancedNetworkStats inboundNetworkStats = new AdvancedNetworkStats();
+    private final AdvancedNetworkStats outboundNetworkStats = new AdvancedNetworkStats();
 
     private final ScheduledExecutorService scheduler;
 
@@ -118,8 +118,7 @@ public class TcpIpNetworkingService
 
         initEndpointManager(config, ioService, loggingService, metricsRegistry, channelInitializerProvider, properties);
         if (unifiedEndpointManager != null) {
-            this.aggregateEndpointManager = new UnifiedAggregateEndpointManager(unifiedEndpointManager,
-                    endpointManagers);
+            this.aggregateEndpointManager = new UnifiedAggregateEndpointManager(unifiedEndpointManager, endpointManagers);
         } else {
             this.aggregateEndpointManager = new DefaultAggregateEndpointManager(endpointManagers);
         }
@@ -275,12 +274,12 @@ public class TcpIpNetworkingService
     }
 
     @Override
-    public AggregateNetworkStats getInboundNetworkStats() {
+    public AdvancedNetworkStats getInboundNetworkStats() {
         return inboundNetworkStats;
     }
 
     @Override
-    public AggregateNetworkStats getOutboundNetworkStats() {
+    public AdvancedNetworkStats getOutboundNetworkStats() {
         return outboundNetworkStats;
     }
 
@@ -313,16 +312,17 @@ public class TcpIpNetworkingService
 
         @Override
         public void run() {
+            Tuple2<MutableLong, MutableLong> rwCounters = Tuple2.of(new MutableLong(), new MutableLong());
             for (ProtocolType protocolType : ProtocolType.values()) {
-                Tuple2<MutableLong, MutableLong> bytesTransceived = bytesTransceivedForProtocol(protocolType);
-                outboundNetworkStats.setBytesTransceivedForProtocol(protocolType, bytesTransceived.element1.value);
-                inboundNetworkStats.setBytesTransceivedForProtocol(protocolType, bytesTransceived.element2.value);
+                bytesTransceivedForProtocol(protocolType, rwCounters);
+                inboundNetworkStats.setBytesTransceivedForProtocol(protocolType, rwCounters.element1.value);
+                outboundNetworkStats.setBytesTransceivedForProtocol(protocolType, rwCounters.element2.value);
             }
         }
 
-        private Tuple2<MutableLong, MutableLong> bytesTransceivedForProtocol(ProtocolType protocolType) {
-            MutableLong bytesSend = new MutableLong();
-            MutableLong bytesWritten = new MutableLong();
+        private void bytesTransceivedForProtocol(ProtocolType protocolType, Tuple2<MutableLong, MutableLong> rwCounters) {
+            rwCounters.element1.value = 0;
+            rwCounters.element2.value = 0;
             networking.forEachChannel(new Consumer<Channel>() {
                 @Override
                 public void accept(Channel channel) {
@@ -330,11 +330,10 @@ public class TcpIpNetworkingService
                     if (type == null || type != protocolType) {
                         return;
                     }
-                    bytesSend.value += channel.bytesRead();
-                    bytesWritten.value += channel.bytesWritten();
+                    rwCounters.element1.value += channel.bytesRead();
+                    rwCounters.element2.value += channel.bytesWritten();
                 }
             });
-            return Tuple2.of(bytesSend, bytesWritten);
         }
 
     }

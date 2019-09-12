@@ -18,7 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.nio.AggregateNetworkStats;
+import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.concurrent.TimeUnit;
@@ -64,14 +64,14 @@ public interface NetworkingService<T extends Connection> {
      *
      * @return network stats for incoming traffic per-protocol
      */
-    AggregateNetworkStats getInboundNetworkStats();
+    AdvancedNetworkStats getInboundNetworkStats();
 
     /**
      * Gets network stats for outgoing traffic
      *
      * @return network stats for outgoing traffic per-protocol
      */
-    AggregateNetworkStats getOutboundNetworkStats();
+    AdvancedNetworkStats getOutboundNetworkStats();
 
     /**
      * Global scheduler for all Endpoints responsible of message retransmission

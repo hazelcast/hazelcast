@@ -21,7 +21,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.nio.AggregateNetworkStats;
+import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -396,12 +396,12 @@ class MockNetworkingService
     }
 
     @Override
-    public AggregateNetworkStats getInboundNetworkStats() {
+    public AdvancedNetworkStats getInboundNetworkStats() {
         return null;
     }
 
     @Override
-    public AggregateNetworkStats getOutboundNetworkStats() {
+    public AdvancedNetworkStats getOutboundNetworkStats() {
         return null;
     }
 

@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.nio.AggregateNetworkStats;
+import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.AggregateEndpointManager;
@@ -129,12 +129,12 @@ public class FirewallingNetworkingService
     }
 
     @Override
-    public AggregateNetworkStats getInboundNetworkStats() {
+    public AdvancedNetworkStats getInboundNetworkStats() {
         return delegate.getInboundNetworkStats();
     }
 
     @Override
-    public AggregateNetworkStats getOutboundNetworkStats() {
+    public AdvancedNetworkStats getOutboundNetworkStats() {
         return delegate.getOutboundNetworkStats();
     }
 
