@@ -454,6 +454,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public void addIndex(IndexConfig config) {
+        checkNotNull(config, "Index config cannot be null.");
+
         assert indexes.isGlobal();
 
         IndexConfig config0 = getNormalizedIndexConfig(config);

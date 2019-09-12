@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Utility methods for indexes.
@@ -239,10 +240,10 @@ public final class IndexUtils {
 
         res.setType(type);
 
-        if (attributes != null) {
-            for (String attribute : attributes) {
-                res.addAttribute(attribute);
-            }
+        checkNotNull(attributes, "Index attributes cannot be null.");
+
+        for (String attribute : attributes) {
+            res.addAttribute(attribute);
         }
 
         return res;

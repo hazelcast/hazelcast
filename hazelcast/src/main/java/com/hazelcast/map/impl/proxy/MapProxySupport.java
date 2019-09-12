@@ -72,6 +72,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -1324,8 +1325,12 @@ abstract class MapProxySupport<K, V>
 
     @Override
     public void addIndex(IndexConfig indexConfig) {
+        checkNotNull(indexConfig, "Index config cannot be null.");
+
+        IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
+
         try {
-            AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig);
+            AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
 
             operationService.invokeOnAllPartitions(SERVICE_NAME,
                 new BinaryOperationFactory(addIndexOperation, getNodeEngine()));

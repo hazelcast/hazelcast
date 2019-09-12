@@ -1432,6 +1432,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public void addIndex(IndexConfig indexConfig) {
+        checkNotNull(indexConfig, "Index config cannot be null.");
+
         IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
 
         ClientMessage request = MapAddIndexCodec.encodeRequest(name, indexConfig0);
