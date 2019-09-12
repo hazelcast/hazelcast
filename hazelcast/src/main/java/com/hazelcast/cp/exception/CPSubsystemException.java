@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
 
 /**
- * Base exception for failures in the CP subsystem
+ * Base exception for failures in CP Subsystem
  * <p>
  * This exception can include the known leader of a {@link CPGroup}
  * when it's thrown.

@@ -83,7 +83,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Maintains the CP subsystem metadata, such as CP groups, active CP members,
+ * Maintains CP Subsystem metadata, such as CP groups, active CP members,
  * leaving and joining CP members, etc.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
@@ -367,10 +367,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                                      long expectedGroupIdSeed) {
         checkNotNull(discoveredCPMembers);
 
-        // Fail fast if CP subsystem initialization is already failed
+        // Fail fast if CP Subsystem initialization is already failed
         if (initializationStatus == MetadataRaftGroupInitStatus.FAILED) {
             String msg = callerCPMember + "committed CP member list: " + discoveredCPMembers
-                    + " after CP subsystem discovery has already failed.";
+                    + " after CP Subsystem discovery has already failed.";
             logger.severe(msg);
             throw new IllegalArgumentException(msg);
         }
@@ -806,7 +806,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             removeActiveMember(commitIndex, leavingMember);
             completeFutures(getMetadataGroupId(), membershipChangeSchedule.getMembershipChangeCommitIndices(), null);
             membershipChangeSchedule = null;
-            logger.info(leavingMember + " is removed from the CP subsystem.");
+            logger.info(leavingMember + " is removed from CP Subsystem.");
 
         } else if (membershipChangeSchedule.getChanges().isEmpty()) {
             completeFutures(getMetadataGroupId(), membershipChangeSchedule.getMembershipChangeCommitIndices(), null);
@@ -1009,7 +1009,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                     return true;
                 }
 
-                throw new IllegalStateException(member + " cannot be added to the CP subsystem because another " + existingMember
+                throw new IllegalStateException(member + " cannot be added to CP Subsystem because another " + existingMember
                         + " exists with the same address!");
             }
         }
@@ -1060,7 +1060,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             case IN_PROGRESS:
                 throw new MetadataRaftGroupInitInProgressException();
             case FAILED:
-                throw new IllegalStateException("CP subsystem initialization failed!");
+                throw new IllegalStateException("CP Subsystem initialization failed!");
             default:
                 throw new IllegalStateException("Illegal initialization status: " + initializationStatus);
 
@@ -1172,7 +1172,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 Collection<Member> members = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
                 for (Member member : latestMembers) {
                     if (!members.contains(member)) {
-                        logger.severe(member + " left the cluster while CP subsystem discovery in progress!");
+                        logger.severe(member + " left the cluster while the CP discovery in progress!");
                         handleDiscoveryFailure();
                         return;
                     }
@@ -1198,7 +1198,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                     handleDiscoveryFailure();
                     return;
                 }
-                logger.info("CP subsystem is initialized with: " + discoveredCPMembers);
+                logger.info("CP Subsystem is initialized with: " + discoveredCPMembers);
             }
 
             discoveryCompleted.set(true);
@@ -1258,7 +1258,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             List<Member> memberList = new ArrayList<Member>(members).subList(0, config.getCPMemberCount());
             List<CPMemberInfo> cpMembers = new ArrayList<CPMemberInfo>(config.getCPMemberCount());
             for (Member member : memberList) {
-                // During the discovery process (both initial or cp subsystem restart),
+                // During the discovery process (both initial or CP Subsystem restart),
                 // it's guaranteed that AP and CP member UUIDs will be the same.
                 cpMembers.add(new CPMemberInfo(member));
             }
@@ -1317,7 +1317,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 logger.warning("Terminating because of CP discovery failure...");
                 terminateNode();
             } else {
-                logger.warning("Cancelling CP subsystem discovery...");
+                logger.warning("Cancelling CP Subsystem discovery...");
                 discoveryCompleted.set(true);
             }
         }

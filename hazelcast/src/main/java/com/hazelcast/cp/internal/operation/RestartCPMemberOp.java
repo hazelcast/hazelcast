@@ -31,7 +31,7 @@ import java.io.IOException;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 
 /**
- * Resets CP state of a member and restarts the CP subsystem initialization process.
+ * Resets CP state of a member and restarts CP Subsystem initialization process
  */
 public class RestartCPMemberOp extends Operation implements RaftSystemOperation, IdentifiedDataSerializable {
 

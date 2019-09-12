@@ -38,7 +38,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Provides access to CP subsystem utilities
+ * Provides access to CP Subsystem utilities
  */
 public class CPSubsystemImpl implements CPSubsystem {
 

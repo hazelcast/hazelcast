@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * cannot be automatically removed from CP Subsystem because it could be still
  * alive and partitioned away.
  * <p>
- * Moreover, by default CP subsystem works in memory without persisting any
+ * Moreover, by default CP Subsystem works in memory without persisting any
  * state to disk. It means that a crashed CP member will not be able to recover
  * by reloading its CP identity and state. Therefore, crashed CP members create
  * a danger for gradually losing majority of CP groups and eventually total

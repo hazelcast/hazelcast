@@ -34,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableList;
 
 /**
- * When there is a membership change in the CP subsystem,
+ * When there is a membership change in CP Subsystem,
  * all decided membership changes of Raft groups are maintained here.
  * {@link RaftGroupMembershipManager} realizes these membership changes.
  *

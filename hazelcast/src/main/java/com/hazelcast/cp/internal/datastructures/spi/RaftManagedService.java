@@ -20,12 +20,12 @@ import com.hazelcast.spi.ManagedService;
 
 /**
  * An interface that can be implemented by a CP data structure service
- * to receive CP subsystem lifecycle calls
+ * to receive CP Subsystem lifecycle calls
  */
 public interface RaftManagedService extends ManagedService {
 
     /**
-     * Called when the CP subsystem is restarted.
+     * Called when CP Subsystem is restarted.
      */
     void onCPSubsystemRestart();
 

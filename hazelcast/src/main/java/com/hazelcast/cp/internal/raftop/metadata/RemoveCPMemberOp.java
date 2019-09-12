@@ -30,9 +30,8 @@ import java.io.IOException;
 
 /**
  * When a CP member is shutting down gracefully, or a crashed CP member is
- * removed from the CP subsystem via
- * {@link RaftService#removeCPMember(String)}, this operation is
- * committed to the Metadata Raft group.
+ * removed from CP Subsystem via {@link RaftService#removeCPMember(String)},
+ * this operation is committed to the Metadata Raft group.
  */
 public class RemoveCPMemberOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,
                                                                      IdentifiedDataSerializable {

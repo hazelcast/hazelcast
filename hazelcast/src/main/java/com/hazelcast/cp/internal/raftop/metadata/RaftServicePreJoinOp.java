@@ -30,7 +30,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * If the CP subsystem discovery process is completed, new Hazelcast nodes
+ * If the CP discovery process is completed, new Hazelcast nodes
  * skip the discovery step.
  * <p/>
  * Please note that this operation is not a {@link RaftOp},

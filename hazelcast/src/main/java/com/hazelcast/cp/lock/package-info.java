@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains locking APIs of the CP subsystem
+ * Contains locking APIs of CP Subsystem
  */
 package com.hazelcast.cp.lock;

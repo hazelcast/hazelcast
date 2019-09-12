@@ -124,7 +124,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains {@link RaftNode} instances that run the Raft consensus algorithm
- * for the created CP groups. Also implements CP subsystem management methods.
+ * for the created CP groups. Also implements CP Subsystem management methods.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class RaftService implements ManagedService, SnapshotAwareService<MetadataRaftGroupSnapshot>, GracefulShutdownAwareService,
@@ -234,18 +234,18 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     @Override
     public ICompletableFuture<Void> restart() {
-        checkState(config.getCPMemberCount() > 0, "CP subsystem is not enabled!");
+        checkState(config.getCPMemberCount() > 0, "CP Subsystem is not enabled!");
 
         final SimpleCompletableFuture<Void> future = newCompletableFuture();
         ClusterService clusterService = nodeEngine.getClusterService();
         final Collection<Member> members = clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR);
 
         if (!clusterService.isMaster()) {
-            return complete(future, new IllegalStateException("Only master can restart CP subsystem!"));
+            return complete(future, new IllegalStateException("Only master can restart CP Subsystem!"));
         }
 
         if (config.getCPMemberCount() > members.size() + 1) {
-            return complete(future, new IllegalStateException("Not enough cluster members to restart CP subsystem! "
+            return complete(future, new IllegalStateException("Not enough cluster members to restart CP Subsystem! "
                     + "Required: " + config.getCPMemberCount() + ", available: " + (members.size() + 1)));
         }
 
@@ -274,7 +274,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         };
 
         long seed = newSeed();
-        logger.warning("Restarting CP subsystem with groupId seed: " + seed);
+        logger.warning("Resetting CP Subsystem with groupId seed: " + seed);
         restartLocal(seed);
 
         InternalOperationService operationService = nodeEngine.getOperationService();
@@ -312,7 +312,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
             getCPPersistenceService().reset();
             metadataGroupManager.restart(seed);
-            logger.info("CP state is reset with groupId seed: " + seed);
+            logger.info("Local CP state is reset with groupId seed: " + seed);
         } finally {
             nodeLock.writeLock().unlock();
         }
@@ -356,7 +356,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         final SimpleCompletableFuture<Void> future = newCompletableFuture();
 
         if (!metadataGroupManager.isDiscoveryCompleted()) {
-            return complete(future, new IllegalStateException("CP subsystem discovery is not completed yet!"));
+            return complete(future, new IllegalStateException("CP Subsystem discovery is not completed yet!"));
         }
 
         if (nodeEngine.getLocalMember().isLiteMember()) {
@@ -489,7 +489,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
 
         if (getCPPersistenceService().isEnabled()) {
-            // When persistence is enabled, we do not remove this member from CP subsystem.
+            // When persistence is enabled, we do not remove this member from CP Subsystem.
             // Because it is supposed to recover by restoring disk data.
             return true;
         }
@@ -1094,7 +1094,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             } else if (nodeEngine.getNode().isRunning()) {
                 boolean missingAutoRemovalEnabled = config.getMissingCPMemberAutoRemovalSeconds() > 0;
                 logger.severe("Local " + localMember + " is not part of received active CP members: " + members
-                        + ". It seems local member is removed from CP subsystem. "
+                        + ". It seems local member is removed from CP Subsystem. "
                         + "Auto removal of missing members is " + (missingAutoRemovalEnabled ? "enabled." : "disabled."));
             }
         }
