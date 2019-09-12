@@ -18,6 +18,9 @@ package com.hazelcast.cp;
 
 /**
  * Identifier for CP groups.
+ *
+ * @see CPGroup
+ * @see CPSubsystem
  */
 public interface CPGroupId {
 

@@ -111,7 +111,7 @@ public class CPSubsystemConfig {
     public static final int DEFAULT_SESSION_TTL_SECONDS = (int) TimeUnit.MINUTES.toSeconds(5);
 
     /**
-     * The default value of interval for the periodically-committed CP session
+     * The default duration for the periodically-committed CP session
      * heartbeats. See {@link #sessionHeartbeatIntervalSeconds}
      */
     public static final int DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 5;
@@ -124,6 +124,13 @@ public class CPSubsystemConfig {
 
     /**
      * The maximum number of CP members that can form a CP group.
+     * Theoretically, there is no upper bound on the number of CP members to
+     * run the Raft consensus algorithm. However, since the Raft consensus
+     * algorithm synchronously replicates operations to the majority of a CP
+     * group members, a larger CP group means more replication overhead, and
+     * memory consumption as well. The current maximum CP group size limit
+     * offers a sufficient degree of fault tolerance for CP Subsystem usages.
+     *
      * See {@link #groupSize}
      */
     public static final int MAX_GROUP_SIZE = 7;
@@ -164,7 +171,7 @@ public class CPSubsystemConfig {
     /**
      * Number of CP members to form CP groups. If set, it must be an odd
      * number between {@link #MIN_GROUP_SIZE} and {@link #MAX_GROUP_SIZE}.
-     * Otherwise, {@link #cpMemberCount} is respected.
+     * Otherwise, {@link #cpMemberCount} is respected while forming CP groups.
      * <p>
      * If set, must be smaller than or equal to {@link #cpMemberCount}
      */
@@ -172,17 +179,17 @@ public class CPSubsystemConfig {
 
     /**
      * Duration for a CP session to be kept alive after the last received
-     * heartbeat. The session will be closed if there is no new heartbeat
-     * during this duration. Session TTL must be decided wisely. If a very low
-     * value is set, CP session of a Hazelcast instance can be closed
-     * prematurely if the instance temporarily loses connectivity to the CP
-     * subsystem because of a network partition or a GC pause. In such an
+     * session heartbeat. A CP session is closed if no session heartbeat is
+     * received during this duration. Session TTL must be decided wisely. If
+     * a very small value is set, a CP session can be closed prematurely if
+     * its owner Hazelcast instance temporarily loses connectivity to CP
+     * Subsystem because of a network partition or a GC pause. In such an
      * occasion, all CP resources of this Hazelcast instance, such as
      * {@link FencedLock} or {@link ISemaphore}, are released. On the other
      * hand, if a very large value is set, CP resources can remain assigned to
      * an actually crashed Hazelcast instance for too long and liveliness
-     * problems can occur. The CP subsystem offers an API,
-     * {@link CPSessionManagementService}, to deal with liveliness issues
+     * problems can occur. CP Subsystem offers an API in
+     * {@link CPSessionManagementService} to deal with liveliness issues
      * related to CP sessions. In order to prevent premature session expires,
      * session TTL configuration can be set a relatively large value and
      * {@link CPSessionManagementService#forceCloseSession(String, long)}
@@ -208,23 +215,22 @@ public class CPSubsystemConfig {
      * Duration to wait before automatically removing a missing CP member from
      * CP Subsystem. When a CP member leaves the cluster, it is not
      * automatically removed from CP Subsystem, since it could be still alive
-     * and left the cluster because of a network partition. On the other hand,
-     * if a missing CP member is actually crashed, it creates a danger for its
-     * CP groups, because it will be still part of majority calculations. This
+     * and left the cluster because of a network problem. On the other hand,
+     * if a missing CP member actually crashed, it creates a danger for CP
+     * groups, because it is still part of majority calculations. This
      * situation could lead to losing majority of CP groups if multiple CP
      * members leave the cluster over time.
      * <p>
      * With the default configuration, missing CP members will be automatically
      * removed from CP Subsystem after 4 hours. This feature is very useful
      * in terms of fault tolerance when CP member count is also configured
-     * to be larger than group size. In this case, a missing CP member will be
+     * to be larger than group size. In this case, a missing CP member is
      * safely replaced in its CP groups with other available CP members
      * in CP Subsystem. This configuration also implies that no network
      * partition is expected to be longer than the configured duration.
      * <p>
-     * If a missing CP member comes back alive after it is automatically
-     * removed from CP Subsystem with this feature, that CP member
-     * must be terminated manually.
+     * If a missing CP member comes back alive after it is removed from CP
+     * Subsystem with this feature, that CP member must be terminated manually.
      * <p>
      * Must be greater than or equal to {@link #sessionTimeToLiveSeconds}
      */
@@ -232,24 +238,23 @@ public class CPSubsystemConfig {
 
     /**
      * Offers a choice between at-least-once and at-most-once execution
-     * of the operations on top of the Raft consensus algorithm.
-     * It is disabled by default and offers at-least-once execution guarantee.
-     * If enabled, it switches to at-most-once execution guarantee.
-     * When you invoke an API method on a CP data structure proxy, it
-     * replicates an internal operation to the corresponding CP group. After
-     * this operation is committed to majority of this CP group by the Raft
-     * leader node, it sends a response for the public API call. If a failure
-     * causes loss of the response, then the calling side cannot determine if
-     * the operation is committed on the CP group or not. In this case, if this
-     * configuration is disabled, the operation is replicated again to the CP
-     * group, and hence could be committed multiple times. If it is enabled,
-     * the public API call fails with
-     * {@link IndeterminateOperationStateException}.
+     * of operations on top of the Raft consensus algorithm. It is disabled by
+     * default and offers at-least-once execution guarantee. If enabled, it
+     * switches to at-most-once execution guarantee. When you invoke an API
+     * method on a CP data structure proxy, it sends an internal operation
+     * to the corresponding CP group. After this operation is committed on
+     * the majority of this CP group by the Raft leader node, it sends
+     * a response for the public API call. If a failure causes loss of
+     * the response, then the calling side cannot determine if the operation is
+     * committed on the CP group or not. In this case, if this configuration is
+     * disabled, the operation is replicated again to the CP group, and hence
+     * could be committed multiple times. If it is enabled, the public API call
+     * fails with {@link IndeterminateOperationStateException}.
      */
     private boolean failOnIndeterminateOperationState;
 
     /**
-     * Flag to denote whether or not CP persistence is enabled.
+     * Flag to denote whether or not CP Subsystem Persistence is enabled.
      * If enabled, CP members persist their local data to stable storage and
      * can recover from crashes.
      */
@@ -258,7 +263,7 @@ public class CPSubsystemConfig {
     /**
      * Base directory to store all CP data when {@link #persistenceEnabled}
      * is true. This directory can be shared between multiple CP members.
-     * Each CP member will create a unique directory under {@code baseDir}
+     * Each CP member creates a unique directory under {@code baseDir}
      * for itself.
      */
     private File baseDir = new File(CP_BASE_DIR_DEFAULT);
@@ -321,14 +326,14 @@ public class CPSubsystemConfig {
     }
 
     /**
-     * Sets the CP member count to initialize CP Subsystem. CP subsystem is
+     * Sets the CP member count to initialize CP Subsystem. CP Subsystem is
      * disabled if 0. Cannot be smaller than {@link #MIN_GROUP_SIZE} and
      * {@link #groupSize}
      *
      * @return this config instance
      */
     public CPSubsystemConfig setCPMemberCount(int cpMemberCount) {
-        checkTrue(cpMemberCount == 0 || cpMemberCount >= MIN_GROUP_SIZE, "CP subsystem must have at least "
+        checkTrue(cpMemberCount == 0 || cpMemberCount >= MIN_GROUP_SIZE, "CP Subsystem must have at least "
                 + MIN_GROUP_SIZE + " CP members");
         this.cpMemberCount = cpMemberCount;
         return this;
@@ -338,8 +343,8 @@ public class CPSubsystemConfig {
      * Returns the number of CP members to form CP groups.
      * Returns 0 if {@link #cpMemberCount} is 0.
      * If group size is not set:
-     * - returns the CP member count if it is an odd number
-     * - returns the CP member count - 1 if it is an even number
+     * - returns the CP member count if it is an odd number,
+     * - returns the CP member count - 1 if it is an even number.
      *
      * @return the number of CP members to form CP groups
      */
@@ -373,10 +378,10 @@ public class CPSubsystemConfig {
 
     /**
      * Returns the duration for a CP session to be kept alive
-     * after the last heartbeat.
+     * after its last session heartbeat.
      *
      * @return the duration for a CP session to be kept alive
-     *         after the last heartbeat
+     *         after its last session heartbeat
      */
     public int getSessionTimeToLiveSeconds() {
         return sessionTimeToLiveSeconds;
@@ -384,7 +389,7 @@ public class CPSubsystemConfig {
 
     /**
      * Sets the duration for a CP session to be kept alive
-     * after the last heartbeat.
+     * after its last session heartbeat.
      *
      * @return this config instance
      */
@@ -421,7 +426,7 @@ public class CPSubsystemConfig {
      * CP member from CP Subsystem
      *
      * @return the duration to wait before automatically removing a missing
-     *         CP member from the CP subsystem
+     *         CP member from the CP Subsystem
      */
     public int getMissingCPMemberAutoRemovalSeconds() {
         return missingCPMemberAutoRemovalSeconds;
@@ -441,10 +446,10 @@ public class CPSubsystemConfig {
 
     /**
      * Returns the value to determine if CP Subsystem API calls will fail when
-     * result of a replicated operation becomes indeterminate.
+     * result of an API call becomes indeterminate.
      *
      * @return the value to determine if CP Subsystem calls will fail when
-     *         result of a replicated operation becomes indeterminate
+     *         result of an API call becomes indeterminate
      */
     public boolean isFailOnIndeterminateOperationState() {
         return failOnIndeterminateOperationState;
@@ -452,7 +457,7 @@ public class CPSubsystemConfig {
 
     /**
      * Sets the value to determine if CP Subsystem calls will fail when
-     * result of a replicated operation becomes indeterminate.
+     * result of an API call becomes indeterminate.
      *
      * @return this config instance
      */
@@ -462,16 +467,16 @@ public class CPSubsystemConfig {
     }
 
     /**
-     * Returns whether CP persistence enabled on this member.
+     * Returns whether CP Subsystem Persistence enabled on this member.
      *
-     * @return true if CP persistence is enabled, false otherwise
+     * @return true if CP Subsystem Persistence is enabled, false otherwise
      */
     public boolean isPersistenceEnabled() {
         return persistenceEnabled;
     }
 
     /**
-     * Sets whether CP persistence is enabled on this member.
+     * Sets whether CP Subsystem Persistence is enabled on this member.
      *
      * @return this config instance
      */
@@ -506,11 +511,11 @@ public class CPSubsystemConfig {
 
     /**
      * Returns the timeout duration for CP members to restore their data from
-     * disk. A CP member fails its startup if it cannot complete its CP data
-     * restore process before this timeout duration.
+     * stable storage. A CP member fails its startup if it cannot complete its
+     * CP data restore process before this timeout duration.
      *
      * @return the timeout duration for CP members to restore their data from
-     *         disk
+     *         stable storage
      */
     public int getDataLoadTimeoutSeconds() {
         return dataLoadTimeoutSeconds;
@@ -518,11 +523,11 @@ public class CPSubsystemConfig {
 
     /**
      * Sets the timeout duration for CP members to restore their data from
-     * disk. A CP member fails its startup if it cannot complete its CP data
-     * restore process before this timeout duration.
+     * stable storage. A CP member fails its startup if it cannot complete its
+     * CP data restore process before this timeout duration.
      *
      * @param dataLoadTimeoutSeconds the timeout duration for CP members to
-     *                               restore their data from disk
+     *                               restore their data from stable storage
      *
      * @return this config instance
      */

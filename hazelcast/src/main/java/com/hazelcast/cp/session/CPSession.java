@@ -22,12 +22,12 @@ import com.hazelcast.nio.Address;
 /**
  * Represents a CP session.
  * <p>
- * For CP data structures that are doing ownership management of the resources,
- * such as lock or semaphore, a session is required to keep track of the
- * liveliness of the caller. In this context, caller means an entity that
- * uses the CPI subsystem APIs. It can be either a Hazelcast server or client.
+ * For CP data structures that involve ownership management of the resources,
+ * such as locks or semaphores, sessions are required to keep track of
+ * liveliness of callers. In this context, caller means an entity that
+ * uses the CPI Subsystem APIs. It can be either a Hazelcast server or client.
  * A caller initially creates a session before sending its very first
- * session-based request to the CP group, such as a lock / semaphore acquire.
+ * session-based request to a CP group, such as a lock / semaphore acquire.
  * After creating a session on the CP group, the caller stores its session id
  * locally and sends it alongside its session-based operations. A single
  * session is used for all lock and semaphore proxies of the caller. When a CP
@@ -52,7 +52,10 @@ import com.hazelcast.nio.Address;
  * then a session owner could be considered crashed very quickly and its
  * resources can be released prematurely. On the other hand, if a large value
  * is set, a session could be kept alive for an unnecessarily long duration
- * even if its owner actually crashes.
+ * even if its owner actually crashes. However, it is a safer approach to
+ * not to use a small session time to live duration. If a session owner is
+ * known to be crashed, its session could be closed manually via
+ * {@link CPSessionManagementService#forceCloseSession(String, long)}.
  *
  * @see CPSubsystemConfig
  */

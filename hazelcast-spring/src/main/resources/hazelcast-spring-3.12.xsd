@@ -4514,7 +4514,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of CP members to form CP groups. If set, it must be an odd
-                        number between 3 and 7. Otherwise, cp-member-count is respected.
+                        number between 3 and 7.
+                        Otherwise, cp-member-count is respected while forming CP groups.
                         If set, must be smaller than or equal to cp-member-count.
                     </xs:documentation>
                 </xs:annotation>
@@ -4523,19 +4524,22 @@
                 <xs:annotation>
                     <xs:documentation>
                         Duration for a CP session to be kept alive after the last received
-                        heartbeat. The session will be closed if there is no new heartbeat
-                        this duration. Session TTL must be decided wisely. If a very low value is set,
-                        CP session of a Hazelcast instance can be closed prematurely if the instance
-                        temporarily loses connectivity to the CP subsystem because of a network
-                        partition or a GC pause. In such an occasion, all CP resources of this Hazelcast
-                        instance, such as FencedLock or ISemaphore, are released. On the other hand,
-                        if a very large value is set, CP resources can remain assigned to an actually
-                        crashed Hazelcast instance for too long and liveliness problems can occur.
-                        The CP subsystem offers an API, CPSessionManagementService, to deal with
-                        liveliness issues related to CP sessions. In order to prevent premature
-                        session expires, session TTL configuration can be set a relatively large value
-                        and CPSessionManagementService#forceCloseSession() can be manually called to
-                        close CP session of a crashed Hazelcast instance.
+                        session heartbeat. A CP session is closed if no session heartbeat is
+                        received during this duration. Session TTL must be decided wisely. If
+                        a very small value is set, a CP session can be closed prematurely if
+                        its owner Hazelcast instance temporarily loses connectivity to CP
+                        Subsystem because of a network partition or a GC pause. In such an
+                        occasion, all CP resources of this Hazelcast instance, such as
+                        FencedLock or ISemaphore, are released. On the other
+                        hand, if a very large value is set, CP resources can remain assigned to
+                        an actually crashed Hazelcast instance for too long and liveliness
+                        problems can occur. CP Subsystem offers an API in
+                        CPSessionManagementService to deal with liveliness issues
+                        related to CP sessions. In order to prevent premature session expires,
+                        session TTL configuration can be set a relatively large value and
+                        CPSessionManagementService#forceCloseSession(String, long)
+                        can be manually called to close CP session of a crashed Hazelcast
+                        instance.
                         Must be greater than session-heartbeat-interval-seconds, and
                         smaller than or equal to missing-cp-member-auto-removal-seconds.
                     </xs:documentation>
@@ -4555,25 +4559,24 @@
             <xs:element name="missing-cp-member-auto-removal-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Duration to wait before automatically removing a missing CP member
-                        from CP Subsystem. When a CP member leaves the cluster, it is not
-                        automatically removed from CP Subsystem, since it could be still
-                        alive and left the cluster because of a network partition.
-                        On the other hand, if a missing CP member is actually crashed,
-                        it creates a danger for its CP groups, because it will be still part of
-                        majority calculations. This situation could lead to losing majority of
-                        CP groups if multiple CP members leave the cluster over time.
+                        Duration to wait before automatically removing a missing CP member from
+                        CP Subsystem. When a CP member leaves the cluster, it is not
+                        automatically removed from CP Subsystem, since it could be still alive
+                        and left the cluster because of a network problem. On the other hand,
+                        if a missing CP member actually crashed, it creates a danger for CP
+                        groups, because it is still part of majority calculations. This
+                        situation could lead to losing majority of CP groups if multiple CP
+                        members leave the cluster over time.
                         With the default configuration, missing CP members will be automatically
                         removed from CP Subsystem after 4 hours. This feature is very useful
                         in terms of fault tolerance when CP member count is also configured
-                        to be larger than group size. In this case, a missing CP member will be
+                        to be larger than group size. In this case, a missing CP member is
                         safely replaced in its CP groups with other available CP members
                         in CP Subsystem. This configuration also implies that no network
                         partition is expected to be longer than the configured duration.
+                        If a missing CP member comes back alive after it is removed from CP
+                        Subsystem with this feature, that CP member must be terminated manually.
                         Must be greater than or equal to session-time-to-live-seconds.
-                        If a missing CP member comes back alive after it is automatically
-                        removed from CP Subsystem with this feature, that CP member
-                        must be terminated manually.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4581,26 +4584,25 @@
                 <xs:annotation>
                     <xs:documentation>
                         Offers a choice between at-least-once and at-most-once execution
-                        of the operations on top of the Raft consensus algorithm.
-                        It is disabled by default and offers at-least-once execution guarantee.
-                        If enabled, it switches to at-most-once execution guarantee.
-                        When you invoke an API method on a CP data structure proxy, it
-                        replicates an internal operation to the corresponding CP group. After
-                        this operation is committed to majority of this CP group by the Raft
-                        leader node, it sends a response for the public API call. If a failure
-                        causes loss of the response, then the calling side cannot determine if
-                        the operation is committed on the CP group or not. In this case, if this
-                        configuration is disabled, the operation is replicated again to the CP
-                        group, and hence could be committed multiple times. If it is enabled,
-                        the public API call fails with
-                        com.hazelcast.core.IndeterminateOperationStateException
+                        of operations on top of the Raft consensus algorithm. It is disabled by
+                        default and offers at-least-once execution guarantee. If enabled, it
+                        switches to at-most-once execution guarantee. When you invoke an API
+                        method on a CP data structure proxy, it sends an internal operation
+                        to the corresponding CP group. After this operation is committed on
+                        the majority of this CP group by the Raft leader node, it sends
+                        a response for the public API call. If a failure causes loss of
+                        the response, then the calling side cannot determine if the operation is
+                        committed on the CP group or not. In this case, if this configuration is
+                        disabled, the operation is replicated again to the CP group, and hence
+                        could be committed multiple times. If it is enabled, the public API call
+                        fails with com.hazelcast.core.IndeterminateOperationStateException.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="persistence-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        Flag to denote whether or not CP persistence is enabled.
+                        Flag to denote whether or not CP Subsystem Persistence is enabled.
                         If enabled, CP members persist their local data to stable storage and
                         can recover from crashes.
                     </xs:documentation>
@@ -4611,8 +4613,7 @@
                     <xs:documentation>
                         Base directory to store all CP data when persistence-enabled
                         is true. This directory can be shared between multiple CP members.
-                        Each CP member will create a unique directory under base-dir
-                        for itself.
+                        Each CP member creates a unique directory under base-dir for itself.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4665,29 +4666,46 @@
                 <xs:annotation>
                     <xs:documentation>
                         Leader election timeout in milliseconds. If a candidate cannot win
-                        majority of the votes in time, a new election round is initiated.
+                        majority of the votes in time, a new leader election round is initiated.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="leader-heartbeat-period-in-millis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="5000">
                 <xs:annotation>
                     <xs:documentation>
-                        Period in milliseconds for a leader to send heartbeat messages
-                        to its followers
+                        Duration in milliseconds for a Raft leader node to send periodic
+                        heartbeat messages to its followers in order to denote its liveliness.
+                        Periodic heartbeat messages are actually append entries requests and
+                        can contain log entries for the lagging followers. If a too small value
+                        is set, heartbeat messages are sent from Raft leaders to followers too
+                        frequently and it can cause an unnecessary usage of CPU and network.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="max-missed-leader-heartbeat-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="5">
                 <xs:annotation>
                     <xs:documentation>
-                        Maximum number of missed leader heartbeats to trigger a new leader election
+                        Maximum number of missed Raft leader heartbeats for a follower to
+                        trigger a new leader election round. For instance, if
+                        leader-heartbeat-period-in-millis is 1 second and this value is set
+                        to 5, then a follower triggers a new leader election round if 5 seconds
+                        pass after the last heartbeat message of the current Raft leader node.
+                        If this duration is too small, new leader election rounds can be
+                        triggered unnecessarily if the current Raft leader temporarily slows
+                        down or a network congestion occurs. If it is too large, it takes longer
+                        to detect failures of Raft leaders.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="append-request-max-entry-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="100">
                 <xs:annotation>
                     <xs:documentation>
-                        Max entry count that can be sent in a single batch of append entries request
+                        Maximum number of Raft log entries that can be sent as a batch
+                        in a single append entries request. In Hazelcast's Raft consensus
+                        algorithm implementation, a Raft leader maintains a separate replication
+                        pipeline for each follower. It sends a new batch of Raft log entries to
+                        a follower after the follower acknowledges the last append entries
+                        request sent by the leader.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4696,6 +4714,16 @@
                 <xs:annotation>
                     <xs:documentation>
                         Number of new commits to initiate a new snapshot after the last snapshot
+                        taken by the local Raft node. This value must be configured wisely as it
+                        effects performance of the system in multiple ways. If a small value is
+                        set, it means that snapshots are taken too frequently and Raft nodes keep
+                        a very short Raft log. If snapshots are large and CP Subsystem
+                        Persistence is enabled, this can create an unnecessary overhead on IO
+                        performance. Moreover, a Raft leader can send too many snapshots to
+                        followers and this can create an unnecessary overhead on network.
+                        On the other hand, if a very large value is set, it can create a memory
+                        overhead since Raft log entries are going to be kept in memory until
+                        the next snapshot.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4703,8 +4731,14 @@
                         default="100">
                 <xs:annotation>
                     <xs:documentation>
-                        Maximum number of uncommitted entries in the leader's Raft log before
-                        temporarily rejecting new requests of callers.
+                        Maximum number of uncommitted log entries in the leader's Raft log
+                        before temporarily rejecting new requests of callers. Since Raft leaders
+                        send log entries to followers in batches, they accumulate incoming
+                        requests in order to improve the throughput. You can configure this
+                        field by considering your degree of concurrency in your callers.
+                        For instance, if you have at most 1000 threads sending requests to
+                        a Raft leader, you can set this field to 1000 so that callers do not
+                        get retry responses unnecessarily.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4712,10 +4746,11 @@
                         default="100">
                 <xs:annotation>
                     <xs:documentation>
-                        Timeout duration in milliseconds to apply backoff on append requests.
-                        After a leader sends an append request to a follower, it will not send
-                        a subsequent append request either until the follower responds or this
-                        timeout occurs.
+                        Timeout duration in milliseconds to apply backoff on append entries
+                        requests. After a Raft leader sends an append entries request to
+                        a follower, it will not send a subsequent append entries request either
+                        until the follower responds or this timeout occurs. Backoff durations
+                        are increased exponentially if followers get unresponsive.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
