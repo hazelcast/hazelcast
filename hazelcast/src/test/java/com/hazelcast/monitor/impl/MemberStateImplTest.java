@@ -21,8 +21,8 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
@@ -55,7 +55,6 @@ import java.util.UUID;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
