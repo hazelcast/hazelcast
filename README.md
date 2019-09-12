@@ -136,7 +136,7 @@ See [examples folder](examples) for some examples.
 
 ## Additional Connectors
 
-See [hazelcast-jet-contrib](github.com/hazelcast/hazelcast-jet-contrib) repository for community supported
+See [hazelcast-jet-contrib](https://github.com/hazelcast/hazelcast-jet-contrib) repository for community supported
 connectors and tools.
 
 ## Architecture
