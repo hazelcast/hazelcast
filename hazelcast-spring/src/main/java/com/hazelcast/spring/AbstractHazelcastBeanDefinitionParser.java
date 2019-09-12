@@ -517,9 +517,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             ManagedList<BeanDefinition> columns = new ManagedList<BeanDefinition>();
 
             for (Node columnsNode : childElements(indexNode)) {
-                if ("columns".equals(cleanNodeName(columnsNode))) {
+                if ("attributes".equals(cleanNodeName(columnsNode))) {
                     for (Node columnNode : childElements(columnsNode)) {
-                        if ("column".equals(cleanNodeName(columnNode))) {
+                        if ("attribute".equals(cleanNodeName(columnNode))) {
                             BeanDefinitionBuilder columnBuilder = createBeanBuilder(IndexAttributeConfig.class);
 
                             columnBuilder.addPropertyValue("name", getTextContent(columnNode));
@@ -530,7 +530,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 }
             }
 
-            indexConfBuilder.addPropertyValue("columns", columns);
+            indexConfBuilder.addPropertyValue("attributes", columns);
 
             indexes.add(indexConfBuilder.getBeanDefinition());
         }
