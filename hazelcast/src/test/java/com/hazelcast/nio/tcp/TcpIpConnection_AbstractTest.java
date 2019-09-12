@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -135,7 +136,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         ServerSocketRegistry registry = new ServerSocketRegistry(singletonMap(MEMBER, ioService.serverSocketChannel), true);
 
         final MockIOService finalIoService = ioService;
-        return new TcpIpNetworkingService(null,
+        return new TcpIpNetworkingService(new Config(),
                 ioService,
                 registry,
                 ioService.loggingService,
