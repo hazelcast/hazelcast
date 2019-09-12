@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,19 +33,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * depending on whether it is for inbound or outbound traffic. Works
  * only when Advanced Networking is enabled and {@link com.hazelcast.config.EndpointConfig}
  * is added for the {@link ProtocolType} in question.
- **/
-public final class PerProtocolNetworkStats {
+ */
+@PrivateApi
+public final class AggregateNetworkStats {
 
     private final EnumMap<ProtocolType, AtomicLong> bytesTransceived;
 
-    public PerProtocolNetworkStats() {
+    public AggregateNetworkStats() {
         bytesTransceived = new EnumMap<ProtocolType, AtomicLong>(ProtocolType.class);
         for (ProtocolType protocolType : ProtocolType.values()) {
             bytesTransceived.put(protocolType, new AtomicLong());
         }
     }
 
-    void setBytesTransceivedForProtocol(ProtocolType protocolType, long bytes) {
+    public void setBytesTransceivedForProtocol(ProtocolType protocolType, long bytes) {
         AtomicLong value = bytesTransceived.get(protocolType);
         value.lazySet(bytes);
     }
@@ -61,12 +63,12 @@ public final class PerProtocolNetworkStats {
      * @param metricsRegistry {@link MetricsRegistry} instance to register the probes on
      * @param prefix          prefix for the probe names to be registered
      */
-    void registerMetrics(MetricsRegistry metricsRegistry, String prefix) {
+    public void registerMetrics(MetricsRegistry metricsRegistry, String prefix) {
         for (final ProtocolType protocolType : ProtocolType.values()) {
             metricsRegistry.register(this, prefix + "." + protocolType.name(), ProbeLevel.INFO,
-                    new LongProbeFunction<PerProtocolNetworkStats>() {
+                    new LongProbeFunction<AggregateNetworkStats>() {
                         @Override
-                        public long get(PerProtocolNetworkStats source) {
+                        public long get(AggregateNetworkStats source) {
                             return bytesTransceived.get(protocolType).get();
                         }
                     });

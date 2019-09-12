@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.networking.nio.PerProtocolNetworkStats;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpEndpointManager;
 
@@ -29,8 +28,6 @@ public class UnifiedAggregateEndpointManager
 
     private final TcpIpEndpointManager unified;
     private final Map<EndpointQualifier, EndpointManager<TcpIpConnection>> views;
-    private final PerProtocolNetworkStats inboundNetworkStats = new PerProtocolNetworkStats();
-    private final PerProtocolNetworkStats outboundNetworkStats = new PerProtocolNetworkStats();
 
     public UnifiedAggregateEndpointManager(TcpIpEndpointManager unified,
                                            Map<EndpointQualifier, EndpointManager<TcpIpConnection>> views) {
@@ -59,15 +56,5 @@ public class UnifiedAggregateEndpointManager
     @Override
     public void addConnectionListener(ConnectionListener listener) {
         unified.addConnectionListener(listener);
-    }
-
-    @Override
-    public PerProtocolNetworkStats getInboundNetworkStats() {
-        return inboundNetworkStats;
-    }
-
-    @Override
-    public PerProtocolNetworkStats getOutboundNetworkStats() {
-        return outboundNetworkStats;
     }
 }

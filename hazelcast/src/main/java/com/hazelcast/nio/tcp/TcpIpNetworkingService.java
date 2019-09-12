@@ -18,12 +18,16 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.cp.internal.util.Tuple2;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.internal.networking.nio.AggregateNetworkStats;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -34,6 +38,8 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.UnifiedAggregateEndpointManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.util.MutableLong;
+import com.hazelcast.util.function.Consumer;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +47,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -48,6 +55,7 @@ import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.singleton;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class TcpIpNetworkingService
         implements NetworkingService<TcpIpConnection> {
@@ -60,12 +68,15 @@ public class TcpIpNetworkingService
 
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
+    private final AtomicBoolean metricsRegistryScheduled = new AtomicBoolean(false);
     private final ServerSocketRegistry registry;
 
     private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers =
             new ConcurrentHashMap<EndpointQualifier, EndpointManager<TcpIpConnection>>();
     private final TcpIpUnifiedEndpointManager unifiedEndpointManager;
     private final AggregateEndpointManager aggregateEndpointManager;
+    private final AggregateNetworkStats inboundNetworkStats = new AggregateNetworkStats();
+    private final AggregateNetworkStats outboundNetworkStats = new AggregateNetworkStats();
 
     private final ScheduledExecutorService scheduler;
 
@@ -107,12 +118,15 @@ public class TcpIpNetworkingService
 
         initEndpointManager(config, ioService, loggingService, metricsRegistry, channelInitializerProvider, properties);
         if (unifiedEndpointManager != null) {
-            this.aggregateEndpointManager = new UnifiedAggregateEndpointManager(unifiedEndpointManager, endpointManagers);
+            this.aggregateEndpointManager = new UnifiedAggregateEndpointManager(unifiedEndpointManager,
+                    endpointManagers);
         } else {
             this.aggregateEndpointManager = new DefaultAggregateEndpointManager(endpointManagers);
         }
 
         metricsRegistry.scanAndRegister(this, "tcp.connection");
+        inboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesReceived");
+        outboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesSend");
     }
 
     private void initEndpointManager(Config config, IOService ioService,
@@ -168,6 +182,11 @@ public class TcpIpNetworkingService
         }
         if (!registry.isOpen()) {
             throw new IllegalStateException("Networking Service is already shutdown. Cannot start!");
+        }
+        // TODO check if metrics need to be deregistered and task needs to be stopped
+        if (metricsRegistryScheduled.compareAndSet(false, true)
+                && metricsRegistry.minimumLevel().isEnabled(ProbeLevel.DEBUG)) {
+            metricsRegistry.scheduleAtFixedRate(new RefreshStatsTask(), 1, SECONDS, ProbeLevel.INFO);
         }
 
         live = true;
@@ -255,6 +274,16 @@ public class TcpIpNetworkingService
         scheduler.schedule(task, delay, unit);
     }
 
+    @Override
+    public AggregateNetworkStats getInboundNetworkStats() {
+        return inboundNetworkStats;
+    }
+
+    @Override
+    public AggregateNetworkStats getOutboundNetworkStats() {
+        return outboundNetworkStats;
+    }
+
     private void startAcceptor() {
         if (acceptor != null) {
             logger.warning("TcpIpAcceptor is already running! Shutting down old acceptor...");
@@ -278,6 +307,36 @@ public class TcpIpNetworkingService
             logger.finest("Closing server socket channel: " + registry);
         }
         registry.destroy();
+    }
+
+    private class RefreshStatsTask implements Runnable {
+
+        @Override
+        public void run() {
+            for (ProtocolType protocolType : ProtocolType.values()) {
+                Tuple2<MutableLong, MutableLong> bytesTransceived = bytesTransceivedForProtocol(protocolType);
+                outboundNetworkStats.setBytesTransceivedForProtocol(protocolType, bytesTransceived.element1.value);
+                inboundNetworkStats.setBytesTransceivedForProtocol(protocolType, bytesTransceived.element2.value);
+            }
+        }
+
+        private Tuple2<MutableLong, MutableLong> bytesTransceivedForProtocol(ProtocolType protocolType) {
+            MutableLong bytesSend = new MutableLong();
+            MutableLong bytesWritten = new MutableLong();
+            networking.forEachChannel(new Consumer<Channel>() {
+                @Override
+                public void accept(Channel channel) {
+                    ProtocolType type = (ProtocolType) channel.attributeMap().get(ProtocolType.class);
+                    if (type == null || type != protocolType) {
+                        return;
+                    }
+                    bytesSend.value += channel.bytesRead();
+                    bytesWritten.value += channel.bytesWritten();
+                }
+            });
+            return Tuple2.of(bytesSend, bytesWritten);
+        }
+
     }
 
 }

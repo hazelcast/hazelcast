@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.networking.nio.PerProtocolNetworkStats;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.util.Collection;
@@ -29,8 +28,6 @@ public class DefaultAggregateEndpointManager
         implements AggregateEndpointManager {
 
     private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers;
-    private final PerProtocolNetworkStats inboundNetworkStats = new PerProtocolNetworkStats();
-    private final PerProtocolNetworkStats outboundNetworkStats = new PerProtocolNetworkStats();
 
     public DefaultAggregateEndpointManager(ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers) {
         this.endpointManagers = endpointManagers;
@@ -80,15 +77,5 @@ public class DefaultAggregateEndpointManager
         for (EndpointManager manager : endpointManagers.values()) {
             manager.addConnectionListener(listener);
         }
-    }
-
-    @Override
-    public PerProtocolNetworkStats getInboundNetworkStats() {
-        return inboundNetworkStats;
-    }
-
-    @Override
-    public PerProtocolNetworkStats getOutboundNetworkStats() {
-        return outboundNetworkStats;
     }
 }

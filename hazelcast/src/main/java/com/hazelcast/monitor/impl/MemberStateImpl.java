@@ -25,7 +25,7 @@ import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
-import com.hazelcast.internal.networking.nio.PerProtocolNetworkStats;
+import com.hazelcast.internal.networking.nio.AggregateNetworkStats;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -86,8 +86,8 @@ public class MemberStateImpl implements MemberState {
     private HotRestartState hotRestartState = new HotRestartStateImpl();
     private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
     private WanSyncState wanSyncState = new WanSyncStateImpl();
-    private PerProtocolNetworkStats inboundNetworkStats = new PerProtocolNetworkStats();
-    private PerProtocolNetworkStats outboundNetworkStats = new PerProtocolNetworkStats();
+    private AggregateNetworkStats inboundNetworkStats = new AggregateNetworkStats();
+    private AggregateNetworkStats outboundNetworkStats = new AggregateNetworkStats();
 
     public MemberStateImpl() {
     }
@@ -319,19 +319,19 @@ public class MemberStateImpl implements MemberState {
         this.clientStats = clientStats;
     }
 
-    public PerProtocolNetworkStats getInboundNetworkStats() {
+    public AggregateNetworkStats getInboundNetworkStats() {
         return inboundNetworkStats;
     }
 
-    public void setInboundNetworkStats(PerProtocolNetworkStats inboundNetworkStats) {
+    public void setInboundNetworkStats(AggregateNetworkStats inboundNetworkStats) {
         this.inboundNetworkStats = inboundNetworkStats;
     }
 
-    public PerProtocolNetworkStats getOutboundNetworkStats() {
+    public AggregateNetworkStats getOutboundNetworkStats() {
         return outboundNetworkStats;
     }
 
-    public void setOutboundNetworkStats(PerProtocolNetworkStats outboundNetworkStats) {
+    public void setOutboundNetworkStats(AggregateNetworkStats outboundNetworkStats) {
         this.outboundNetworkStats = outboundNetworkStats;
     }
 

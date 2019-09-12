@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.nio.AggregateNetworkStats;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,20 @@ public interface NetworkingService<T extends Connection> {
     EndpointManager<T> getEndpointManager(EndpointQualifier qualifier);
 
     /**
+     * Gets network stats for incoming traffic
+     *
+     * @return network stats for incoming traffic per-protocol
+     */
+    AggregateNetworkStats getInboundNetworkStats();
+
+    /**
+     * Gets network stats for outgoing traffic
+     *
+     * @return network stats for outgoing traffic per-protocol
+     */
+    AggregateNetworkStats getOutboundNetworkStats();
+
+    /**
      * Global scheduler for all Endpoints responsible of message retransmission
      */
     void scheduleDeferred(Runnable task, long delay, TimeUnit unit);
@@ -91,7 +106,7 @@ public interface NetworkingService<T extends Connection> {
 
     /**
      * Shutdowns the service completely.
-     * Endpoints and the networking endine will not be operational anymore and cannot be restarted.
+     * Endpoints and the networking engine will not be operational anymore and cannot be restarted.
      * <p>
      * This method has no effect if it is already shutdown.
      */
