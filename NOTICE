@@ -24,3 +24,5 @@ from the Akka project (https://github.com/akka/akka/).
 The package com.hazelcast.internal.json contains code originating
 from minimal-json project (https://github.com/ralfstx/minimal-json).
 
+The class com.hazelcast.instance.impl.MobyNames contains code originating
+from The Moby Project (https://github.com/moby/moby).

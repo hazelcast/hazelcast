@@ -1012,6 +1012,18 @@ public final class GroupProperty {
     public static final HazelcastProperty SEARCH_DYNAMIC_CONFIG_FIRST
             = new HazelcastProperty("hazelcast.data.search.dynamic.config.first.enabled", false);
 
+    /**
+     * Defines whether Moby Names should be used for instance name generating when it is not provided by user.
+     * </p>
+     * Moby Name is a short human-readable name consisting of randomly chosen adjective and the surname of a famous person.
+     * </p>
+     * If set to true, Moby Name will be chosen, otherwise a name that is concatenation of static prefix, number and cluster name.
+     * </p>
+     * By default is true.
+     */
+    public static final HazelcastProperty MOBY_NAMING_ENABLED
+            = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
+
     private GroupProperty() {
     }
 }

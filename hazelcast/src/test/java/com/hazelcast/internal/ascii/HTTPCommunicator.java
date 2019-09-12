@@ -65,7 +65,6 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 @SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {
 
-    private final HazelcastInstance instance;
     private final String address;
     private final boolean sslEnabled;
     private boolean enableChunkedStreaming;
@@ -79,7 +78,6 @@ public class HTTPCommunicator {
     }
 
     public HTTPCommunicator(HazelcastInstance instance, String baseRestAddress) {
-        this.instance = instance;
 
         AdvancedNetworkConfig anc = instance.getConfig().getAdvancedNetworkConfig();
         SSLConfig sslConfig;
@@ -160,6 +158,11 @@ public class HTTPCommunicator {
 
     public String getClusterInfo() throws IOException {
         String url = address + "cluster";
+        return doGet(url).response;
+    }
+
+    public String getInstanceInfo() throws IOException {
+        String url = address + "instance";
         return doGet(url).response;
     }
 
@@ -543,6 +546,11 @@ public class HTTPCommunicator {
 
     public ConnectionResponse headRequestToGarbageClusterHealthURI() throws IOException {
         String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
+        return doHead(url);
+    }
+
+    public ConnectionResponse headRequestToInstanceURI() throws IOException {
+        String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_INSTANCE;
         return doHead(url);
     }
 
