@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.standalone.model.MyElement;
 import com.hazelcast.client.standalone.model.MyKey;
 import com.hazelcast.client.standalone.model.MyPortableElement;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -204,7 +205,7 @@ public class ClientMapStandaloneTest {
             MyPortableElement element = new MyPortableElement(i);
             map.put(i, element);
         }
-        map.addIndex("id", false);
+        map.addIndex(IndexType.HASH, "id");
         Predicate predicate = or(
                 equal("id", 0),
                 equal("id", 1)

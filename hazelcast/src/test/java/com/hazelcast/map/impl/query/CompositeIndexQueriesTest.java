@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -76,9 +77,9 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         config.getMapConfig("map").setInMemoryFormat(inMemoryFormat);
         map = createHazelcastInstance(config).getMap("map");
 
-        IndexConfig indexConfig1 = IndexUtils.createSimpleIndexConfig(false, "name", "age");
-        IndexConfig indexConfig2 = IndexUtils.createSimpleIndexConfig(true, "__key", "age");
-        IndexConfig indexConfig3 = IndexUtils.createSimpleIndexConfig(true, "height", "__key");
+        IndexConfig indexConfig1 = IndexUtils.createTestIndexConfig(IndexType.HASH, "name", "age");
+        IndexConfig indexConfig2 = IndexUtils.createTestIndexConfig(IndexType.SORTED, "__key", "age");
+        IndexConfig indexConfig3 = IndexUtils.createTestIndexConfig(IndexType.SORTED, "height", "__key");
 
         map.addIndex(indexConfig1);
         map.addIndex(indexConfig2);

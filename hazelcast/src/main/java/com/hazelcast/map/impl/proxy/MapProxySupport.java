@@ -72,7 +72,6 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -1321,13 +1320,6 @@ abstract class MapProxySupport<K, V>
 
     protected Data toData(Object object, PartitioningStrategy partitioningStrategy) {
         return serializationService.toData(object, partitioningStrategy);
-    }
-
-    @Override
-    public void addIndex(@Nonnull String attribute, boolean ordered) {
-        IndexConfig config = IndexUtils.createSimpleIndexConfig(ordered, attribute);
-
-        addIndex(config);
     }
 
     @Override

@@ -21,7 +21,6 @@ import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,10 +34,9 @@ public interface Index {
     String getName();
 
     /**
-     * @return the components of this index for composite indexes, {@code null}
-     * for single-attribute non-composite indexes.
+     * @return the components of this index.
      */
-    List<String> getComponents();
+    String[] getComponents();
 
     /**
      * @return Configuration of the index.

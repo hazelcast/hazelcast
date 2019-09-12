@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.query.impl.AttributeIndexRegistry.FirstComponentDecorator;
 import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -192,7 +193,7 @@ public class AttributeIndexRegistryTest {
     }
 
     private static InternalIndex index(boolean ordered, String... components) {
-        IndexConfig config = IndexUtils.createSimpleIndexConfig(ordered, components);
+        IndexConfig config = IndexUtils.createTestIndexConfig(ordered ? IndexType.SORTED : IndexType.HASH, components);
 
         config = IndexUtils.validateAndNormalize(UUID.randomUUID().toString(), config);
 

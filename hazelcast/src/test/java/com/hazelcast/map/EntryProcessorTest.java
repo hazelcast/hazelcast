@@ -1205,7 +1205,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
@@ -1230,7 +1230,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         IMap<Integer, SampleTestObjects.ObjectWithInteger> map = node.getMap(MAP_NAME);
-        map.addIndex("attribute", true);
+        map.addIndex(IndexType.SORTED, "attribute");
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, new SampleTestObjects.ObjectWithInteger(i));
@@ -1245,7 +1245,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void test_executeOnEntriesWithPredicate_usesIndexes_whenIndexesAvailable() {
         HazelcastInstance node = createHazelcastInstance(getConfig());
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
@@ -1280,7 +1280,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         final IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         map.set(1, 1);
 

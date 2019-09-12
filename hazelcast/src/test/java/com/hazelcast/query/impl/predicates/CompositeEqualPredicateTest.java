@@ -19,6 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
@@ -75,7 +76,7 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testUnordered() {
-        IndexConfig indexConfig = IndexUtils.createSimpleIndexConfig(false, "age", "height");
+        IndexConfig indexConfig = IndexUtils.createTestIndexConfig(IndexType.HASH, "age", "height");
         map.addIndex(indexConfig);
         assertEquals(0, map.getLocalMapStats().getIndexedQueryCount());
 
@@ -97,7 +98,7 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testOrdered() {
-        IndexConfig indexConfig = IndexUtils.createSimpleIndexConfig(true, "age", "height");
+        IndexConfig indexConfig = IndexUtils.createTestIndexConfig(IndexType.SORTED, "age", "height");
 
         map.addIndex(indexConfig);
         assertEquals(0, map.getLocalMapStats().getIndexedQueryCount());

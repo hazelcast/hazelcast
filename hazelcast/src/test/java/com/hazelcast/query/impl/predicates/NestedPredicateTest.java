@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
@@ -55,9 +56,9 @@ public class NestedPredicateTest extends HazelcastTestSupport {
     @Test
     public void addingIndexes() {
         // single-attribute index
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
         // nested-attribute index
-        map.addIndex("limb.name", true);
+        map.addIndex(IndexType.SORTED, "limb.name");
     }
 
     @Test

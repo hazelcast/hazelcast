@@ -195,11 +195,11 @@ public class IndexCreateTest extends HazelcastTestSupport {
                 assertNotNull("Index not found: " + expectedName, index);
 
                 assertEquals(indexConfig.getType() == IndexType.SORTED, index.isOrdered());
-                assertEquals(indexConfig.getAttributes().size(), index.getComponents().size());
+                assertEquals(indexConfig.getAttributes().size(), index.getComponents().length);
 
                 for (int i = 0; i < indexConfig.getAttributes().size(); i++) {
                     IndexAttributeConfig expAttribute = indexConfig.getAttributes().get(i);
-                    String componentName = index.getComponents().get(i);
+                    String componentName = index.getComponents()[i];
 
                     assertEquals(IndexUtils.canonicalizeAttribute(expAttribute.getName()), componentName);
                 }

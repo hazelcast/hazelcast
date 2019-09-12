@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
@@ -78,7 +79,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
         HazelcastInstance h1 = createTestHazelcastInstance();
 
         IMap<String, CustomObject> imap = h1.getMap("objects");
-        imap.addIndex("attribute", true);
+        imap.addIndex(IndexType.SORTED, "attribute");
 
         for (int i = 0; i < 10; i++) {
             CustomAttribute attr = new CustomAttribute(i, 200);
@@ -97,7 +98,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     public void testDeletingNonExistingObject() {
         HazelcastInstance instance = createTestHazelcastInstance();
         IMap<Integer, SampleTestObjects.Value> map = instance.getMap(randomMapName());
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "name");
 
         map.delete(1);
     }
@@ -106,8 +107,8 @@ public class QueryIndexTest extends HazelcastTestSupport {
     public void testInnerIndex() {
         HazelcastInstance instance = createTestHazelcastInstance();
         IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
-        map.addIndex("name", false);
-        map.addIndex("type.typeName", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.HASH, "type.typeName");
         for (int i = 0; i < 10; i++) {
             Value v = new Value("name" + i, i < 5 ? null : new ValueType("type" + i), i);
             map.put("" + i, v);
@@ -128,8 +129,8 @@ public class QueryIndexTest extends HazelcastTestSupport {
     public void testInnerIndexSql() {
         HazelcastInstance instance = createTestHazelcastInstance();
         IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
-        map.addIndex("name", false);
-        map.addIndex("type.typeName", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.HASH, "type.typeName");
         for (int i = 0; i < 4; i++) {
             Value v = new Value("name" + i, new ValueType("type" + i), i);
             map.put("" + i, v);
@@ -148,7 +149,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     public void issue685RemoveIndexesOnClear() {
         HazelcastInstance instance = createTestHazelcastInstance();
         IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
         for (int i = 0; i < 4; i++) {
             Value v = new Value("name" + i);
             map.put("" + i, v);
@@ -163,7 +164,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     public void testQueryDoesNotMatchOldResults_whenEntriesAreUpdated() {
         HazelcastInstance instance = createTestHazelcastInstance();
         IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
-        map.addIndex("name", true);
+        map.addIndex(IndexType.SORTED, "name");
 
         map.put("0", new Value("name"));
         map.put("0", new Value("newName"));
@@ -176,7 +177,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     public void testOneIndexedFieldsWithTwoCriteriaField() {
         HazelcastInstance h1 = createTestHazelcastInstance();
         IMap<String, Employee> map = h1.getMap("employees");
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "name");
         map.put("1", new Employee(1L, "joe", 30, true, 100D));
         EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         PredicateBuilder a = e.get("name").equal("joe");
@@ -195,7 +196,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     }
 
     private void testPredicateNotEqualWithIndex(IMap<Integer, Value> map, boolean ordered) {
-        map.addIndex("name", ordered);
+        map.addIndex(ordered ? IndexType.SORTED : IndexType.HASH, "name");
         map.put(1, new Value("abc", 1));
         map.put(2, new Value("xyz", 2));
         map.put(3, new Value("aaa", 3));

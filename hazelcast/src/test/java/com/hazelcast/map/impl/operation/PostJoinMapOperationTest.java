@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
@@ -210,7 +211,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         IMap<String, Person> map = hz1.getMap("map");
         map.put("foo", new Person("foo", 32));
         map.put("bar", new Person("bar", 70));
-        map.addIndex("age", true);
+        map.addIndex(IndexType.SORTED, "age");
 
         // when: new node joins and original node is terminated
         HazelcastInstance hz2 = hzFactory.newHazelcastInstance();
@@ -242,7 +243,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         // given: a single node HazelcastInstance with a map configured with index and interceptor
         HazelcastInstance hz1 = hzFactory.newHazelcastInstance();
         IMap<String, Person> map = hz1.getMap("map");
-        map.addIndex("age", true);
+        map.addIndex(IndexType.SORTED, "age");
         map.addInterceptor(new FixedReturnInterceptor());
 
         assertEquals(RETURNED_FROM_INTERCEPTOR, map.get("foo"));

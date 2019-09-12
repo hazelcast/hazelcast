@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -97,7 +96,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public List<String> getComponents() {
+        public String[] getComponents() {
             return delegate.getComponents();
         }
 

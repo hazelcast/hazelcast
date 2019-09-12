@@ -153,7 +153,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         for (int i = 0; i < ENTRIES; ++i) {
             client1.put(i, i);
         }
-        client1.addIndex("this", false);
+        client1.addIndex(IndexType.HASH, "this");
         assertPartitionsIndexedCorrectly(expectedPartitions, map1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -171,7 +171,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         assertPartitionsIndexedCorrectly(expectedPartitions, map1, map3);
 
         IMap<Integer, Integer> client3 = createClientFor(map3);
-        client3.addIndex("__key", true);
+        client3.addIndex(IndexType.HASH, "__key");
         assertPartitionsIndexedCorrectly(expectedPartitions, map1, map3);
 
         migrationFailingService.fail = true;

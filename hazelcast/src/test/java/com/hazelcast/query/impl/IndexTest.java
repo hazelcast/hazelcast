@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -102,7 +103,7 @@ public class IndexTest {
 
     @Test
     public void testRemoveEnumIndex() {
-        IndexConfig config = IndexUtils.createSimpleIndexConfig(false, "favoriteCity");
+        IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
         is.addOrGetIndex(config, null);
@@ -117,7 +118,7 @@ public class IndexTest {
 
     @Test
     public void testUpdateEnumIndex() {
-        IndexConfig config = IndexUtils.createSimpleIndexConfig(false, "favoriteCity");
+        IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
         is.addOrGetIndex(config, null);
@@ -139,9 +140,9 @@ public class IndexTest {
     @Test
     public void testIndex() throws QueryException {
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
-        Index dIndex = is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "d"), null);
-        Index boolIndex = is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "bool"), null);
-        Index strIndex = is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "str"), null);
+        Index dIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "d"), null);
+        Index boolIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"), null);
+        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "str"), null);
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
@@ -202,7 +203,7 @@ public class IndexTest {
     @Test
     public void testIndexWithNull() throws QueryException {
         Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
-        Index strIndex = is.addOrGetIndex(IndexUtils.createSimpleIndexConfig(true, "str"), null);
+        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"), null);
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
@@ -469,7 +470,9 @@ public class IndexTest {
     }
 
     private void testIt(boolean ordered) {
-        IndexConfig config = IndexUtils.createSimpleIndexConfig(ordered, QueryConstants.THIS_ATTRIBUTE_NAME.value());
+        IndexType type = ordered ? IndexType.SORTED : IndexType.HASH;
+
+        IndexConfig config = IndexUtils.createTestIndexConfig(type, QueryConstants.THIS_ATTRIBUTE_NAME.value());
 
         IndexImpl index = new IndexImpl(config, ss, newExtractor(), copyBehavior, PerIndexStats.EMPTY);
 

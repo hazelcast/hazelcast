@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -71,8 +72,8 @@ public class BoundedRangePredicateQueriesTest extends HazelcastTestSupport {
         config.getMapConfig("persons").setInMemoryFormat(inMemoryFormat);
 
         map = createHazelcastInstance(config).getMap("persons");
-        map.addIndex("age", false);
-        map.addIndex("height", true);
+        map.addIndex(IndexType.HASH, "age");
+        map.addIndex(IndexType.SORTED, "height");
         // the weight attribute is unindexed
 
         map.put(MIN - 1, new Person(null));

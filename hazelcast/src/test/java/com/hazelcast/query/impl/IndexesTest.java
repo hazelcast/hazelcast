@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.Predicate;
@@ -70,9 +71,9 @@ public class IndexesTest {
     @Test
     public void testAndWithSingleEntry() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "name"), null);
-        indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(true, "age"), null);
-        indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(true, "salary"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"), null);
         for (int i = 0; i < 100; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
@@ -93,9 +94,9 @@ public class IndexesTest {
     @Test
     public void testIndex() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "name"), null);
-        indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(true, "age"), null);
-        indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(true, "salary"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"), null);
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
@@ -112,7 +113,7 @@ public class IndexesTest {
     @Test
     public void testIndex2() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "name"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
         indexes.putEntry(new QueryEntry(serializationService, toData(1), new Value("abc"), newExtractor()), null,
                 Index.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(2), new Value("xyz"), newExtractor()), null,
@@ -146,7 +147,7 @@ public class IndexesTest {
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "name"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
@@ -173,7 +174,7 @@ public class IndexesTest {
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
-        indexes.addOrGetIndex(IndexUtils.createSimpleIndexConfig(false, "__key"), null);
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "__key"), null);
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry
@@ -190,13 +191,13 @@ public class IndexesTest {
     public void testNoDuplicateIndexes() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
 
-        IndexConfig config1 = IndexUtils.createSimpleIndexConfig(false, "a");
+        IndexConfig config1 = IndexUtils.createTestIndexConfig(IndexType.HASH, "a");
 
         InternalIndex index = indexes.addOrGetIndex(config1, null);
         assertNotNull(index);
         assertSame(index, indexes.addOrGetIndex(config1, null));
 
-        IndexConfig config2 = IndexUtils.createSimpleIndexConfig(false, "a", "b");
+        IndexConfig config2 = IndexUtils.createTestIndexConfig(IndexType.HASH, "a", "b");
 
         index = indexes.addOrGetIndex(config2, null);
         assertNotNull(index);

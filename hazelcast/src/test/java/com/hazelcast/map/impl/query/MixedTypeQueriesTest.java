@@ -18,10 +18,10 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -81,18 +81,18 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
 
         expected = instance.getMap("expected");
-        expected.addIndex(IndexUtils.createSimpleIndexConfig(false, "attr1", "attr2"));
-        expected.addIndex(IndexUtils.createSimpleIndexConfig(true, "attr2", "attr1"));
-        expected.addIndex("attr3", false);
-        expected.addIndex("attr4", true);
-        expected.addIndex(IndexUtils.createSimpleIndexConfig(true, "attr2", "attr4"));
+        expected.addIndex(IndexType.HASH, "attr1", "attr2");
+        expected.addIndex(IndexType.SORTED, "attr2", "attr1");
+        expected.addIndex(IndexType.HASH, "attr3");
+        expected.addIndex(IndexType.SORTED, "attr4");
+        expected.addIndex(IndexType.SORTED, "attr2", "attr4");
 
         actual = instance.getMap("actual");
-        actual.addIndex(IndexUtils.createSimpleIndexConfig(false, "attr1", "attr2"));
-        actual.addIndex(IndexUtils.createSimpleIndexConfig(true, "attr2", "attr1"));
-        actual.addIndex("attr3", false);
-        actual.addIndex("attr4", true);
-        actual.addIndex(IndexUtils.createSimpleIndexConfig(true, "attr2", "attr4"));
+        actual.addIndex(IndexType.HASH, "attr1", "attr2");
+        actual.addIndex(IndexType.SORTED, "attr2", "attr1");
+        actual.addIndex(IndexType.HASH, "attr3");
+        actual.addIndex(IndexType.SORTED, "attr4");
+        actual.addIndex(IndexType.SORTED, "attr2", "attr4");
 
         for (int i = 0; i < 2000; ++i) {
             Number attr1 = randomNumber();

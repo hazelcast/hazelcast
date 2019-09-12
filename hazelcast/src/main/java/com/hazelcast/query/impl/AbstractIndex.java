@@ -31,7 +31,6 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
@@ -56,7 +55,7 @@ public abstract class AbstractIndex implements InternalIndex {
     protected final IndexStore indexStore;
     protected final IndexCopyBehavior copyBehavior;
 
-    private final List<String> components;
+    private final String[] components;
     private final IndexConfig config;
     private final boolean ordered;
     private final PerIndexStats stats;
@@ -97,7 +96,7 @@ public abstract class AbstractIndex implements InternalIndex {
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     @Override
-    public List<String> getComponents() {
+    public String[] getComponents() {
         return components;
     }
 
@@ -245,12 +244,12 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     private Object extractAttributeValue(Data key, Object value) {
-        if (components.size() == 1) {
-            return QueryableEntry.extractAttributeValue(extractors, ss, components.get(0), key, value, null);
+        if (components.length == 1) {
+            return QueryableEntry.extractAttributeValue(extractors, ss, components[0], key, value, null);
         } else {
-            Comparable[] valueComponents = new Comparable[components.size()];
-            for (int i = 0; i < components.size(); ++i) {
-                String attribute = components.get(i);
+            Comparable[] valueComponents = new Comparable[components.length];
+            for (int i = 0; i < components.length; ++i) {
+                String attribute = components[i];
 
                 Object extractedValue = QueryableEntry.extractAttributeValue(extractors, ss, attribute, key, value, null);
                 if (extractedValue instanceof MultiResult) {
@@ -281,15 +280,15 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     private TypeConverter obtainConverter(QueryableEntry entry) {
-        if (components.size() == 1) {
-            return entry.getConverter(components.get(0));
+        if (components.length == 1) {
+            return entry.getConverter(components[0]);
         } else {
             CompositeConverter existingConverter = (CompositeConverter) converter;
-            TypeConverter[] converters = new TypeConverter[components.size()];
-            for (int i = 0; i < components.size(); ++i) {
+            TypeConverter[] converters = new TypeConverter[components.length];
+            for (int i = 0; i < components.length; ++i) {
                 TypeConverter existingComponentConverter = getNonTransientComponentConverter(existingConverter, i);
                 if (existingComponentConverter == null) {
-                    converters[i] = entry.getConverter(components.get(i));
+                    converters[i] = entry.getConverter(components[i]);
                     assert converters[i] != null;
                 } else {
                     // preserve the old one to avoid downgrading

@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
@@ -138,7 +139,7 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, SampleTestObjects.Employee> map = instance.getMap("default");
 
-        map.addIndex("date", ordered);
+        map.addIndex(ordered ? IndexType.SORTED : IndexType.HASH, "date");
         for (int i = 10; i >= 1; i--) {
             Employee employee = new Employee(i, "name-" + i, i, true, i * 100);
             if (i % 2 == 0) {

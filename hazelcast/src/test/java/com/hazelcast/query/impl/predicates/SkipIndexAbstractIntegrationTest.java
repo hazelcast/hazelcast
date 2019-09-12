@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
@@ -33,7 +34,7 @@ public abstract class SkipIndexAbstractIntegrationTest extends HazelcastTestSupp
     public void testIndexSuppressionDoesntChangeOutcome() {
         HazelcastInstance hz = getHazelcastInstance();
         IMap<Integer, Pojo> map = hz.getMap("foo");
-        map.addIndex("f", false);
+        map.addIndex(IndexType.HASH, "f");
 
         for (int k = 0; k < 20; k++) {
             map.put(k, new Pojo(k));

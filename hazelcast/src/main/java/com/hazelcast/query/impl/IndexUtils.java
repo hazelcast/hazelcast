@@ -213,33 +213,50 @@ public final class IndexUtils {
         return THIS_PATTERN.matcher(attribute).replaceFirst("");
     }
 
-    public static List<String> getComponents(IndexConfig config) {
+    public static String[] getComponents(IndexConfig config) {
         assert config != null;
 
-        List<String> res = new ArrayList<>(config.getAttributes().size());
+        List<IndexAttributeConfig> attributes = config.getAttributes();
 
-        for (IndexAttributeConfig attributes : config.getAttributes()) {
-            res.add(attributes.getName());
+        String[] res = new String[attributes.size()];
+
+        for (int i = 0; i < attributes.size(); i++) {
+            res[i] = attributes.get(i).getName();
         }
 
         return res;
     }
 
     /**
-     * Create simple index definition with the given attributes. For testing purposes only.
+     * Create simple index definition with the given attributes
      *
-     * @param ordered Whether the index should be ordered.
+     * @param type Index type.
      * @param attributes Attribute names.
      * @return Index definition.
      */
-    public static IndexConfig createSimpleIndexConfig(boolean ordered, String... attributes) {
+    public static IndexConfig createIndexConfig(IndexType type, String... attributes) {
         IndexConfig res = new IndexConfig();
 
-        res.setType(ordered ? IndexType.SORTED : IndexType.HASH);
+        res.setType(type);
 
-        for (String attribute : attributes) {
-            res.addAttribute(attribute);
+        if (attributes != null) {
+            for (String attribute : attributes) {
+                res.addAttribute(attribute);
+            }
         }
+
+        return res;
+    }
+
+    /**
+     * Create simple index definition with the given attributes and initialize it's name upfront. For testing purposes.
+     *
+     * @param type Index type.
+     * @param attributes Attribute names.
+     * @return Index definition.
+     */
+    public static IndexConfig createTestIndexConfig(IndexType type, String... attributes) {
+        IndexConfig res = createIndexConfig(type, attributes);
 
         return validateAndNormalize(UuidUtil.newUnsecureUUID().toString(), res);
     }

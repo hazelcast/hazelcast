@@ -17,12 +17,12 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -75,7 +75,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         populateMap(map, count);
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         populateMap(map, count, 2 * count);
 
@@ -93,7 +93,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         populateMap(map, count);
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "__key"));
+        cache.addIndex(IndexType.SORTED, "__key");
 
         populateMap(map, count, 2 * count);
 
@@ -111,7 +111,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         populateMap(map, count);
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         populateMap(map, 17, count);
 
@@ -132,7 +132,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         Predicate<Employee, Employee> predicate = Predicates.lessThan("id", count);
         QueryCache<Employee, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         for (Map.Entry<Employee, Employee> entry : cache.entrySet(predicate)) {
             entry.getValue().setAge(Employee.MAX_AGE + 1);
@@ -154,7 +154,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         Predicate<Employee, Employee> predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
         QueryCache<Employee, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         for (Map.Entry<Employee, Employee> entry : cache.entrySet(predicate)) {
             entry.getValue().setAge(Employee.MAX_AGE + 1);
@@ -173,7 +173,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         populateMap(map, count);
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         populateMap(map, count, 2 * count);
 
@@ -193,7 +193,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         Predicate<Integer, Employee> predicate = Predicates.lessThan("id", count);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         for (Map.Entry<Integer, Employee> entry : cache.entrySet(predicate)) {
             entry.getValue().setAge(Employee.MAX_AGE + 1);
@@ -213,7 +213,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         Predicate<Integer, Employee> predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         for (Map.Entry<Integer, Employee> entry : cache.entrySet(predicate)) {
             entry.getValue().setAge(Employee.MAX_AGE + 1);
@@ -232,7 +232,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         populateMap(map, count);
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         removeEntriesFromMap(map, 17, count);
 
@@ -251,7 +251,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
         // here adding key index. (key --> integer; value --> Employee)
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "__key"));
+        cache.addIndex(IndexType.SORTED, "__key");
 
         removeEntriesFromMap(map, 17, count);
 
@@ -269,7 +269,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         populateMap(map, count);
 
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         populateMap(map, count, 2 * count);
 
@@ -288,7 +288,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         Predicate<Integer, Employee> predicate = Predicates.lessThan("id", count);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         for (Employee employee : cache.values(predicate)) {
             employee.setAge(Employee.MAX_AGE + 1);
@@ -308,7 +308,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
         Predicate<Integer, Employee> predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
-        cache.addIndex(IndexUtils.createSimpleIndexConfig(true, "id"));
+        cache.addIndex(IndexType.SORTED, "id");
 
         for (Employee employee : cache.values(predicate)) {
             employee.setAge(Employee.MAX_AGE + 1);

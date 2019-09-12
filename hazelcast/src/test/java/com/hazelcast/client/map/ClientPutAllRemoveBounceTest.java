@@ -17,6 +17,7 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
@@ -58,7 +59,7 @@ public class ClientPutAllRemoveBounceTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME).addIndex("id", true);
+        bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME).addIndex(IndexType.SORTED, "id");
     }
 
     @Test

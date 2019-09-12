@@ -22,7 +22,6 @@ import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -55,8 +54,8 @@ public class AttributeIndexRegistry {
      * @see Indexes#addOrGetIndex
      */
     public void register(InternalIndex index) {
-        List<String> components = index.getComponents();
-        String attribute = components.get(0);
+        String[] components = index.getComponents();
+        String attribute = components[0];
 
         Record record = registry.get(attribute);
         if (record == null) {
@@ -66,7 +65,7 @@ public class AttributeIndexRegistry {
 
         if (index.isOrdered()) {
             if (record.orderedWorseThan(index)) {
-                record.ordered = components.size() == 1 ? index : new FirstComponentDecorator(index);
+                record.ordered = components.length == 1 ? index : new FirstComponentDecorator(index);
             }
         } else {
             if (record.unorderedWorseThan(index)) {
@@ -127,7 +126,7 @@ public class AttributeIndexRegistry {
         public boolean unorderedWorseThan(InternalIndex candidate) {
             assert !candidate.isOrdered();
             // we have no index and the unordered candidate is not composite
-            return unordered == null && candidate.getComponents().size() == 1;
+            return unordered == null && candidate.getComponents().length == 1;
         }
 
         public boolean orderedWorseThan(InternalIndex candidate) {
@@ -142,11 +141,11 @@ public class AttributeIndexRegistry {
             if (current instanceof FirstComponentDecorator) {
                 // the current index is composite
 
-                List<String> candidateComponents = candidate.getComponents();
-                if (candidateComponents.size() > 1) {
+                String[] candidateComponents = candidate.getComponents();
+                if (candidateComponents.length > 1) {
                     // if the current index has more components, replace it
                     FirstComponentDecorator currentDecorator = (FirstComponentDecorator) current;
-                    return currentDecorator.width > candidateComponents.size();
+                    return currentDecorator.width > candidateComponents.length;
                 }
 
                 // any non-composite candidate is better than composite index
@@ -173,12 +172,15 @@ public class AttributeIndexRegistry {
         final InternalIndex delegate;
 
         private final int width;
+        private final String[] components;
 
         FirstComponentDecorator(InternalIndex delegate) {
-            assert delegate.getComponents().size() > 1;
+            assert delegate.getComponents().length > 1;
             assert delegate.isOrdered();
             this.delegate = delegate;
-            this.width = delegate.getComponents().size();
+            this.width = delegate.getComponents().length;
+
+            components = new String[] { delegate.getComponents()[0] };
         }
 
         @Override
@@ -187,8 +189,8 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public List<String> getComponents() {
-            return null;
+        public String[] getComponents() {
+            return components;
         }
 
         @Override

@@ -28,9 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
@@ -84,11 +82,8 @@ public class CompositeIndexVisitorTest extends VisitorTestSupport {
         visitor = new CompositeIndexVisitor();
     }
 
-    private List<String> components(String... names) {
-        List<String> res = new ArrayList<>(names.length);
-        res.addAll(Arrays.asList(names));
-
-        return res;
+    private String[] components(String... names) {
+        return names;
     }
 
     @Test

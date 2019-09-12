@@ -88,7 +88,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, Trade> map = instance.getMap(name);
-        map.addIndex(attributeName, false);
+        map.addIndex(IndexType.HASH, attributeName);
 
         // WHEN
         // This `get` will trigger load from map-loader but since eviction kicks in, entry will get removed
@@ -149,7 +149,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     public void putAndQuery_whenMultipleMappingFound_thenDoNotReturnDuplicatedEntry() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, Body> map = instance.getMap(randomMapName());
-        map.addIndex("limbArray[any].fingerCount", true);
+        map.addIndex(IndexType.SORTED, "limbArray[any].fingerCount");
 
         Limb leftHand = new Limb("hand", new Nail("red"));
         Limb rightHand = new Limb("hand");
@@ -193,8 +193,8 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     public void testEmptyAndNullCollectionIndexing() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, Body> map = instance.getMap(randomMapName());
-        map.addIndex("limbArray[any].fingerCount", false);
-        map.addIndex("limbCollection[any].fingerCount", true);
+        map.addIndex(IndexType.HASH, "limbArray[any].fingerCount");
+        map.addIndex(IndexType.SORTED, "limbCollection[any].fingerCount");
 
         map.put(0, new Body("body0"));
 
@@ -227,8 +227,12 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
             Indexes indexes = mapContainer.getIndexes(partitionId);
 
             for (InternalIndex index : indexes.getIndexes()) {
-                if (index.getComponents().contains(IndexUtils.canonicalizeAttribute(attribute))) {
-                    result.add(index);
+                for (String component : index.getComponents()) {
+                    if (component.equals(IndexUtils.canonicalizeAttribute(attribute))) {
+                        result.add(index);
+
+                        break;
+                    }
                 }
             }
         }

@@ -1431,13 +1431,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public void addIndex(@Nonnull String attribute, boolean ordered) {
-        IndexConfig config = IndexUtils.createSimpleIndexConfig(ordered, attribute);
-
-        addIndex(config);
-    }
-
-    @Override
     public void addIndex(IndexConfig indexConfig) {
         IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
 

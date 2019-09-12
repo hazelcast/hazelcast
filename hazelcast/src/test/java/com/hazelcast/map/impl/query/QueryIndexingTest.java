@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.mock.MockUtil;
@@ -98,8 +99,8 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     public void testResultsHaveNullFields_whenUsingIndexes() {
         IMap<Integer, Employee> map = h1.getMap("employees");
 
-        map.addIndex("name", false);
-        map.addIndex("city", true);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "city");
 
         map.putAll(employees);
         waitAllForSafeState(h1, h2);

@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -42,7 +43,7 @@ public class QueryCacheIndexConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testIndexConfigIsRespected() {
-        IndexConfig indexConfig = IndexUtils.createSimpleIndexConfig(true, "field");
+        IndexConfig indexConfig = IndexUtils.createTestIndexConfig(IndexType.SORTED, "field");
 
         final Config config = new Config();
         final MapConfig mapConfig = new MapConfig("map").addQueryCacheConfig(

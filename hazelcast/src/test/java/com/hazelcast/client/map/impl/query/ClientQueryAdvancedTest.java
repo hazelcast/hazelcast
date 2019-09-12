@@ -18,6 +18,7 @@ package com.hazelcast.client.map.impl.query;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
@@ -58,7 +59,7 @@ public class ClientQueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
         IMap<Integer, SampleTestObjects.Value> map = client.getMap("default");
 
-        map.addIndex("type", false);
+        map.addIndex(IndexType.HASH, "type");
 
         SampleTestObjects.ValueType valueType = new SampleTestObjects.ValueType("name");
         SampleTestObjects.Value valueWithoutNull = new SampleTestObjects.Value("notNull", valueType, 1);

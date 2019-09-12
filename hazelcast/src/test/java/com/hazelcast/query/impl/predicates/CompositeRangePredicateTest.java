@@ -19,6 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
@@ -72,7 +73,7 @@ public class CompositeRangePredicateTest extends HazelcastTestSupport {
 
         map = createHazelcastInstance(config).getMap("persons");
 
-        IndexConfig indexConfig = IndexUtils.createSimpleIndexConfig(true, "age", "height", "__key");
+        IndexConfig indexConfig = IndexUtils.createTestIndexConfig(IndexType.SORTED, "age", "height", "__key");
 
         indexName = indexConfig.getName();
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -80,7 +81,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     public void testAndPredicate_whenFirstIndexAwarePredicateIsNotIndexed() {
         final HazelcastInstance instance = createHazelcastInstance();
         final IMap<Object, Object> map = instance.getMap("map");
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "name");
         String name = randomString();
         map.put("key", new Value(name));
 
