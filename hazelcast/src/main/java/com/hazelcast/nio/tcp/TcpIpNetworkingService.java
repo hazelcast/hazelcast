@@ -46,7 +46,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -67,7 +66,6 @@ public class TcpIpNetworkingService
 
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
-    private final AtomicBoolean metricsRegistryScheduled = new AtomicBoolean(false);
     private final ServerSocketRegistry registry;
 
     private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers =
@@ -123,8 +121,6 @@ public class TcpIpNetworkingService
         }
 
         metricsRegistry.scanAndRegister(this, "tcp.connection");
-        inboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesReceived");
-        outboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesSend");
     }
 
     private void initEndpointManager(Config config, IOService ioService,
@@ -181,17 +177,16 @@ public class TcpIpNetworkingService
         if (!registry.isOpen()) {
             throw new IllegalStateException("Networking Service is already shutdown. Cannot start!");
         }
-        // TODO check if metrics need to be deregistered and task needs to be stopped
-        if (metricsRegistryScheduled.compareAndSet(false, true)
-                && metricsRegistry.minimumLevel().isEnabled(ProbeLevel.DEBUG)) {
-            metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
-        }
 
         live = true;
         logger.finest("Starting Networking Service and IO selectors.");
 
         networking.start();
         startAcceptor();
+
+        inboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesReceived");
+        outboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesSend");
+        metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
     }
 
     @Override
@@ -201,6 +196,9 @@ public class TcpIpNetworkingService
         }
         live = false;
         logger.finest("Stopping Networking Service");
+
+        metricsRegistry.deregister(inboundNetworkStats);
+        metricsRegistry.deregister(outboundNetworkStats);
 
         shutdownAcceptor();
         if (unifiedEndpointManager != null) {
