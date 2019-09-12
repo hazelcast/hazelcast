@@ -20,9 +20,11 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.PartitioningStrategy;
@@ -124,7 +126,24 @@ public class DefaultNodeExtension implements NodeExtension {
         this.logger = node.getLogger(NodeExtension.class);
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
+        checkPersistenceAllowed();
         createAndSetPhoneHome();
+    }
+
+    private void checkPersistenceAllowed() {
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = node.getConfig().getHotRestartPersistenceConfig();
+        if (hotRestartPersistenceConfig != null && hotRestartPersistenceConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("Hot Restart requires Hazelcast Enterprise Edition");
+            }
+        }
+
+        CPSubsystemConfig cpSubsystemConfig = node.getConfig().getCPSubsystemConfig();
+        if (cpSubsystemConfig != null && cpSubsystemConfig.isPersistenceEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("CP persistence requires Hazelcast Enterprise Edition");
+            }
+        }
     }
 
     private void checkSecurityAllowed() {
