@@ -37,7 +37,6 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.UnifiedAggregateEndpointManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.function.Consumer;
 
 import java.util.Set;
@@ -309,25 +308,37 @@ public class TcpIpNetworkingService
 
         @Override
         public void run() {
-            final MutableLong bytesRead = new MutableLong();
-            final MutableLong bytesWritten = new MutableLong();
+            final NetworkStatsAccumulator accumulator = new NetworkStatsAccumulator();
             for (final ProtocolType protocolType : ProtocolType.valuesAsSet()) {
-                bytesRead.value = 0;
-                bytesWritten.value = 0;
-                networking.forEachChannel(new Consumer<Channel>() {
-                    @Override
-                    public void accept(Channel channel) {
-                        ProtocolType type = (ProtocolType) channel.attributeMap().get(ProtocolType.class);
-                        if (type == null || type != protocolType) {
-                            return;
-                        }
-                        bytesRead.value += channel.bytesRead();
-                        bytesWritten.value += channel.bytesWritten();
-                    }
-                });
-                inboundNetworkStats.setBytesTransceivedForProtocol(protocolType, bytesRead.value);
-                outboundNetworkStats.setBytesTransceivedForProtocol(protocolType, bytesWritten.value);
+                accumulator.reset(protocolType);
+                networking.forEachChannel(accumulator);
+                inboundNetworkStats.setBytesTransceivedForProtocol(protocolType, accumulator.bytesRead);
+                outboundNetworkStats.setBytesTransceivedForProtocol(protocolType, accumulator.bytesWritten);
             }
+        }
+
+    }
+
+    private static class NetworkStatsAccumulator implements Consumer<Channel> {
+
+        long bytesRead;
+        long bytesWritten;
+        private ProtocolType protocolType;
+
+        public void reset(ProtocolType protocolType) {
+            bytesRead = 0;
+            bytesWritten = 0;
+            this.protocolType = protocolType;
+        }
+
+        @Override
+        public void accept(Channel channel) {
+            ProtocolType type = (ProtocolType) channel.attributeMap().get(ProtocolType.class);
+            if (type == null || type != protocolType) {
+                return;
+            }
+            bytesRead += channel.bytesRead();
+            bytesWritten += channel.bytesWritten();
         }
 
     }
