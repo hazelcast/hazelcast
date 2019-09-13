@@ -25,19 +25,19 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapAttributeConfigReadOnlyTest {
+public class AttributeConfigReadOnlyTest {
 
-    private MapAttributeConfig getReadOnlyConfig() {
-        return new MapAttributeConfig().getAsReadOnly();
+    private AttributeConfig getReadOnlyConfig() {
+        return new AttributeConfig().getAsReadOnly();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setNameOfReadOnlyMapAttributeConfigShouldFail() throws Exception {
+    public void setNameOfReadOnlyAttributeConfigShouldFail() throws Exception {
         getReadOnlyConfig().setName("extractedName");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setExtractorOfReadOnlyMapAttributeConfigShouldFail() throws Exception {
-        getReadOnlyConfig().setExtractor("com.test.Extractor");
+    public void setExtractorOfReadOnlyAttributeConfigShouldFail() throws Exception {
+        getReadOnlyConfig().setExtractorClassName("com.test.Extractor");
     }
 }

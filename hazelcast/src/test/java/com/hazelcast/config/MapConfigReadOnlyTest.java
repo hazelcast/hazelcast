@@ -271,8 +271,8 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setMapAttributeConfigsOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setMapAttributeConfigs(singletonList(new MapAttributeConfig()));
+    public void setAttributeConfigsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setAttributeConfigs(singletonList(new AttributeConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)

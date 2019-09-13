@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.extractor.specification;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
@@ -179,10 +179,10 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
             public void doWithConfig(Config config, AbstractExtractionTest.Multivalue mv) {
                 MapConfig mapConfig = config.getMapConfig("map");
 
-                MapAttributeConfig tattoosCount = new AbstractExtractionTest.TestMapAttributeIndexConfig();
+                AttributeConfig tattoosCount = new TestAttributeIndexConfig();
                 tattoosCount.setName("tattoosCount");
-                tattoosCount.setExtractor("com.hazelcast.query.impl.extractor.specification.ExtractionWithExtractorsSpecTest$LimbTattoosCountExtractor");
-                mapConfig.addMapAttributeConfig(tattoosCount);
+                tattoosCount.setExtractorClassName("com.hazelcast.query.impl.extractor.specification.ExtractionWithExtractorsSpecTest$LimbTattoosCountExtractor");
+                mapConfig.addAttributeConfig(tattoosCount);
 
                 config.getSerializationConfig().addPortableFactory(ComplexTestDataStructure.PersonPortableFactory.ID, new ComplexTestDataStructure.PersonPortableFactory());
             }

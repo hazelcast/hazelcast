@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 
 import java.util.ListIterator;
 
@@ -25,29 +25,29 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public final class MapAttributeConfigCodec {
+public final class AttributeConfigCodec {
 
-    private MapAttributeConfigCodec() {
+    private AttributeConfigCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, MapAttributeConfig config) {
+    public static void encode(ClientMessage clientMessage, AttributeConfig config) {
         clientMessage.add(BEGIN_FRAME);
 
         StringCodec.encode(clientMessage, config.getName());
-        StringCodec.encode(clientMessage, config.getExtractor());
+        StringCodec.encode(clientMessage, config.getExtractorClassName());
 
         clientMessage.add(END_FRAME);
     }
 
-    public static MapAttributeConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static AttributeConfig decode(ListIterator<ClientMessage.Frame> iterator) {
         // begin frame
         iterator.next();
 
         String name = StringCodec.decode(iterator);
-        String extractor = StringCodec.decode(iterator);
+        String extractorClassName = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return new MapAttributeConfig(name, extractor);
+        return new AttributeConfig(name, extractorClassName);
     }
 }

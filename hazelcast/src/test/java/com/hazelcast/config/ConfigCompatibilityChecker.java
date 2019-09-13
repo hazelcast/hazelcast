@@ -804,8 +804,8 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getNearCacheConfig(), c2.getNearCacheConfig())
                     && isCompatible(c1.getWanReplicationRef(), c2.getWanReplicationRef())
                     && isCollectionCompatible(c1.getMapIndexConfigs(), c2.getMapIndexConfigs(), new MapIndexConfigChecker())
-                    && isCollectionCompatible(c1.getMapAttributeConfigs(), c2.getMapAttributeConfigs(),
-                    new MapAttributeConfigChecker())
+                    && isCollectionCompatible(c1.getAttributeConfigs(), c2.getAttributeConfigs(),
+                    new AttributeConfigChecker())
                     && isCollectionCompatible(c1.getEntryListenerConfigs(), c2.getEntryListenerConfigs(),
                     new EntryListenerConfigChecker())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
@@ -884,12 +884,12 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class MapAttributeConfigChecker extends ConfigChecker<MapAttributeConfig> {
+    private static class AttributeConfigChecker extends ConfigChecker<AttributeConfig> {
         @Override
-        boolean check(MapAttributeConfig c1, MapAttributeConfig c2) {
+        boolean check(AttributeConfig c1, AttributeConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getExtractor(), c2.getExtractor());
+                    && nullSafeEqual(c1.getExtractorClassName(), c2.getExtractorClassName());
         }
     }
 

@@ -263,7 +263,7 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig setMapAttributeConfigs(List<MapAttributeConfig> mapAttributeConfigs) {
+    public MapConfig setAttributeConfigs(List<AttributeConfig> attributeConfigs) {
         throw throwReadOnly();
     }
 

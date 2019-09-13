@@ -39,7 +39,7 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -866,7 +866,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setTimeToLiveSeconds(220)
                 .setMaxIdleSeconds(110)
                 .setSplitBrainProtectionName(randomString())
-                .addMapAttributeConfig(new MapAttributeConfig("attributeName", "com.attribute.extractor"))
+                .addAttributeConfig(new AttributeConfig("attributeName", "com.attribute.extractor"))
                 .addMapIndexConfig(new MapIndexConfig("attr", true))
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)

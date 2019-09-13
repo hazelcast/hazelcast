@@ -2421,7 +2421,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          ordered: true\n"
                 + "      attributes:\n"
                 + "        currency:\n"
-                + "          extractor: com.bank.CurrencyExtractor\n"
+                + "          extractor-class-name: com.bank.CurrencyExtractor\n"
                 + "      partition-lost-listeners:\n"
                 + "         - com.your-package.YourPartitionLostListener\n"
                 + "      entry-listeners:\n"
@@ -2449,9 +2449,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig.getMapIndexConfigs().size());
         assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
         assertTrue(mapConfig.getMapIndexConfigs().get(0).isOrdered());
-        assertEquals(1, mapConfig.getMapAttributeConfigs().size());
-        assertEquals("com.bank.CurrencyExtractor", mapConfig.getMapAttributeConfigs().get(0).getExtractor());
-        assertEquals("currency", mapConfig.getMapAttributeConfigs().get(0).getName());
+        assertEquals(1, mapConfig.getAttributeConfigs().size());
+        assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
+        assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
         assertEquals(1, mapConfig.getPartitionLostListenerConfigs().size());
         assertEquals("com.your-package.YourPartitionLostListener",
                 mapConfig.getPartitionLostListenerConfigs().get(0).getClassName());
@@ -2529,16 +2529,16 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    people:\n"
                 + "      attributes:\n"
                 + "        power:\n"
-                + "          extractor: com.car.PowerExtractor\n"
+                + "          extractor-class-name: com.car.PowerExtractor\n"
                 + "        weight:\n"
-                + "          extractor: com.car.WeightExtractor\n";
+                + "          extractor-class-name: com.car.WeightExtractor\n";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getMapAttributeConfigs().isEmpty());
-        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getMapAttributeConfigs().get(0));
-        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getMapAttributeConfigs().get(1));
+        assertFalse(mapConfig.getAttributeConfigs().isEmpty());
+        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getAttributeConfigs().get(0));
+        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getAttributeConfigs().get(1));
     }
 
     @Override
@@ -2549,14 +2549,14 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "    people:\n"
                 + "      attributes:\n"
-                + "        - extractor: com.car.WeightExtractor\n";
+                + "        - extractor-class-name: com.car.WeightExtractor\n";
 
         buildConfig(yaml);
     }
 
-    private static void assertAttributeEqual(String expectedName, String expectedExtractor, MapAttributeConfig attributeConfig) {
+    private static void assertAttributeEqual(String expectedName, String expectedExtractor, AttributeConfig attributeConfig) {
         assertEquals(expectedName, attributeConfig.getName());
-        assertEquals(expectedExtractor, attributeConfig.getExtractor());
+        assertEquals(expectedExtractor, attributeConfig.getExtractorClassName());
     }
 
     @Override
@@ -2567,7 +2567,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "   people:\n"
                 + "     attributes:\n"
-                + "       - extractor: com.car.WeightExtractor\n";
+                + "       - extractor-class-name: com.car.WeightExtractor\n";
         buildConfig(yaml);
     }
 
@@ -2592,7 +2592,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    people:\n"
                 + "      attributes:\n"
                 + "        weight:\n"
-                + "          extractor: \"\"\n";
+                + "          extractor-class-name: \"\"\n";
         buildConfig(yaml);
     }
 

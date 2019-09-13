@@ -149,7 +149,7 @@ public class ClientDynamicClusterConfig extends Config {
                 mapConfig.getMaxSizeConfig().getMaxSizePolicy().name(), mapConfig.getMaxSizeConfig().getSize(),
                 MapStoreConfigHolder.of(mapConfig.getMapStoreConfig(), serializationService),
                 NearCacheConfigHolder.of(mapConfig.getNearCacheConfig(), serializationService),
-                mapConfig.getWanReplicationRef(), mapConfig.getMapIndexConfigs(), mapConfig.getMapAttributeConfigs(),
+                mapConfig.getWanReplicationRef(), mapConfig.getMapIndexConfigs(), mapConfig.getAttributeConfigs(),
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
                 mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(),
                 mapConfig.getMergePolicyConfig().getBatchSize(), mapConfig.getMetadataPolicy().getId());

@@ -59,7 +59,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -345,12 +345,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 fail("unknown index!");
             }
         }
-        assertEquals(2, testMapConfig.getMapAttributeConfigs().size());
-        for (MapAttributeConfig attribute : testMapConfig.getMapAttributeConfigs()) {
+        assertEquals(2, testMapConfig.getAttributeConfigs().size());
+        for (AttributeConfig attribute : testMapConfig.getAttributeConfigs()) {
             if ("power".equals(attribute.getName())) {
-                assertEquals("com.car.PowerExtractor", attribute.getExtractor());
+                assertEquals("com.car.PowerExtractor", attribute.getExtractorClassName());
             } else if ("weight".equals(attribute.getName())) {
-                assertEquals("com.car.WeightExtractor", attribute.getExtractor());
+                assertEquals("com.car.WeightExtractor", attribute.getExtractorClassName());
             } else {
                 fail("unknown attribute!");
             }

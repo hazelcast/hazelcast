@@ -353,8 +353,8 @@
         </indexes>
 
         <attributes>
-            <attribute extractor="com.example.CurrencyExtractor">currency</attribute>
-            <attribute extractor="com.example.AgeExtractor">age</attribute>
+            <attribute extractor-class-name="com.example.CurrencyExtractor">currency</attribute>
+            <attribute extractor-class-name="com.example.AgeExtractor">age</attribute>
         </attributes>
 
         <entry-listeners>

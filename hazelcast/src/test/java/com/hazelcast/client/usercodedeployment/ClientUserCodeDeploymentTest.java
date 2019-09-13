@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -201,7 +201,7 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
         Config config = createNodeConfig();
-        config.getMapConfig(mapName).addMapAttributeConfig(new MapAttributeConfig(attributeName, "usercodedeployment.CapitalizatingFirstnameExtractor"));
+        config.getMapConfig(mapName).addAttributeConfig(new AttributeConfig(attributeName, "usercodedeployment.CapitalizatingFirstnameExtractor"));
 
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);

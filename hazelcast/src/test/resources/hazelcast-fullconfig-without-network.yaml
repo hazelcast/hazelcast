@@ -336,9 +336,9 @@ hazelcast:
 
       attributes:
         currency:
-          extractor: com.example.CurrencyExtractor
+          extractor-class-name: com.example.CurrencyExtractor
         age:
-          extractor: com.example.AgeExtractor
+          extractor-class-name: com.example.AgeExtractor
 
       entry-listeners:
         - include-value: true

@@ -33,40 +33,40 @@ import static java.lang.String.format;
  *
  * @see com.hazelcast.query.extractor.ValueExtractor
  */
-public class MapAttributeConfig implements IdentifiedDataSerializable {
+public class AttributeConfig implements IdentifiedDataSerializable {
 
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9_]*$");
 
     private String name;
-    private String extractor;
+    private String extractorClassName;
 
-    private transient MapAttributeConfigReadOnly readOnly;
+    private transient AttributeConfigReadOnly readOnly;
 
     /**
-     * Creates an empty MapAttributeConfig.
+     * Creates an empty AttributeConfig.
      */
-    public MapAttributeConfig() {
+    public AttributeConfig() {
     }
 
     /**
-     * Creates a MapAttributeConfig with the given attribute and ordered setting.
+     * Creates a AttributeConfig with the given attribute and ordered setting.
      * <p>
      * Name may begin with an ascii letter [A-Za-z] or digit [0-9] and may contain ascii letters [A-Za-z], digits [0-9]
      * or underscores later on.
      *
-     * @param name      the name given to an attribute that is going to be extracted
-     * @param extractor full class name of the extractor used to extract the value of the attribute
+     * @param name               the name given to an attribute that is going to be extracted
+     * @param extractorClassName full class name of the extractor used to extract the value of the attribute
      * @see #setName(String)
-     * @see #setExtractor(String)
+     * @see #setExtractorClassName(String) (String)
      */
-    public MapAttributeConfig(String name, String extractor) {
+    public AttributeConfig(String name, String extractorClassName) {
         setName(name);
-        setExtractor(extractor);
+        setExtractorClassName(extractorClassName);
     }
 
-    public MapAttributeConfig(MapAttributeConfig config) {
+    public AttributeConfig(AttributeConfig config) {
         name = config.getName();
-        extractor = config.getExtractor();
+        extractorClassName = config.getExtractorClassName();
     }
 
     /**
@@ -75,9 +75,9 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
      * @return immutable version of this configuration
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
-    public MapAttributeConfigReadOnly getAsReadOnly() {
+    public AttributeConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
-            readOnly = new MapAttributeConfigReadOnly(this);
+            readOnly = new AttributeConfigReadOnly(this);
         }
         return readOnly;
     }
@@ -97,11 +97,11 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
      * The name cannot be equal to any of the query constants.
      *
      * @param name the name of the attribute extracted by the extractor
-     * @return the updated MapAttributeConfig
+     * @return the updated AttributeConfig
      * @throws IllegalArgumentException if attribute is null,an empty or inappropriate string
      * @see QueryConstants
      */
-    public MapAttributeConfig setName(String name) {
+    public AttributeConfig setName(String name) {
         this.name = checkName(name);
         return this;
     }
@@ -133,28 +133,28 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
      * Gets the full class name of the extractor in a String format, e.g. {@code com.example.car.SpeedExtractor}.
      *
      * @return the full class name of the extractor in a String format
-     * @see #setExtractor(String)
+     * @see #setExtractorClassName(String) (String)
      */
-    public String getExtractor() {
-        return extractor;
+    public String getExtractorClassName() {
+        return extractorClassName;
     }
 
     /**
      * Sets the full class name of the extractor in a String format, e.g. {@code com.example.car.SpeedExtractor}.
      *
-     * @param extractor the full class name of the extractor in a String format
-     * @return the updated MapAttributeConfig
+     * @param extractorClassName the full class name of the extractor in a String format
+     * @return the updated AttributeConfig
      */
-    public MapAttributeConfig setExtractor(String extractor) {
-        this.extractor = checkHasText(extractor, "Map attribute extractor must contain text");
+    public AttributeConfig setExtractorClassName(String extractorClassName) {
+        this.extractorClassName = checkHasText(extractorClassName, "Map attribute extractor must contain text");
         return this;
     }
 
     @Override
     public String toString() {
-        return "MapAttributeConfig{"
+        return "AttributeConfig{"
                 + "name='" + name + '\''
-                + "extractor='" + extractor + '\''
+                + "extractorClassName='" + extractorClassName + '\''
                 + '}';
     }
 
@@ -171,13 +171,13 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(extractor);
+        out.writeUTF(extractorClassName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        extractor = in.readUTF();
+        extractorClassName = in.readUTF();
     }
 
     @Override
@@ -189,17 +189,18 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
             return false;
         }
 
-        MapAttributeConfig that = (MapAttributeConfig) o;
+        AttributeConfig that = (AttributeConfig) o;
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        return extractor != null ? extractor.equals(that.extractor) : that.extractor == null;
+        return extractorClassName != null
+            ? extractorClassName.equals(that.extractorClassName) : that.extractorClassName == null;
     }
 
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (extractor != null ? extractor.hashCode() : 0);
+        result = 31 * result + (extractorClassName != null ? extractorClassName.hashCode() : 0);
         return result;
     }
 }

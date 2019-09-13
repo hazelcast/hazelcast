@@ -2375,7 +2375,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <index ordered=\"true\">age</index>\n"
                 + "          </indexes>"
                 + "        <attributes>\n"
-                + "            <attribute extractor=\"com.bank.CurrencyExtractor\">currency</attribute>\n"
+                + "            <attribute extractor-class-name=\"com.bank.CurrencyExtractor\">currency</attribute>\n"
                 + "           </attributes>"
                 + "        <partition-lost-listeners>\n"
                 + "            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>\n"
@@ -2406,9 +2406,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig.getMapIndexConfigs().size());
         assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
         assertTrue(mapConfig.getMapIndexConfigs().get(0).isOrdered());
-        assertEquals(1, mapConfig.getMapAttributeConfigs().size());
-        assertEquals("com.bank.CurrencyExtractor", mapConfig.getMapAttributeConfigs().get(0).getExtractor());
-        assertEquals("currency", mapConfig.getMapAttributeConfigs().get(0).getName());
+        assertEquals(1, mapConfig.getAttributeConfigs().size());
+        assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
+        assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
         assertEquals(1, mapConfig.getPartitionLostListenerConfigs().size());
         assertEquals("com.your-package.YourPartitionLostListener", mapConfig.getPartitionLostListenerConfigs().get(0).getClassName());
         assertEquals(1, mapConfig.getEntryListenerConfigs().size());
@@ -2486,8 +2486,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.PowerExtractor\">power</attribute>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\">weight</attribute>\n"
+                + "           <attribute extractor-class-name=\"com.car.PowerExtractor\">power</attribute>\n"
+                + "           <attribute extractor-class-name=\"com.car.WeightExtractor\">weight</attribute>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2495,9 +2495,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getMapAttributeConfigs().isEmpty());
-        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getMapAttributeConfigs().get(0));
-        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getMapAttributeConfigs().get(1));
+        assertFalse(mapConfig.getAttributeConfigs().isEmpty());
+        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getAttributeConfigs().get(0));
+        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getAttributeConfigs().get(1));
     }
 
     @Override
@@ -2506,7 +2506,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\"></attribute>\n"
+                + "           <attribute extractor-class-name=\"com.car.WeightExtractor\"></attribute>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2514,9 +2514,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         buildConfig(xml);
     }
 
-    private static void assertAttributeEqual(String expectedName, String expectedExtractor, MapAttributeConfig attributeConfig) {
+    private static void assertAttributeEqual(String expectedName, String expectedExtractor, AttributeConfig attributeConfig) {
         assertEquals(expectedName, attributeConfig.getName());
-        assertEquals(expectedExtractor, attributeConfig.getExtractor());
+        assertEquals(expectedExtractor, attributeConfig.getExtractorClassName());
     }
 
     @Override
@@ -2525,7 +2525,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\"/>\n"
+                + "           <attribute extractor-class-name=\"com.car.WeightExtractor\"/>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2553,7 +2553,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"\">weight</attribute>\n"
+                + "           <attribute extractor-class-name=\"\">weight</attribute>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
