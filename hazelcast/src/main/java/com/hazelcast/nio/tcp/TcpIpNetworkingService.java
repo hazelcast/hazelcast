@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -65,6 +66,7 @@ public class TcpIpNetworkingService
 
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
+    private final AtomicBoolean metricsRegistryScheduled = new AtomicBoolean(false);
     private final ServerSocketRegistry registry;
 
     private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers =
@@ -186,9 +188,11 @@ public class TcpIpNetworkingService
         startAcceptor();
 
         if (advancedNetworkingEnabled) {
+            if (metricsRegistryScheduled.compareAndSet(false, true)) {
+                metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
+            }
             inboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesReceived");
             outboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesSend");
-            metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
         }
     }
 
