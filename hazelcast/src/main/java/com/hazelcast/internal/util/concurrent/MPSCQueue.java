@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util.concurrent;
 
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.AbstractQueue;
@@ -23,13 +24,55 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
 import static java.util.concurrent.locks.LockSupport.park;
 import static java.util.concurrent.locks.LockSupport.unpark;
+
+final class Node<E> {
+    Node next;
+    E item;
+    int size;
+}
+
+abstract class MPSCQueueL1Pad<E> extends AbstractQueue<E> implements OperationHostileThread {
+    long p01, p02, p03, p04, p05, p06, p07;
+    long p10, p11, p12, p13, p14, p15, p16, p17;
+}
+
+// fields are accessed by the the producers.
+abstract class MPSCQueueL1Fields<E> extends MPSCQueueL1Pad<E> {
+    // no worries about padding because field is static
+    static final Node BLOCKED = new Node();
+
+    volatile Node putStack = null;
+    IdleStrategy idleStrategy;
+    Thread consumerThread;
+}
+
+abstract class MPSCQueueL2Pad<E> extends MPSCQueueL1Fields<E> {
+    long p01, p02, p03, p04, p05, p06, p07;
+    long p10, p11, p12, p13, p14, p15, p16, p17;
+}
+
+// fields are access by the consumer
+abstract class MPSCQueueL2Fields<E> extends MPSCQueueL2Pad<E> {
+    // no worried about padding because field is static
+    static final int INITIAL_ARRAY_SIZE = 512;
+
+    protected Object[] takeStack = new Object[INITIAL_ARRAY_SIZE];
+    int takeStackIndex = -1;
+    volatile int takeStackSize;
+}
+
+abstract class MPSCQueueL3Pad<E> extends MPSCQueueL2Fields<E> {
+    long p01, p02, p03, p04, p05, p06, p07;
+    long p10, p11, p12, p13, p14, p15, p16, p17;
+}
+
 
 /**
  * Multi producer single consumer queue. This queue has a configurable {@link IdleStrategy} so if there is nothing to take,
@@ -43,17 +86,11 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  *
  * @param <E> the type of elements held in this collection
  */
-public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
-    static final int INITIAL_ARRAY_SIZE = 512;
-    static final Node BLOCKED = new Node();
-
-    final AtomicReference<Node> putStack = new AtomicReference<>();
-    private final AtomicInteger takeStackSize = new AtomicInteger();
-    private final IdleStrategy idleStrategy;
-
-    private Thread consumerThread;
-    private Object[] takeStack = new Object[INITIAL_ARRAY_SIZE];
-    private int takeStackIndex = -1;
+public final class MPSCQueue<E> extends MPSCQueueL3Pad<E> implements BlockingQueue<E> {
+    static final AtomicIntegerFieldUpdater<MPSCQueueL2Fields> TAKE_STACK_SIZE
+            = AtomicIntegerFieldUpdater.newUpdater(MPSCQueueL2Fields.class, "takeStackSize");
+    static final AtomicReferenceFieldUpdater<MPSCQueueL1Fields, Node> PUT_STACK
+            = AtomicReferenceFieldUpdater.newUpdater(MPSCQueueL1Fields.class, Node.class, "putStack");
 
     /**
      * Creates a new {@link MPSCQueue} with the provided {@link IdleStrategy} and consumer thread.
@@ -98,19 +135,18 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
      */
     @Override
     public void clear() {
-        putStack.set(BLOCKED);
+        putStack = BLOCKED;
     }
 
     @Override
     public boolean offer(E item) {
         checkNotNull(item, "item can't be null");
 
-        AtomicReference<Node> putStack = this.putStack;
         Node newHead = new Node();
         newHead.item = item;
 
         for (; ; ) {
-            Node oldHead = putStack.get();
+            Node oldHead = putStack;
             if (oldHead == null || oldHead == BLOCKED) {
                 newHead.next = null;
                 newHead.size = 1;
@@ -119,7 +155,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
                 newHead.size = oldHead.size + 1;
             }
 
-            if (!putStack.compareAndSet(oldHead, newHead)) {
+            if (!PUT_STACK.compareAndSet(this, oldHead, newHead)) {
                 continue;
             }
 
@@ -153,7 +189,6 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
         takeAll();
         assert takeStackIndex == 0;
         assert takeStack[takeStackIndex] != null;
-
         return next();
     }
 
@@ -201,19 +236,18 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     private void dequeue() {
         takeStack[takeStackIndex] = null;
         takeStackIndex++;
-        takeStackSize.lazySet(takeStackSize.get() - 1);
+        TAKE_STACK_SIZE.lazySet(this, takeStackSize - 1);
     }
 
     private void takeAll() throws InterruptedException {
         long iteration = 0;
-        AtomicReference<Node> putStack = this.putStack;
         for (; ; ) {
             if (consumerThread.isInterrupted()) {
-                putStack.compareAndSet(BLOCKED, null);
+                PUT_STACK.compareAndSet(this, BLOCKED, null);
                 throw new InterruptedException();
             }
 
-            Node currentPutStackHead = putStack.get();
+            Node currentPutStackHead = putStack;
 
             if (currentPutStackHead == null) {
                 if (idleStrategy != null) {
@@ -222,7 +256,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
                 }
 
                 // there is nothing to be take, so lets block.
-                if (!putStack.compareAndSet(null, BLOCKED)) {
+                if (!PUT_STACK.compareAndSet(this, null, BLOCKED)) {
                     // we are lucky, something is available
                     continue;
                 }
@@ -232,7 +266,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
             } else if (currentPutStackHead == BLOCKED) {
                 park();
             } else {
-                if (!putStack.compareAndSet(currentPutStackHead, null)) {
+                if (!PUT_STACK.compareAndSet(this, currentPutStackHead, null)) {
                     continue;
                 }
 
@@ -245,12 +279,12 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     private boolean drainPutStack() {
         for (; ; ) {
-            Node head = putStack.get();
+            Node head = putStack;
             if (head == null) {
                 return false;
             }
 
-            if (putStack.compareAndSet(head, null)) {
+            if (PUT_STACK.compareAndSet(this, head, null)) {
                 copyIntoTakeStack(head);
                 return true;
             }
@@ -260,7 +294,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     private void copyIntoTakeStack(Node putStackHead) {
         int putStackSize = putStackHead.size;
 
-        takeStackSize.lazySet(putStackSize);
+        TAKE_STACK_SIZE.lazySet(this, putStackSize);
 
         if (putStackSize > takeStack.length) {
             takeStack = new Object[nextPowerOfTwo(putStackHead.size)];
@@ -282,9 +316,9 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
      */
     @Override
     public int size() {
-        Node h = putStack.get();
+        Node h = putStack;
         int putStackSize = h == null ? 0 : h.size;
-        return putStackSize + takeStackSize.get();
+        return putStackSize + takeStackSize;
     }
 
     @Override
@@ -328,9 +362,5 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
         throw new UnsupportedOperationException();
     }
 
-    private static final class Node<E> {
-        Node next;
-        E item;
-        int size;
-    }
+
 }

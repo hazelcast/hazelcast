@@ -21,6 +21,8 @@ package com.hazelcast.util.concurrent;
  * on each iteration such that any work in the idle strategy would be wasteful.
  */
 public class NoOpIdleStrategy implements IdleStrategy {
+    public final static NoOpIdleStrategy INSTANCE = new NoOpIdleStrategy();
+
     public boolean idle(final long n) {
         return true;
     }

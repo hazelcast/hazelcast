@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+import com.hazelcast.spi.impl.operationexecutor.SpecialPartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
@@ -39,8 +40,10 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.concurrent.IdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.jctools.queues.MpscBlockingConsumerArrayQueue;
 
 import java.util.BitSet;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -97,6 +100,37 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
+    private final FakeOperationThread[] fakePartitionThreads;
+
+    private static class FakeOperationThread extends Thread {
+        private final BlockingQueue<Runnable> queue;
+        private volatile boolean stop;
+
+        private FakeOperationThread(int id) {
+            setName("FakeOperationThread-"+id);
+            queue = new MpscBlockingConsumerArrayQueue<Runnable>(10000);//this,null);
+            //queue = new MPSCQueue<>(this,null);//this,null);
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!stop) {
+                    Runnable r = queue.take();
+                    r.run();
+                }
+            }catch (Exception e){
+                if(!stop){
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void shutdown() {
+            stop = true;
+            interrupt();
+        }
+    }
 
     public OperationExecutorImpl(HazelcastProperties properties,
                                  LoggingService loggerService,
@@ -112,6 +146,12 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
         this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
+
+        this.fakePartitionThreads = new FakeOperationThread[partitionThreads.length];
+        for(int k=0;k<fakePartitionThreads.length;k++){
+            fakePartitionThreads[k]=new FakeOperationThread(k);
+        }
+        System.out.println("fakePartitionThreads.count:"+fakePartitionThreads.length);
 
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
@@ -148,7 +188,8 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
             String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
             MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(idleStrategy);
-
+            // ArrayBlockingQueue<Object> normalQueue =  new ArrayBlockingQueue<>(10000);
+            // BlockingQueue normalQueue = new MpscBlockingConsumerArrayQueue(10000);
             OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<Object>());
 
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
@@ -367,8 +408,13 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         if (partitionId < 0) {
             genericQueue.add(task, priority);
         } else {
-            OperationThread partitionThread = partitionThreads[toPartitionThreadIndex(partitionId)];
-            partitionThread.queue.add(task, priority);
+            if(task instanceof SpecialPartitionSpecificRunnable){
+                FakeOperationThread partitionThread = fakePartitionThreads[toPartitionThreadIndex(partitionId)];
+                partitionThread.queue.add((Runnable)task);
+            }else {
+                OperationThread partitionThread = partitionThreads[toPartitionThreadIndex(partitionId)];
+                partitionThread.queue.add(task, priority);
+            }
         }
     }
 
@@ -501,6 +547,9 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
                 + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         startAll(partitionThreads);
         startAll(genericThreads);
+        for(FakeOperationThread t: fakePartitionThreads){
+            t.start();
+        }
     }
 
     private static void startAll(OperationThread[] operationThreads) {
@@ -515,6 +564,9 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         shutdownAll(genericThreads);
         awaitTermination(partitionThreads);
         awaitTermination(genericThreads);
+        for(FakeOperationThread t: fakePartitionThreads){
+            t.shutdown();
+        }
     }
 
     private static void shutdownAll(OperationThread[] operationThreads) {

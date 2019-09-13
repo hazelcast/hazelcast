@@ -18,6 +18,8 @@ package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.internal.util.ConcurrencyDetection;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public final class CallIdFactory {
 
     private CallIdFactory() {
@@ -27,14 +29,42 @@ public final class CallIdFactory {
             int maxConcurrentInvocations,
             long backoffTimeoutMs,
             ConcurrencyDetection concurrencyDetection) {
-        if (concurrencyDetection.enabled()) {
-            if (backoffTimeoutMs > 0) {
-                return new CallIdSequenceWithBackpressure(maxConcurrentInvocations, backoffTimeoutMs, concurrencyDetection);
-            } else {
-                return new FailFastCallIdSequence(maxConcurrentInvocations, concurrencyDetection);
+//        if (concurrencyDetection.enabled()) {
+//            if (backoffTimeoutMs > 0) {
+//                return new CallIdSequenceWithBackpressure(maxConcurrentInvocations, backoffTimeoutMs, concurrencyDetection);
+//            } else {
+//                return new FailFastCallIdSequence(maxConcurrentInvocations, concurrencyDetection);
+//            }
+//        } else {
+//            return new CallIdSequenceWithoutBackpressure();
+//        }
+//    }
+
+        return new CallIdSequence() {
+            @Override
+            public int getMaxConcurrentInvocations() {
+                return 0;
             }
-        } else {
-            return new CallIdSequenceWithoutBackpressure();
-        }
+
+            @Override
+            public long next() {
+                return Math.abs(ThreadLocalRandom.current().nextLong())+1;
+            }
+
+            @Override
+            public long forceNext() {
+                return next();
+            }
+
+            @Override
+            public void complete() {
+
+            }
+
+            @Override
+            public long getLastCallId() {
+                return 0;
+            }
+        };
     }
 }

@@ -165,7 +165,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     }
 
     private void registerInvocation(ClientInvocation clientInvocation) {
-
         ClientMessage clientMessage = clientInvocation.getClientMessage();
         long correlationId = clientMessage.getCorrelationId();
         invocations.put(correlationId, clientInvocation);

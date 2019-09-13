@@ -18,16 +18,15 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
@@ -39,15 +38,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
-import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
-import com.hazelcast.spi.impl.operationservice.BlockingOperation;
-import com.hazelcast.spi.impl.operationservice.CallStatus;
-import com.hazelcast.spi.impl.operationservice.Notifier;
-import com.hazelcast.spi.impl.operationservice.Offload;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
-import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -57,18 +47,24 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
@@ -97,12 +93,12 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private final Node node;
     private final NodeEngineImpl nodeEngine;
 
-    @Probe(level = DEBUG)
-    private final Counter executedOperationsCounter;
+    //@Probe(level = DEBUG)
+    //private final Counter executedOperationsCounter;
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;
 
-    private final Counter failedBackupsCounter;
+   // private final Counter failedBackupsCounter;
     private final OperationBackupHandler backupHandler;
 
     // has only meaning for metrics.
@@ -129,15 +125,15 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         this.nodeEngine = operationService.nodeEngine;
         this.outboundResponseHandler = operationService.outboundResponseHandler;
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
-        this.failedBackupsCounter = failedBackupsCounter;
+   //     this.failedBackupsCounter = failedBackupsCounter;
         this.backupHandler = operationService.backupHandler;
         // only a ad-hoc operation runner will be called concurrently
-        this.executedOperationsCounter = partitionId == AD_HOC_PARTITION_ID ? newMwCounter() : newSwCounter();
+   //     this.executedOperationsCounter = partitionId == AD_HOC_PARTITION_ID ? newMwCounter() : newSwCounter();
     }
 
     @Override
     public long executedOperationsCount() {
-        return executedOperationsCounter.get();
+      return   0;//return executedOperationsCounter.get();
     }
 
     @Override
@@ -153,18 +149,18 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     @Override
     public void run(Runnable task) {
-        boolean publishCurrentTask = publishCurrentTask();
+        //boolean publishCurrentTask = publishCurrentTask();
 
-        if (publishCurrentTask) {
-            currentTask = task;
-        }
+        //if (publishCurrentTask) {
+        //    currentTask = task;
+       // }
 
         try {
             task.run();
         } finally {
-            if (publishCurrentTask) {
-                currentTask = null;
-            }
+         //   if (publishCurrentTask) {
+         //       currentTask = null;
+          //  }
         }
     }
 
@@ -175,13 +171,13 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     @Override
     public void run(Operation op) {
-        executedOperationsCounter.inc();
+       // executedOperationsCounter.inc();
 
-        boolean publishCurrentTask = publishCurrentTask();
-
-        if (publishCurrentTask) {
-            currentTask = op;
-        }
+//        boolean publishCurrentTask = publishCurrentTask();
+//
+//        if (publishCurrentTask) {
+//            currentTask = op;
+//        }
 
         try {
             checkNodeState(op);
@@ -200,9 +196,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
-            if (publishCurrentTask) {
-                currentTask = null;
-            }
+//            if (publishCurrentTask) {
+//                currentTask = null;
+//            }
         }
     }
 
@@ -361,7 +357,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         operation.logError(e);
 
         if (operation instanceof Backup) {
-            failedBackupsCounter.inc();
+            //failedBackupsCounter.inc();
             return;
         }
 

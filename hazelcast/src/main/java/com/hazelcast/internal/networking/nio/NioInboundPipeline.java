@@ -50,6 +50,8 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
 
     private InboundHandler[] handlers = new InboundHandler[0];
     private ByteBuffer receiveBuffer;
+    @Probe
+    private final SwCounter processCount = newSwCounter();
 
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
@@ -105,6 +107,9 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
 
     @Override
     void process() throws Exception {
+        //System.out.println(this+" process");;
+
+
         processCount.inc();
         // we are going to set the timestamp even if the channel is going to fail reading. In that case
         // the connection is going to be closed anyway.
@@ -117,6 +122,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         }
 
         bytesRead.inc(readBytes);
+       // System.out.println(this+" bytes read "+readBytes);
 
         // currently the whole pipeline is retried when one of the handlers is dirty; but only the dirty handler
         // and the remaining sequence should need to retry.

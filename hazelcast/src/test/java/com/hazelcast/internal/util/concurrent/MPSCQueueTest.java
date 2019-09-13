@@ -288,19 +288,19 @@ public class MPSCQueueTest extends HazelcastTestSupport {
         queue.clear();
 
         assertEquals(0, queue.size());
-        assertSame(MPSCQueue.BLOCKED, queue.putStack.get());
+        assertSame(MPSCQueue.BLOCKED, queue.putStack);
     }
 
     @Test
     public void clear_whenThreadWaiting() {
         queue.setConsumerThread(Thread.currentThread());
 
-        queue.putStack.set(MPSCQueue.BLOCKED);
+        queue.putStack = MPSCQueue.BLOCKED;
 
         queue.clear();
 
         assertEquals(0, queue.size());
-        assertSame(MPSCQueue.BLOCKED, queue.putStack.get());
+        assertSame(MPSCQueue.BLOCKED, queue.putStack);
     }
 
     @Test
@@ -312,7 +312,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
         queue.clear();
 
         assertEquals(0, queue.size());
-        assertSame(MPSCQueue.BLOCKED, queue.putStack.get());
+        assertSame(MPSCQueue.BLOCKED, queue.putStack);
     }
 
     @Test
@@ -329,7 +329,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
 
         // since 1 item was taken, 2 items are remaining
         assertEquals(2, queue.size());
-        assertSame(MPSCQueue.BLOCKED, queue.putStack.get());
+        assertSame(MPSCQueue.BLOCKED, queue.putStack);
     }
 
     @Test
@@ -349,7 +349,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
 
         // since 1 item was taken, 2 items are remaining
         assertEquals(2, queue.size());
-        assertSame(MPSCQueue.BLOCKED, queue.putStack.get());
+        assertSame(MPSCQueue.BLOCKED, queue.putStack);
     }
 
     // ============= misc ====================================

@@ -32,6 +32,7 @@ import com.hazelcast.util.concurrent.BusySpinIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -39,7 +40,6 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.properties.GroupProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -145,7 +145,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     long responsesNormal() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
-            result += handler.responsesNormal.get();
+         //   result += handler.responsesNormal.get();
         }
         return result;
     }
@@ -154,7 +154,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     long responsesTimeout() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
-            result += handler.responsesTimeout.get();
+        //    result += handler.responsesTimeout.get();
         }
         return result;
     }
@@ -163,7 +163,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     long responsesBackup() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
-            result += handler.responsesBackup.get();
+         //   result += handler.responsesBackup.get();
         }
         return result;
     }
@@ -172,7 +172,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     long responsesError() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
-            result += handler.responsesError.get();
+         //   result += handler.responsesError.get();
         }
         return result;
     }
@@ -181,7 +181,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     long responsesMissing() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
-            result += handler.responsesMissing.get();
+        //    result += handler.responsesMissing.get();
         }
         return result;
     }
@@ -240,24 +240,68 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     final class AsyncMultithreadedResponseHandler implements Consumer<Packet> {
         @Override
         public void accept(Packet packet) {
-            int threadIndex = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
-            responseThreads[threadIndex].responseQueue.add(packet);
+        //    int threadIndex = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
+            responseThreads[ThreadLocalRandom.current().nextInt(responseThreads.length)].responseQueue.add(packet);
         }
     }
 
+    private static class ResponseThreadSuper extends Thread {
+        private Object p0;
+        private Object p1;
+        private Object p2;
+        private Object p3;
+        private Object p4;
+        private Object p5;
+        private Object p6;
+        private Object p7;
+        private Object p8;
+        private Object p9;
+        private Object pa;
+        private Object pb;
+        private Object pc;
+        private Object pd;
+        private Object pe;
+        private Object pf;
+    }
+
+    private static class ResponseThreadFields extends ResponseThreadSuper {
+        protected   BlockingQueue<Packet> responseQueue;
+        protected  InboundResponseHandler inboundResponseHandler;
+        protected volatile boolean shutdown;
+    }
+
+    private static class ResponseThreadSub extends ResponseThreadFields {
+        private Object p0;
+        private Object p1;
+        private Object p2;
+        private Object p3;
+        private Object p4;
+        private Object p5;
+        private Object p6;
+        private Object p7;
+        private Object p8;
+        private Object p9;
+        private Object pa;
+        private Object pb;
+        private Object pc;
+        private Object pd;
+        private Object pe;
+        private Object pf;
+    }
+
+
     /**
+     *
+     *
      * The ResponseThread needs to implement the OperationHostileThread interface to make sure that the OperationExecutor
      * is not going to schedule any operations on this task due to retry.
      */
-    private final class ResponseThread extends Thread implements OperationHostileThread {
-
-        private final BlockingQueue<Packet> responseQueue;
-        private final InboundResponseHandler inboundResponseHandler;
-        private volatile boolean shutdown;
+    private final class ResponseThread extends ResponseThreadSub implements OperationHostileThread {
 
         private ResponseThread(String hzName, int threadIndex) {
-            super(createThreadName(hzName, "response-" + threadIndex));
+            setName(createThreadName(hzName, "response-" + threadIndex));
             this.inboundResponseHandler = new InboundResponseHandler(invocationRegistry, nodeEngine);
+            //this.responseQueue = new ArrayBlockingQueue<>(100000);
             this.responseQueue = new MPSCQueue<>(this, getIdleStrategy(properties, IDLE_STRATEGY));
         }
 

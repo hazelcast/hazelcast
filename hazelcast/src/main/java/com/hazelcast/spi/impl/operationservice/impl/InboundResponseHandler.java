@@ -18,8 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
@@ -30,8 +28,6 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.nio.Packet.Type.OPERATION;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_ACK_RESPONSE;
@@ -55,11 +51,11 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  */
 public final class InboundResponseHandler implements Consumer<Packet> {
 
-    final SwCounter responsesNormal = newSwCounter();
-    final SwCounter responsesTimeout = newSwCounter();
-    final MwCounter responsesBackup = newMwCounter();
-    final SwCounter responsesError = newSwCounter();
-    final MwCounter responsesMissing = newMwCounter();
+//    final SwCounter responsesNormal = newSwCounter();
+//    final SwCounter responsesTimeout = newSwCounter();
+//    final MwCounter responsesBackup = newMwCounter();
+//    final SwCounter responsesError = newSwCounter();
+//    final MwCounter responsesMissing = newMwCounter();
     private final ILogger logger;
     private final InternalSerializationService serializationService;
     private final InvocationRegistry invocationRegistry;
@@ -109,7 +105,7 @@ public final class InboundResponseHandler implements Consumer<Packet> {
     }
 
     public void notifyBackupComplete(long callId) {
-        responsesBackup.inc();
+        //responsesBackup.inc();
 
         try {
             Invocation invocation = invocationRegistry.get(callId);
@@ -131,11 +127,11 @@ public final class InboundResponseHandler implements Consumer<Packet> {
     }
 
     void notifyErrorResponse(long callId, Object cause, Address sender) {
-        responsesError.inc();
+       // responsesError.inc();
         Invocation invocation = invocationRegistry.get(callId);
 
         if (invocation == null) {
-            responsesMissing.inc();
+           // responsesMissing.inc();
             if (nodeEngine.isRunning() && callId != 0) {
                 logger.warning("No Invocation found for error response with callId=" + callId + " sent from " + sender);
             }
@@ -146,11 +142,11 @@ public final class InboundResponseHandler implements Consumer<Packet> {
     }
 
     void notifyNormalResponse(long callId, Object value, int backupCount, Address sender) {
-        responsesNormal.inc();
+        //responsesNormal.inc();
         Invocation invocation = invocationRegistry.get(callId);
 
         if (invocation == null) {
-            responsesMissing.inc();
+           // responsesMissing.inc();
             if (nodeEngine.isRunning()) {
                 logger.warning("No Invocation found for normal response with callId=" + callId + " sent from " + sender);
             }
@@ -160,11 +156,11 @@ public final class InboundResponseHandler implements Consumer<Packet> {
     }
 
     void notifyCallTimeout(long callId, Address sender) {
-        responsesTimeout.inc();
+        //responsesTimeout.inc();
         Invocation invocation = invocationRegistry.get(callId);
 
         if (invocation == null) {
-            responsesMissing.inc();
+           // responsesMissing.inc();
             if (nodeEngine.isRunning()) {
                 logger.warning("No Invocation found for call timeout response with callId=" + callId + " sent from " + sender);
             }

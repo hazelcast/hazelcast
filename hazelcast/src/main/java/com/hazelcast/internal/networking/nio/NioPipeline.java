@@ -44,9 +44,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     protected final int loadType = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
     // the number of time the NioPipeline.process() method has been called.
-    @Probe
-    protected final SwCounter processCount = newSwCounter();
-    protected final ILogger logger;
+     protected final ILogger logger;
     protected final NioChannel channel;
     protected final SocketChannel socketChannel;
     // needs to be volatile because it can accessed concurrently (only the owner will modify). Owner can be null if the
@@ -54,7 +52,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     protected volatile NioThread owner;
     protected SelectionKey selectionKey;
     private final ChannelErrorHandler errorHandler;
-    private final int initialOps;
+    final int initialOps;
     private final IOBalancer ioBalancer;
     private final AtomicReference<TaskNode> delayedTaskStack = new AtomicReference<TaskNode>();
     @Probe
@@ -112,42 +110,45 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     }
 
     void start() {
-        ownerAddTaskAndWakeup(new NioPipelineTask(NioPipeline.this) {
-            @Override
-            protected void run0() {
-                try {
-                    getSelectionKey();
-
-                    // we need to call process so that the pipeline gets unscheduled.
-                    if (NioPipeline.this instanceof NioOutboundPipeline) {
-                        NioOutboundPipeline out = (NioOutboundPipeline) NioPipeline.this;
-                        out.process();
-                    }
-                } catch (Throwable t) {
-                    onError(t);
-                }
-            }
-        });
+        owner.register(this);
+        ownerAddTaskAndWakeup(this);
+//
+//        ownerAddTaskAndWakeup(new NioPipelineTask(NioPipeline.this) {
+//            @Override
+//            protected void run0() {
+//                try {
+//                    getSelectionKey();
+//
+//                    // we need to call process so that the pipeline gets unscheduled.
+//                    if (NioPipeline.this instanceof NioOutboundPipeline) {
+//                        NioOutboundPipeline out = (NioOutboundPipeline) NioPipeline.this;
+//                        out.process();
+//                    }
+//                } catch (Throwable t) {
+//                    onError(t);
+//                }
+//            }
+//        });
     }
 
-    private SelectionKey getSelectionKey() throws IOException {
-        if (selectionKey == null) {
-            selectionKey = socketChannel.register(owner.getSelector(), initialOps, this);
-        }
-        return selectionKey;
-    }
-
-    final void setSelectionKey(SelectionKey selectionKey) {
-        this.selectionKey = selectionKey;
-    }
+//    private SelectionKey getSelectionKey() throws IOException {
+//        if (selectionKey == null) {
+//            selectionKey = socketChannel.register(owner.getSelector(), initialOps, this);
+//        }
+//        return selectionKey;
+//    }
+//
+//    final void setSelectionKey(SelectionKey selectionKey) {
+//        this.selectionKey = selectionKey;
+//    }
 
     final void registerOp(int operation) throws IOException {
-        SelectionKey selectionKey = getSelectionKey();
+ //       SelectionKey selectionKey = getSelectionKey();
         selectionKey.interestOps(selectionKey.interestOps() | operation);
     }
 
     final void unregisterOp(int operation) throws IOException {
-        SelectionKey selectionKey = getSelectionKey();
+   //     SelectionKey selectionKey = getSelectionKey();
         int interestOps = selectionKey.interestOps();
         if ((interestOps & operation) != 0) {
             selectionKey.interestOps(interestOps & ~operation);
@@ -326,6 +327,8 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
      * @throws IOException
      */
     void startMigration() throws IOException {
+        owner.pipelines.remove(this);
+
         assert newOwner != null : "newOwner can't be null";
         assert owner != newOwner : "newOwner can't be the same as the existing owner";
         publishMetrics();
@@ -359,6 +362,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
                 assert owner == null;
                 owner = newOwner;
                 ownerId = newOwner.id;
+                owner.pipelines.add(NioPipeline.this);
 
                 // we don't need to wakeup since the io thread will see the delayed tasks.
                 restoreTasks(owner, delayedTaskStack.getAndSet(null), false);
@@ -370,8 +374,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
                     return;
                 }
 
-                selectionKey = getSelectionKey();
-                registerOp(initialOps);
+                selectionKey = socketChannel.register(owner.selector, initialOps, NioPipeline.this);
 
                 // and now we set the newOwner to null since we are finished with the migration
                 NioPipeline.this.newOwner = null;

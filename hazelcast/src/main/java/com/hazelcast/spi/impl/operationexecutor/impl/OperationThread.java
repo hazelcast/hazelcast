@@ -19,19 +19,65 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+
+class OperationThreadL1Pad extends HazelcastManagedThread {
+    long p01, p02, p03, p04, p05, p06, p07;
+    long p10, p11, p12, p13, p14, p15, p16, p17;
+}
+
+class OperationThreadL1Fields extends OperationThreadL1Pad {
+    int threadId;
+    OperationQueue queue;
+    boolean priority;
+    NodeExtension nodeExtension;
+    ILogger logger;
+    volatile boolean shutdown;
+    OperationRunner[] partitionOperationRunners;
+}
+
+class OperationThreadL2Pad extends OperationThreadL1Fields {
+    long p01, p02, p03, p04, p05, p06, p07;
+    long p10, p11, p12, p13, p14, p15, p16, p17;
+}
+
+class OperationThreadL2Fields extends OperationThreadL2Pad {
+    // This field wil only be accessed by the thread itself when doing 'self'
+    // calls. So no need for any form of synchronization.
+    OperationRunner currentRunner;
+    // All these counters are updated by this OperationThread (so a single writer)
+    // and are read by the MetricsRegistry.
+//    @Probe
+//     final SwCounter completedTotalCount = newSwCounter();
+//    @Probe
+//     final SwCounter completedPacketCount = newSwCounter();
+//    @Probe
+//     final SwCounter completedOperationCount = newSwCounter();
+//    @Probe
+//     final SwCounter completedPartitionSpecificRunnableCount = newSwCounter();
+//    @Probe
+//     final SwCounter completedRunnableCount = newSwCounter();
+//    @Probe
+//     final SwCounter errorCount = newSwCounter();
+//    @Probe
+//     final SwCounter completedOperationBatchCount = newSwCounter();
+
+}
+
+class OperationThreadL3Pad extends OperationThreadL2Fields {
+    long p01, p02, p03, p04, p05, p06, p07;
+    long p10, p11, p12, p13, p14, p15, p16, p17;
+}
+
 
 /**
  * The OperationThread is responsible for processing operations, packets
@@ -43,35 +89,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * <p>
  * The actual processing of an operation is forwarded to the {@link OperationRunner}.
  */
-public abstract class OperationThread extends HazelcastManagedThread implements MetricsProvider {
-
-    final int threadId;
-    final OperationQueue queue;
-    // This field wil only be accessed by the thread itself when doing 'self'
-    // calls. So no need for any form of synchronization.
-    OperationRunner currentRunner;
-
-    // All these counters are updated by this OperationThread (so a single writer)
-    // and are read by the MetricsRegistry.
-    @Probe
-    private final SwCounter completedTotalCount = newSwCounter();
-    @Probe
-    private final SwCounter completedPacketCount = newSwCounter();
-    @Probe
-    private final SwCounter completedOperationCount = newSwCounter();
-    @Probe
-    private final SwCounter completedPartitionSpecificRunnableCount = newSwCounter();
-    @Probe
-    private final SwCounter completedRunnableCount = newSwCounter();
-    @Probe
-    private final SwCounter errorCount = newSwCounter();
-    @Probe
-    private final SwCounter completedOperationBatchCount = newSwCounter();
-
-    private final boolean priority;
-    private final NodeExtension nodeExtension;
-    private final ILogger logger;
-    private volatile boolean shutdown;
+public abstract class OperationThread extends OperationThreadL3Pad implements MetricsProvider {
 
     public OperationThread(String name,
                            int threadId,
@@ -80,7 +98,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
                            NodeExtension nodeExtension,
                            boolean priority,
                            ClassLoader configClassLoader) {
-        super(name);
+        setName(name);
         setContextClassLoader(configClassLoader);
         this.queue = queue;
         this.threadId = threadId;
@@ -132,43 +150,44 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
             } else {
                 throw new IllegalStateException("Unhandled task:" + task);
             }
-            completedTotalCount.inc();
+            //  completedTotalCount.inc();
         } catch (Throwable t) {
-            errorCount.inc();
+            //    errorCount.inc();
             inspectOutOfMemoryError(t);
             logger.severe("Failed to process: " + task + " on: " + getName(), t);
         } finally {
-            currentRunner = null;
+             currentRunner = null;
         }
     }
 
     private void process(Operation operation) {
         currentRunner = operationRunner(operation.getPartitionId());
         currentRunner.run(operation);
-        completedOperationCount.inc();
+        //   completedOperationCount.inc();
     }
 
     private void process(Packet packet) throws Exception {
         currentRunner = operationRunner(packet.getPartitionId());
         currentRunner.run(packet);
-        completedPacketCount.inc();
+        //  completedPacketCount.inc();
     }
 
     private void process(PartitionSpecificRunnable runnable) {
+        //runnable.run();;
         currentRunner = operationRunner(runnable.getPartitionId());
         currentRunner.run(runnable);
-        completedPartitionSpecificRunnableCount.inc();
+        //   completedPartitionSpecificRunnableCount.inc();
     }
 
     private void process(Runnable runnable) {
         runnable.run();
-        completedRunnableCount.inc();
+        //    completedRunnableCount.inc();
     }
 
     private void process(TaskBatch batch) {
         Object task = batch.next();
         if (task == null) {
-            completedOperationBatchCount.inc();
+            //       completedOperationBatchCount.inc();
             return;
         }
 

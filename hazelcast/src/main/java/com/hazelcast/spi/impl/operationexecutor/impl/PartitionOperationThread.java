@@ -28,8 +28,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public final class PartitionOperationThread extends OperationThread {
 
-    private final OperationRunner[] partitionOperationRunners;
-
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionOperationThread(String name,
                                     int threadId,

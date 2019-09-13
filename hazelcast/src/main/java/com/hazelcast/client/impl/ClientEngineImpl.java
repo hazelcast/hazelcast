@@ -33,6 +33,7 @@ import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.TransactionalMessageTask;
 import com.hazelcast.client.impl.protocol.task.UrgentMessageTask;
+import com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.AbstractMapQueryMessageTask;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
@@ -58,6 +59,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationexecutor.SpecialPartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -244,10 +246,42 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         return endpointManager.size();
     }
 
+
     public void accept(ClientMessage clientMessage) {
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         OperationServiceImpl operationService = nodeEngine.getOperationService();
+        if(messageTask instanceof AtomicLongGetMessageTask){
+            AtomicLongGetMessageTask atomicLongGetMessageTask = (AtomicLongGetMessageTask)messageTask;
+          //  atomicLongGetMessageTask.onResponse(0L);
+            operationService.getOperationExecutor().execute(new SpecialPartitionSpecificRunnable() {
+                @Override
+                public int getPartitionId() {
+                    return clientMessage.getPartitionId();
+                }
+
+                @Override
+                public void run() {
+                    atomicLongGetMessageTask.onResponse(0l);
+                }
+            });
+
+//
+//            operationService.getOperationExecutor().execute(new PartitionSpecificRunnable() {
+//                @Override
+//                public int getPartitionId() {
+//                    return atomicLongGetMessageTask.getPartitionId();
+//                }
+//
+//                @Override
+//                public void run() {
+//                    atomicLongGetMessageTask.onResponse(0l);
+//                }
+//            });
+
+            return;
+        }
+
         if (isUrgent(messageTask)) {
             operationService.execute((UrgentMessageTask) messageTask);
         } else if (messageTask instanceof AbstractPartitionMessageTask) {

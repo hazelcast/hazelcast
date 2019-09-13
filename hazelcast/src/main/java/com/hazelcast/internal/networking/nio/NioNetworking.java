@@ -194,6 +194,8 @@ public final class NioNetworking implements Networking {
         }
         this.inputThreads = inThreads;
 
+        System.out.println("inputThreadCount:"+inputThreadCount);
+
         NioThread[] outThreads = new NioThread[outputThreadCount];
         for (int i = 0; i < outThreads.length; i++) {
             NioThread thread = new NioThread(
@@ -209,6 +211,7 @@ public final class NioNetworking implements Networking {
             thread.start();
         }
         this.outputThreads = outThreads;
+        System.out.println("outputThreadCount:"+outputThreadCount);
 
         startIOBalancer();
     }

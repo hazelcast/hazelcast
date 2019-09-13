@@ -28,6 +28,7 @@ import com.hazelcast.util.MutableInteger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -36,7 +37,6 @@ import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_COU
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
-import static com.hazelcast.util.HashUtil.hashToIndex;
 
 /**
  * A {@link Supplier} for {@link Supplier} instance that processes responses for client
@@ -155,20 +155,35 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         if (responseThreads.length == 1) {
             return responseThreads[0];
         } else {
-            int index = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
+            int index = ThreadLocalRandom.current().nextInt(responseThreads.length);
             return responseThreads[index];
         }
     }
 
-    private class ResponseThread extends Thread {
-        private final BlockingQueue<ClientMessage> responseQueue;
-        private final AtomicBoolean started = new AtomicBoolean();
+    private static class ResponseThreadSuper extends Thread {
+        long p00, p01, p02, p03, p04, p05, p06, p07;
+        long p10, p11, p12, p13, p14, p15, p16;
+    }
 
-        ResponseThread(String name) {
-            super(name);
+    private static class ResponseThreadFields extends ResponseThreadSuper {
+        public BlockingQueue<ClientMessage> responseQueue;
+        public AtomicBoolean started = new AtomicBoolean();
+    }
+
+    private static class ResponseThreadSub extends ResponseThreadFields {
+        long p00, p01, p02, p03, p04, p05, p06, p07;
+        long p10, p11, p12, p13, p14, p15, p16;
+    }
+
+    private class ResponseThread extends ResponseThreadSub {
+
+          ResponseThread(String name) {
+            setName(name);
             setContextClassLoader(client.getClientConfig().getClassLoader());
-            this.responseQueue = new MPSCQueue<ClientMessage>(this,
-                    getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
+            //this.responseQueue = new MpscBlockingConsumerArrayQueue<>(10000);
+            this.responseQueue = new MPSCQueue<>(this, getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
+           //this.responseQueue = new ArrayBlockingQueue<>(10000);//this,
+                   ///;
         }
 
         @Override

@@ -25,15 +25,16 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.internal.util.concurrent.PaddedAtomicReference;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.concurrent.NoOpIdleStrategy;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
@@ -43,81 +44,146 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.collection.ArrayUtils.append;
 import static com.hazelcast.util.collection.ArrayUtils.replaceFirst;
-import static java.lang.Math.max;
+import static java.lang.Long.max;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-public final class NioOutboundPipeline
-        extends NioPipeline
-        implements Supplier<OutboundFrame>, OutboundPipeline {
+abstract class NioOutboundPipelineL1Pad extends NioPipeline {
+    long p01, p02, p03, p04, p05, p06, p07;
+    long p10, p11, p12, p13, p14, p15, p16, p17;
 
-    public enum State {
-        /*
-         * The pipeline isn't scheduled (nothing to do).
-         * Only possible next state is scheduled.
-         */
-        UNSCHEDULED,
-        /*
-         * The pipeline is scheduled, meaning it is owned by some thread.
-         *
-         * the next possible states are:
-         * - unscheduled (everything got written; we are done)
-         * - scheduled: new writes got detected
-         * - reschedule: needed if one of the handlers wants to reschedule the pipeline
-         */
-        SCHEDULED,
-        /*
-         * One of the handler wants to stop with the pipeline; one of the usages is TLS handshake.
-         * Additional writes of frames will not lead to a scheduling of the pipeline. Only a
-         * wakeup will schedule the pipeline.
-         *
-         * Next possible states are:
-         * - unscheduled: everything got written
-         * - scheduled: new writes got detected
-         * - reschedule: pipeline needs to be reprocessed
-         * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
-         */
-        BLOCKED,
-        /*
-         * state needed for pipeline that was scheduled, but needs to be reprocessed
-         * this is needed for wakeup during processing (TLS).
-         *
-         * Next possible states are:
-         * - unscheduled: everything got written
-         * - scheduled: new writes got detected
-         * - reschedule: pipeline needs to be reprocessed
-         * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
-         */
-        RESCHEDULE
+    NioOutboundPipelineL1Pad(NioChannel channel,
+                             NioThread owner,
+                             ChannelErrorHandler errorHandler,
+                             int initialOps,
+                             ILogger logger,
+                             IOBalancer ioBalancer) {
+        super(channel, owner, errorHandler, initialOps, logger, ioBalancer);
     }
+}
+
+abstract class NioOutboundPipelineL1Fields extends NioOutboundPipelineL1Pad {
+    OutboundHandler[] handlers = new OutboundHandler[0];
+    ByteBuffer sendBuffer;
+    @Probe(name = "bytesWritten")
+    final SwCounter bytesWritten = newSwCounter();
+    @Probe(name = "normalFramesWritten")
+    final SwCounter normalFramesWritten = newSwCounter();
+    @Probe(name = "priorityFramesWritten")
+    final SwCounter priorityFramesWritten = newSwCounter();
+    @Probe
+    final SwCounter processCount = newSwCounter();
+    long bytesWrittenLastPublish;
+    long normalFramesWrittenLastPublish;
+    long priorityFramesWrittenLastPublish;
+    long processCountLastPublish;
+    volatile long lastWriteTime;
+
+
+    NioOutboundPipelineL1Fields(NioChannel channel,
+                                NioThread owner,
+                                ChannelErrorHandler errorHandler,
+                                int initialOps,
+                                ILogger logger,
+                                IOBalancer ioBalancer) {
+        super(channel, owner, errorHandler, initialOps, logger, ioBalancer);
+    }
+}
+
+abstract class NioOutboundPipelineL2Pad extends NioOutboundPipelineL1Fields {
+    long p01, p02, p03, p04, p05, p06, p07;
+    long p10, p11, p12, p13, p14, p15, p16, p17;
+
+    NioOutboundPipelineL2Pad(NioChannel channel,
+                             NioThread owner,
+                             ChannelErrorHandler errorHandler,
+                             int initialOps,
+                             ILogger logger,
+                             IOBalancer ioBalancer) {
+        super(channel, owner, errorHandler, initialOps, logger, ioBalancer);
+    }
+}
+
+abstract class NioOutboundPipelineL2Fields extends NioOutboundPipelineL2Pad {
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
-    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<>();
+    public final Queue<OutboundFrame> writeQueue = new MPSCQueue<>(NoOpIdleStrategy.INSTANCE);
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
-    public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<>();
+    public final Queue<OutboundFrame> priorityWriteQueue = new MPSCQueue<>(NoOpIdleStrategy.INSTANCE);
+    final PaddedAtomicReference<State> scheduled = new PaddedAtomicReference<>(State.SCHEDULED);
 
-    private OutboundHandler[] handlers = new OutboundHandler[0];
-    private ByteBuffer sendBuffer;
+    ConcurrencyDetection concurrencyDetection;
+    boolean writeThroughEnabled;
 
-    private final AtomicReference<State> scheduled = new AtomicReference<>(State.SCHEDULED);
-    @Probe(name = "bytesWritten")
-    private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = "normalFramesWritten")
-    private final SwCounter normalFramesWritten = newSwCounter();
-    @Probe(name = "priorityFramesWritten")
-    private final SwCounter priorityFramesWritten = newSwCounter();
+    NioOutboundPipelineL2Fields(NioChannel channel,
+                             NioThread owner,
+                             ChannelErrorHandler errorHandler,
+                             int initialOps,
+                             ILogger logger,
+                             IOBalancer ioBalancer) {
+        super(channel, owner, errorHandler, initialOps, logger, ioBalancer);
+    }
+}
+abstract class NioOutboundPipelineL3Pad extends NioOutboundPipelineL2Fields{
+    long p01, p02, p03, p04, p05, p06, p07;
+    long p10, p11, p12, p13, p14, p15, p16, p17;
 
-    private volatile long lastWriteTime;
+    NioOutboundPipelineL3Pad(NioChannel channel,
+                                NioThread owner,
+                                ChannelErrorHandler errorHandler,
+                                int initialOps,
+                                ILogger logger,
+                                IOBalancer ioBalancer) {
+        super(channel, owner, errorHandler, initialOps, logger, ioBalancer);
+    }
+}
 
-    private long bytesWrittenLastPublish;
-    private long normalFramesWrittenLastPublish;
-    private long priorityFramesWrittenLastPublish;
-    private long processCountLastPublish;
-    private final ConcurrencyDetection concurrencyDetection;
-    private final boolean writeThroughEnabled;
+enum State {
+    /*
+     * The pipeline isn't scheduled (nothing to do).
+     * Only possible next state is scheduled.
+     */
+    UNSCHEDULED,
+    /*
+     * The pipeline is scheduled, meaning it is owned by some thread.
+     *
+     * the next possible states are:
+     * - unscheduled (everything got written; we are done)
+     * - scheduled: new writes got detected
+     * - reschedule: needed if one of the handlers wants to reschedule the pipeline
+     */
+    SCHEDULED,
+    /*
+     * One of the handler wants to stop with the pipeline; one of the usages is TLS handshake.
+     * Additional writes of frames will not lead to a scheduling of the pipeline. Only a
+     * wakeup will schedule the pipeline.
+     *
+     * Next possible states are:
+     * - unscheduled: everything got written
+     * - scheduled: new writes got detected
+     * - reschedule: pipeline needs to be reprocessed
+     * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
+     */
+    BLOCKED,
+    /*
+     * state needed for pipeline that was scheduled, but needs to be reprocessed
+     * this is needed for wakeup during processing (TLS).
+     *
+     * Next possible states are:
+     * - unscheduled: everything got written
+     * - scheduled: new writes got detected
+     * - reschedule: pipeline needs to be reprocessed
+     * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
+     */
+    RESCHEDULE
+}
+
+public final class NioOutboundPipeline
+        extends NioOutboundPipelineL3Pad
+        implements Supplier<OutboundFrame>, OutboundPipeline {
 
     NioOutboundPipeline(NioChannel channel,
                         NioThread owner,
@@ -208,14 +274,21 @@ public final class NioOutboundPipeline
                     }
                 } else {
                     // no write through, let the io thread deal with it.
-                    ownerAddTaskAndWakeup(this);
+                    try {
+                        registerOp(OP_WRITE);
+                    } catch (IOException e) {
+                        throw new RuntimeException();
+                    }
+                    selectionKey.selector().wakeup();
+
+                    //ownerAddTaskAndWakeup(this);
                 }
                 return;
             } else if (state == State.SCHEDULED || state == State.RESCHEDULE) {
                 // already scheduled, so we are done
-                if (writeThroughEnabled) {
-                    concurrencyDetection.onDetected();
-                }
+//                if (writeThroughEnabled) {
+//                    concurrencyDetection.onDetected();
+//                }
                 return;
             } else if (state == State.BLOCKED) {
                 // pipeline is blocked, so we don't need to schedule
@@ -224,6 +297,7 @@ public final class NioOutboundPipeline
                 throw new IllegalStateException("Unexpected state:" + state);
             }
         }
+
     }
 
     @Override
@@ -233,7 +307,7 @@ public final class NioOutboundPipeline
             if (prevState == State.RESCHEDULE) {
                 break;
             } else {
-                  if (scheduled.compareAndSet(prevState, State.RESCHEDULE)) {
+                if (scheduled.compareAndSet(prevState, State.RESCHEDULE)) {
                     if (prevState == State.UNSCHEDULED || prevState == State.BLOCKED) {
                         ownerAddTaskAndWakeup(this);
                     }
@@ -402,7 +476,7 @@ public final class NioOutboundPipeline
         lastWriteTime = currentTimeMillis();
         int written = socketChannel.write(sendBuffer);
         bytesWritten.inc(written);
-        //System.out.println(channel + " bytes written:" + written);
+        //   System.out.println(channel + " bytes written:" + written);
     }
 
     void drainWriteQueues() {

@@ -27,6 +27,23 @@ import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
  */
 public class HazelcastManagedThread extends Thread {
 
+    private Object p0;
+    private Object p1;
+    private Object p2;
+    private Object p3;
+    private Object p4;
+    private Object p5;
+    private Object p6;
+    private Object p7;
+    private Object p8;
+    private Object p9;
+    private Object pa;
+    private Object pb;
+    private Object pc;
+    private Object pd;
+    private Object pe;
+    private Object pf;
+
     public HazelcastManagedThread() {
     }
 
