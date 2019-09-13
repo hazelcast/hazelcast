@@ -16,12 +16,18 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.NodeEngine;
 
 import javax.annotation.Nonnull;
+
+import static com.hazelcast.jet.impl.execution.init.ExecutionPlan.createLoggerName;
 
 /**
  * Base class for processor wrappers. Delegates all calls to the wrapped
@@ -45,8 +51,34 @@ public abstract class ProcessorWrapper implements Processor {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
+    public final void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
+        outbox = wrapOutbox(outbox);
+        // Pass a logger with real class name to processor
+        // We do this only if context is ProcCtx (that is, not for tests where TestProcessorContext can be used
+        // and also other objects could be mocked or null, such as jetInstance())
+        if (context instanceof ProcCtx) {
+            ProcCtx c = (ProcCtx) context;
+            NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
+            ILogger newLogger = nodeEngine.getLogger(
+                    createLoggerName(
+                            getWrapped().getClass().getName(),
+                            c.jobConfig().getName(),
+                            c.vertexName(),
+                            c.globalProcessorIndex())
+            );
+            context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+                    newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(), c.processingGuarantee(),
+                    c.localParallelism(), c.memberIndex(), c.memberCount());
+        }
         wrapped.init(outbox, context);
+        initWrapper(outbox, context);
+    }
+
+    protected Outbox wrapOutbox(Outbox outbox) {
+        return outbox;
+    }
+
+    protected void initWrapper(Outbox outbox, Context context) {
     }
 
     @Override
