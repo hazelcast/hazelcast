@@ -84,6 +84,8 @@
     <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]config[\\/]AbstractDomConfigProcessor"/>
     <suppress checks="ExecutableStatementCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheConfig"/>
+    <suppress checks="ExecutableStatementCount"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]holder[\\/]CacheConfigHolder"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheSimpleConfig"/>
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]config[\\/]Config"/>
     <suppress checks="FileLength"

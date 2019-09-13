@@ -17,12 +17,21 @@
 package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.builtin.CacheConfigHolderCodec;
+import com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil;
 
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.*;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
+import static com.hazelcast.client.impl.protocol.ClientMessage.CORRELATION_ID_FIELD_OFFSET;
+import static com.hazelcast.client.impl.protocol.ClientMessage.PARTITION_ID_FIELD_OFFSET;
+import static com.hazelcast.client.impl.protocol.ClientMessage.TYPE_FIELD_OFFSET;
+import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 /**
  * TODO DOC
@@ -43,10 +52,9 @@ public final class CacheCreateConfigCodec {
     public static class RequestParameters {
 
         /**
-         * The cache configuration. Byte-array which is serialized from an object implementing
-         * javax.cache.configuration.Configuration interface.
+         * The cache configuration.
          */
-        public com.hazelcast.nio.serialization.Data cacheConfig;
+        public com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder cacheConfig;
 
         /**
          * True if the configuration shall be created on all members, false otherwise.
@@ -54,7 +62,8 @@ public final class CacheCreateConfigCodec {
         public boolean createAlsoOnOthers;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.nio.serialization.Data cacheConfig, boolean createAlsoOnOthers) {
+    public static ClientMessage encodeRequest(com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder cacheConfig,
+                                              boolean createAlsoOnOthers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -63,7 +72,7 @@ public final class CacheCreateConfigCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeBoolean(initialFrame.content, REQUEST_CREATE_ALSO_ON_OTHERS_FIELD_OFFSET, createAlsoOnOthers);
         clientMessage.add(initialFrame);
-        DataCodec.encode(clientMessage, cacheConfig);
+        CacheConfigHolderCodec.encode(clientMessage, cacheConfig);
         return clientMessage;
     }
 
@@ -72,7 +81,7 @@ public final class CacheCreateConfigCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.createAlsoOnOthers = decodeBoolean(initialFrame.content, REQUEST_CREATE_ALSO_ON_OTHERS_FIELD_OFFSET);
-        request.cacheConfig = DataCodec.decode(iterator);
+        request.cacheConfig = CacheConfigHolderCodec.decode(iterator);
         return request;
     }
 
@@ -80,19 +89,18 @@ public final class CacheCreateConfigCodec {
     public static class ResponseParameters {
 
         /**
-         * The created configuration object. Byte-array which is serialized from an object implementing
-         * javax.cache.configuration.Configuration interface.
+         * The created configuration object.
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, response, CacheConfigHolderCodec::encode);
         return clientMessage;
     }
 
@@ -101,7 +109,7 @@ public final class CacheCreateConfigCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        response.response = CodecUtil.decodeNullable(iterator, CacheConfigHolderCodec::decode);
         return response;
     }
 
