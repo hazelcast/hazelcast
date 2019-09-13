@@ -162,7 +162,8 @@ public class CPSubsystemConfig {
      * more CP members can be added at run-time and the number of active CP
      * members can go beyond the configured CP member count. The number of CP
      * members can be smaller than total member count of the Hazelcast cluster.
-     * For instance, you can run 5 CP members in a 20-member Hazelcast cluster.
+     * For instance, you can run 5 CP members in a Hazelcast cluster of
+     * 20 members.
      * <p>
      * If set, must be greater than or equal to {@link #groupSize}
      */
@@ -213,7 +214,7 @@ public class CPSubsystemConfig {
 
     /**
      * Duration to wait before automatically removing a missing CP member from
-     * CP Subsystem. When a CP member leaves the cluster, it is not
+     * CP Subsystem. When a CP member leaves the Hazelcast cluster, it is not
      * automatically removed from CP Subsystem, since it could be still alive
      * and left the cluster because of a network problem. On the other hand,
      * if a missing CP member actually crashed, it creates a danger for CP
@@ -221,7 +222,7 @@ public class CPSubsystemConfig {
      * situation could lead to losing majority of CP groups if multiple CP
      * members leave the cluster over time.
      * <p>
-     * With the default configuration, missing CP members will be automatically
+     * With the default configuration, missing CP members are automatically
      * removed from CP Subsystem after 4 hours. This feature is very useful
      * in terms of fault tolerance when CP member count is also configured
      * to be larger than group size. In this case, a missing CP member is
@@ -255,7 +256,7 @@ public class CPSubsystemConfig {
 
     /**
      * Flag to denote whether or not CP Subsystem Persistence is enabled.
-     * If enabled, CP members persist their local data to stable storage and
+     * If enabled, CP members persist their local CP data to stable storage and
      * can recover from crashes.
      */
     private boolean persistenceEnabled;
@@ -263,8 +264,9 @@ public class CPSubsystemConfig {
     /**
      * Base directory to store all CP data when {@link #persistenceEnabled}
      * is true. This directory can be shared between multiple CP members.
-     * Each CP member creates a unique directory under {@code baseDir}
-     * for itself.
+     * Each CP member creates a unique directory for itself under the base
+     * directory. This is especially useful for cloud environments where CP
+     * members generally use a shared filesystem.
      */
     private File baseDir = new File(CP_BASE_DIR_DEFAULT);
 

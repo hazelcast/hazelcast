@@ -49,10 +49,10 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * of a Hazelcast cluster do not necessarily take part in CP Subsystem.
  * The number of Hazelcast members that takes part in CP Subsystem is specified
  * with {@link CPSubsystemConfig#setCPMemberCount(int)}. Say that it is
- * configured as C. Then, when a Hazelcast cluster starts, the first C members
+ * configured as N. Then, when a Hazelcast cluster starts, the first N members
  * form CP Subsystem. These members are called {@link CPMember}s, and they can
  * also contain data for other regular -AP- Hazelcast data structures, such as
- * {@link IMap}, {@link ISet}, etc.
+ * {@link IMap}, {@link ISet}.
  * <p>
  * Data structures in CP Subsystem run in {@link CPGroup}s. Each CP group
  * elects its own Raft leader and runs the Raft consensus algorithm
@@ -103,28 +103,28 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * CP Subsystem achieves horizontal scalability thanks to all of
  * the aforementioned CP group management capabilities. You can scale out
  * the throughput and memory capacity by distributing your CP data structures
- * to multiple CP groups (i.e., manual partitioning/sharding) and distributing
- * those CP groups over CP members (i.e., choosing a CP group size that is
- * smaller than the CP member count configuration). Nevertheless, the current
- * set of CP data structures have quite low memory overheads. Moreover, related
- * to the Raft consensus algorithm, each CP group makes uses of internal
- * heartbeat RPCs to maintain authority of the Raft leader and help lagging CP
- * group members to make progress. Last, the new CP lock and semaphore
- * implementations rely on a brand new session mechanism. In a nutshell,
- * a Hazelcast server or a client starts a new session on the corresponding CP
- * group when it makes its very first lock or semaphore acquire request, and
- * then periodically commits session heartbeats to this CP group in order to
- * indicate its liveliness. It means that if CP locks and semaphores are
- * distributed to multiple CP groups, there will be a session management
- * overhead on each CP group. Please see {@link CPSession} for more details.
- * For these reasons, we recommend developers to use a minimal number of CP
- * groups. For most use cases, the DEFAULT CP group should be sufficient to
- * maintain all CP data structure instances. Custom CP groups is recommended
+ * to multiple CP groups (i.e., manual partitioning / sharding) and
+ * distributing those CP groups over CP members (i.e., choosing a CP group size
+ * that is smaller than the CP member count configuration). Nevertheless,
+ * the current set of CP data structures have quite low memory overheads.
+ * Moreover, related to the Raft consensus algorithm, each CP group makes use
+ * of internal heartbeat RPCs to maintain authority of the Raft leader and help
+ * lagging CP group members to make progress. Last, the new CP lock and
+ * semaphore implementations rely on a brand new session mechanism. In a
+ * nutshell, a Hazelcast server or a client starts a new session on the
+ * corresponding CP group when it makes its very first lock or semaphore
+ * acquire request, and then periodically commits session heartbeats to this CP
+ * group in order to indicate its liveliness. It means that if CP locks and
+ * semaphores are distributed to multiple CP groups, there will be a session
+ * management overhead on each CP group. Please see {@link CPSession} for more
+ * details. For these reasons, we recommend developers to use a minimal number
+ * of CP groups. For most use cases, the DEFAULT CP group should be sufficient
+ * to maintain all CP data structure instances. Custom CP groups is recommended
  * only when you benchmark your deployment and decide that performance of
  * the DEFAULT CP group is not sufficient for your workload.
  * <p>
- * CP Subsystem runs a discovery process in the background on cluster startup.
- * When it is enabled by setting a positive value to
+ * CP Subsystem runs a discovery process on cluster startup. When CP Subsystem
+ * is enabled by setting a positive value to
  * {@link CPSubsystemConfig#setCPMemberCount(int)}, say N, the first N members
  * in the Hazelcast cluster member list initiate this discovery process. Other
  * Hazelcast members skip this step. The CP discovery process runs out of
@@ -168,14 +168,15 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * {@link CPSubsystemConfig#setPersistenceEnabled(boolean)}, CP members persist
  * their local state to stable storage and can restore their state after
  * crashes. This capability significantly improves the overall reliability of
- * CP Subsystem by enabling recovery of crashed CP members. You can restart
- * crashed CP members and they will restore their local state and resume
- * working as if they have never crashed. If you cannot restart a CP member
- * on the same machine, you can move its data to another machine and restart it
- * with a new address. CP Subsystem Persistence enables you to handle single or
- * multiple CP member crashes, or even whole cluster crashes and guarantee that
- * committed operations are not lost after recovery. As long as majority of CP
- * members are available after recovery, CP Subsystem remains operational.
+ * CP Subsystem by enabling recovery of crashed CP members. When you restart
+ * crashed CP members, they restore their local state and resume working as if
+ * they have never crashed. If you cannot restart a CP member on the same
+ * machine, you can move its data to another machine and restart it with a new
+ * address. CP Subsystem Persistence enables you to handle single or multiple CP
+ * member crashes, or even whole cluster crashes and guarantee that committed
+ * operations are not lost after recovery. In other words, CP member crashes
+ * and restarts do not create any consistency problem. As long as majority of
+ * CP members are available after recovery, CP Subsystem remains operational.
  * <p>
  * When CP Subsystem Persistence is enabled, all Hazelcast cluster members
  * create a sub-directory under the base persistence directory which is
@@ -191,7 +192,7 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * an AP member. Otherwise, it could think that the CP discovery process has
  * not been executed and trigger it, which would break CP Subsystem.
  * <p>
- * <strong> In light of this information, If you have both CP and AP members
+ * <strong>In light of this information, If you have both CP and AP members
  * in your cluster when CP Subsystem Persistence is enabled, and if you want to
  * perform a cluster-wide restart, you need to ensure that AP members are also
  * restarted with their CP persistence directories.</strong>
@@ -202,8 +203,8 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * is replaced with other available CP members in all of its CP groups in order
  * not to decrease or more importantly not to lose majorities of CP groups.
  * It is because CP members keep their local state only in memory when CP
- * Subsystem Persistence is disabled and a shut-down CP member cannot join back
- * with its CP identity and state, hence it is better to remove it from CP
+ * Subsystem Persistence is disabled, hence a shut-down CP member cannot join
+ * back with its CP identity and state, hence it is better to remove it from CP
  * Subsystem to not to harm availability of CP groups. If there is no other
  * available CP member to replace a shutting down CP member in a CP group, that
  * CP group's size is reduced by 1 and its majority value is recalculated.
@@ -224,10 +225,43 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * calculations.</li>
  * </ul>
  * <p>
+ * <strong>Moreover, there is a subtle point about concurrent shutdown of CP
+ * members when CP Subsystem Persistence is disabled. If there are N CP members
+ * in CP Subsystem, {@link HazelcastInstance#shutdown()} can be called on N-2
+ * CP members concurrently. Once these N-2 CP members complete their shutdown,
+ * the remaining 2 CP members must be shut down serially. Even though
+ * the shutdown API can be called concurrently on multiple CP members, since
+ * the METADATA CP group handles shutdown requests serially, it would be simpler
+ * to shut down CP members one by one, by calling
+ * {@link HazelcastInstance#shutdown()} on the next CP member once the current
+ * CP member completes its shutdown. This rule does not apply when CP Subsystem
+ * Persistence is enabled so you can shut down your CP members concurrently
+ * if you enabled CP Subsystem Persistence. Please see {@link CPSubsystem}
+ * to learn more about the shut-down behaviour of CP members.</strong> It is
+ * enough for users to recall this rule while shutting down CP members when
+ * CP Subsystem Persistence is disabled. Interested users can read the rest of
+ * this paragraph to learn the reasoning behind this rule. Each shutdown
+ * request internally requires a Raft commit to the METADATA CP group when CP
+ * Subsystem Persistence is disabled. A CP member proceeds to shutdown after it
+ * receives a response of this commit. To be able to perform a Raft commit,
+ * the METADATA CP group must have its majority up and running. When only 2 CP
+ * members are left after graceful shutdowns, the majority of the METADATA CP
+ * group becomes 2. If the last 2 CP members shut down concurrently, one of
+ * them is likely to perform its Raft commit faster than the other one and
+ * leave the cluster before the other CP member completes its Raft commit.
+ * In this case, the last CP member waits for a response of its commit attempt
+ * on the METADATA CP group, and times out eventually. This situation causes
+ * an unnecessary delay on shutdown process of the last CP member. On the other
+ * hand, when the last 2 CP members shut down serially, the N-1th member
+ * receives the response of its commit after its shutdown request is committed
+ * also on the last CP member. Then, the last CP member checks its local data
+ * to notice that it is the last CP member alive, and proceeds its shutdown
+ * without attempting a Raft commit on the METADATA CP group.
+ * <p>
  * CP Subsystem's fault tolerance capabilities are summarized below.
  * For the sake of simplicity, let's assume that both the CP member count and
- * CP group size configurations are configured as N and we use only
- * the DEFAULT CP group. <strong>In the bullet list below, "a permanent crash"
+ * CP group size configurations are configured as the same and we use only
+ * the DEFAULT CP group. <strong>In the list below, "a permanent crash"
  * means that a CP member either crashes while CP Subsystem Persistence is
  * disabled, hence it cannot be recovered with its CP identity and data, or
  * it crashes while CP Subsystem Persistence is enabled but its CP data cannot
@@ -235,7 +269,7 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * </strong>
  * <ul>
  * <li>If a CP member leaves the Hazelcast cluster, it is not automatically
- * removed from CP Subsystem because CP Subsystem may not certainly determine
+ * removed from CP Subsystem because CP Subsystem cannot certainly determine
  * if that member has actually crashed or just disconnected from the cluster.
  * Therefore, absent CP members are still considered in majority calculations
  * and cause a danger for the availability of CP Subsystem. If the user knows
@@ -252,7 +286,7 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * a crashed CP member is the Raft leader for some CP groups, those CP groups
  * run a new leader election round to elect a new leader among remaining CP
  * group members. CP Subsystem API calls that internally hit those CP groups
- * are retried until they have Raft leaders. If a failed CP member has
+ * are retried until they have new Raft leaders. If a failed CP member has
  * the Raft follower role, it causes a very minimal disruption since Raft
  * leaders are still able to replicate and commit operations with the majority
  * of their CP group members.</li>
@@ -262,15 +296,15 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * is not able to restore its CP data from disk because after it joins back to
  * the cluster it notices that it is no longer a CP member. Because of that, it
  * fails its startup process and prints an error message. The only thing to do
- * in this case is manually delete its CP persistence directory because its
- * data is no longer useful. On the other hand, if CP Subsystem Persistence is
+ * in this case is manually delete its CP persistence directory since its data
+ * is no longer useful. On the other hand, if CP Subsystem Persistence is
  * disabled, a failed CP member cannot remember anything related to its
  * previous CP identity, hence it restarts as a new AP member.</li>
- * <li>A CP member can be encounter a connection issue with the cluster and
- * disconnect from the cluster. If it is removed from CP Subsystem by the user
- * even though this CP member is actually alive but only disconnected, this
- * CP member should be terminated to prevent any accidental communication
- * with the other CP members in CP Subsystem.</li>
+ * <li>A CP member can be encounter a network issue and disconnect from
+ * the cluster. If it is removed from CP Subsystem by the user even though this
+ * CP member is actually alive but only disconnected, this CP member should be
+ * terminated to prevent any accidental communication with the other CP members
+ * in CP Subsystem.</li>
  * <li>If a network partition occurs, behaviour of CP Subsystem depends on how
  * CP members are divided in different sides of the network partition and
  * to which sides Hazelcast clients are connected. Each CP group remains
@@ -285,18 +319,19 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * than N / 2 + 1) for availability. If N / 2 + 1 or more CP members crash, CP
  * Subsystem loses its availability. If CP Subsystem Persistence is enabled and
  * the majority of CP members become online by successfully restarting some of
- * failed CP members, CP Subsystem regains its availability back. Otherwise, it
- * means that CP Subsystem has lost its majority irrevocably. In this case,
- * the only solution is to perform a force-reset which wipes-out the whole CP
- * Subsystem state via {@link CPSubsystemManagementService#restart()}.</li>
+ * failed CP members, CP Subsystem regains its availability back. <strong>
+ * Otherwise, it means that CP Subsystem has lost its majority irrevocably.
+ * </strong> In this case, the only solution is to wipe-out the whole CP
+ * Subsystem state by performing a force-reset via
+ * {@link CPSubsystemManagementService#restart()}.</li>
  * </ul>
  * <p>
  * <strong>When {@link CPSubsystemConfig#getCPMemberCount()} is greater than
  * {@link CPSubsystemConfig#getGroupSize()}, CP groups are formed by selecting
- * a subset of CP members. Each CP group can have a different set of CP
- * members, therefore different fault-tolerance and availability conditions.
- * In the following bullet list, CP Subsystem's additional fault tolerance
- * capabilities are discussed for this configuration case.</strong>
+ * a subset of CP members. In this case, each CP group can have a different set
+ * of CP members, therefore different fault-tolerance and availability
+ * conditions.</strong> In the following list, CP Subsystem's additional fault
+ * tolerance capabilities are discussed for this configuration case.
  * <ul>
  * <li>When the majority of a non-METADATA CP group permanently crash, that CP
  * group cannot make progress anymore, even though other CP groups in CP
@@ -316,12 +351,12 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * to perform membership changes on CP Subsystem.</li>
  * <li>If the majority of the METADATA CP group permanently crash,
  * unfortunately it is equivalent to the permanent crash of the majority
- * members of the whole CP Subsystem, even though other CP groups are running
- * fine. In fact, existing CP groups continue serving to incoming requests, but
- * since the METADATA CP group is not available anymore, no management tasks
- * can be performed on CP Subsystem. For instance, a new CP group cannot be
- * created. The only solution is to perform a force-reset which wipes-out
- * the whole CP Subsystem state via
+ * CP members of the whole CP Subsystem, even though other CP groups are
+ * running fine. In fact, existing CP groups continue serving to incoming
+ * requests, but since the METADATA CP group is not available anymore, no
+ * management tasks can be performed on CP Subsystem. For instance, a new CP
+ * group cannot be created. The only solution is to perform a force-reset
+ * which wipes-out the whole CP Subsystem state via
  * {@link CPSubsystemManagementService#restart()}.</li>
  * </ul>
  *
@@ -346,7 +381,7 @@ public interface CPSubsystem {
      * register. When a network partition occurs, proxies that exist on the
      * minority side of its CP group lose availability.
      * <p>
-     * <strong>Each call of this method performs a commit to the Metadata CP
+     * <strong>Each call of this method performs a commit to the METADATA CP
      * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @param name name of the {@link IAtomicLong} proxy
@@ -369,7 +404,7 @@ public interface CPSubsystem {
      * behaves as a CP register. When a network partition occurs, proxies that
      * exist on the minority side of its CP group lose availability.
      * <p>
-     * <strong>Each call of this method performs a commit to the Metadata CP
+     * <strong>Each call of this method performs a commit to the METADATA CP
      * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @param name name of the {@link IAtomicReference} proxy
@@ -392,7 +427,7 @@ public interface CPSubsystem {
      * partition occurs, proxies that exist on the minority side of its CP
      * group lose availability.
      * <p>
-     * <strong>Each call of this method performs a commit to the Metadata CP
+     * <strong>Each call of this method performs a commit to the METADATA CP
      * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @param name name of the {@link ICountDownLatch} proxy
@@ -414,7 +449,7 @@ public interface CPSubsystem {
      * proxies that exist on the minority side of its CP group lose
      * availability.
      * <p>
-     * <strong>Each call of this method performs a commit to the Metadata CP
+     * <strong>Each call of this method performs a commit to the METADATA CP
      * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @see FencedLockConfig
@@ -438,7 +473,7 @@ public interface CPSubsystem {
      * partition occurs, proxies that exist on the minority side of its CP
      * group lose availability.
      * <p>
-     * <strong>Each call of this method performs a commit to the Metadata CP
+     * <strong>Each call of this method performs a commit to the METADATA CP
      * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @see CPSemaphoreConfig

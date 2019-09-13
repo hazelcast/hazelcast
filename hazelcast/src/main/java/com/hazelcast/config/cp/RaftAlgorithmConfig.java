@@ -135,7 +135,7 @@ public class RaftAlgorithmConfig {
      * requests. After a Raft leader sends an append entries request to
      * a follower, it will not send a subsequent append entries request either
      * until the follower responds or this timeout occurs. Backoff durations
-     * are increased exponentially if followers get unresponsive.
+     * are increased exponentially if followers remain unresponsive.
      */
     private long appendRequestBackoffTimeoutInMillis = DEFAULT_APPEND_REQUEST_BACKOFF_TIMEOUT_IN_MILLIS;
 
