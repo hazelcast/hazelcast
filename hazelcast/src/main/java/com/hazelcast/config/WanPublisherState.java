@@ -56,7 +56,7 @@ public enum WanPublisherState {
      * it will become available. Once it becomes available, you can then switch
      * the publisher state to REPLICATING to begin replicating to that cluster.
      *
-     * @see WanReplicationService#clearQueues(String, String)
+     * @see WanReplicationService#removeWanEvents(String, String)
      */
     STOPPED((byte) 2, false, false);
 

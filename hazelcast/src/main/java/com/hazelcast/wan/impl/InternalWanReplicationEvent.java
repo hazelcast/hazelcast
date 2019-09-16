@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 import com.hazelcast.wan.WanReplicationEvent;
 
+import javax.annotation.Nonnull;
 import java.util.Set;
 
 /**
@@ -29,12 +30,14 @@ public interface InternalWanReplicationEvent extends WanReplicationEvent {
     /**
      * Returns the key for the entry on which the event occurred.
      */
+    @Nonnull
     Data getKey();
 
     /**
      * Returns the set of cluster group names on which this event has already
      * been processed.
      */
+    @Nonnull
     Set<String> getGroupNames();
 
     /**

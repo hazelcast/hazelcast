@@ -37,14 +37,14 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * is a container for multiple WAN publishers.
  * When publishing an event on this delegate, all publishers are notified.
  */
-public final class WanReplicationPublisherDelegate {
+public final class WanReplicationPublishersContainer {
     /** Non-null WAN replication name */
     final String name;
     /** Non-null WAN publishers, grouped by publisher ID */
     final ConcurrentMap<String, WanReplicationPublisher> publishers;
 
-    public WanReplicationPublisherDelegate(String name,
-                                           ConcurrentMap<String, WanReplicationPublisher> publishers) {
+    public WanReplicationPublishersContainer(@Nonnull String name,
+                                             @Nonnull ConcurrentMap<String, WanReplicationPublisher> publishers) {
         checkNotNull(name, "WAN publisher name should not be null");
         checkNotNull(publishers, "WAN publisher map should not be null");
         this.name = name;
@@ -65,9 +65,12 @@ public final class WanReplicationPublisherDelegate {
         return publishers.get(publisherId);
     }
 
-    public void addPublisher(String publisherId,
-                             WanReplicationPublisher publisher) {
-        publishers.put(publisherId, publisher);
+    public void addPublisher(@Nonnull String publisherId,
+                             @Nonnull WanReplicationPublisher publisher) {
+        if (publishers.putIfAbsent(publisherId, publisher) != null) {
+            throw new IllegalStateException("Publisher with publisher ID " + publisherId
+                    + " on WAN replication scheme " + name + " is already present and cannot be overriden");
+        }
     }
 
     public String getName() {
@@ -119,7 +122,7 @@ public final class WanReplicationPublisherDelegate {
 
     public void checkWanReplicationQueues() {
         for (WanReplicationPublisher publisher : publishers.values()) {
-            publisher.prepareForReplicationEventPublication();
+            publisher.doPrepublicationChecks();
         }
     }
 

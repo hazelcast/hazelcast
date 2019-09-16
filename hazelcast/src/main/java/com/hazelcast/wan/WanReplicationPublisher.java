@@ -61,12 +61,11 @@ public interface WanReplicationPublisher<T> {
     }
 
     /**
-     * Prepares the publisher for event publication or performs pre-publication
-     * checks (e.g. enforcing invariants).
+     * Performs pre-publication checks (e.g. enforcing invariants).
      * Invoked before {@link #publishReplicationEvent(WanReplicationEvent)}
      * and {@link #publishReplicationEventBackup(WanReplicationEvent)}.
      */
-    void prepareForReplicationEventPublication();
+    void doPrepublicationChecks();
 
     /**
      * Publish the {@code eventObject} WAN replication event.
@@ -166,16 +165,6 @@ public interface WanReplicationPublisher<T> {
     }
 
     /**
-     * Removes all WAN events pending replication.
-     * If the publisher does not store WAN events, this method is a no-op.
-     * Invoked when clearing the WAN replication data, e.g. because of a REST call.
-     * NOTE: used only in Hazelcast Enterprise.
-     */
-    default int removeWanEvents() {
-        return 0;
-    }
-
-    /**
      * Returns a container containing the WAN events for the given replication
      * {@code event} and {@code namespaces} to be replicated. The replication
      * here refers to the intra-cluster replication between members in a single
@@ -222,7 +211,17 @@ public interface WanReplicationPublisher<T> {
     }
 
     /**
-     * Removes all WAN events pending replication and belonging to the provided
+     * Removes all WAN events awaiting replication.
+     * If the publisher does not store WAN events, this method is a no-op.
+     * Invoked when clearing the WAN replication data, e.g. because of a REST call.
+     * NOTE: used only in Hazelcast Enterprise.
+     */
+    default int removeWanEvents() {
+        return 0;
+    }
+
+    /**
+     * Removes all WAN events awaiting replication and belonging to the provided
      * service and partition.
      * If the publisher does not store WAN events, this method is a no-op.
      * Invoked when migrating WAN replication data between members in a cluster.

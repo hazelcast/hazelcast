@@ -25,6 +25,7 @@ import com.hazelcast.wan.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.impl.InternalWanReplicationEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
@@ -41,11 +42,13 @@ public class MapReplicationRemove implements InternalWanReplicationEvent, Identi
     public MapReplicationRemove() {
     }
 
+    @Nonnull
     @Override
     public Data getKey() {
         return key;
     }
 
+    @Nonnull
     @Override
     public Set<String> getGroupNames() {
         // called only in EE

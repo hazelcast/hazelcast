@@ -57,7 +57,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MemoryInfoAccessor;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
-import com.hazelcast.wan.impl.WanReplicationPublisherDelegate;
+import com.hazelcast.wan.impl.WanReplicationPublishersContainer;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.HashMap;
@@ -103,7 +103,7 @@ public class MapContainer {
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
 
     protected SplitBrainMergePolicy wanMergePolicy;
-    protected WanReplicationPublisherDelegate wanReplicationDelegate;
+    protected WanReplicationPublishersContainer wanReplicationDelegate;
 
     protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
@@ -312,7 +312,7 @@ public class MapContainer {
         return globalIndexes != null;
     }
 
-    public WanReplicationPublisherDelegate getWanReplicationDelegate() {
+    public WanReplicationPublishersContainer getWanReplicationDelegate() {
         return wanReplicationDelegate;
     }
 

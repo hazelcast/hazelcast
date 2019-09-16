@@ -46,7 +46,7 @@ public class FullQueueWanReplication implements WanReplicationPublisher {
     }
 
     @Override
-    public void prepareForReplicationEventPublication() {
+    public void doPrepublicationChecks() {
         throw new WANReplicationQueueFullException("WAN event queue is full");
     }
 }

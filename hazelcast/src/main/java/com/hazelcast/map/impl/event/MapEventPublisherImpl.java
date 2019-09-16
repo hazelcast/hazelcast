@@ -39,7 +39,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.impl.InternalWanReplicationEvent;
-import com.hazelcast.wan.impl.WanReplicationPublisherDelegate;
+import com.hazelcast.wan.impl.WanReplicationPublishersContainer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -123,7 +123,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
      */
     protected void publishWanEvent(String mapName, InternalWanReplicationEvent event) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        WanReplicationPublisherDelegate wanReplicationPublisher
+        WanReplicationPublishersContainer wanReplicationPublisher
                 = mapContainer.getWanReplicationDelegate();
         if (isOwnedPartition(event.getKey())) {
             wanReplicationPublisher.publishReplicationEvent(event);

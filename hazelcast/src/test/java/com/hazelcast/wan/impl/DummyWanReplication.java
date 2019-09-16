@@ -52,7 +52,7 @@ class DummyWanReplication implements WanReplicationPublisher {
     }
 
     @Override
-    public void prepareForReplicationEventPublication() {
+    public void doPrepublicationChecks() {
     }
 
     Queue<WanReplicationEvent> getEventQueue() {

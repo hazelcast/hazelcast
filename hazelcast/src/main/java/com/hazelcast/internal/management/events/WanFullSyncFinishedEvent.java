@@ -23,9 +23,9 @@ import java.util.UUID;
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_FINISHED_FULL;
 
 public class WanFullSyncFinishedEvent extends AbstractWanSyncFinishedEvent {
-    public WanFullSyncFinishedEvent(UUID uuid, String wanReplicationName, String targetGroupName, String mapName,
+    public WanFullSyncFinishedEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName,
                                     long durationSecs, long recordsSynced, int partitionsSynced) {
-        super(uuid, wanReplicationName, targetGroupName, mapName, durationSecs, recordsSynced, partitionsSynced);
+        super(uuid, wanReplicationName, wanPublisherId, mapName, durationSecs, recordsSynced, partitionsSynced);
     }
 
     @Override
