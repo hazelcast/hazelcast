@@ -25,7 +25,6 @@ import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.IndexAttributeConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -49,8 +48,10 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
@@ -514,17 +515,13 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             indexConfBuilder.addPropertyValue("type", type);
 
             // Resolve columns.
-            ManagedList<BeanDefinition> columns = new ManagedList<BeanDefinition>();
+            List<String> columns = new ArrayList<>();
 
             for (Node columnsNode : childElements(indexNode)) {
                 if ("attributes".equals(cleanNodeName(columnsNode))) {
                     for (Node columnNode : childElements(columnsNode)) {
                         if ("attribute".equals(cleanNodeName(columnNode))) {
-                            BeanDefinitionBuilder columnBuilder = createBeanBuilder(IndexAttributeConfig.class);
-
-                            columnBuilder.addPropertyValue("name", getTextContent(columnNode));
-
-                            columns.add(columnBuilder.getBeanDefinition());
+                            columns.add(getTextContent(columnNode));
                         }
                     }
                 }
