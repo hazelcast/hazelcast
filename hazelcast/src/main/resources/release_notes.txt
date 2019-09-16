@@ -1,5 +1,14 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.2 - VISA ====
+
+1. Enhancements
+
+* Introduced CP Subsystem Persistence which enables CP members to recover from crash scenarios.
+See the CP Subsystem Persistence section in Hazelcast IMDG Reference Manual.
+* Improved the CP Subsystem chapter's whole content by enhancing the CP fault tolerance content and
+reorganizing the sections for the new CP Subsystem Persistence section.
+
 ==== 3.12.2 ====
 
 1. Enhancements 
