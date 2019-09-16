@@ -103,11 +103,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
 
     @Override
     public String getClusterName() {
-        final String clusterName = client.getClientConfig().getClusterName();
-        if (clusterName == null) {
-            throw new RuntimeException("Cluster name cannot be null on the client which participates in XA Transaction");
-        }
-        return clusterName;
+        return client.getClientConfig().getClusterName();
     }
 
     public ClientConnection connect() throws Exception {
