@@ -47,7 +47,9 @@ public final class ArrayDataSerializableFactory implements VersionedDataSerializ
     }
 
     @Override
-    public IdentifiedDataSerializable create(int typeId, Version version) {
+    public IdentifiedDataSerializable create(int typeId,
+                                             Version clusterVersion,
+                                             Version wanProtocolVersion) {
         if (typeId >= 0 && typeId < len) {
             ConstructorFunction<Integer, IdentifiedDataSerializable> factory = constructors[typeId];
             if (factory == null) {
@@ -55,7 +57,7 @@ public final class ArrayDataSerializableFactory implements VersionedDataSerializ
             }
             if (factory instanceof VersionAwareConstructorFunction) {
                 return ((VersionAwareConstructorFunction<Integer, IdentifiedDataSerializable>) factory)
-                        .createNew(typeId, version);
+                        .createNew(typeId, clusterVersion, wanProtocolVersion);
             } else {
                 return factory.createNew(typeId);
             }

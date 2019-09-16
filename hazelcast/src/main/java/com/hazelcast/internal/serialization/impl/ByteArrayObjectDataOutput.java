@@ -433,6 +433,7 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
             buffer = new byte[initialSize * 8];
         }
         version = UNKNOWN;
+        wanProtocolVersion = UNKNOWN;
     }
 
     @Override

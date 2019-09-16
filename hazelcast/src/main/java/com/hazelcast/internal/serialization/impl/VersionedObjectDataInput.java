@@ -34,72 +34,41 @@ import static com.hazelcast.version.Version.UNKNOWN;
 abstract class VersionedObjectDataInput extends InputStream implements ObjectDataInput {
 
     protected Version version = Version.UNKNOWN;
+    protected Version wanProtocolVersion = Version.UNKNOWN;
 
     @Override
     public Version getWanProtocolVersion() {
-        return isWanProtocolVersionSet()
-                ? Version.of(-1 * version.getMajor(), version.getMinor())
-                : UNKNOWN;
+        return wanProtocolVersion;
     }
 
-    /**
-     * {@inheritDoc}
-     * The {@link #version} field is used for both the WAN protocol version and
-     * intra-cluster message versioning so the output stream can only have one
-     * of the {@link #setVersion(Version)} or
-     * {@link #setWanProtocolVersion(Version)} set at a time.
-     */
+    @Override
     public void setWanProtocolVersion(Version version) {
-        this.version = Version.of(-1 * version.getMajor(), version.getMinor());
+        this.wanProtocolVersion = version;
+        this.version = UNKNOWN;
     }
 
     /**
      * {@inheritDoc}
      * If the serializer supports versioning it may set the version to use for
      * the intra-cluster message serialization on this object.
-     * The {@link #version} field is used for both the WAN protocol version and
-     * intra-cluster message versioning so the output stream can only have one
-     * of the {@link #setVersion(Version)} or
-     * {@link #setWanProtocolVersion(Version)} set at a time.
      *
      * @return the version of {@link Version#UNKNOWN} if the version is unknown to the object.
      */
     @Override
     public Version getVersion() {
-        return isWanProtocolVersionSet() ? UNKNOWN : version;
+        return version;
     }
 
     /**
      * {@inheritDoc}
      * If the serializer supports versioning it may set the version to use for
      * the intra-cluster message serialization on this object.
-     * The {@link #version} field is used for both the WAN protocol version and
-     * intra-cluster message versioning so the output stream can only have one
-     * of the {@link #setVersion(Version)} or
-     * {@link #setWanProtocolVersion(Version)} set at a time.
      *
      * @param version version to set
      */
     @Override
     public void setVersion(Version version) {
         this.version = version;
-    }
-
-    /**
-     * Returns the raw, unformatted version set on this instance. On the other
-     * hand, both {@link #getVersion()} and {@link #getWanProtocolVersion()}
-     * will return conditional and formatted versions.
-     *
-     * @return the raw, unformatted version set on this instance
-     */
-    public Version getRawVersion() {
-        return version;
-    }
-
-    /**
-     * Returns {@code true} if WAN protocol version is set, {@code false} otherwise.
-     */
-    private boolean isWanProtocolVersionSet() {
-        return version.getMajor() < 0;
+        this.wanProtocolVersion = UNKNOWN;
     }
 }

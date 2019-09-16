@@ -32,22 +32,13 @@ import static com.hazelcast.version.Version.UNKNOWN;
  * the serialization on this object.
  */
 abstract class VersionedObjectDataOutput extends OutputStream implements ObjectDataOutput, VersionAware {
-    /**
-     * Used for both WAN protocol version and intra-cluster message versioning.
-     * Negative major version numbers indicate that the WAN protocol version is
-     * set while positive major version numbers indicate that the intra-cluster
-     * message version is set.
-     */
     protected Version version = Version.UNKNOWN;
+    protected Version wanProtocolVersion = Version.UNKNOWN;
 
     /**
      * {@inheritDoc}
      * If the serializer supports versioning it may set the version to use for
      * the intra-cluster message serialization on this object.
-     * The {@link #version} field is used for both the WAN protocol version and
-     * intra-cluster message versioning so the output stream can only have one
-     * of the {@link #setVersion(Version)} or
-     * {@link #setWanProtocolVersion(Version)} set at a time.
      *
      * @return the version of {@link Version#UNKNOWN} if the version is unknown to the object.
      */
@@ -60,53 +51,23 @@ abstract class VersionedObjectDataOutput extends OutputStream implements ObjectD
      * {@inheritDoc}
      * If the serializer supports versioning it may set the version to use for
      * the intra-cluster message serialization on this object.
-     * The {@link #version} field is used for both the WAN protocol version and
-     * intra-cluster message versioning so the output stream can only have one
-     * of the {@link #setVersion(Version)} or
-     * {@link #setWanProtocolVersion(Version)} set at a time.
      *
      * @param version version to set
      */
     @Override
     public void setVersion(Version version) {
         this.version = version;
+        this.wanProtocolVersion = UNKNOWN;
     }
 
-    /**
-     * Returns the raw, unformatted version set on this instance. On the other
-     * hand, both {@link #getVersion()} and {@link #getWanProtocolVersion()}
-     * will return conditional and formatted versions.
-     *
-     * @return the raw, unformatted version set on this instance
-     */
-    public Version getRawVersion() {
-        return version;
-    }
-
-    /**
-     * {@inheritDoc}
-     * The {@link #version} field is used for both the WAN protocol version and
-     * intra-cluster message versioning so the output stream can only have one
-     * of the {@link #setVersion(Version)} or
-     * {@link #setWanProtocolVersion(Version)} set at a time.
-     */
     @Override
     public void setWanProtocolVersion(Version version) {
-        this.version = Version.of(-1 * version.getMajor(), version.getMinor());
+        this.wanProtocolVersion = version;
+        this.version = UNKNOWN;
     }
 
     @Override
     public Version getWanProtocolVersion() {
-        // WAN protocol version is set when major version is negative
-        return isWanProtocolVersionSet()
-                ? Version.of(-1 * version.getMajor(), version.getMinor())
-                : UNKNOWN;
-    }
-
-    /**
-     * Returns {@code true} if WAN protocol version is set, {@code false} otherwise.
-     */
-    public boolean isWanProtocolVersionSet() {
-        return version.getMajor() < 0;
+        return wanProtocolVersion;
     }
 }

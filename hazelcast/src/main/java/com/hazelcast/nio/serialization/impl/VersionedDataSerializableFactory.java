@@ -39,10 +39,14 @@ public interface VersionedDataSerializableFactory extends DataSerializableFactor
     /**
      * Creates an IdentifiedDataSerializable instance using given type ID and object version
      *
-     * @param typeId  IdentifiedDataSerializable type ID
-     * @param version version of the IdentifiedDataSerializable to create
+     * @param typeId             IdentifiedDataSerializable type ID
+     * @param clusterVersion     version of the object it should create - it's cluster version bound, since
+     *                           objects change between release only. May be {@link Version#UNKNOWN} if the
+     *                           WAN protocol version is set or cluster version is not available
+     * @param wanProtocolVersion WAN protocol version. May be {@link Version#UNKNOWN} if the
+     *                           cluster version is set or WAN protocol version is not available
      * @return IdentifiedDataSerializable instance or null if type ID is not known by this factory
      * @see MemberVersion
      */
-    IdentifiedDataSerializable create(int typeId, Version version);
+    IdentifiedDataSerializable create(int typeId, Version clusterVersion, Version wanProtocolVersion);
 }
