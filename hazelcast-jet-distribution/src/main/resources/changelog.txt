@@ -1,3 +1,17 @@
+** Hazelcast Jet 3.2 **
+
+* New stateful mapping/flat-mapping and filtering operators allows possibility for
+advanced stateful computation such as custom windows and pattern matching.
+* New test sources and assertion sinks to help with unit testing of pipelines.
+* Job-specific metrics are now available via Job API and it's also possible to store and
+query the final metrics for completed jobs.
+* New S3 source and sink which can be used to read from and write to Amazon Web Services
+S3 buckets.
+* IMap sources and sinks have been rewritten to make better use of cooperative
+multi-threading, resulting in significantly increased performance.
+* Various job lifecycle improvements to allow small batch jobs to run with less latency.
+* Updated Hazelcast IMDG version to 3.12.2.
+
 ** Hazelcast Jet 3.1 **
 
 * Apache Beam Runner for Hazelcast Jet is released. For more details please see https://beam.apache.org/documentation/runners/jet/

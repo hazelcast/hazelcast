@@ -5,6 +5,50 @@ issues at https://github.com/hazelcast/hazelcast-jet/issues/<issue number>.
 
 The label in the brackets refer to the respective module.
 
+** Hazelcast Jet 3.2 **
+
+1. New Features
+
+[pipeline-api] Add test sources and assertion sinks which can be used for testing pipelines [#1457]
+[pipeline-api] {map/flatMap/filter}Stateful operator which enables new kinds of stateful processing [#1516]
+[core] Add ability to query job metrics through Job API and add option to store metrics for completed jobs [#1459]
+[s3] Add sources and sinks for Amazon AWS S3 [#1538]
+
+2. Enhancements
+
+[pipeline-api] Add ability to adapt AggregateOperation1 to Hazelcast Aggregtor [#1513]
+[pipeline-api] IMDG map and cache reader is with a much faster, cooperative reader [#1514]
+[pipeline-api] IMDG map writer is replaced with faster, cooperative writer [#1539, #1545]
+[jet-cli] Add support for YAML configuration to CLI [#1475]
+[code-samples] Code samples have been moved to the main Jet repository [#1546]
+[core] Support for multigraphs in DAG [#1332]
+[core] Cap number of job results in the cluster to 1,000 and add configuration property [#1495]
+[core] Replace job ID generator with FlakeID [#1488]
+[core] Update Hazelcast to 3.12.2 [#1515]
+[core] Add ability to configure both min and max idle time for both cooperative/non-cooperative threads [#1507]
+[core] Make it optional to enable/disable metrics for a specific job [#1509]
+[core] Add extended information to DOT format output [#1526]
+
+3. Fixes
+
+[pipeline-api] Timestamp transform should match parallelism of upstream transform [#1563]
+[pipeline-api] Add missing serializability checks for sources and sinks [#1455]
+[pipeline-api] Default to lower parallelism of 2 for non-cooperative context factory [#1571]
+[jet-cli] Saved snapshots and running jobs should be sorted by name and sanitized [#1556]
+[jet-cli] Fix default group name in cluster.sh [#1577]
+[core] Do not use blocking client threads where possible [#1485]
+[core] Fix for checking system property for shutdown hook registration [#1461]
+[core] Fix for mixing and matching Hazelcast XML and YAML configuration with Jet XML or YAML [#1474]
+[core] Avoid creating job resources map if it won't be needed [#1493]
+[core] Do not attempt to clear snapshot maps on job starts [#1494]
+[core] Fix race which may happen between cancellation and restarting [#1544]
+[core] Fix race which may happen during multiple clients calling the same job [#1557]
+[core] Fix for races when getting job status and config that could result in job being reported as missing [#1567]
+[core] Make snapshots logs less noisy [#1573]
+[core] Fix for deadlock when many jobs are restarting at the same time [#1583]
+[core] Add more details to exceptions if a job fails with TopologyChangedException [#1595]
+[core] Add consistent exception if job.join() is called before or after job is completed [#1600, #1612]
+
 ** Hazelcast Jet 3.1 **
 
 1. New Features
