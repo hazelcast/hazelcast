@@ -100,6 +100,9 @@ final class ClientCacheHelper {
             Future<ClientMessage> future = clientInvocation.invoke();
             final ClientMessage response = future.get();
             final CacheConfigHolder cacheConfigHolder = CacheCreateConfigCodec.decodeResponse(response).response;
+            if (cacheConfigHolder == null) {
+                return null;
+            }
             return cacheConfigHolder.asCacheConfig(serializationService);
         } catch (Exception e) {
             throw rethrow(e);

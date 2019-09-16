@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 public final class CacheConfigHolderCodec {
     private static final int BACKUP_COUNT_OFFSET = 0;
     private static final int ASYNC_BACKUP_COUNT_OFFSET = BACKUP_COUNT_OFFSET + Bits.INT_SIZE_IN_BYTES;
-    private static final int IS_READ_THROUGH_OFFSET = ASYNC_BACKUP_COUNT_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
+    private static final int IS_READ_THROUGH_OFFSET = ASYNC_BACKUP_COUNT_OFFSET + Bits.INT_SIZE_IN_BYTES;
     private static final int IS_WRITE_THROUGH_OFFSET = IS_READ_THROUGH_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int IS_STORE_BY_VALUE_OFFSET = IS_WRITE_THROUGH_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
     private static final int IS_MANAGEMENT_ENABLED_OFFSET = IS_STORE_BY_VALUE_OFFSET + Bits.BOOLEAN_SIZE_IN_BYTES;
