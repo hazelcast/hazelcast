@@ -45,13 +45,13 @@ import java.util.concurrent.locks.Lock;
  * <p>
  * By default, {@link FencedLock} is reentrant. Once a caller acquires
  * the lock, it can acquire the lock reentrantly as many times as it wants
- * in a linearizable manner. You can configure the reentrancy behaviour via
+ * in a linearizable manner. You can configure the reentrancy behavior via
  * {@link FencedLockConfig}. For instance, reentrancy can be disabled and
  * {@link FencedLock} can work as a non-reentrant mutex. One can also set
  * a custom reentrancy limit. When the reentrancy limit is reached,
  * {@link FencedLock} does not block a lock call. Instead, it fails with
  * {@link LockAcquireLimitReachedException} or a specified return value.
- * Please check the locking methods to see details about the behaviour.
+ * Please check the locking methods to see details about the behavior.
  * <p>
  * Distributed locks are unfortunately NOT EQUIVALENT to single-node mutexes
  * because of the complexities in distributed systems, such as uncertain

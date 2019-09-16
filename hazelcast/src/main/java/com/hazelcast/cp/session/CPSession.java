@@ -53,7 +53,7 @@ import com.hazelcast.nio.Address;
  * resources can be released prematurely. On the other hand, if a large value
  * is set, a session could be kept alive for an unnecessarily long duration
  * even if its owner actually crashes. However, it is a safer approach to
- * not to use a small session time to live duration. If a session owner is
+ * not to use a small session time-to-live duration. If a session owner is
  * known to be crashed, its session could be closed manually via
  * {@link CPSessionManagementService#forceCloseSession(String, long)}.
  *

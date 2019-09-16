@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit;
  * CP group, in order not to decrease or more importantly not to lose
  * the majority of CP groups. If there is no available CP member to replace
  * a shutting down CP member in a CP group, that group's size is reduced by 1
- * and its majority value is recalculated. Please note that this behaviour is
+ * and its majority value is recalculated. Please note that this behavior is
  * when CP Subsystem Persistence is disabled. When CP Subsystem Persistence is
  * enabled, shut-down CP members are not automatically removed from the active
  * CP members list and they are still considered as part of CP groups

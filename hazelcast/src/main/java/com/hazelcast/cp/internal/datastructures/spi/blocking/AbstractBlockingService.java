@@ -58,7 +58,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Base class for services that maintain blocking resources.
- * Contains common behaviour that will be needed by service implementations.
+ * Contains common behavior that will be needed by service implementations.
  *
  * @param <W> concrete type of the WaitKey
  * @param <R> concrete type of the resource
