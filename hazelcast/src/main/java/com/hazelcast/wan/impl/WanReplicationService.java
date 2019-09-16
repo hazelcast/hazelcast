@@ -190,7 +190,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * Returns a counter of sent and processed WAN replication events.
      *
      * @param wanReplicationName the name of the wan replication config
-     * @param wanPublisherId     the publisher ID
+     * @param wanPublisherId     WAN replication publisher ID
      * @param serviceName        the name of the service for the WAN events
      * @return the WAN event counter
      */
