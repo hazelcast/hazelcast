@@ -64,9 +64,9 @@ public class IndexConfigTest {
         config2.addAttribute("col2");
         assertEquals(expected, config1.equals(config2));
 
-        List<IndexAttributeConfig> cols = new LinkedList<>();
-        cols.add(new IndexAttributeConfig("col1"));
-        cols.add(new IndexAttributeConfig("col2"));
+        List<String> cols = new LinkedList<>();
+        cols.add("col1");
+        cols.add("col2");
         config2.setAttributes(cols);
         assertEquals(expected, config1.equals(config2));
 
@@ -80,22 +80,27 @@ public class IndexConfigTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testColumnElementNull() {
+    public void testAttributesNull() {
+        new IndexConfig().setAttributes(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testAttributeNull() {
         new IndexConfig().setAttributes(Collections.singletonList(null));
     }
 
     @Test(expected = NullPointerException.class)
-    public void testColumnNameNull() {
-        new IndexAttributeConfig().setName(null);
+    public void testAttributeNullAdd() {
+        new IndexConfig().addAttribute(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testColumnNameEmpty() {
-        new IndexAttributeConfig("");
+    public void testAttributeEmpty() {
+        new IndexConfig().setAttributes(Collections.singletonList(""));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testColumnDescending() {
-        new IndexAttributeConfig().setAscending(false);
+    public void testAttributeEmptyAdd() {
+        new IndexConfig().addAttribute("");
     }
 }

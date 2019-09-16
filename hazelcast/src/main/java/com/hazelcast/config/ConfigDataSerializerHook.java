@@ -103,9 +103,8 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int AWS_CONFIG = 61;
     public static final int DISCOVERY_CONFIG = 62;
     public static final int DISCOVERY_STRATEGY_CONFIG = 63;
-    public static final int INDEX_ATTRIBUTE = 64;
 
-    private static final int LEN = INDEX_ATTRIBUTE + 1;
+    private static final int LEN = DISCOVERY_STRATEGY_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -184,7 +183,6 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[AWS_CONFIG] = arg -> new AwsConfig();
         constructors[DISCOVERY_CONFIG] = arg -> new DiscoveryConfig();
         constructors[DISCOVERY_STRATEGY_CONFIG] = arg -> new DiscoveryStrategyConfig();
-        constructors[INDEX_ATTRIBUTE] = arg -> new IndexAttributeConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

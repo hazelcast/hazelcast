@@ -117,7 +117,7 @@ public class AttributeCanonicalizationTest {
 
         for (int i = 0; i < expAttributes.length; i++) {
             String expAttribute = expAttributes[i];
-            String attribute = normalizedConfig.getAttributes().get(i).getName();
+            String attribute = normalizedConfig.getAttributes().get(i);
 
             assertEquals(expAttribute, attribute);
 

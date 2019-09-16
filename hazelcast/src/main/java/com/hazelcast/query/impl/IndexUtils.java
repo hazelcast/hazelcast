@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DomConfigHelper;
-import com.hazelcast.config.IndexAttributeConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.util.UuidUtil;
@@ -26,7 +25,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -61,7 +59,7 @@ public final class IndexUtils {
         assert config != null;
 
         // Validate attributes.
-        List<String> originalAttributeNames = getAttributeNames(config);
+        List<String> originalAttributeNames = config.getAttributes();
 
         if (originalAttributeNames.isEmpty()) {
             throw new IllegalArgumentException("Index must have at least one attribute: " + config);
@@ -180,30 +178,6 @@ public final class IndexUtils {
     }
 
     /**
-     * Get attribute names of the given index.
-     *
-     * @param config Index config.
-     * @return Attribute names.
-     */
-    private static List<String> getAttributeNames(IndexConfig config) {
-        if (config.getAttributes().isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<String> res = new ArrayList<>(config.getAttributes().size());
-
-        for (IndexAttributeConfig attribute : config.getAttributes()) {
-            if (attribute == null) {
-                throw new NullPointerException("Attribute cannot be null [indexConfig=" + config + ']');
-            }
-
-            res.add(attribute.getName());
-        }
-
-        return res;
-    }
-
-    /**
      * Produces canonical attribute representation by stripping an unnecessary
      * "this." qualifier from the passed attribute, if any.
      *
@@ -217,12 +191,12 @@ public final class IndexUtils {
     public static String[] getComponents(IndexConfig config) {
         assert config != null;
 
-        List<IndexAttributeConfig> attributes = config.getAttributes();
+        List<String> attributes = config.getAttributes();
 
         String[] res = new String[attributes.size()];
 
         for (int i = 0; i < attributes.size(); i++) {
-            res[i] = attributes.get(i).getName();
+            res[i] = attributes.get(i);
         }
 
         return res;
@@ -277,8 +251,8 @@ public final class IndexUtils {
 
             gen.open("attributes");
 
-            for (IndexAttributeConfig attribute : indexCfg.getAttributes()) {
-                gen.node("attribute", attribute.getName());
+            for (String attribute : indexCfg.getAttributes()) {
+                gen.node("attribute", attribute);
             }
 
             gen.close();

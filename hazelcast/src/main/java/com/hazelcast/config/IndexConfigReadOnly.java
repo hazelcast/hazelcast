@@ -42,20 +42,11 @@ public class IndexConfigReadOnly extends IndexConfig {
     }
 
     @Override
-    public List<IndexAttributeConfig> getAttributes() {
-        List<IndexAttributeConfig> attributes = super.getAttributes();
-        List<IndexAttributeConfig> res = new ArrayList<>(attributes.size());
-
-        for (IndexAttributeConfig attribute : attributes) {
-            res.add(attribute.getAsReadOnly());
-        }
+    public List<String> getAttributes() {
+        List<String> attributes = super.getAttributes();
+        List<String> res = new ArrayList<>(attributes);
 
         return Collections.unmodifiableList(res);
-    }
-
-    @Override
-    public IndexConfig addAttribute(IndexAttributeConfig attribute) {
-        throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
@@ -64,12 +55,7 @@ public class IndexConfigReadOnly extends IndexConfig {
     }
 
     @Override
-    protected void addAttributeInternal(IndexAttributeConfig attribute) {
-        super.addAttributeInternal(attribute.getAsReadOnly());
-    }
-
-    @Override
-    public IndexConfig setAttributes(List<IndexAttributeConfig> attributes) {
+    public IndexConfig setAttributes(List<String> attributes) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

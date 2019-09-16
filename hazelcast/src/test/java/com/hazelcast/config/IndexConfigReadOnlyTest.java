@@ -33,10 +33,6 @@ public class IndexConfigReadOnlyTest {
         return new IndexConfig().getAsReadOnly();
     }
 
-    private static IndexAttributeConfig getColumnConfig() {
-        return new IndexAttributeConfig().getAsReadOnly();
-    }
-
     @Test(expected = UnsupportedOperationException.class)
     public void setType() {
         getConfig().setType(IndexType.SORTED);
@@ -49,7 +45,7 @@ public class IndexConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setColumns() {
-        getConfig().setAttributes(Collections.singletonList(new IndexAttributeConfig("column")));
+        getConfig().setAttributes(Collections.singletonList("column"));
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -59,16 +55,6 @@ public class IndexConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void addColumn2() {
-        getConfig().addAttribute(new IndexAttributeConfig("column"));
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setColumnName() {
-        getColumnConfig().setName("column");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setColumnAscending() {
-        getColumnConfig().setAscending(true);
+        getConfig().addAttribute("column");
     }
 }

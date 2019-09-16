@@ -19,10 +19,10 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.IndexUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
@@ -38,7 +38,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Index could be created on one or more attributes.
  *
  * @see com.hazelcast.config.IndexType
- * @see IndexAttributeConfig
  * @see com.hazelcast.config.MapConfig#setIndexConfigs(List)
  */
 public class IndexConfig implements IdentifiedDataSerializable {
@@ -52,10 +51,19 @@ public class IndexConfig implements IdentifiedDataSerializable {
     private IndexType type = DEFAULT_TYPE;
 
     /** Indexed attributes. */
-    private List<IndexAttributeConfig> attributes;
+    private List<String> attributes;
 
     public IndexConfig() {
         // No-op.
+    }
+
+    /**
+     * Creates an index configuration of the given type.
+     *
+     * @param type Index type.
+     */
+    public IndexConfig(IndexType type) {
+        setType(type);
     }
 
     /**
@@ -65,7 +73,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @param attributes Attributes to be indexed.
      */
     public IndexConfig(IndexType type, String... attributes) {
-        setType(type);
+        this(type);
 
         if (attributes != null) {
             for (String attribute : attributes) {
@@ -78,8 +86,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
         this.name = other.name;
         this.type = other.type;
 
-        for (IndexAttributeConfig attribute : other.getAttributes()) {
-            addAttributeInternal(new IndexAttributeConfig(attribute.getName()));
+        for (String attribute : other.getAttributes()) {
+            addAttributeInternal(attribute);
         }
     }
 
@@ -134,7 +142,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
      *
      * @return Index attributes.
      */
-    public List<IndexAttributeConfig> getAttributes() {
+    public List<String> getAttributes() {
         if (attributes == null) {
             attributes = new ArrayList<>();
         }
@@ -143,30 +151,22 @@ public class IndexConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds an index attribute with the given name and default sort order.
+     * Adds an index attribute with the given.
      *
      * @param attribute Attribute name.
      * @return This instance for chaining.
      */
     public IndexConfig addAttribute(String attribute) {
-        return addAttribute(new IndexAttributeConfig(attribute));
-    }
-
-    /**
-     * Adds an index attribute.
-     *
-     * @param attribute Index attribute.
-     * @return This instance for chaining.
-     */
-    public IndexConfig addAttribute(IndexAttributeConfig attribute) {
         addAttributeInternal(attribute);
 
         return this;
     }
 
-    protected void addAttributeInternal(IndexAttributeConfig attribute) {
+    public void addAttributeInternal(String attribute) {
+        IndexUtils.validateAttribute(attribute);
+
         if (attributes == null) {
-            attributes = new ArrayList<>(1);
+            attributes = new ArrayList<>();
         }
 
         attributes.add(attribute);
@@ -178,20 +178,14 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @param attributes Index attributes.
      * @return This instance for chaining.
      */
-    public IndexConfig setAttributes(List<IndexAttributeConfig> attributes) {
-        if (attributes == null) {
-            attributes = Collections.emptyList();
-        } else {
-            attributes = new ArrayList<>(attributes);
-        }
+    public IndexConfig setAttributes(List<String> attributes) {
+        checkNotNull(attributes, "Index attributes cannot be null.");
 
-        for (IndexAttributeConfig attribute : attributes) {
-            if (attribute == null) {
-                throw new NullPointerException("Attribute cannot be null.");
-            }
-        }
+        this.attributes = new ArrayList<>(attributes.size());
 
-        this.attributes = attributes;
+        for (String attribute : attributes) {
+            addAttribute(attribute);
+        }
 
         return this;
     }

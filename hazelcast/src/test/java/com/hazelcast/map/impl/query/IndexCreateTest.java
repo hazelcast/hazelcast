@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.IndexAttributeConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
@@ -198,10 +197,10 @@ public class IndexCreateTest extends HazelcastTestSupport {
                 assertEquals(indexConfig.getAttributes().size(), index.getComponents().length);
 
                 for (int i = 0; i < indexConfig.getAttributes().size(); i++) {
-                    IndexAttributeConfig expAttribute = indexConfig.getAttributes().get(i);
+                    String expAttributeName = indexConfig.getAttributes().get(i);
                     String componentName = index.getComponents()[i];
 
-                    assertEquals(IndexUtils.canonicalizeAttribute(expAttribute.getName()), componentName);
+                    assertEquals(IndexUtils.canonicalizeAttribute(expAttributeName), componentName);
                 }
             }
         }
@@ -244,8 +243,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
             res.append("hash");
         }
 
-        for (IndexAttributeConfig attribute : config.getAttributes()) {
-            res.append("_").append(IndexUtils.canonicalizeAttribute(attribute.getName()));
+        for (String attribute : config.getAttributes()) {
+            res.append("_").append(IndexUtils.canonicalizeAttribute(attribute));
         }
 
         return res.toString();

@@ -2408,7 +2408,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
         assertTrue(mapConfig.isReadBackupData());
         assertEquals(1, mapConfig.getIndexConfigs().size());
-        assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0).getName());
+        assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
         assertTrue(mapConfig.getIndexConfigs().get(0).getType() == IndexType.SORTED);
         assertEquals(1, mapConfig.getMapAttributeConfigs().size());
         assertEquals("com.bank.CurrencyExtractor", mapConfig.getMapAttributeConfigs().get(0).getExtractor());
@@ -2488,7 +2488,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, IndexConfig indexConfig) {
-        assertEquals(expectedAttribute, indexConfig.getAttributes().get(0).getName());
+        assertEquals(expectedAttribute, indexConfig.getAttributes().get(0));
         assertEquals(expectedOrdered, indexConfig.getType() == IndexType.SORTED);
     }
 
@@ -2708,7 +2708,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
         for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
-            assertEquals("name", indexConfig.getAttributes().get(0).getName());
+            assertEquals("name", indexConfig.getAttributes().get(0));
             assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
     }
