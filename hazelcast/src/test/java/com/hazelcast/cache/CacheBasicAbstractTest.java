@@ -732,13 +732,13 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 map.put(data, value1);
             }
 
-            int nextTableIndex = Integer.MAX_VALUE;
+            IterationPointer[] pointers = {new IterationPointer(Integer.MAX_VALUE, -1)};
             int total = 0;
             int remaining = testSize;
-            while (remaining > 0 && nextTableIndex > 0) {
+            while (remaining > 0 && pointers[pointers.length - 1].getIndex() > 0) {
                 int size = (remaining > fetchSize ? fetchSize : remaining);
                 List<Data> keys = new ArrayList<Data>(size);
-                nextTableIndex = map.fetchKeys(nextTableIndex, size, keys);
+                pointers = map.fetchKeys(pointers, size, keys);
                 remaining -= keys.size();
                 total += keys.size();
             }

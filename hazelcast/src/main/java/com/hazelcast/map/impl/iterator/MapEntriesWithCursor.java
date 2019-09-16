@@ -29,8 +29,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Container class for a collection of entries along with an offset from which new entries can be fetched.
- * This class is usually used when iterating the map entries.
+ * Container class for a collection of entries along with pointers defining
+ * the iteration state from which new keys can be fetched.
+ * This class is usually used when iterating map entries.
  *
  * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator
  */
@@ -39,8 +40,8 @@ public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Data>> 
     public MapEntriesWithCursor() {
     }
 
-    public MapEntriesWithCursor(List<Map.Entry<Data, Data>> entries, int nextTableIndexToReadFrom) {
-        super(entries, nextTableIndexToReadFrom);
+    public MapEntriesWithCursor(List<Map.Entry<Data, Data>> entries, IterationPointer[] pointers) {
+        super(entries, pointers);
     }
 
     @Override

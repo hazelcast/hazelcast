@@ -64,7 +64,7 @@ public class CacheClusterWideIteratorTest extends HazelcastTestSupport {
     public boolean prefetchValues;
 
     protected Iterator getIterator(Cache cache) {
-        return new ClusterWideIterator((CacheProxy) cache, prefetchValues);
+        return new CachePartitionsIterator((CacheProxy) cache, prefetchValues);
     }
 
     @Before

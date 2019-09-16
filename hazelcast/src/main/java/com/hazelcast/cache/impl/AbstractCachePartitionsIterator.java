@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 
 import javax.cache.Cache;
@@ -25,51 +26,62 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * {@link AbstractClusterWideIterator} provides the core iterator functionality shared by its descendants.
+ * {@link AbstractCachePartitionsIterator} provides the core iterator functionality
+ * shared by its descendants.
  * <p>
- * <p>Hazelcast cluster is made of partitions which holds a slice of all clusters data. Partition count
- * never increase or decrease in a cluster. In order to implement an iterator over a partitioned data, we use
+ * <p>The Hazelcast cluster is made out of partitions which holds a slice of
+ * the cluster data. The partition count never increases or decreases in a
+ * cluster. In order to implement an iterator over a partitioned data, we use
  * the following parameters.
  * <ul>
- * <li>To iterate over partitioned data, we use partitionId as the first parameter of this iterator.</li>
- * <li>Each partition may have a lot of entries, so we use a second parameter to track the iteration of the
- * partition.</li>
+ * <li>the {@code partitionId}</li>
+ * <li>Each partition may have a lot of entries, so we use a second parameter
+ * to track the iteration of the partition.</li>
  * </ul>
+ * </p>
  * <p>
  * Iteration steps:
  * <ul>
- * <li>fetching fixed sized of keys from the current partition defined by partitionId.</li>
+ * <li>fetching fixed number of keys from the partition defined by {@code partitionId}.</li>
  * <li>iteration on fetched keys.</li>
- * <li>get value of each key with {@link #next()} when method is called.</li>
- * <li>when fetched keys are all used by calling {@link #next()}, more keys are fetched from the cluster.</li>
+ * <li>get value of a key when the {@link #next()} method is called.</li>
+ * <li>when fetched keys are exhausted by calling {@link #next()}, more keys
+ * are fetched from the cluster.</li>
  * </ul>
- * This implementation iterates over partitions and for each partition it iterates over the internal map using the
- * internal table index of the map {@link com.hazelcast.internal.util.SampleableConcurrentHashMap}.
+ * This implementation iterates over partitions and for each partition it
+ * iterates over the internal map using the {@link IterationPointer}s.
+ * </p>
  * <p>
  * <h2>Fetching data from cluster:</h2>
- * Fetching is getting a fixed size of keys from the internal table of records of a partition defined by
- * partitionId. Table index is also provided as a table index locator. Fetch response is the keys and
- * last table index. The last table index is included in the result to be used in the next fetch.
+ * Fetching is getting a fixed size of keys from the internal table of records
+ * of a partition defined by {@code partitionId} and the
+ * {@link IterationPointer}s. The fetch response is the keys and the
+ * {@link IterationPointer}s used for the following fetch operation.
+ * </p>
  * <p>
  * <h2>Notes:</h2>
  * <ul>
  * <li>Iterator fetches keys in batch with a fixed size that is configurable.</li>
  * <li>Fetched keys are cached in the iterator to be used in each iteration step.</li>
- * <li>{@link #hasNext()} may return true for a key already removed.</li>
- * <li>{@link #hasNext()} only return false when all known keys are fetched and iterated.</li>
- * <li>{@link #next()} may return null although cache never has null value. This may happen when, for example,
- * someone removes the entry after the current thread has checked with {@link #hasNext()}.</li>
- * <li>This implementation does not affected by value updates as each value is got from the cluster
- * when {@link #next()} called.</li>
+ * <li>{@link #hasNext()} may return {@code true} for a key already removed.</li>
+ * <li>{@link #hasNext()} may only return {@code false} when all known keys
+ * are fetched and iterated.</li>
+ * <li>{@link #next()} may return {@code null} although the cache does not
+ * have a {@code null} value. This may happen, for example, when someone
+ * removes the entry after the current thread has checked with
+ * {@link #hasNext()}.</li>
+ * <li>This implementation is not affected by value updates as each value is
+ * retrieved from the cluster when {@link #next()} called.</li>
  * </ul>
+ * </p>
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
- * @see com.hazelcast.cache.impl.CacheRecordStore#fetchKeys(int tableIndex, int size)
- * @see com.hazelcast.cache.impl.ClusterWideIterator
- * @see CacheKeyIterationResult
+ * @see com.hazelcast.cache.impl.CacheRecordStore#fetchKeys(IterationPointer[], int)
+ * @see CachePartitionsIterator
+ * @see CacheKeysWithCursor
  */
-public abstract class AbstractClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
+public abstract class AbstractCachePartitionsIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
 
     protected static final int DEFAULT_FETCH_SIZE = 100;
 
@@ -80,13 +92,13 @@ public abstract class AbstractClusterWideIterator<K, V> implements Iterator<Cach
     protected int partitionIndex = -1;
 
     /**
-     * The table is segment table of hash map, which is an array that stores the actual records.
-     * This field is used to mark where the latest entry is read.
-     * <p>
-     * The iteration will start from highest index available to the table.
-     * It will be converted to array size on the server side.
+     * The iteration pointers define the iteration state over a backing map.
+     * Each array item represents an iteration state for a certain size of the
+     * backing map structure (either allocated slot count for HD or table size
+     * for on-heap). Each time the table is resized, this array will carry an
+     * additional iteration pointer.
      */
-    protected int lastTableIndex = Integer.MAX_VALUE;
+    protected IterationPointer[] pointers;
 
     protected final int fetchSize;
     protected boolean prefetchValues;
@@ -94,11 +106,15 @@ public abstract class AbstractClusterWideIterator<K, V> implements Iterator<Cach
     protected int index;
     protected int currentIndex = -1;
 
-    public AbstractClusterWideIterator(ICacheInternal<K, V> cache, int partitionCount, int fetchSize, boolean prefetchValues) {
+    public AbstractCachePartitionsIterator(ICacheInternal<K, V> cache,
+                                           int partitionCount,
+                                           int fetchSize,
+                                           boolean prefetchValues) {
         this.cache = cache;
         this.partitionCount = partitionCount;
         this.fetchSize = fetchSize;
         this.prefetchValues = prefetchValues;
+        resetPointers();
     }
 
     @Override
@@ -140,9 +156,10 @@ public abstract class AbstractClusterWideIterator<K, V> implements Iterator<Cach
 
     protected boolean advance() {
         while (partitionIndex < getPartitionCount()) {
-            if (result == null || result.size() < fetchSize || lastTableIndex < 0) {
+            if (result == null || result.size() < fetchSize
+                    || pointers[pointers.length - 1].getIndex() < 0) {
                 partitionIndex++;
-                lastTableIndex = Integer.MAX_VALUE;
+                resetPointers();
                 result = null;
                 if (partitionIndex == getPartitionCount()) {
                     return false;
@@ -189,9 +206,23 @@ public abstract class AbstractClusterWideIterator<K, V> implements Iterator<Cach
         }
     }
 
-    protected void setLastTableIndex(List response, int lastTableIndex) {
+    /**
+     * Resets the iteration state.
+     */
+    protected void resetPointers() {
+        pointers = new IterationPointer[]{new IterationPointer(Integer.MAX_VALUE, -1)};
+    }
+
+    /**
+     * Sets the iteration state to the state defined by the {@code pointers}
+     * if the given response contains items.
+     *
+     * @param response the iteration response
+     * @param pointers the pointers defining the state of iteration
+     */
+    protected void setLastTableIndex(List response, IterationPointer[] pointers) {
         if (response != null && response.size() > 0) {
-            this.lastTableIndex = lastTableIndex;
+            this.pointers = pointers;
         }
     }
 

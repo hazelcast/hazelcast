@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchKeysCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.internal.nio.Connection;
@@ -36,8 +37,10 @@ public class MapFetchKeysMessageTask extends AbstractMapPartitionMessageTask<Map
 
     @Override
     protected Operation prepareOperation() {
+        // TODO add client support for IterationPointer
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        return operationProvider.createFetchKeysOperation(parameters.name, parameters.tableIndex, parameters.batch);
+        IterationPointer[] pointers = {new IterationPointer(parameters.tableIndex, -1)};
+        return operationProvider.createFetchKeysOperation(parameters.name, pointers, parameters.batch);
     }
 
     @Override
@@ -51,7 +54,9 @@ public class MapFetchKeysMessageTask extends AbstractMapPartitionMessageTask<Map
             return MapFetchKeysCodec.encodeResponse(0, Collections.<Data>emptyList());
         }
         MapKeysWithCursor mapKeysWithCursor = (MapKeysWithCursor) response;
-        return MapFetchKeysCodec.encodeResponse(mapKeysWithCursor.getNextTableIndexToReadFrom(), mapKeysWithCursor.getBatch());
+        IterationPointer[] pointers = mapKeysWithCursor.getIterationPointers();
+        return MapFetchKeysCodec.encodeResponse(
+                pointers[pointers.length - 1].getIndex(), mapKeysWithCursor.getBatch());
     }
 
     @Override

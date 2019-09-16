@@ -831,23 +831,32 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Returns an iterator for iterating entries in the {@code partitionId}. If {@code prefetchValues} is
-     * {@code true}, values will be sent along with the keys and no additional data will be fetched when
-     * iterating. If {@code false}, only keys will be sent and values will be fetched when calling {@code
-     * Map.Entry.getValue()} lazily.
+     * Returns an iterator for iterating entries in the {@code partitionId}. If
+     * {@code prefetchValues} is {@code true}, values will be sent along with
+     * the keys and no additional data will be fetched when iterating. If
+     * {@code false}, only keys will be sent and values will be fetched when
+     * calling {@code Map.Entry.getValue()} lazily.
      * <p>
-     * The entries are not fetched one-by-one but in batches.
-     * You may control the size of the batch by changing the {@code fetchSize} parameter.
-     * A too small {@code fetchSize} can affect performance since more data will have to be sent to and from the partition owner.
-     * A too high {@code fetchSize} means that more data will be sent which can block other operations from being sent,
-     * including internal operations.
-     * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
-     * a "safepoint" to resume iteration later.
+     * The values are fetched in batches.
+     * You may control the size of the batch by changing the {@code fetchSize}
+     * parameter.
+     * A too small {@code fetchSize} can affect performance since more data
+     * will have to be sent to and from the partition owner.
+     * A too high {@code fetchSize} means that more data will be sent which
+     * can block other operations from being sent, including internal
+     * operations.
+     * The underlying implementation may send more values in one batch than
+     * {@code fetchSize} if it needs to get to a "safepoint" to later resume
+     * iteration.
      * <p>
      * <b>NOTE</b>
-     * Iterating the map should be done only when the {@link IMap} is not being
-     * mutated and the cluster is stable (there are no migrations or membership changes).
-     * In other cases, the iterator may not return some entries or may return an entry twice.
+     * The iteration may be done when the map is being mutated or when there are
+     * membership changes. The iterator does not reflect the state when it has
+     * been constructed - it may return some entries that were added after the
+     * iteration has started and may not return some entries that were removed
+     * after iteration has started.
+     * The iterator will not, however, skip an entry if it has not been changed
+     * and will not return an entry twice.
      *
      * @param fetchSize      the size of the batches which will be sent when iterating the data
      * @param partitionId    the partition ID which is being iterated
@@ -860,27 +869,36 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Returns an iterator for iterating the result of the projection on entries in the {@code partitionId} which
-     * satisfy the {@code predicate}.
+     * Returns an iterator for iterating the result of the projection on entries
+     * in the {@code partitionId} which satisfy the {@code predicate}.
      * <p>
-     * The values are not fetched one-by-one but rather in batches.
-     * You may control the size of the batch by changing the {@code fetchSize} parameter.
-     * A too small {@code fetchSize} can affect performance since more data will have to be sent to and from the partition owner.
-     * A too high {@code fetchSize} means that more data will be sent which can block other operations from being sent,
-     * including internal operations.
-     * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
-     * a "safepoint" to later resume iteration.
+     * The values are fetched in batches.
+     * You may control the size of the batch by changing the {@code fetchSize}
+     * parameter.
+     * A too small {@code fetchSize} can affect performance since more data
+     * will have to be sent to and from the partition owner.
+     * A too high {@code fetchSize} means that more data will be sent which
+     * can block other operations from being sent, including internal
+     * operations.
+     * The underlying implementation may send more values in one batch than
+     * {@code fetchSize} if it needs to get to a "safepoint" to later resume
+     * iteration.
      * Predicates of type {@link PagingPredicate} are not supported.
-     * <p>
      * <b>NOTE</b>
-     * Iterating the map should be done only when the {@link IMap} is not being
-     * mutated and the cluster is stable (there are no migrations or membership changes).
-     * In other cases, the iterator may not return some entries or may return an entry twice.
+     * The iteration may be done when the map is being mutated or when there are
+     * membership changes. The iterator does not reflect the state when it has
+     * been constructed - it may return some entries that were added after the
+     * iteration has started and may not return some entries that were removed
+     * after iteration has started.
+     * The iterator will not, however, skip an entry if it has not been changed
+     * and will not return an entry twice.
      *
      * @param fetchSize   the size of the batches which will be sent when iterating the data
      * @param partitionId the partition ID which is being iterated
-     * @param projection  the projection to apply before returning the value. {@code null} value is not allowed
-     * @param predicate   the predicate which the entries must match. {@code null} value is not allowed
+     * @param projection  the projection to apply before returning the value. {@code null} value
+     *                    is not allowed
+     * @param predicate   the predicate which the entries must match. {@code null} value is not
+     *                    allowed
      * @param <R>         the return type
      * @return the iterator for the projected entries
      * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}

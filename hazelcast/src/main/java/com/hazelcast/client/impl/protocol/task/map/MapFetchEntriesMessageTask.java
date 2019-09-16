@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -28,7 +29,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.Collections;
-import java.util.Map;
 
 public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<MapFetchEntriesCodec.RequestParameters> {
     public MapFetchEntriesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -37,8 +37,10 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
 
     @Override
     protected Operation prepareOperation() {
+        // TODO add client support for IterationPointer
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        return operationProvider.createFetchEntriesOperation(parameters.name, parameters.tableIndex, parameters.batch);
+        IterationPointer[] pointers = {new IterationPointer(parameters.tableIndex, -1)};
+        return operationProvider.createFetchEntriesOperation(parameters.name, pointers, parameters.batch);
     }
 
     @Override
@@ -49,11 +51,12 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
     @Override
     protected ClientMessage encodeResponse(Object response) {
         if (response == null) {
-            return MapFetchEntriesCodec.encodeResponse(0, Collections.<Map.Entry<Data, Data>>emptyList());
+            return MapFetchEntriesCodec.encodeResponse(0, Collections.emptyList());
         }
         MapEntriesWithCursor mapEntriesWithCursor = (MapEntriesWithCursor) response;
-        return MapFetchEntriesCodec.encodeResponse(mapEntriesWithCursor.getNextTableIndexToReadFrom(),
-                mapEntriesWithCursor.getBatch());
+        IterationPointer[] pointers = mapEntriesWithCursor.getIterationPointers();
+        return MapFetchEntriesCodec.encodeResponse(
+                pointers[pointers.length - 1].getIndex(), mapEntriesWithCursor.getBatch());
     }
 
     @Override

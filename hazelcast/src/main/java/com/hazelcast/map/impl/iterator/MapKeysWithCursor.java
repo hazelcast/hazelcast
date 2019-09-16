@@ -26,8 +26,9 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Container class for a collection of keys along with an offset from which new keys can be fetched.
- * This class is usually used when iterating the map keys.
+ * Container class for a collection of keys along with pointers defining
+ * the iteration state from which new keys can be fetched.
+ * This class is usually used when iterating map keys.
  *
  * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator
  */
@@ -36,8 +37,8 @@ public class MapKeysWithCursor extends AbstractCursor<Data> {
     public MapKeysWithCursor() {
     }
 
-    public MapKeysWithCursor(List<Data> keys, int nextTableIndexToReadFrom) {
-        super(keys, nextTableIndexToReadFrom);
+    public MapKeysWithCursor(List<Data> keys, IterationPointer[] pointers) {
+        super(keys, pointers);
     }
 
     public int getCount() {

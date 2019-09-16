@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -29,28 +30,31 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>Response data object returned by {@link com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation }.</p>
- * This result wrapper is used in {@link AbstractClusterWideIterator}'s subclasses to return a collection of entries
- * and the last tableIndex processed.
+ * Container class for a collection of entries along with pointers defining
+ * the iteration state from which new keys can be fetched.
+ * This class is usually used when iterating cache entries.
  *
- * @see AbstractClusterWideIterator
- * @see com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation
+ * @see CacheProxy#iterator
  */
-public class CacheEntryIterationResult implements IdentifiedDataSerializable {
-
-    private int tableIndex;
+public class CacheEntriesWithCursor implements IdentifiedDataSerializable {
     private List<Map.Entry<Data, Data>> entries;
+    private IterationPointer[] pointers;
 
-    public CacheEntryIterationResult() {
+    public CacheEntriesWithCursor() {
     }
 
-    public CacheEntryIterationResult(List<Map.Entry<Data, Data>> entries, int tableIndex) {
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    public CacheEntriesWithCursor(List<Map.Entry<Data, Data>> entries, IterationPointer[] pointers) {
         this.entries = entries;
-        this.tableIndex = tableIndex;
+        this.pointers = pointers;
     }
 
-    public int getTableIndex() {
-        return tableIndex;
+    /**
+     * Returns the iteration pointers representing the current iteration state.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
+    public IterationPointer[] getPointers() {
+        return pointers;
     }
 
     public List<Map.Entry<Data, Data>> getEntries() {
@@ -69,7 +73,11 @@ public class CacheEntryIterationResult implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(tableIndex);
+        out.writeInt(pointers.length);
+        for (IterationPointer pointer : pointers) {
+            out.writeInt(pointer.getIndex());
+            out.writeInt(pointer.getSize());
+        }
         int size = entries.size();
         out.writeInt(size);
         for (Map.Entry<Data, Data> entry : entries) {
@@ -80,9 +88,13 @@ public class CacheEntryIterationResult implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        tableIndex = in.readInt();
+        int pointersCount = in.readInt();
+        pointers = new IterationPointer[pointersCount];
+        for (int i = 0; i < pointersCount; i++) {
+            pointers[i] = new IterationPointer(in.readInt(), in.readInt());
+        }
         int size = in.readInt();
-        entries = new ArrayList<Map.Entry<Data, Data>>(size);
+        entries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Data key = IOUtil.readData(in);
             Data value = IOUtil.readData(in);
@@ -92,7 +104,7 @@ public class CacheEntryIterationResult implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "CacheEntryIteratorResult{tableIndex=" + tableIndex + '}';
+        return "CacheEntryIteratorResult";
     }
 
     public int getCount() {

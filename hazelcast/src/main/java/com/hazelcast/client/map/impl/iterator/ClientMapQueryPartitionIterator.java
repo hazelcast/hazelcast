@@ -23,7 +23,8 @@ import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.map.IMap;
+import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.iterator.AbstractMapQueryPartitionIterator;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
@@ -36,12 +37,18 @@ import java.util.List;
 import java.util.Map.Entry;
 
 /**
- * Iterator for iterating map entries in the {@code partitionId}. The values are not fetched one-by-one but rather in batches.
- * The {@link Iterator#remove()} method is not supported and will throw an {@link UnsupportedOperationException}.
+ * Iterator for iterating map entries in the {@code partitionId}. The values
+ * are not fetched one-by-one but rather in batches.
+ * The {@link Iterator#remove()} method is not supported and will throw a
+ * {@link UnsupportedOperationException}.
  * <b>NOTE</b>
- * Iterating the map should be done only when the {@link IMap} is not being
- * mutated and the cluster is stable (there are no migrations or membership changes).
- * In other cases, the iterator may not return some entries or may return an entry twice.
+ * The iteration may be done when the map is being mutated or when there are
+ * membership changes. The iterator does not reflect the state when it has
+ * been constructed - it may return some entries that were added after the
+ * iteration has started and may not return some entries that were removed
+ * after iteration has started.
+ * The iterator will not, however, skip an entry if it has not been changed
+ * and will not return an entry twice.
  */
 public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitionIterator<K, V, R> {
 
@@ -61,18 +68,21 @@ public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPa
 
     @Override
     protected List<Data> fetch() {
-        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
-        final ClientMessage request = MapFetchWithQueryCodec.encodeRequest(mapProxy.getName(), lastTableIndex, fetchSize,
+        // TODO add client support for IterationPointer
+        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
+        ClientMessage request = MapFetchWithQueryCodec.encodeRequest(
+                mapProxy.getName(),
+                pointers[pointers.length - 1].getIndex(),
+                fetchSize,
                 getSerializationService().toData(query.getProjection()),
                 getSerializationService().toData(query.getPredicate()));
-        final ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
+        ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
         try {
-            final ClientInvocationFuture f = clientInvocation.invoke();
-            final MapFetchWithQueryCodec.ResponseParameters responseParameters = MapFetchWithQueryCodec.decodeResponse(f.get());
-
-            final List<Data> results = responseParameters.results;
-
-            setLastTableIndex(results, responseParameters.nextTableIndexToReadFrom);
+            ClientInvocationFuture f = clientInvocation.invoke();
+            MapFetchWithQueryCodec.ResponseParameters responseParameters = MapFetchWithQueryCodec.decodeResponse(f.get());
+            List<Data> results = responseParameters.results;
+            IterationPointer[] pointers = {new IterationPointer(responseParameters.nextTableIndexToReadFrom, -1)};
+            setLastTableIndex(results, pointers);
             return results;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

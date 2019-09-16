@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
-import com.hazelcast.cache.impl.CacheEntryIterationResult;
+import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchEntriesOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.instance.impl.Node;
@@ -30,12 +30,11 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.Collections;
-import java.util.Map;
 
 /**
- * This client request specifically calls {@link CacheEntryIteratorOperation} on the server side.
+ * This client request specifically calls {@link CacheFetchEntriesOperation} on the server side.
  *
- * @see CacheEntryIteratorOperation
+ * @see CacheFetchEntriesOperation
  */
 public class CacheIterateEntriesMessageTask
         extends AbstractCacheMessageTask<CacheIterateEntriesCodec.RequestParameters> {
@@ -46,8 +45,10 @@ public class CacheIterateEntriesMessageTask
 
     @Override
     protected Operation prepareOperation() {
+        // TODO add client support for IterationPointer
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createEntryIteratorOperation(parameters.tableIndex, parameters.batch);
+        IterationPointer[] pointers = {new IterationPointer(parameters.tableIndex, -1)};
+        return operationProvider.createFetchEntriesOperation(pointers, parameters.batch);
     }
 
     @Override
@@ -58,10 +59,12 @@ public class CacheIterateEntriesMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         if (response == null) {
-            return CacheIterateEntriesCodec.encodeResponse(0, Collections.<Map.Entry<Data, Data>>emptyList());
+            return CacheIterateEntriesCodec.encodeResponse(0, Collections.emptyList());
         }
-        CacheEntryIterationResult iteratorResult = (CacheEntryIterationResult) response;
-        return CacheIterateEntriesCodec.encodeResponse(iteratorResult.getTableIndex(), iteratorResult.getEntries());
+        CacheEntriesWithCursor iteratorResult = (CacheEntriesWithCursor) response;
+        IterationPointer[] pointers = iteratorResult.getPointers();
+        return CacheIterateEntriesCodec.encodeResponse(
+                pointers[pointers.length - 1].getIndex(), iteratorResult.getEntries());
     }
 
     @Override

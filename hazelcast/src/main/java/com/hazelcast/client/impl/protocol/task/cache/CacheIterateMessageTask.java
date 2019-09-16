@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
+import com.hazelcast.cache.impl.CacheKeysWithCursor;
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchKeysOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
 import com.hazelcast.instance.impl.Node;
@@ -29,9 +29,9 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.Collections;
 
 /**
- * This client request  specifically calls {@link CacheKeyIteratorOperation} on the server side.
+ * This client request  specifically calls {@link CacheFetchKeysOperation} on the server side.
  *
- * @see CacheKeyIteratorOperation
+ * @see CacheFetchKeysOperation
  */
 public class CacheIterateMessageTask
         extends AbstractCacheMessageTask<CacheIterateCodec.RequestParameters> {
@@ -42,8 +42,10 @@ public class CacheIterateMessageTask
 
     @Override
     protected Operation prepareOperation() {
+        // TODO add client support for IterationPointer
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createKeyIteratorOperation(parameters.tableIndex, parameters.batch);
+        IterationPointer[] pointers = {new IterationPointer(parameters.tableIndex, -1)};
+        return operationProvider.createFetchKeysOperation(pointers, parameters.batch);
     }
 
     @Override
@@ -54,10 +56,11 @@ public class CacheIterateMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         if (response == null) {
-            return CacheIterateCodec.encodeResponse(0, Collections.<Data>emptyList());
+            return CacheIterateCodec.encodeResponse(0, Collections.emptyList());
         }
-        CacheKeyIterationResult keyIteratorResult = (CacheKeyIterationResult) response;
-        return CacheIterateCodec.encodeResponse(keyIteratorResult.getTableIndex(), keyIteratorResult.getKeys());
+        CacheKeysWithCursor keyIteratorResult = (CacheKeysWithCursor) response;
+        IterationPointer[] pointers = keyIteratorResult.getPointers();
+        return CacheIterateCodec.encodeResponse(pointers[pointers.length - 1].getIndex(), keyIteratorResult.getKeys());
     }
 
     @Override
