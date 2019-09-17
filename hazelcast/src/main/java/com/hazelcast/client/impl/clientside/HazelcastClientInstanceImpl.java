@@ -38,6 +38,7 @@ import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.impl.connection.nio.ClusterConnectorServiceImpl;
 import com.hazelcast.client.impl.connection.nio.DefaultClientConnectionStrategy;
+import com.hazelcast.client.impl.management.ManagementCenterService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.protocol.codec.MetricsReadMetricsCodec;
@@ -142,7 +143,6 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -154,6 +154,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.client.properties.ClientProperty.CONCURRENT_WINDOW_MS;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
@@ -168,6 +170,17 @@ import static java.lang.System.currentTimeMillis;
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
+
+    private final ClientMessageDecoder<MetricsResultSet> decodeMetricsResponse = new ClientMessageDecoder<MetricsResultSet>() {
+
+        @Override
+        public MetricsResultSet decodeClientMessage(ClientMessage clientMessage) {
+
+            MetricsReadMetricsCodec.ResponseParameters response = serializationService
+                    .toObject(MetricsReadMetricsCodec.decodeResponse(clientMessage));
+            return new MetricsResultSet(response.nextSequence, response.elements);
+        }
+    };
 
     private final ConcurrencyDetection concurrencyDetection;
     private final HazelcastProperties properties;
@@ -203,6 +216,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientDiscoveryService clientDiscoveryService;
     private final ClientProxySessionManager proxySessionManager;
     private final CPSubsystemImpl cpSubsystem;
+    private final ManagementCenterService managementCenterService;
 
     public HazelcastClientInstanceImpl(ClientConfig clientConfig,
                                        ClientFailoverConfig clientFailoverConfig,
@@ -258,6 +272,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
+        managementCenterService = new ManagementCenterService(this, serializationService);
     }
 
     private ConcurrencyDetection initConcurrencyDetection() {
@@ -827,6 +842,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ClientQueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
+    }
+
+    public ManagementCenterService getManagementCenterService() {
+        return managementCenterService;
     }
 
     public ConcurrencyDetection getConcurrencyDetection() {

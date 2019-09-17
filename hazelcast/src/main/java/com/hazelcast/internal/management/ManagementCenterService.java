@@ -98,6 +98,7 @@ import static java.net.URLEncoder.encode;
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
  */
 public class ManagementCenterService {
+    public static final String SERVICE_NAME = "hz:core:managementCenterService";
 
     private static final int HTTP_SUCCESS = 200;
     private static final int HTTP_NOT_MODIFIED = 304;
@@ -108,7 +109,6 @@ public class ManagementCenterService {
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
-    private final StateSendThread stateSendThread;
     private final PrepareStateThread prepareStateThread;
     private final EventSendThread eventSendThread;
     private final ILogger logger;
@@ -135,7 +135,6 @@ public class ManagementCenterService {
         this.managementCenterUrl = getManagementCenterUrl();
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.taskPollThread = new TaskPollThread();
-        this.stateSendThread = new StateSendThread();
         this.prepareStateThread = new PrepareStateThread();
         this.eventSendThread = new EventSendThread();
         this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
@@ -145,6 +144,10 @@ public class ManagementCenterService {
             this.instance.getCluster().addMembershipListener(new ManagementCenterService.MemberListenerImpl());
             start();
         }
+    }
+
+    public TimedMemberState getTimedMemberState() {
+        return timedMemberState.get();
     }
 
     private String getManagementCenterUrl() {
@@ -188,7 +191,6 @@ public class ManagementCenterService {
 
         taskPollThread.start();
         prepareStateThread.start();
-        stateSendThread.start();
         eventSendThread.start();
         logger.info("Hazelcast will connect to Hazelcast Management Center on address: \n" + managementCenterUrl);
     }
@@ -201,7 +203,6 @@ public class ManagementCenterService {
 
         logger.info("Shutting down Hazelcast Management Center Service");
         try {
-            interruptThread(stateSendThread);
             interruptThread(taskPollThread);
             interruptThread(prepareStateThread);
             interruptThread(eventSendThread);

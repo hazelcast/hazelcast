@@ -73,6 +73,9 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddTopicConfigMessa
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.UpdateMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapEventJournalReadTask;
@@ -137,7 +140,6 @@ import com.hazelcast.cp.internal.session.client.GenerateThreadIdMessageTask;
 import com.hazelcast.cp.internal.session.client.HeartbeatSessionMessageTask;
 import com.hazelcast.flakeidgen.impl.client.NewIdBatchMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.longregister.client.codec.LongRegisterAddAndGetCodec;
 import com.hazelcast.internal.longregister.client.codec.LongRegisterDecrementAndGetCodec;
 import com.hazelcast.internal.longregister.client.codec.LongRegisterGetAndAddCodec;
@@ -154,6 +156,7 @@ import com.hazelcast.internal.longregister.client.task.LongRegisterGetAndSetMess
 import com.hazelcast.internal.longregister.client.task.LongRegisterGetMessageTask;
 import com.hazelcast.internal.longregister.client.task.LongRegisterIncrementAndGetMessageTask;
 import com.hazelcast.internal.longregister.client.task.LongRegisterSetMessageTask;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -2246,6 +2249,21 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                         return new ReadMetricsMessageTask(clientMessage, node, connection);
                     }
                 });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ChangeClusterStateMessageTask(clientMessage, node, connection);
+            }
+        });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCGetMapConfigRequestCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new GetMapConfigMessageTask(clientMessage, node, connection);
+            }
+        });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigRequestCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new UpdateMapConfigMessageTask(clientMessage, node, connection);
+            }
+        });
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
