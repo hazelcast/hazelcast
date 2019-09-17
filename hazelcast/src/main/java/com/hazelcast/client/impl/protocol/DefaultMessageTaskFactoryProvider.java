@@ -77,6 +77,7 @@ import com.hazelcast.client.impl.protocol.task.map.MapPutWithMaxIdleMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapSetTtlMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapSetWithMaxIdleMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.Pre38MapAddNearCacheEntryListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.metrics.ReadMetricsMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorGetAllScheduledMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorSubmitToAddressMessageTask;
@@ -2232,6 +2233,13 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new ReleasePermitsMessageTask(clientMessage, node, connection);
             }
         });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MetricsReadMetricsCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    @Override
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new ReadMetricsMessageTask(clientMessage, node, connection);
+                    }
+                });
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

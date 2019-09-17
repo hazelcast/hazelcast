@@ -23,6 +23,7 @@ import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -68,6 +69,7 @@ import static com.hazelcast.config.ConfigSections.LOCK;
 import static com.hazelcast.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.config.ConfigSections.MAP;
 import static com.hazelcast.config.ConfigSections.MEMBER_ATTRIBUTES;
+import static com.hazelcast.config.ConfigSections.METRICS;
 import static com.hazelcast.config.ConfigSections.MULTIMAP;
 import static com.hazelcast.config.ConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.config.ConfigSections.NETWORK;
@@ -224,6 +226,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleAdvancedNetwork(node);
         } else if (CP_SUBSYSTEM.isEqual(nodeName)) {
             handleCPSubsystem(node);
+        } else if (METRICS.isEqual(nodeName)) {
+            handleMetrics(node);
         } else {
             return true;
         }
@@ -2867,6 +2871,27 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 }
             }
             cpSubsystemConfig.addLockConfig(lockConfig);
+        }
+    }
+
+    private void handleMetrics(Node node) {
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+        metricsConfig.setEnabled(enabled);
+        boolean jmxEnabled = getBooleanValue(getAttribute(node, "jmx-enabled"));
+        metricsConfig.setJmxEnabled(jmxEnabled);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("collection-interval-seconds".equals(nodeName)) {
+                metricsConfig.setCollectionIntervalSeconds(Integer.parseInt(value));
+            } else if ("retention-seconds".equals(nodeName)) {
+                metricsConfig.setRetentionSeconds(Integer.parseInt(value));
+            } else if ("metrics-for-data-structures".equals(nodeName)) {
+                metricsConfig.setMetricsForDataStructuresEnabled(Boolean.parseBoolean(value));
+            } else if ("minimum-level".equals(nodeName)) {
+                metricsConfig.setMinimumLevel(ProbeLevel.valueOf(value));
+            }
         }
     }
 }

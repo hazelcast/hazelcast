@@ -59,6 +59,7 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -3388,4 +3389,25 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("/mnt/optane", yamlConfig.getNativeMemoryConfig().getPersistentMemoryDirectory());
     }
 
+    @Override
+    @Test
+    public void testMetricsConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  metrics:\n"
+                + "    enabled: false\n"
+                + "    jmx-enabled: false\n"
+                + "    collection-interval-seconds: 10\n"
+                + "    retention-seconds: 11\n"
+                + "    metrics-for-data-structures: true\n"
+                + "    minimum-level: DEBUG";
+        Config config = new InMemoryYamlConfig(yaml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.isJmxEnabled());
+        assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
+        assertEquals(11, metricsConfig.getRetentionSeconds());
+        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
+        assertEquals(DEBUG, metricsConfig.getMinimumLevel());
+    }
 }

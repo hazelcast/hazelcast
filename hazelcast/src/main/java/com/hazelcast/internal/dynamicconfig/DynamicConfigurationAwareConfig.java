@@ -35,6 +35,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -1150,6 +1151,18 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setCPSubsystemConfig(CPSubsystemConfig cpSubsystemConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public MetricsConfig getMetricsConfig() {
+        return staticConfig.getMetricsConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

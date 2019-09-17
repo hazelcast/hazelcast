@@ -16,12 +16,13 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.Client;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -34,6 +35,7 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.internal.util.Preconditions;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -108,6 +110,7 @@ public class ClientConfig {
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap;
     private final Set<String> labels;
     private final ConcurrentMap<String, Object> userContext;
+    private MetricsConfig metricsConfig = new MetricsConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -169,6 +172,7 @@ public class ClientConfig {
         }
         labels = new HashSet<>(config.labels);
         userContext = new ConcurrentHashMap<>(config.userContext);
+        metricsConfig = new MetricsConfig(config.metricsConfig);
     }
 
     /**
@@ -960,6 +964,24 @@ public class ClientConfig {
         return userContext.equals(that.userContext);
     }
 
+    /**
+     * Returns the metrics collection config.
+     */
+    @Nonnull
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    /**
+     * Sets the metrics collection config.
+     */
+    @Nonnull
+    public ClientConfig setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
+        Preconditions.checkNotNull(metricsConfig, "metricsConfig");
+        this.metricsConfig = metricsConfig;
+        return this;
+    }
+
     @Override
     @SuppressWarnings({"checkstyle:npathcomplexity"})
     public int hashCode() {
@@ -985,6 +1007,7 @@ public class ClientConfig {
         result = 31 * result + flakeIdGeneratorConfigMap.hashCode();
         result = 31 * result + labels.hashCode();
         result = 31 * result + userContext.hashCode();
+        result = 31 * result + metricsConfig.hashCode();
         return result;
     }
 
@@ -1010,6 +1033,7 @@ public class ClientConfig {
                 + ", userCodeDeploymentConfig=" + userCodeDeploymentConfig
                 + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
                 + ", labels=" + labels
+                + ", metricsConfig=" + metricsConfig
                 + '}';
     }
 }

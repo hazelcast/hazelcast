@@ -3145,3 +3145,11 @@ hazelcast:
         lock-acquire-limit: 1
       lock2:
         lock-acquire-limit: 2
+
+  metrics:
+    enabled: false
+    jmx-enabled: false
+    collection-interval-seconds: 10
+    retention-seconds: 30
+    metrics-for-data-structures: true
+    minimum-level: INFO

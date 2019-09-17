@@ -73,6 +73,7 @@
                 <xs:element name="pn-counter" type="pn-counter" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="advanced-network" type="advanced-network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cp-subsystem" type="cp-subsystem" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="metrics" type="metrics" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -4533,4 +4534,25 @@
             </xs:element>
         </xs:all>
     </xs:complexType>
+
+    <xs:complexType name="metrics">
+        <xs:all>
+            <xs:element name="collection-interval-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
+            <xs:element name="retention-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
+            <xs:element name="metrics-for-data-structures" type="xs:boolean" default="false" minOccurs="0"/>
+            <xs:element name="minimum-level" type="metric-minimum-level" default="MANDATORY" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
+        <xs:attribute name="jmx-enabled" type="xs:boolean" default="true"/>
+    </xs:complexType>
+
+    <xs:simpleType name="metric-minimum-level">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="MANDATORY"/>
+            <xs:enumeration value="INFO"/>
+            <xs:enumeration value="DEBUG"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
 </xs:schema>

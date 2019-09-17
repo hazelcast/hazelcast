@@ -18,12 +18,14 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 
 /**
  * Contains various exception related utility methods.
@@ -224,4 +226,35 @@ public final class ExceptionUtil {
         System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 2, localSideStackTrace.length - 1);
         throwable.setStackTrace(newStackTrace);
     }
+
+    /**
+     * Utility to make sure exceptions inside
+     * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
+     * Exceptions will be caught and logged using the supplied logger.
+     */
+    @Nonnull
+    public static <T> BiConsumer<T, ? super Throwable> withTryCatch(
+            @Nonnull ILogger logger, @Nonnull BiConsumer<T, ? super Throwable> consumer
+    ) {
+        return withTryCatch(logger, "Exception during callback", consumer);
+    }
+
+    /**
+     * Utility to make sure exceptions inside
+     * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
+     * Exceptions will be caught and logged using the supplied logger and message.
+     */
+    @Nonnull
+    public static <T> BiConsumer<T, ? super Throwable> withTryCatch(
+            @Nonnull ILogger logger, @Nonnull String message, @Nonnull BiConsumer<T, ? super Throwable> consumer
+    ) {
+        return (r, t) -> {
+            try {
+                consumer.accept(r, t);
+            } catch (Throwable e) {
+                logger.severe(message, e);
+            }
+        };
+    }
+
 }

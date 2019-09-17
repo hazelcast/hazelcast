@@ -3205,4 +3205,11 @@
         </locks>
     </cp-subsystem>
 
+    <metrics enabled="false" jmx-enabled="false">
+        <collection-interval-seconds>10</collection-interval-seconds>
+        <retention-seconds>30</retention-seconds>
+        <metrics-for-data-structures>true</metrics-for-data-structures>
+        <minimum-level>INFO</minimum-level>
+    </metrics>
+
 </hazelcast>

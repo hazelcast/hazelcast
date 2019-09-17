@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.Client;
-import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.ClientService;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
@@ -29,6 +28,8 @@ import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.cp.internal.CPSubsystemImpl;
 import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
+import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
@@ -39,6 +40,7 @@ import com.hazelcast.client.impl.connection.nio.ClusterConnectorServiceImpl;
 import com.hazelcast.client.impl.connection.nio.DefaultClientConnectionStrategy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
+import com.hazelcast.client.impl.protocol.codec.MetricsReadMetricsCodec;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.proxy.PartitionServiceProxy;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
@@ -65,6 +67,7 @@ import com.hazelcast.client.impl.spi.impl.listener.SmartClientListenerService;
 import com.hazelcast.client.impl.statistics.Statistics;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
@@ -76,6 +79,7 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
@@ -86,13 +90,13 @@ import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -103,6 +107,7 @@ import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
 import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
@@ -110,6 +115,8 @@ import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.ServiceLoader;
@@ -119,8 +126,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -142,6 +147,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -167,6 +173,17 @@ import static java.lang.System.currentTimeMillis;
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
+
+    private final ClientMessageDecoder<MetricsResultSet> decodeMetricsResponse = new ClientMessageDecoder<MetricsResultSet>() {
+
+        @Override
+        public MetricsResultSet decodeClientMessage(ClientMessage clientMessage) {
+
+            MetricsReadMetricsCodec.ResponseParameters response = serializationService
+                    .toObject(MetricsReadMetricsCodec.decodeResponse(clientMessage));
+            return new MetricsResultSet(response.nextSequence, response.elements);
+        }
+    };
 
     private final ConcurrencyDetection concurrencyDetection;
     private final HazelcastProperties properties;
@@ -318,7 +335,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
-        ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel probeLevel = config.getMetricsConfig().getMinimumLevel();
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger, probeLevel);
         return metricsRegistry;
@@ -840,5 +857,18 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ConcurrencyDetection getConcurrencyDetection() {
         return concurrencyDetection;
+    }
+
+    /**
+     * Reads the metrics journal for a given number starting from a specific sequence.
+     */
+    @Nonnull
+    public ICompletableFuture<MetricsResultSet> readMetricsAsync(Member member, long startSequence) {
+        ClientMessage request = MetricsReadMetricsCodec.encodeRequest(member.getUuid(), startSequence);
+        ClientInvocation invocation = new ClientInvocation(this, request, null, member.getAddress());
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(), serializationService, decodeMetricsResponse, false
+        );
     }
 }

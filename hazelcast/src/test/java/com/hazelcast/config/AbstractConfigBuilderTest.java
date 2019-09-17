@@ -539,6 +539,8 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     public abstract void testCPSubsystemConfig();
 
+    public abstract void testMetricsConfig();
+
     protected static void assertAwsConfig(AwsConfig aws) {
         assertEquals("sample-access-key", aws.getProperties().get("access-key"));
         assertEquals("sample-secret-key", aws.getProperties().get("secret-key"));

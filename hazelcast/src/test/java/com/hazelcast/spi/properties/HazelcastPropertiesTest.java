@@ -17,7 +17,6 @@
 package com.hazelcast.spi.properties;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -265,36 +264,18 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getEnum() {
-        config.setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.DEBUG.toString());
-        HazelcastProperties properties = new HazelcastProperties(config);
+        config.getMetricsConfig().setMinimumLevel(ProbeLevel.DEBUG);
 
-        ProbeLevel level = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel level = config.getMetricsConfig().getMinimumLevel();
 
         assertEquals(ProbeLevel.DEBUG, level);
     }
 
     @Test
     public void getEnum_default() {
-        ProbeLevel level = defaultProperties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel level = config.getMetricsConfig().getMinimumLevel();
 
         assertEquals(ProbeLevel.MANDATORY, level);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void getEnum_nonExistingEnum() {
-        config.setProperty(Diagnostics.METRICS_LEVEL.getName(), "notExist");
-        HazelcastProperties properties = new HazelcastProperties(config);
-        properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
-    }
-
-    @Test
-    public void getEnum_ignoredName() {
-        config.setProperty(Diagnostics.METRICS_LEVEL.getName(), "dEbUg");
-        HazelcastProperties properties = new HazelcastProperties(config);
-
-        ProbeLevel level = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
-
-        assertEquals(ProbeLevel.DEBUG, level);
     }
 
     @Test
