@@ -25,9 +25,8 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -38,12 +37,12 @@ import java.util.concurrent.Future;
  * the TransactionLog will contains 4 {@link TransactionLogRecord} instances.
  *
  * planned optimization:
- * Most transaction will be small, but an linkedhashmap is created. Instead use an array and do a
+ * Most transaction will be small, but an hashmap is created. Instead use an array and do a
  * linear search in that array. When there are too many items added, then enable the hashmap.
  */
 public class TransactionLog {
 
-    private final Map<Object, TransactionLogRecord> recordMap = new LinkedHashMap<>();
+    private final Map<Object, TransactionLogRecord> recordMap = new HashMap<>();
 
     public TransactionLog() {
     }
@@ -103,10 +102,7 @@ public class TransactionLog {
 
     public List<Future> rollback(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
-        List<TransactionLogRecord> records = new ArrayList<>(recordMap.values());
-        ListIterator<TransactionLogRecord> iterator = records.listIterator(size());
-        while (iterator.hasPrevious()) {
-            TransactionLogRecord record = iterator.previous();
+        for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record, record.newRollbackOperation());
             futures.add(future);
         }
