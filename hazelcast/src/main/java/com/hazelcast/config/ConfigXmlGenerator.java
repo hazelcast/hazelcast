@@ -892,7 +892,7 @@ public class ConfigXmlGenerator {
             mapNearCacheConfigXmlGenerator(gen, m.getNearCacheConfig());
             wanReplicationConfigXmlGenerator(gen, m.getWanReplicationRef());
             mapIndexConfigXmlGenerator(gen, m);
-            mapAttributeConfigXmlGenerator(gen, m);
+            attributeConfigXmlGenerator(gen, m);
             entryListenerConfigXmlGenerator(gen, m);
             mapPartitionLostListenerConfigXmlGenerator(gen, m);
             mapPartitionStrategyConfigXmlGenerator(gen, m);
@@ -1114,11 +1114,11 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void mapAttributeConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
-        if (!m.getMapAttributeConfigs().isEmpty()) {
+    private static void attributeConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
+        if (!m.getAttributeConfigs().isEmpty()) {
             gen.open("attributes");
-            for (MapAttributeConfig attributeCfg : m.getMapAttributeConfigs()) {
-                gen.node("attribute", attributeCfg.getName(), "extractor", attributeCfg.getExtractor());
+            for (AttributeConfig attributeCfg : m.getAttributeConfigs()) {
+                gen.node("attribute", attributeCfg.getName(), "extractor-class-name", attributeCfg.getExtractorClassName());
             }
             gen.close();
         }

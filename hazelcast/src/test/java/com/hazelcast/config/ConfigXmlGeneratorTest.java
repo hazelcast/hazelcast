@@ -897,7 +897,7 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testMapAttributesConfigWithStoreClass() {
+    public void testAttributesConfigWithStoreClass() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
@@ -925,7 +925,7 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testMapAttributesConfigWithStoreFactory() {
+    public void testAttributesConfigWithStoreFactory() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
@@ -940,9 +940,9 @@ public class ConfigXmlGeneratorTest {
 
     @SuppressWarnings("deprecation")
     private void testMap(MapStoreConfig mapStoreConfig) {
-        MapAttributeConfig attrConfig = new MapAttributeConfig()
+        AttributeConfig attrConfig = new AttributeConfig()
                 .setName("power")
-                .setExtractor("com.car.PowerExtractor");
+                .setExtractorClassName("com.car.PowerExtractor");
 
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig()
                 .setSize(10)
@@ -1016,7 +1016,7 @@ public class ConfigXmlGeneratorTest {
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .addEntryListenerConfig(listenerConfig)
                 .setMapIndexConfigs(singletonList(mapIndexConfig))
-                .addMapAttributeConfig(attrConfig)
+                .addAttributeConfig(attrConfig)
                 .setPartitionLostListenerConfigs(singletonList(
                         new MapPartitionLostListenerConfig("partitionLostListener")));
 
@@ -1028,9 +1028,9 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         MapConfig actualConfig = xmlConfig.getMapConfig("carMap");
-        MapAttributeConfig xmlAttrConfig = actualConfig.getMapAttributeConfigs().get(0);
+        AttributeConfig xmlAttrConfig = actualConfig.getAttributeConfigs().get(0);
         assertEquals(attrConfig.getName(), xmlAttrConfig.getName());
-        assertEquals(attrConfig.getExtractor(), xmlAttrConfig.getExtractor());
+        assertEquals(attrConfig.getExtractorClassName(), xmlAttrConfig.getExtractorClassName());
         assertEquals(expectedConfig, actualConfig);
     }
 

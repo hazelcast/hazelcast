@@ -130,7 +130,7 @@ public class MapContainer {
         initWanReplication(nodeEngine);
         ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
         this.extractors = Extractors.newBuilder(serializationService)
-                                    .setMapAttributeConfigs(mapConfig.getMapAttributeConfigs())
+                                    .setAttributeConfigs(mapConfig.getAttributeConfigs())
                                     .setClassLoader(classloader)
                                     .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),

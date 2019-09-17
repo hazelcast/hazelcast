@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -58,19 +58,19 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("map");
-        mapConfig.addMapAttributeConfig(extractor("name",
+        mapConfig.addAttributeConfig(extractor("name",
                 "com.hazelcast.query.impl.predicates.NestedPredicateWithExtractorTest$BodyNameExtractor"));
-        mapConfig.addMapAttributeConfig(extractor("limbname",
+        mapConfig.addAttributeConfig(extractor("limbname",
                 "com.hazelcast.query.impl.predicates.NestedPredicateWithExtractorTest$LimbNameExtractor"));
         config.addMapConfig(mapConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
         map = instance.getMap("map");
     }
 
-    private static MapAttributeConfig extractor(String name, String extractor) {
-        MapAttributeConfig extractorConfig = new MapAttributeConfig();
+    private static AttributeConfig extractor(String name, String extractor) {
+        AttributeConfig extractorConfig = new AttributeConfig();
         extractorConfig.setName(name);
-        extractorConfig.setExtractor(extractor);
+        extractorConfig.setExtractorClassName(extractor);
         return extractorConfig;
     }
 

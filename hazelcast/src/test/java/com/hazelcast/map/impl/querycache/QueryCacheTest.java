@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -208,9 +208,9 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
     }
 
     @Test
-    public void testQueryCache_with_mapAttribute_inPredicate() {
+    public void testQueryCache_with_attribute_inPredicate() {
 
-        String MAP_ATTRIBUTE_NAME = "booleanMapAttribute";
+        String ATTRIBUTE_NAME = "booleanAttribute";
 
         Config config = new Config();
         config.getMapConfig(mapName)
@@ -218,12 +218,12 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
                         new QueryCacheConfig(cacheName)
                                 .setIncludeValue(true)
                                 .setPredicateConfig(// use map attribute in a predicate
-                                        new PredicateConfig(Predicates.equal(MAP_ATTRIBUTE_NAME, true))
+                                        new PredicateConfig(Predicates.equal(ATTRIBUTE_NAME, true))
                                 ))
-                .addMapAttributeConfig(
-                        new MapAttributeConfig()
-                                .setExtractor(EvenNumberEmployeeValueExtractor.class.getName())
-                                .setName(MAP_ATTRIBUTE_NAME));
+                .addAttributeConfig(
+                        new AttributeConfig()
+                                .setExtractorClassName(EvenNumberEmployeeValueExtractor.class.getName())
+                                .setName(ATTRIBUTE_NAME));
 
         IMap<Integer, Employee> map = getIMap(config);
         QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);

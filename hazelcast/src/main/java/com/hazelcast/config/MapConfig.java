@@ -106,7 +106,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     private List<EntryListenerConfig> entryListenerConfigs;
     private List<MapPartitionLostListenerConfig> partitionLostListenerConfigs;
     private List<MapIndexConfig> mapIndexConfigs;
-    private List<MapAttributeConfig> mapAttributeConfigs;
+    private List<AttributeConfig> attributeConfigs;
     private List<QueryCacheConfig> queryCacheConfigs;
     private PartitioningStrategyConfig partitioningStrategyConfig;
     private MetadataPolicy metadataPolicy = DEFAULT_METADATA_POLICY;
@@ -145,7 +145,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         this.partitionLostListenerConfigs =
                 new ArrayList<>(config.getPartitionLostListenerConfigs());
         this.mapIndexConfigs = new ArrayList<>(config.getMapIndexConfigs());
-        this.mapAttributeConfigs = new ArrayList<>(config.getMapAttributeConfigs());
+        this.attributeConfigs = new ArrayList<>(config.getAttributeConfigs());
         this.queryCacheConfigs = new ArrayList<>(config.getQueryCacheConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
@@ -544,20 +544,20 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         return this;
     }
 
-    public MapConfig addMapAttributeConfig(MapAttributeConfig mapAttributeConfig) {
-        getMapAttributeConfigs().add(mapAttributeConfig);
+    public MapConfig addAttributeConfig(AttributeConfig attributeConfig) {
+        getAttributeConfigs().add(attributeConfig);
         return this;
     }
 
-    public List<MapAttributeConfig> getMapAttributeConfigs() {
-        if (mapAttributeConfigs == null) {
-            mapAttributeConfigs = new ArrayList<>();
+    public List<AttributeConfig> getAttributeConfigs() {
+        if (attributeConfigs == null) {
+            attributeConfigs = new ArrayList<>();
         }
-        return mapAttributeConfigs;
+        return attributeConfigs;
     }
 
-    public MapConfig setMapAttributeConfigs(List<MapAttributeConfig> mapAttributeConfigs) {
-        this.mapAttributeConfigs = mapAttributeConfigs;
+    public MapConfig setAttributeConfigs(List<AttributeConfig> attributeConfigs) {
+        this.attributeConfigs = attributeConfigs;
         return this;
     }
 
@@ -806,7 +806,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (!getMapIndexConfigs().equals(that.getMapIndexConfigs())) {
             return false;
         }
-        if (!getMapAttributeConfigs().equals(that.getMapAttributeConfigs())) {
+        if (!getAttributeConfigs().equals(that.getAttributeConfigs())) {
             return false;
         }
         if (!getQueryCacheConfigs().equals(that.getQueryCacheConfigs())) {
@@ -850,7 +850,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
         result = 31 * result + getEntryListenerConfigs().hashCode();
         result = 31 * result + getMapIndexConfigs().hashCode();
-        result = 31 * result + getMapAttributeConfigs().hashCode();
+        result = 31 * result + getAttributeConfigs().hashCode();
         result = 31 * result + getQueryCacheConfigs().hashCode();
         result = 31 * result + getPartitionLostListenerConfigs().hashCode();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
@@ -885,7 +885,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
                 + ", wanReplicationRef=" + wanReplicationRef
                 + ", entryListenerConfigs=" + entryListenerConfigs
                 + ", mapIndexConfigs=" + mapIndexConfigs
-                + ", mapAttributeConfigs=" + mapAttributeConfigs
+                + ", attributeConfigs=" + attributeConfigs
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", queryCacheConfigs=" + queryCacheConfigs
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
@@ -922,7 +922,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(partitionLostListenerConfigs, out);
         writeNullableList(mapIndexConfigs, out);
-        writeNullableList(mapAttributeConfigs, out);
+        writeNullableList(attributeConfigs, out);
         writeNullableList(queryCacheConfigs, out);
         out.writeBoolean(statisticsEnabled);
         out.writeObject(partitioningStrategyConfig);
@@ -953,7 +953,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         entryListenerConfigs = readNullableList(in);
         partitionLostListenerConfigs = readNullableList(in);
         mapIndexConfigs = readNullableList(in);
-        mapAttributeConfigs = readNullableList(in);
+        attributeConfigs = readNullableList(in);
         queryCacheConfigs = readNullableList(in);
         statisticsEnabled = in.readBoolean();
         partitioningStrategyConfig = in.readObject();

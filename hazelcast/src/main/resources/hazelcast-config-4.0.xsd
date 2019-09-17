@@ -2630,7 +2630,7 @@
     <xs:complexType name="map-attribute">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="extractor" type="xs:string"/>
+                <xs:attribute name="extractor-class-name" type="xs:string"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
