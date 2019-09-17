@@ -24,11 +24,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.Delete;
-import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Category(NightlyTest.class)
 public class S3SinkTest extends S3TestBase {
@@ -39,27 +40,48 @@ public class S3SinkTest extends S3TestBase {
     @After
     public void deleteObjects() {
         S3Client client = clientSupplier().get();
-        ObjectIdentifier[] identifiers = client
+        List<ObjectIdentifier> identifiers = client
                 .listObjects(ListObjectsRequest.builder().bucket(bucketName).build())
                 .contents()
                 .stream()
                 .map(S3Object::key)
                 .map(key -> ObjectIdentifier.builder().key(key).build())
-                .toArray(ObjectIdentifier[]::new);
-        if (identifiers.length > 0) {
-            Delete delete = Delete.builder()
-                                  .objects(identifiers)
-                                  .build();
-            client.deleteObjects(DeleteObjectsRequest.builder()
-                                                     .bucket(bucketName)
-                                                     .delete(delete)
-                                                     .build());
+                .collect(Collectors.toList());
+
+        if (!identifiers.isEmpty()) {
+            client.deleteObjects(b -> b.bucket(bucketName).delete(d -> d.objects(identifiers)));
         }
     }
 
     @Test
     public void test() {
-        testSink(jet, bucketName);
+        testSink(bucketName);
+    }
+
+    @Test
+    public void when_writesToExistingFile_then_overwritesFile() {
+        testSink(bucketName, "my-objects-", 100);
+        testSink(bucketName, "my-objects-", 200);
+    }
+
+    @Test
+    public void when_drainToNotExistingBucket() {
+        testSinkWithNotExistingBucket("jet-s3-connector-test-bucket-sink-THIS-BUCKET-DOES-NOT-EXIST");
+    }
+
+    @Test
+    public void when_withSpaceInName() {
+        testSink(bucketName, "file with space", 10);
+    }
+
+    @Test
+    public void when_withNonAsciiSymbolInName() {
+        testSink(bucketName, "测试", 10);
+    }
+
+    @Test
+    public void when_withNonAsciiSymbolInFile() {
+        testSink(bucketName, "fileWithNonAsciiSymbol", 10, "测试");
     }
 
     SupplierEx<S3Client> clientSupplier() {
