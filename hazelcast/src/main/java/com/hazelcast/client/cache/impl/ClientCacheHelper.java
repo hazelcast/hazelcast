@@ -22,12 +22,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.config.CacheConfig;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.util.FutureUtil;
 
 import java.util.ArrayList;
@@ -65,8 +66,12 @@ final class ClientCacheHelper {
             ClientMessage responseMessage = future.get();
             SerializationService serializationService = client.getSerializationService();
 
-            Data responseData = CacheGetConfigCodec.decodeResponse(responseMessage).response;
-            return serializationService.toObject(responseData);
+            CacheConfigHolder cacheConfigHolder = CacheGetConfigCodec.decodeResponse(responseMessage).response;
+            if (cacheConfigHolder == null) {
+                return null;
+            }
+
+            return cacheConfigHolder.asCacheConfig(serializationService);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -88,13 +93,17 @@ final class ClientCacheHelper {
             String nameWithPrefix = newCacheConfig.getNameWithPrefix();
             int partitionId = client.getClientPartitionService().getPartitionId(nameWithPrefix);
 
-            Data configData = client.getSerializationService().toData(newCacheConfig);
-            ClientMessage request = CacheCreateConfigCodec.encodeRequest(configData, true);
+            InternalSerializationService serializationService = client.getSerializationService();
+            ClientMessage request = CacheCreateConfigCodec
+                    .encodeRequest(CacheConfigHolder.of(newCacheConfig, serializationService), true);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
             Future<ClientMessage> future = clientInvocation.invoke();
             final ClientMessage response = future.get();
-            final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
-            return client.getSerializationService().toObject(data);
+            final CacheConfigHolder cacheConfigHolder = CacheCreateConfigCodec.decodeResponse(response).response;
+            if (cacheConfigHolder == null) {
+                return null;
+            }
+            return cacheConfigHolder.asCacheConfig(serializationService);
         } catch (Exception e) {
             throw rethrow(e);
         }

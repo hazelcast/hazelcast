@@ -21,13 +21,13 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
 import java.security.Permission;
@@ -50,22 +50,18 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected void processMessage() {
-        CacheConfig cacheConfig = nodeEngine.toObject(parameters.cacheConfig);
+        // parameters.cacheConfig is not nullable by protocol definition, hence no need for null check
+        CacheConfig cacheConfig = parameters.cacheConfig.asCacheConfig(serializationService);
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
 
-        if (cacheConfig != null) {
-            SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
-            checkCacheConfig(cacheConfig, mergePolicyProvider);
+        SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
+        checkCacheConfig(cacheConfig, mergePolicyProvider);
 
-            Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicyConfig().getPolicy());
-            checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
-                    true, logger);
+        Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicyConfig().getPolicy());
+        checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(), true, logger);
 
-            ICompletableFuture future = cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
-            future.andThen(this);
-        } else {
-            sendResponse(null);
-        }
+        ICompletableFuture future = cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
+        future.andThen(this);
     }
 
     @Override
@@ -75,8 +71,8 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Data responseData = nodeEngine.toData(response);
-        return CacheCreateConfigCodec.encodeResponse(responseData);
+        CacheConfig cacheConfig = (CacheConfig) response;
+        return CacheCreateConfigCodec.encodeResponse(CacheConfigHolder.of(cacheConfig, serializationService));
     }
 
     @Override
