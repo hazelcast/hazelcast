@@ -30,7 +30,6 @@ import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
 
@@ -38,6 +37,7 @@ import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 /**
  * Serializable adapter for {@link com.hazelcast.config.MapConfig}
@@ -58,13 +58,13 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
         JsonObject root = new JsonObject();
 
         String name = mapConfig.getName();
-        if (!StringUtil.isNullOrEmpty(name)) {
+        if (!isNullOrEmpty(name)) {
             root.add("name", name);
         }
 
-        String quorumName = mapConfig.getSplitBrainProtectionName();
-        if (!StringUtil.isNullOrEmpty(quorumName)) {
-            root.add("quorumName", quorumName);
+        String splitBrainProtectionName = mapConfig.getSplitBrainProtectionName();
+        if (!isNullOrEmpty(splitBrainProtectionName)) {
+            root.add("splitBrainProtectionName", splitBrainProtectionName);
         }
 
         root.add("maxSize", mapConfig.getMaxSizeConfig().getSize());
@@ -99,9 +99,9 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
             mapConfig.setName(getString(json, "name"));
         }
 
-        JsonValue quorumName = json.get("quorumName");
-        if (quorumName != null && !quorumName.isNull()) {
-            mapConfig.setSplitBrainProtectionName(getString(json, "quorumName"));
+        JsonValue splitBrainProtectionName = json.get("splitBrainProtectionName");
+        if (splitBrainProtectionName != null && !splitBrainProtectionName.isNull()) {
+            mapConfig.setSplitBrainProtectionName(getString(json, "splitBrainProtectionName"));
         }
 
         mapConfig.setMaxSizeConfig(new MaxSizeConfig().setSize(getInt(json, "maxSize"))
