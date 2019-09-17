@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -34,7 +35,7 @@ public class QueryId implements DataSerializable {
      * @return Query ID.
      */
     public static QueryId create(String memberId) {
-        UUID qryId = UUID.randomUUID();
+        UUID qryId = UuidUtil.newUnsecureUUID();
 
         return new QueryId(memberId, qryId.getLeastSignificantBits(), qryId.getLeastSignificantBits());
     }

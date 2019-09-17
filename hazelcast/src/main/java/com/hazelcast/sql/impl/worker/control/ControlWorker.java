@@ -154,14 +154,13 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
             queryId,
             task.getArguments(),
             task.getRootConsumer(),
-            fragmentDeployments,
             edgeToStripeMap
         );
 
         queries.put(queryId, ctx);
 
         // Start query on executor.
-        for (FragmentDeployment fragmentDeployment : ctx.getFragmentDeployments()) {
+        for (FragmentDeployment fragmentDeployment : fragmentDeployments) {
             for (StripeDeployment stripeDeployment :  fragmentDeployment.getStripes()) {
                 stripeDeployment.initialize(ctx, fragmentDeployment);
 

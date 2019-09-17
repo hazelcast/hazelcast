@@ -45,9 +45,6 @@ public class QueryContext {
     /** Root consumer. */
     private final QueryResultConsumer rootConsumer;
 
-    /** Deployed fragments. */
-    private final List<FragmentDeployment> fragmentDeployments;
-
     /** Maps an edge to array, whose length is stripe length, and values are data thread IDs. */
     private final Map<Integer, int[]> edgeToStripeMap;
 
@@ -56,12 +53,11 @@ public class QueryContext {
     private volatile Extractors extractors;
 
     public QueryContext(NodeEngine nodeEngine, QueryId queryId, List<Object> arguments, QueryResultConsumer rootConsumer,
-        List<FragmentDeployment> fragmentDeployments, Map<Integer, int[]> edgeToStripeMap) {
+        Map<Integer, int[]> edgeToStripeMap) {
         this.nodeEngine = nodeEngine;
         this.queryId = queryId;
         this.arguments = arguments;
         this.rootConsumer = rootConsumer;
-        this.fragmentDeployments = fragmentDeployments;
         this.edgeToStripeMap = edgeToStripeMap;
     }
 
@@ -75,10 +71,6 @@ public class QueryContext {
 
     public QueryResultConsumer getRootConsumer() {
         return rootConsumer;
-    }
-
-    public List<FragmentDeployment> getFragmentDeployments() {
-        return fragmentDeployments;
     }
 
     public Map<Integer, int[]> getEdgeToStripeMap() {
