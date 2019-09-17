@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -24,6 +25,7 @@ import org.junit.Before;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -57,6 +59,11 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
         protected void onInterruptDetected() {
             interruptDetected = true;
             complete(new InterruptedException());
+        }
+
+        @Override
+        protected IllegalStateException wrapToInstanceNotActiveException(RejectedExecutionException e) {
+            return new HazelcastInstanceNotActiveException(e.getMessage());
         }
 
         @Override
