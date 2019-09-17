@@ -24,14 +24,16 @@ import com.hazelcast.util.MapUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.Objects;
 import java.util.Set;
 
 @SuppressFBWarnings("SE_BAD_FIELD")
-public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, R, CanonicalizingHashSet<R>>
+public final class DistinctValuesAggregator<I, R>
+        extends AbstractAggregator<I, R, Set<R>>
         implements IdentifiedDataSerializable {
 
-    private CanonicalizingHashSet<R> values = new CanonicalizingHashSet<R>();
+    private CanonicalizingHashSet<R> values = new CanonicalizingHashSet<>();
 
     public DistinctValuesAggregator() {
         super();

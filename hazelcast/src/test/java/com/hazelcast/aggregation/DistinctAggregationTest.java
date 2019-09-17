@@ -16,7 +16,6 @@
 
 package com.hazelcast.aggregation;
 
-import com.hazelcast.aggregation.impl.CanonicalizingHashSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -51,12 +50,12 @@ public class DistinctAggregationTest {
         List<String> values = repeatTimes(3, sampleStrings());
         Set<String> expectation = new HashSet<String>(values);
 
-        Aggregator<Map.Entry<String, String>, CanonicalizingHashSet<String>> aggregation = Aggregators.distinct();
+        Aggregator<Map.Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<String, String>, CanonicalizingHashSet<String>> resultAggregation = Aggregators.distinct();
+        Aggregator<Map.Entry<String, String>, Set<String>> resultAggregation = Aggregators.distinct();
         resultAggregation.combine(aggregation);
         Set<String> result = resultAggregation.aggregate();
 
@@ -70,12 +69,12 @@ public class DistinctAggregationTest {
         values.add(null);
         Set<String> expectation = new HashSet<String>(values);
 
-        Aggregator<Map.Entry<String, String>, CanonicalizingHashSet<String>> aggregation = Aggregators.distinct();
+        Aggregator<Map.Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<String, String>, CanonicalizingHashSet<String>> resultAggregation = Aggregators.distinct();
+        Aggregator<Map.Entry<String, String>, Set<String>> resultAggregation = Aggregators.distinct();
         resultAggregation.combine(aggregation);
         Set<String> result = resultAggregation.aggregate();
 
@@ -89,12 +88,12 @@ public class DistinctAggregationTest {
         List<Person> values = repeatTimes(3, Arrays.asList(people));
         Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
 
-        Aggregator<Map.Entry<Person, Person>, CanonicalizingHashSet<Double>> aggregation = Aggregators.distinct("age");
+        Aggregator<Map.Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<Person, Person>, CanonicalizingHashSet<Double>> resultAggregation = Aggregators.distinct("age");
+        Aggregator<Map.Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");
         resultAggregation.combine(aggregation);
         Set<Double> result = resultAggregation.aggregate();
 
@@ -108,12 +107,12 @@ public class DistinctAggregationTest {
         List<Person> values = repeatTimes(3, Arrays.asList(people));
         Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
 
-        Aggregator<Map.Entry<Person, Person>, CanonicalizingHashSet<Double>> aggregation = Aggregators.distinct("age");
+        Aggregator<Map.Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<Person, Person>, CanonicalizingHashSet<Double>> resultAggregation = Aggregators.distinct("age");
+        Aggregator<Map.Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");
         resultAggregation.combine(aggregation);
         Set<Double> result = resultAggregation.aggregate();
 
