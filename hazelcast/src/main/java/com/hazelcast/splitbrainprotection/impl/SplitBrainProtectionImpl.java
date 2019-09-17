@@ -162,7 +162,7 @@ public class SplitBrainProtectionImpl implements SplitBrainProtection {
     }
 
     @Override
-    public boolean isMinimumClusterSizeSatisfied() {
+    public boolean hasMinimumSize() {
         return splitBrainProtectionState == SplitBrainProtectionState.MIN_CLUSTER_SIZE_SATISFIED;
     }
 
@@ -256,7 +256,7 @@ public class SplitBrainProtectionImpl implements SplitBrainProtection {
     }
 
     void ensureNoSplitBrain() {
-        if (!isMinimumClusterSizeSatisfied()) {
+        if (!hasMinimumSize()) {
             throw newSplitBrainProtectionException();
         }
     }
@@ -294,7 +294,7 @@ public class SplitBrainProtectionImpl implements SplitBrainProtection {
     public String toString() {
         return "SplitBrainProtectionImpl{"
                 + "splitBrainProtectionName='" + splitBrainProtectionName + '\''
-                + ", isMinimumClusterSizeSatisfied=" + isMinimumClusterSizeSatisfied()
+                + ", isMinimumClusterSizeSatisfied=" + hasMinimumSize()
                 + ", minimumClusterSize=" + minimumClusterSize
                 + ", config=" + config
                 + ", splitBrainProtectionFunction=" + splitBrainProtectionFunction
