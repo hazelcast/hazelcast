@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.proxy;
 
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
@@ -33,11 +32,12 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -408,8 +408,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
 
-        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
-                message -> ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response);
+        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, partitionId, false,
+                (T) null);
+
         if (callback != null) {
             delegatingFuture.andThen(callback);
         }
@@ -433,8 +434,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         int partitionId = randomPartitionId();
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
-                message -> ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response);
+        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, partitionId, false,
+                (T) null);
         delegatingFuture.andThen(callback);
     }
 
@@ -453,8 +454,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         String uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, task, address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
-        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
-                message -> ExecutorServiceSubmitToAddressCodec.decodeResponse(message).response);
+        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, address, false,
+                (T) null);
         if (callback != null) {
             delegatingFuture.andThen(callback);
         }
