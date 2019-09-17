@@ -16,10 +16,14 @@
 
 package com.hazelcast.nio.serialization.compatibility;
 
+import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.projection.Projections;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.SampleTestObjects;
 
 import java.io.Externalizable;
 import java.io.Serializable;
@@ -85,6 +89,7 @@ class ReferenceObjects {
     static int anInt = 56789;
     static long aLong = -50992225L;
     static String aString;
+    static String anSqlString = "this > 5 AND this < 100";
 
     static {
         CharBuffer cb = CharBuffer.allocate(Character.MAX_VALUE);
@@ -150,6 +155,8 @@ class ReferenceObjects {
     static Serializable serializable = new AJavaSerialiazable(anInt, aFloat);
     static Externalizable externalizable = new AJavaExternalizable(anInt, aFloat);
 
+    static Comparable<SampleTestObjects.ValueType> aComparable = new SampleTestObjects.ValueType(aString);
+
     static ArrayList nonNullList = new ArrayList(asList(
             aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
@@ -210,6 +217,56 @@ class ReferenceObjects {
             serializable, externalizable,
             arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,
             hashSet, treeSet, linkedHashSet, copyOnWriteArraySet, concurrentSkipListSet, arrayDeque, linkedBlockingQueue,
-            arrayBlockingQueue, priorityBlockingQueue, delayQueue, synchronousQueue, linkedTransferQueue
+            arrayBlockingQueue, priorityBlockingQueue, delayQueue, synchronousQueue, linkedTransferQueue,
+
+            // predicates
+            Predicates.alwaysTrue(),
+            Predicates.alwaysFalse(),
+            Predicates.sql(anSqlString),
+            Predicates.equal(aString, aComparable),
+            Predicates.notEqual(aString, aComparable),
+            Predicates.greaterThan(aString, aComparable),
+            Predicates.between(aString, aComparable, aComparable),
+            Predicates.like(aString, aString),
+            Predicates.ilike(aString, aString),
+            Predicates.in(aString, aComparable, aComparable),
+            Predicates.regex(aString, aString),
+            Predicates.partitionPredicate(aComparable, Predicates.greaterThan(aString, aComparable)),
+            Predicates.and(Predicates.sql(anSqlString),
+                    Predicates.equal(aString, aComparable),
+                    Predicates.notEqual(aString, aComparable),
+                    Predicates.greaterThan(aString, aComparable),
+                    Predicates.greaterEqual(aString, aComparable)),
+            Predicates.or(Predicates.sql(anSqlString),
+                    Predicates.equal(aString, aComparable),
+                    Predicates.notEqual(aString, aComparable),
+                    Predicates.greaterThan(aString, aComparable),
+                    Predicates.greaterEqual(aString, aComparable)),
+            Predicates.instanceOf(aCustomStreamSerializable.getClass()),
+
+            // Aggregators
+            Aggregators.distinct(aString),
+            Aggregators.integerMax(aString),
+            Aggregators.maxBy(aString),
+            Aggregators.comparableMin(aString),
+            Aggregators.minBy(aString),
+            Aggregators.count(aString),
+            Aggregators.numberAvg(aString),
+            Aggregators.integerAvg(aString),
+            Aggregators.longAvg(aString),
+            Aggregators.doubleAvg(aString),
+            Aggregators.bigIntegerAvg(aString),
+            Aggregators.bigDecimalAvg(aString),
+            Aggregators.integerSum(aString),
+            Aggregators.longSum(aString),
+            Aggregators.doubleSum(aString),
+            Aggregators.fixedPointSum(aString),
+            Aggregators.floatingPointSum(aString),
+            Aggregators.bigDecimalSum(aString),
+
+            // projections
+            Projections.singleAttribute(aString),
+            Projections.multiAttribute(aString, aString, anSqlString),
+            Projections.identity()
     };
 }
