@@ -44,6 +44,7 @@ import java.util.Set;
  * @param <V> type of the value
  */
 @BinaryInterface
+@SuppressWarnings("checkstyle:methodcount")
 public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     public CacheConfigReadOnly(CacheConfig config) {

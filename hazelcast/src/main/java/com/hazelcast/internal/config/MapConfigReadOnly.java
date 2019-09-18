@@ -45,6 +45,7 @@ import java.util.List;
 /**
  * Contains the configuration for an {@link IMap} (read-only).
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class MapConfigReadOnly extends MapConfig {
 
     public MapConfigReadOnly(MapConfig config) {
