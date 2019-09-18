@@ -176,8 +176,9 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
         }
     }
 
-    public void setProperties(Properties properties) {
+    public XmlClientFailoverConfigBuilder setProperties(Properties properties) {
         setPropertiesInternal(properties);
+        return this;
     }
 }
 
