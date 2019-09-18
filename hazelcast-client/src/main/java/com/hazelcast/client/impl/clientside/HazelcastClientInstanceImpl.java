@@ -791,10 +791,20 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         getLifecycleService().shutdown();
     }
 
-    public void doShutdown(boolean isGraceful) {
-        if (isGraceful) {
-            proxySessionManager.shutdown();
-        }
+    /**
+     * Called during graceful shutdown of client to safely clean up resources on server side.
+     * Shutdown process is blocked until this method returns.
+     * <p>
+     * Current list of cleanups:
+     * <ul>
+     * <li>Close of CP sessions</li>
+     * </ul>
+     */
+    void onGracefulShutdown() {
+        proxySessionManager.shutdownAndAwait();
+    }
+
+    public void doShutdown() {
         proxyManager.destroy();
         connectionManager.shutdown();
         clientConnectionStrategy.shutdown();
