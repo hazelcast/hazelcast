@@ -23,8 +23,11 @@ import java.util.UUID;
 public abstract class AbstractWanAntiEntropyEventBase extends AbstractWanEventBase {
     private final UUID uuid;
 
-    protected AbstractWanAntiEntropyEventBase(UUID uuid, String wanReplicationName, String targetGroupName, String mapName) {
-        super(wanReplicationName, targetGroupName, mapName);
+    protected AbstractWanAntiEntropyEventBase(UUID uuid,
+                                              String wanReplicationName,
+                                              String wanPublisherId,
+                                              String mapName) {
+        super(wanReplicationName, wanPublisherId, mapName);
         this.uuid = uuid;
     }
 

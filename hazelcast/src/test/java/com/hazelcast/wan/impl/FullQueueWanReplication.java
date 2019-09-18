@@ -18,16 +18,14 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.instance.impl.Node;
-import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WANReplicationQueueFullException;
-import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.WanReplicationPublisher;
 
-public class FullQueueWanReplication implements WanReplicationEndpoint {
+public class FullQueueWanReplication implements WanReplicationPublisher {
 
     @Override
-    public void init(Node node,
-                     WanReplicationConfig wanReplicationConfig,
+    public void init(WanReplicationConfig wanReplicationConfig,
                      AbstractWanPublisherConfig wanPublisherConfig) {
     }
 
@@ -48,7 +46,7 @@ public class FullQueueWanReplication implements WanReplicationEndpoint {
     }
 
     @Override
-    public void checkWanReplicationQueues() {
+    public void doPrepublicationChecks() {
         throw new WANReplicationQueueFullException("WAN event queue is full");
     }
 }

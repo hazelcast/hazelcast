@@ -480,7 +480,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String wanRepName = params[0];
         final String publisherId = params[1];
         try {
-            textCommandService.getNode().getNodeEngine().getWanReplicationService().clearQueues(wanRepName, publisherId);
+            textCommandService.getNode().getNodeEngine().getWanReplicationService().removeWanEvents(wanRepName, publisherId);
             res = response(ResponseType.SUCCESS, "message", "WAN replication queues are cleared.");
         } catch (Exception ex) {
             logger.warning("Error occurred while clearing queues", ex);

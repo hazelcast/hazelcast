@@ -43,11 +43,11 @@ public class WanEventCounters {
      * Returns the {@link DistributedServiceWanEventCounters} for the given {@code serviceName}
      */
     public DistributedServiceWanEventCounters getWanEventCounter(String wanReplicationName,
-                                                                 String targetGroupName,
+                                                                 String wanPublisherId,
                                                                  String serviceName) {
-        final String wanPublisherId = wanReplicationName + ":" + targetGroupName;
+        final String counterId = wanReplicationName + ":" + wanPublisherId;
         final WanPublisherEventCounters serviceWanEventCounters
-                = getOrPutIfAbsent(eventCounterMap, wanPublisherId, WAN_EVENT_COUNTER_CONSTRUCTOR_FN);
+                = getOrPutIfAbsent(eventCounterMap, counterId, WAN_EVENT_COUNTER_CONSTRUCTOR_FN);
 
         return serviceWanEventCounters.getWanEventCounter(serviceName);
     }

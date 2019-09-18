@@ -37,6 +37,6 @@ public class ClearWanQueuesOperation extends AbstractLocalOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
-        wanReplicationService.clearQueues(schemeName, publisherName);
+        wanReplicationService.removeWanEvents(schemeName, publisherName);
     }
 }
