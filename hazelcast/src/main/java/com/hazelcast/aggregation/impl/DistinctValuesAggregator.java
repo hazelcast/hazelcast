@@ -24,7 +24,6 @@ import com.hazelcast.util.MapUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.Set;
 import java.util.Objects;
 import java.util.Set;
 
