@@ -32,7 +32,7 @@ import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
 import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -664,7 +664,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     public MembershipChangeSchedule completeRaftGroupMembershipChanges(long commitIndex,
-                                                                       Map<CPGroupId, Tuple2<Long, Long>> changedGroups) {
+                                                                       Map<CPGroupId, BiTuple<Long, Long>> changedGroups) {
         checkNotNull(changedGroups);
         if (membershipChangeSchedule == null) {
             String msg = "Cannot apply CP membership changes: " + changedGroups + " since there is no membership change context!";
@@ -677,7 +677,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             CPGroupInfo group = groups.get(groupId);
             checkState(group != null, groupId + "not found in CP groups: " + groups.keySet()
                     + "to apply " + change);
-            Tuple2<Long, Long> t = changedGroups.get(groupId);
+            BiTuple<Long, Long> t = changedGroups.get(groupId);
 
             if (t != null) {
                 if (!applyMembershipChange(change, group, t.element1, t.element2)) {
@@ -687,7 +687,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 if (logger.isFineEnabled()) {
                     logger.warning(groupId + " is already destroyed so will skip: " + change);
                 }
-                changedGroups.put(groupId, Tuple2.of(0L, 0L));
+                changedGroups.put(groupId, BiTuple.of(0L, 0L));
             }
         }
 

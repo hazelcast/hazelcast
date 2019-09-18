@@ -14,36 +14,40 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.util;
+package com.hazelcast.internal.util;
 
 import java.util.Objects;
 
 /**
- * An immutable container of 3 statically typed fields
+ * An immutable container of 2 statically typed fields
  *
  * @param <X> type of the first element
  * @param <Y> type of the second element
- * @param <Z> type of the third element
  */
 @SuppressWarnings("checkstyle:visibilitymodifier")
-public final class Tuple3<X, Y, Z> {
+public final class BiTuple<X, Y> {
 
     public final X element1;
     public final Y element2;
-    public final Z element3;
 
-    private Tuple3(X element1, Y element2, Z element3) {
+    private BiTuple(X element1, Y element2) {
         this.element1 = element1;
         this.element2 = element2;
-        this.element3 = element3;
     }
 
-    public static <X, Y, Z> Tuple3<X, Y, Z> of(X element1, Y element2, Z element3) {
-        return new Tuple3<>(element1, element2, element3);
+    public static <X, Y> BiTuple<X, Y> of(X element1, Y element2) {
+        return new BiTuple<>(element1, element2);
+    }
+
+    public X element1() {
+        return element1;
+    }
+
+    public Y element2() {
+        return element2;
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -52,27 +56,23 @@ public final class Tuple3<X, Y, Z> {
             return false;
         }
 
-        Tuple3<?, ?, ?> tuple3 = (Tuple3<?, ?, ?>) o;
+        BiTuple<?, ?> biTuple = (BiTuple<?, ?>) o;
 
-        if (!Objects.equals(element1, tuple3.element1)) {
+        if (!Objects.equals(element1, biTuple.element1)) {
             return false;
         }
-        if (!Objects.equals(element2, tuple3.element2)) {
-            return false;
-        }
-        return Objects.equals(element3, tuple3.element3);
+        return Objects.equals(element2, biTuple.element2);
     }
 
     @Override
     public int hashCode() {
         int result = element1 != null ? element1.hashCode() : 0;
         result = 31 * result + (element2 != null ? element2.hashCode() : 0);
-        result = 31 * result + (element3 != null ? element3.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "Tuple3{" + "element1=" + element1 + ", element2=" + element2 + ", element3=" + element3 + '}';
+        return "BiTuple{" + "element1=" + element1 + ", element2=" + element2 + '}';
     }
 }

@@ -31,7 +31,7 @@ import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKeyContainer;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.operation.ExpireWaitKeysOp;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -527,7 +527,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
 
         RaftInvocationManager invocationManager = getRaftInvocationManager();
         UUID invUid = newUnsecureUUID();
-        Tuple2[] lockWaitTimeoutKeyRef = new Tuple2[1];
+        BiTuple[] lockWaitTimeoutKeyRef = new BiTuple[1];
 
         InternalCompletableFuture<Long> f1 = invocationManager
                 .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, SECONDS.toMillis(300)));
@@ -537,7 +537,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> {
             RaftLockRegistry registry = service.getRegistryOrNull(groupId);
-            Map<Tuple2<String, UUID>, Tuple2<Long, Long>> waitTimeouts = registry.getWaitTimeouts();
+            Map<BiTuple<String, UUID>, BiTuple<Long, Long>> waitTimeouts = registry.getWaitTimeouts();
             assertEquals(1, waitTimeouts.size());
             lockWaitTimeoutKeyRef[0] = waitTimeouts.keySet().iterator().next();
         });

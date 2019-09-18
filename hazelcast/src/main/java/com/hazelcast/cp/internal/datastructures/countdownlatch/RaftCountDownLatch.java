@@ -18,7 +18,7 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch;
 
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.BlockingResource;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -58,27 +58,27 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
      * a retry or a countDown() request sent before re-initialization
      * of the latch. In this case, this count down request is ignored.
      */
-    Tuple2<Integer, Collection<AwaitInvocationKey>> countDown(UUID invocationUuid, int expectedRound) {
+    BiTuple<Integer, Collection<AwaitInvocationKey>> countDown(UUID invocationUuid, int expectedRound) {
         if (expectedRound > round) {
             throw new IllegalArgumentException("expected round: " + expectedRound + ", actual round: " + round);
         }
 
         if (expectedRound < round) {
             Collection<AwaitInvocationKey> c = Collections.emptyList();
-            return Tuple2.of(0, c);
+            return BiTuple.of(0, c);
         }
 
         countDownUids.add(invocationUuid);
         int remaining = getRemainingCount();
         if (remaining > 0) {
             Collection<AwaitInvocationKey> c = Collections.emptyList();
-            return Tuple2.of(remaining, c);
+            return BiTuple.of(remaining, c);
         }
 
         Collection<AwaitInvocationKey> w = getAllWaitKeys();
         clearWaitKeys();
 
-        return Tuple2.of(0, w);
+        return BiTuple.of(0, w);
     }
 
     boolean trySetCount(int count) {

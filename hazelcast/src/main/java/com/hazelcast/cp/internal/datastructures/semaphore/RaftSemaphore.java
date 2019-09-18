@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.semaphore;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.BlockingResource;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKeyContainer;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -132,7 +132,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
             sessionStates.put(sessionId, state);
         }
 
-        Tuple2<UUID, Integer> prev = state.invocationRefUids.put(endpoint.threadId(), Tuple2.of(invocationUid, permits));
+        BiTuple<UUID, Integer> prev = state.invocationRefUids.put(endpoint.threadId(), BiTuple.of(invocationUid, permits));
         if (prev == null || !prev.element1.equals(invocationUid)) {
             state.acquiredPermits += permits;
             available -= permits;
@@ -170,7 +170,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
             }
 
             state.acquiredPermits -= permits;
-            state.invocationRefUids.put(endpoint.threadId(), Tuple2.of(invocationUid, permits));
+            state.invocationRefUids.put(endpoint.threadId(), BiTuple.of(invocationUid, permits));
         }
 
         available += permits;
@@ -282,7 +282,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
                 return ReleaseResult.successful(c, c);
             }
 
-            state.invocationRefUids.put(threadId, Tuple2.of(invocationUid, permits));
+            state.invocationRefUids.put(threadId, BiTuple.of(invocationUid, permits));
         }
 
         available += permits;
@@ -345,9 +345,9 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
             out.writeLong(e1.getKey());
             SessionSemaphoreState state = e1.getValue();
             out.writeInt(state.invocationRefUids.size());
-            for (Entry<Long, Tuple2<UUID, Integer>> e2 : state.invocationRefUids.entrySet()) {
+            for (Entry<Long, BiTuple<UUID, Integer>> e2 : state.invocationRefUids.entrySet()) {
                 out.writeLong(e2.getKey());
-                Tuple2<UUID, Integer> t = e2.getValue();
+                BiTuple<UUID, Integer> t = e2.getValue();
                 writeUUID(out, t.element1);
                 out.writeInt(t.element2);
             }
@@ -369,7 +369,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
                 long threadId = in.readLong();
                 UUID invocationUid = readUUID(in);
                 int permits = in.readInt();
-                state.invocationRefUids.put(threadId, Tuple2.of(invocationUid, permits));
+                state.invocationRefUids.put(threadId, BiTuple.of(invocationUid, permits));
             }
 
             state.acquiredPermits = in.readInt();
@@ -447,17 +447,17 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
         /**
          * map of threadId -> <invocationUid, permits> to track last operation of each endpoint
          */
-        private final Long2ObjectHashMap<Tuple2<UUID, Integer>> invocationRefUids = new Long2ObjectHashMap<>();
+        private final Long2ObjectHashMap<BiTuple<UUID, Integer>> invocationRefUids = new Long2ObjectHashMap<>();
 
         private int acquiredPermits;
 
         boolean containsInvocation(long threadId, UUID invocationUid) {
-            Tuple2<UUID, Integer> t = invocationRefUids.get(threadId);
+            BiTuple<UUID, Integer> t = invocationRefUids.get(threadId);
             return (t != null && t.element1.equals(invocationUid));
         }
 
         Integer getInvocationResponse(long threadId, UUID invocationUid) {
-            Tuple2<UUID, Integer> t = invocationRefUids.get(threadId);
+            BiTuple<UUID, Integer> t = invocationRefUids.get(threadId);
             return (t != null && t.element1.equals(invocationUid)) ? t.element2 : null;
         }
 

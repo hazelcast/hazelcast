@@ -32,7 +32,7 @@ import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetDestroyingRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetMembershipChangeScheduleOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -248,7 +248,7 @@ class RaftGroupMembershipManager {
 
             List<CPGroupMembershipChange> changes = schedule.getChanges();
             CountDownLatch latch = new CountDownLatch(changes.size());
-            Map<CPGroupId, Tuple2<Long, Long>> changedGroups = new ConcurrentHashMap<>();
+            Map<CPGroupId, BiTuple<Long, Long>> changedGroups = new ConcurrentHashMap<>();
 
             for (CPGroupMembershipChange change : changes) {
                 applyOnRaftGroup(latch, changedGroups, change);
@@ -269,7 +269,7 @@ class RaftGroupMembershipManager {
             return f.join();
         }
 
-        private void applyOnRaftGroup(CountDownLatch latch, Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
+        private void applyOnRaftGroup(CountDownLatch latch, Map<CPGroupId, BiTuple<Long, Long>> changedGroups,
                                       CPGroupMembershipChange change) {
             ICompletableFuture<Long> future;
             if (change.getMemberToRemove() != null) {
@@ -285,7 +285,7 @@ class RaftGroupMembershipManager {
                     if (change.getMemberToAdd() != null) {
                         addMember(latch, changedGroups, change, removeCommitIndex);
                     } else {
-                        changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), removeCommitIndex));
+                        changedGroups.put(change.getGroupId(), BiTuple.of(change.getMembersCommitIndex(), removeCommitIndex));
                         latch.countDown();
                     }
                 }
@@ -302,14 +302,14 @@ class RaftGroupMembershipManager {
             });
         }
 
-        private void addMember(CountDownLatch latch, Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
+        private void addMember(CountDownLatch latch, Map<CPGroupId, BiTuple<Long, Long>> changedGroups,
                                CPGroupMembershipChange change, long currentCommitIndex) {
             ICompletableFuture<Long> future = invocationManager.changeMembership(change.getGroupId(), currentCommitIndex,
                     change.getMemberToAdd(), MembershipChangeMode.ADD);
             future.andThen(new ExecutionCallback<Long>() {
                 @Override
                 public void onResponse(Long addCommitIndex) {
-                    changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), addCommitIndex));
+                    changedGroups.put(change.getGroupId(), BiTuple.of(change.getMembersCommitIndex(), addCommitIndex));
                     latch.countDown();
                 }
 
@@ -321,7 +321,7 @@ class RaftGroupMembershipManager {
             });
         }
 
-        private void checkMemberAddCommitIndex(Map<CPGroupId, Tuple2<Long, Long>> changedGroups, CPGroupMembershipChange change,
+        private void checkMemberAddCommitIndex(Map<CPGroupId, BiTuple<Long, Long>> changedGroups, CPGroupMembershipChange change,
                                                Throwable t) {
             CPMemberInfo memberToAdd = change.getMemberToAdd();
             if (t instanceof MismatchingGroupMembersCommitIndexException) {
@@ -363,7 +363,7 @@ class RaftGroupMembershipManager {
                     }
                 }
 
-                changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), m.getCommitIndex()));
+                changedGroups.put(change.getGroupId(), BiTuple.of(change.getMembersCommitIndex(), m.getCommitIndex()));
                 return;
             }
 
@@ -372,7 +372,7 @@ class RaftGroupMembershipManager {
         }
 
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
-        private long checkMemberRemoveCommitIndex(Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
+        private long checkMemberRemoveCommitIndex(Map<CPGroupId, BiTuple<Long, Long>> changedGroups,
                                                   CPGroupMembershipChange change, Throwable t) {
             CPMemberInfo removedMember = change.getMemberToRemove();
             if (t instanceof MismatchingGroupMembersCommitIndexException) {
@@ -403,7 +403,7 @@ class RaftGroupMembershipManager {
                     }
 
                     // both member-remove and member-add are done.
-                    changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), m.getCommitIndex()));
+                    changedGroups.put(change.getGroupId(), BiTuple.of(change.getMembersCommitIndex(), m.getCommitIndex()));
                     return NA_MEMBERS_COMMIT_INDEX;
                 } else if (m.getMembers().size() != (change.getMembers().size() - 1)) {
                     // if there is no added member, I expect number of the learnt group members to be 1 less than
@@ -427,7 +427,7 @@ class RaftGroupMembershipManager {
             return NA_MEMBERS_COMMIT_INDEX;
         }
 
-        private void completeMembershipChanges(Map<CPGroupId, Tuple2<Long, Long>> changedGroups) {
+        private void completeMembershipChanges(Map<CPGroupId, BiTuple<Long, Long>> changedGroups) {
             RaftOp op = new CompleteRaftGroupMembershipChangesOp(changedGroups);
             CPGroupId metadataGroupId = raftService.getMetadataGroupId();
             ICompletableFuture<Object> future = invocationManager.invoke(metadataGroupId, op);

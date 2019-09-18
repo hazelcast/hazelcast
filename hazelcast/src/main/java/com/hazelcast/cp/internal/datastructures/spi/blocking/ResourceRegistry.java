@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.spi.blocking;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -64,7 +64,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
     protected final Set<String> destroyedNames = new HashSet<>();
     // key.element1: name, key.element2: invocation uid
     // value.element1: timeout duration (persisted in the snapshot), value.element2: deadline timestamp (transient)
-    protected final ConcurrentMap<Tuple2<String, UUID>, Tuple2<Long, Long>> waitTimeouts = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<BiTuple<String, UUID>, BiTuple<Long, Long>> waitTimeouts = new ConcurrentHashMap<>();
 
     // Live operations are not put into Raft snapshots because it is not needed.
     // Currently, only Raft ops that create a wait key are tracked as live operations,
@@ -72,7 +72,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
     // populate live operations as well, they can miss some entries if they install a snapshot
     // instead of applying Raft log entries. If a follower becomes later, callers will
     // retry and commit their waiting Raft ops.
-    private final Set<Tuple2<Address, Long>> liveOperationsSet = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<BiTuple<Address, Long>> liveOperationsSet = newSetFromMap(new ConcurrentHashMap<>());
 
     protected ResourceRegistry() {
     }
@@ -112,7 +112,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
     protected final void addWaitKey(String name, W key, long timeoutMs) {
         if (timeoutMs > 0) {
             long deadline = Clock.currentTimeMillis() + timeoutMs;
-            waitTimeouts.putIfAbsent(Tuple2.of(name, key.invocationUid), Tuple2.of(timeoutMs, deadline));
+            waitTimeouts.putIfAbsent(BiTuple.of(name, key.invocationUid), BiTuple.of(timeoutMs, deadline));
         }
         if (timeoutMs != 0) {
             addLiveOperation(key);
@@ -120,12 +120,12 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
     }
 
     protected final void removeWaitKey(String name, W key) {
-        waitTimeouts.remove(Tuple2.of(name, key.invocationUid()));
+        waitTimeouts.remove(BiTuple.of(name, key.invocationUid()));
         removeLiveOperation(key);
     }
 
     final void expireWaitKey(String name, UUID invocationUid, List<W> expired) {
-        waitTimeouts.remove(Tuple2.of(name, invocationUid));
+        waitTimeouts.remove(BiTuple.of(name, invocationUid));
 
         BlockingResource<W> resource = getResourceOrNull(name);
         if (resource != null) {
@@ -133,9 +133,9 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         }
     }
 
-    final Collection<Tuple2<String, UUID>> getWaitKeysToExpire(long now) {
-        List<Tuple2<String, UUID>> expired = new ArrayList<>();
-        for (Entry<Tuple2<String, UUID>, Tuple2<Long, Long>> e : waitTimeouts.entrySet()) {
+    final Collection<BiTuple<String, UUID>> getWaitKeysToExpire(long now) {
+        List<BiTuple<String, UUID>> expired = new ArrayList<>();
+        for (Entry<BiTuple<String, UUID>, BiTuple<Long, Long>> e : waitTimeouts.entrySet()) {
             long deadline = e.getValue().element2;
             if (deadline <= now) {
                 expired.add(e.getKey());
@@ -145,15 +145,15 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         return expired;
     }
 
-    final Map<Tuple2<String, UUID>, Long> overwriteWaitTimeouts(Map<Tuple2<String, UUID>, Tuple2<Long, Long>>
+    final Map<BiTuple<String, UUID>, Long> overwriteWaitTimeouts(Map<BiTuple<String, UUID>, BiTuple<Long, Long>>
                                                                         existingWaitTimeouts) {
-        for (Entry<Tuple2<String, UUID>, Tuple2<Long, Long>> e : existingWaitTimeouts.entrySet()) {
+        for (Entry<BiTuple<String, UUID>, BiTuple<Long, Long>> e : existingWaitTimeouts.entrySet()) {
             waitTimeouts.put(e.getKey(), e.getValue());
         }
 
-        Map<Tuple2<String, UUID>, Long> newKeys = new HashMap<>();
-        for (Entry<Tuple2<String, UUID>, Tuple2<Long, Long>> e : waitTimeouts.entrySet()) {
-            Tuple2<String, UUID> key = e.getKey();
+        Map<BiTuple<String, UUID>, Long> newKeys = new HashMap<>();
+        for (Entry<BiTuple<String, UUID>, BiTuple<Long, Long>> e : waitTimeouts.entrySet()) {
+            BiTuple<String, UUID> key = e.getKey();
             if (!existingWaitTimeouts.containsKey(key)) {
                 Long timeout = e.getValue().element1;
                 newKeys.put(key, timeout);
@@ -198,7 +198,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
     }
 
     // queried locally in tests
-    public final Map<Tuple2<String, UUID>, Tuple2<Long, Long>> getWaitTimeouts() {
+    public final Map<BiTuple<String, UUID>, BiTuple<Long, Long>> getWaitTimeouts() {
         return unmodifiableMap(waitTimeouts);
     }
 
@@ -219,20 +219,20 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
 
     @Override
     public void populate(LiveOperations liveOperations) {
-        for (Tuple2<Address, Long> t : liveOperationsSet) {
+        for (BiTuple<Address, Long> t : liveOperationsSet) {
             liveOperations.add(t.element1, t.element2);
         }
     }
 
     private void addLiveOperation(W key) {
-        liveOperationsSet.add(Tuple2.of(key.callerAddress(), key.callId()));
+        liveOperationsSet.add(BiTuple.of(key.callerAddress(), key.callId()));
     }
 
     final void removeLiveOperation(W key) {
-        liveOperationsSet.remove(Tuple2.of(key.callerAddress(), key.callId()));
+        liveOperationsSet.remove(BiTuple.of(key.callerAddress(), key.callId()));
     }
 
-    public final Collection<Tuple2<Address, Long>> getLiveOperations() {
+    public final Collection<BiTuple<Address, Long>> getLiveOperations() {
         return liveOperationsSet;
     }
 
@@ -257,8 +257,8 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
             out.writeUTF(name);
         }
         out.writeInt(waitTimeouts.size());
-        for (Entry<Tuple2<String, UUID>, Tuple2<Long, Long>> e : waitTimeouts.entrySet()) {
-            Tuple2<String, UUID> t = e.getKey();
+        for (Entry<BiTuple<String, UUID>, BiTuple<Long, Long>> e : waitTimeouts.entrySet()) {
+            BiTuple<String, UUID> t = e.getKey();
             out.writeUTF(t.element1);
             writeUUID(out, t.element2);
             out.writeLong(e.getValue().element1);
@@ -285,7 +285,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
             String name = in.readUTF();
             UUID invocationUid = readUUID(in);
             long timeout = in.readLong();
-            waitTimeouts.put(Tuple2.of(name, invocationUid), Tuple2.of(timeout, now + timeout));
+            waitTimeouts.put(BiTuple.of(name, invocationUid), BiTuple.of(timeout, now + timeout));
         }
     }
 

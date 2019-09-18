@@ -25,7 +25,7 @@ import com.hazelcast.cp.internal.datastructures.spi.AbstractCPMigrationAwareServ
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -54,8 +54,8 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         extends AbstractCPMigrationAwareService
         implements RaftManagedService, RaftRemoteService, RaftNodeLifecycleAwareService, SnapshotAwareService<S> {
 
-    private final Map<Tuple2<CPGroupId, String>, V> atomicValues = new ConcurrentHashMap<>();
-    private final Set<Tuple2<CPGroupId, String>> destroyedValues = newSetFromMap(new ConcurrentHashMap<>());
+    private final Map<BiTuple<CPGroupId, String>, V> atomicValues = new ConcurrentHashMap<>();
+    private final Set<BiTuple<CPGroupId, String>> destroyedValues = newSetFromMap(new ConcurrentHashMap<>());
     private volatile RaftService raftService;
 
     public RaftAtomicValueService(NodeEngine nodeEngine) {
@@ -100,7 +100,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         }
 
         Set<String> destroyed = new HashSet<>();
-        for (Tuple2<CPGroupId, String> tuple : destroyedValues) {
+        for (BiTuple<CPGroupId, String> tuple : destroyedValues) {
             if (groupId.equals(tuple.element1)) {
                 destroyed.add(tuple.element2);
             }
@@ -117,11 +117,11 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         for (Map.Entry<String, T> e : snapshot.getValues()) {
             String name = e.getKey();
             T val = e.getValue();
-            atomicValues.put(Tuple2.of(groupId, name), newAtomicValue(groupId, name, val));
+            atomicValues.put(BiTuple.of(groupId, name), newAtomicValue(groupId, name, val));
         }
 
         for (String name : snapshot.getDestroyed()) {
-            destroyedValues.add(Tuple2.of(groupId, name));
+            destroyedValues.add(BiTuple.of(groupId, name));
         }
     }
 
@@ -129,9 +129,9 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
 
     @Override
     public final void onRaftGroupDestroyed(CPGroupId groupId) {
-        Iterator<Tuple2<CPGroupId, String>> iter = atomicValues.keySet().iterator();
+        Iterator<BiTuple<CPGroupId, String>> iter = atomicValues.keySet().iterator();
         while (iter.hasNext()) {
-            Tuple2<CPGroupId, String> next = iter.next();
+            BiTuple<CPGroupId, String> next = iter.next();
             if (groupId.equals(next.element1)) {
                 destroyedValues.add(next);
                 iter.remove();
@@ -145,7 +145,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
 
     @Override
     public final boolean destroyRaftObject(CPGroupId groupId, String name) {
-        Tuple2<CPGroupId, String> key = Tuple2.of(groupId, name);
+        BiTuple<CPGroupId, String> key = BiTuple.of(groupId, name);
         destroyedValues.add(key);
         return atomicValues.remove(key) != null;
     }
@@ -153,7 +153,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
     public final V getAtomicValue(CPGroupId groupId, String name) {
         checkNotNull(groupId);
         checkNotNull(name);
-        Tuple2<CPGroupId, String> key = Tuple2.of(groupId, name);
+        BiTuple<CPGroupId, String> key = BiTuple.of(groupId, name);
         if (destroyedValues.contains(key)) {
             throw new DistributedObjectDestroyedException("AtomicValue[" + name + "] is already destroyed!");
         }
@@ -192,7 +192,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
                 .filter(tuple -> getCPGroupPartitionId(tuple.element1, partitionCount) == partitionId)
                 .map(tuple -> tuple.element1)
                 .distinct()
-                .map(groupId -> Tuple2.of(groupId, takeSnapshot(groupId, 0L)))
+                .map(groupId -> BiTuple.of(groupId, takeSnapshot(groupId, 0L)))
                 .collect(Collectors.toMap(tuple -> tuple.element1, tuple -> tuple.element2));
     }
 

@@ -58,7 +58,7 @@ import com.hazelcast.cp.internal.raft.impl.task.QueryTask;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
 import com.hazelcast.cp.internal.raft.impl.task.ReplicateTask;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
@@ -931,7 +931,7 @@ public class RaftNodeImpl implements RaftNode {
     public void toFollower(int term) {
         LeaderState leaderState = state.leaderState();
         if (leaderState != null) {
-            for (Tuple2<Object, SimpleCompletableFuture> t : leaderState.queryState().operations()) {
+            for (BiTuple<Object, SimpleCompletableFuture> t : leaderState.queryState().operations()) {
                 t.element2.complete(new NotLeaderException(groupId, localMember, null));
             }
         }

@@ -18,7 +18,7 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch;
 
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Collection;
@@ -60,9 +60,9 @@ public class RaftCountDownLatchRegistry extends ResourceRegistry<AwaitInvocation
         return getOrInitResource(name).trySetCount(count);
     }
 
-    Tuple2<Integer, Collection<AwaitInvocationKey>> countDown(String name, UUID invocationUuid, int expectedRound) {
+    BiTuple<Integer, Collection<AwaitInvocationKey>> countDown(String name, UUID invocationUuid, int expectedRound) {
         RaftCountDownLatch latch = getOrInitResource(name);
-        Tuple2<Integer, Collection<AwaitInvocationKey>> t = latch.countDown(invocationUuid, expectedRound);
+        BiTuple<Integer, Collection<AwaitInvocationKey>> t = latch.countDown(invocationUuid, expectedRound);
         for (AwaitInvocationKey key : t.element2) {
             removeWaitKey(name, key);
         }
