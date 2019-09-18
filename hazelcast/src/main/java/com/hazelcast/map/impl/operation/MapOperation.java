@@ -202,7 +202,7 @@ public abstract class MapOperation extends AbstractNamedOperation
                 && !disableWanReplicationEvent();
 
         if (canPublishWanEvent) {
-            mapContainer.getWanReplicationDelegate().checkWanReplicationQueues();
+            mapContainer.getWanReplicationDelegate().doPrepublicationChecks();
         }
         return canPublishWanEvent;
     }

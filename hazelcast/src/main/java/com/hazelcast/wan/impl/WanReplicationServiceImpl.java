@@ -59,12 +59,12 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     /** WAN event counters for all services and only sent events */
     private final WanEventCounters sentWanEventCounters = new WanEventCounters();
 
-    private final ConcurrentMap<String, WanReplicationPublishersContainer> wanReplications = createConcurrentHashMap(1);
+    private final ConcurrentMap<String, DelegatingWanReplicationScheme> wanReplications = createConcurrentHashMap(1);
 
-    private final ConstructorFunction<String, WanReplicationPublishersContainer> publisherDelegateConstructorFunction =
-            new ConstructorFunction<String, WanReplicationPublishersContainer>() {
+    private final ConstructorFunction<String, DelegatingWanReplicationScheme> publisherDelegateConstructorFunction =
+            new ConstructorFunction<String, DelegatingWanReplicationScheme>() {
                 @Override
-                public WanReplicationPublishersContainer createNew(String name) {
+                public DelegatingWanReplicationScheme createNew(String name) {
                     final WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
                     if (wanReplicationConfig == null) {
                         return null;
@@ -75,7 +75,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
                         throw new InvalidConfigurationException("Built-in batching WAN replication implementation "
                                 + "is only available in Hazelcast enterprise edition.");
                     }
-                    return new WanReplicationPublishersContainer(name, createPublishers(wanReplicationConfig));
+                    return new DelegatingWanReplicationScheme(name, createPublishers(wanReplicationConfig));
                 }
             };
 
@@ -84,7 +84,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public WanReplicationPublishersContainer getWanReplicationPublishers(String name) {
+    public DelegatingWanReplicationScheme getWanReplicationPublishers(String name) {
         return getOrPutSynchronized(wanReplications, name, this, publisherDelegateConstructorFunction);
     }
 
@@ -101,7 +101,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
 
         customPublisherConfigs.forEach(
                 publisherConfig -> {
-                    String publisherId = getPublisherIdOrGroupName(publisherConfig);
+                    String publisherId = getWanPublisherId(publisherConfig);
                     if (publishers.containsKey(publisherId)) {
                         throw new InvalidConfigurationException(
                                 "Detected duplicate publisher ID '" + publisherId + "' for a single WAN replication config");
@@ -150,10 +150,10 @@ public class WanReplicationServiceImpl implements WanReplicationService {
      * If the publisher ID is empty, returns the publisher group name.
      *
      * @param publisherConfig the WAN replication publisher configuration
-     * @return the publisher ID or group name
+     * @return the WAN publisher ID
      */
     public static @Nonnull
-    String getPublisherIdOrGroupName(AbstractWanPublisherConfig publisherConfig) {
+    String getWanPublisherId(AbstractWanPublisherConfig publisherConfig) {
         String publisherId = null;
         if (!isNullOrEmptyAfterTrim(publisherConfig.getPublisherId())) {
             publisherId = publisherConfig.getPublisherId();
@@ -169,7 +169,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     @Override
     public void shutdown() {
         synchronized (this) {
-            for (WanReplicationPublishersContainer delegate : wanReplications.values()) {
+            for (DelegatingWanReplicationScheme delegate : wanReplications.values()) {
                 for (WanReplicationPublisher publisher : delegate.getPublishers()) {
                     if (publisher != null) {
                         publisher.shutdown();

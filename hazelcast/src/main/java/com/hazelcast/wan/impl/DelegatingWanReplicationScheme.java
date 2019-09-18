@@ -33,18 +33,19 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Delegating WAN replication publisher implementation. This implementation
- * is a container for multiple WAN publishers.
+ * WAN replication scheme implementation delegating to multiple WAN
+ * replication publisher implementations. This implementation is a container
+ * for multiple WAN publishers.
  * When publishing an event on this delegate, all publishers are notified.
  */
-public final class WanReplicationPublishersContainer {
+public final class DelegatingWanReplicationScheme {
     /** Non-null WAN replication name */
     final String name;
     /** Non-null WAN publishers, grouped by publisher ID */
     final ConcurrentMap<String, WanReplicationPublisher> publishers;
 
-    public WanReplicationPublishersContainer(@Nonnull String name,
-                                             @Nonnull ConcurrentMap<String, WanReplicationPublisher> publishers) {
+    public DelegatingWanReplicationScheme(@Nonnull String name,
+                                          @Nonnull ConcurrentMap<String, WanReplicationPublisher> publishers) {
         checkNotNull(name, "WAN publisher name should not be null");
         checkNotNull(publishers, "WAN publisher map should not be null");
         this.name = name;
@@ -120,7 +121,7 @@ public final class WanReplicationPublishersContainer {
         return statsMap;
     }
 
-    public void checkWanReplicationQueues() {
+    public void doPrepublicationChecks() {
         for (WanReplicationPublisher publisher : publishers.values()) {
             publisher.doPrepublicationChecks();
         }

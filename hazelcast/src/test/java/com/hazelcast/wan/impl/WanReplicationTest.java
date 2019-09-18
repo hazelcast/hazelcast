@@ -298,7 +298,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     private DummyWanReplication getWanReplicationImpl(HazelcastInstance instance) {
         WanReplicationService service = getNodeEngineImpl(instance).getWanReplicationService();
-        WanReplicationPublishersContainer delegate = service.getWanReplicationPublishers("dummyWan");
+        DelegatingWanReplicationScheme delegate = service.getWanReplicationPublishers("dummyWan");
         return (DummyWanReplication) delegate.getPublishers().iterator().next();
     }
 

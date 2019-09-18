@@ -50,7 +50,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param name name of the WAN replication configuration
      * @return instance of the corresponding replication publisher
      */
-    WanReplicationPublishersContainer getWanReplicationPublishers(String name);
+    DelegatingWanReplicationScheme getWanReplicationPublishers(String name);
 
     /**
      * Starts the shutdown process of the WAN replication service.
