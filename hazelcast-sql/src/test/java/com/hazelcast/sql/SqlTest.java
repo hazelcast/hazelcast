@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -29,6 +28,7 @@ import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -51,11 +51,10 @@ public class SqlTest extends HazelcastTestSupport {
     private static final int PERSON_CNT = 10;
 
     private HazelcastInstance member;
-    private HazelcastInstance client;
 
     @Before
     public void before() {
-        TestHazelcastFactory nodeFactory = new TestHazelcastFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         Config cfg = new Config();
 
@@ -78,9 +77,8 @@ public class SqlTest extends HazelcastTestSupport {
         cfg.addMapConfig(departmentCfg);
         cfg.addMapConfig(personCfg);
 
-        nodeFactory.newHazelcastInstance(cfg);
         member = nodeFactory.newHazelcastInstance(cfg);
-        client = nodeFactory.newHazelcastClient();
+        nodeFactory.newHazelcastInstance(cfg);
 
         ReplicatedMap<Long, City> cityMap = member.getReplicatedMap("city");
         IMap<Long, Department> departmentMap = member.getMap("department");
