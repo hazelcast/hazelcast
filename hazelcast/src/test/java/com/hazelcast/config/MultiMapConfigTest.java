@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
+import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;

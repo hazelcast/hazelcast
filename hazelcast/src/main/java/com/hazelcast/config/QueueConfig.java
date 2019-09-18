@@ -17,9 +17,11 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -96,8 +98,8 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public QueueConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new QueueConfigReadOnly(this);

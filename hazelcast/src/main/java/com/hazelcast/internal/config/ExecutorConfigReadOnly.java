@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.ExecutorConfig;
 
 /**
  * Configuration for Executor(Read Only)
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class ExecutorConfigReadOnly extends ExecutorConfig {
 

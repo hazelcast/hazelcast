@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
@@ -98,9 +99,9 @@ public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Override
+    @PrivateApi
     public AtomicLongConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new AtomicLongConfigReadOnly(this);

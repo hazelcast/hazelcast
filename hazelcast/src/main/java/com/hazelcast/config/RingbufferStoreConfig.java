@@ -21,6 +21,7 @@ import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -127,8 +128,8 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public RingbufferStoreConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new RingbufferStoreConfigReadOnly(this);

@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.util.List;
 
 /**
  * Configuration for Wan target replication reference(read only)
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 @BinaryInterface
 public class WanReplicationRefReadOnly extends WanReplicationRef {

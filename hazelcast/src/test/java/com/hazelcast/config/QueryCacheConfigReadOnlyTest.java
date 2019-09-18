@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.EvictionConfigReadOnly;
+import com.hazelcast.internal.config.PredicateConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

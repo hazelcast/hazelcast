@@ -14,51 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
-import java.util.List;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 
 /**
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * See {@link FlakeIdGeneratorConfig}
  */
-class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
+public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
 
-    ReplicatedMapConfigReadOnly(ReplicatedMapConfig replicatedMapConfig) {
-        super(replicatedMapConfig);
+    public FlakeIdGeneratorConfigReadOnly(FlakeIdGeneratorConfig config) {
+        super(config);
     }
 
     @Override
-    public ReplicatedMapConfig setName(String name) {
+    public FlakeIdGeneratorConfig setName(String name) {
         throw throwReadOnly();
     }
 
     @Override
-    public ReplicatedMapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+    public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
         throw throwReadOnly();
     }
 
     @Override
-    public ReplicatedMapConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
+    public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
         throw throwReadOnly();
     }
 
     @Override
-    public ReplicatedMapConfig setAsyncFillup(boolean asyncFillup) {
+    public FlakeIdGeneratorConfig setIdOffset(long idOffset) {
         throw throwReadOnly();
     }
 
     @Override
-    public ReplicatedMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+    public FlakeIdGeneratorConfig setNodeIdOffset(long nodeIdOffset) {
         throw throwReadOnly();
     }
 
     @Override
-    public ReplicatedMapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public ReplicatedMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+    public FlakeIdGeneratorConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw throwReadOnly();
     }
 

@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
-import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.config.CachePartitionLostListenerConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.util.EventListener;
 
 /**
- * Read-Only Configuration for MapPartitionLostListener
+ * Read-Only Configuration for CachePartitionLostListener
  *
- * @see com.hazelcast.map.listener.MapPartitionLostListener
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * @see CachePartitionLostListener
  */
-public class MapPartitionLostListenerConfigReadOnly extends MapPartitionLostListenerConfig {
+@BinaryInterface
+public class CachePartitionLostListenerConfigReadOnly
+        extends CachePartitionLostListenerConfig {
 
-    public MapPartitionLostListenerConfigReadOnly(MapPartitionLostListenerConfig config) {
+    public CachePartitionLostListenerConfigReadOnly(CachePartitionLostListenerConfig config) {
         super(config);
     }
 
     @Override
-    public MapPartitionLostListener getImplementation() {
-        return (MapPartitionLostListener) implementation;
+    public CachePartitionLostListener getImplementation() {
+        return (CachePartitionLostListener) implementation;
     }
 
     @Override
@@ -48,7 +52,7 @@ public class MapPartitionLostListenerConfigReadOnly extends MapPartitionLostList
     }
 
     @Override
-    public MapPartitionLostListenerConfig setImplementation(MapPartitionLostListener implementation) {
+    public CachePartitionLostListenerConfig setImplementation(CachePartitionLostListener implementation) {
         throw new UnsupportedOperationException("this config is read-only");
     }
 }

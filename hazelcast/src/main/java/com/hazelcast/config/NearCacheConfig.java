@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.NearCacheConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -116,9 +118,8 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      * Returns an immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
-    @Deprecated
+    @PrivateApi
     public NearCacheConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new NearCacheConfigReadOnly(this);

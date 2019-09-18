@@ -14,26 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 /**
- * Contains the configuration for a extractor of Map.
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * Contains the configuration for a size of Map.
  */
-public class AttributeConfigReadOnly extends AttributeConfig {
+@BinaryInterface
+public class MaxSizeConfigReadOnly extends MaxSizeConfig {
 
-    public AttributeConfigReadOnly(AttributeConfig config) {
+    public MaxSizeConfigReadOnly(MaxSizeConfig config) {
         super(config);
     }
 
     @Override
-    public AttributeConfig setName(String attribute) {
+    public MaxSizeConfig setSize(int size) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public AttributeConfig setExtractorClassName(String extractorClassName) {
+    public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

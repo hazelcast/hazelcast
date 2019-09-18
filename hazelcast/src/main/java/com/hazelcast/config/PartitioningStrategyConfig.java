@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.internal.config.PartitioningStrategyConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -54,8 +56,8 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public PartitioningStrategyConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new PartitioningStrategyConfigReadOnly(this);

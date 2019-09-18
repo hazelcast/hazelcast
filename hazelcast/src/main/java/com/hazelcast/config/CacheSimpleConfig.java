@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
@@ -148,8 +150,8 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public CacheSimpleConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new CacheSimpleConfigReadOnly(this);

@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -82,7 +83,8 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
      *
      * @return immutable version of this configuration
      */
-    HotRestartConfig getAsReadOnly() {
+    @PrivateApi
+    public HotRestartConfig getAsReadOnly() {
         return new HotRestartConfigReadOnly(this);
     }
 

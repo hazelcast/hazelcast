@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
-import com.hazelcast.config.CachePartitionLostListenerConfigReadOnly;
+import com.hazelcast.internal.config.CachePartitionLostListenerConfigReadOnly;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;

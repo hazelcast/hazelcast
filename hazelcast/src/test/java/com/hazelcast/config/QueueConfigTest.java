@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.QueueConfigReadOnly;
+import com.hazelcast.internal.config.QueueStoreConfigReadOnly;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;

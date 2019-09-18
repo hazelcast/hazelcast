@@ -17,6 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.ISet;
+import com.hazelcast.internal.config.SetConfigReadOnly;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Contains the configuration for an {@link ISet}.
@@ -40,9 +42,9 @@ public class SetConfig extends CollectionConfig<SetConfig> {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Override
+    @PrivateApi
     public SetConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new SetConfigReadOnly(this);

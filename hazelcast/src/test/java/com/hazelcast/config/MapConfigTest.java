@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.config.MapPartitionLostListenerConfigReadOnly;
+import com.hazelcast.internal.config.MapStoreConfigReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.listener.MapPartitionLostListener;

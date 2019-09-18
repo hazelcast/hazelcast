@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ListenerConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.EventListener;
@@ -74,8 +76,8 @@ public class ListenerConfig implements IdentifiedDataSerializable {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public ListenerConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new ListenerConfigReadOnly(this);

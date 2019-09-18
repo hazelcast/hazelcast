@@ -14,28 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
-import java.util.EventListener;
+import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.partition.PartitioningStrategy;
 
 /**
- * Contains the configuration for a Listener.
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * Contains the configuration for strategy of partitioning
  */
-public class ListenerConfigReadOnly extends ListenerConfig {
+public class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConfig {
 
-    public ListenerConfigReadOnly(ListenerConfig config) {
+    public PartitioningStrategyConfigReadOnly(PartitioningStrategyConfig config) {
         super(config);
     }
 
     @Override
-    public ListenerConfig setClassName(String className) {
+    public PartitioningStrategyConfig setPartitioningStrategyClass(String partitionStrategyClass) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public ListenerConfig setImplementation(EventListener implementation) {
+    public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public PartitioningStrategyConfig setPartitioningStrategy(PartitioningStrategy partitionStrategy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

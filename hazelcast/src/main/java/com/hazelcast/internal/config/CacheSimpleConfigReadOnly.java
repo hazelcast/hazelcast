@@ -14,7 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.CachePartitionLostListenerConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.HotRestartConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.WanReplicationRef;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,8 +31,6 @@ import java.util.List;
 
 /**
  * Readonly version of {@link com.hazelcast.config.CacheSimpleConfig}
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
 

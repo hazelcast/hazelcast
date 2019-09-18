@@ -14,8 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.HotRestartConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.MapPartitionLostListenerConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 
@@ -26,12 +44,10 @@ import java.util.List;
 
 /**
  * Contains the configuration for an {@link IMap} (read-only).
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class MapConfigReadOnly extends MapConfig {
 
-    MapConfigReadOnly(MapConfig config) {
+    public MapConfigReadOnly(MapConfig config) {
         super(config);
     }
 

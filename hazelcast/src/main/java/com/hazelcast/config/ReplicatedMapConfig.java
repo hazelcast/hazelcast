@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -184,8 +186,8 @@ public class ReplicatedMapConfig
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public ReplicatedMapConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new ReplicatedMapConfigReadOnly(this);

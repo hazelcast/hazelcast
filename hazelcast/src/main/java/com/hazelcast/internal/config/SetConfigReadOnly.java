@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.SetConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,8 +26,6 @@ import java.util.List;
 
 /**
  * Contains configuration for Set(read only)
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class SetConfigReadOnly extends SetConfig {
 

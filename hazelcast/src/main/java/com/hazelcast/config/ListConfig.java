@@ -17,6 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.internal.config.ListConfigReadOnly;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Contains the configuration for an {@link IList}.
@@ -40,9 +42,9 @@ public class ListConfig extends CollectionConfig<ListConfig> {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Override
+    @PrivateApi
     public ListConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new ListConfigReadOnly(this);

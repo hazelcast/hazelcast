@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.TopicConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,8 +25,6 @@ import java.util.List;
 
 /**
  * Configuration for topic(Read only)
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class TopicConfigReadOnly extends TopicConfig {
 

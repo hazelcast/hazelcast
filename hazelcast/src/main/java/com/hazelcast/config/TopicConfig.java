@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
 import java.io.IOException;
@@ -79,8 +81,8 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public TopicConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new TopicConfigReadOnly(this);

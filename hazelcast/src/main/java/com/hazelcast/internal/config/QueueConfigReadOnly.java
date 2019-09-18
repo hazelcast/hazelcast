@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.QueueStoreConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,12 +28,10 @@ import java.util.List;
 
 /**
  * Contains the configuration for an {@link IQueue}.
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class QueueConfigReadOnly extends QueueConfig {
 
-    QueueConfigReadOnly(QueueConfig config) {
+    public QueueConfigReadOnly(QueueConfig config) {
         super(config);
     }
 

@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MaxSizeConfigReadOnly;
+import com.hazelcast.internal.config.MaxSizeConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

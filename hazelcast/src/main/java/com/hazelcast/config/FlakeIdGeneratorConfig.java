@@ -17,10 +17,13 @@
 package com.hazelcast.config;
 
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -35,7 +38,7 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  *
  * @since 3.10
  */
-public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable , NamedConfig {
+public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Default value for {@link #getPrefetchCount()}.
@@ -90,8 +93,9 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable , Name
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @Probe
+    @PrivateApi
     public FlakeIdGeneratorConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new FlakeIdGeneratorConfigReadOnly(this);

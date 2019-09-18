@@ -14,46 +14,53 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
-/**
- * See {@link FlakeIdGeneratorConfig}
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
- */
-public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
 
-    FlakeIdGeneratorConfigReadOnly(FlakeIdGeneratorConfig config) {
-        super(config);
+import java.util.List;
+
+public class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
+
+    public ReplicatedMapConfigReadOnly(ReplicatedMapConfig replicatedMapConfig) {
+        super(replicatedMapConfig);
     }
 
     @Override
-    public FlakeIdGeneratorConfig setName(String name) {
+    public ReplicatedMapConfig setName(String name) {
         throw throwReadOnly();
     }
 
     @Override
-    public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
+    public ReplicatedMapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         throw throwReadOnly();
     }
 
     @Override
-    public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
+    public ReplicatedMapConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
         throw throwReadOnly();
     }
 
     @Override
-    public FlakeIdGeneratorConfig setIdOffset(long idOffset) {
+    public ReplicatedMapConfig setAsyncFillup(boolean asyncFillup) {
         throw throwReadOnly();
     }
 
     @Override
-    public FlakeIdGeneratorConfig setNodeIdOffset(long nodeIdOffset) {
+    public ReplicatedMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw throwReadOnly();
     }
 
     @Override
-    public FlakeIdGeneratorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+    public ReplicatedMapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public ReplicatedMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         throw throwReadOnly();
     }
 

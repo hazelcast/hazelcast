@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.QueryCacheConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -157,8 +159,8 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public QueryCacheConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new QueryCacheConfigReadOnly(this);

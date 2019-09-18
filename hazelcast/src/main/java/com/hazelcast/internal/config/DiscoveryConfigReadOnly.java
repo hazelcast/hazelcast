@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 
@@ -23,12 +25,10 @@ import java.util.List;
 
 /**
  * Readonly version of {@link DiscoveryConfig}
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class DiscoveryConfigReadOnly extends DiscoveryConfig {
 
-    DiscoveryConfigReadOnly(DiscoveryConfig discoveryConfig) {
+    public DiscoveryConfigReadOnly(DiscoveryConfig discoveryConfig) {
         super(discoveryConfig.getDiscoveryServiceProvider(), discoveryConfig.getNodeFilter(),
                 discoveryConfig.getNodeFilterClass(), discoveryConfig.getDiscoveryStrategyConfigs());
     }

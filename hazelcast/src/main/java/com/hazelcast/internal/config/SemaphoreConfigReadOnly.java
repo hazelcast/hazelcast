@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.SemaphoreConfig;
 
 /**
  * Contains configuration for Semaphore(read only)
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class SemaphoreConfigReadOnly extends SemaphoreConfig {
 

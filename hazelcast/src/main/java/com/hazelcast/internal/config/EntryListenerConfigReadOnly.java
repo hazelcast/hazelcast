@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.EntryListener;
 
 import java.util.EventListener;
 
 /**
  * Configuration for EntryListener(Read Only)
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class EntryListenerConfigReadOnly extends EntryListenerConfig {
 

@@ -14,8 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheConfiguration;
+import com.hazelcast.config.CachePartitionLostListenerConfig;
+import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.HotRestartConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.nio.serialization.BinaryInterface;
 
 import javax.annotation.Nonnull;
@@ -33,12 +42,11 @@ import java.util.Set;
  *
  * @param <K> type of the key
  * @param <V> type of the value
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 @BinaryInterface
 public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
-    CacheConfigReadOnly(CacheConfig config) {
+    public CacheConfigReadOnly(CacheConfig config) {
         super(config);
     }
 

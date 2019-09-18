@@ -14,40 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
-import com.hazelcast.collection.ItemListener;
-
-import java.util.EventListener;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.query.Predicate;
 
 /**
- * Contains the configuration for an Item Listener(Read-only).
+ * Contains the configuration for a Predicate.
  *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * @since 3.5
  */
-public class ItemListenerConfigReadOnly extends ItemListenerConfig {
+public class PredicateConfigReadOnly extends PredicateConfig {
 
-    public ItemListenerConfigReadOnly(ItemListenerConfig config) {
+    public PredicateConfigReadOnly(PredicateConfig config) {
         super(config);
     }
 
     @Override
-    public ItemListenerConfig setImplementation(ItemListener implementation) {
+    public PredicateConfig setClassName(String className) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public ItemListenerConfig setIncludeValue(boolean includeValue) {
+    public PredicateConfig setImplementation(Predicate implementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public ListenerConfig setClassName(String className) {
+    public PredicateConfig setSql(String sql) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public ListenerConfig setImplementation(EventListener implementation) {
-        throw new UnsupportedOperationException("This config is read-only");
+    public String toString() {
+        return "PredicateConfigReadOnly{} " + super.toString();
     }
 }

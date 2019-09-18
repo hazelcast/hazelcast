@@ -14,39 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
-import java.util.Collections;
-import java.util.Map;
+import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 
 /**
- * Contains configuration for attribute of member (Read-Only).
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * Readonly version of CacheSimpleEntryListenerConfig
  */
-public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
+public class CacheSimpleEntryListenerConfigReadOnly extends CacheSimpleEntryListenerConfig {
 
-    MemberAttributeConfigReadOnly(MemberAttributeConfig source) {
-        super(source);
+    public CacheSimpleEntryListenerConfigReadOnly(CacheSimpleEntryListenerConfig listenerConfig) {
+        super(listenerConfig);
     }
 
     @Override
-    public MemberAttributeConfig setAttribute(String key, String value) {
+    public CacheSimpleEntryListenerConfig setSynchronous(boolean synchronous) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public MemberAttributeConfig removeAttribute(String key) {
+    public CacheSimpleEntryListenerConfig setOldValueRequired(boolean oldValueRequired) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public MemberAttributeConfig setAttributes(Map<String, String> attributes) {
+    public CacheSimpleEntryListenerConfig setCacheEntryEventFilterFactory(String cacheEntryEventFilterFactory) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public Map<String, String> getAttributes() {
-        return Collections.unmodifiableMap(super.getAttributes());
+    public CacheSimpleEntryListenerConfig setCacheEntryListenerFactory(String cacheEntryListenerFactory) {
+        throw new UnsupportedOperationException("This config is read-only");
     }
 }

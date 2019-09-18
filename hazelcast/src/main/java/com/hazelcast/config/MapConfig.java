@@ -16,11 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
@@ -161,8 +163,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public MapConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new MapConfigReadOnly(this);

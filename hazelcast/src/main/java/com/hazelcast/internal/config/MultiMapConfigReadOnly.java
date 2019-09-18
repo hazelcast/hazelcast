@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.multimap.MultiMap;
 
 import java.util.ArrayList;
@@ -24,8 +27,6 @@ import java.util.List;
 
 /**
  * Contains the configuration for an {@link MultiMap}.
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class MultiMapConfigReadOnly extends MultiMapConfig {
 

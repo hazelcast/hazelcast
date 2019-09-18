@@ -147,7 +147,8 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
                 + '}';
     }
 
-    NearCachePreloaderConfig getAsReadOnly() {
+    @PrivateApi
+    public NearCachePreloaderConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new NearCachePreloaderConfigReadOnly(this);
         }

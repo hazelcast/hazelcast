@@ -14,39 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
-import com.hazelcast.query.Predicate;
+import com.hazelcast.config.MapIndexConfig;
 
 /**
- * Contains the configuration for a Predicate.
- *
- * @since 3.5
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * Contains the configuration for a index of Map.
  */
-class PredicateConfigReadOnly extends PredicateConfig {
+public class MapIndexConfigReadOnly extends MapIndexConfig {
 
-    PredicateConfigReadOnly(PredicateConfig config) {
+    public MapIndexConfigReadOnly(MapIndexConfig config) {
         super(config);
     }
 
     @Override
-    public PredicateConfig setClassName(String className) {
+    public MapIndexConfig setAttribute(String attribute) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public PredicateConfig setImplementation(Predicate implementation) {
+    public MapIndexConfig setOrdered(boolean ordered) {
         throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public PredicateConfig setSql(String sql) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public String toString() {
-        return "PredicateConfigReadOnly{} " + super.toString();
     }
 }

@@ -14,33 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
-import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.config.MemberAttributeConfig;
+
+import java.util.Collections;
+import java.util.Map;
 
 /**
- * Contains the configuration for strategy of partitioning
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * Contains configuration for attribute of member (Read-Only).
  */
-public class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConfig {
+public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
 
-    public PartitioningStrategyConfigReadOnly(PartitioningStrategyConfig config) {
-        super(config);
+    public MemberAttributeConfigReadOnly(MemberAttributeConfig source) {
+        super(source);
     }
 
     @Override
-    public PartitioningStrategyConfig setPartitioningStrategyClass(String partitionStrategyClass) {
+    public MemberAttributeConfig setAttribute(String key, String value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
+    public MemberAttributeConfig removeAttribute(String key) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public PartitioningStrategyConfig setPartitioningStrategy(PartitioningStrategy partitionStrategy) {
+    public MemberAttributeConfig setAttributes(Map<String, String> attributes) {
         throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        return Collections.unmodifiableMap(super.getAttributes());
     }
 }

@@ -16,7 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MapPartitionLostListenerConfigReadOnly;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Configuration for MapPartitionLostListener
@@ -47,9 +49,9 @@ public class MapPartitionLostListenerConfig extends ListenerConfig {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Override
+    @PrivateApi
     public MapPartitionLostListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new MapPartitionLostListenerConfigReadOnly(this);

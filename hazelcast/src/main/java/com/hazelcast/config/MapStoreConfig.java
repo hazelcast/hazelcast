@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MapStoreConfigReadOnly;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.io.IOException;
@@ -56,6 +58,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     private InitialLoadMode initialLoadMode = InitialLoadMode.LAZY;
 
     private transient MapStoreConfigReadOnly readOnly;
+
     /**
      * Initial load module
      */
@@ -90,8 +93,8 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public MapStoreConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new MapStoreConfigReadOnly(this);

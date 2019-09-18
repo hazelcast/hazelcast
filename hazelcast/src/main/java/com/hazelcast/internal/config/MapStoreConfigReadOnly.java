@@ -14,89 +14,73 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.MapStoreConfig;
+
+import java.util.Properties;
 
 /**
- * Contains configuration for a Near Cache (read-only).
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * Contains the configuration for a Map Store (read-only).
  */
-public class NearCacheConfigReadOnly extends NearCacheConfig {
+public class MapStoreConfigReadOnly extends MapStoreConfig {
 
-    public NearCacheConfigReadOnly() {
-    }
-
-    public NearCacheConfigReadOnly(NearCacheConfig config) {
+    public MapStoreConfigReadOnly(MapStoreConfig config) {
         super(config);
     }
 
     @Override
-    public NearCacheConfig setName(String name) {
+    public MapStoreConfig setClassName(String className) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public NearCacheConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
+    public MapStoreConfig setFactoryClassName(String factoryClassName) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public NearCacheConfig setMaxIdleSeconds(int maxIdleSeconds) {
+    public MapStoreConfig setWriteDelaySeconds(int writeDelaySeconds) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public NearCacheConfig setSerializeKeys(boolean serializeKeys) {
+    public MapStoreConfig setWriteBatchSize(int writeBatchSize) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public NearCacheConfig setInvalidateOnChange(boolean invalidateOnChange) {
+    public MapStoreConfig setEnabled(boolean enabled) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public NearCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+    public MapStoreConfig setImplementation(Object implementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
+    public MapStoreConfig setInitialLoadMode(InitialLoadMode initialLoadMode) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public NearCacheConfig setCacheLocalEntries(boolean cacheLocalEntries) {
+    public MapStoreConfig setFactoryImplementation(Object factoryImplementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public NearCacheConfig setLocalUpdatePolicy(LocalUpdatePolicy localUpdatePolicy) {
+    public MapStoreConfig setProperty(String name, String value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public NearCacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
+    public MapStoreConfig setProperties(Properties properties) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public EvictionConfig getEvictionConfig() {
-        return super.getEvictionConfig().getAsReadOnly();
-    }
-
-    @Override
-    public NearCacheConfig setPreloaderConfig(NearCachePreloaderConfig preloaderConfig) {
+    public MapStoreConfig setWriteCoalescing(boolean writeCoalescing) {
         throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public NearCachePreloaderConfig getPreloaderConfig() {
-        return super.getPreloaderConfig().getAsReadOnly();
-    }
-
-    @Override
-    public int getClassId() {
-        throw new UnsupportedOperationException("NearCacheConfigReadOnly is not serializable");
     }
 }

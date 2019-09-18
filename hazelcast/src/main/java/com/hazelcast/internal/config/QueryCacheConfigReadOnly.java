@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.QueryCacheConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,11 +31,10 @@ import java.util.List;
  * Read only {@code QueryCacheConfig}
  *
  * @since 3.5
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
-class QueryCacheConfigReadOnly extends QueryCacheConfig {
+public class QueryCacheConfigReadOnly extends QueryCacheConfig {
 
-    QueryCacheConfigReadOnly(QueryCacheConfig other) {
+    public QueryCacheConfigReadOnly(QueryCacheConfig other) {
         super(other);
     }
 

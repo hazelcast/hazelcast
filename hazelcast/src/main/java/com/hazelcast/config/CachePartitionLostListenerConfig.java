@@ -17,7 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.internal.config.CachePartitionLostListenerConfigReadOnly;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.Serializable;
 
@@ -51,9 +53,9 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Override
+    @PrivateApi
     public CachePartitionLostListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new CachePartitionLostListenerConfigReadOnly(this);

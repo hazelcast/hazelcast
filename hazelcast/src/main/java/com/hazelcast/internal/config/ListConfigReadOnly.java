@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.MergePolicyConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,8 +27,6 @@ import java.util.List;
 
 /**
  * Contains the configuration for an {@link IList} (read-only).
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class ListConfigReadOnly extends ListConfig {
 

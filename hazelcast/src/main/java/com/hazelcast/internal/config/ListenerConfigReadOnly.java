@@ -14,26 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.ListenerConfig;
+
+import java.util.EventListener;
 
 /**
- * Contains the configuration for a index of Map.
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * Contains the configuration for a Listener.
  */
-public class MapIndexConfigReadOnly extends MapIndexConfig {
+public class ListenerConfigReadOnly extends ListenerConfig {
 
-    public MapIndexConfigReadOnly(MapIndexConfig config) {
+    public ListenerConfigReadOnly(ListenerConfig config) {
         super(config);
     }
 
     @Override
-    public MapIndexConfig setAttribute(String attribute) {
+    public ListenerConfig setClassName(String className) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public MapIndexConfig setOrdered(boolean ordered) {
+    public ListenerConfig setImplementation(EventListener implementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

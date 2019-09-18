@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
+import com.hazelcast.config.QueueStoreConfig;
 
 import java.util.Properties;
 
 /**
  * Contains the configuration for an {@link QueueStore}.
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class QueueStoreConfigReadOnly extends QueueStoreConfig {
 

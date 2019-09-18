@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.nio.serialization.BinaryInterface;
 
 /**
  * Read only version of {@link com.hazelcast.config.EvictionConfig}.
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 @BinaryInterface
 public class EvictionConfigReadOnly extends EvictionConfig {

@@ -14,36 +14,40 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.collection.ItemListener;
+import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.ListenerConfig;
+
+import java.util.EventListener;
 
 /**
- * Readonly version of CacheSimpleEntryListenerConfig
- *
- * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
+ * Contains the configuration for an Item Listener(Read-only).
  */
-public class CacheSimpleEntryListenerConfigReadOnly extends CacheSimpleEntryListenerConfig {
+public class ItemListenerConfigReadOnly extends ItemListenerConfig {
 
-    public CacheSimpleEntryListenerConfigReadOnly(CacheSimpleEntryListenerConfig listenerConfig) {
-        super(listenerConfig);
+    public ItemListenerConfigReadOnly(ItemListenerConfig config) {
+        super(config);
     }
 
     @Override
-    public CacheSimpleEntryListenerConfig setSynchronous(boolean synchronous) {
+    public ItemListenerConfig setImplementation(ItemListener implementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public CacheSimpleEntryListenerConfig setOldValueRequired(boolean oldValueRequired) {
+    public ItemListenerConfig setIncludeValue(boolean includeValue) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public CacheSimpleEntryListenerConfig setCacheEntryEventFilterFactory(String cacheEntryEventFilterFactory) {
+    public ListenerConfig setClassName(String className) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public CacheSimpleEntryListenerConfig setCacheEntryListenerFactory(String cacheEntryListenerFactory) {
+    public ListenerConfig setImplementation(EventListener implementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

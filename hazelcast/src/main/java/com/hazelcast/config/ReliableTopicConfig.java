@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -306,8 +307,8 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public ReliableTopicConfig getAsReadOnly() {
         return new ReliableTopicConfigReadOnly(this);
     }

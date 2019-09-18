@@ -20,6 +20,7 @@ import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -116,8 +117,8 @@ public class LockConfig implements IdentifiedDataSerializable, NamedConfig {
      * Gets immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
+    @PrivateApi
     public LockConfig getAsReadOnly() {
         return new LockConfigReadOnly(this);
     }
