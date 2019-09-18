@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 
 /**
  * A split brain protection function that keeps track of the last heartbeat timestamp per member. For a member to be

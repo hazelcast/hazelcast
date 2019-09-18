@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 @SuppressFBWarnings({"EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT"})
 public abstract class HttpCommand extends AbstractTextCommand {

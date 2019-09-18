@@ -32,8 +32,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains configuration parameters for client network related behaviour

@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
+import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 
 /**
  * Contains split-brain handling logic for {@link ReplicatedMap}.

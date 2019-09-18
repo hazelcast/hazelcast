@@ -44,10 +44,10 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.executor.StripedExecutor;
-import com.hazelcast.util.executor.StripedRunnable;
-import com.hazelcast.util.executor.TimeoutRunnable;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.executor.StripedExecutor;
+import com.hazelcast.internal.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.TimeoutRunnable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -58,9 +58,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.createIMapEvent;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Client side event service implementation for query cache.

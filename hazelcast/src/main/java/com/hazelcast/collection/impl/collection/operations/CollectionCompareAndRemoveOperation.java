@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 

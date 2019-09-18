@@ -18,12 +18,12 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * Thread safe container for {@link DistributedServiceWanEventCounters}

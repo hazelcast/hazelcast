@@ -25,8 +25,8 @@ import com.hazelcast.query.impl.Extractable;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Projection that extracts the values of the given attributes and returns them in an Object[] array.

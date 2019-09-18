@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import javax.annotation.Nonnull;
 import java.util.Map;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration object for a custom WAN publisher. A single publisher defines

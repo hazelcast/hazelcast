@@ -84,11 +84,11 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.collection.PartitionIdSet;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,7 +113,7 @@ import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATIO
 import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
-import static com.hazelcast.util.SetUtil.immutablePartitionIdSet;
+import static com.hazelcast.internal.util.SetUtil.immutablePartitionIdSet;
 import static java.lang.Thread.currentThread;
 
 /**

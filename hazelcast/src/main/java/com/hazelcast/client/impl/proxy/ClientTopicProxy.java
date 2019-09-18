@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Proxy implementation of {@link ITopic}.

@@ -41,8 +41,8 @@ import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 /**
  * An operation could be compared to a {@link Runnable}. It contains logic that

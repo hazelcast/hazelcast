@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 /**
  * Helper which is used to create a {@link MapService} object.

@@ -29,13 +29,13 @@ import com.hazelcast.client.impl.protocol.codec.LockUnlockCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.cp.lock.ICondition;
 import com.hazelcast.cp.lock.ILock;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.ThreadUtil;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.Thread.currentThread;
 
 /**

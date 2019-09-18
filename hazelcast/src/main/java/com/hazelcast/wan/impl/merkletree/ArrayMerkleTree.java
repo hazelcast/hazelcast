@@ -16,14 +16,14 @@
 
 package com.hazelcast.wan.impl.merkletree;
 
-import com.hazelcast.util.collection.OAHashSet;
+import com.hazelcast.internal.util.collection.OAHashSet;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
  * A not thread-safe, array based {@link MerkleTree} implementation, which

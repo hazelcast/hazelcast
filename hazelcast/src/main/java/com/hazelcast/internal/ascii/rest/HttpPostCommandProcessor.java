@@ -31,8 +31,8 @@ import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.util.JsonUtil;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.JsonUtil;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -44,11 +44,11 @@ import java.net.URLDecoder;
 import java.util.UUID;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
-import static com.hazelcast.util.ExceptionUtil.peel;
-import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.util.StringUtil.stringToBytes;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.StringUtil.bytesToString;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:methodlength"})
 public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostCommand> {

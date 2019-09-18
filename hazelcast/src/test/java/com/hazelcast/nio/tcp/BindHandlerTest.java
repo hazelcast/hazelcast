@@ -57,7 +57,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.getSerializationService;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;

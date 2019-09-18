@@ -25,8 +25,8 @@ import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.QuickMath.normalize;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.QuickMath.normalize;
 
 /**
  * Utility class for {@link sun.misc.Unsafe}.

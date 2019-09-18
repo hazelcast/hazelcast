@@ -23,7 +23,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.util.AddressUtil;
+import com.hazelcast.internal.util.AddressUtil;
 
 import java.net.UnknownHostException;
 import java.util.Collection;

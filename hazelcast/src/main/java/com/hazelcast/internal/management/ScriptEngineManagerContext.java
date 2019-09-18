@@ -18,7 +18,7 @@ package com.hazelcast.internal.management;
 
 import javax.script.ScriptEngineManager;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Accessor for {@link javax.script.ScriptEngineManager}

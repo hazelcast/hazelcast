@@ -37,7 +37,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
+import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +53,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Helper to ClientConnectionManager.

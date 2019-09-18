@@ -25,7 +25,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import java.io.IOException;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a Map Store.

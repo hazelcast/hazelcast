@@ -62,7 +62,7 @@ import static com.hazelcast.test.HazelcastTestSupport.generateKeyOwnedBy;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.Assert.fail;

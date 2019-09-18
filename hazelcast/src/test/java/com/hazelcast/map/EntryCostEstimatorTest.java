@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

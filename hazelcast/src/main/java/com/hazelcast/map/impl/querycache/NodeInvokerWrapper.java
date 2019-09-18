@@ -25,9 +25,9 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.Preconditions.checkInstanceOf;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Invocation functionality for node-side {@link QueryCacheContext}.

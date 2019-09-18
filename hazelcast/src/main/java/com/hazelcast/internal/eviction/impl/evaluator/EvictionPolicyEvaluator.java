@@ -20,7 +20,7 @@ import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.Expirable;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 /**
  * Default {@link EvictionPolicyEvaluator} implementation.

@@ -33,7 +33,7 @@ import java.util.UUID;
 
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.Math.max;
 
 /**

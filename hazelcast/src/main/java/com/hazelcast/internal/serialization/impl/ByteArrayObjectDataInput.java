@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import java.io.EOFException;
 import java.io.IOException;

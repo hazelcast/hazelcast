@@ -41,9 +41,9 @@ import java.util.UUID;
 import static com.hazelcast.map.impl.MapDataSerializerHook.F_ID;
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_INVALIDATION_METADATA;
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_INVALIDATION_METADATA_RESPONSE;
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 public class MapGetInvalidationMetaDataOperation extends Operation implements IdentifiedDataSerializable, ReadonlyOperation {
 

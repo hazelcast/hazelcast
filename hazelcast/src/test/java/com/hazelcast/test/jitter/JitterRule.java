@@ -24,8 +24,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
-import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

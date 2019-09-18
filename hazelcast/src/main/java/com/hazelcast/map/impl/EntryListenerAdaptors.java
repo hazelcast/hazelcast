@@ -22,7 +22,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.IMap;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.EnumMap;
 import java.util.Map;

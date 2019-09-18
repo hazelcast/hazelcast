@@ -28,7 +28,7 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A Metric set for exposing {@link java.lang.management.OperatingSystemMXBean} metrics.

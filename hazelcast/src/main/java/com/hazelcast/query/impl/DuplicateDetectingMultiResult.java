@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> implements MultiResultSet {
     private Map<Data, QueryableEntry> records;

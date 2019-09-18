@@ -47,8 +47,8 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.CacheEventType.PARTITION_LOST;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Helper class mainly for {@link ClientCacheProxySupport} that contains utility-methods and utility-classes.

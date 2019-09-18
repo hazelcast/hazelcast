@@ -28,11 +28,11 @@ import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.MapUtil;
 
 import java.util.Collections;
 import java.util.Map;
@@ -46,7 +46,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedExecutorService implements ManagedService, RemoteService,
         StatisticsAwareService<LocalExecutorStats>, SplitBrainProtectionAwareService {

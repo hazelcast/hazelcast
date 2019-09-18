@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Handler for processing of event data in an {@link Accumulator Accumulator}.

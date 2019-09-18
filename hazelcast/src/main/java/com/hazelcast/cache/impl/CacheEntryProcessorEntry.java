@@ -24,7 +24,7 @@ import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * This class is an implementation of {@link MutableEntry} which is provided into

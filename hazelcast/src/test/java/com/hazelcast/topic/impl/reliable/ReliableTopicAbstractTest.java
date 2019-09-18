@@ -26,7 +26,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 

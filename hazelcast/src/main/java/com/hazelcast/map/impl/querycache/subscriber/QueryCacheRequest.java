@@ -23,9 +23,9 @@ import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Represents a user request for creating a {@link com.hazelcast.map.QueryCache QueryCache}.

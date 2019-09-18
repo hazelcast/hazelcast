@@ -27,7 +27,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 import javax.cache.CacheManager;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static org.junit.Assert.assertNotEquals;
 
 /**

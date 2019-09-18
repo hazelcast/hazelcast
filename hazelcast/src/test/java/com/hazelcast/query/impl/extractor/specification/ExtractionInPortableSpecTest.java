@@ -22,7 +22,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

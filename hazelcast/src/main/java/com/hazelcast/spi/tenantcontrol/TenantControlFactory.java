@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.tenantcontrol.NoopTenantControlFactory;
  * Hazelcast service attaches the tenant control to a distributed object.
  *
  * An implementation of {@code TenantControlFactory} is instantiated
- * via {@link com.hazelcast.util.ServiceLoader}, so in order to be picked up:
+ * via {@link com.hazelcast.internal.util.ServiceLoader}, so in order to be picked up:
  * <ul>
  *     <li>Its class name must be stored in a service definition file in
  *     {@code META-INF/services/com.hazelcast.spi.tenantcontrol.TenantControlFactory}</li>

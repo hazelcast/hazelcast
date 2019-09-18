@@ -21,11 +21,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.util.ExceptionUtil.RuntimeExceptionFactory;
+import com.hazelcast.internal.util.ExceptionUtil.RuntimeExceptionFactory;
 
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Contains static method that is used from client transaction classes.

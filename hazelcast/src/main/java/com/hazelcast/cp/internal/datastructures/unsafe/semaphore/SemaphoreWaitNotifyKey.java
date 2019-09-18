@@ -18,7 +18,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.semaphore;
 
 import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
 

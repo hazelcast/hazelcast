@@ -22,7 +22,7 @@ import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.MemoryInfoAccessor;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

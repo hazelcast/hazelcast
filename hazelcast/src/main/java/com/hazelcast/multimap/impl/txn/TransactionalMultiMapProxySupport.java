@@ -32,7 +32,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.ThreadUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,8 +43,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public abstract class TransactionalMultiMapProxySupport<K, V>
         extends TransactionalDistributedObject<MultiMapService>

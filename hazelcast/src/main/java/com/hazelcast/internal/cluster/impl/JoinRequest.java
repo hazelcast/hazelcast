@@ -32,8 +32,8 @@ import java.util.Set;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.unmodifiableSet;
 
 public class JoinRequest extends JoinMessage {

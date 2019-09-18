@@ -19,7 +19,7 @@ package com.hazelcast.internal.management.dto;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.JsonSerializable;
 
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * A serializable DTO for client B/W list filtering configuration entries.

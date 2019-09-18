@@ -44,9 +44,9 @@ import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -54,7 +54,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 @SuppressWarnings("checkstyle:methodcount")
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,

@@ -21,7 +21,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import java.io.File;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A MetricSet for files. Currently only displays space statistics for the partition of the user.home

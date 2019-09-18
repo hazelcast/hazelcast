@@ -23,7 +23,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 /**
  * Handles {@link PreVoteRequest} and responds to the sender

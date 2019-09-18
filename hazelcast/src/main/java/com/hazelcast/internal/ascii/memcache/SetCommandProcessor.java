@@ -29,7 +29,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.REPLACE;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.SET;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
 

@@ -33,9 +33,9 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
-import static com.hazelcast.util.Clock.currentTimeMillis;
-import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.ExceptionUtil.fixAsyncStackTrace;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 /**
  * The InvocationFuture is the {@link InternalCompletableFuture} that waits on the completion

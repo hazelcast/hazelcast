@@ -29,8 +29,8 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -54,9 +54,9 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.ALL;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.Preconditions.isNotNull;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.Arrays.asList;
 
 /**

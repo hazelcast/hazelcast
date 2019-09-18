@@ -25,7 +25,7 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.internal.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;

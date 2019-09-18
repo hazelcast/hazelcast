@@ -30,7 +30,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.security.Permission;
 import java.util.ArrayList;

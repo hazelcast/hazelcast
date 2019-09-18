@@ -23,7 +23,7 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.collection.Long2ObjectHashMap;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,8 +40,8 @@ import java.util.UUID;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static java.util.Collections.unmodifiableCollection;
 
 /**

@@ -73,7 +73,7 @@ import static com.hazelcast.nio.IOUtil.toFileName;
 import static com.hazelcast.nio.IOUtil.touch;
 import static com.hazelcast.nio.IOUtil.writeByteArray;
 import static com.hazelcast.nio.IOUtil.writeObject;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

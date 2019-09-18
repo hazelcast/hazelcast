@@ -31,13 +31,13 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.internal.util.EmptyStatement;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
 /**
  * Client-side Raft-based proxy implementation of {@link ICountDownLatch}

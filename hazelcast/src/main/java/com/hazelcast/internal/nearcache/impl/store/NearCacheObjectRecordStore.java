@@ -21,7 +21,7 @@ import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
-import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 
 /**
  * {@link com.hazelcast.internal.nearcache.NearCacheRecordStore} implementation for Near Caches

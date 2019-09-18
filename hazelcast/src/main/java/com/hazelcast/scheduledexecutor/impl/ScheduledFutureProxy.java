@@ -44,8 +44,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
 @SuppressWarnings({"checkstyle:methodcount"})

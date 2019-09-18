@@ -37,9 +37,9 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.StateMachine;
-import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.StateMachine;
+import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -62,8 +62,8 @@ import static com.hazelcast.map.impl.MapKeyLoaderUtil.toPartition;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR;
-import static com.hazelcast.util.IterableUtil.limit;
-import static com.hazelcast.util.IterableUtil.map;
+import static com.hazelcast.internal.util.IterableUtil.limit;
+import static com.hazelcast.internal.util.IterableUtil.map;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**

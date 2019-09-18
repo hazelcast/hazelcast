@@ -29,7 +29,7 @@ import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Default implementation of {@link MapServiceFactory}

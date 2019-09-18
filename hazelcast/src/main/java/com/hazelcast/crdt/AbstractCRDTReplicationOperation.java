@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Base class for CRDT replication operations. It supports replicating a

@@ -21,7 +21,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.AddressUtil;
+import com.hazelcast.internal.util.AddressUtil;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Discovery service that discover nodes via hazelcast.cloud

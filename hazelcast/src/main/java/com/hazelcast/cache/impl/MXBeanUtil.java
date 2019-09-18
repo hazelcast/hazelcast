@@ -24,7 +24,7 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Set;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * MXBean utility methods related to registration of the beans.

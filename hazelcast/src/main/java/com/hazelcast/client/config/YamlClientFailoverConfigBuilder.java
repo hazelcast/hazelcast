@@ -25,7 +25,7 @@ import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -36,8 +36,8 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Loads the {@link com.hazelcast.client.config.ClientFailoverConfig} using YAML.

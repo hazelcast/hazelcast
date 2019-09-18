@@ -22,8 +22,8 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionLifecycleListener;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

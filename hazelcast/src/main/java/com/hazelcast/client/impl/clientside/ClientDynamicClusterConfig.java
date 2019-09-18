@@ -100,7 +100,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Client implementation of member side config. Clients use this to submit new data structure configurations into

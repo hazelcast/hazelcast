@@ -40,7 +40,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.diagnostics.AbstractDiagnosticsPluginTest.cleanupDiagnosticFiles;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

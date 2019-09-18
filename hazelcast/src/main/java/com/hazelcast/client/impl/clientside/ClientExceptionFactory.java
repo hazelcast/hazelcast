@@ -72,7 +72,7 @@ import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
-import com.hazelcast.util.AddressUtil;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.wan.WanReplicationQueueFullException;
 
 import javax.cache.CacheException;

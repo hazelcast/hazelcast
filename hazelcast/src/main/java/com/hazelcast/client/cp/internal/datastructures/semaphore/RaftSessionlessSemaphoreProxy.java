@@ -38,9 +38,9 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static java.lang.Math.max;
 
 /**

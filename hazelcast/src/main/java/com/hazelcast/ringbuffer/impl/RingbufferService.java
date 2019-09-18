@@ -44,8 +44,8 @@ import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -62,9 +62,9 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.internal.config.ConfigValidator.checkRingbufferConfig;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.MapUtil.isNullOrEmpty;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * The SPI Service that deals with the {@link com.hazelcast.ringbuffer.Ringbuffer}.

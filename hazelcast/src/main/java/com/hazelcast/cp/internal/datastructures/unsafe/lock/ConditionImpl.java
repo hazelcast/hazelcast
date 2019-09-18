@@ -25,15 +25,15 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ThreadUtil;
 
 import java.util.Date;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowInterrupted;
 
 final class ConditionImpl implements ICondition {
 

@@ -42,7 +42,7 @@ import static com.hazelcast.config.ConfigSections.IMPORT;
 import static com.hazelcast.config.DomConfigHelper.asElementIterable;
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 
 /**

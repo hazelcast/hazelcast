@@ -19,7 +19,7 @@ package com.hazelcast.internal.networking.nio.iobalancer;
 import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.util.ItemCounter;
 
 import java.util.Map;
 import java.util.Set;

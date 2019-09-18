@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.eviction;
 
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 
 /**
  * {@link EvictionChecker} implementation for composing

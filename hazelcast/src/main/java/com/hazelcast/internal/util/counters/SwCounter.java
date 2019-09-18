@@ -22,7 +22,7 @@ import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**

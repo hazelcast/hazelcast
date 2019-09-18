@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;

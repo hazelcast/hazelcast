@@ -28,7 +28,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.util.RootCauseMatcher;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

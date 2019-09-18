@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;

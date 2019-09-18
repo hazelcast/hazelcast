@@ -27,7 +27,7 @@ import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.AdditionalServiceClassLoader;
+import com.hazelcast.internal.util.AdditionalServiceClassLoader;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;

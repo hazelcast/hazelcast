@@ -34,9 +34,9 @@ import com.hazelcast.internal.management.JsonSerializable;
 
 import java.util.function.Consumer;
 
-import static com.hazelcast.util.JsonUtil.fromJsonObject;
-import static com.hazelcast.util.JsonUtil.toJsonObject;
-import static com.hazelcast.util.MapUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.JsonUtil.fromJsonObject;
+import static com.hazelcast.internal.util.JsonUtil.toJsonObject;
+import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 
 /**
  * A JSON representation of {@link WanBatchReplicationPublisherConfig}.

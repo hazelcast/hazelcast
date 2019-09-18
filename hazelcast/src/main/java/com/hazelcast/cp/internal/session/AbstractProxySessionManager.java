@@ -21,7 +21,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,9 +37,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static com.hazelcast.util.ExceptionUtil.peel;
-import static com.hazelcast.util.Preconditions.checkState;
-import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.Preconditions.checkState;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 
 /**
  * Implements session management APIs for Raft-based server and client proxies

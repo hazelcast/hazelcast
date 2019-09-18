@@ -41,10 +41,10 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.collection.PartitionIdSet;
-import com.hazelcast.util.executor.CompletableFutureTask;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -68,9 +68,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations

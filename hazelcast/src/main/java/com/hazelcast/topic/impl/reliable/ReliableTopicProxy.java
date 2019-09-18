@@ -34,8 +34,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.UuidUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,8 +45,8 @@ import java.util.concurrent.Executor;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.util.ExceptionUtil.peel;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 

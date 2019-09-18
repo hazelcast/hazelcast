@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.Integer.getInteger;
 
 /**

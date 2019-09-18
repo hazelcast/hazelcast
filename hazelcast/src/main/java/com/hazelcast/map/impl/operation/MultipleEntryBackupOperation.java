@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.util.SetUtil.createLinkedHashSet;
+import static com.hazelcast.internal.util.SetUtil.createLinkedHashSet;
 
 public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 

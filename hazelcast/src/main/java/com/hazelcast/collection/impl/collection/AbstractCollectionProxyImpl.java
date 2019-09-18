@@ -41,7 +41,7 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -53,8 +53,8 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCollectionConfig;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.singleton;
 
 public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S>

@@ -35,8 +35,8 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * {@link javax.cache.CacheManager} implementation for client side.

@@ -20,8 +20,8 @@ import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.internal.jmx.OperationServiceMBean}.

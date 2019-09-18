@@ -39,7 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E> implements IList<E> {
 

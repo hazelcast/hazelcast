@@ -61,9 +61,9 @@ import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.RandomPicker;
-import com.hazelcast.util.collection.Long2ObjectHashMap;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.RandomPicker;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -79,7 +79,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATING;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.UPDATING_GROUP_MEMBER_LIST;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Math.min;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

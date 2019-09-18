@@ -37,7 +37,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Processes remaining items in {@link Accumulator} instances on a partition.

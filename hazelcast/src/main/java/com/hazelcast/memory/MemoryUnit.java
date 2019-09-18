@@ -16,7 +16,7 @@
 
 package com.hazelcast.memory;
 
-import static com.hazelcast.util.QuickMath.divideByAndRoundToInt;
+import static com.hazelcast.internal.util.QuickMath.divideByAndRoundToInt;
 
 /**
  * MemoryUnit represents memory size at a given unit of

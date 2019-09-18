@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Arrays;
 

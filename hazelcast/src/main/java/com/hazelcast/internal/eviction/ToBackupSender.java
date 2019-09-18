@@ -21,7 +21,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.internal.util.CollectionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;

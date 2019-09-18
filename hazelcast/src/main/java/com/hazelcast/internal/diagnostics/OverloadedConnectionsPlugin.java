@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.util.ItemCounter;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;

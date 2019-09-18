@@ -38,9 +38,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,8 +58,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * @author ali 5/24/13

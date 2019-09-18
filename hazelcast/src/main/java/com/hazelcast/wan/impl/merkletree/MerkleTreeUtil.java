@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan.impl.merkletree;
 
-import com.hazelcast.util.QuickMath;
+import com.hazelcast.internal.util.QuickMath;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Utility methods for Merkle tree implementation

@@ -42,8 +42,8 @@ import java.util.stream.Collectors;
 import static com.hazelcast.cp.internal.RaftService.getCPGroupPartitionId;
 import static com.hazelcast.cp.internal.RaftService.getObjectNameForProxy;
 import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
 
 /**

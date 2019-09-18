@@ -50,10 +50,10 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
@@ -74,7 +74,7 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.emptyList;
 
 /**

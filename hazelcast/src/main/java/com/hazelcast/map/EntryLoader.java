@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * This is an extension to {@link MapLoader}. Entries loaded by EntryLoader

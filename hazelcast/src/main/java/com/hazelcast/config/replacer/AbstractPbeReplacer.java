@@ -28,9 +28,9 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.StringUtil.UTF8_CHARSET;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
 
 /**
  * The common parent for {@link ConfigReplacer} implementations which allow to mask values by encrypting the value. This parent

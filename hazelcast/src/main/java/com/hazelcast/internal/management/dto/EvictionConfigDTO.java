@@ -23,9 +23,9 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getString;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 class EvictionConfigDTO implements JsonSerializable {
     private EvictionConfig evictionConfig;

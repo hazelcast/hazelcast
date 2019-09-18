@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
  * Owned entry cost estimator for maps which have {@link InMemoryFormat#BINARY} memory-format.

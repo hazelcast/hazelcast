@@ -19,7 +19,7 @@ package com.hazelcast.spi.discovery;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collections;
 import java.util.Map;

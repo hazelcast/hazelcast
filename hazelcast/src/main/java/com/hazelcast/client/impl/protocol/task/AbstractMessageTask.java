@@ -45,7 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 /**
  * Base Message task.

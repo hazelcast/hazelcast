@@ -41,8 +41,8 @@ import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.OFFSET_BACKUP_ACKS;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_CALL_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_TYPE_ID;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Responsible for handling responses for invocations. Based on the content of the

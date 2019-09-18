@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Collection;
 

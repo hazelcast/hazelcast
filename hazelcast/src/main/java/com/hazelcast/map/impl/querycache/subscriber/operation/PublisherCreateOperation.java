@@ -41,10 +41,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 
 /**
  * An idempotent create operation which creates

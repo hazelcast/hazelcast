@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
  * CachedDataRecordWithStats.

@@ -38,7 +38,7 @@ import java.util.Map.Entry;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICATION_OPERATION;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class ReplicationOperation extends Operation implements IdentifiedDataSerializable {
 

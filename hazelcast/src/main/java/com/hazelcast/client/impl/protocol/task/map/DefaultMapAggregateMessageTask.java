@@ -23,7 +23,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.util.IterationType;
 
 import java.util.Collection;
 

@@ -24,8 +24,8 @@ import com.hazelcast.internal.management.JsonSerializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * A serializable DTO that describes client B/W list filtering configuration received from Management Center.

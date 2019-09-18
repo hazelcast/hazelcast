@@ -18,7 +18,7 @@ package com.hazelcast.instance.impl;
 
 import java.net.NetworkInterface;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration object for {@link NetworkInterface} mocking.

@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Collection;
 

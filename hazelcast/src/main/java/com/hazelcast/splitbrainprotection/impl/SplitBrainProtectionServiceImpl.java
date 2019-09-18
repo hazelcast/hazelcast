@@ -47,8 +47,8 @@ import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.executor.ExecutorType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -59,7 +59,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ_WRITE;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.WRITE;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Service containing logic for cluster split brain protection.

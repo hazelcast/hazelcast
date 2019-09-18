@@ -32,7 +32,7 @@ import java.util.Collection;
 import java.util.Queue;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 /**
  * Merges a {@link QueueMergeTypes} for split-brain healing with a {@link SplitBrainMergePolicy}.

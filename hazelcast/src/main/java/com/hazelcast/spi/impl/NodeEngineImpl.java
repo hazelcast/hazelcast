@@ -85,8 +85,8 @@ import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.CONCURRENT_WINDOW_MS;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
 
 /**

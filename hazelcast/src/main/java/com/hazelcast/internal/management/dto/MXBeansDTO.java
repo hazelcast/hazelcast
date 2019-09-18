@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
 
 /**
  * Holder class for serializable service beans.

@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Holder for write-behind-specific state.

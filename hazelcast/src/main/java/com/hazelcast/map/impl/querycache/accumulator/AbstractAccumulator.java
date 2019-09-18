@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.sequence.DefaultPartitionSequencer;
 import com.hazelcast.map.impl.querycache.event.sequence.PartitionSequencer;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 /**
  * Contains helpers for an {@code Accumulator} implementation.

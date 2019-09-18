@@ -41,7 +41,7 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.util.ByteArrayProcessor;
+import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
 import java.util.Map;

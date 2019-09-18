@@ -24,7 +24,7 @@ import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.NetworkingService;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
-import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
 
 /**
  * A Serializable DTO for {@link NetworkingServiceMBean}.

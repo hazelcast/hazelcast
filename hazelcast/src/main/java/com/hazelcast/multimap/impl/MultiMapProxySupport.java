@@ -34,8 +34,8 @@ import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ThreadUtil;
 
 import java.util.HashSet;
 import java.util.Map;

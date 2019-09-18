@@ -61,7 +61,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.isIn;

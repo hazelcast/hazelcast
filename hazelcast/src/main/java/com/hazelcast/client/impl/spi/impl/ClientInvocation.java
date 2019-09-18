@@ -41,8 +41,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.util.Clock.currentTimeMillis;
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 /**
  * Handles the routing of a request from a Hazelcast client.

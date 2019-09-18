@@ -33,8 +33,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
 /**
  * Server-side Raft-based proxy implementation of {@link ICountDownLatch}

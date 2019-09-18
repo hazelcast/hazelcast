@@ -45,11 +45,11 @@ import static com.hazelcast.ringbuffer.impl.operations.GenericOperation.OPERATIO
 import static com.hazelcast.ringbuffer.impl.operations.GenericOperation.OPERATION_REMAINING_CAPACITY;
 import static com.hazelcast.ringbuffer.impl.operations.GenericOperation.OPERATION_SIZE;
 import static com.hazelcast.ringbuffer.impl.operations.GenericOperation.OPERATION_TAIL;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowInterrupted;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.String.format;
 
 /**

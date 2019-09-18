@@ -25,8 +25,8 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import java.io.IOException;
 import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for {@link SplitBrainMergePolicy}.

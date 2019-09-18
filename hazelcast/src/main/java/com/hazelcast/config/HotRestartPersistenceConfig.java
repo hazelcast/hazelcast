@@ -18,8 +18,8 @@ package com.hazelcast.config;
 
 import java.io.File;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configures the Hot Restart stores.

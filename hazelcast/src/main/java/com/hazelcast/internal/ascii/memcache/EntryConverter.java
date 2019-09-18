@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.memcache;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
  * Produced {@link MemcacheEntry} from key and values

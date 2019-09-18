@@ -29,7 +29,7 @@ import com.hazelcast.cp.internal.session.operation.HeartbeatSessionOp;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Iterator;
 import java.util.Map;

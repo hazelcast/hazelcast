@@ -24,14 +24,14 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.util.ICMPHelper;
+import com.hazelcast.internal.util.ICMPHelper;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

@@ -24,8 +24,8 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.SortingUtil;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.SortingUtil;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleImmutableEntry;

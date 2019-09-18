@@ -23,7 +23,7 @@ import com.hazelcast.logging.Logger;
 import java.io.InputStream;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * A {@link ClientFailoverConfig} which is initialized by loading an XML

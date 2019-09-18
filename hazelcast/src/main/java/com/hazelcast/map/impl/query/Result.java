@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Map;
 
