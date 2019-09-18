@@ -137,12 +137,13 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     @Override
     public void shutdown() {
-        doShutdown(true);
+        client.onGracefulShutdown();
+        doShutdown();
     }
 
     @Override
     public void terminate() {
-        doShutdown(false);
+        doShutdown();
     }
 
     public void start() {
@@ -151,14 +152,14 @@ public final class LifecycleServiceImpl implements LifecycleService {
         fireLifecycleEvent(STARTED);
     }
 
-    private void doShutdown(boolean isGraceful) {
+    private void doShutdown() {
         if (!active.compareAndSet(true, false)) {
             return;
         }
 
         fireLifecycleEvent(SHUTTING_DOWN);
         HazelcastClient.shutdown(client.getName());
-        client.doShutdown(isGraceful);
+        client.doShutdown();
         fireLifecycleEvent(SHUTDOWN);
 
         shutdownExecutor();
