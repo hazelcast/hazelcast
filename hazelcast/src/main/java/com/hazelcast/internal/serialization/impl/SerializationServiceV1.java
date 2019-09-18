@@ -198,6 +198,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(BigDecimal.class, new BigDecimalSerializer());
         registerConstant(Enum.class, new EnumSerializer());
 
+        registerConstant(Object[].class, new ArrayStreamSerializer());
+
         registerConstant(ArrayList.class, new ArrayListStreamSerializer());
         registerConstant(LinkedList.class, new LinkedListStreamSerializer());
         registerConstant(CopyOnWriteArrayList.class, new CopyOnWriteArrayListStreamSerializer());

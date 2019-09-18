@@ -81,7 +81,6 @@ public class DistinctAggregationTest {
         assertThat(result, is(equalTo(expectation)));
     }
 
-
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testCountAggregator_withAttributePath() {
         Person[] people = {new Person(5.1), new Person(3.3)};
