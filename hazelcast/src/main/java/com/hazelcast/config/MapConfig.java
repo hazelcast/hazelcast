@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
@@ -41,7 +42,8 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link IMap}.
  */
-public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
+public class MapConfig implements SplitBrainMergeTypeProvider,
+        IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The minimum number of backups
@@ -120,7 +122,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     public MapConfig(String name) {
-        this.name = name;
+        setName(name);
     }
 
     public MapConfig(MapConfig config) {
@@ -183,7 +185,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      * @param name the name to set for this {@link IMap}
      */
     public MapConfig setName(String name) {
-        this.name = name;
+        this.name = checkNotNull(name, "Name must not be null");
         return this;
     }
 
@@ -251,9 +253,9 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated CacheConfig
-     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
-     *                                  or larger than the maximum number of backup
-     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
+     * @throws IllegalArgumentException if asyncBackupCount smaller than
+     *                                  0, or larger than the maximum number of backup or the sum of the
+     *                                  backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -304,14 +306,17 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     /**
-     * Maximum number of seconds for each entry to stay idle in the map. Entries that are
-     * idle (not touched) for more than {@code maxIdleSeconds} will get automatically evicted from the map.
-     * Entry is touched if {@code get()}, {@code getAll()}, {@code put()} or {@code containsKey()} is called.
-     * Any integer between {@code 0} and {@code Integer.MAX_VALUE}.
-     * {@code 0} means infinite. Default is {@code 0}. The time precision is limited by 1 second. The MaxIdle that
-     * less than 1 second can lead to unexpected behaviour.
+     * Maximum number of seconds for each entry to stay idle in the
+     * map. Entries that are idle (not touched) for more than {@code
+     * maxIdleSeconds} will get automatically evicted from the map. Entry
+     * is touched if {@code get()}, {@code getAll()}, {@code put()} or
+     * {@code containsKey()} is called. Any integer between {@code 0}
+     * and {@code Integer.MAX_VALUE}. {@code 0} means infinite. Default
+     * is {@code 0}. The time precision is limited by 1 second. The
+     * MaxIdle that less than 1 second can lead to unexpected behaviour.
      *
-     * @param maxIdleSeconds the maxIdleSeconds (the maximum number of seconds for each entry to stay idle in the map) to set
+     * @param maxIdleSeconds the maxIdleSeconds (the maximum number
+     *                       of seconds for each entry to stay idle in the map) to set
      */
     public MapConfig setMaxIdleSeconds(int maxIdleSeconds) {
         this.maxIdleSeconds = maxIdleSeconds;
@@ -358,7 +363,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     /**
      * Sets custom eviction policy implementation for this map.
      * <p>
-     * Internal eviction algorithm finds most appropriate entry to evict from this map by using supplied policy.
+     * Internal eviction algorithm finds most appropriate
+     * entry to evict from this map by using supplied policy.
      *
      * @param mapEvictionPolicy custom eviction policy implementation
      * @return the updated map configuration
@@ -764,28 +770,25 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (!name.equals(that.name)) {
             return false;
         }
-        if (maxSizeConfig != null ? !maxSizeConfig.equals(that.maxSizeConfig) : that.maxSizeConfig != null) {
+        if (!Objects.equals(maxSizeConfig, that.maxSizeConfig)) {
             return false;
         }
         if (evictionPolicy != that.evictionPolicy) {
             return false;
         }
-        if (mapEvictionPolicy != null ? !mapEvictionPolicy.equals(that.mapEvictionPolicy)
-                : that.mapEvictionPolicy != null) {
+        if (!Objects.equals(mapEvictionPolicy, that.mapEvictionPolicy)) {
             return false;
         }
-        if (mapStoreConfig != null ? !mapStoreConfig.equals(that.mapStoreConfig)
-                : that.mapStoreConfig != null) {
+        if (!Objects.equals(mapStoreConfig, that.mapStoreConfig)) {
             return false;
         }
-        if (nearCacheConfig != null ? !nearCacheConfig.equals(that.nearCacheConfig)
-                : that.nearCacheConfig != null) {
+        if (!Objects.equals(nearCacheConfig, that.nearCacheConfig)) {
             return false;
         }
         if (cacheDeserializedValues != that.cacheDeserializedValues) {
             return false;
         }
-        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
+        if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
             return false;
         }
         if (inMemoryFormat != that.inMemoryFormat) {
@@ -794,7 +797,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (metadataPolicy != that.metadataPolicy) {
             return false;
         }
-        if (wanReplicationRef != null ? !wanReplicationRef.equals(that.wanReplicationRef) : that.wanReplicationRef != null) {
+        if (!Objects.equals(wanReplicationRef, that.wanReplicationRef)) {
             return false;
         }
         if (!getEntryListenerConfigs().equals(that.getEntryListenerConfigs())) {
@@ -812,13 +815,10 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (!getQueryCacheConfigs().equals(that.getQueryCacheConfigs())) {
             return false;
         }
-        if (partitioningStrategyConfig != null
-                ? !partitioningStrategyConfig.equals(that.partitioningStrategyConfig)
-                : that.partitioningStrategyConfig != null) {
+        if (!Objects.equals(partitioningStrategyConfig, that.partitioningStrategyConfig)) {
             return false;
         }
-        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
-                : that.splitBrainProtectionName != null) {
+        if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
         if (!merkleTreeConfig.equals(that.merkleTreeConfig)) {

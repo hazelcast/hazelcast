@@ -770,10 +770,10 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class MapConfigChecker extends ConfigChecker<MapConfig> {
+    public static class MapConfigChecker extends ConfigChecker<MapConfig> {
         @Override
         @SuppressWarnings("deprecation")
-        boolean check(MapConfig c1, MapConfig c2) {
+        public boolean check(MapConfig c1, MapConfig c2) {
             if (c1 == c2) {
                 return true;
             }

@@ -69,7 +69,7 @@ public class MapConfigRequestTest extends HazelcastTestSupport {
         assertTrue(getBoolean(result, "hasMapConfig", false));
         final MapConfigDTO adapter = new MapConfigDTO();
         adapter.fromJson(getObject(result, "mapConfig"));
-        MapConfig mapConfig = adapter.getMapConfig();
+        MapConfig mapConfig = adapter.getConfig();
 
         assertNotNull(mapConfig);
         assertEquals("default", mapConfig.getName());
