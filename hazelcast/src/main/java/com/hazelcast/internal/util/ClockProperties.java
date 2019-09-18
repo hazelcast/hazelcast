@@ -29,8 +29,10 @@ public final class ClockProperties {
     public static final String HAZELCAST_CLOCK_OFFSET = "com.hazelcast.clock.offset";
 
     /**
-     * The implementation of {@link com.hazelcast.internal.util.Clock.ClockImpl} to use. If not defined we will use
-     * {@link com.hazelcast.internal.util.Clock.SystemClock} or {@link com.hazelcast.internal.util.Clock.SystemOffsetClock}, depending on
+     * The implementation of {@link com.hazelcast.internal.util.Clock.ClockImpl}
+     * to use. If not defined we will use
+     * {@link com.hazelcast.internal.util.Clock.SystemClock} or
+     * {@link com.hazelcast.internal.util.Clock.SystemOffsetClock}, depending on
      * whether an offset is defined with {@link #HAZELCAST_CLOCK_OFFSET}.
      */
     public static final String HAZELCAST_CLOCK_IMPL = "com.hazelcast.clock.impl";
