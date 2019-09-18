@@ -54,6 +54,14 @@
 
         <dependency>
             <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-client</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client-protocol</artifactId>
             <version>${client.protocol.version}</version>
             <scope>test</scope>

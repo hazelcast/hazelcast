@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.hazelcast.sql;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -22,42 +6,53 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-@SuppressWarnings("serial")
-public class SqlTest extends HazelcastTestSupport {
+import static java.util.Arrays.asList;
+
+/**
+ * Base class for common SQL tests.
+ */
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+public abstract class AbstractSqlTest extends HazelcastTestSupport {
     private static final int CITY_CNT = 2;
     private static final int DEPARTMENT_CNT = 2;
     private static final int PERSON_CNT = 10;
 
-    private HazelcastInstance member;
-    private HazelcastInstance client;
+    private static TestHazelcastFactory nodeFactory;
 
-    @Before
-    public void before() {
-        TestHazelcastFactory nodeFactory = new TestHazelcastFactory(2);
+    protected static HazelcastInstance member;
+    protected static HazelcastInstance client;
+
+    @Parameterized.Parameter
+    public boolean executeFromClient;
+
+    @Parameterized.Parameters(name = "executeFromClient:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+            {true},
+            {false}
+        });
+    }
+
+    @BeforeClass
+    public static void beforeClass() {
+        nodeFactory = new TestHazelcastFactory(3);
 
         Config cfg = new Config();
 
@@ -83,7 +78,6 @@ public class SqlTest extends HazelcastTestSupport {
         nodeFactory.newHazelcastInstance(cfg);
         member = nodeFactory.newHazelcastInstance(cfg);
         client = nodeFactory.newHazelcastClient();
-
 
         ReplicatedMap<Long, City> cityMap = member.getReplicatedMap("city");
         IMap<Long, Department> departmentMap = member.getMap("department");
@@ -114,43 +108,25 @@ public class SqlTest extends HazelcastTestSupport {
         System.out.println(">>> DATA LOAD COMPLETED");
     }
 
-    @After
-    public void after() {
+    @AfterClass
+    public static void afterClass() {
         member = null;
+        client = null;
 
-        Hazelcast.shutdownAll();
+        nodeFactory.terminateAll();
     }
 
-    @Test(timeout = Long.MAX_VALUE)
-    public void testReplicatedProject() throws Exception {
-        doQuery("SELECT name FROM city");
-    }
+    protected List<SqlRow> doQuery(String sql) {
+        HazelcastInstance target = executeFromClient ? client : member;
 
-    @Test(timeout = Long.MAX_VALUE)
-    public void testJoin() throws Exception {
-        List<SqlRow> res = doQuery("SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key");
-
-        Assert.assertEquals(PERSON_CNT, res.size());
-    }
-
-    private List<SqlRow> doQuery(String sql) {
-        SqlCursor cursor = member.getSqlService().query(sql);
+        SqlCursor cursor = target.getSqlService().query(sql);
 
         List<SqlRow> rows = new ArrayList<>();
 
         for (SqlRow row : cursor)
             rows.add(row);
 
-        print(rows);
-
         return rows;
-    }
-
-    private void print(List<SqlRow> rows) {
-        System.out.println(">>> RESULT:");
-
-        for (SqlRow row : rows)
-            System.out.println(">>>\t" + row);
     }
 
     private static class City implements Serializable {
