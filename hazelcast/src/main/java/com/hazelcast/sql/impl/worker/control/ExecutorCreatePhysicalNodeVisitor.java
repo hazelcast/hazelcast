@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.worker.control;
 
  import com.hazelcast.map.impl.proxy.MapProxyImpl;
- import com.hazelcast.spi.NodeEngine;
+ import com.hazelcast.spi.impl.NodeEngine;
  import com.hazelcast.sql.HazelcastSqlException;
  import com.hazelcast.sql.impl.QueryFragment;
  import com.hazelcast.sql.impl.QueryId;

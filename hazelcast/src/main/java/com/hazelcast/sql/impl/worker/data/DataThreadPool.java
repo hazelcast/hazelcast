@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.worker.data;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.worker.AbstractThreadPool;
 
 /**

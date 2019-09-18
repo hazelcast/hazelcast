@@ -1,6 +1,6 @@
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.EnumMap;
 import java.util.Map;

@@ -18,8 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.sql.impl.worker.control.FragmentDeployment;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.List;
 import java.util.Map;

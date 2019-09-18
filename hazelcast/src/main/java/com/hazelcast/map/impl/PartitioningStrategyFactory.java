@@ -17,11 +17,10 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ConcurrentHashMap;

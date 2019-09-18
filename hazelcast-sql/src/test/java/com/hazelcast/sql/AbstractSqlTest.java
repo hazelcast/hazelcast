@@ -2,7 +2,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -37,16 +37,16 @@ public abstract class AbstractSqlTest extends HazelcastTestSupport {
     private static TestHazelcastFactory nodeFactory;
 
     protected static HazelcastInstance member;
-    protected static HazelcastInstance client;
+    protected static HazelcastInstance liteMember;
 
     @Parameterized.Parameter
-    public boolean executeFromClient;
+    public boolean executeFromLiteMember;
 
-    @Parameterized.Parameters(name = "executeFromClient:{0}")
+    @Parameterized.Parameters(name = "executeFromLiteMember:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-            {true},
-            {false}
+            { false },
+            { true }
         });
     }
 
@@ -69,7 +69,7 @@ public abstract class AbstractSqlTest extends HazelcastTestSupport {
             )
         );
 
-        personCfg.addMapAttributeConfig(new MapAttributeConfig().setName("deptId").setPath("__key.deptId"));
+        personCfg.addAttributeConfig(new AttributeConfig().setName("deptId").setPath("__key.deptId"));
 
         cfg.addReplicatedMapConfig(cityCfg);
         cfg.addMapConfig(departmentCfg);
@@ -77,7 +77,7 @@ public abstract class AbstractSqlTest extends HazelcastTestSupport {
 
         nodeFactory.newHazelcastInstance(cfg);
         member = nodeFactory.newHazelcastInstance(cfg);
-        client = nodeFactory.newHazelcastClient();
+        //liteMember = nodeFactory.newHazelcastInstance(cfg.setLiteMember(true));
 
         ReplicatedMap<Long, City> cityMap = member.getReplicatedMap("city");
         IMap<Long, Department> departmentMap = member.getMap("department");
@@ -111,13 +111,13 @@ public abstract class AbstractSqlTest extends HazelcastTestSupport {
     @AfterClass
     public static void afterClass() {
         member = null;
-        client = null;
+        liteMember = null;
 
         nodeFactory.terminateAll();
     }
 
     protected List<SqlRow> doQuery(String sql) {
-        HazelcastInstance target = executeFromClient ? client : member;
+        HazelcastInstance target = executeFromLiteMember ? liteMember : member;
 
         SqlCursor cursor = target.getSqlService().query(sql);
 

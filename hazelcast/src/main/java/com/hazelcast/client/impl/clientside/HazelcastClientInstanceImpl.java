@@ -88,6 +88,7 @@ import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.map.IMap;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
@@ -853,5 +854,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ConcurrencyDetection getConcurrencyDetection() {
         return concurrencyDetection;
+    }
+
+    @Override
+    public SqlService getSqlService() {
+        throw new UnsupportedOperationException();
     }
 }

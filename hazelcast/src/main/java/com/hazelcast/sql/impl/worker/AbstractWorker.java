@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.CountDownLatch;

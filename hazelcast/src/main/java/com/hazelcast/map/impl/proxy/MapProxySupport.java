@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -234,12 +234,12 @@ abstract class MapProxySupport<K, V>
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
 
-        List<MapAttributeConfig> attributeConfigs = mapConfig.getMapAttributeConfigs();
+        List<AttributeConfig> attributeConfigs = mapConfig.getAttributeConfigs();
 
         if (attributeConfigs != null && !attributeConfigs.isEmpty()) {
             aliases = new HashMap<>();
 
-            for (MapAttributeConfig attributeConfig : attributeConfigs) {
+            for (AttributeConfig attributeConfig : attributeConfigs) {
                 if (attributeConfig.getPath() != null)
                     aliases.put(attributeConfig.getName(), attributeConfig.getPath());
             }

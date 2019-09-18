@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.worker.control;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.worker.AbstractThreadPool;

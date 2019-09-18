@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.schema;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.calcite.HazelcastCalciteContext;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaVersion;

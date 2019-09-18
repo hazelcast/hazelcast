@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlTransientException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlService;

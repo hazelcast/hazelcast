@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 /**
  * Abstract striped thread pool.

@@ -17,11 +17,11 @@
 package com.hazelcast.partition.strategy;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 /**
  * Partitioning strategy which uses a field with a predefined name as a partitioning key.
