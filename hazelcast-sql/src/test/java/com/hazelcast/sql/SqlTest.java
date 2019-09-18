@@ -51,6 +51,7 @@ public class SqlTest extends HazelcastTestSupport {
     private static final int PERSON_CNT = 10;
 
     private HazelcastInstance member;
+    private HazelcastInstance liteMember;
 
     @Before
     public void before() {
@@ -79,6 +80,8 @@ public class SqlTest extends HazelcastTestSupport {
 
         member = nodeFactory.newHazelcastInstance(cfg);
         nodeFactory.newHazelcastInstance(cfg);
+
+        liteMember = nodeFactory.newHazelcastInstance(cfg.setLiteMember(true));
 
         ReplicatedMap<Long, City> cityMap = member.getReplicatedMap("city");
         IMap<Long, Department> departmentMap = member.getMap("department");
@@ -112,24 +115,31 @@ public class SqlTest extends HazelcastTestSupport {
     @After
     public void after() {
         member = null;
+        liteMember = null;
 
         Hazelcast.shutdownAll();
     }
 
     @Test(timeout = Long.MAX_VALUE)
     public void testReplicatedProject() throws Exception {
-        doQuery("SELECT name FROM city");
+        doQuery(
+            member,
+            "SELECT name FROM city"
+        );
     }
 
     @Test(timeout = Long.MAX_VALUE)
     public void testJoin() throws Exception {
-        List<SqlRow> res = doQuery("SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key");
+        List<SqlRow> res = doQuery(
+            member,
+            "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
+        );
 
         Assert.assertEquals(PERSON_CNT, res.size());
     }
 
-    private List<SqlRow> doQuery(String sql) {
-        SqlCursor cursor = member.getSqlService().query(sql);
+    private List<SqlRow> doQuery(HazelcastInstance target, String sql) {
+        SqlCursor cursor = target.getSqlService().query(sql);
 
         List<SqlRow> rows = new ArrayList<>();
 
