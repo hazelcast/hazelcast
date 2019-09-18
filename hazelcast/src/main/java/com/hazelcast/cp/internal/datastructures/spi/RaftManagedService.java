@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.spi;
 
-import com.hazelcast.spi.ManagedService;
+import com.hazelcast.internal.services.ManagedService;
 
 /**
  * An interface that can be implemented by a CP data structure service

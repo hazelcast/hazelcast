@@ -71,14 +71,13 @@ public class TcpIpEndpointManager
     private static final long DELAY_FACTOR = 100L;
 
     @Probe(name = "inProgressCount")
-    final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+    final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
 
     @Probe(name = "count", level = MANDATORY)
-    final ConcurrentHashMap<Address, TcpIpConnection> connectionsMap =
-            new ConcurrentHashMap<Address, TcpIpConnection>(100);
+    final ConcurrentHashMap<Address, TcpIpConnection> connectionsMap = new ConcurrentHashMap<>(100);
 
     @Probe(name = "activeCount", level = MANDATORY)
-    final Set<TcpIpConnection> activeConnections = newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
+    final Set<TcpIpConnection> activeConnections = newSetFromMap(new ConcurrentHashMap<>());
 
     private final ILogger logger;
     private final IOService ioService;
@@ -90,19 +89,13 @@ public class TcpIpEndpointManager
     private final BindHandler bindHandler;
 
     @Probe(name = "connectionListenerCount")
-    private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+    private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<>();
 
     private final ConstructorFunction<Address, TcpIpConnectionErrorHandler> monitorConstructor =
-            new ConstructorFunction<Address, TcpIpConnectionErrorHandler>() {
-                public TcpIpConnectionErrorHandler createNew(Address endpoint) {
-                    return new TcpIpConnectionErrorHandler(TcpIpEndpointManager.this, endpoint);
-                }
-            };
+            endpoint -> new TcpIpConnectionErrorHandler(TcpIpEndpointManager.this, endpoint);
 
     @Probe(name = "monitorCount")
-    private final ConcurrentHashMap<Address, TcpIpConnectionErrorHandler> monitors =
-            new ConcurrentHashMap<Address, TcpIpConnectionErrorHandler>(100);
-
+    private final ConcurrentHashMap<Address, TcpIpConnectionErrorHandler> monitors = new ConcurrentHashMap<>(100);
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
@@ -152,7 +145,7 @@ public class TcpIpEndpointManager
     }
 
     public Collection<TcpIpConnection> getConnections() {
-        return unmodifiableCollection(new HashSet<TcpIpConnection>(connectionsMap.values()));
+        return unmodifiableCollection(new HashSet<>(connectionsMap.values()));
     }
 
     @Override

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp;
 
-import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
@@ -56,9 +56,10 @@ import com.hazelcast.core.IFunction;
  * partition heals, Hazelcast will use the configured split-brain merge policy
  * to resolve conflicting values.
  * <p>
- * This {@link IAtomicReference} impl also supports Quorum {@link QuorumConfig}
- * in cluster versions 3.10 and higher. However, Hazelcast quorums do not
- * guarantee strong consistency under failure scenarios.
+ * This {@link IAtomicReference} impl also supports split brain protection
+ * {@link SplitBrainProtectionConfig} in cluster versions 3.10 and higher.
+ * However, Hazelcast split brain protections do not guarantee strong consistency
+ * under failure scenarios.
  * <p>
  * The second impl is a new one introduced with the {@link CPSubsystem} in
  * version 3.12. It is accessed via

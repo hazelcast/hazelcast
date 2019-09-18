@@ -32,7 +32,7 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
         implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     protected String name;
-    protected String quorumName;
+    protected String splitBrainProtectionName;
     protected MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     protected AbstractBasicConfig() {
@@ -44,7 +44,7 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
 
     protected AbstractBasicConfig(AbstractBasicConfig config) {
         this.name = config.name;
-        this.quorumName = config.quorumName;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
@@ -92,22 +92,22 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public T setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public T setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         //noinspection unchecked
         return (T) this;
     }
@@ -116,7 +116,7 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
     public String toString() {
         return  getClass().getSimpleName() + "{"
                 + "name='" + name + '\''
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + "}";
     }

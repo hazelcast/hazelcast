@@ -138,12 +138,12 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
     }
 
-    public String readResourceToString(String resource) throws IOException {
+    public static String readResourceToString(String resource) throws IOException {
         InputStream xmlInputStream = XmlYamlConfigBuilderEqualsTest.class.getClassLoader().getResourceAsStream(resource);
         return new String(IOUtil.toByteArray(xmlInputStream));
     }
 
-    private File createPasswordFile(String passwordFileName, String passwordFileContent) throws IOException {
+    static File createPasswordFile(String passwordFileName, String passwordFileContent) throws IOException {
         File workDir = new File(".");
         File file = new File(workDir, passwordFileName);
         file.deleteOnExit();

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 /**
  * Helper event listener methods for {@link MapServiceContext}.

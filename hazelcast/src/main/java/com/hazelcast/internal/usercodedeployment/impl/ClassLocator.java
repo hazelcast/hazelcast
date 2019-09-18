@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.usercodedeployment.impl;
 
-import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
@@ -25,8 +25,9 @@ import com.hazelcast.internal.usercodedeployment.impl.operation.ClassDataFinderO
 import com.hazelcast.internal.util.filter.Filter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.io.Closeable;
 import java.security.PrivilegedAction;
@@ -58,7 +59,7 @@ public final class ClassLocator {
     private final Filter<Member> memberFilter;
     private final UserCodeDeploymentConfig.ClassCacheMode classCacheMode;
     private final NodeEngine nodeEngine;
-    private final ClassloadingMutexProvider mutexFactory = new ClassloadingMutexProvider();
+    private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
     private final ILogger logger;
 
     public ClassLocator(ConcurrentMap<String, ClassSource> classSourceMap,
@@ -100,7 +101,7 @@ public final class ClassLocator {
         // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
         // mutexFactory abstract these differences away
         String mainClassName = extractMainClassName(name);
-        Closeable classMutex = mutexFactory.getMutexForClass(mainClassName);
+        Closeable classMutex = mutexFactory.mutexFor(mainClassName);
         try {
             synchronized (classMutex) {
                 ClassSource classSource = clientClassSourceMap.get(mainClassName);
@@ -115,12 +116,7 @@ public final class ClassLocator {
                         return;
                     }
                 } else {
-                    classSource = doPrivileged(new PrivilegedAction<ClassSource>() {
-                        @Override
-                        public ClassSource run() {
-                            return new ClassSource(parent, ClassLocator.this);
-                        }
-                    });
+                    classSource = doPrivileged((PrivilegedAction<ClassSource>) () -> new ClassSource(parent, ClassLocator.this));
                     clientClassSourceMap.put(mainClassName, classSource);
                 }
                 classSource.define(name, classDef);
@@ -135,7 +131,7 @@ public final class ClassLocator {
         // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
         // mutexFactory abstract these differences away
         String mainClassName = extractMainClassName(name);
-        Closeable classMutex = mutexFactory.getMutexForClass(mainClassName);
+        Closeable classMutex = mutexFactory.mutexFor(mainClassName);
         try {
             synchronized (classMutex) {
                 ClassSource classSource = classSourceMap.get(mainClassName);

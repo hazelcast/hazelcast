@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal;
 
 import com.hazelcast.cp.internal.session.RaftSessionService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptor;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptorProvider;
 

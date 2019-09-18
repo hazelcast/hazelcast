@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,17 +26,20 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
-public class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation {
-    protected boolean putTransient;
+import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
+
+public class PutBackupOperation extends MapOperation implements BackupOperation {
+
+    protected Data dataKey;
+    protected Data dataValue;
     protected RecordInfo recordInfo;
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue,
-                              RecordInfo recordInfo, boolean putTransient,
-                              boolean disableWanReplicationEvent) {
-        super(name, dataKey, dataValue);
+                              RecordInfo recordInfo) {
+        super(name);
+        this.dataKey = dataKey;
+        this.dataValue = dataValue;
         this.recordInfo = recordInfo;
-        this.putTransient = putTransient;
-        this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
     public PutBackupOperation() {
@@ -45,21 +47,19 @@ public class PutBackupOperation extends KeyBasedMapOperation implements BackupOp
 
     @Override
     protected void runInternal() {
-        ttl = recordInfo != null ? recordInfo.getTtl() : ttl;
-        maxIdle = recordInfo != null ? recordInfo.getMaxIdle() : maxIdle;
-        Record record = recordStore.putBackup(dataKey, dataValue, ttl,
-                maxIdle, putTransient, getCallerProvenance());
+        Record record = recordStore.putBackup(dataKey, dataValue, recordInfo.getTtl(),
+                recordInfo.getMaxIdle(), isPutTransient(), getCallerProvenance());
 
-        if (recordInfo != null) {
-            Records.applyRecordInfo(record, recordInfo);
-        }
+        applyRecordInfo(record, recordInfo);
+    }
+
+    protected boolean isPutTransient() {
+        return false;
     }
 
     @Override
     protected void afterRunInternal() {
-        if (recordInfo != null) {
-            evict(dataKey);
-        }
+        evict(dataKey);
         publishWanUpdate(dataKey, dataValue);
 
         super.afterRunInternal();
@@ -78,25 +78,19 @@ public class PutBackupOperation extends KeyBasedMapOperation implements BackupOp
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (recordInfo != null) {
-            out.writeBoolean(true);
-            recordInfo.writeData(out);
-        } else {
-            out.writeBoolean(false);
-        }
-        out.writeBoolean(putTransient);
-        out.writeBoolean(disableWanReplicationEvent);
+
+        out.writeData(dataKey);
+        out.writeData(dataValue);
+        recordInfo.writeData(out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        boolean hasRecordInfo = in.readBoolean();
-        if (hasRecordInfo) {
-            recordInfo = new RecordInfo();
-            recordInfo.readData(in);
-        }
-        putTransient = in.readBoolean();
-        disableWanReplicationEvent = in.readBoolean();
+
+        dataKey = in.readData();
+        dataValue = in.readData();
+        recordInfo = new RecordInfo();
+        recordInfo.readData(in);
     }
 }

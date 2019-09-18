@@ -20,8 +20,8 @@ import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.UnlockIfL
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.UnlockOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.OperationService;

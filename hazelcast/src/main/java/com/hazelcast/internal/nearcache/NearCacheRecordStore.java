@@ -20,7 +20,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.impl.InitializingObject;
 
 /**
  * {@link NearCacheRecordStore} is the contract point to store keys and values as

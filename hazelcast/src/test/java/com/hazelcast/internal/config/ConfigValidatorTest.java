@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
@@ -24,8 +23,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -53,8 +51,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     private HazelcastProperties properties;
     private NativeMemoryConfig nativeMemoryConfig;
-    private MergePolicyProvider mapMergePolicyProvider;
-    private CacheMergePolicyProvider cacheMergePolicyProvider;
+    private SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
 
     @Before
     public void setUp() {
@@ -63,11 +60,9 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         NodeEngine nodeEngine = Mockito.mock(NodeEngine.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(config.getClassLoader());
 
-        SplitBrainMergePolicyProvider splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(nodeEngine);
+        splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(nodeEngine);
         when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(splitBrainMergePolicyProvider);
 
-        mapMergePolicyProvider = new MergePolicyProvider(nodeEngine);
-        cacheMergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
         properties = nodeEngine.getProperties();
     }
 
@@ -78,12 +73,12 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void checkMapConfig_BINARY() {
-        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, mapMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     @Test
     public void checkMapConfig_OBJECT() {
-        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, mapMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     /**
@@ -91,7 +86,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = IllegalArgumentException.class)
     public void checkMapConfig_NATIVE() {
-        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, mapMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
@@ -107,7 +102,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
                 .setInMemoryFormat(OBJECT)
                 .setEvictionConfig(evictionConfig);
 
-        checkCacheConfig(cacheSimpleConfig, cacheMergePolicyProvider);
+        checkCacheConfig(cacheSimpleConfig, splitBrainMergePolicyProvider);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -118,7 +113,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
                 .setInMemoryFormat(NATIVE)
                 .setEvictionConfig(evictionConfig);
 
-        checkCacheConfig(cacheSimpleConfig, cacheMergePolicyProvider);
+        checkCacheConfig(cacheSimpleConfig, splitBrainMergePolicyProvider);
     }
 
     @Test

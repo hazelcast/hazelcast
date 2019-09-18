@@ -16,18 +16,13 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.cache.CacheMergePolicy;
-import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
-import com.hazelcast.cache.impl.operation.CacheLegacyMergeOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 
@@ -85,28 +80,6 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
     }
 
     @Override
-    protected void mergeStoreLegacy(ICacheRecordStore recordStore, BiConsumer<Integer, Operation> consumer) {
-        int partitionId = recordStore.getPartitionId();
-        String name = recordStore.getName();
-        CacheMergePolicy mergePolicy = ((CacheMergePolicy) getMergePolicy(name));
-
-        for (Map.Entry<Data, CacheRecord> entry : recordStore.getReadOnlyRecords().entrySet()) {
-            Data key = entry.getKey();
-            CacheRecord record = entry.getValue();
-            CacheEntryView<Data, Data> entryView = new DefaultCacheEntryView(
-                    key,
-                    toData(record.getValue()),
-                    record.getCreationTime(),
-                    record.getExpirationTime(),
-                    record.getLastAccessTime(),
-                    record.getAccessHit(),
-                    toData(record.getExpiryPolicy()));
-
-            consumer.accept(partitionId, new CacheLegacyMergeOperation(name, key, entryView, mergePolicy));
-        }
-    }
-
-    @Override
     protected InMemoryFormat getInMemoryFormat(String dataStructureName) {
         return cacheService.getConfigs().get(dataStructureName).getInMemoryFormat();
     }
@@ -120,7 +93,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
     }
 
     @Override
-    protected Object getMergePolicy(String dataStructureName) {
+    protected SplitBrainMergePolicy getMergePolicy(String dataStructureName) {
         return cacheService.getMergePolicy(dataStructureName);
     }
 

@@ -21,9 +21,9 @@ import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.Disposable;
-import com.hazelcast.spi.CoreService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;

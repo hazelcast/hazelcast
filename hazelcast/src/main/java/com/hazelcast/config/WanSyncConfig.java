@@ -25,7 +25,7 @@ import java.io.IOException;
 /**
  * Configuration object for the WAN sync mechanism.
  *
- * @see WanPublisherConfig
+ * @see WanBatchReplicationPublisherConfig
  * @since 3.11
  */
 public class WanSyncConfig implements IdentifiedDataSerializable {

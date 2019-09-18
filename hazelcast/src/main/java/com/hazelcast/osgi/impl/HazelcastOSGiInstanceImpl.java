@@ -19,7 +19,7 @@ package com.hazelcast.osgi.impl;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.client.api.ClientService;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
@@ -50,7 +50,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
 import com.hazelcast.osgi.HazelcastOSGiService;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -236,8 +236,8 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public QuorumService getQuorumService() {
-        return delegatedInstance.getQuorumService();
+    public SplitBrainProtectionService getSplitBrainProtectionService() {
+        return delegatedInstance.getSplitBrainProtectionService();
     }
 
     @Override

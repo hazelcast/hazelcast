@@ -16,6 +16,7 @@
 
 package com.hazelcast.test.starter.answer;
 
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader;
 import com.hazelcast.test.starter.ReflectionUtils;
 import org.mockito.invocation.InvocationOnMock;
@@ -335,7 +336,7 @@ abstract class AbstractAnswer implements Answer {
      * <p>
      * Can be used if the target class is not constant, but depends on the
      * given delegate instance (e.g. to create the correct mock for
-     * {@link com.hazelcast.spi.NodeEngine#getService(String)}).
+     * {@link NodeEngine#getService(String)}).
      *
      * @param delegate the delegate to retrieve the class from
      * @param answer   the default {@link Answer} to create the mock with

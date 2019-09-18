@@ -24,8 +24,8 @@ import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.GracefulShutdownAwareService;
-import com.hazelcast.spi.ManagedService;
+import com.hazelcast.internal.services.GracefulShutdownAwareService;
+import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.List;

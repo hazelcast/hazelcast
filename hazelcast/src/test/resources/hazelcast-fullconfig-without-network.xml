@@ -61,30 +61,29 @@
         <property name="foo">bar</property>
     </properties>
     <wan-replication name="my-wan-cluster">
-        <wan-publisher group-name="tokyo" publisher-id="tokyoPublisherId">
-            <class-name>com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication</class-name>
+        <batch-publisher>
+            <group-name>tokyo</group-name>
+            <publisher-id>tokyoPublisherId</publisher-id>
             <queue-capacity>1000</queue-capacity>
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
-            <initial-publisher-state>REPLICATING</initial-publisher-state>
+            <initial-publisher-state>STOPPED</initial-publisher-state>
+            <batch-size>50</batch-size>
+            <batch-max-delay-millis>3000</batch-max-delay-millis>
+            <snapshot-enabled>true</snapshot-enabled>
+            <response-timeout-millis>5000</response-timeout-millis>
+            <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
+            <target-endpoints>10.3.5.1:5701, 10.3.5.2:5701</target-endpoints>
             <wan-sync>
                 <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
             </wan-sync>
-            <properties>
-                <property name="batch.size">50</property>
-                <property name="batch.max.delay.millis">3000</property>
-                <property name="snapshot.enabled">false</property>
-                <property name="response.timeout.millis">5000</property>
-                <property name="ack.type">ACK_ON_OPERATION_COMPLETE</property>
-                <property name="endpoints">10.3.5.1:5701, 10.3.5.2:5701</property>
-                <property name="snapshot.enabled">false</property>
-                <property name="group.password">pass</property>
-            </properties>
-        </wan-publisher>
-        <wan-publisher group-name="istanbul">
-            <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>
-            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+        </batch-publisher>
+        <batch-publisher>
+            <group-name>istanbul</group-name>
+            <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>
             <initial-publisher-state>STOPPED</initial-publisher-state>
-            <queue-capacity>10000</queue-capacity>
+            <queue-capacity>12345</queue-capacity>
+            <discovery-period-seconds>5</discovery-period-seconds>
+            <max-target-endpoints>2</max-target-endpoints>
             <aws enabled="false" connection-timeout-seconds="10">
                 <access-key>sample-access-key</access-key>
                 <secret-key>sample-secret-key</secret-key>
@@ -117,7 +116,7 @@
                 <namespace>hazelcast</namespace>
             </eureka>
             <discovery-strategies>
-                <node-filter class="DummyFilterClass" />
+                <node-filter class="DummyFilterClass"/>
                 <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
                     <properties>
                         <property name="key-string">foo</property>
@@ -128,17 +127,15 @@
             </discovery-strategies>
             <properties>
                 <property name="custom.prop.publisher">prop.publisher</property>
-                <property name="discovery.period">5</property>
-                <property name="maxEndpoints">2</property>
             </properties>
-        </wan-publisher>
-        <wan-consumer>
+        </batch-publisher>
+        <consumer>
             <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>
             <properties>
                 <property name="custom.prop.consumer">prop.consumer</property>
             </properties>
             <persist-wan-replicated-data>true</persist-wan-replicated-data>
-        </wan-consumer>
+        </consumer>
     </wan-replication>
     <partition-group enabled="true" group-type="CUSTOM">
         <member-group>
@@ -156,25 +153,25 @@
         <statistics-enabled>false</statistics-enabled>
         <pool-size>16</pool-size>
         <queue-capacity>1000</queue-capacity>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </executor-service>
     <durable-executor-service name="dummy">
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>10</capacity>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </durable-executor-service>
     <scheduled-executor-service name="dummy">
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>50</capacity>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="10">PutIfAbsentMergePolicy</merge-policy>
     </scheduled-executor-service>
     <cardinality-estimator name="dummy">
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="50">HyperLogLogMergePolicy</merge-policy>
     </cardinality-estimator>
 
@@ -204,7 +201,7 @@
             </properties>
         </queue-store>
 
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </queue>
 
@@ -334,12 +331,11 @@
                `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
         -->
         <near-cache>
-            <max-size>10000</max-size>
             <time-to-live-seconds>0</time-to-live-seconds>
             <max-idle-seconds>0</max-idle-seconds>
-            <eviction-policy>LFU</eviction-policy>
             <invalidate-on-change>true</invalidate-on-change>
             <cache-local-entries>false</cache-local-entries>
+            <eviction eviction-policy="LRU" size="10000"/>
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
@@ -357,8 +353,8 @@
         </indexes>
 
         <attributes>
-            <attribute extractor="com.example.CurrencyExtractor">currency</attribute>
-            <attribute extractor="com.example.AgeExtractor">age</attribute>
+            <attribute extractor-class-name="com.example.CurrencyExtractor">currency</attribute>
+            <attribute extractor-class-name="com.example.AgeExtractor">age</attribute>
         </attributes>
 
         <entry-listeners>
@@ -400,17 +396,15 @@
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </multimap>
 
     <replicatedmap name="dummy">
         <in-memory-format>BINARY</in-memory-format>
-        <concurrency-level>12</concurrency-level>
-        <replication-delay-millis>12</replication-delay-millis>
         <async-fillup>false</async-fillup>
         <statistics-enabled>false</statistics-enabled>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
         <entry-listeners>
             <entry-listener include-value="false" local="true">DummyListener</entry-listener>
@@ -425,7 +419,7 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </list>
 
@@ -437,7 +431,7 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </set>
 
@@ -464,25 +458,25 @@
         <initial-permits>10</initial-permits>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </semaphore>
 
     <lock name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </lock>
 
     <atomic-long name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-long>
 
     <atomic-reference name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-reference>
 
     <count-down-latch name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </count-down-latch>
 
     <ringbuffer name="default">
@@ -491,7 +485,7 @@
         <async-backup-count>1</async-backup-count>
         <time-to-live-seconds>29</time-to-live-seconds>
         <in-memory-format>OBJECT</in-memory-format>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </ringbuffer>
 
@@ -531,7 +525,7 @@
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
             </filters>
         </wan-replication-ref>
-        <quorum-ref>DummyQuorum</quorum-ref>
+        <split-brain-protection-ref>DummySplitBrainProtection</split-brain-protection-ref>
         <merge-policy>DummyMergePolicy</merge-policy>
         <partition-lost-listeners>
             <partition-lost-listener>DummyListener</partition-lost-listener>
@@ -768,10 +762,10 @@
     </member-attributes>
 
 
-    <quorum name="quorumRuleWithThreeMembers" enabled="true">
-        <quorum-size>3</quorum-size>
-        <quorum-type>READ_WRITE</quorum-type>
-    </quorum>
+    <split-brain-protection name="splitBrainProtectionRuleWithThreeMembers" enabled="true">
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+    </split-brain-protection>
 
     <crdt-replication>
         <replication-period-millis>1000</replication-period-millis>
@@ -780,27 +774,27 @@
 
     <pn-counter name="pn-counter-1">
         <replica-count>100</replica-count>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <statistics-enabled>false</statistics-enabled>
     </pn-counter>
 
-    <quorum enabled="true" name="member-count-quorum">
-        <quorum-type>READ_WRITE</quorum-type>
-        <quorum-size>3</quorum-size>
-        <member-count-quorum/>
-    </quorum>
+    <split-brain-protection enabled="true" name="member-count-split-brain-protection">
+        <protect-on>READ_WRITE</protect-on>
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <member-count-split-brain-protection/>
+    </split-brain-protection>
 
-    <quorum enabled="true" name="probabilistic-quorum">
-        <quorum-size>3</quorum-size>
-        <quorum-type>READ_WRITE</quorum-type>
-        <probabilistic-quorum acceptable-heartbeat-pause-millis="100" max-sample-size="20" suspicion-threshold="10" />
-    </quorum>
+    <split-brain-protection enabled="true" name="probabilistic-split-brain-protection">
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+        <probabilistic-split-brain-protection acceptable-heartbeat-pause-millis="100" max-sample-size="20" suspicion-threshold="10" />
+    </split-brain-protection>
 
-    <quorum enabled="true" name="recently-active-quorum">
-        <quorum-size>4</quorum-size>
-        <quorum-type>READ_WRITE</quorum-type>
-        <recently-active-quorum heartbeat-tolerance-millis="60000" />
-    </quorum>
+    <split-brain-protection enabled="true" name="recently-active-split-brain-protection">
+        <minimum-cluster-size>4</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+        <recently-active-split-brain-protection heartbeat-tolerance-millis="60000" />
+    </split-brain-protection>
 
     <hot-restart-persistence enabled="false">
         <backup-dir>backup-dir</backup-dir>

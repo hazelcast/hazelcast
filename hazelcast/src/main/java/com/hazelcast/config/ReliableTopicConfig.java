@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -151,7 +152,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      * Gets the Executor that is going to process the events.
      * <p>
      * If no Executor is selected, then the
-     * {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} is used.
+     * {@link ExecutionService#ASYNC_EXECUTOR} is used.
      *
      * @return the Executor used to process events
      * @see #setExecutor(java.util.concurrent.Executor)
@@ -173,7 +174,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      * executor only needs to have a single thread.
      *
      * @param executor the executor. if the executor is null, the
-     *                 {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} will be used
+     *                 {@link ExecutionService#ASYNC_EXECUTOR} will be used
      *                 to process the event
      * @return the updated config
      */

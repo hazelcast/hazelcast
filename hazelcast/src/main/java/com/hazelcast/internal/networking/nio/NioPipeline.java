@@ -64,6 +64,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     private final SwCounter startedMigrations = newSwCounter();
     @Probe
     private final SwCounter completedMigrations = newSwCounter();
+    private volatile NioThread newOwner;
 
     NioPipeline(NioChannel channel,
                 NioThread owner,
@@ -111,11 +112,17 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     }
 
     void start() {
-        addTaskAndWakeup(new NioPipelineTask(this) {
+        ownerAddTaskAndWakeup(new NioPipelineTask(NioPipeline.this) {
             @Override
             protected void run0() {
                 try {
                     getSelectionKey();
+
+                    // we need to call process so that the pipeline gets unscheduled.
+                    if (NioPipeline.this instanceof NioOutboundPipeline) {
+                        NioOutboundPipeline out = (NioOutboundPipeline) NioPipeline.this;
+                        out.process();
+                    }
                 } catch (Throwable t) {
                     onError(t);
                 }
@@ -178,7 +185,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
      *
      * @param task the task to add.
      */
-    final void addTaskAndWakeup(Runnable task) {
+    final void ownerAddTaskAndWakeup(Runnable task) {
         // in this loop we are going to either send the task to the owner
         // or store the delayed task to be picked up as soon as the migration
         // completes
@@ -231,7 +238,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         } else {
             // the pipeline is executed on the wrong IOThread, so send the
             // pipeline to the right IO Thread to be executed.
-            addTaskAndWakeup(this);
+            ownerAddTaskAndWakeup(this);
         }
     }
 
@@ -295,53 +302,48 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
      */
     @Override
     public final void requestMigration(NioThread newOwner) {
-        // todo: what happens when owner null.
-        owner.addTaskAndWakeup(new StartMigrationTask(newOwner));
+        this.newOwner = newOwner;
+
+        // we can't call wakeup directly unfortunately because wakeup isn't defined on this
+        // abstract class and can't be defined due to incompatible return types of the wakeup
+        // on the inbound and outbound pipeline.
+        if (this instanceof NioOutboundPipeline) {
+            ((NioOutboundPipeline) this).wakeup();
+        } else {
+            ((NioInboundPipeline) this).wakeup();
+        }
     }
 
-    private class StartMigrationTask implements Runnable {
-        private final NioThread newOwner;
+    boolean migrationRequested() {
+        return newOwner != null;
+    }
 
-        StartMigrationTask(NioThread newOwner) {
-            this.newOwner = newOwner;
+    /**
+     * Starts the migration.
+     * <p>
+     * This method needs to run on a thread that is executing the {@link #process()}  method.
+     *
+     * @throws IOException
+     */
+    void startMigration() throws IOException {
+        assert newOwner != null : "newOwner can't be null";
+        assert owner != newOwner : "newOwner can't be the same as the existing owner";
+        publishMetrics();
+
+        if (!socketChannel.isOpen()) {
+            // if the channel is closed, we are done.
+            return;
         }
 
-        @Override
-        public void run() {
-            // if there is no change, we are done
-            if (owner == newOwner) {
-                return;
-            }
+        startedMigrations.inc();
 
-            publishMetrics();
+        unregisterOp(initialOps);
+        selectionKey.cancel();
+        selectionKey = null;
+        owner = null;
+        ownerId = -1;
 
-            try {
-                startMigration(newOwner);
-            } catch (Throwable t) {
-                onError(t);
-            }
-        }
-
-        // This method run on the owning NioThread
-        private void startMigration(final NioThread newOwner) throws IOException {
-            assert owner == currentThread() : "startMigration can only run on the owning NioThread";
-            assert owner != newOwner : "newOwner can't be the same as the existing owner";
-
-            if (!socketChannel.isOpen()) {
-                // if the channel is closed, we are done.
-                return;
-            }
-
-            startedMigrations.inc();
-
-            unregisterOp(initialOps);
-            selectionKey.cancel();
-            selectionKey = null;
-            owner = null;
-            ownerId = -1;
-
-            newOwner.addTaskAndWakeup(new CompleteMigrationTask(newOwner));
-        }
+        newOwner.addTaskAndWakeup(new CompleteMigrationTask(newOwner));
     }
 
     private class CompleteMigrationTask implements Runnable {
@@ -370,6 +372,9 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
 
                 selectionKey = getSelectionKey();
                 registerOp(initialOps);
+
+                // and now we set the newOwner to null since we are finished with the migration
+                NioPipeline.this.newOwner = null;
             } catch (Throwable t) {
                 onError(t);
             }

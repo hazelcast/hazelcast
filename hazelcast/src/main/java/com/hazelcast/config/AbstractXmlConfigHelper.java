@@ -165,8 +165,8 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     private String xmlRefToJavaName(final String name) {
-        if (name.equals("quorum-ref")) {
-            return "quorumName";
+        if (name.equals("split-brain-protection-ref")) {
+            return "splitBrainProtectionName";
         }
         return null;
     }

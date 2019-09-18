@@ -59,7 +59,7 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private boolean statisticsEnabled = true;
-    private String quorumName;
+    private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     private transient MultiMapConfigReadOnly readOnly;
@@ -79,7 +79,7 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
         this.backupCount = config.backupCount;
         this.asyncBackupCount = config.asyncBackupCount;
         this.statisticsEnabled = config.statisticsEnabled;
-        this.quorumName = config.quorumName;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
@@ -289,22 +289,22 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public MultiMapConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public MultiMapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -340,7 +340,7 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
                 + ", binary=" + binary
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
     }
@@ -372,7 +372,7 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
@@ -393,7 +393,7 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         statisticsEnabled = in.readBoolean();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
     }
 
@@ -431,7 +431,8 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
         if (listenerConfigs != null ? !listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
@@ -447,7 +448,7 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }

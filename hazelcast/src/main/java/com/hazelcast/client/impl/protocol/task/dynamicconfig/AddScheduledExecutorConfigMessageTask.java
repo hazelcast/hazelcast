@@ -48,8 +48,7 @@ public class AddScheduledExecutorConfigMessageTask
         config.setDurability(parameters.durability);
         config.setCapacity(parameters.capacity);
         config.setName(parameters.name);
-        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
-                parameters.mergeBatchSize);
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         config.setMergePolicyConfig(mergePolicyConfig);
         return config;
     }

@@ -24,8 +24,8 @@ import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.internal.usercodedeployment.impl.ClassSource;
 import com.hazelcast.internal.util.filter.Filter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;

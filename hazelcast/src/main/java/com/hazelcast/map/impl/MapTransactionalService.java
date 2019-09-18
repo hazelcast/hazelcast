@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.tx.TransactionalMapProxy;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.transaction.impl.Transaction;
 
 /**

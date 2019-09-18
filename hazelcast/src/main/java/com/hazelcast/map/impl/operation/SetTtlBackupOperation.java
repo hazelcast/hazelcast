@@ -18,19 +18,23 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import java.io.IOException;
 
 public class SetTtlBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+    private long ttl;
 
     public SetTtlBackupOperation() {
 
     }
 
     public SetTtlBackupOperation(String name, Data dataKey, long ttl) {
-        super(name, dataKey, ttl, DEFAULT_MAX_IDLE);
+        super(name, dataKey);
+        this.ttl = ttl;
     }
 
     @Override
@@ -50,5 +54,17 @@ public class SetTtlBackupOperation extends KeyBasedMapOperation implements Backu
             publishWanUpdate(dataKey, record.getValue());
         }
         super.afterRunInternal();
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeLong(ttl);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        ttl = in.readLong();
     }
 }

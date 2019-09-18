@@ -226,11 +226,6 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setMergePolicyOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setMergePolicy("myMergePolicy");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void setStatisticsEnabledOfReadOnlyMapConfigShouldFail() {
         getReadOnlyConfig().setStatisticsEnabled(true);
     }
@@ -276,8 +271,8 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setMapAttributeConfigsOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setMapAttributeConfigs(singletonList(new MapAttributeConfig()));
+    public void setAttributeConfigsOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setAttributeConfigs(singletonList(new AttributeConfig()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -291,7 +286,7 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setQuorumNameOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setQuorumName("myQuorum");
+    public void setSplitBrainProtectionNameOfReadOnlyMapConfigShouldFail() {
+        getReadOnlyConfig().setSplitBrainProtectionName("mySplitBrainProtection");
     }
 }

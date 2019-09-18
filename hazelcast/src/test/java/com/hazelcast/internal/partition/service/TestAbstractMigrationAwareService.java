@@ -17,11 +17,11 @@
 package com.hazelcast.internal.partition.service;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ManagedService;
+import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.util.ArrayList;
 import java.util.Collection;

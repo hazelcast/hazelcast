@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
@@ -26,13 +25,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.MutableLong;
 
@@ -47,7 +47,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -67,15 +66,15 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     private static final long TIMEOUT_FACTOR = 500;
     private static final long MINIMAL_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
 
-    private final Semaphore semaphore = new Semaphore(0);
+    protected final SplitBrainMergePolicyProvider mergePolicyProvider;
 
     private final ILogger logger;
     private final String serviceName;
-    private final ClusterService clusterService;
     private final OperationService operationService;
     private final IPartitionService partitionService;
-    private final AbstractSplitBrainHandlerService<Store> splitBrainHandlerService;
     private final InternalSerializationService serializationService;
+    private final AbstractSplitBrainHandlerService<Store> splitBrainHandlerService;
+    private final Semaphore semaphore = new Semaphore(0);
 
     private Map<String, Collection<Store>> mergingStoresByName;
 
@@ -87,7 +86,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         this.serviceName = serviceName;
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionService = nodeEngine.getPartitionService();
-        this.clusterService = nodeEngine.getClusterService();
+        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         this.operationService = nodeEngine.getOperationService();
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.splitBrainHandlerService = splitBrainHandlerService;
@@ -98,11 +97,8 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         for (Store store : stores) {
             String dataStructureName = getDataStructureName(store);
 
-            Collection<Store> storeList = storesByName.get(dataStructureName);
-            if (storeList == null) {
-                storeList = new LinkedList<Store>();
-                storesByName.put(dataStructureName, storeList);
-            }
+            Collection<Store> storeList
+                    = storesByName.computeIfAbsent(dataStructureName, k -> new LinkedList<>());
             storeList.add(store);
         }
         return storesByName;
@@ -114,7 +110,6 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         int mergedCount = 0;
 
         mergedCount += mergeWithSplitBrainMergePolicy();
-        mergedCount += mergeWithLegacyMergePolicy();
 
         waitMergeEnd(mergedCount);
     }
@@ -132,76 +127,26 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
             String dataStructureName = entry.getKey();
             Collection<Store> stores = entry.getValue();
 
-            if (getMergePolicy(dataStructureName) instanceof SplitBrainMergePolicy) {
-                MergingItemBiConsumer consumer = newConsumer(dataStructureName);
-                for (Store store : stores) {
-                    try {
-                        mergeStore(store, consumer);
-                        consumer.consumeRemaining();
-                    } finally {
-                        asyncDestroyStores(singleton(store));
-                    }
+            MergingItemBiConsumer consumer = newConsumer(dataStructureName);
+            for (Store store : stores) {
+                try {
+                    mergeStore(store, consumer);
+                    consumer.consumeRemaining();
+                } finally {
+                    asyncDestroyStores(singleton(store));
                 }
-                mergedCount += consumer.mergedCount;
-                onMerge(dataStructureName);
-                iterator.remove();
             }
+            mergedCount += consumer.mergedCount;
+            onMerge(dataStructureName);
+            iterator.remove();
         }
         return mergedCount;
     }
 
     private MergingItemBiConsumer newConsumer(String dataStructureName) {
-        SplitBrainMergePolicy<V, MergingItem> policy = getSplitBrainMergePolicy(dataStructureName);
+        SplitBrainMergePolicy<V, MergingItem> policy = getMergePolicy(dataStructureName);
         int batchSize = getBatchSize(dataStructureName);
         return new MergingItemBiConsumer(dataStructureName, policy, batchSize);
-    }
-
-    @SuppressWarnings("unchecked")
-    private SplitBrainMergePolicy<V, MergingItem> getSplitBrainMergePolicy(String dataStructureName) {
-        return ((SplitBrainMergePolicy<V, MergingItem>) getMergePolicy(dataStructureName));
-    }
-
-    private int mergeWithLegacyMergePolicy() {
-        LegacyOperationBiConsumer consumer = new LegacyOperationBiConsumer();
-
-        Iterator<Map.Entry<String, Collection<Store>>> iterator = mergingStoresByName.entrySet().iterator();
-        while (iterator.hasNext()) {
-            try {
-                Map.Entry<String, Collection<Store>> entry = iterator.next();
-
-                String dataStructureName = entry.getKey();
-                Collection<Store> stores = entry.getValue();
-
-                if (canMergeLegacy(dataStructureName)) {
-                    for (Store store : stores) {
-                        try {
-                            mergeStoreLegacy(store, consumer);
-                        } finally {
-                            asyncDestroyStores(singleton(store));
-                        }
-                    }
-                    onMerge(dataStructureName);
-                } else {
-                    asyncDestroyStores(stores);
-                }
-            } finally {
-                iterator.remove();
-            }
-        }
-
-        return consumer.mergedCount;
-    }
-
-    /**
-     * Check if data structures in-memory-format appropriate to merge
-     * with legacy policies
-     */
-    private boolean canMergeLegacy(String dataStructureName) {
-        Object mergePolicy = getMergePolicy(dataStructureName);
-        InMemoryFormat inMemoryFormat = getInMemoryFormat(dataStructureName);
-
-        return checkMergePolicySupportsInMemoryFormat(dataStructureName,
-                mergePolicy, inMemoryFormat, false, logger);
     }
 
     private void waitMergeEnd(int mergedCount) {
@@ -266,7 +211,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         public void accept(Integer partitionId, MergingItem mergingItem) {
             List<MergingItem> entries = mergingItemsPerPartition[partitionId];
             if (entries == null) {
-                entries = new LinkedList<MergingItem>();
+                entries = new LinkedList<>();
                 mergingItemsPerPartition[partitionId] = entries;
             }
 
@@ -397,11 +342,6 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     protected abstract void mergeStore(Store recordStore, BiConsumer<Integer, MergingItem> consumer);
 
     /**
-     * Used to merge with legacy merge policies.
-     */
-    protected abstract void mergeStoreLegacy(Store recordStore, BiConsumer<Integer, Operation> consumer);
-
-    /**
      * This batch size can only be used with {@link SplitBrainMergePolicy},
      * legacy merge policies don't support batch data sending.
      *
@@ -410,9 +350,9 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     protected abstract int getBatchSize(String dataStructureName);
 
     /**
-     * @return a type of {@link SplitBrainMergePolicy} or a legacy merge policy
+     * @return a type of {@link SplitBrainMergePolicy}
      */
-    protected abstract Object getMergePolicy(String dataStructureName);
+    protected abstract SplitBrainMergePolicy<V, MergingItem> getMergePolicy(String dataStructureName);
 
     protected abstract String getDataStructureName(Store store);
 

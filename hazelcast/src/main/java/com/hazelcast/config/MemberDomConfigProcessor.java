@@ -23,12 +23,12 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.spi.ServiceConfigurationParser;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Element;
@@ -77,7 +77,7 @@ import static com.hazelcast.config.ConfigSections.PARTITION_GROUP;
 import static com.hazelcast.config.ConfigSections.PN_COUNTER;
 import static com.hazelcast.config.ConfigSections.PROPERTIES;
 import static com.hazelcast.config.ConfigSections.QUEUE;
-import static com.hazelcast.config.ConfigSections.QUORUM;
+import static com.hazelcast.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
 import static com.hazelcast.config.ConfigSections.RELIABLE_TOPIC;
 import static com.hazelcast.config.ConfigSections.REPLICATED_MAP;
 import static com.hazelcast.config.ConfigSections.RINGBUFFER;
@@ -213,8 +213,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             config.setLicenseKey(getTextContent(node));
         } else if (MANAGEMENT_CENTER.isEqual(nodeName)) {
             handleManagementCenterConfig(node);
-        } else if (QUORUM.isEqual(nodeName)) {
-            handleQuorum(node);
+        } else if (SPLIT_BRAIN_PROTECTION.isEqual(nodeName)) {
+            handleSplitBrainProtection(node);
         } else if (LITE_MEMBER.isEqual(nodeName)) {
             handleLiteMember(node);
         } else if (HOT_RESTART_PERSISTENCE.isEqual(nodeName)) {
@@ -340,96 +340,104 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setLiteMember(liteMember);
     }
 
-    protected void handleQuorum(Node node) {
-        QuorumConfig quorumConfig = new QuorumConfig();
+    protected void handleSplitBrainProtection(Node node) {
+        SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig();
         String name = getAttribute(node, "name");
-        quorumConfig.setName(name);
-        handleQuorumNode(node, quorumConfig, name);
+        splitBrainProtectionConfig.setName(name);
+        handleSplitBrainProtectionNode(node, splitBrainProtectionConfig, name);
     }
 
-    protected void handleQuorumNode(Node node, QuorumConfig quorumConfig, String name) {
+    protected void handleSplitBrainProtectionNode(Node node, SplitBrainProtectionConfig splitBrainProtectionConfig, String name) {
         Node attrEnabled = node.getAttributes().getNamedItem("enabled");
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
-        // probabilistic-quorum and recently-active-quorum quorum configs are constructed via QuorumConfigBuilder
-        QuorumConfigBuilder quorumConfigBuilder = null;
-        quorumConfig.setEnabled(enabled);
+        // probabilistic-split-brain-protection and recently-active-split-brain-protection
+        // configs are constructed via SplitBrainProtectionConfigBuilder
+        SplitBrainProtectionConfigBuilder splitBrainProtectionConfigBuilder = null;
+        splitBrainProtectionConfig.setEnabled(enabled);
         for (Node n : childElements(node)) {
             String value = getTextContent(n).trim();
             String nodeName = cleanNodeName(n);
-            if ("quorum-size".equals(nodeName)) {
-                quorumConfig.setSize(getIntegerValue("quorum-size", value));
-            } else if ("quorum-listeners".equals(nodeName)) {
-                handleQuorumListeners(quorumConfig, n);
-            } else if ("quorum-type".equals(nodeName)) {
-                quorumConfig.setType(QuorumType.valueOf(upperCaseInternal(value)));
-            } else if ("quorum-function-class-name".equals(nodeName)) {
-                quorumConfig.setQuorumFunctionClassName(value);
-            } else if ("recently-active-quorum".equals(nodeName)) {
-                quorumConfigBuilder = handleRecentlyActiveQuorum(name, n, quorumConfig.getSize());
-            } else if ("probabilistic-quorum".equals(nodeName)) {
-                quorumConfigBuilder = handleProbabilisticQuorum(name, n, quorumConfig.getSize());
+            if ("minimum-cluster-size".equals(nodeName)) {
+                splitBrainProtectionConfig.setMinimumClusterSize(getIntegerValue("minimum-cluster-size", value));
+            } else if ("listeners".equals(nodeName)) {
+                handleSplitBrainProtectionListeners(splitBrainProtectionConfig, n);
+            } else if ("protect-on".equals(nodeName)) {
+                splitBrainProtectionConfig.setProtectOn(SplitBrainProtectionOn.valueOf(upperCaseInternal(value)));
+            } else if ("function-class-name".equals(nodeName)) {
+                splitBrainProtectionConfig.setFunctionClassName(value);
+            } else if ("recently-active-split-brain-protection".equals(nodeName)) {
+                splitBrainProtectionConfigBuilder =
+                        handleRecentlyActiveSplitBrainProtection(name, n, splitBrainProtectionConfig.getMinimumClusterSize());
+            } else if ("probabilistic-split-brain-protection".equals(nodeName)) {
+                splitBrainProtectionConfigBuilder =
+                        handleProbabilisticSplitBrainProtection(name, n, splitBrainProtectionConfig.getMinimumClusterSize());
             }
         }
-        if (quorumConfigBuilder != null) {
-            boolean quorumFunctionDefinedByClassName = !isNullOrEmpty(quorumConfig.getQuorumFunctionClassName());
-            if (quorumFunctionDefinedByClassName) {
-                throw new InvalidConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
-                        + "recently-active-quorum and a quorum function class name.");
+        if (splitBrainProtectionConfigBuilder != null) {
+            boolean splitBrainProtectionFunctionDefinedByClassName =
+                    !isNullOrEmpty(splitBrainProtectionConfig.getFunctionClassName());
+            if (splitBrainProtectionFunctionDefinedByClassName) {
+                throw new InvalidConfigurationException("A split brain protection cannot simultaneously"
+                        + " define probabilistic-split-brain-protectionm or "
+                        + "recently-active-split-brain-protection and a split brain protection function class name.");
             }
-            // ensure parsed attributes are reflected in constructed quorum config
-            QuorumConfig constructedConfig = quorumConfigBuilder.build();
-            constructedConfig.setSize(quorumConfig.getSize());
-            constructedConfig.setType(quorumConfig.getType());
-            constructedConfig.setListenerConfigs(quorumConfig.getListenerConfigs());
-            quorumConfig = constructedConfig;
+            // ensure parsed attributes are reflected in constructed split brain protection config
+            SplitBrainProtectionConfig constructedConfig = splitBrainProtectionConfigBuilder.build();
+            constructedConfig.setMinimumClusterSize(splitBrainProtectionConfig.getMinimumClusterSize());
+            constructedConfig.setProtectOn(splitBrainProtectionConfig.getProtectOn());
+            constructedConfig.setListenerConfigs(splitBrainProtectionConfig.getListenerConfigs());
+            splitBrainProtectionConfig = constructedConfig;
         }
-        config.addQuorumConfig(quorumConfig);
+        config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
     }
 
-    protected void handleQuorumListeners(QuorumConfig quorumConfig, Node n) {
+    protected void handleSplitBrainProtectionListeners(SplitBrainProtectionConfig splitBrainProtectionConfig, Node n) {
         for (Node listenerNode : childElements(n)) {
-            if ("quorum-listener".equals(cleanNodeName(listenerNode))) {
+            if ("listener".equals(cleanNodeName(listenerNode))) {
                 String listenerClass = getTextContent(listenerNode);
-                quorumConfig.addListenerConfig(new QuorumListenerConfig(listenerClass));
+                splitBrainProtectionConfig.addListenerConfig(new SplitBrainProtectionListenerConfig(listenerClass));
             }
         }
     }
 
-    private QuorumConfigBuilder handleRecentlyActiveQuorum(String name, Node node, int quorumSize) {
-        QuorumConfigBuilder quorumConfigBuilder;
+    private SplitBrainProtectionConfigBuilder handleRecentlyActiveSplitBrainProtection(String name, Node node,
+                                                                                       int splitBrainProtectionSize) {
+        SplitBrainProtectionConfigBuilder splitBrainProtectionConfigBuilder;
         int heartbeatToleranceMillis = getIntegerValue("heartbeat-tolerance-millis",
                 getAttribute(node, "heartbeat-tolerance-millis"),
-                RecentlyActiveQuorumConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS);
-        quorumConfigBuilder = QuorumConfig.newRecentlyActiveQuorumConfigBuilder(name,
-                quorumSize,
+                RecentlyActiveSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS);
+        splitBrainProtectionConfigBuilder = SplitBrainProtectionConfig.newRecentlyActiveSplitBrainProtectionConfigBuilder(name,
+                splitBrainProtectionSize,
                 heartbeatToleranceMillis);
-        return quorumConfigBuilder;
+        return splitBrainProtectionConfigBuilder;
     }
 
-    private QuorumConfigBuilder handleProbabilisticQuorum(String name, Node node, int quorumSize) {
-        QuorumConfigBuilder quorumConfigBuilder;
+    private SplitBrainProtectionConfigBuilder handleProbabilisticSplitBrainProtection(String name, Node node,
+                                                                                      int splitBrainProtectionSize) {
+        SplitBrainProtectionConfigBuilder splitBrainProtectionConfigBuilder;
         long acceptableHeartPause = getLongValue("acceptable-heartbeat-pause-millis",
                 getAttribute(node, "acceptable-heartbeat-pause-millis"),
-                ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS);
+                ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS);
         double threshold = getDoubleValue("suspicion-threshold",
                 getAttribute(node, "suspicion-threshold"),
-                ProbabilisticQuorumConfigBuilder.DEFAULT_PHI_THRESHOLD);
+                ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_PHI_THRESHOLD);
         int maxSampleSize = getIntegerValue("max-sample-size",
                 getAttribute(node, "max-sample-size"),
-                ProbabilisticQuorumConfigBuilder.DEFAULT_SAMPLE_SIZE);
+                ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_SAMPLE_SIZE);
         long minStdDeviation = getLongValue("min-std-deviation-millis",
                 getAttribute(node, "min-std-deviation-millis"),
-                ProbabilisticQuorumConfigBuilder.DEFAULT_MIN_STD_DEVIATION);
+                ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_MIN_STD_DEVIATION);
         long heartbeatIntervalMillis = getLongValue("heartbeat-interval-millis",
                 getAttribute(node, "heartbeat-interval-millis"),
-                ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
-        quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
+                ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
+        splitBrainProtectionConfigBuilder = SplitBrainProtectionConfig.
+                newProbabilisticSplitBrainProtectionConfigBuilder(name, splitBrainProtectionSize)
                 .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
                 .withSuspicionThreshold(threshold)
                 .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
                 .withMinStdDeviationMillis(minStdDeviation)
                 .withMaxSampleSize(maxSampleSize);
-        return quorumConfigBuilder;
+        return splitBrainProtectionConfigBuilder;
     }
 
     private void handleServices(Node node) {
@@ -503,22 +511,87 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addWanReplicationConfig(wanReplicationConfig);
     }
 
-    protected void handleWanReplicationChild(WanReplicationConfig wanReplicationConfig, Node nodeTarget, String nodeName) {
-        if ("wan-publisher".equals(nodeName)) {
-            WanPublisherConfig publisherConfig = new WanPublisherConfig();
-            publisherConfig.setPublisherId(getAttribute(nodeTarget, "publisher-id"));
-            publisherConfig.setGroupName(getAttribute(nodeTarget, "group-name"));
-            handleWanPublisherNode(wanReplicationConfig, nodeTarget, publisherConfig);
-        } else if ("wan-consumer".equals(nodeName)) {
+    protected void handleWanReplicationChild(WanReplicationConfig wanReplicationConfig,
+                                             Node nodeTarget,
+                                             String nodeName) {
+        if ("batch-publisher".equals(nodeName)) {
+            WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
+            handleBatchWanPublisherNode(wanReplicationConfig, nodeTarget, config);
+        } else if ("custom-publisher".equals(nodeName)) {
+            CustomWanPublisherConfig config = new CustomWanPublisherConfig();
+            handleCustomWanPublisherNode(wanReplicationConfig, nodeTarget, config);
+        } else if ("consumer".equals(nodeName)) {
             handleWanConsumerNode(wanReplicationConfig, nodeTarget);
         }
     }
 
-    void handleWanPublisherNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget, WanPublisherConfig publisherConfig) {
+    void handleCustomWanPublisherNode(WanReplicationConfig wanReplicationConfig,
+                                      Node nodeTarget,
+                                      CustomWanPublisherConfig config) {
         for (Node targetChild : childElements(nodeTarget)) {
-            handleWanPublisherConfig(publisherConfig, targetChild);
+            String targetChildName = cleanNodeName(targetChild);
+            if ("properties".equals(targetChildName)) {
+                fillProperties(targetChild, config.getProperties());
+            } else if ("publisher-id".equals(targetChildName)) {
+                config.setPublisherId(getTextContent(targetChild));
+            } else if ("class-name".equals(targetChildName)) {
+                config.setClassName(getTextContent(targetChild));
+            }
         }
-        wanReplicationConfig.addWanPublisherConfig(publisherConfig);
+        wanReplicationConfig.addCustomPublisherConfig(config);
+    }
+
+    void handleBatchWanPublisherNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget,
+                                     WanBatchReplicationPublisherConfig config) {
+        for (Node targetChild : childElements(nodeTarget)) {
+            String targetChildName = cleanNodeName(targetChild);
+            if ("group-name".equals(targetChildName)) {
+                config.setGroupName(getTextContent(targetChild));
+            } else if ("publisher-id".equals(targetChildName)) {
+                config.setPublisherId(getTextContent(targetChild));
+            } else if ("target-endpoints".equals(targetChildName)) {
+                config.setTargetEndpoints(getTextContent(targetChild));
+            } else if ("snapshot-enabled".equals(targetChildName)) {
+                config.setSnapshotEnabled(getBooleanValue(getTextContent(targetChild)));
+            } else if ("initial-publisher-state".equals(targetChildName)) {
+                config.setInitialPublisherState(WanPublisherState.valueOf(upperCaseInternal(getTextContent(targetChild))));
+            } else if ("queue-capacity".equals(targetChildName)) {
+                config.setQueueCapacity(getIntegerValue("queue-capacity", getTextContent(targetChild)));
+            } else if ("batch-size".equals(targetChildName)) {
+                config.setBatchSize(getIntegerValue("batch-size", getTextContent(targetChild)));
+            } else if ("batch-max-delay-millis".equals(targetChildName)) {
+                config.setBatchMaxDelayMillis(getIntegerValue("batch-max-delay-millis", getTextContent(targetChild)));
+            } else if ("response-timeout-millis".equals(targetChildName)) {
+                config.setResponseTimeoutMillis(getIntegerValue("response-timeout-millis", getTextContent(targetChild)));
+            } else if ("queue-full-behavior".equals(targetChildName)) {
+                config.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(getTextContent(targetChild))));
+            } else if ("acknowledge-type".equals(targetChildName)) {
+                config.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(getTextContent(targetChild))));
+            } else if ("discovery-period-seconds".equals(targetChildName)) {
+                config.setDiscoveryPeriodSeconds(getIntegerValue("discovery-period-seconds", getTextContent(targetChild)));
+            } else if ("max-target-endpoints".equals(targetChildName)) {
+                config.setMaxTargetEndpoints(getIntegerValue("max-target-endpoints", getTextContent(targetChild)));
+            } else if ("max-concurrent-invocations".equals(targetChildName)) {
+                config.setMaxConcurrentInvocations(getIntegerValue("max-concurrent-invocations", getTextContent(targetChild)));
+            } else if ("use-endpoint-private-address".equals(targetChildName)) {
+                config.setUseEndpointPrivateAddress(getBooleanValue(getTextContent(targetChild)));
+            } else if ("idle-min-park-ns".equals(targetChildName)) {
+                config.setIdleMinParkNs(getIntegerValue("idle-min-park-ns", getTextContent(targetChild)));
+            } else if ("idle-max-park-ns".equals(targetChildName)) {
+                config.setIdleMaxParkNs(getIntegerValue("idle-max-park-ns", getTextContent(targetChild)));
+            } else if ("properties".equals(targetChildName)) {
+                fillProperties(targetChild, config.getProperties());
+            } else if (AliasedDiscoveryConfigUtils.supports(targetChildName)) {
+                handleAliasedDiscoveryStrategy(config, targetChild, targetChildName);
+            } else if ("discovery-strategies".equals(targetChildName)) {
+                handleDiscoveryStrategies(config.getDiscoveryConfig(), targetChild);
+            } else if ("wan-sync".equals(targetChildName)) {
+                handleWanSync(config.getWanSyncConfig(), targetChild);
+            } else if ("endpoint".equals(targetChildName)) {
+                config.setEndpoint(getTextContent(targetChild));
+            }
+        }
+        wanReplicationConfig.addWanBatchReplicationPublisherConfig(config);
     }
 
     void handleWanConsumerNode(WanReplicationConfig wanReplicationConfig, Node nodeTarget) {
@@ -527,33 +600,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleWanConsumerConfig(consumerConfig, targetChild);
         }
         wanReplicationConfig.setWanConsumerConfig(consumerConfig);
-    }
-
-    void handleWanPublisherConfig(WanPublisherConfig publisherConfig, Node targetChild) {
-        String targetChildName = cleanNodeName(targetChild);
-        if ("class-name".equals(targetChildName)) {
-            publisherConfig.setClassName(getTextContent(targetChild));
-        } else if ("queue-full-behavior".equals(targetChildName)) {
-            String queueFullBehavior = getTextContent(targetChild);
-            publisherConfig.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(queueFullBehavior)));
-        } else if ("initial-publisher-state".equals(targetChildName)) {
-            String initialPublisherState = getTextContent(targetChild);
-            publisherConfig.setInitialPublisherState(
-                    WanPublisherState.valueOf(upperCaseInternal(initialPublisherState)));
-        } else if ("queue-capacity".equals(targetChildName)) {
-            int queueCapacity = getIntegerValue("queue-capacity", getTextContent(targetChild));
-            publisherConfig.setQueueCapacity(queueCapacity);
-        } else if ("properties".equals(targetChildName)) {
-            fillProperties(targetChild, publisherConfig.getProperties());
-        } else if (AliasedDiscoveryConfigUtils.supports(targetChildName)) {
-            handleAliasedDiscoveryStrategy(publisherConfig, targetChild, targetChildName);
-        } else if ("discovery-strategies".equals(targetChildName)) {
-            handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
-        } else if ("wan-sync".equals(targetChildName)) {
-            handleWanSync(publisherConfig.getWanSyncConfig(), targetChild);
-        } else if ("endpoint".equals(targetChildName)) {
-            publisherConfig.setEndpoint(getTextContent(targetChild));
-        }
     }
 
     private void handleWanSync(WanSyncConfig wanSyncConfig, Node node) {
@@ -835,8 +881,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 scheduledExecutorConfig.setDurability(parseInt(getTextContent(child)));
             } else if ("pool-size".equals(nodeName)) {
                 scheduledExecutorConfig.setPoolSize(parseInt(getTextContent(child)));
-            } else if ("quorum-ref".equals(nodeName)) {
-                scheduledExecutorConfig.setQuorumName(getTextContent(child));
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                scheduledExecutorConfig.setSplitBrainProtectionName(getTextContent(child));
             }
         }
 
@@ -860,8 +906,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 cardinalityEstimatorConfig.setBackupCount(parseInt(getTextContent(child)));
             } else if ("async-backup-count".equals(nodeName)) {
                 cardinalityEstimatorConfig.setAsyncBackupCount(parseInt(getTextContent(child)));
-            } else if ("quorum-ref".equals(nodeName)) {
-                cardinalityEstimatorConfig.setQuorumName(getTextContent(child));
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                cardinalityEstimatorConfig.setSplitBrainProtectionName(getTextContent(child));
             }
         }
 
@@ -1041,8 +1087,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private static String handleRefProperty(String element) {
-        if (element.equals("quorum-ref")) {
-            return "QuorumName";
+        if (element.equals("split-brain-protection-ref")) {
+            return "SplitBrainProtectionName";
         }
         return null;
     }
@@ -1124,11 +1170,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleAliasedDiscoveryStrategy(JoinConfig joinConfig, Node node, String tag) {
-        AliasedDiscoveryConfig aliasedDiscoveryConfig = AliasedDiscoveryConfigUtils.getConfigByTag(joinConfig, tag);
+        AliasedDiscoveryConfig aliasedDiscoveryConfig = getConfigByTag(joinConfig, tag);
         updateConfig(aliasedDiscoveryConfig, node);
     }
 
-    private void handleAliasedDiscoveryStrategy(WanPublisherConfig publisherConfig, Node node, String tag) {
+    private void handleAliasedDiscoveryStrategy(WanBatchReplicationPublisherConfig publisherConfig,
+                                                Node node,
+                                                String tag) {
         AliasedDiscoveryConfig aliasedDiscoveryConfig = getConfigByTag(publisherConfig, tag);
         updateConfig(aliasedDiscoveryConfig, node);
     }
@@ -1310,8 +1358,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
-            if ("quorum-ref".equals(nodeName)) {
-                lockConfig.setQuorumName(value);
+            if ("split-brain-protection-ref".equals(nodeName)) {
+                lockConfig.setSplitBrainProtectionName(value);
             }
         }
         config.addLockConfig(lockConfig);
@@ -1348,8 +1396,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("queue-store".equals(nodeName)) {
                 QueueStoreConfig queueStoreConfig = createQueueStoreConfig(n);
                 qConfig.setQueueStoreConfig(queueStoreConfig);
-            } else if ("quorum-ref".equals(nodeName)) {
-                qConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                qConfig.setSplitBrainProtectionName(value);
             } else if ("empty-queue-ttl".equals(nodeName)) {
                 qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", value));
             } else if ("merge-policy".equals(nodeName)) {
@@ -1399,8 +1447,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 });
             } else if ("statistics-enabled".equals(nodeName)) {
                 lConfig.setStatisticsEnabled(getBooleanValue(value));
-            } else if ("quorum-ref".equals(nodeName)) {
-                lConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                lConfig.setSplitBrainProtectionName(value);
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 lConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -1438,8 +1486,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 });
             } else if ("statistics-enabled".equals(nodeName)) {
                 sConfig.setStatisticsEnabled(getBooleanValue(value));
-            } else if ("quorum-ref".equals(nodeName)) {
-                sConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                sConfig.setSplitBrainProtectionName(value);
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 sConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -1480,8 +1528,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 multiMapConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("binary".equals(nodeName)) {
                 multiMapConfig.setBinary(getBooleanValue(value));
-            } else if ("quorum-ref".equals(nodeName)) {
-                multiMapConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                multiMapConfig.setSplitBrainProtectionName(value);
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 multiMapConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -1515,29 +1563,22 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
-            if ("concurrency-level".equals(nodeName)) {
-                replicatedMapConfig.setConcurrencyLevel(getIntegerValue("concurrency-level", value));
-            } else if ("in-memory-format".equals(nodeName)) {
+            if ("in-memory-format".equals(nodeName)) {
                 replicatedMapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
-            } else if ("replication-delay-millis".equals(nodeName)) {
-                replicatedMapConfig.setReplicationDelayMillis(getIntegerValue("replication-delay-millis", value));
             } else if ("async-fillup".equals(nodeName)) {
                 replicatedMapConfig.setAsyncFillup(getBooleanValue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
                 replicatedMapConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("entry-listeners".equals(nodeName)) {
-                handleEntryListeners(n, new Function<EntryListenerConfig, Void>() {
-                    @Override
-                    public Void apply(EntryListenerConfig entryListenerConfig) {
-                        replicatedMapConfig.addEntryListenerConfig(entryListenerConfig);
-                        return null;
-                    }
+                handleEntryListeners(n, entryListenerConfig -> {
+                    replicatedMapConfig.addEntryListenerConfig(entryListenerConfig);
+                    return null;
                 });
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 replicatedMapConfig.setMergePolicyConfig(mergePolicyConfig);
-            } else if ("quorum-ref".equals(nodeName)) {
-                replicatedMapConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                replicatedMapConfig.setSplitBrainProtectionName(value);
             }
         }
         config.addReplicatedMapConfig(replicatedMapConfig);
@@ -1568,11 +1609,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("max-size".equals(nodeName)) {
                 handleMaxSizeConfig(mapConfig, node, value);
             } else if ("time-to-live-seconds".equals(nodeName)) {
-                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value
-                ));
+                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value));
             } else if ("max-idle-seconds".equals(nodeName)) {
-                mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value
-                ));
+                mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value));
             } else if ("map-store".equals(nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
@@ -1601,21 +1640,18 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("indexes".equals(nodeName)) {
                 mapIndexesHandle(node, mapConfig);
             } else if ("attributes".equals(nodeName)) {
-                mapAttributesHandle(node, mapConfig);
+                attributesHandle(node, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
-                handleEntryListeners(node, new Function<EntryListenerConfig, Void>() {
-                    @Override
-                    public Void apply(EntryListenerConfig entryListenerConfig) {
-                        mapConfig.addEntryListenerConfig(entryListenerConfig);
-                        return null;
-                    }
+                handleEntryListeners(node, entryListenerConfig -> {
+                    mapConfig.addEntryListenerConfig(entryListenerConfig);
+                    return null;
                 });
             } else if ("partition-lost-listeners".equals(nodeName)) {
                 mapPartitionLostListenerHandle(node, mapConfig);
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
-            } else if ("quorum-ref".equals(nodeName)) {
-                mapConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                mapConfig.setSplitBrainProtectionName(value);
             } else if ("query-caches".equals(nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
             } else if ("map-eviction-policy-class-name".equals(nodeName)) {
@@ -1649,16 +1685,10 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("max-size".equals(nodeName)) {
-                nearCacheConfig.setMaxSize(Integer.parseInt(value));
-                LOGGER.warning("The element <max-size/> for <near-cache/> is deprecated, please use <eviction> instead!");
-            } else if ("time-to-live-seconds".equals(nodeName)) {
+            if ("time-to-live-seconds".equals(nodeName)) {
                 nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
             } else if ("max-idle-seconds".equals(nodeName)) {
                 nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
-            } else if ("eviction-policy".equals(nodeName)) {
-                nearCacheConfig.setEvictionPolicy(value);
-                LOGGER.warning("The element <eviction-policy/> for <near-cache/> is deprecated, please use <eviction> instead!");
             } else if ("in-memory-format".equals(nodeName)) {
                 nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("serialize-keys".equals(nodeName)) {
@@ -1743,12 +1773,12 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
                 cacheConfig.setEvictionConfig(getEvictionConfig(n, false));
-            } else if ("quorum-ref".equals(nodeName)) {
-                cacheConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                cacheConfig.setSplitBrainProtectionName(value);
             } else if ("partition-lost-listeners".equals(nodeName)) {
                 cachePartitionLostListenerHandle(n, cacheConfig);
             } else if ("merge-policy".equals(nodeName)) {
-                cacheConfig.setMergePolicy(value);
+                cacheConfig.setMergePolicyConfig(createMergePolicyConfig(n));
             } else if ("event-journal".equals(nodeName)) {
                 EventJournalConfig eventJournalConfig = new EventJournalConfig();
                 handleViaReflection(n, cacheConfig, eventJournalConfig);
@@ -1960,13 +1990,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void mapAttributesHandle(Node n, MapConfig mapConfig) {
+    protected void attributesHandle(Node n, MapConfig mapConfig) {
         for (Node extractorNode : childElements(n)) {
             if ("attribute".equals(cleanNodeName(extractorNode))) {
                 NamedNodeMap attrs = extractorNode.getAttributes();
-                String extractor = getTextContent(attrs.getNamedItem("extractor"));
+                String extractor = getTextContent(attrs.getNamedItem("extractor-class-name"));
                 String name = getTextContent(extractorNode);
-                mapConfig.addMapAttributeConfig(new MapAttributeConfig(name, extractor));
+                mapConfig.addAttributeConfig(new AttributeConfig(name, extractor));
             }
         }
     }
@@ -2348,8 +2378,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("async-backup-count".equals(nodeName)) {
                 sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
                         , value));
-            } else if ("quorum-ref".equals(nodeName)) {
-                sConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                sConfig.setSplitBrainProtectionName(value);
             }
         }
         config.addSemaphoreConfig(sConfig);
@@ -2384,8 +2414,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("ringbuffer-store".equals(nodeName)) {
                 RingbufferStoreConfig ringbufferStoreConfig = createRingbufferStoreConfig(n);
                 rbConfig.setRingbufferStoreConfig(ringbufferStoreConfig);
-            } else if ("quorum-ref".equals(nodeName)) {
-                rbConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                rbConfig.setSplitBrainProtectionName(value);
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 rbConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -2408,8 +2438,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 atomicLongConfig.setMergePolicyConfig(mergePolicyConfig);
-            } else if ("quorum-ref".equals(nodeName)) {
-                atomicLongConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                atomicLongConfig.setSplitBrainProtectionName(value);
             }
         }
         config.addAtomicLongConfig(atomicLongConfig);
@@ -2429,8 +2459,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 atomicReferenceConfig.setMergePolicyConfig(mergePolicyConfig);
-            } else if ("quorum-ref".equals(nodeName)) {
-                atomicReferenceConfig.setQuorumName(value);
+            } else if ("split-brain-protection-ref".equals(nodeName)) {
+                atomicReferenceConfig.setSplitBrainProtectionName(value);
             }
         }
         config.addAtomicReferenceConfig(atomicReferenceConfig);
@@ -2447,8 +2477,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
-            if ("quorum-ref".equals(nodeName)) {
-                countDownLatchConfig.setQuorumName(value);
+            if ("split-brain-protection-ref".equals(nodeName)) {
+                countDownLatchConfig.setSplitBrainProtectionName(value);
             }
         }
         config.addCountDownLatchConfig(countDownLatchConfig);

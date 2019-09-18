@@ -35,7 +35,7 @@ public class ReplicatedMapKeys implements Portable {
     private List<Data> keys;
 
     public ReplicatedMapKeys() {
-        this.keys = new ArrayList<Data>();
+        this.keys = new ArrayList<>();
     }
 
     public ReplicatedMapKeys(List<Data> keys) {
@@ -59,7 +59,7 @@ public class ReplicatedMapKeys implements Portable {
     public void readPortable(PortableReader reader) throws IOException {
         int size = reader.readInt("size");
         ObjectDataInput in = reader.getRawDataInput();
-        keys = new ArrayList<Data>(size);
+        keys = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             keys.add(in.readData());
         }

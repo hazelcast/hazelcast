@@ -36,7 +36,7 @@ public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedCo
     private transient CountDownLatchConfigReadOnly readOnly;
 
     private String name;
-    private String quorumName;
+    private String splitBrainProtectionName;
 
     /**
      * Creates a default configured {@link CountDownLatchConfig}.
@@ -62,7 +62,7 @@ public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedCo
     public CountDownLatchConfig(CountDownLatchConfig config) {
         isNotNull(config, "config");
         this.name = config.getName();
-        this.quorumName = config.getQuorumName();
+        this.splitBrainProtectionName = config.getSplitBrainProtectionName();
     }
 
     /**
@@ -99,12 +99,12 @@ public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedCo
         return this;
     }
 
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
-    public CountDownLatchConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public CountDownLatchConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -112,7 +112,7 @@ public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedCo
     public String toString() {
         return "CountDownLatchConfig{"
                 + "name='" + name + '\''
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + '}';
     }
 
@@ -129,13 +129,13 @@ public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedCo
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
@@ -149,7 +149,8 @@ public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedCo
         }
 
         CountDownLatchConfig that = (CountDownLatchConfig) o;
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         return name != null ? name.equals(that.name) : that.name == null;
@@ -158,7 +159,7 @@ public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedCo
     @Override
     public final int hashCode() {
         int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
     }
 
@@ -174,7 +175,7 @@ public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedCo
         }
 
         @Override
-        public CountDownLatchConfig setQuorumName(String name) {
+        public CountDownLatchConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
             throw new UnsupportedOperationException("This is a read-only config!");
         }
     }

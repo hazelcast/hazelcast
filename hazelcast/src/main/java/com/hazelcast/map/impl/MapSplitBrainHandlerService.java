@@ -18,7 +18,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 
@@ -58,7 +57,7 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
     protected void onStoreCollection(RecordStore recordStore) {
         assertRunningOnPartitionThread();
 
-        ((DefaultRecordStore) recordStore).clearOtherDataThanStorage(true);
+        ((DefaultRecordStore) recordStore).clearOtherDataThanStorage(false, true);
     }
 
     @Override
@@ -77,7 +76,8 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
 
     @Override
     protected boolean hasMergeablePolicy(RecordStore store) {
-        Object mergePolicy = mapServiceContext.getMergePolicy(store.getName());
-        return !(mergePolicy instanceof DiscardMergePolicy || mergePolicy instanceof IgnoreMergingEntryMapMergePolicy);
+        String policy = store.getMapContainer().getMapConfig().getMergePolicyConfig().getPolicy();
+        Object mergePolicy = mapServiceContext.getNodeEngine().getSplitBrainMergePolicyProvider().getMergePolicy(policy);
+        return !(mergePolicy instanceof DiscardMergePolicy);
     }
 }

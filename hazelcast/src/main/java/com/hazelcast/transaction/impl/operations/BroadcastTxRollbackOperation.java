@@ -20,7 +20,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;

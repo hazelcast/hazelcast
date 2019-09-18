@@ -35,14 +35,15 @@ public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements Ba
     public TxnUnlockBackupOperation() {
     }
 
-    public TxnUnlockBackupOperation(String name, Data dataKey, String ownerUuid) {
-        super(name, dataKey, -1, -1);
+    public TxnUnlockBackupOperation(String name, Data dataKey, String ownerUuid, long lockThreadId) {
+        super(name, dataKey);
         this.ownerUuid = ownerUuid;
+        this.threadId = lockThreadId;
     }
 
     @Override
     protected void runInternal() {
-        recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
+        recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
     }
 
     @Override

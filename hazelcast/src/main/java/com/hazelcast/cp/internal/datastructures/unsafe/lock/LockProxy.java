@@ -19,9 +19,9 @@ package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 import com.hazelcast.cp.lock.ICondition;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;

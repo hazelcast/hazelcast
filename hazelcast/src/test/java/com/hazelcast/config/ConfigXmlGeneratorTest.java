@@ -20,13 +20,13 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
-import com.hazelcast.config.ConfigCompatibilityChecker.QuorumConfigChecker;
+import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfigChecker;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
@@ -301,36 +301,36 @@ public class ConfigXmlGeneratorTest {
 
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
-                .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
-                .setClientBlockUnmappedActions(false)
-                .setClientLoginModuleConfigs(Arrays.asList(
-                        new LoginModuleConfig()
-                                .setClassName("f.o.o")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                        new LoginModuleConfig()
-                                .setClassName("b.a.r")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                        new LoginModuleConfig()
-                                .setClassName("l.o.l")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-                .setMemberLoginModuleConfigs(Arrays.asList(
-                        new LoginModuleConfig()
-                                .setClassName("member.f.o.o")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                        new LoginModuleConfig()
-                                .setClassName("member.b.a.r")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                        new LoginModuleConfig()
-                                .setClassName("member.l.o.l")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-                .setMemberCredentialsConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops))
-                .setClientPermissionConfigs(new HashSet<PermissionConfig>(singletonList(
-                        new PermissionConfig()
-                                .setActions(newHashSet("read", "remove"))
-                                .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
-                                .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
-                                .setName("mycounter")
-                                .setPrincipal("devos"))));
+                      .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
+                      .setClientBlockUnmappedActions(false)
+                      .setClientLoginModuleConfigs(Arrays.asList(
+                              new LoginModuleConfig()
+                                      .setClassName("f.o.o")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                              new LoginModuleConfig()
+                                      .setClassName("b.a.r")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                              new LoginModuleConfig()
+                                      .setClassName("l.o.l")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
+                      .setMemberLoginModuleConfigs(Arrays.asList(
+                              new LoginModuleConfig()
+                                      .setClassName("member.f.o.o")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                              new LoginModuleConfig()
+                                      .setClassName("member.b.a.r")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                              new LoginModuleConfig()
+                                      .setClassName("member.l.o.l")
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
+                      .setMemberCredentialsConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops))
+                      .setClientPermissionConfigs(new HashSet<>(singletonList(
+                              new PermissionConfig()
+                                      .setActions(newHashSet("read", "remove"))
+                                      .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
+                                      .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
+                                      .setName("mycounter")
+                                      .setPrincipal("devos"))));
 
         cfg.setSecurityConfig(expectedConfig);
 
@@ -446,8 +446,7 @@ public class ConfigXmlGeneratorTest {
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig()
                 .setName("replicated-map-name")
                 .setStatisticsEnabled(false)
-                .setConcurrencyLevel(128)
-                .setQuorumName("quorum")
+                .setSplitBrainProtectionName("splitBrainProtection")
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
                 .addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener", false, false));
@@ -463,9 +462,8 @@ public class ConfigXmlGeneratorTest {
         MergePolicyConfig actualMergePolicyConfig = xmlReplicatedMapConfig.getMergePolicyConfig();
         assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
         assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
-        assertEquals(128, xmlReplicatedMapConfig.getConcurrencyLevel());
         assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
-        assertEquals("quorum", xmlReplicatedMapConfig.getQuorumName());
+        assertEquals("splitBrainProtection", xmlReplicatedMapConfig.getSplitBrainProtectionName());
         assertEquals(InMemoryFormat.NATIVE, xmlReplicatedMapConfig.getInMemoryFormat());
         assertTrue(xmlReplicatedMapConfig.isAsyncFillup());
         assertEquals("PassThroughMergePolicy", actualMergePolicyConfig.getPolicy());
@@ -513,9 +511,9 @@ public class ConfigXmlGeneratorTest {
                 .setWriteThrough(true)
                 .setPartitionLostListenerConfigs(singletonList(
                         new CachePartitionLostListenerConfig("partitionLostListener")))
-                .setQuorumName("testQuorum");
+                .setSplitBrainProtectionName("testSplitBrainProtection");
 
-        expectedConfig.setMergePolicy("mergePolicy");
+        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
         expectedConfig.setDisablePerEntryInvalidationEvents(true);
         expectedConfig.setWanReplicationRef(wanReplicationRef());
 
@@ -543,7 +541,7 @@ public class ConfigXmlGeneratorTest {
                 .setPartitionLostListenerConfigs(singletonList(
                         new CachePartitionLostListenerConfig("partitionLostListener")));
 
-        expectedConfig.setMergePolicy("mergePolicy");
+        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
         expectedConfig.setDisablePerEntryInvalidationEvents(true);
 
         Config config = new Config()
@@ -565,10 +563,10 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testCacheQuorumRef() {
+    public void testCacheSplitBrainProtectionRef() {
         CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
                 .setName("testCache")
-                .setQuorumName("testQuorum");
+                .setSplitBrainProtectionName("testSplitBrainProtection");
 
         Config config = new Config()
                 .addCacheConfig(expectedConfig);
@@ -576,7 +574,7 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
-        assertEquals("testQuorum", actualConfig.getQuorumName());
+        assertEquals("testSplitBrainProtection", actualConfig.getSplitBrainProtectionName());
     }
 
     @Test
@@ -614,7 +612,7 @@ public class ConfigXmlGeneratorTest {
                 .setTimeToLiveSeconds(4)
                 .setInMemoryFormat(InMemoryFormat.BINARY)
                 .setRingbufferStoreConfig(ringbufferStoreConfig)
-                .setQuorumName("quorum")
+                .setSplitBrainProtectionName("splitBrainProtection")
                 .setMergePolicyConfig(mergePolicyConfig);
 
         Config config = new Config().addRingBufferConfig(expectedConfig);
@@ -629,7 +627,7 @@ public class ConfigXmlGeneratorTest {
     public void testSemaphore() {
         SemaphoreConfig expectedConfig = new SemaphoreConfig()
                 .setName("testSemaphore")
-                .setQuorumName("quorum")
+                .setSplitBrainProtectionName("splitBrainProtection")
                 .setInitialPermits(3)
                 .setBackupCount(1)
                 .setAsyncBackupCount(2);
@@ -650,7 +648,7 @@ public class ConfigXmlGeneratorTest {
                 .setStatisticsEnabled(true)
                 .setPoolSize(10)
                 .setQueueCapacity(100)
-                .setQuorumName("quorum");
+                .setSplitBrainProtectionName("splitBrainProtection");
 
         Config config = new Config()
                 .addExecutorConfig(expectedConfig);
@@ -668,7 +666,7 @@ public class ConfigXmlGeneratorTest {
                 .setPoolSize(10)
                 .setCapacity(100)
                 .setDurability(2)
-                .setQuorumName("quorum");
+                .setSplitBrainProtectionName("splitBrainProtection");
 
         Config config = new Config()
                 .addDurableExecutorConfig(expectedConfig);
@@ -684,7 +682,7 @@ public class ConfigXmlGeneratorTest {
         PNCounterConfig expectedConfig = new PNCounterConfig()
                 .setName("testPNCounter")
                 .setReplicaCount(100)
-                .setQuorumName("quorum");
+                .setSplitBrainProtectionName("splitBrainProtection");
 
         Config config = new Config().addPNCounterConfig(expectedConfig);
 
@@ -703,7 +701,7 @@ public class ConfigXmlGeneratorTest {
                 .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST)
                 .setBinary(true)
                 .setStatisticsEnabled(true)
-                .setQuorumName("quorum")
+                .setSplitBrainProtectionName("splitBrainProtection")
                 .setEntryListenerConfigs(singletonList(new EntryListenerConfig("java.Listener", true, true)));
 
         Config config = new Config()
@@ -723,7 +721,7 @@ public class ConfigXmlGeneratorTest {
 
         AtomicLongConfig expectedConfig = new AtomicLongConfig("testAtomicLongConfig")
                 .setMergePolicyConfig(mergePolicyConfig)
-                .setQuorumName("quorum");
+                .setSplitBrainProtectionName("splitBrainProtection");
 
         Config config = new Config()
                 .addAtomicLongConfig(expectedConfig);
@@ -746,7 +744,7 @@ public class ConfigXmlGeneratorTest {
 
         AtomicReferenceConfig expectedConfig = new AtomicReferenceConfig("testAtomicReferenceConfig")
                 .setMergePolicyConfig(mergePolicyConfig)
-                .setQuorumName("quorum");
+                .setSplitBrainProtectionName("splitBrainProtection");
 
         Config config = new Config()
                 .addAtomicReferenceConfig(expectedConfig);
@@ -764,7 +762,7 @@ public class ConfigXmlGeneratorTest {
     @Test
     public void testCountDownLatch() {
         CountDownLatchConfig expectedConfig = new CountDownLatchConfig("testCountDownLatchConfig")
-                .setQuorumName("quorum");
+                .setSplitBrainProtectionName("splitBrainProtection");
 
 
         Config config = new Config()
@@ -787,7 +785,7 @@ public class ConfigXmlGeneratorTest {
                 .setStatisticsEnabled(true)
                 .setBackupCount(2)
                 .setAsyncBackupCount(3)
-                .setQuorumName("quorum")
+                .setSplitBrainProtectionName("splitBrainProtection")
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
 
@@ -811,7 +809,7 @@ public class ConfigXmlGeneratorTest {
                 .setStatisticsEnabled(true)
                 .setBackupCount(2)
                 .setAsyncBackupCount(3)
-                .setQuorumName("quorum")
+                .setSplitBrainProtectionName("splitBrainProtection")
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
 
@@ -899,7 +897,7 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testMapAttributesConfigWithStoreClass() {
+    public void testAttributesConfigWithStoreClass() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
@@ -927,7 +925,7 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testMapAttributesConfigWithStoreFactory() {
+    public void testAttributesConfigWithStoreFactory() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
@@ -942,9 +940,9 @@ public class ConfigXmlGeneratorTest {
 
     @SuppressWarnings("deprecation")
     private void testMap(MapStoreConfig mapStoreConfig) {
-        MapAttributeConfig attrConfig = new MapAttributeConfig()
+        AttributeConfig attrConfig = new AttributeConfig()
                 .setName("power")
-                .setExtractor("com.car.PowerExtractor");
+                .setExtractorClassName("com.car.PowerExtractor");
 
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig()
                 .setSize(10)
@@ -1018,7 +1016,7 @@ public class ConfigXmlGeneratorTest {
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .addEntryListenerConfig(listenerConfig)
                 .setMapIndexConfigs(singletonList(mapIndexConfig))
-                .addMapAttributeConfig(attrConfig)
+                .addAttributeConfig(attrConfig)
                 .setPartitionLostListenerConfigs(singletonList(
                         new MapPartitionLostListenerConfig("partitionLostListener")));
 
@@ -1030,9 +1028,9 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         MapConfig actualConfig = xmlConfig.getMapConfig("carMap");
-        MapAttributeConfig xmlAttrConfig = actualConfig.getMapAttributeConfigs().get(0);
+        AttributeConfig xmlAttrConfig = actualConfig.getAttributeConfigs().get(0);
         assertEquals(attrConfig.getName(), xmlAttrConfig.getName());
-        assertEquals(attrConfig.getExtractor(), xmlAttrConfig.getExtractor());
+        assertEquals(attrConfig.getExtractorClassName(), xmlAttrConfig.getExtractorClassName());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -1066,9 +1064,8 @@ public class ConfigXmlGeneratorTest {
     @Test
     public void testMapNearCacheEvictionConfig() {
         NearCacheConfig expectedConfig = new NearCacheConfig()
-                .setName("nearCache")
-                .setMaxSize(23)
-                .setEvictionPolicy("LRU");
+                .setName("nearCache");
+        expectedConfig.getEvictionConfig().setSize(23).setEvictionPolicy(EvictionPolicy.LRU);
 
         MapConfig mapConfig = new MapConfig()
                 .setName("nearCacheTest")
@@ -1080,8 +1077,8 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
-        assertEquals(23, actualConfig.getMaxSize());
-        assertEquals("LRU", actualConfig.getEvictionPolicy());
+        assertEquals(23, actualConfig.getEvictionConfig().getSize());
+        assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -1106,30 +1103,52 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testWanConfig() {
-        HashMap<String, Comparable> props = new HashMap<String, Comparable>();
+        HashMap<String, Comparable> props = new HashMap<>();
         props.put("prop1", "val1");
         props.put("prop2", "val2");
         props.put("prop3", "val3");
         WanReplicationConfig wanConfig = new WanReplicationConfig()
                 .setName("testName")
                 .setWanConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
-        WanPublisherConfig publisherConfig = new WanPublisherConfig()
+        WanBatchReplicationPublisherConfig batchPublisher = new WanBatchReplicationPublisherConfig()
                 .setGroupName("dummyGroup")
                 .setPublisherId("dummyPublisherId")
-                .setClassName("dummyClass")
-                .setAwsConfig(getDummyAwsConfig())
+                .setSnapshotEnabled(false)
                 .setInitialPublisherState(WanPublisherState.STOPPED)
-                .setDiscoveryConfig(getDummyDiscoveryConfig());
-        publisherConfig.getWanSyncConfig()
-                .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
+                .setQueueCapacity(1000)
+                .setBatchSize(500)
+                .setBatchMaxDelayMillis(1000)
+                .setResponseTimeoutMillis(60000)
+                .setQueueFullBehavior(WANQueueFullBehavior.DISCARD_AFTER_MUTATION)
+                .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
+                .setDiscoveryPeriodSeconds(20)
+                .setMaxTargetEndpoints(100)
+                .setMaxConcurrentInvocations(500)
+                .setUseEndpointPrivateAddress(true)
+                .setIdleMinParkNs(100)
+                .setIdleMaxParkNs(1000)
+                .setTargetEndpoints("a,b,c,d")
+                .setAwsConfig(getDummyAwsConfig())
+                .setDiscoveryConfig(getDummyDiscoveryConfig())
+                .setEndpoint("WAN")
+                .setProperties(props);
+
+        batchPublisher.getWanSyncConfig()
+                      .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
+
+        CustomWanPublisherConfig customPublisher = new CustomWanPublisherConfig()
+                .setPublisherId("dummyPublisherId")
+                .setClassName("className")
+                .setProperties(props);
+
         WanConsumerConfig wanConsumerConfig = new WanConsumerConfig()
                 .setClassName("dummyClass")
                 .setProperties(props)
                 .setPersistWanReplicatedData(false);
 
-        wanConfig
-                .setWanConsumerConfig(wanConsumerConfig)
-                .setWanPublisherConfigs(singletonList(publisherConfig));
+        wanConfig.setWanConsumerConfig(wanConsumerConfig)
+                 .addWanBatchReplicationPublisherConfig(batchPublisher)
+                 .addCustomPublisherConfig(customPublisher);
 
         Config config = new Config().addWanReplicationConfig(wanConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
@@ -1146,7 +1165,7 @@ public class ConfigXmlGeneratorTest {
                 .setBackupCount(2)
                 .setAsyncBackupCount(3)
                 .setName("Existing")
-                .setQuorumName("quorum")
+                .setSplitBrainProtectionName("splitBrainProtection")
                 .setMergePolicyConfig(new MergePolicyConfig("DiscardMergePolicy", 14));
         cfg.addCardinalityEstimatorConfig(estimatorConfig);
 
@@ -1161,7 +1180,7 @@ public class ConfigXmlGeneratorTest {
         assertEquals(defaultCardinalityEstConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
         assertEquals(defaultCardinalityEstConfig.getBackupCount(), fallsbackToDefault.getBackupCount());
         assertEquals(defaultCardinalityEstConfig.getAsyncBackupCount(), fallsbackToDefault.getAsyncBackupCount());
-        assertEquals(defaultCardinalityEstConfig.getQuorumName(), fallsbackToDefault.getQuorumName());
+        assertEquals(defaultCardinalityEstConfig.getSplitBrainProtectionName(), fallsbackToDefault.getSplitBrainProtectionName());
     }
 
     @Test
@@ -1221,7 +1240,7 @@ public class ConfigXmlGeneratorTest {
         String testLock = "TestLock";
         Config cfg = new Config();
 
-        LockConfig expectedConfig = new LockConfig().setName(testLock).setQuorumName("quorum");
+        LockConfig expectedConfig = new LockConfig().setName(testLock).setSplitBrainProtectionName("splitBrainProtection");
 
         cfg.addLockConfig(expectedConfig);
 
@@ -1239,7 +1258,7 @@ public class ConfigXmlGeneratorTest {
                         .setDurability(2)
                         .setName("Existing")
                         .setPoolSize(3)
-                        .setQuorumName("quorum")
+                        .setSplitBrainProtectionName("splitBrainProtection")
                         .setMergePolicyConfig(new MergePolicyConfig("JediPolicy", 23));
         cfg.addScheduledExecutorConfig(scheduledExecutorConfig);
 
@@ -1258,49 +1277,50 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testQuorumConfig_configByClassName() {
+    public void testSplitBrainProtectionConfig_configByClassName() {
         Config config = new Config();
-        QuorumConfig quorumConfig = new QuorumConfig("test-quorum", true, 3);
-        quorumConfig.setType(QuorumType.READ_WRITE)
-                .setQuorumFunctionClassName("com.hazelcast.QuorumFunction");
-        config.addQuorumConfig(quorumConfig);
+        SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig("test-splitBrainProtection", true, 3);
+        splitBrainProtectionConfig.setProtectOn(SplitBrainProtectionOn.READ_WRITE)
+                .setFunctionClassName("com.hazelcast.SplitBrainProtectionFunction");
+        config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        QuorumConfig generatedConfig = getNewConfigViaXMLGenerator(config).getQuorumConfig("test-quorum");
-        assertTrue(generatedConfig.toString() + " should be compatible with " + quorumConfig.toString(),
-                new QuorumConfigChecker().check(quorumConfig, generatedConfig));
+        SplitBrainProtectionConfig generatedConfig = getNewConfigViaXMLGenerator(config).
+                getSplitBrainProtectionConfig("test-splitBrainProtection");
+        assertTrue(generatedConfig.toString() + " should be compatible with " + splitBrainProtectionConfig.toString(),
+                new SplitBrainProtectionConfigChecker().check(splitBrainProtectionConfig, generatedConfig));
     }
 
     @Test
-    public void testQuorumConfig_configuredByRecentlyActiveQuorumConfigBuilder() {
+    public void testConfig_configuredByRecentlyActiveSplitBrainProtectionConfigBuilder() {
         Config config = new Config();
-        QuorumConfig quorumConfig = QuorumConfig.newRecentlyActiveQuorumConfigBuilder("recently-active", 3, 3141592)
+        SplitBrainProtectionConfig splitBrainProtectionConfig = SplitBrainProtectionConfig.newRecentlyActiveSplitBrainProtectionConfigBuilder("recently-active", 3, 3141592)
                 .build();
-        quorumConfig.setType(QuorumType.READ_WRITE)
-                .addListenerConfig(new QuorumListenerConfig("com.hazelcast.QuorumListener"));
-        config.addQuorumConfig(quorumConfig);
+        splitBrainProtectionConfig.setProtectOn(SplitBrainProtectionOn.READ_WRITE)
+                .addListenerConfig(new SplitBrainProtectionListenerConfig("com.hazelcast.SplitBrainProtectionListener"));
+        config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        QuorumConfig generatedConfig = getNewConfigViaXMLGenerator(config).getQuorumConfig("recently-active");
-        assertTrue(generatedConfig.toString() + " should be compatible with " + quorumConfig.toString(),
-                new QuorumConfigChecker().check(quorumConfig, generatedConfig));
+        SplitBrainProtectionConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSplitBrainProtectionConfig("recently-active");
+        assertTrue(generatedConfig.toString() + " should be compatible with " + splitBrainProtectionConfig.toString(),
+                new SplitBrainProtectionConfigChecker().check(splitBrainProtectionConfig, generatedConfig));
     }
 
     @Test
-    public void testQuorumConfig_configuredByProbabilisticQuorumConfigBuilder() {
+    public void testConfig_configuredByProbabilisticSplitBrainProtectionConfigBuilder() {
         Config config = new Config();
-        QuorumConfig quorumConfig = QuorumConfig.newProbabilisticQuorumConfigBuilder("probabilistic-quorum", 3)
+        SplitBrainProtectionConfig splitBrainProtectionConfig = SplitBrainProtectionConfig.newProbabilisticSplitBrainProtectionConfigBuilder("probabilistic-split-brain-protection", 3)
                 .withHeartbeatIntervalMillis(1)
                 .withAcceptableHeartbeatPauseMillis(2)
                 .withMaxSampleSize(3)
                 .withMinStdDeviationMillis(4)
                 .withSuspicionThreshold(5)
                 .build();
-        quorumConfig.setType(QuorumType.READ_WRITE)
-                .addListenerConfig(new QuorumListenerConfig("com.hazelcast.QuorumListener"));
-        config.addQuorumConfig(quorumConfig);
+        splitBrainProtectionConfig.setProtectOn(SplitBrainProtectionOn.READ_WRITE)
+                .addListenerConfig(new SplitBrainProtectionListenerConfig("com.hazelcast.SplitBrainProtectionListener"));
+        config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        QuorumConfig generatedConfig = getNewConfigViaXMLGenerator(config).getQuorumConfig("probabilistic-quorum");
-        assertTrue(generatedConfig.toString() + " should be compatible with " + quorumConfig.toString(),
-                new QuorumConfigChecker().check(quorumConfig, generatedConfig));
+        SplitBrainProtectionConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSplitBrainProtectionConfig("probabilistic-split-brain-protection");
+        assertTrue(generatedConfig.toString() + " should be compatible with " + splitBrainProtectionConfig.toString(),
+                new SplitBrainProtectionConfigChecker().check(splitBrainProtectionConfig, generatedConfig));
     }
 
     @Test

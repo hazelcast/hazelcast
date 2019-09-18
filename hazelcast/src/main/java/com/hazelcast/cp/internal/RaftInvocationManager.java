@@ -25,6 +25,9 @@ import com.hazelcast.cp.internal.operation.ChangeRaftGroupMembershipOp;
 import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.DestroyRaftGroupOp;
 import com.hazelcast.cp.internal.operation.RaftQueryOp;
+import com.hazelcast.cp.internal.operation.unsafe.AbstractUnsafeRaftOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftQueryOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
@@ -33,10 +36,10 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.RaftInvocation;
@@ -50,14 +53,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.shuffle;
 
 /**
  * Performs invocations to create &amp; destroy Raft groups,
  * commits {@link RaftOp} and runs queries on Raft groups.
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "checkstyle:classdataabstractioncoupling"})
 public class RaftInvocationManager {
 
     private final NodeEngineImpl nodeEngine;
@@ -79,7 +82,7 @@ public class RaftInvocationManager {
         this.invocationMaxRetryCount = nodeEngine.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
         this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
         this.operationCallTimeout = nodeEngine.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
-        this.cpSubsystemEnabled = raftService.getConfig().getCPMemberCount() > 0;
+        this.cpSubsystemEnabled = raftService.isCpSubsystemEnabled();
     }
 
     void reset() {
@@ -176,33 +179,39 @@ public class RaftInvocationManager {
     }
 
     public <T> InternalCompletableFuture<T> invoke(CPGroupId groupId, RaftOp raftOp) {
-        InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
-        if (completedFuture != null) {
-            return completedFuture;
+        if (cpSubsystemEnabled) {
+            Operation operation = new DefaultRaftReplicateOp(groupId, raftOp);
+            Invocation invocation =
+                    new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext, groupId, operation,
+                            invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
+            return invocation.invoke();
         }
-        Operation operation = new DefaultRaftReplicateOp(groupId, raftOp);
-        Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
-                groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
-        return invocation.invoke();
+        return invokeOnPartition(new UnsafeRaftReplicateOp(groupId, raftOp));
+    }
+
+    public <T> InternalCompletableFuture<T> invokeOnPartition(AbstractUnsafeRaftOp operation) {
+        operation.setPartitionId(raftService.getCPGroupPartitionId(operation.getGroupId()));
+        return nodeEngine.getOperationService().invokeOnPartition(operation);
     }
 
     public <T> InternalCompletableFuture<T> query(CPGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
-        InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
-        if (completedFuture != null) {
-            return completedFuture;
+        if (cpSubsystemEnabled) {
+            RaftQueryOp operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
+            Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
+                    groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
+            return invocation.invoke();
         }
-        RaftQueryOp operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
-        Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
-                groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
-        return invocation.invoke();
+        return invokeOnPartition(new UnsafeRaftQueryOp(groupId, raftOp));
     }
 
     public <T> InternalCompletableFuture<T> queryLocally(CPGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
-        InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
-        if (completedFuture != null) {
-            return completedFuture;
+        Operation operation;
+        if (cpSubsystemEnabled) {
+            operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
+        } else {
+            operation = new UnsafeRaftQueryOp(groupId, raftOp);
         }
-        RaftQueryOp operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
+        operation.setPartitionId(raftService.getCPGroupPartitionId(groupId));
         return nodeEngine.getOperationService().invokeOnTarget(RaftService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
     }
 

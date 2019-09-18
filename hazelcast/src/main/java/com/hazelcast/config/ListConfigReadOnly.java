@@ -85,7 +85,7 @@ public class ListConfigReadOnly extends ListConfig {
     }
 
     @Override
-    public ListConfig setQuorumName(String quorumName) {
+    public ListConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw new UnsupportedOperationException("This config is read-only list: " + getName());
     }
 }

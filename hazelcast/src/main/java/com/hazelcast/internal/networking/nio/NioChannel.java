@@ -131,7 +131,13 @@ public final class NioChannel extends AbstractChannel {
         if (Thread.currentThread() instanceof NioThread) {
             // we don't want to do any tasks on an io thread; we offload it instead
             try {
-                closeListenerExecutor.execute(new NotifyCloseListenersTask());
+                closeListenerExecutor.execute(() -> {
+                    try {
+                        notifyCloseListeners();
+                    } catch (Exception e) {
+                        logger.warning(e.getMessage(), e);
+                    }
+                });
             } catch (RejectedExecutionException e) {
                 // if the task gets rejected, the networking must be shutting down.
                 logger.fine(e);
@@ -149,7 +155,7 @@ public final class NioChannel extends AbstractChannel {
     //  this toString implementation is very useful for debugging. Please don't remove it.
 //    @Override
 //    public String toString() {
-//        String local = getPort(localSocketAddress());it
+//        String local = getPort(localSocketAddress());
 //        String remote = getPort(remoteSocketAddress());
 //        String s = local + (isClientMode() ? "=>" : "->") + remote;
 //
@@ -164,16 +170,5 @@ public final class NioChannel extends AbstractChannel {
 
     private String getPort(SocketAddress socketAddress) {
         return socketAddress == null ? "*missing*" : Integer.toString(((InetSocketAddress) socketAddress).getPort());
-    }
-
-    private class NotifyCloseListenersTask implements Runnable {
-        @Override
-        public void run() {
-            try {
-                notifyCloseListeners();
-            } catch (Exception e) {
-                logger.warning(e.getMessage(), e);
-            }
-        }
     }
 }

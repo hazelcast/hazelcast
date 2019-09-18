@@ -23,7 +23,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapKeys;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,11 +47,11 @@ public class KeySetOperation extends AbstractNamedSerializableOperation implemen
     public void run() throws Exception {
         ReplicatedMapService service = getService();
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(name);
-        List<Object> keys = new ArrayList<Object>();
+        List<Object> keys = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
             keys.addAll(store.keySet(false));
         }
-        ArrayList<Data> dataKeys = new ArrayList<Data>(keys.size());
+        ArrayList<Data> dataKeys = new ArrayList<>(keys.size());
         SerializationService serializationService = getNodeEngine().getSerializationService();
         for (Object key : keys) {
             dataKeys.add(serializationService.toData(key));

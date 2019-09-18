@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 /**
  * Event service abstraction to allow different type of implementations on

@@ -24,6 +24,7 @@ package com.hazelcast.test;
  * @see HazelcastTestSupport#assertCompletesEventually(ProgressCheckerTask, long)
  * @see TaskProgress
  */
+@FunctionalInterface
 public interface ProgressCheckerTask {
     /**
      * Collects and returns progress information

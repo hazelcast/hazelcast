@@ -131,7 +131,8 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
         assertContainsAll(dates, asList(4000000L, 6000000L, 8000000L, 10000000L, null));
     }
 
-    private List<Long> queryIndexedDateFieldAsNullValue(boolean ordered, Predicate pred) {
+    private List<Long> queryIndexedDateFieldAsNullValue(boolean ordered,
+                                                        Predicate<Integer, SampleTestObjects.Employee> pred) {
         Config config = getConfig();
         config.setProperty(GroupProperty.INDEX_COPY_BEHAVIOR.getName(), copyBehavior.name());
         HazelcastInstance instance = createHazelcastInstance(config);

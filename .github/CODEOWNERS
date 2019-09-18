@@ -1,0 +1,7 @@
+# Each line is a file pattern followed by one or more owners.
+
+# These owners will be the default owners for everything related to the clients team in
+# the repo . @hazelcast/clients team will be requested for
+# review when someone opens a pull request.
+
+**/client/**       @hazelcast/clients

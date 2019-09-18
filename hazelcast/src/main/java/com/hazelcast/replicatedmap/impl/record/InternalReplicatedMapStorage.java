@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 public class InternalReplicatedMapStorage<K, V> {
 
     private final ConcurrentMap<K, ReplicatedRecord<K, V>> storage =
-            new ConcurrentHashMap<K, ReplicatedRecord<K, V>>(1000, 0.75f, 1);
+            new ConcurrentHashMap<>(1000, 0.75f, 1);
 
     private long version;
 

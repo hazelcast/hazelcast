@@ -173,6 +173,9 @@ public final class JavaDefaultSerializers {
         }
 
         private Externalizable read(InputStream in, String className, ClassLoader classLoader) throws Exception {
+            if (classFilter != null) {
+                classFilter.filter(className);
+            }
             Externalizable ds = ClassLoaderUtil.newInstance(classLoader, className);
             ObjectInputStream objectInputStream = newObjectInputStream(classLoader, classFilter, in);
             ds.readExternal(objectInputStream);

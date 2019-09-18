@@ -18,8 +18,8 @@ package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionException;
@@ -36,6 +36,7 @@ import com.hazelcast.util.UuidUtil;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -99,7 +100,7 @@ public final class XATransaction implements Transaction {
         this.originatedFromClient = originatedFromClient;
     }
 
-    public XATransaction(NodeEngine nodeEngine, List<TransactionLogRecord> logs,
+    public XATransaction(NodeEngine nodeEngine, Collection<TransactionLogRecord> logs,
                          String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog(logs);
@@ -145,7 +146,7 @@ public final class XATransaction implements Transaction {
 
     private void putTransactionInfoRemote() throws ExecutionException, InterruptedException {
         PutRemoteTransactionOperation operation = new PutRemoteTransactionOperation(
-                transactionLog.getRecordList(), txnId, xid, txOwnerUuid, timeoutMillis, startTime);
+                transactionLog.getRecords(), txnId, xid, txOwnerUuid, timeoutMillis, startTime);
         OperationService operationService = nodeEngine.getOperationService();
         IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionId = partitionService.getPartitionId(xid);
@@ -221,8 +222,8 @@ public final class XATransaction implements Transaction {
         return startTime;
     }
 
-    public List<TransactionLogRecord> getTransactionRecords() {
-        return transactionLog.getRecordList();
+    public Collection<TransactionLogRecord> getTransactionRecords() {
+        return transactionLog.getRecords();
     }
 
     @Override

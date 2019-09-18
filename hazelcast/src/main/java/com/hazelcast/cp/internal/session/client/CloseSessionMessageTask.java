@@ -18,31 +18,30 @@ package com.hazelcast.cp.internal.session.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSessionCloseSessionCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.client.impl.protocol.codec.CPSessionCloseSessionCodec.RequestParameters;
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 
-import java.security.Permission;
-
 /**
  * Client message task for {@link CloseSessionOp}
  */
-public class CloseSessionMessageTask extends AbstractMessageTask<CPSessionCloseSessionCodec.RequestParameters>
-        implements ExecutionCallback<Object> {
+public class CloseSessionMessageTask extends AbstractSessionMessageTask<RequestParameters, Object> {
 
     public CloseSessionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .invoke(parameters.groupId, new CloseSessionOp(parameters.sessionId))
-               .andThen(this);
+    CPGroupId getGroupId() {
+        return parameters.groupId;
+    }
+
+    @Override
+    RaftOp getRaftOp() {
+        return new CloseSessionOp(parameters.sessionId);
     }
 
     @Override
@@ -53,40 +52,5 @@ public class CloseSessionMessageTask extends AbstractMessageTask<CPSessionCloseS
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return CPSessionCloseSessionCodec.encodeResponse((Boolean) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return RaftService.SERVICE_NAME;
-    }
-
-    @Override
-    public String getDistributedObjectName() {
-        return null;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
-
-    @Override
-    public String getMethodName() {
-        return null;
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
-    }
-
-    @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

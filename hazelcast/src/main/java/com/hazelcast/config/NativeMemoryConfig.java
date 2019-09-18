@@ -65,6 +65,11 @@ public class NativeMemoryConfig {
     private int minBlockSize = DEFAULT_MIN_BLOCK_SIZE;
     private int pageSize = DEFAULT_PAGE_SIZE;
     private float metadataSpacePercentage = DEFAULT_METADATA_SPACE_PERCENTAGE;
+    /**
+     * Path to the non-volatile memory directory. {@code null} indicates the
+     * standard RAM is used.
+     */
+    private String persistentMemoryDirectory;
 
     public NativeMemoryConfig() {
     }
@@ -76,6 +81,7 @@ public class NativeMemoryConfig {
         minBlockSize = nativeMemoryConfig.minBlockSize;
         pageSize = nativeMemoryConfig.pageSize;
         metadataSpacePercentage = nativeMemoryConfig.metadataSpacePercentage;
+        persistentMemoryDirectory = nativeMemoryConfig.persistentMemoryDirectory;
     }
 
     /**
@@ -215,6 +221,28 @@ public class NativeMemoryConfig {
     }
 
     /**
+     * Returns the persistent memory directory (e.g. Intel Optane) to be used to store memory structures allocated by native
+     * memory manager.
+     * <p>
+     * Default value is {@code null}. It indicates that volatile RAM is being used.
+     * {@code null}
+     */
+    public String getPersistentMemoryDirectory() {
+        return persistentMemoryDirectory;
+    }
+
+    /**
+     * Sets the persistent memory directory (e.g. Intel Optane) to be used to store memory structures allocated by native memory
+     * manager.
+     * @param directory the persistent memory directory
+     * @return this {@link NativeMemoryConfig} instance
+     */
+    public NativeMemoryConfig setPersistentMemoryDirectory(String directory) {
+        this.persistentMemoryDirectory = directory;
+        return this;
+    }
+
+    /**
      * Type of memory allocator:
      * <ul>
      * <li>STANDARD: allocate/free memory using default OS memory manager</li>
@@ -260,6 +288,10 @@ public class NativeMemoryConfig {
         if (size != null ? !size.equals(that.size) : that.size != null) {
             return false;
         }
+        if (persistentMemoryDirectory != null ? !persistentMemoryDirectory.equals(that.persistentMemoryDirectory)
+                : that.persistentMemoryDirectory != null) {
+            return false;
+        }
         return allocatorType == that.allocatorType;
     }
 
@@ -271,6 +303,7 @@ public class NativeMemoryConfig {
         result = 31 * result + minBlockSize;
         result = 31 * result + pageSize;
         result = 31 * result + (metadataSpacePercentage != +0.0f ? Float.floatToIntBits(metadataSpacePercentage) : 0);
+        result = 31 * result + (persistentMemoryDirectory != null ? persistentMemoryDirectory.hashCode() : 0);
         return result;
     }
 
@@ -283,6 +316,7 @@ public class NativeMemoryConfig {
                 + ", minBlockSize=" + minBlockSize
                 + ", pageSize=" + pageSize
                 + ", metadataSpacePercentage=" + metadataSpacePercentage
+                + ", persistentMemoryDirectory=" + persistentMemoryDirectory
                 + '}';
     }
 }

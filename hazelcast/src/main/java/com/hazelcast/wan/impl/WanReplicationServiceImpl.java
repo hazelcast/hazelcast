@@ -16,8 +16,9 @@
 
 package com.hazelcast.wan.impl;
 
+import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.events.AddWanConfigIgnoredEvent;
@@ -26,16 +27,21 @@ import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.getOrCreate;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 
 /**
  * Open source implementation of the {@link WanReplicationService}
@@ -50,8 +56,8 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     /** WAN event counters for all services and only sent events */
     private final WanEventCounters sentWanEventCounters = new WanEventCounters();
 
-    private final ConcurrentHashMap<String, WanReplicationPublisherDelegate> wanReplications
-            = initializeWanReplicationPublisherMapping();
+    private final ConcurrentMap<String, WanReplicationPublisherDelegate> wanReplications = createConcurrentHashMap(1);
+
     private final ConstructorFunction<String, WanReplicationPublisherDelegate> publisherDelegateConstructorFunction =
             new ConstructorFunction<String, WanReplicationPublisherDelegate>() {
                 @Override
@@ -60,8 +66,14 @@ public class WanReplicationServiceImpl implements WanReplicationService {
                     if (wanReplicationConfig == null) {
                         return null;
                     }
-                    final List<WanPublisherConfig> publisherConfigs = wanReplicationConfig.getWanPublisherConfigs();
-                    return new WanReplicationPublisherDelegate(name, createPublishers(wanReplicationConfig, publisherConfigs));
+                    List<WanBatchReplicationPublisherConfig> batchPublisherConfigs
+                            = wanReplicationConfig.getBatchPublisherConfigs();
+                    if (!batchPublisherConfigs.isEmpty()) {
+                        throw new InvalidConfigurationException("Built-in batching WAN replication implementation "
+                                + "is only available in Hazelcast enterprise edition.");
+                    }
+                    return new WanReplicationPublisherDelegate(name,
+                            createEndpoints(wanReplicationConfig, wanReplicationConfig.getCustomPublisherConfigs()));
                 }
             };
 
@@ -74,21 +86,22 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         return getOrPutSynchronized(wanReplications, name, this, publisherDelegateConstructorFunction);
     }
 
-    private WanReplicationEndpoint[] createPublishers(WanReplicationConfig wanReplicationConfig,
-                                                      List<WanPublisherConfig> publisherConfigs) {
+    private WanReplicationEndpoint[] createEndpoints(WanReplicationConfig wanReplicationConfig,
+                                                     Collection<? extends AbstractWanPublisherConfig> publisherConfigs) {
         WanReplicationEndpoint[] targetEndpoints = new WanReplicationEndpoint[publisherConfigs.size()];
         int count = 0;
-        for (WanPublisherConfig publisherConfig : publisherConfigs) {
-            final WanReplicationEndpoint target = getOrCreate((WanReplicationEndpoint) publisherConfig.getImplementation(),
+        for (AbstractWanPublisherConfig pc : publisherConfigs) {
+            final WanReplicationEndpoint target = getOrCreate((WanReplicationEndpoint) pc.getImplementation(),
                     node.getConfigClassLoader(),
-                    publisherConfig.getClassName());
+                    pc.getClassName());
             if (target == null) {
                 throw new InvalidConfigurationException("Either \'implementation\' or \'className\' "
-                        + "attribute need to be set in WanPublisherConfig");
+                        + "attribute need to be set in the WAN publisher configuration for publisher " + pc);
             }
-            target.init(node, wanReplicationConfig, publisherConfig);
+            target.init(node, wanReplicationConfig, pc);
             targetEndpoints[count++] = target;
         }
+
         return targetEndpoints;
     }
 
@@ -130,7 +143,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public void syncMap(String wanReplicationName, String targetGroupName, String mapName) {
+    public UUID syncMap(String wanReplicationName, String targetGroupName, String mapName) {
         node.getManagementCenterService().log(
                 WanSyncIgnoredEvent.enterpriseOnly(wanReplicationName, targetGroupName, mapName));
 
@@ -138,7 +151,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public void syncAllMaps(String wanReplicationName, String targetGroupName) {
+    public UUID syncAllMaps(String wanReplicationName, String targetGroupName) {
         node.getManagementCenterService().log(
                 WanSyncIgnoredEvent.enterpriseOnly(wanReplicationName, targetGroupName, null));
 
@@ -146,7 +159,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public void consistencyCheck(String wanReplicationName, String targetGroupName, String mapName) {
+    public UUID consistencyCheck(String wanReplicationName, String targetGroupName, String mapName) {
         node.getManagementCenterService().log(
                 new WanConsistencyCheckIgnoredEvent(wanReplicationName, targetGroupName, mapName,
                         "Consistency check is supported for enterprise clusters only."));
@@ -176,10 +189,6 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         return null;
     }
 
-    private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
-        return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
-    }
-
     @Override
     public WanSyncState getWanSyncState() {
         return null;
@@ -201,5 +210,11 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     public void removeWanEventCounters(String serviceName, String objectName) {
         receivedWanEventCounters.removeCounter(serviceName, objectName);
         sentWanEventCounters.removeCounter(serviceName, objectName);
+    }
+
+    @Override
+    public List<Version> getSupportedWanProtocolVersions() {
+        // EE WAN replication not supported in OS
+        return Collections.emptyList();
     }
 }

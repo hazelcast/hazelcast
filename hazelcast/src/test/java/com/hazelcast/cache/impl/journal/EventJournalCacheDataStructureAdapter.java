@@ -25,7 +25,7 @@ import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 
 import javax.cache.Cache;
 import java.util.AbstractMap.SimpleImmutableEntry;

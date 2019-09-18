@@ -16,15 +16,13 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
@@ -509,7 +507,7 @@ public interface ICacheRecordStore {
     boolean isWanReplicationEnabled();
 
     /**
-     * Returns {@link com.hazelcast.spi.ObjectNamespace} associated with this record store.
+     * Returns {@link ObjectNamespace} associated with this record store.
      *
      * @return ObjectNamespace associated with this record store.
      */
@@ -525,21 +523,6 @@ public interface ICacheRecordStore {
      */
     CacheRecord merge(CacheMergeTypes mergingEntry,
                       SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy, CallerProvenance callerProvenance);
-
-    /**
-     * Merges the given {@link CacheEntryView} via the given {@link CacheMergePolicy}.
-     *
-     * @param cacheEntryView   the {@link CacheEntryView} instance to merge
-     * @param mergePolicy      the {@link CacheMergePolicy} instance to apply
-     * @param caller           the UUID of the caller
-     * @param origin           source of the call
-     * @param completionId     User generated id which shall be received as a field of the cache event upon completion of
-     *                         the request in the cluster.
-     * @param callerProvenance
-     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
-     */
-    CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
-                      String caller, String origin, int completionId, CallerProvenance callerProvenance);
 
     /**
      * @return partition ID of this store

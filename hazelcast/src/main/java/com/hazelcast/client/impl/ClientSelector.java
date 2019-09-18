@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
 
 public interface ClientSelector {
 

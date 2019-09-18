@@ -17,8 +17,8 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.ExceptionUtil;
 

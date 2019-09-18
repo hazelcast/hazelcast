@@ -17,7 +17,7 @@
 package com.hazelcast.serviceprovider;
 
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptor;
 
 public class TestServiceDescriptor implements ServiceDescriptor {

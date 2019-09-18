@@ -16,7 +16,7 @@
 
 package com.hazelcast.util.scheduler;
 
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.ScheduledFuture;

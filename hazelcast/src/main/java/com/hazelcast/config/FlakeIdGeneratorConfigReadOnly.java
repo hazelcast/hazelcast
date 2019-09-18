@@ -28,7 +28,7 @@ public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
     }
 
     @Override
-    public void setName(String name) {
+    public FlakeIdGeneratorConfig setName(String name) {
         throw throwReadOnly();
     }
 

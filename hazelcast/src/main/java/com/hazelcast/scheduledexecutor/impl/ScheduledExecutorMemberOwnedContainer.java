@@ -18,7 +18,7 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 

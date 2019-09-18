@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.monitor.LocalExecutorStats;
 
 import java.util.Collection;
@@ -32,7 +33,8 @@ import java.util.concurrent.Future;
  * on a specific member, on a member who is owner of a specific key,
  * executing a tasks on multiple members and listening execution result using a callback.
  *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster
+ * versions 3.10 and higher.
  *
  * @see ExecutorService
  * @see ExecutionCallback

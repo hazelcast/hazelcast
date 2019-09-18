@@ -42,15 +42,11 @@
                         <xs:element name="executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -83,15 +79,11 @@
                         <xs:element name="durable-executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -123,15 +115,11 @@
                         <xs:element name="scheduled-executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:all>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -186,15 +174,11 @@
                                         </xs:annotation>
                                     </xs:element>
 
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -232,15 +216,11 @@
                                             <xs:attribute name="factory-implementation" use="optional" type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -291,15 +271,11 @@
                         <xs:element name="lock" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -335,15 +311,11 @@
                                                           type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -418,15 +390,11 @@
                         <xs:element name="atomic-long" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -438,15 +406,11 @@
                         <xs:element name="atomic-reference" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -458,15 +422,11 @@
                         <xs:element name="count-down-latch" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -477,15 +437,11 @@
                         <xs:element name="semaphore" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -668,7 +624,7 @@
                                                 <xs:element name="attribute" minOccurs="0" maxOccurs="unbounded">
                                                     <xs:complexType>
                                                         <xs:attribute name="name" type="xs:string" use="required"/>
-                                                        <xs:attribute name="extractor" type="xs:string" use="required"/>
+                                                        <xs:attribute name="extractor-class-name" type="xs:string" use="required"/>
                                                     </xs:complexType>
                                                 </xs:element>
                                             </xs:sequence>
@@ -688,15 +644,11 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -964,50 +916,17 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
-                                            </xs:documentation>
-                                        </xs:annotation>
-                                    </xs:element>
-                                    <xs:element name="merge-policy" minOccurs="0" maxOccurs="1">
-                                        <xs:annotation>
-                                            <xs:documentation>
-                                                While recovering from split-brain (network partitioning), cache entries in the
-                                                small cluster
-                                                merge into the bigger cluster based on the policy set here.
-                                                When an entry merges into the cluster, an entry with the same key might already
-                                                exist in the cluster.
-                                                The values of these entries might be different for that same key. Which value
-                                                should be set for the
-                                                key? The conflict is resolved by the policy set here.
-                                                <p>
-                                                    <br/>There are built-in merge policies, such as:
-                                                    <br/>`com.hazelcast.cache.merge.PassThroughCacheMergePolicy` or
-                                                    `PASS_THROUGH`:
-                                                    The entry will be added directly even though there is an existing entry for
-                                                    the key.
-                                                    <br/>`com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy` or
-                                                    `PUT_IF_ABSENT`:
-                                                    The entry will be added if there is no existing entry for the key.
-                                                    <br/>`com.hazelcast.cache.merge.HigherHitsCacheMergePolicy` or `HIGHER_HITS`:
-                                                    The entry with the higher number of hits wins.
-                                                    <br/>`com.hazelcast.cache.merge.LatestAccessCacheMergePolicy` or
-                                                    `LATEST_ACCESS`:
-                                                    The entry which has been accessed more recently wins.
-                                                    <br/>Default policy is 'com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy'
-                                                </p>
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="event-journal" type="event-journal" minOccurs="0" maxOccurs="1"/>
+                                    <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="required">
                                     <xs:annotation>
@@ -1155,15 +1074,11 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1230,15 +1145,11 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1291,15 +1202,11 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split-brain-protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1409,15 +1316,11 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split-brain-protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1426,33 +1329,6 @@
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
                                 <xs:attribute name="in-memory-format" type="in-memory-format" use="optional"
                                               default="OBJECT"/>
-                                <xs:attribute name="concurrency-level" type="concurrency-level" use="optional"
-                                              default="32">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Number of parallel mutexes to minimize contention on keys. The default value
-                                            is 32 which
-                                            is a good number for lots of applications. If higher contention is seen on
-                                            writes to values
-                                            inside of the replicated map this value can be adjusted to the needs.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="replication-delay-millis" type="parameterized-unsigned-int" use="optional"
-                                              default="100">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Defines a number of milliseconds after a put is executed before the value is
-                                            replicated
-                                            to other nodes. In this time multiple puts can be operated and are cached up
-                                            to be send
-                                            at once.
-                                            Default value is 100ms before a replication is operated, if set to 0 no
-                                            delay is used and
-                                            all values are replicated one by one.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
                                 <xs:attribute name="async-fillup" type="parameterized-boolean" use="optional" default="true">
                                     <xs:annotation>
                                         <xs:documentation>
@@ -1491,7 +1367,7 @@
                             </xs:unique>
                         </xs:element>
                         <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="split-brain-protection" type="split-brain-protection" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="lite-member" minOccurs="0" maxOccurs="1">
                             <xs:complexType>
                                 <xs:attribute name="enabled" type="parameterized-boolean">
@@ -1519,15 +1395,11 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
-                                                You should set the quorum-ref's value as the quorum's name.
-                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-                                                specified one.
+                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split-brain-protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -2581,127 +2453,34 @@
 
     <xs:complexType name="wan-replication">
         <xs:sequence>
-            <xs:element name="wan-publisher" minOccurs="0" maxOccurs="unbounded">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="queue-full-behavior" type="wan-queue-full-behavior" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="queue-capacity" type="parameterized-positive-integer" default="10000" minOccurs="0"
-                                    maxOccurs="1"/>
-                        <xs:element name="initial-publisher-state" type="initial-publisher-state" minOccurs="0" maxOccurs="1"
-                                    default="REPLICATING">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    Defines the initial state in which a WAN publisher is started.
-                                    - REPLICATING (default):
-                                    State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
-                                    and WAN sync is enabled.
-                                    - PAUSED:
-                                    State where new events are enqueued but they are not dequeued. Some events which have been dequeued before
-                                    the state was switched may still be replicated to the target cluster but further events will not be
-                                    replicated. WAN sync is enabled.
-                                    - STOPPED:
-                                    State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
-                                    still be replicated after the publisher has switched to this state. WAN sync is enabled.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                        <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="wan-sync" type="wan-sync" minOccurs="0">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    Configuration for the WAN sync mechanism.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="endpoint" type="xs:string" minOccurs="0">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    Reference to the name of a WAN endpoint config or WAN server socket endpoint config.
-                                    The network settings from the referenced endpoint configuration will setup the network
-                                    configuration of connections to the target WAN cluster members.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                    </xs:sequence>
-                    <xs:attributeGroup ref="class-or-bean-name"/>
-                    <xs:attribute name="group-name" use="required">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Sets the group name used as an endpoint group name for authentication
-                                on the target endpoint.
-                                If there is no separate publisher ID property defined, this group name
-                                will also be used as a WAN publisher ID. This ID is then used for
-                                identifying the publisher in a WanReplicationConfig.
-                            </xs:documentation>
-                        </xs:annotation>
-                        <xs:simpleType>
-                            <xs:restriction base="xs:string"/>
-                        </xs:simpleType>
-                    </xs:attribute>
-                    <xs:attribute name="publisher-id">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Sets the publisher ID used for identifying the publisher in a
-                                WanReplicationConfig.
-                                If there is no publisher ID defined (it is empty), the group name will
-                                be used as a publisher ID.
-                            </xs:documentation>
-                        </xs:annotation>
-                        <xs:simpleType>
-                            <xs:restriction base="xs:string"/>
-                        </xs:simpleType>
-                    </xs:attribute>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="wan-consumer" minOccurs="0">
+            <xs:element name="batch-publisher"
+                        type="wan-batch-publisher"
+                        minOccurs="0"
+                        maxOccurs="unbounded">
                 <xs:annotation>
                     <xs:documentation>
-                        Config for processing WAN events received from a target cluster.
-                        You can configure certain behaviour when processing incoming WAN events
-                        or even configure your own implementation for a WAN consumer. A custom
-                        WAN consumer allows you to define custom processing logic and is usually
-                        used in combination with a custom WAN publisher.
-                        A custom consumer is optional and you may simply omit defining it which
-                        will cause the default processing logic to be used.
+                        Configuration object for the built-in WAN publisher (available in
+                        Hazelcast Enterprise). The publisher sends events to another Hazelcast
+                        cluster in batches, sending when either when enough events are enqueued
+                        or enqueued events have waited for enough time.
+                        The endpoint can be a different cluster defined by static IP's or
+                        discovered using a cloud discovery mechanism.
                     </xs:documentation>
                 </xs:annotation>
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="properties" type="properties" minOccurs="0">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    Properties for the custom WAN consumer. These properties are
-                                    accessible when initalizing the WAN consumer.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                    </xs:sequence>
-                    <xs:attributeGroup ref="class-or-bean-name">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Defines a custom WAN consumer (WanReplicationConsumer).
-                                If you don't define a class name or implementation, the default processing
-                                logic for incoming WAN events will be used.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attributeGroup>
-                    <xs:attribute name="persist-wan-replicated-data" type="parameterized-boolean" default="false">
-                        <xs:annotation>
-                            <xs:documentation>
-                                When true, an incoming event over WAN replication can be persisted to a
-                                database for example, otherwise it will not be persisted. Default value
-                                is false.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
-                </xs:complexType>
             </xs:element>
+            <xs:element name="custom-publisher"
+                        type="wan-custom-publisher"
+                        minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configuration object for a custom WAN publisher. A single publisher defines how
+                        WAN events are sent to a specific endpoint.
+                        The endpoint can be some other external system which is
+                        not a Hazelcast cluster (e.g. JMS queue).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="consumer" type="wan-consumer" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -2709,6 +2488,294 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="wan-batch-publisher" mixed="true">
+        <xs:all>
+            <xs:element name="group-name" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the group name used as an endpoint group name for authentication
+                        on the target endpoint.
+                        If there is no separate publisher ID property defined, this group name
+                        will also be used as a WAN publisher ID. This ID is then used for
+                        identifying the publisher in a WanReplicationConfig.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="snapshot-enabled" type="parameterized-boolean" default="false" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets if key-based coalescing is configured for this WAN publisher.
+                        When enabled, only the latest WanReplicationEvent
+                        of a key is sent to target.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="initial-publisher-state"
+                        type="initial-publisher-state"
+                        default="REPLICATING" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines the initial state in which a WAN publisher is started.
+                        - REPLICATING (default):
+                        State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
+                        and WAN sync is enabled.
+                        - PAUSED:
+                        State where new events are enqueued but they are not dequeued. Some events which have been dequeued before
+                        the state was switched may still be replicated to the target cluster but further events will not be
+                        replicated. WAN sync is enabled.
+                        - STOPPED:
+                        State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
+                        still be replicated after the publisher has switched to this state. WAN sync is enabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="queue-capacity" type="parameterized-positive-integer" default="10000" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the capacity of the primary and backup queue for WAN replication events.
+                        One hazelcast instance can have up to 2*queueCapacity events since
+                        we keep up to queueCapacity primary events (events with keys for
+                        which the instance is the owner) and queueCapacity backup events
+                        (events with keys for which the instance is the backup).
+                        Events for IMap and ICache count against this limit collectively.
+                        When the queue capacity is reached, backup events are dropped while normal
+                        replication events behave as determined by the queue-full-behavior.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="batch-size" type="parameterized-positive-integer" default="500" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the maximum batch size that can be sent to target cluster.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="batch-max-delay-millis" type="parameterized-positive-integer" default="1000" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the maximum amount of time in milliseconds to wait before sending a
+                        batch of events to target cluster, if batch-size of events
+                        have not arrived within this duration.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="response-timeout-millis" type="parameterized-positive-integer" default="60000" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the duration in milliseconds for the waiting time before retrying to
+                        send the events to target cluster again in case of acknowledgement
+                        is not arrived.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="queue-full-behavior"
+                        type="wan-queue-full-behavior"
+                        default="DISCARD_AFTER_MUTATION"
+                        minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the configured behaviour of this WAN publisher when the WAN queue is
+                        full.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="acknowledge-type"
+                        type="wan-acknowledge-type"
+                        default="ACK_ON_OPERATION_COMPLETE"
+                        minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the strategy for when the target cluster should acknowledge that
+                        a WAN event batch has been processed.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="discovery-period-seconds"
+                        type="parameterized-positive-integer"
+                        default="10"
+                        minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the period in seconds in which WAN tries to discover new target
+                        endpoints and reestablish connections to failed endpoints.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-target-endpoints"
+                        type="parameterized-positive-integer"
+                        default="2147483647"
+                        minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Returns the maximum number of endpoints that WAN will connect to when
+                        using a discovery mechanism to define endpoints.
+                        This property has no effect when static endpoint addresses are defined
+                        using target-endpoints.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-concurrent-invocations"
+                        type="xs:int"
+                        default="-1"
+                        minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the maximum number of WAN event batches being sent to the target
+                        cluster concurrently.
+                        Setting this property to anything less than 2 will only allow a
+                        single batch of events to be sent to each target endpoint and will
+                        maintain causality of events for a single partition.
+                        Setting this property to 2 or higher will allow multiple batches
+                        of WAN events to be sent to each target endpoint. Since this allows
+                        reordering or batches due to network conditions, causality and ordering
+                        of events for a single partition is lost and batches for a single
+                        partition are now sent randomly to any available target endpoint.
+                        This, however, does present faster WAN replication for certain scenarios
+                        such as replicating immutable, independent map entries which are only
+                        added once and where ordering of when these entries are added is not
+                        necessary.
+                        Keep in mind that if you set this property to a value which is less than
+                        the target endpoint count, you will lose performance as not all target
+                        endpoints will be used at any point in time to process WAN event batches.
+                        So, for instance, if you have a target cluster with 3 members (target
+                        endpoints) and you want to use this property, it makes sense to set it
+                        to a value higher than 3. Otherwise, you can simply disable it
+                        by setting it to less than 2 in which case WAN will use the
+                        default replication strategy and adapt to the target endpoint count
+                        while maintaining causality.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="use-endpoint-private-address"
+                        type="parameterized-boolean"
+                        default="false" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets whether the WAN connection manager should connect to the
+                        endpoint on the private address returned by the discovery SPI.
+                        By default this property is false which means the WAN connection
+                        manager will always use the public address.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="idle-min-park-ns"
+                        type="parameterized-unsigned-long"
+                        default="10000000"
+                        minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the minimum duration in nanoseconds that the WAN replication thread
+                        will be parked if there are no events to replicate.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="idle-max-park-ns"
+                        type="parameterized-unsigned-long"
+                        default="250000000"
+                        minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the maximum duration in nanoseconds that the WAN replication thread
+                        will be parked if there are no events to replicate.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="publisher-id" type="xs:string"
+                        minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the publisher ID used for identifying the publisher in a
+                        WanReplicationConfig.
+                        If there is no publisher ID defined (it is empty), the group name will
+                        be used as a publisher ID.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="target-endpoints" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Comma separated list of target cluster members,
+                        e.g. 127.0.0.1:5701, 127.0.0.1:5702.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
+            <xs:element name="endpoint" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Reference to the name of a WAN endpoint config or WAN server socket endpoint config.
+                        The network settings from the referenced endpoint configuration will setup the network
+                        configuration of connections to the target WAN cluster members.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="wan-custom-publisher" mixed="true">
+        <xs:all>
+            <xs:element name="publisher-id" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the publisher ID used for identifying the publisher in a
+                        WanReplicationConfig.
+                        If there is no publisher ID defined (it is empty), the group name will
+                        be used as a publisher ID.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attributeGroup ref="class-or-bean-name">
+            <xs:annotation>
+                <xs:documentation>
+                    Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attributeGroup>
+    </xs:complexType>
+
+
+    <xs:complexType name="wan-consumer">
+        <xs:all>
+            <xs:element name="properties" type="properties" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Properties for the custom WAN consumer. These properties are
+                        accessible when initalizing the WAN consumer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attributeGroup ref="class-or-bean-name">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines a custom WAN consumer (WanReplicationConsumer).
+                    If you don't define a class name or implementation, the default processing
+                    logic for incoming WAN events will be used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attributeGroup>
+        <xs:attribute name="persist-wan-replicated-data" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    When true, an incoming event over WAN replication can be persisted to a
+                    database for example, otherwise it will not be persisted. Default value
+                    is false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+
+
 
     <xs:complexType name="memcache-protocol">
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
@@ -3235,8 +3302,6 @@
         <xs:attribute name="invalidate-on-change" use="optional" type="parameterized-boolean" default="true"/>
         <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="max-idle-seconds" use="optional" type="xs:string" default="0"/>
-        <xs:attribute name="eviction-policy" use="optional" type="eviction-policy" default="LRU"/>
-        <xs:attribute name="max-size" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="cache-local-entries" use="optional" type="xs:string" default="false"/>
     </xs:complexType>
 
@@ -3615,6 +3680,7 @@
             <xs:enumeration value="NONE"/>
             <xs:enumeration value="LRU"/>
             <xs:enumeration value="LFU"/>
+            <xs:enumeration value="RANDOM"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -3682,12 +3748,6 @@
         <xs:attribute name="time-unit" type="time-unit" use="optional"/>
     </xs:complexType>
 
-    <xs:simpleType name="concurrency-level">
-        <xs:restriction base="xs:int">
-            <xs:minInclusive value="0"/>
-        </xs:restriction>
-    </xs:simpleType>
-
     <xs:simpleType name="topology-changed-strategy">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="CANCEL_RUNNING_OPERATION"/>
@@ -3743,28 +3803,6 @@
                 <xs:documentation>
                     Resolve conflicts that occurred when target cluster already has the replicated
                     entry key.
-
-                    4 merge policy implementations for IMap and 2 merge policy implementations for
-                    ICache are provided out-of-the-box.
-
-                    IMap has the following merge policies:
-                    com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the
-                    source map to the target map if it does not exist in the target map.
-                    com.hazelcast.map.merge.HigherHitsMapMergePolicy: Incoming entry merges from the
-                    source map to the target map if the source entry has more hits than the target one.
-                    com.hazelcast.map.merge.PassThroughMergePolicy: Incoming entry merges from the
-                    source map to the target map unless the incoming entry is not null.
-                    com.hazelcast.map.merge.LatestUpdateMapMergePolicy: Incoming entry merges from the
-                    source map to the target map if the source entry has been updated more recently
-                    than the target entry. Please note that this merge policy can only be used when the
-                    clusters' clocks are in sync.
-
-                    ICache has the following merge policies:
-                    com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
-                    the source cache to the target cache if the source entry has more hits than the
-                    target one.
-                    com.hazelcast.cache.merge.PassThroughCacheMergePolicy: Incoming entry merges from
-                    the source cache to the target cache unless the incoming entry is not null.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3794,6 +3832,7 @@
         </xs:attribute>
         <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
         <xs:attribute name="enabled" default="true" type="parameterized-boolean"/>
+        <xs:attribute name="persistent-memory-directory" type="xs:string" use="optional"/>
     </xs:complexType>
     <xs:complexType name="memory-size">
         <xs:attribute name="value" type="parameterized-non-negative-integer" default="128"/>
@@ -3814,19 +3853,19 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:complexType name="quorum">
+    <xs:complexType name="split-brain-protection">
         <xs:all>
-            <xs:element name="quorum-size" type="quorum-size" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="quorum-type" type="quorum-type" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="quorum-function-class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="quorum-listeners" minOccurs="0" maxOccurs="1">
+            <xs:element name="minimum-cluster-size" type="minimum-cluster-size" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="protect-on" type="protect-on" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="function-class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="quorum-listener" type="quorum-listener" maxOccurs="unbounded"/>
+                        <xs:element name="listener" type="split-brain-protection-listener" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element ref="choice-of-quorum-function" minOccurs="0" maxOccurs="1" />
+            <xs:element ref="choice-of-split-brain-protection-function" minOccurs="0" maxOccurs="1" />
         </xs:all>
         <xs:attribute name="enabled" type="parameterized-boolean" use="required"/>
         <xs:attribute name="name" use="required">
@@ -3836,13 +3875,13 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:element name="choice-of-quorum-function" abstract="true"/>
+    <xs:element name="choice-of-split-brain-protection-function" abstract="true"/>
 
-    <xs:element name="probabilistic-quorum" substitutionGroup="choice-of-quorum-function">
+    <xs:element name="probabilistic-split-brain-protection" substitutionGroup="choice-of-split-brain-protection-function">
         <xs:complexType>
             <xs:annotation>
                 <xs:documentation>
-                    A probabilistic quorum function based on Phi Accrual failure detector. See
+                    A probabilistic split brain protection function based on Phi Accrual failure detector. See
                     com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector for implementation
                     details. Configuration:<br/>
                     - <code>acceptable-heartbeat-pause</code>: duration in milliseconds corresponding to number
@@ -3871,20 +3910,21 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="recently-active-quorum" substitutionGroup="choice-of-quorum-function">
+    <xs:element name="recently-active-split-brain-protection" substitutionGroup="choice-of-split-brain-protection-function">
         <xs:complexType>
             <xs:annotation>
                 <xs:documentation>
-                    A quorum function that keeps track of the last heartbeat timestamp per each member. For a member
-                    to be considered live (for the purpose of determining presence of quorum), a heartbeat must have
-                    been received at most <code>heartbeat-tolerance</code> milliseconds before current time.
+                    A split brain protection function that keeps track of the last heartbeat timestamp per each member.
+                    For a member to be considered live (for the purpose to conclude whether the minimum cluster size
+                    property is satisfied), a heartbeat must have been received at most <code>heartbeat-tolerance</code>
+                    milliseconds before current time.
                 </xs:documentation>
             </xs:annotation>
             <xs:attribute name="heartbeat-tolerance-millis" type="parameterized-unsigned-int" default="5000"/>
         </xs:complexType>
     </xs:element>
 
-    <xs:simpleType name="quorum-type">
+    <xs:simpleType name="protect-on">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="READ"/>
             <xs:enumeration value="WRITE"/>
@@ -3892,13 +3932,13 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:simpleType name="quorum-size">
+    <xs:simpleType name="minimum-cluster-size">
         <xs:restriction base="xs:int">
             <xs:minInclusive value="2"/>
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:complexType name="quorum-listener">
+    <xs:complexType name="split-brain-protection-listener">
         <xs:complexContent>
             <xs:extension base="listener">
             </xs:extension>
@@ -3935,6 +3975,13 @@
 
     <xs:simpleType name="wan-queue-full-behavior">
         <xs:union memberTypes="wan-queue-full-behavior-format-enum non-space-string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="wan-acknowledge-type">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="ACK_ON_OPERATION_COMPLETE"/>
+            <xs:enumeration value="ACK_ON_RECEIPT"/>
+        </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="initial-publisher-state">

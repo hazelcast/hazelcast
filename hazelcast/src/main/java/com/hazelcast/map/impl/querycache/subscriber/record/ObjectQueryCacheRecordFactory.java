@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber.record;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * Factory for {@link ObjectQueryCacheRecord}.

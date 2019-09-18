@@ -16,14 +16,15 @@
 
 package com.hazelcast.cp.internal;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.CPMember;
-import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
@@ -34,6 +35,7 @@ import com.hazelcast.cp.internal.session.RaftSessionService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.logging.ILogger;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -43,44 +45,49 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class CPSubsystemImpl implements CPSubsystem {
 
     private final HazelcastInstanceImpl instance;
+    private final boolean cpSubsystemEnabled;
 
     public CPSubsystemImpl(HazelcastInstanceImpl instance) {
         this.instance = instance;
+        int cpMemberCount = instance.getConfig().getCPSubsystemConfig().getCPMemberCount();
+        this.cpSubsystemEnabled = cpMemberCount > 0;
+        ILogger logger = instance.node.getLogger(CPSubsystem.class);
+        if (cpSubsystemEnabled) {
+            logger.info("CP Subsystem is enabled with " + cpMemberCount + " members.");
+        } else {
+            logger.warning("CP Subsystem is not enabled. CP data structures will operate in UNSAFE mode! "
+                    + "Please note that UNSAFE mode will not provide strong consistency guarantees.");
+        }
     }
 
     @Override
     public IAtomicLong getAtomicLong(String name) {
         checkNotNull(name, "Retrieving an atomic long instance with a null name is not allowed!");
-        RaftRemoteService service = getService(RaftAtomicLongService.SERVICE_NAME);
-        return service.createProxy(name);
+        return createProxy(RaftAtomicLongService.SERVICE_NAME, name);
     }
 
     @Override
     public <E> IAtomicReference<E> getAtomicReference(String name) {
         checkNotNull(name, "Retrieving an atomic reference instance with a null name is not allowed!");
-        RaftRemoteService service = getService(RaftAtomicRefService.SERVICE_NAME);
-        return service.createProxy(name);
+        return createProxy(RaftAtomicRefService.SERVICE_NAME, name);
     }
 
     @Override
     public ICountDownLatch getCountDownLatch(String name) {
         checkNotNull(name, "Retrieving a count down latch instance with a null name is not allowed!");
-        RaftRemoteService service = getService(RaftCountDownLatchService.SERVICE_NAME);
-        return service.createProxy(name);
+        return createProxy(RaftCountDownLatchService.SERVICE_NAME, name);
     }
 
     @Override
     public FencedLock getLock(String name) {
         checkNotNull(name, "Retrieving an fenced lock instance with a null name is not allowed!");
-        RaftRemoteService service = getService(RaftLockService.SERVICE_NAME);
-        return service.createProxy(name);
+        return createProxy(RaftLockService.SERVICE_NAME, name);
     }
 
     @Override
     public ISemaphore getSemaphore(String name) {
         checkNotNull(name, "Retrieving a semaphore instance with a null name is not allowed!");
-        RaftRemoteService service = getService(RaftSemaphoreService.SERVICE_NAME);
-        return service.createProxy(name);
+        return createProxy(RaftSemaphoreService.SERVICE_NAME, name);
     }
 
     @Override
@@ -90,22 +97,27 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     @Override
     public CPSubsystemManagementService getCPSubsystemManagementService() {
-        if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
+        if (!cpSubsystemEnabled) {
             throw new HazelcastException("CP Subsystem is not enabled!");
         }
-        return instance.node.getNodeEngine().getService(RaftService.SERVICE_NAME);
+        return getService(RaftService.SERVICE_NAME);
     }
 
     @Override
     public CPSessionManagementService getCPSessionManagementService() {
-        if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
+        if (!cpSubsystemEnabled) {
             throw new HazelcastException("CP Subsystem is not enabled!");
         }
-        return instance.node.getNodeEngine().getService(RaftSessionService.SERVICE_NAME);
+        return getService(RaftSessionService.SERVICE_NAME);
     }
 
     private <T> T getService(String serviceName) {
         return instance.node.getNodeEngine().getService(serviceName);
+    }
+
+    private <T extends DistributedObject> T createProxy(String serviceName, String name) {
+        RaftRemoteService service = getService(serviceName);
+        return service.createProxy(name);
     }
 
 }

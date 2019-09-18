@@ -18,7 +18,7 @@ package com.hazelcast.internal.management;
 
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.config.Config;
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
@@ -139,6 +139,28 @@ public class ManagementCenterServiceIntegrationTest {
 
                 Client client2 = new ClientImpl(null, createInetSocketAddress("127.0.0.2"), name, labels);
                 assertFalse(instance.node.clientEngine.isClientAllowed(client2));
+            }
+        });
+    }
+
+    @Test
+    public void testMemberStateNameProvided() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                String responseString = doHttpGet("/mancen/memberStateCheck");
+                assertNotNull(responseString);
+                assertNotEquals("", responseString);
+
+                JsonObject object;
+                try {
+                    object = Json.parse(responseString).asObject();
+                } catch (ParseException e) {
+                    throw new AssertionError("Failed to parse JSON: " + responseString);
+                }
+                TimedMemberState memberState = new TimedMemberState();
+                memberState.fromJson(object);
+                assertEquals(instance.getName(), memberState.getMemberState().getName());
             }
         });
     }

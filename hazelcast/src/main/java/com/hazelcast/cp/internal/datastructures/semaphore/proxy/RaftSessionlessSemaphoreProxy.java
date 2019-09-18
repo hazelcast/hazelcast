@@ -31,7 +31,7 @@ import com.hazelcast.cp.internal.datastructures.semaphore.operation.ReleasePermi
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.session.SessionAwareProxy;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.concurrent.TimeUnit;
 
@@ -73,7 +73,7 @@ public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements 
     @Override
     public void acquire(int permits) {
         checkPositive(permits, "Permits must be positive!");
-        long clusterWideThreadId = getOrCreateUniqueThreadId(groupId);
+        long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, -1L);
         invocationManager.invoke(groupId, op).join();
     }
@@ -96,7 +96,7 @@ public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements 
     @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
         checkPositive(permits, "Permits must be positive!");
-        long clusterWideThreadId = getOrCreateUniqueThreadId(groupId);
+        long clusterWideThreadId = getOrCreateUniqueThreadId();
         long timeoutMs = max(0, unit.toMillis(timeout));
         RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, timeoutMs);
         return invocationManager.<Boolean>invoke(groupId, op).join();
@@ -110,7 +110,7 @@ public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements 
     @Override
     public void release(int permits) {
         checkPositive(permits, "Permits must be positive!");
-        long clusterWideThreadId = getOrCreateUniqueThreadId(groupId);
+        long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new ReleasePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits);
         invocationManager.invoke(groupId, op).join();
     }
@@ -122,7 +122,7 @@ public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements 
 
     @Override
     public int drainPermits() {
-        long clusterWideThreadId = getOrCreateUniqueThreadId(groupId);
+        long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new DrainPermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID());
         return invocationManager.<Integer>invoke(groupId, op).join();
     }
@@ -133,7 +133,7 @@ public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements 
         if (reduction == 0) {
             return;
         }
-        long clusterWideThreadId = getOrCreateUniqueThreadId(groupId);
+        long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new ChangePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), -reduction);
         invocationManager.invoke(groupId, op).join();
     }
@@ -144,7 +144,7 @@ public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements 
         if (increase == 0) {
             return;
         }
-        long clusterWideThreadId = getOrCreateUniqueThreadId(groupId);
+        long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new ChangePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), increase);
         invocationManager.invoke(groupId, op).join();
     }

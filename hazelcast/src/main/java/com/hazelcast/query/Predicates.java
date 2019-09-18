@@ -212,7 +212,7 @@ public final class Predicates {
      * @param klass the class the created predicate will check for.
      * @return the created <b>instance of</b> predicate.
      */
-    public static Predicate instanceOf(final Class klass) {
+    public static <K, V> Predicate<K, V> instanceOf(final Class klass) {
         return new InstanceOfPredicate(klass);
     }
 
@@ -225,7 +225,7 @@ public final class Predicates {
      * @param predicates the child predicates to form the resulting <b>and</b> predicate from.
      * @return the created <b>and</b> predicate instance.
      */
-    public static Predicate and(Predicate... predicates) {
+    public static <K, V> Predicate<K, V> and(Predicate... predicates) {
         return new AndPredicate(predicates);
     }
 
@@ -235,7 +235,7 @@ public final class Predicates {
      * @param predicate the predicate to negate the value of.
      * @return the created <b>not</b> predicate instance.
      */
-    public static Predicate not(Predicate predicate) {
+    public static <K, V> Predicate<K, V> not(Predicate predicate) {
         return new NotPredicate(predicate);
     }
 
@@ -248,7 +248,7 @@ public final class Predicates {
      * @param predicates the child predicates to form the resulting <b>or</b> predicate from.
      * @return the created <b>or</b> predicate instance.
      */
-    public static Predicate or(Predicate... predicates) {
+    public static <K, V> Predicate<K, V> or(Predicate... predicates) {
         return new OrPredicate(predicates);
     }
 
@@ -264,7 +264,7 @@ public final class Predicates {
      * @return the created <b>not equal</b> predicate instance.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate notEqual(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> notEqual(String attribute, Comparable value) {
         return new NotEqualPredicate(attribute, value);
     }
 
@@ -280,7 +280,7 @@ public final class Predicates {
      * @return the created <b>equal</b> predicate instance.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate equal(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> equal(String attribute, Comparable value) {
         return new EqualPredicate(attribute, value);
     }
 
@@ -301,7 +301,7 @@ public final class Predicates {
      * @see #ilike(String, String)
      * @see #regex(String, String)
      */
-    public static Predicate like(String attribute, String pattern) {
+    public static <K, V> Predicate<K, V> like(String attribute, String pattern) {
         return new LikePredicate(attribute, pattern);
     }
 
@@ -322,7 +322,7 @@ public final class Predicates {
      * @see #like(String, String)
      * @see #regex(String, String)
      */
-    public static Predicate ilike(String attribute, String pattern) {
+    public static <K, V> Predicate<K, V> ilike(String attribute, String pattern) {
         return new ILikePredicate(attribute, pattern);
     }
 
@@ -341,7 +341,7 @@ public final class Predicates {
      * @see #like(String, String)
      * @see #ilike(String, String)
      */
-    public static Predicate regex(String attribute, String pattern) {
+    public static <K, V> Predicate<K, V> regex(String attribute, String pattern) {
         return new RegexPredicate(attribute, pattern);
     }
 
@@ -357,7 +357,7 @@ public final class Predicates {
      * @return the created <b>greater than</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate greaterThan(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> greaterThan(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, false, false);
     }
 
@@ -373,7 +373,7 @@ public final class Predicates {
      * @return the created <b>greater than or equal to</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate greaterEqual(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> greaterEqual(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, true, false);
     }
 
@@ -389,7 +389,7 @@ public final class Predicates {
      * @return the created <b>less than</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate lessThan(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> lessThan(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, false, true);
     }
 
@@ -405,7 +405,7 @@ public final class Predicates {
      * @return the created <b>less than or equal to</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate lessEqual(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> lessEqual(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, true, true);
     }
 
@@ -423,7 +423,7 @@ public final class Predicates {
      * @return the created <b>between</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate between(String attribute, Comparable from, Comparable to) {
+    public static <K, V> Predicate<K, V> between(String attribute, Comparable from, Comparable to) {
         return new BetweenPredicate(attribute, from, to);
     }
 
@@ -439,7 +439,7 @@ public final class Predicates {
      * @return the created <b>in</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate in(String attribute, Comparable... values) {
+    public static <K, V> Predicate<K, V> in(String attribute, Comparable... values) {
         return new InPredicate(attribute, values);
     }
 
@@ -458,7 +458,7 @@ public final class Predicates {
      * @return the created <b>sql</b> predicate instance.
      * @throws IllegalArgumentException if the SQL expression is invalid.
      */
-    public static Predicate sql(String expression) {
+    public static <K, V> Predicate<K, V> sql(String expression) {
         return new SqlPredicate(expression);
     }
 

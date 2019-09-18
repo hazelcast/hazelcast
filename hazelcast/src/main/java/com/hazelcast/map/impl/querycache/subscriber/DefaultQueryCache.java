@@ -40,7 +40,7 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.FutureUtil;

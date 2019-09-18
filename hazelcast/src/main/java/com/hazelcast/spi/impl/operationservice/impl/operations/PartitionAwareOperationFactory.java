@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 

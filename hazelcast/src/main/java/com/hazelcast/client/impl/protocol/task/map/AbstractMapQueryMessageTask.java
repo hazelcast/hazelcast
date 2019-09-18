@@ -89,7 +89,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         try {
             Predicate predicate = getPredicate();
             if (predicate instanceof PartitionPredicate) {
-                int partitionId = getPartitionId();
+                int partitionId = clientMessage.getPartitionId();
                 QueryResult queryResult = invokeOnPartition((PartitionPredicate) predicate, partitionId);
                 extractAndAppendResult(result, queryResult);
                 return reduce(result);

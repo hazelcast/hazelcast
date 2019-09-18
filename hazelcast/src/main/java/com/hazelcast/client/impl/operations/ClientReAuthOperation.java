@@ -53,7 +53,7 @@ public class ClientReAuthOperation
     @Override
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
-        //Runs on {@link com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR}
+        //Runs on {@link com.hazelcast.spi.impl.executionservice.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR}
         // to work in sync with ClientDisconnectionOperation
         engine.getClientManagementExecutor().execute(new ClientReauthTask());
     }
@@ -84,7 +84,7 @@ public class ClientReAuthOperation
     public boolean returnsResponse() {
         // This method actually returns a response.
         // Since operation needs to work on a different executor,
-        // (see {@link com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR})
+        // (see {@link com.hazelcast.spi.impl.executionservice.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR})
         // the response is returned via ClientReAuthOperation.ClientReauthTask
         return false;
     }

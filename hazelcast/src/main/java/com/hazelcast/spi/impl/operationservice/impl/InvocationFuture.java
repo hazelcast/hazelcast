@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.IndeterminateOperationState;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
@@ -37,7 +38,7 @@ import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.StringUtil.timeToString;
 
 /**
- * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
+ * The InvocationFuture is the {@link InternalCompletableFuture} that waits on the completion
  * of an {@link Invocation}. The Invocation executes an operation.
  * <p>
  * In the past the InvocationFuture.get logic was also responsible for detecting the heartbeat for blocking operations

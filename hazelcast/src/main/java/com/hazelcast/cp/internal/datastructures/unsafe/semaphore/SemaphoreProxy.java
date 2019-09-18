@@ -24,9 +24,9 @@ import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.operations.Init
 import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.operations.ReduceOperation;
 import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.operations.ReleaseOperation;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.Future;

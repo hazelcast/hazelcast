@@ -17,7 +17,7 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

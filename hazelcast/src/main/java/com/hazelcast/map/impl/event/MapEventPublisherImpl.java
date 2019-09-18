@@ -29,14 +29,15 @@ import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationPublisher;
 
 import java.util.ArrayList;
@@ -98,7 +99,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        Object wanMergePolicy = mapContainer.getWanMergePolicy();
+        SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanMergePolicy();
         MapReplicationUpdate event = new MapReplicationUpdate(mapName, wanMergePolicy, entryView);
         publishWanEvent(mapName, event);
     }
@@ -119,13 +120,13 @@ public class MapEventPublisherImpl implements MapEventPublisher {
      * @param mapName the map name
      * @param event   the event
      */
-    protected void publishWanEvent(String mapName, ReplicationEventObject event) {
+    protected void publishWanEvent(String mapName, WanReplicationEvent event) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         WanReplicationPublisher wanReplicationPublisher = mapContainer.getWanReplicationPublisher();
         if (isOwnedPartition(event.getKey())) {
-            wanReplicationPublisher.publishReplicationEvent(SERVICE_NAME, event);
+            wanReplicationPublisher.publishReplicationEvent(event);
         } else {
-            wanReplicationPublisher.publishReplicationEventBackup(SERVICE_NAME, event);
+            wanReplicationPublisher.publishReplicationEventBackup(event);
         }
     }
 

@@ -102,7 +102,9 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getHits();
 
     /**
-     * Returns the number of currently locked locally owned keys.
+     * Returns the number of currently locked keys. The returned count
+     * includes locks on keys whether or not they are present in the map,
+     * since it is allowed to lock on keys that are not present.
      *
      * @return number of locked entries.
      */

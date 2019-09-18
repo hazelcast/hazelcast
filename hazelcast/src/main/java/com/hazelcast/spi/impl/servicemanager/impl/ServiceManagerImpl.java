@@ -46,13 +46,13 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.spi.ConfigurableService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.services.ConfigurableService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
@@ -126,7 +126,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
-        registerService(QuorumServiceImpl.SERVICE_NAME, nodeEngine.getQuorumService());
+        registerService(SplitBrainProtectionServiceImpl.SERVICE_NAME, nodeEngine.getSplitBrainProtectionService());
         registerService(WanReplicationService.SERVICE_NAME, nodeEngine.getWanReplicationService());
         registerService(EventServiceImpl.SERVICE_NAME, nodeEngine.getEventService());
     }

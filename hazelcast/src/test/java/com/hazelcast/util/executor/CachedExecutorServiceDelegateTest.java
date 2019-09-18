@@ -16,8 +16,8 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

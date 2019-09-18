@@ -16,22 +16,45 @@
 
 package com.hazelcast.wan;
 
+import java.util.UUID;
+
 /**
- * WAN Synchronization statistics
+ * Base interface of WAN Synchronization statistics.
  */
 public interface WanSyncStats {
+
     /**
-     * Returns the duration of the synchronization in seconds
+     * Returns the UUID of the synchronization.
+     *
+     * @return the UUID of the synchronization
+     */
+    UUID getUuid();
+
+    /**
+     * Returns the duration of the synchronization in seconds.
+     *
+     * @return the duration of the synchronization in seconds
      */
     long getDurationSecs();
 
     /**
-     * Returns the number of the partitions synchronized
+     * Returns the number of the partitions to synchronize.
+     *
+     * @return the number of partitions to synchronize
+     */
+    int getPartitionsToSync();
+
+    /**
+     * Returns the number of the partitions synchronized.
+     *
+     * @return the number of the partitions synchronized
      */
     int getPartitionsSynced();
 
     /**
-     * Returns the number of the records synchronized
+     * Returns the number of the records synchronized.
+     *
+     * @return the number of records synchronized
      */
     int getRecordsSynced();
 }

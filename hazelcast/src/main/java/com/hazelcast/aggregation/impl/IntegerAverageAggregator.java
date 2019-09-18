@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Numbers;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Number, Double>
         implements IdentifiedDataSerializable {
@@ -84,4 +85,23 @@ public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Num
         this.count = in.readLong();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        IntegerAverageAggregator<?> that = (IntegerAverageAggregator<?>) o;
+        return sum == that.sum && count == that.count;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), sum, count);
+    }
 }

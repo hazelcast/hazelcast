@@ -18,7 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,7 +42,7 @@ import static com.hazelcast.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.util.CollectionUtil.nullToEmpty;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
-import static com.hazelcast.util.CollectionUtil.toIntegerList;
+import static com.hazelcast.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.util.CollectionUtil.toLongArray;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
@@ -241,18 +241,18 @@ public class CollectionUtilTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testToIntegerList_whenNull() {
-        toIntegerList(null);
+        asIntegerList(null);
     }
 
     @Test
     public void testToIntegerList_whenEmpty() {
-        List<Integer> result = toIntegerList(new int[0]);
+        List<Integer> result = asIntegerList(new int[0]);
         assertEquals(0, result.size());
     }
 
     @Test
     public void testToIntegerList_whenNotEmpty() {
-        List<Integer> result = toIntegerList(new int[]{1, 2, 3, 4});
+        List<Integer> result = asIntegerList(new int[]{1, 2, 3, 4});
         assertEquals(asList(1, 2, 3, 4), result);
     }
 

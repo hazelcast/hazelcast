@@ -173,7 +173,7 @@ public class TcpIpNetworkingService
         live = true;
         logger.finest("Starting Networking Service and IO selectors.");
 
-        networking.start();
+        networking.restart();
         startAcceptor();
     }
 

@@ -110,11 +110,6 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             }
 
             @Override
-            public EvictionPolicyType getEvictionPolicyType() {
-                return EvictionPolicyType.LRU;
-            }
-
-            @Override
             public String getComparatorClassName() {
                 return null;
             }
@@ -183,11 +178,6 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             @Override
             public EvictionPolicy getEvictionPolicy() {
                 return EvictionPolicy.LFU;
-            }
-
-            @Override
-            public EvictionPolicyType getEvictionPolicyType() {
-                return EvictionPolicyType.LFU;
             }
 
             @Override

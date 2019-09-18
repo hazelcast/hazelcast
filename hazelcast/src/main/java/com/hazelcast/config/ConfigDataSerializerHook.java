@@ -40,68 +40,69 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(CONFIG_DS_FACTORY, CONFIG_DS_FACTORY_ID);
 
     public static final int WAN_REPLICATION_CONFIG = 0;
-    public static final int WAN_CONSUMER_CONFIG = 1;
-    public static final int WAN_PUBLISHER_CONFIG = 2;
-    public static final int NEAR_CACHE_CONFIG = 3;
-    public static final int NEAR_CACHE_PRELOADER_CONFIG = 4;
-    public static final int ADD_DYNAMIC_CONFIG_OP = 5;
-    public static final int DYNAMIC_CONFIG_PRE_JOIN_OP = 6;
-    public static final int MULTIMAP_CONFIG = 7;
-    public static final int LISTENER_CONFIG = 8;
-    public static final int ENTRY_LISTENER_CONFIG = 9;
-    public static final int MAP_CONFIG = 10;
-    public static final int RANDOM_EVICTION_POLICY = 11;
-    public static final int LFU_EVICTION_POLICY = 12;
-    public static final int LRU_EVICTION_POLICY = 13;
-    public static final int MAP_STORE_CONFIG = 14;
-    public static final int MAP_PARTITION_LOST_LISTENER_CONFIG = 15;
-    public static final int MAP_INDEX_CONFIG = 16;
-    public static final int MAP_ATTRIBUTE_CONFIG = 17;
-    public static final int QUERY_CACHE_CONFIG = 18;
-    public static final int PREDICATE_CONFIG = 19;
-    public static final int PARTITION_STRATEGY_CONFIG = 20;
-    public static final int HOT_RESTART_CONFIG = 21;
-    public static final int TOPIC_CONFIG = 22;
-    public static final int RELIABLE_TOPIC_CONFIG = 23;
-    public static final int ITEM_LISTENER_CONFIG = 24;
-    public static final int QUEUE_STORE_CONFIG = 25;
-    public static final int QUEUE_CONFIG = 26;
-    public static final int LOCK_CONFIG = 27;
-    public static final int LIST_CONFIG = 28;
-    public static final int SET_CONFIG = 29;
-    public static final int EXECUTOR_CONFIG = 30;
-    public static final int DURABLE_EXECUTOR_CONFIG = 31;
-    public static final int SCHEDULED_EXECUTOR_CONFIG = 32;
-    public static final int SEMAPHORE_CONFIG = 33;
-    public static final int REPLICATED_MAP_CONFIG = 34;
-    public static final int RINGBUFFER_CONFIG = 35;
-    public static final int RINGBUFFER_STORE_CONFIG = 36;
-    public static final int CARDINALITY_ESTIMATOR_CONFIG = 37;
-    public static final int SIMPLE_CACHE_CONFIG = 38;
-    public static final int SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG = 39;
-    public static final int SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG = 40;
-    public static final int SIMPLE_CACHE_CONFIG_DURATION_CONFIG = 41;
-    public static final int QUORUM_CONFIG = 42;
-    public static final int MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER = 43;
-    public static final int EVENT_JOURNAL_CONFIG = 44;
-    public static final int QUORUM_LISTENER_CONFIG = 45;
-    public static final int CACHE_PARTITION_LOST_LISTENER_CONFIG = 46;
-    public static final int SIMPLE_CACHE_ENTRY_LISTENER_CONFIG = 47;
-    public static final int FLAKE_ID_GENERATOR_CONFIG = 48;
-    public static final int ATOMIC_LONG_CONFIG = 49;
-    public static final int ATOMIC_REFERENCE_CONFIG = 50;
-    public static final int MERGE_POLICY_CONFIG = 51;
-    public static final int COUNT_DOWN_LATCH_CONFIG = 52;
-    public static final int PN_COUNTER_CONFIG = 53;
-    public static final int MERKLE_TREE_CONFIG = 54;
-    public static final int WAN_SYNC_CONFIG = 55;
-    public static final int KUBERNETES_CONFIG = 56;
-    public static final int EUREKA_CONFIG = 57;
-    public static final int GCP_CONFIG = 58;
-    public static final int AZURE_CONFIG = 59;
-    public static final int AWS_CONFIG = 60;
-    public static final int DISCOVERY_CONFIG = 61;
-    public static final int DISCOVERY_STRATEGY_CONFIG = 62;
+    public static final int WAN_CUSTOM_PUBLISHER_CONFIG = 1;
+    public static final int WAN_BATCH_PUBLISHER_CONFIG = 2;
+    public static final int WAN_CONSUMER_CONFIG = 3;
+    public static final int NEAR_CACHE_CONFIG = 4;
+    public static final int NEAR_CACHE_PRELOADER_CONFIG = 5;
+    public static final int ADD_DYNAMIC_CONFIG_OP = 6;
+    public static final int DYNAMIC_CONFIG_PRE_JOIN_OP = 7;
+    public static final int MULTIMAP_CONFIG = 8;
+    public static final int LISTENER_CONFIG = 9;
+    public static final int ENTRY_LISTENER_CONFIG = 10;
+    public static final int MAP_CONFIG = 11;
+    public static final int RANDOM_EVICTION_POLICY = 12;
+    public static final int LFU_EVICTION_POLICY = 13;
+    public static final int LRU_EVICTION_POLICY = 14;
+    public static final int MAP_STORE_CONFIG = 15;
+    public static final int MAP_PARTITION_LOST_LISTENER_CONFIG = 16;
+    public static final int MAP_INDEX_CONFIG = 17;
+    public static final int MAP_ATTRIBUTE_CONFIG = 18;
+    public static final int QUERY_CACHE_CONFIG = 19;
+    public static final int PREDICATE_CONFIG = 20;
+    public static final int PARTITION_STRATEGY_CONFIG = 21;
+    public static final int HOT_RESTART_CONFIG = 22;
+    public static final int TOPIC_CONFIG = 23;
+    public static final int RELIABLE_TOPIC_CONFIG = 24;
+    public static final int ITEM_LISTENER_CONFIG = 25;
+    public static final int QUEUE_STORE_CONFIG = 26;
+    public static final int QUEUE_CONFIG = 27;
+    public static final int LOCK_CONFIG = 28;
+    public static final int LIST_CONFIG = 29;
+    public static final int SET_CONFIG = 30;
+    public static final int EXECUTOR_CONFIG = 31;
+    public static final int DURABLE_EXECUTOR_CONFIG = 32;
+    public static final int SCHEDULED_EXECUTOR_CONFIG = 33;
+    public static final int SEMAPHORE_CONFIG = 34;
+    public static final int REPLICATED_MAP_CONFIG = 35;
+    public static final int RINGBUFFER_CONFIG = 36;
+    public static final int RINGBUFFER_STORE_CONFIG = 37;
+    public static final int CARDINALITY_ESTIMATOR_CONFIG = 38;
+    public static final int SIMPLE_CACHE_CONFIG = 39;
+    public static final int SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG = 40;
+    public static final int SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG = 41;
+    public static final int SIMPLE_CACHE_CONFIG_DURATION_CONFIG = 42;
+    public static final int SPLIT_BRAIN_PROTECTION_CONFIG = 43;
+    public static final int MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER = 44;
+    public static final int EVENT_JOURNAL_CONFIG = 45;
+    public static final int SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG = 46;
+    public static final int CACHE_PARTITION_LOST_LISTENER_CONFIG = 47;
+    public static final int SIMPLE_CACHE_ENTRY_LISTENER_CONFIG = 48;
+    public static final int FLAKE_ID_GENERATOR_CONFIG = 49;
+    public static final int ATOMIC_LONG_CONFIG = 50;
+    public static final int ATOMIC_REFERENCE_CONFIG = 51;
+    public static final int MERGE_POLICY_CONFIG = 52;
+    public static final int COUNT_DOWN_LATCH_CONFIG = 53;
+    public static final int PN_COUNTER_CONFIG = 54;
+    public static final int MERKLE_TREE_CONFIG = 55;
+    public static final int WAN_SYNC_CONFIG = 56;
+    public static final int KUBERNETES_CONFIG = 57;
+    public static final int EUREKA_CONFIG = 58;
+    public static final int GCP_CONFIG = 59;
+    public static final int AZURE_CONFIG = 60;
+    public static final int AWS_CONFIG = 61;
+    public static final int DISCOVERY_CONFIG = 62;
+    public static final int DISCOVERY_STRATEGY_CONFIG = 63;
 
     private static final int LEN = DISCOVERY_STRATEGY_CONFIG + 1;
 
@@ -114,403 +115,74 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
-        constructors[WAN_REPLICATION_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new WanReplicationConfig();
-            }
-        };
-        constructors[WAN_CONSUMER_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new WanConsumerConfig();
-            }
-        };
-        constructors[WAN_PUBLISHER_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new WanPublisherConfig();
-            }
-        };
-        constructors[NEAR_CACHE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new NearCacheConfig();
-            }
-        };
-        constructors[NEAR_CACHE_PRELOADER_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new NearCachePreloaderConfig();
-            }
-        };
-        constructors[ADD_DYNAMIC_CONFIG_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddDynamicConfigOperation();
-            }
-        };
-        constructors[DYNAMIC_CONFIG_PRE_JOIN_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DynamicConfigPreJoinOperation();
-            }
-        };
-        constructors[MULTIMAP_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapConfig();
-            }
-        };
-        constructors[LISTENER_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListenerConfig();
-            }
-        };
-        constructors[ENTRY_LISTENER_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EntryListenerConfig();
-            }
-        };
-        constructors[MAP_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapConfig();
-            }
-        };
-        constructors[RANDOM_EVICTION_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RandomEvictionPolicy();
-            }
-        };
-        constructors[LFU_EVICTION_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LFUEvictionPolicy();
-            }
-        };
-        constructors[LRU_EVICTION_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LRUEvictionPolicy();
-            }
-        };
-        constructors[MAP_STORE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapStoreConfig();
-            }
-        };
-        constructors[MAP_PARTITION_LOST_LISTENER_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapPartitionLostListenerConfig();
-            }
-        };
-        constructors[MAP_INDEX_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapIndexConfig();
-            }
-        };
-        constructors[MAP_ATTRIBUTE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapAttributeConfig();
-            }
-        };
-        constructors[QUERY_CACHE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryCacheConfig();
-            }
-        };
-        constructors[PREDICATE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PredicateConfig();
-            }
-        };
-        constructors[PARTITION_STRATEGY_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitioningStrategyConfig();
-            }
-        };
-        constructors[HOT_RESTART_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HotRestartConfig();
-            }
-        };
-        constructors[TOPIC_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TopicConfig();
-            }
-        };
-        constructors[RELIABLE_TOPIC_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReliableTopicConfig();
-            }
-        };
-        constructors[ITEM_LISTENER_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ItemListenerConfig();
-            }
-        };
-        constructors[QUEUE_STORE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueStoreConfig();
-            }
-        };
-        constructors[QUEUE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueConfig();
-            }
-        };
-        constructors[LOCK_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LockConfig();
-            }
-        };
-        constructors[LIST_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListConfig();
-            }
-        };
-        constructors[SET_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetConfig();
-            }
-        };
-        constructors[EXECUTOR_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ExecutorConfig();
-            }
-        };
-        constructors[DURABLE_EXECUTOR_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DurableExecutorConfig();
-            }
-        };
-        constructors[SCHEDULED_EXECUTOR_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ScheduledExecutorConfig();
-            }
-        };
-        constructors[SEMAPHORE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SemaphoreConfig();
-            }
-        };
-        constructors[REPLICATED_MAP_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicatedMapConfig();
-            }
-        };
-        constructors[RINGBUFFER_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RingbufferConfig();
-            }
-        };
-        constructors[RINGBUFFER_STORE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RingbufferStoreConfig();
-            }
-        };
-        constructors[CARDINALITY_ESTIMATOR_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CardinalityEstimatorConfig();
-            }
-        };
-        constructors[SIMPLE_CACHE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheSimpleConfig();
-            }
-        };
+        constructors[WAN_REPLICATION_CONFIG] = arg -> new WanReplicationConfig();
+        constructors[WAN_CONSUMER_CONFIG] = arg -> new WanConsumerConfig();
+        constructors[WAN_CUSTOM_PUBLISHER_CONFIG] = arg -> new CustomWanPublisherConfig();
+        constructors[WAN_BATCH_PUBLISHER_CONFIG] = arg -> new WanBatchReplicationPublisherConfig();
+        constructors[NEAR_CACHE_CONFIG] = arg -> new NearCacheConfig();
+        constructors[NEAR_CACHE_PRELOADER_CONFIG] = arg -> new NearCachePreloaderConfig();
+        constructors[ADD_DYNAMIC_CONFIG_OP] = arg -> new AddDynamicConfigOperation();
+        constructors[DYNAMIC_CONFIG_PRE_JOIN_OP] = arg -> new DynamicConfigPreJoinOperation();
+        constructors[MULTIMAP_CONFIG] = arg -> new MultiMapConfig();
+        constructors[LISTENER_CONFIG] = arg -> new ListenerConfig();
+        constructors[ENTRY_LISTENER_CONFIG] = arg -> new EntryListenerConfig();
+        constructors[MAP_CONFIG] = arg -> new MapConfig();
+        constructors[RANDOM_EVICTION_POLICY] = arg -> new RandomEvictionPolicy();
+        constructors[LFU_EVICTION_POLICY] = arg -> new LFUEvictionPolicy();
+        constructors[LRU_EVICTION_POLICY] = arg -> new LRUEvictionPolicy();
+        constructors[MAP_STORE_CONFIG] = arg -> new MapStoreConfig();
+        constructors[MAP_PARTITION_LOST_LISTENER_CONFIG] = arg -> new MapPartitionLostListenerConfig();
+        constructors[MAP_INDEX_CONFIG] = arg -> new MapIndexConfig();
+        constructors[MAP_ATTRIBUTE_CONFIG] = arg -> new AttributeConfig();
+        constructors[QUERY_CACHE_CONFIG] = arg -> new QueryCacheConfig();
+        constructors[PREDICATE_CONFIG] = arg -> new PredicateConfig();
+        constructors[PARTITION_STRATEGY_CONFIG] = arg -> new PartitioningStrategyConfig();
+        constructors[HOT_RESTART_CONFIG] = arg -> new HotRestartConfig();
+        constructors[TOPIC_CONFIG] = arg -> new TopicConfig();
+        constructors[RELIABLE_TOPIC_CONFIG] = arg -> new ReliableTopicConfig();
+        constructors[ITEM_LISTENER_CONFIG] = arg -> new ItemListenerConfig();
+        constructors[QUEUE_STORE_CONFIG] = arg -> new QueueStoreConfig();
+        constructors[QUEUE_CONFIG] = arg -> new QueueConfig();
+        constructors[LOCK_CONFIG] = arg -> new LockConfig();
+        constructors[LIST_CONFIG] = arg -> new ListConfig();
+        constructors[SET_CONFIG] = arg -> new SetConfig();
+        constructors[EXECUTOR_CONFIG] = arg -> new ExecutorConfig();
+        constructors[DURABLE_EXECUTOR_CONFIG] = arg -> new DurableExecutorConfig();
+        constructors[SCHEDULED_EXECUTOR_CONFIG] = arg -> new ScheduledExecutorConfig();
+        constructors[SEMAPHORE_CONFIG] = arg -> new SemaphoreConfig();
+        constructors[REPLICATED_MAP_CONFIG] = arg -> new ReplicatedMapConfig();
+        constructors[RINGBUFFER_CONFIG] = arg -> new RingbufferConfig();
+        constructors[RINGBUFFER_STORE_CONFIG] = arg -> new RingbufferStoreConfig();
+        constructors[CARDINALITY_ESTIMATOR_CONFIG] = arg -> new CardinalityEstimatorConfig();
+        constructors[SIMPLE_CACHE_CONFIG] = arg -> new CacheSimpleConfig();
         constructors[SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new CacheSimpleConfig.ExpiryPolicyFactoryConfig();
-                    }
-                };
+                arg -> new CacheSimpleConfig.ExpiryPolicyFactoryConfig();
         constructors[SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig();
-                    }
-                };
+                arg -> new CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig();
         constructors[SIMPLE_CACHE_CONFIG_DURATION_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig();
-                    }
-                };
-        constructors[QUORUM_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new QuorumConfig();
-                    }
-                };
+                arg -> new CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig();
+        constructors[SPLIT_BRAIN_PROTECTION_CONFIG] = arg -> new SplitBrainProtectionConfig();
         constructors[MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new EntryListenerConfig.MapListenerToEntryListenerAdapter();
-                    }
-                };
-        constructors[EVENT_JOURNAL_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new EventJournalConfig();
-                    }
-                };
-        constructors[QUORUM_LISTENER_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new QuorumListenerConfig();
-                    }
-                };
-        constructors[CACHE_PARTITION_LOST_LISTENER_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new CachePartitionLostListenerConfig();
-                    }
-                };
-        constructors[SIMPLE_CACHE_ENTRY_LISTENER_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new CacheSimpleEntryListenerConfig();
-                    }
-                };
-        constructors[FLAKE_ID_GENERATOR_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new FlakeIdGeneratorConfig();
-                    }
-                };
-        constructors[ATOMIC_LONG_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new AtomicLongConfig();
-                    }
-                };
-        constructors[ATOMIC_REFERENCE_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new AtomicReferenceConfig();
-                    }
-                };
-        constructors[MERGE_POLICY_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new MergePolicyConfig();
-                    }
-                };
-        constructors[COUNT_DOWN_LATCH_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new CountDownLatchConfig();
-                    }
-                };
-        constructors[PN_COUNTER_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new PNCounterConfig();
-                    }
-                };
-        constructors[MERKLE_TREE_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new MerkleTreeConfig();
-                    }
-                };
-        constructors[WAN_SYNC_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new WanSyncConfig();
-                    }
-                };
-        constructors[KUBERNETES_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new KubernetesConfig();
-                    }
-                };
-        constructors[EUREKA_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new EurekaConfig();
-                    }
-                };
-        constructors[GCP_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new GcpConfig();
-                    }
-                };
-        constructors[AZURE_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new AzureConfig();
-                    }
-                };
-        constructors[AWS_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new AwsConfig();
-                    }
-                };
-        constructors[DISCOVERY_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new DiscoveryConfig();
-                    }
-                };
-        constructors[DISCOVERY_STRATEGY_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new DiscoveryStrategyConfig();
-                    }
-                };
+                arg -> new EntryListenerConfig.MapListenerToEntryListenerAdapter();
+        constructors[EVENT_JOURNAL_CONFIG] = arg -> new EventJournalConfig();
+        constructors[SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG] = arg -> new SplitBrainProtectionListenerConfig();
+        constructors[CACHE_PARTITION_LOST_LISTENER_CONFIG] = arg -> new CachePartitionLostListenerConfig();
+        constructors[SIMPLE_CACHE_ENTRY_LISTENER_CONFIG] = arg -> new CacheSimpleEntryListenerConfig();
+        constructors[FLAKE_ID_GENERATOR_CONFIG] = arg -> new FlakeIdGeneratorConfig();
+        constructors[ATOMIC_LONG_CONFIG] = arg -> new AtomicLongConfig();
+        constructors[ATOMIC_REFERENCE_CONFIG] = arg -> new AtomicReferenceConfig();
+        constructors[MERGE_POLICY_CONFIG] = arg -> new MergePolicyConfig();
+        constructors[COUNT_DOWN_LATCH_CONFIG] = arg -> new CountDownLatchConfig();
+        constructors[PN_COUNTER_CONFIG] = arg -> new PNCounterConfig();
+        constructors[MERKLE_TREE_CONFIG] = arg -> new MerkleTreeConfig();
+        constructors[WAN_SYNC_CONFIG] = arg -> new WanSyncConfig();
+        constructors[KUBERNETES_CONFIG] = arg -> new KubernetesConfig();
+        constructors[EUREKA_CONFIG] = arg -> new EurekaConfig();
+        constructors[GCP_CONFIG] = arg -> new GcpConfig();
+        constructors[AZURE_CONFIG] = arg -> new AzureConfig();
+        constructors[AWS_CONFIG] = arg -> new AwsConfig();
+        constructors[DISCOVERY_CONFIG] = arg -> new DiscoveryConfig();
+        constructors[DISCOVERY_STRATEGY_CONFIG] = arg -> new DiscoveryStrategyConfig();
         return new ArrayDataSerializableFactory(constructors);
     }
 }

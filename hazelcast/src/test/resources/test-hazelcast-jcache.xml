@@ -43,7 +43,7 @@
                 <cache-entry-listener-factory class-name="com.hazelcast.config.CacheConfigTest$MyEntryListenerFactory"/>
                 <cache-entry-event-filter-factory class-name="com.hazelcast.config.CacheConfigTest$MyEntryEventFilterFactory"/>
             </cache-entry-listener>
-           <cache-entry-listener old-value-required="true" synchronous="true">
+            <cache-entry-listener old-value-required="true" synchronous="true">
                 <cache-entry-listener-factory class-name="com.hazelcast.config.CacheConfigTest$MySyncEntryListenerFactory"/>
                 <cache-entry-event-filter-factory class-name="com.hazelcast.config.CacheConfigTest$MySyncEntryEventFilterFactory"/>
             </cache-entry-listener>
@@ -60,9 +60,9 @@
 
     <cache name="cacheWithTimedCreatedExpiryPolicyFactory">
         <expiry-policy-factory>
-               <timed-expiry-policy-factory expiry-policy-type="CREATED"
-                                            duration-amount="1"
-                                            time-unit="DAYS"/>
+            <timed-expiry-policy-factory expiry-policy-type="CREATED"
+                                         duration-amount="1"
+                                         time-unit="DAYS"/>
         </expiry-policy-factory>
     </cache>
 

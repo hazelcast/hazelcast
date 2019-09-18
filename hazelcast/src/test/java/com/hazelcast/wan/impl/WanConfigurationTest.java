@@ -18,7 +18,7 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -111,12 +111,12 @@ public class WanConfigurationTest extends HazelcastTestSupport {
             return super.getConfig();
         }
 
-        WanPublisherConfig wanPublisherConfig = new WanPublisherConfig()
+        CustomWanPublisherConfig customWanPublisherConfig = new CustomWanPublisherConfig()
                 .setClassName(DummyWanReplication.class.getName());
 
         WanReplicationConfig wanConfig = new WanReplicationConfig()
                 .setName("dummyWan")
-                .addWanPublisherConfig(wanPublisherConfig);
+                .addCustomPublisherConfig(customWanPublisherConfig);
 
         WanReplicationRef wanRef = new WanReplicationRef()
                 .setName("dummyWan")

@@ -58,7 +58,7 @@ public class ReplicatedMapValueCollection implements Portable {
     public void readPortable(PortableReader reader) throws IOException {
         int size = reader.readInt("size");
         ObjectDataInput in = reader.getRawDataInput();
-        values = new ArrayList<Data>(size);
+        values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             values.add(in.readData());
         }

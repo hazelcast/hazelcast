@@ -55,30 +55,29 @@ hazelcast:
 
   wan-replication:
     my-wan-cluster:
-      wan-publisher:
-
+      batch-publisher:
         tokyoPublisherId:
           group-name: tokyo
           class-name: com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication
           queue-capacity: 1000
           queue-full-behavior: THROW_EXCEPTION
-          initial-publisher-state: REPLICATING
+          initial-publisher-state: STOPPED
+          batch-size: 50
+          batch-max-delay-millis: 3000
+          response-timeout-millis: 5000
+          acknowledge-type: ACK_ON_RECEIPT
+          target-endpoints: "10.3.5.1:5701, 10.3.5.2:5701"
+          snapshot-enabled: true
           wan-sync:
             consistency-check-strategy: MERKLE_TREES
-          properties:
-            batch.size: 50
-            batch.max.delay.millis: 3000
-            response.timeout.millis: 5000
-            ack.type: ACK_ON_OPERATION_COMPLETE
-            endpoints: "10.3.5.1:5701, 10.3.5.2:5701"
-            snapshot.enabled: false
-            group.password: pass
 
         istanbul:
           class-name: com.hazelcast.wan.custom.WanPublisher
-          queue-full-behavior: DISCARD_AFTER_MUTATION
+          queue-full-behavior: THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE
           initial-publisher-state: STOPPED
-          queue-capacity: 10000
+          queue-capacity: 12345
+          discovery-period-seconds: 5
+          max-target-endpoints: 2
           aws:
             enabled: false
             connection-timeout-seconds: 10
@@ -123,10 +122,7 @@ hazelcast:
                   key-boolean: true
           properties:
             custom.prop.publisher: prop.publisher
-            discovery.period: 5
-            maxEndpoints: 2
-
-      wan-consumer:
+      consumer:
         class-name: com.hazelcast.wan.custom.WanConsumer
         properties:
           custom.prop.consumer: prop.consumer
@@ -150,21 +146,21 @@ hazelcast:
       statistics-enabled: false
       pool-size: 16
       queue-capacity: 1000
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   durable-executor-service:
     dummy:
       pool-size: 10
       durability: 2
       capacity: 10
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   scheduled-executor-service:
     dummy:
       pool-size: 10
       durability: 2
       capacity: 50
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 10
         class-name: PutIfAbsentMergePolicy
@@ -173,7 +169,7 @@ hazelcast:
     dummy:
       backup-count: 1
       async-backup-count: 0
-      quorum-ref: quorumRuleWithThreeNodes
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 50
         class-name: HyperLogLogMergePolicy
@@ -202,7 +198,7 @@ hazelcast:
          properties:
            foo: bar
 
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -340,9 +336,9 @@ hazelcast:
 
       attributes:
         currency:
-          extractor: com.example.CurrencyExtractor
+          extractor-class-name: com.example.CurrencyExtractor
         age:
-          extractor: com.example.AgeExtractor
+          extractor-class-name: com.example.AgeExtractor
 
       entry-listeners:
         - include-value: true
@@ -388,7 +384,7 @@ hazelcast:
         - include-value: true
           local: true
           class-name: com.hazelcast.examples.EntryListener
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -396,11 +392,9 @@ hazelcast:
   replicatedmap:
     dummy:
       in-memory-format: BINARY
-      concurrency-level: 12
-      replication-delay-millis: 12
       async-fillup: false
       statistics-enabled: false
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -418,7 +412,7 @@ hazelcast:
       item-listeners:
         - include-value: true
           class-name: com.hazelcast.examples.ItemListener
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -432,7 +426,7 @@ hazelcast:
       item-listeners:
         - include-value: true
           class-name: com.hazelcast.examples.ItemListener
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -458,29 +452,29 @@ hazelcast:
       initial-permits: 10
       backup-count: 1
       async-backup-count: 0
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   lock:
     default:
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   atomic-long:
     default:
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
 
   atomic-reference:
     default:
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
 
   count-down-latch:
     default:
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   ringbuffer:
     default:
@@ -489,7 +483,7 @@ hazelcast:
       async-backup-count: 1
       time-to-live-seconds: 29
       in-memory-format: OBJECT
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
@@ -541,8 +535,10 @@ hazelcast:
         filters:
           - com.example.WanTestFilter1
           - com.example.WanTestFilter2
-      quorum-ref: DummyQuorum
-      merge-policy: DummyMergePolicy
+      split-brain-protection-ref: DummySplitBrainProtection
+      merge-policy:
+        batch-size: 100
+        class-name: DummyMergePolicy
       partition-lost-listeners:
         - DummyListener
       hot-restart:
@@ -773,35 +769,35 @@ hazelcast:
   pn-counter:
     pn-counter-1:
       replica-count: 100
-      quorum-ref: quorumRuleWithThreeMembers
+      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
       statistics-enabled: false
 
-  quorum:
-    quorumRuleWithThreeMembers:
+  split-brain-protection:
+    splitBrainProtectionRuleWithThreeMembers:
       enabled: true
-      quorum-size: 3
-      quorum-type: READ_WRITE
+      minimum-cluster-size: 3
+      protect-on: READ_WRITE
 
-    member-count-quorum:
+    member-count-split-brain-protection:
       enabled: true
-      quorum-type: READ_WRITE
-      quorum-size: 3
-      member-count-quorum: {}
+      protect-on: READ_WRITE
+      minimum-cluster-size: 3
+      member-count-split-brain-protection: {}
 
-    probabilistic-quorum:
+    probabilistic-split-brain-protection:
       enabled: true
-      quorum-size: 3
-      quorum-type: READ_WRITE
-      probabilistic-quorum:
+      minimum-cluster-size: 3
+      protect-on: READ_WRITE
+      probabilistic-split-brain-protection:
         acceptable-heartbeat-pause-millis: 100
         max-sample-size: 20
         suspicion-threshold: 10
 
-    recently-active-quorum:
+    recently-active-split-brain-protection:
       enabled: true
-      quorum-size: 4
-      quorum-type: READ_WRITE
-      recently-active-quorum:
+      minimum-cluster-size: 4
+      protect-on: READ_WRITE
+      recently-active-split-brain-protection:
         heartbeat-tolerance-millis: 60000
 
   hot-restart-persistence:

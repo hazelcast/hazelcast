@@ -31,6 +31,7 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
 class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
@@ -550,23 +551,14 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      */
     @Override
     public final String readUTF() throws IOException {
-        int charCount = readInt();
-        if (charCount == NULL_ARRAY_LENGTH) {
+        int numberOfBytes = readInt();
+        if (numberOfBytes == NULL_ARRAY_LENGTH) {
             return null;
         }
-        if (charBuffer == null || charCount > charBuffer.length) {
-            charBuffer = new char[charCount];
-        }
-        byte b;
-        for (int i = 0; i < charCount; i++) {
-            b = readByte();
-            if (b < 0) {
-                charBuffer[i] = Bits.readUtf8Char(this, b);
-            } else {
-                charBuffer[i] = (char) b;
-            }
-        }
-        return new String(charBuffer, 0, charCount);
+
+        String result = new String(data, pos, numberOfBytes, UTF_8);
+        pos += numberOfBytes;
+        return result;
     }
 
     @Override

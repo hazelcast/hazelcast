@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.services.PostJoinAwareService;
 
 import java.util.Properties;
 
@@ -40,7 +41,7 @@ public interface MapLoaderLifecycleSupport {
      * <p>
      * On members joining a cluster, this method is executed during finalization
      * of the join operation, therefore care should be taken to adhere to the
-     * rules for {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}.
+     * rules for {@link PostJoinAwareService#getPostJoinOperation()}.
      * If the implementation executes operations which may wait on locks or otherwise
      * block (e.g. waiting for network operations), this may result in a time-out and
      * obstruct the new member from joining the cluster. If blocking operations are

@@ -24,6 +24,7 @@ import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -55,8 +56,9 @@ public interface ConfigurationService {
      * Registers a dynamic configurations to all cluster members.
      *
      * @param config configuration to register
-     * @throws com.hazelcast.config.ConfigurationException when static configuration already contains the same config
-     *                                                     with the same name
+     * @throws InvalidConfigurationException when static configuration already
+     *                                       contains the same config with the
+     *                                       same name
      */
     void broadcastConfig(IdentifiedDataSerializable config);
 

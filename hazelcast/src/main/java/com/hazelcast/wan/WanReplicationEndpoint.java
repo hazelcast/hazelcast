@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.impl.Node;
 
@@ -30,11 +30,11 @@ public interface WanReplicationEndpoint
     /**
      * Initializes the endpoint using the given arguments.
      *
-     * @param node      the current node that tries to connect
+     * @param node                 the current node that tries to connect
      * @param wanReplicationConfig {@link WanReplicationConfig} instance
-     * @param publisherConfig  {@link WanPublisherConfig} instance
+     * @param publisherConfig      {@link AbstractWanPublisherConfig} instance
      */
-    void init(Node node, WanReplicationConfig wanReplicationConfig, WanPublisherConfig publisherConfig);
+    void init(Node node, WanReplicationConfig wanReplicationConfig, AbstractWanPublisherConfig publisherConfig);
 
     /**
      * Closes the endpoint and its internal connections and shuts down other internal states

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp;
 
-import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.DistributedObject;
@@ -70,9 +70,10 @@ import java.util.concurrent.TimeUnit;
  * largest partitioned cluster (by number of members). If the cluster sizes are
  * all equal, then a random {@link ISemaphore} instance will be chosen.
  * <p>
- * This {@link ISemaphore} impl also supports Quorum {@link QuorumConfig}
- * in cluster versions 3.10 and higher. However, Hazelcast quorums do not
- * guarantee strong consistency under failure scenarios.
+ * This {@link ISemaphore} impl also supports split brain protection
+ * {@link SplitBrainProtectionConfig} in cluster versions 3.10 and higher.
+ * However, Hazelcast split brain protections do not guarantee strong consistency
+ * under failure scenarios.
  * <p>
  * The second impl is a new one introduced with the {@link CPSubsystem} in
  * version 3.12. It is accessed via {@link CPSubsystem#getSemaphore(String)}.

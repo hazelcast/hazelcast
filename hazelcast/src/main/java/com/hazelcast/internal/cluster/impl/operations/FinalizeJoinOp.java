@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,7 +46,7 @@ import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFa
 public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     /**
      * Operations to be executed before node is marked as joined.
-     * @see com.hazelcast.spi.PreJoinAwareService
+     * @see PreJoinAwareService
      * @since 3.9
      */
     private OnJoinOp preJoinOp;

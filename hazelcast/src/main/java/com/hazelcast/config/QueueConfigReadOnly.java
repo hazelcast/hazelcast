@@ -99,7 +99,7 @@ public class QueueConfigReadOnly extends QueueConfig {
     }
 
     @Override
-    public QueueConfig setQuorumName(String quorumName) {
+    public QueueConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw new UnsupportedOperationException("This config is read-only queue: " + getName());
     }
 

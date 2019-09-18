@@ -26,8 +26,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -122,8 +120,12 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
                 .withPrefabValues(PredicateConfig.class,
                         new PredicateConfig("red"), new PredicateConfig("black"))
                 .withPrefabValues(EvictionConfig.class,
-                        new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
-                        new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
+                        new EvictionConfig().setSize(1000)
+                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
+                                .setEvictionPolicy(EvictionPolicy.LFU),
+                        new EvictionConfig().setSize(300)
+                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE)
+                                .setEvictionPolicy(EvictionPolicy.LRU))
                 .withPrefabValues(QueryCacheConfigReadOnly.class,
                         new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
                         new QueryCacheConfigReadOnly(new QueryCacheConfig("black")))

@@ -20,12 +20,15 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+
 public class PutIfAbsentOperation extends BasePutOperation implements MutatingOperation {
 
-    private boolean successful;
+    protected transient boolean successful;
 
-    public PutIfAbsentOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
-        super(name, dataKey, value, ttl, maxIdle);
+    public PutIfAbsentOperation(String name, Data dataKey, Data value) {
+        super(name, dataKey, value);
     }
 
     public PutIfAbsentOperation() {
@@ -33,9 +36,18 @@ public class PutIfAbsentOperation extends BasePutOperation implements MutatingOp
 
     @Override
     protected void runInternal() {
-        final Object oldValue = recordStore.putIfAbsent(dataKey, dataValue, ttl, maxIdle, getCallerAddress());
+        Object oldValue = recordStore.putIfAbsent(dataKey, dataValue,
+                getTtl(), getMaxIdle(), getCallerAddress());
         this.oldValue = mapServiceContext.toData(oldValue);
         successful = this.oldValue == null;
+    }
+
+    protected long getTtl() {
+        return DEFAULT_TTL;
+    }
+
+    protected long getMaxIdle() {
+        return DEFAULT_MAX_IDLE;
     }
 
     @Override

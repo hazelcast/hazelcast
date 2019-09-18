@@ -124,7 +124,7 @@ public class ConfigCompatibilityChecker {
                 c2.getCardinalityEstimatorConfigs(), new CardinalityEstimatorConfigChecker());
         checkCompatibleConfigs("pn counter", c1, c2, c1.getPNCounterConfigs(), c2.getPNCounterConfigs(),
                 new PNCounterConfigChecker());
-        checkCompatibleConfigs("quorum", c1, c2, c1.getQuorumConfigs(), c2.getQuorumConfigs(), new QuorumConfigChecker());
+        checkCompatibleConfigs("split-brain-protection", c1, c2, c1.getSplitBrainProtectionConfigs(), c2.getSplitBrainProtectionConfigs(), new SplitBrainProtectionConfigChecker());
         checkCompatibleConfigs("security", c1, c2, singletonMap("", c1.getSecurityConfig()),
                 singletonMap("", c2.getSecurityConfig()), new SecurityConfigChecker());
         checkCompatibleConfigs("cp subsystem", c1, c2, singletonMap("", c1.getCPSubsystemConfig()),
@@ -149,7 +149,7 @@ public class ConfigCompatibilityChecker {
 
     private static Map<String, SemaphoreConfig> getSemaphoreConfigsByName(Config c) {
         Collection<SemaphoreConfig> semaphoreConfigs = c.getSemaphoreConfigs();
-        HashMap<String, SemaphoreConfig> configsByName = new HashMap<String, SemaphoreConfig>(semaphoreConfigs.size());
+        HashMap<String, SemaphoreConfig> configsByName = new HashMap<>(semaphoreConfigs.size());
         for (SemaphoreConfig config : semaphoreConfigs) {
             configsByName.put(config.getName(), config);
         }
@@ -164,7 +164,7 @@ public class ConfigCompatibilityChecker {
 
     private static <T> void checkCompatibleConfigs(String type, Config c1, Config c2, Map<String, T> configs1,
                                                    Map<String, T> configs2, ConfigChecker<T> checker) {
-        Set<String> configNames = new HashSet<String>(configs1.keySet());
+        Set<String> configNames = new HashSet<>(configs1.keySet());
         configNames.addAll(configs2.keySet());
 
         for (String name : configNames) {
@@ -213,7 +213,7 @@ public class ConfigCompatibilityChecker {
                 && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
                 && nullSafeEqual(c1.getMaxSize(), c2.getMaxSize())
                 && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
-                && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                 && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
     }
 
@@ -263,7 +263,7 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getCapacity(), c2.getCapacity())
                     && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds())
                     && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && isCompatible(c1.getRingbufferStoreConfig(), c2.getRingbufferStoreConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
@@ -288,7 +288,7 @@ public class ConfigCompatibilityChecker {
         boolean check(AtomicLongConfig c1, AtomicLongConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
 
@@ -303,7 +303,7 @@ public class ConfigCompatibilityChecker {
         boolean check(AtomicReferenceConfig c1, AtomicReferenceConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
 
@@ -326,7 +326,7 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getQueueStoreConfig(), c2.getQueueStoreConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
         }
 
         private static boolean isCompatible(QueueStoreConfig c1, QueueStoreConfig c2) {
@@ -351,7 +351,7 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getBackupCount(), c2.getBackupCount())
                     && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && nullSafeEqual(c1.getInitialPermits(), c2.getInitialPermits());
         }
 
@@ -366,7 +366,7 @@ public class ConfigCompatibilityChecker {
         boolean check(CountDownLatchConfig c1, CountDownLatchConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
         }
 
         @Override
@@ -380,7 +380,7 @@ public class ConfigCompatibilityChecker {
         boolean check(LockConfig c1, LockConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
         }
 
         @Override
@@ -461,7 +461,7 @@ public class ConfigCompatibilityChecker {
             return nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize())
                     && (nullSafeEqual(cap1, cap2) || (Math.min(cap1, cap2) == 0 && Math.max(cap1, cap2) == Integer.MAX_VALUE))
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled());
         }
 
@@ -478,7 +478,7 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize())
                     && nullSafeEqual(c1.getDurability(), c2.getDurability())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && nullSafeEqual(c1.getCapacity(), c2.getCapacity());
         }
 
@@ -494,7 +494,7 @@ public class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getDurability(), c2.getDurability())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize());
         }
@@ -516,7 +516,7 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getBackupCount(), c2.getBackupCount())
                     && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
 
@@ -532,10 +532,9 @@ public class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
-                    && nullSafeEqual(c1.getConcurrencyLevel(), c2.getConcurrencyLevel())
                     && nullSafeEqual(c1.isAsyncFillup(), c2.isAsyncFillup())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && isCollectionCompatible(c1.getListenerConfigs(), c2.getListenerConfigs(),
                     new ReplicatedMapListenerConfigChecker());
@@ -570,7 +569,7 @@ public class ConfigCompatibilityChecker {
                     && c1.getAsyncBackupCount() == c2.getAsyncBackupCount()
                     && c1.getAsyncBackupCount() == c2.getAsyncBackupCount()
                     && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
         }
 
         @Override
@@ -613,7 +612,7 @@ public class ConfigCompatibilityChecker {
             }
             return nullSafeEqual(c1.getName(), c2.getName())
                     && c1.getReplicaCount() == c2.getReplicaCount()
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
         }
 
         @Override
@@ -724,9 +723,9 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
                     && isCompatible(c1.getEvictionConfig(), c2.getEvictionConfig())
                     && isCompatible(c1.getWanReplicationRef(), c2.getWanReplicationRef())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
-                    && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
+                    && nullSafeEqual(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getHotRestartConfig(), c2.getHotRestartConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getEventJournalConfig(), c2.getEventJournalConfig());
         }
@@ -771,10 +770,10 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class MapConfigChecker extends ConfigChecker<MapConfig> {
+    public static class MapConfigChecker extends ConfigChecker<MapConfig> {
         @Override
         @SuppressWarnings("deprecation")
-        boolean check(MapConfig c1, MapConfig c2) {
+        public boolean check(MapConfig c1, MapConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -805,12 +804,12 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getNearCacheConfig(), c2.getNearCacheConfig())
                     && isCompatible(c1.getWanReplicationRef(), c2.getWanReplicationRef())
                     && isCollectionCompatible(c1.getMapIndexConfigs(), c2.getMapIndexConfigs(), new MapIndexConfigChecker())
-                    && isCollectionCompatible(c1.getMapAttributeConfigs(), c2.getMapAttributeConfigs(),
-                    new MapAttributeConfigChecker())
+                    && isCollectionCompatible(c1.getAttributeConfigs(), c2.getAttributeConfigs(),
+                    new AttributeConfigChecker())
                     && isCollectionCompatible(c1.getEntryListenerConfigs(), c2.getEntryListenerConfigs(),
                     new EntryListenerConfigChecker())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig());
         }
 
@@ -827,8 +826,6 @@ public class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds())
-                    && nullSafeEqual(c1.getMaxSize(), c2.getMaxSize())
-                    && nullSafeEqual(c1.getEvictionPolicy(), c2.getEvictionPolicy())
                     && isCompatible(c1.getEvictionConfig(), c2.getEvictionConfig());
         }
 
@@ -838,7 +835,6 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getSize(), c2.getSize())
                     && nullSafeEqual(c1.getMaximumSizePolicy(), c2.getMaximumSizePolicy())
                     && nullSafeEqual(c1.getEvictionPolicy(), c2.getEvictionPolicy())
-                    && nullSafeEqual(c1.getEvictionPolicyType(), c2.getEvictionPolicyType())
                     && nullSafeEqual(c1.getEvictionStrategyType(), c2.getEvictionStrategyType())
                     && nullSafeEqual(c1.getComparatorClassName(), c2.getComparatorClassName());
         }
@@ -888,12 +884,12 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class MapAttributeConfigChecker extends ConfigChecker<MapAttributeConfig> {
+    private static class AttributeConfigChecker extends ConfigChecker<AttributeConfig> {
         @Override
-        boolean check(MapAttributeConfig c1, MapAttributeConfig c2) {
+        boolean check(AttributeConfig c1, AttributeConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getExtractor(), c2.getExtractor());
+                    && nullSafeEqual(c1.getExtractorClassName(), c2.getExtractorClassName());
         }
     }
 
@@ -910,7 +906,7 @@ public class ConfigCompatibilityChecker {
         @Override
         boolean check(MemberGroupConfig c1, MemberGroupConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(new ArrayList<String>(c1.getInterfaces()), new ArrayList<String>(c2.getInterfaces()));
+                    && nullSafeEqual(new ArrayList<>(c1.getInterfaces()), new ArrayList<>(c2.getInterfaces()));
         }
     }
 
@@ -1165,7 +1161,7 @@ public class ConfigCompatibilityChecker {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
-                    && nullSafeEqual(new ArrayList<String>(c1.getInterfaces()), new ArrayList<String>(c2.getInterfaces())));
+                    && nullSafeEqual(new ArrayList<>(c1.getInterfaces()), new ArrayList<>(c2.getInterfaces())));
         }
     }
 
@@ -1243,7 +1239,7 @@ public class ConfigCompatibilityChecker {
         }
 
         private static Map<String, AliasedDiscoveryConfig> mapByTag(List<AliasedDiscoveryConfig<?>> configs) {
-            Map<String, AliasedDiscoveryConfig> result = new HashMap<String, AliasedDiscoveryConfig>();
+            Map<String, AliasedDiscoveryConfig> result = new HashMap<>();
             for (AliasedDiscoveryConfig c : configs) {
                 if (c.isEnabled()) {
                     result.put(c.getTag(), c);
@@ -1270,8 +1266,10 @@ public class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && WAN_CONSUMER_CONFIG_CHECKER.check(c1.getWanConsumerConfig(), c2.getWanConsumerConfig())
-                    && isCollectionCompatible(c1.getWanPublisherConfigs(), c2.getWanPublisherConfigs(),
-                    new WanPublisherConfigChecker());
+                    && isCollectionCompatible(c1.getBatchPublisherConfigs(), c2.getBatchPublisherConfigs(),
+                    new WanBatchReplicationPublisherConfigChecker())
+                    && isCollectionCompatible(c1.getCustomPublisherConfigs(), c2.getCustomPublisherConfigs(),
+                    new WanCustomPublisherConfigChecker());
         }
     }
 
@@ -1286,19 +1284,41 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    public static class WanPublisherConfigChecker extends ConfigChecker<WanPublisherConfig> {
+    public static class WanCustomPublisherConfigChecker extends ConfigChecker<CustomWanPublisherConfig> {
         @Override
-        public boolean check(WanPublisherConfig c1, WanPublisherConfig c2) {
+        public boolean check(CustomWanPublisherConfig c1, CustomWanPublisherConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getPublisherId(), c2.getPublisherId())
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+        }
+    }
+
+    public static class WanBatchReplicationPublisherConfigChecker extends ConfigChecker<WanBatchReplicationPublisherConfig> {
+        @Override
+        public boolean check(WanBatchReplicationPublisherConfig c1, WanBatchReplicationPublisherConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getGroupName(), c2.getGroupName())
                     && nullSafeEqual(c1.getPublisherId(), c2.getPublisherId())
-                    && nullSafeEqual(c1.getQueueCapacity(), c2.getQueueCapacity())
-                    && nullSafeEqual(c1.getQueueFullBehavior(), c2.getQueueFullBehavior())
-                    && nullSafeEqual(c1.getInitialPublisherState(), c2.getInitialPublisherState())
+                    && c1.isSnapshotEnabled() == c2.isSnapshotEnabled()
+                    && c1.getInitialPublisherState() == c2.getInitialPublisherState()
+                    && c1.getQueueCapacity() == c2.getQueueCapacity()
+                    && c1.getBatchSize() == c2.getBatchSize()
+                    && c1.getBatchMaxDelayMillis() == c2.getBatchMaxDelayMillis()
+                    && c1.getResponseTimeoutMillis() == c2.getResponseTimeoutMillis()
+                    && c1.getQueueFullBehavior() == c2.getQueueFullBehavior()
+                    && c1.getAcknowledgeType() == c2.getAcknowledgeType()
+                    && c1.getDiscoveryPeriodSeconds() == c2.getDiscoveryPeriodSeconds()
+                    && c1.getMaxTargetEndpoints() == c2.getMaxTargetEndpoints()
+                    && c1.getMaxConcurrentInvocations() == c2.getMaxConcurrentInvocations()
+                    && c1.isUseEndpointPrivateAddress() == c2.isUseEndpointPrivateAddress()
+                    && c1.getIdleMinParkNs() == c2.getIdleMinParkNs()
+                    && c1.getIdleMaxParkNs() == c2.getIdleMaxParkNs()
+                    && nullSafeEqual(c1.getTargetEndpoints(), c2.getTargetEndpoints())
                     && new AliasedDiscoveryConfigsChecker().check(aliasedDiscoveryConfigsFrom(c1), aliasedDiscoveryConfigsFrom(c2))
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig())
                     && new WanSyncConfigChecker().check(c1.getWanSyncConfig(), c2.getWanSyncConfig())
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
                     && nullSafeEqual(c1.getEndpoint(), c2.getEndpoint())
                     && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());
@@ -1358,8 +1378,8 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            HashMap<String, ServiceConfig> config1 = new HashMap<String, ServiceConfig>();
-            HashMap<String, ServiceConfig> config2 = new HashMap<String, ServiceConfig>();
+            HashMap<String, ServiceConfig> config1 = new HashMap<>();
+            HashMap<String, ServiceConfig> config2 = new HashMap<>();
 
             for (ServiceConfig serviceConfig : c1) {
                 config1.put(serviceConfig.getName(), serviceConfig);
@@ -1423,8 +1443,8 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            Map<String, LoginModuleConfig> config1 = new HashMap<String, LoginModuleConfig>();
-            Map<String, LoginModuleConfig> config2 = new HashMap<String, LoginModuleConfig>();
+            Map<String, LoginModuleConfig> config1 = new HashMap<>();
+            Map<String, LoginModuleConfig> config2 = new HashMap<>();
 
             for (LoginModuleConfig loginModuleConfig : c1) {
                 config1.put(loginModuleConfig.getClassName(), loginModuleConfig);
@@ -1457,8 +1477,8 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            Map<String, SecurityInterceptorConfig> config1 = new HashMap<String, SecurityInterceptorConfig>();
-            Map<String, SecurityInterceptorConfig> config2 = new HashMap<String, SecurityInterceptorConfig>();
+            Map<String, SecurityInterceptorConfig> config1 = new HashMap<>();
+            Map<String, SecurityInterceptorConfig> config2 = new HashMap<>();
 
             for (SecurityInterceptorConfig securityInterceptorConfig : c1) {
                 config1.put(securityInterceptorConfig.getClassName(), securityInterceptorConfig);
@@ -1546,9 +1566,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    static class QuorumConfigChecker extends ConfigChecker<QuorumConfig> {
+    static class SplitBrainProtectionConfigChecker extends ConfigChecker<SplitBrainProtectionConfig> {
         @Override
-        boolean check(QuorumConfig c1, QuorumConfig c2) {
+        boolean check(SplitBrainProtectionConfig c1, SplitBrainProtectionConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -1558,10 +1578,10 @@ public class ConfigCompatibilityChecker {
 
             return ((c1.isEnabled() == c2.isEnabled())
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getType(), c2.getType())
-                    && (c1.getSize() == c2.getSize())
-                    && nullSafeEqual(c1.getQuorumFunctionClassName(), c2.getQuorumFunctionClassName())
-                    && nullSafeEqual(c1.getQuorumFunctionImplementation(), c2.getQuorumFunctionImplementation())
+                    && nullSafeEqual(c1.getProtectOn(), c2.getProtectOn())
+                    && (c1.getMinimumClusterSize() == c2.getMinimumClusterSize())
+                    && nullSafeEqual(c1.getFunctionClassName(), c2.getFunctionClassName())
+                    && nullSafeEqual(c1.getFunctionImplementation(), c2.getFunctionImplementation())
                     && nullSafeEqual(c1.getListenerConfigs(), c2.getListenerConfigs()));
         }
     }

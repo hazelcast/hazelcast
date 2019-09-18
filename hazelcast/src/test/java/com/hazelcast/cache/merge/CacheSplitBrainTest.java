@@ -106,13 +106,13 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .setStatisticsEnabled(false)
-                .setMergePolicy(mergePolicyClass.getName());
+                .getMergePolicyConfig().setPolicy(mergePolicyClass.getName());
         config.getCacheConfig(cacheNameB)
                 .setInMemoryFormat(inMemoryFormat)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .setStatisticsEnabled(false)
-                .setMergePolicy(mergePolicyClass.getName());
+                .getMergePolicyConfig().setPolicy(mergePolicyClass.getName());
         return config;
     }
 

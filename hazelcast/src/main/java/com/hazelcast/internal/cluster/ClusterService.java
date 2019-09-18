@@ -21,7 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.CoreService;
+import com.hazelcast.internal.services.CoreService;
 
 import java.util.Collection;
 

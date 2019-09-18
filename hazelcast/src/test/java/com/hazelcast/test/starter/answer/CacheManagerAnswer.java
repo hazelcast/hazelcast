@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import org.mockito.invocation.InvocationOnMock;
 
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;

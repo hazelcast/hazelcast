@@ -85,6 +85,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.clientType = "undefined";
         client.name = "aClient";
         client.labels = new HashSet<String>(Collections.singletonList("label"));
+        client.ipAddress = "10.176.167.34";
+        client.canonicalHostName = "ip-10-176-167-34.ec2.internal";
         clients.add(client);
 
         Map<String, Long> runtimeProps = new HashMap<String, Long>();
@@ -143,6 +145,10 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(uuid, deserialized.getUuid());
         assertEquals(cpMemberUuid, deserialized.getCpMemberUuid());
         assertEquals(endpoints, deserialized.getEndpoints());
+
+        assertNotNull(deserialized.getName());
+        assertEquals(deserialized.getName(), memberState.getName());
+
         assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
         assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());
@@ -167,6 +173,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals("undefined", client.clientType);
         assertEquals("aClient", client.name);
         assertContains(client.labels, "label");
+        assertEquals("10.176.167.34", client.ipAddress);
+        assertEquals("ip-10-176-167-34.ec2.internal", client.canonicalHostName);
 
         NodeState deserializedState = deserialized.getNodeState();
         assertEquals(clusterState, deserializedState.getClusterState());

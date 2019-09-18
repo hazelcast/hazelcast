@@ -23,7 +23,7 @@ import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
 
-public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec.RequestParameters> {
+public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec.RequestParameters> implements UrgentMessageTask {
 
     public PingMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -69,4 +69,8 @@ public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec
         return null;
     }
 
+    @Override
+    public int getPartitionId() {
+        return -1;
+    }
 }

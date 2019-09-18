@@ -17,7 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cluster.Joiner;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;

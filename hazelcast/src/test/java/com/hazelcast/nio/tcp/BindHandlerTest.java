@@ -16,23 +16,22 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ExtendedBindMessage;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,8 +40,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -50,26 +47,26 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.instance.ProtocolType.WAN;
-import static com.hazelcast.test.HazelcastTestSupport.randomName;
+import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.HazelcastTestSupport.getSerializationService;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.reflect.Whitebox.setInternalState;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(QuickTest.class)
 public class BindHandlerTest {
 
     // client side socket address of the new connection
@@ -120,10 +117,9 @@ public class BindHandlerTest {
     @Parameter(4)
     public List<Address> expectedAddresses;
 
-    // connection registrations will be asserted against contents of this map
-    private final ConcurrentHashMap<Address, TcpIpConnection> connectionsMap = new ConcurrentHashMap<Address, TcpIpConnection>();
+    private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
-    private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private InternalSerializationService serializationService;
     private BindHandler bindHandler;
 
     // mocks
@@ -157,17 +153,40 @@ public class BindHandlerTest {
     }
 
     @Before
-    public void setup() {
-        setup(connectionsMap, protocolType);
+    public void setup() throws IllegalAccessException {
+        HazelcastInstance hz = factory.newHazelcastInstance(createConfig());
+        serializationService = getSerializationService(hz);
+        Node node = getNode(hz);
+        endpointManager = TcpIpEndpointManager.class.cast(
+                node.getEndpointManager(EndpointQualifier.resolve(protocolType, "wan")));
+        bindHandler = getFieldValueReflectively(endpointManager, "bindHandler");
+
+        // setup mock channel & socket
+        Socket socket = mock(Socket.class);
+        when(socket.getRemoteSocketAddress()).thenReturn(CLIENT_SOCKET_ADDRESS);
+
+        channel = mock(Channel.class);
+        ConcurrentMap channelAttributeMap = new ConcurrentHashMap();
+        when(channel.attributeMap()).thenReturn(channelAttributeMap);
+        when(channel.socket()).thenReturn(socket);
+        when(channel.remoteSocketAddress()).thenReturn(CLIENT_SOCKET_ADDRESS);
+    }
+
+    @After
+    public void tearDown() {
+        factory.terminateAll();
     }
 
     @Test
-    public void process() {
+    public void process() throws IllegalAccessException {
         bindHandler.process(extendedBind());
         assertExpectedAddressesRegistered();
     }
 
-    private void assertExpectedAddressesRegistered() {
+    private void assertExpectedAddressesRegistered()
+            throws IllegalAccessException {
+        // inspect connections in TcpIpEndpointManager
+        ConcurrentHashMap<Address, TcpIpConnection> connectionsMap = getFieldValueReflectively(endpointManager, "connectionsMap");
         try {
             for (Address address : expectedAddresses) {
                 assertTrue(connectionsMap.containsKey(address));
@@ -198,7 +217,7 @@ public class BindHandlerTest {
     }
 
     private static Map<ProtocolType, Collection<Address>> localAddresses_memberWan() {
-        Map<ProtocolType, Collection<Address>> addresses = new HashMap<ProtocolType, Collection<Address>>();
+        Map<ProtocolType, Collection<Address>> addresses = new HashMap<>();
 
         Collection<Address> memberAddresses = singletonList(new Address(INITIATOR_MEMBER_ADDRESS));
         Collection<Address> wanAddresses = singletonList(new Address(INITIATOR_WAN_ADDRESS));
@@ -208,57 +227,25 @@ public class BindHandlerTest {
         return addresses;
     }
 
-    private static Map<EndpointQualifier, Address> serverAddresses() {
-        Map<EndpointQualifier, Address> addressMap = new HashMap<EndpointQualifier, Address>();
-        addressMap.put(EndpointQualifier.MEMBER, SERVER_MEMBER_ADDRESS);
-        addressMap.put(EndpointQualifier.CLIENT, SERVER_CLIENT_ADDRESS);
-        addressMap.put(EndpointQualifier.resolve(WAN, "wan"), SERVER_WAN_ADDRESS);
-        return addressMap;
-    }
+    private Config createConfig() {
+        ServerSocketEndpointConfig memberServerSocketConfig = new ServerSocketEndpointConfig()
+                .setPort(SERVER_MEMBER_ADDRESS.getPort());
+        memberServerSocketConfig.getInterfaces().addInterface(SERVER_MEMBER_ADDRESS.getHost());
+        ServerSocketEndpointConfig clientServerSocketConfig = new ServerSocketEndpointConfig()
+                .setPort(SERVER_CLIENT_ADDRESS.getPort());
+        clientServerSocketConfig.getInterfaces().addInterface(SERVER_CLIENT_ADDRESS.getHost());
+        ServerSocketEndpointConfig wanServerSocketConfig = new ServerSocketEndpointConfig()
+                .setName("wan")
+                .setPort(SERVER_WAN_ADDRESS.getPort());
+        wanServerSocketConfig.getInterfaces().addInterface(SERVER_WAN_ADDRESS.getHost());
 
-    private void setup(final ConcurrentHashMap<Address, TcpIpConnection> connectionsMap,
-                       ProtocolType protocolType) {
-        ILogger logger = Logger.getLogger(BindHandlerTest.class);
-
-        LoggingService loggingService = mock(LoggingService.class);
-        when(loggingService.getLogger(any(Class.class))).thenReturn(logger);
-
-        IOService ioService = mock(IOService.class);
-        when(ioService.getSerializationService()).thenReturn(serializationService);
-        when(ioService.getLoggingService()).thenReturn(loggingService);
-        when(ioService.getThisAddress()).thenReturn(SERVER_MEMBER_ADDRESS);
-        when(ioService.getThisAddresses()).thenReturn(serverAddresses());
-
-        NetworkingService networkingService = mock(NetworkingService.class);
-        when(networkingService.getIoService()).thenReturn(ioService);
-
-        endpointManager = mock(TcpIpEndpointManager.class);
-        when(endpointManager.getNetworkingService()).thenReturn(networkingService);
-        when(endpointManager.registerConnection(any(Address.class), any(TcpIpConnection.class)))
-                .then(new Answer<Boolean>() {
-                    @Override
-                    public Boolean answer(InvocationOnMock invocation)
-                            throws Throwable {
-                        connectionsMap.put(
-                                (Address) invocation.getArgument(0),
-                                (TcpIpConnection) invocation.getArgument(1)
-                        );
-                        return true;
-                    }
-                });
-        when(endpointManager.getEndpointQualifier()).thenReturn(EndpointQualifier.resolve(protocolType, randomName()));
-        setInternalState(endpointManager, "connectionsInProgress", new HashSet<Address>());
-        setInternalState(endpointManager, "connectionsMap", connectionsMap);
-
-        Socket socket = mock(Socket.class);
-        when(socket.getRemoteSocketAddress()).thenReturn(CLIENT_SOCKET_ADDRESS);
-
-        channel = mock(Channel.class);
-        ConcurrentMap channelAttributeMap = new ConcurrentHashMap();
-        when(channel.attributeMap()).thenReturn(channelAttributeMap);
-        when(channel.socket()).thenReturn(socket);
-        when(channel.remoteSocketAddress()).thenReturn(CLIENT_SOCKET_ADDRESS);
-
-        bindHandler = new BindHandler(endpointManager, ioService, logger, true, Collections.singleton(protocolType));
+        memberServerSocketConfig.getInterfaces().addInterface("127.0.0.1");
+        Config config = smallInstanceConfig();
+        config.getAdvancedNetworkConfig()
+              .setEnabled(true)
+              .setMemberEndpointConfig(memberServerSocketConfig)
+              .setClientEndpointConfig(clientServerSocketConfig)
+              .addWanEndpointConfig(wanServerSocketConfig);
+        return config;
     }
 }

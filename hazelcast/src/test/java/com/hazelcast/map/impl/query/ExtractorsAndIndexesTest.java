@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -62,7 +62,7 @@ public class ExtractorsAndIndexesTest extends HazelcastTestSupport {
 
         Config config = new Config();
         config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat).addMapIndexConfig(new MapIndexConfig("last", true))
-              .addMapAttributeConfig(new MapAttributeConfig("generated", Extractor.class.getName()));
+              .addAttributeConfig(new AttributeConfig("generated", Extractor.class.getName()));
         config.getNativeMemoryConfig().setEnabled(true);
 
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
@@ -89,7 +89,7 @@ public class ExtractorsAndIndexesTest extends HazelcastTestSupport {
         public String last;
     }
 
-    public static class Extractor extends ValueExtractor<Person, Void> {
+    public static class Extractor implements ValueExtractor<Person, Void> {
         @SuppressWarnings("unchecked")
         @Override
         public void extract(Person person, Void aVoid, ValueCollector valueCollector) {

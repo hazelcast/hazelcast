@@ -75,7 +75,6 @@ public class MapSetReadCursorMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new SetReadCursorOperation(parameters.mapName, parameters.cacheName, parameters.sequence,
-                clientMessage.getPartitionId());
+        return new SetReadCursorOperation(parameters.mapName, parameters.cacheName, parameters.sequence, getPartitionId());
     }
 }

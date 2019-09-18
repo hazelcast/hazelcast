@@ -22,10 +22,11 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
@@ -41,6 +42,7 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 public class TxnSetOperation extends BasePutOperation
         implements MapTxnOperation, MutatingOperation {
 
+    private long ttl;
     private long version;
     private String ownerUuid;
 
@@ -80,7 +82,7 @@ public class TxnSetOperation extends BasePutOperation
                 oldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }
             eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-            recordStore.set(dataKey, dataValue, ttl, maxIdle);
+            recordStore.set(dataKey, dataValue, ttl, RecordStore.DEFAULT_MAX_IDLE);
             shouldBackup = true;
         }
     }
@@ -127,8 +129,7 @@ public class TxnSetOperation extends BasePutOperation
         if (isPostProcessing(recordStore)) {
             dataValue = mapServiceContext.toData(record.getValue());
         }
-        return new TxnSetBackupOperation(name, dataKey, dataValue, replicationInfo,
-                putTransient, disableWanReplicationEvent);
+        return new TxnSetBackupOperation(name, dataKey, dataValue, replicationInfo);
     }
 
     @Override
@@ -141,6 +142,7 @@ public class TxnSetOperation extends BasePutOperation
         super.writeInternal(out);
         out.writeLong(version);
         out.writeUTF(ownerUuid);
+        out.writeLong(ttl);
     }
 
     @Override
@@ -148,6 +150,7 @@ public class TxnSetOperation extends BasePutOperation
         super.readInternal(in);
         version = in.readLong();
         ownerUuid = in.readUTF();
+        ttl = in.readLong();
     }
 
     @Override

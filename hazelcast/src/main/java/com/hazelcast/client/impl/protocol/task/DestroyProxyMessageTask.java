@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.security.Permission;
 

@@ -21,7 +21,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -46,15 +45,12 @@ public class FilteringClassLoader extends ClassLoader {
     private ClassLoader delegatingClassLoader;
 
     public FilteringClassLoader(List<String> excludePackages, String enforcedSelfLoadingPackage) {
+        super(null);
         this.excludePackages = excludePackages;
         this.enforcedSelfLoadingPackage = enforcedSelfLoadingPackage;
 
         try {
-            Field parent = ClassLoader.class.getDeclaredField("parent");
-            parent.setAccessible(true);
-
-            delegatingClassLoader = (ClassLoader) parent.get(this);
-            parent.set(this, null);
+            delegatingClassLoader = ClassLoader.getSystemClassLoader();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

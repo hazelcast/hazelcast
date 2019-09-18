@@ -17,7 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -63,6 +63,12 @@ public class SimpleCompletedFuture<E> implements InternalCompletableFuture<E> {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Note: Since this future is always completed, the callback is executed
+     * immediately and in the calling thread.
+     */
     @SuppressWarnings("unchecked")
     @Override
     public void andThen(ExecutionCallback<E> callback) {

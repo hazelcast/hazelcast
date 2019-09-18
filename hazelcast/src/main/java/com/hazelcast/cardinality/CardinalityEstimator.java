@@ -16,6 +16,7 @@
 
 package com.hazelcast.cardinality;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 
@@ -26,7 +27,7 @@ import com.hazelcast.core.ICompletableFuture;
  * CardinalityEstimator is internally based on a HyperLogLog++ data-structure,
  * and uses P^2 byte registers for storage and computation. (Default P = 14)
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 public interface CardinalityEstimator extends DistributedObject {
 

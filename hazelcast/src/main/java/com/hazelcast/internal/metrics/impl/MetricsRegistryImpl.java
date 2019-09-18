@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -329,11 +330,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public void scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit, ProbeLevel probeLevel) {
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit, ProbeLevel probeLevel) {
         if (!probeLevel.isEnabled(minimumLevel)) {
-            return;
+            return null;
         }
-        scheduler.scheduleAtFixedRate(publisher, 0, period, timeUnit);
+        return scheduler.scheduleAtFixedRate(publisher, 0, period, timeUnit);
     }
 
     public void shutdown() {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.operations.CreateAllowedDuringPassiveStateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.CreateTxBackupLogOperation;
@@ -50,7 +50,7 @@ public class AllowedDuringPassiveStateTransactionImpl
 
     protected ReplicateTxBackupLogOperation createReplicateTxBackupLogOperation() {
         return new ReplicateAllowedDuringPassiveStateTxBackupLogOperation(
-                getTransactionLog().getRecordList(), getOwnerUuid(), getTxnId(), getTimeoutMillis(), getStartTime());
+                getTransactionLog().getRecords(), getOwnerUuid(), getTxnId(), getTimeoutMillis(), getStartTime());
     }
 
     protected RollbackTxBackupLogOperation createRollbackTxBackupLogOperation() {

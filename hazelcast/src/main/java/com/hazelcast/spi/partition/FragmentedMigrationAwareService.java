@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.partition;
 
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collection;

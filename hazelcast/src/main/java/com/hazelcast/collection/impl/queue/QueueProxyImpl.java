@@ -20,8 +20,8 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

@@ -23,6 +23,7 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.impl.Extractable;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -87,4 +88,20 @@ public final class MultiAttributeProjection<I> implements Projection<I, Object[]
         this.attributePaths = in.readUTFArray();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MultiAttributeProjection<?> that = (MultiAttributeProjection<?>) o;
+        return Arrays.equals(attributePaths, that.attributePaths);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(attributePaths);
+    }
 }

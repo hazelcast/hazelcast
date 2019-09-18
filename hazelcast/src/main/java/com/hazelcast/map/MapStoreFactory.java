@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.internal.services.PostJoinAwareService;
+
 import java.util.Properties;
 
 /**
@@ -30,7 +32,7 @@ public interface MapStoreFactory<K, V> {
      * Produces a MapLoader or a MapStore for the given map name and properties.
      * This method will be executed as part of a Hazelcast member's post-join operations,
      * therefore it needs to adhere to the rules for post join operations, as described in
-     * {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}.
+     * {@link PostJoinAwareService#getPostJoinOperation()}.
      *
      * @param mapName    name of the distributed map that the produced MapLoader or MapStore will serve
      * @param properties the properties of the MapStoreConfig for the produced MapLoader or MapStore

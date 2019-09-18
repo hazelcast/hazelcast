@@ -40,7 +40,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -69,7 +69,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
@@ -84,7 +84,7 @@ import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -126,7 +126,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -139,7 +138,7 @@ import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConf
 import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_ITEM_LISTENER_CONFIG;
 import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_LISTENER_CONFIG;
 import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG;
-import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_QUORUM_LISTENER_CONFIG;
+import static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder.TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG;
 
 public class ReferenceObjects {
 
@@ -198,8 +197,8 @@ public class ReferenceObjects {
         if (a instanceof MapIndexConfig && b instanceof MapIndexConfig) {
             return isEqual((MapIndexConfig) a, (MapIndexConfig) b);
         }
-        if (a instanceof MapAttributeConfig && b instanceof MapAttributeConfig) {
-            return isEqual((MapAttributeConfig) a, (MapAttributeConfig) b);
+        if (a instanceof AttributeConfig && b instanceof AttributeConfig) {
+            return isEqual((AttributeConfig) a, (AttributeConfig) b);
         }
         if (a instanceof QueryCacheConfigHolder && b instanceof QueryCacheConfigHolder) {
             return isEqual((QueryCacheConfigHolder) a, (QueryCacheConfigHolder) b);
@@ -355,7 +354,7 @@ public class ReferenceObjects {
                 : that.getAttribute() == null;
     }
 
-    public static boolean isEqual(MapAttributeConfig a, MapAttributeConfig that) {
+    public static boolean isEqual(AttributeConfig a, AttributeConfig that) {
         if (a == that) {
             return true;
         }
@@ -366,8 +365,8 @@ public class ReferenceObjects {
         if (a.getName() != null ? !a.getName().equals(that.getName()) : that.getName() != null) {
             return false;
         }
-        return a.getExtractor() != null ? a.getExtractor().equals(that.getExtractor())
-                : that.getExtractor() == null;
+        return a.getExtractorClassName() != null ? a.getExtractorClassName().equals(that.getExtractorClassName())
+                : that.getExtractorClassName() == null;
     }
 
     public static boolean isEqual(MapStoreConfigHolder a, MapStoreConfigHolder b) {
@@ -679,7 +678,7 @@ public class ReferenceObjects {
     public static RingbufferStoreConfigHolder ringbufferStore;
     public static QueueStoreConfigHolder queueStoreConfig;
 
-    public static Properties props;
+    public static Map<String, String> props;
     public static List<ListenerConfigHolder> listenerConfigs;
 
     public static WanReplicationRef wanReplicationRef;
@@ -689,15 +688,15 @@ public class ReferenceObjects {
     public static NearCachePreloaderConfig nearCachePreloaderConfig;
     public static NearCacheConfigHolder nearCacheConfig;
     public static List<MapIndexConfig> mapIndexConfigs;
-    public static List<MapAttributeConfig> mapAttributeConfigs;
+    public static List<AttributeConfig> attributeConfigs;
     public static List<QueryCacheConfigHolder> queryCacheConfigs;
     public static TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
     public static HotRestartConfig hotRestartConfig;
     public static List<CacheSimpleEntryListenerConfig> cacheEntryListenerConfigs;
 
     static {
-        props = new Properties();
-        props.setProperty("a", "b");
+        props = new HashMap<>();
+        props.put("a", "b");
 
         BigEndianSerializationServiceBuilder defaultSerializationServiceBuilder = new BigEndianSerializationServiceBuilder();
         SerializationService serializationService = defaultSerializationServiceBuilder
@@ -711,7 +710,7 @@ public class ReferenceObjects {
         ListenerConfigHolder holder3 = new ListenerConfigHolder(TYPE_ENTRY_LISTENER_CONFIG, "listener.By.ClassName", true, true);
         ListenerConfigHolder holder4 = new ListenerConfigHolder(TYPE_ITEM_LISTENER_CONFIG, "listener.By.ClassName");
         ListenerConfigHolder holder5 = new ListenerConfigHolder(TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG, "listener.By.ClassName");
-        ListenerConfigHolder holder6 = new ListenerConfigHolder(TYPE_QUORUM_LISTENER_CONFIG, "listener.By.ClassName");
+        ListenerConfigHolder holder6 = new ListenerConfigHolder(TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG, "listener.By.ClassName");
         listenerConfigs.add(holder1);
         listenerConfigs.add(holder2);
         listenerConfigs.add(holder3);
@@ -719,8 +718,6 @@ public class ReferenceObjects {
         listenerConfigs.add(holder5);
         listenerConfigs.add(holder6);
 
-        Properties props = new Properties();
-        props.setProperty("a", "b");
         ringbufferStore = new RingbufferStoreConfigHolder("com.hazelcast.RingbufferStore", null, null, null,
                 props, true);
         queueStoreConfig = new QueueStoreConfigHolder("com.hazelcast.QueueStore", null, null, null, props, true);
@@ -751,8 +748,8 @@ public class ReferenceObjects {
         mapIndexConfigs = new ArrayList<MapIndexConfig>();
         mapIndexConfigs.add(new MapIndexConfig("attr", false));
 
-        mapAttributeConfigs = new ArrayList<MapAttributeConfig>();
-        mapAttributeConfigs.add(new MapAttributeConfig("attr", "com.hazelcast.AttributeExtractor"));
+        attributeConfigs = new ArrayList<AttributeConfig>();
+        attributeConfigs.add(new AttributeConfig("attr", "com.hazelcast.AttributeExtractor"));
 
         queryCacheConfigs = new ArrayList<QueryCacheConfigHolder>();
         QueryCacheConfigHolder queryCacheConfig = new QueryCacheConfigHolder();
@@ -809,7 +806,7 @@ public class ReferenceObjects {
             aString), new InvalidConfigurationException(aString), new MemberLeftException(
             aString), new NegativeArraySizeException(aString), new NoSuchElementException(aString), new NotSerializableException(
             aString), new NullPointerException(aString), new OperationTimeoutException(aString), new PartitionMigratingException(
-            aString), new QueryException(aString), new QueryResultSizeExceededException(aString), new QuorumException(
+            aString), new QueryException(aString), new QueryResultSizeExceededException(aString), new SplitBrainProtectionException(
             aString), new ReachedMaxSizeException(aString), new RejectedExecutionException(aString), new ResponseAlreadySentException(
             aString), new RetryableHazelcastException(aString), new RetryableIOException(aString), new RuntimeException(
             aString), new SecurityException(aString), new SocketException(aString), new StaleSequenceException(aString,

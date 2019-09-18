@@ -29,7 +29,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.CallsPerMember;
-import com.hazelcast.spi.CanCancelOperations;
+import com.hazelcast.internal.services.CanCancelOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.OperationControl;
 import com.hazelcast.spi.impl.NodeEngineImpl;

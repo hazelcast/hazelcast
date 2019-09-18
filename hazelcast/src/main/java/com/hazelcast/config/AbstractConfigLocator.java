@@ -82,7 +82,7 @@ public abstract class AbstractConfigLocator {
      *                            file referenced in the system property
      *                            is not an accepted suffix
      */
-    public abstract boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix();
+    protected abstract boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix();
 
     /**
      * Locates the configuration file in the working directory.

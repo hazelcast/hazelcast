@@ -18,7 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -45,7 +45,7 @@ public class DynamicConfigVersionTest {
     static {
         Set<Class<?>> nonDynamicConfigClasses = new HashSet<Class<?>>();
         nonDynamicConfigClasses.add(WanReplicationConfig.class);
-        nonDynamicConfigClasses.add(QuorumConfig.class);
+        nonDynamicConfigClasses.add(SplitBrainProtectionConfig.class);
         nonDynamicConfigClasses.add(ListenerConfig.class);
         NON_DYNAMIC_CONFIG_CLASSES = nonDynamicConfigClasses;
     }

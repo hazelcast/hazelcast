@@ -18,14 +18,14 @@ package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.EmptyLocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
 import com.hazelcast.replicatedmap.impl.operation.PutAllOperation;
@@ -36,20 +36,21 @@ import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -57,11 +58,10 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.quorum.QuorumType.READ;
+import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
@@ -76,6 +76,12 @@ import static java.lang.Thread.currentThread;
 @SuppressWarnings("checkstyle:methodcount")
 public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<ReplicatedMapService>
         implements ReplicatedMap<K, V>, InitializingObject {
+
+    private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    private static final String NULL_TIMEUNIT_IS_NOT_ALLOWED = "Null time unit is not allowed!";
+    private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+    private static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Null predicate is not allowed!";
 
     private static final int WAIT_INTERVAL_MILLIS = 1000;
     private static final int RETRY_INTERVAL_COUNT = 3;
@@ -178,7 +184,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public int size() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         int size = 0;
         for (ReplicatedRecordStore store : stores) {
@@ -189,7 +195,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public boolean isEmpty() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         for (ReplicatedRecordStore store : stores) {
             if (!store.isEmpty()) {
@@ -200,18 +206,18 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
-    public boolean containsKey(Object key) {
-        ensureQuorumPresent(READ);
-        isNotNull(key, "key");
+    public boolean containsKey(@Nonnull Object key) {
+        ensureNoSplitBrain(READ);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         int partitionId = partitionService.getPartitionId(key);
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, partitionId);
         return store != null && store.containsKey(key);
     }
 
     @Override
-    public boolean containsValue(Object value) {
-        ensureQuorumPresent(READ);
-        isNotNull(value, "value");
+    public boolean containsValue(@Nonnull Object value) {
+        ensureNoSplitBrain(READ);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         for (ReplicatedRecordStore store : stores) {
             if (store.containsValue(value)) {
@@ -222,9 +228,9 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
-    public V get(Object key) {
-        ensureQuorumPresent(READ);
-        isNotNull(key, "key");
+    public V get(@Nonnull Object key) {
+        ensureNoSplitBrain(READ);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         int partitionId = partitionService.getPartitionId(key);
         ReplicatedRecordStore store = service.getReplicatedRecordStore(getName(), false, partitionId);
         if (store == null) {
@@ -234,9 +240,9 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
-    public V put(K key, V value) {
-        isNotNull(key, "key");
-        isNotNull(value, "value");
+    public V put(@Nonnull K key, @Nonnull V value) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         Data dataKey = nodeEngine.toData(key);
         Data dataValue = nodeEngine.toData(value);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
@@ -248,10 +254,10 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
-    public V put(K key, V value, long ttl, TimeUnit timeUnit) {
-        isNotNull(key, "key");
-        isNotNull(value, "value");
-        isNotNull(timeUnit, "timeUnit");
+    public V put(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit timeUnit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(timeUnit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
         if (ttl < 0) {
             throw new IllegalArgumentException("ttl must be a positive integer");
         }
@@ -267,8 +273,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
-    public V remove(Object key) {
-        isNotNull(key, "key");
+    public V remove(@Nonnull Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data dataKey = nodeEngine.toData(key);
         int partitionId = partitionService.getPartitionId(key);
         RemoveOperation removeOperation = new RemoveOperation(getName(), dataKey);
@@ -279,8 +285,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
-    public void putAll(Map<? extends K, ? extends V> entries) {
-        checkNotNull(entries, "entries cannot be null");
+    public void putAll(@Nonnull Map<? extends K, ? extends V> entries) {
+        checkNotNull(entries, "Entries cannot be null");
         int mapSize = entries.size();
         if (mapSize == 0) {
             return;
@@ -290,13 +296,13 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         int initialSize = getPutAllInitialSize(mapSize, partitionCount);
 
         try {
-            List<Future> futures = new ArrayList<Future>(partitionCount);
+            List<Future> futures = new ArrayList<>(partitionCount);
             ReplicatedMapEntries[] entrySetPerPartition = new ReplicatedMapEntries[partitionCount];
 
             // first we fill entrySetPerPartition
             for (Entry entry : entries.entrySet()) {
-                isNotNull(entry.getKey(), "key");
-                isNotNull(entry.getValue(), "value");
+                checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+                checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
 
                 int partitionId = partitionService.getPartitionId(entry.getKey());
                 ReplicatedMapEntries mapEntries = entrySetPerPartition[partitionId];
@@ -359,42 +365,50 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
-    public boolean removeEntryListener(String id) {
+    public boolean removeEntryListener(@Nonnull String id) {
+        checkNotNull(id, "Listener ID should not be null!");
         return eventPublishingService.removeEventListener(name, id);
     }
 
+    @Nonnull
     @Override
-    public String addEntryListener(EntryListener<K, V> listener) {
-        isNotNull(listener, "listener");
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return eventPublishingService.addEventListener(listener, TrueEventFilter.INSTANCE, name);
     }
 
+    @Nonnull
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, K key) {
-        isNotNull(listener, "listener");
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedEntryEventFilter(serializationService.toData(key));
         return eventPublishingService.addEventListener(listener, eventFilter, name);
     }
 
+    @Nonnull
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
-        isNotNull(listener, "listener");
-        isNotNull(predicate, "predicate");
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedQueryEventFilter(null, predicate);
         return eventPublishingService.addEventListener(listener, eventFilter, name);
     }
 
+    @Nonnull
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
-        isNotNull(listener, "listener");
-        isNotNull(predicate, "predicate");
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+                                   @Nonnull Predicate<K, V> predicate,
+                                   @Nullable K key) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedQueryEventFilter(serializationService.toData(key), predicate);
         return eventPublishingService.addEventListener(listener, eventFilter, name);
     }
 
+    @Nonnull
     @Override
     public Set<K> keySet() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
         Set<K> keySet = createHashSet(Math.max(KEY_SET_MIN_SIZE, stores.size() * KEY_SET_STORE_MULTIPLE));
         for (ReplicatedRecordStore store : stores) {
@@ -403,40 +417,42 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         return keySet;
     }
 
+    @Nonnull
     @Override
     public Collection<V> values() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        Collection<V> values = new ArrayList<V>();
+        Collection<V> values = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
             values.addAll(store.values(true));
         }
         return values;
     }
 
+    @Nonnull
     @Override
-    public Collection<V> values(Comparator<V> comparator) {
-        ensureQuorumPresent(READ);
+    public Collection<V> values(@Nullable Comparator<V> comparator) {
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        List<V> values = new ArrayList<V>();
+        List<V> values = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
             values.addAll(store.values(comparator));
         }
-        Collections.sort(values, comparator);
+        values.sort(comparator);
         return values;
     }
 
+    @Nonnull
     @Override
     @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet() {
-        ensureQuorumPresent(READ);
+        ensureNoSplitBrain(READ);
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        List<Entry> entries = new ArrayList<Entry>();
+        List<Entry> entries = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
             entries.addAll(store.entrySet(true));
         }
-        Set result = new ResultSet(entries, IterationType.ENTRY);
-        return result;
+        return (Set) new ResultSet(entries, IterationType.ENTRY);
     }
 
     @Override
@@ -456,6 +472,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         return getClass().getSimpleName() + " -> " + name;
     }
 
+    @Nonnull
     @Override
     public LocalReplicatedMapStats getReplicatedMapStats() {
         LocalReplicatedMapStats stats;
@@ -467,7 +484,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         return stats;
     }
 
-    private void ensureQuorumPresent(QuorumType requiredQuorumPermissionType) {
-        service.ensureQuorumPresent(name, requiredQuorumPermissionType);
+    private void ensureNoSplitBrain(SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+        service.ensureNoSplitBrain(name, requiredSplitBrainProtectionPermissionType);
     }
 }

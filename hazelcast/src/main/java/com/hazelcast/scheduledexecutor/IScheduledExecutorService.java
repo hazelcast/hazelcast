@@ -17,6 +17,7 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 
 import javax.annotation.Nonnull;
@@ -76,7 +77,7 @@ import java.util.concurrent.TimeUnit;
  * <p>Tasks that are holding state that needs to be also durable across
  * partitions, will need to implement the {@link StatefulTask} interface.
  *
- * <p>Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10
+ * <p>Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10
  * in cluster versions 3.10 and higher.
  */
 public interface IScheduledExecutorService

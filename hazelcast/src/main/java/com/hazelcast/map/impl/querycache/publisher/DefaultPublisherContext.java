@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorScannerTask;
 import com.hazelcast.map.impl.querycache.accumulator.DefaultAccumulatorInfoSupplier;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.ArrayList;
 import java.util.Collection;

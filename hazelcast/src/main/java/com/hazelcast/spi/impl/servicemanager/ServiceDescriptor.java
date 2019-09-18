@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.servicemanager;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 
 /**
  * Descriptor of Hazelcast managed service;

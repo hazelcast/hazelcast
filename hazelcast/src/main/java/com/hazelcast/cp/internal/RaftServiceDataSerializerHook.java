@@ -22,6 +22,10 @@ import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.DestroyRaftGroupOp;
 import com.hazelcast.cp.internal.operation.RaftQueryOp;
 import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftBackupOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftQueryOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeSnapshotReplicationOp;
 import com.hazelcast.cp.internal.operation.integration.AppendFailureResponseOp;
 import com.hazelcast.cp.internal.operation.integration.AppendRequestOp;
 import com.hazelcast.cp.internal.operation.integration.AppendSuccessResponseOp;
@@ -105,6 +109,10 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int RAFT_PRE_JOIN_OP = 39;
     public static final int RESTART_CP_MEMBER_OP = 40;
     public static final int GROUP_MEMBERSHIP_CHANGE = 41;
+    public static final int UNSAFE_RAFT_REPLICATE_OP = 42;
+    public static final int UNSAFE_RAFT_QUERY_OP = 43;
+    public static final int UNSAFE_RAFT_BACKUP_OP = 44;
+    public static final int UNSAFE_SNAPSHOT_REPLICATE_OP = 45;
 
     @Override
     public int getFactoryId() {
@@ -197,6 +205,14 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new RestartCPMemberOp();
                 case GROUP_MEMBERSHIP_CHANGE:
                     return new CPGroupMembershipChange();
+                case UNSAFE_RAFT_REPLICATE_OP:
+                    return new UnsafeRaftReplicateOp();
+                case UNSAFE_RAFT_QUERY_OP:
+                    return new UnsafeRaftQueryOp();
+                case UNSAFE_RAFT_BACKUP_OP:
+                    return new UnsafeRaftBackupOp();
+                case UNSAFE_SNAPSHOT_REPLICATE_OP:
+                    return new UnsafeSnapshotReplicationOp();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }

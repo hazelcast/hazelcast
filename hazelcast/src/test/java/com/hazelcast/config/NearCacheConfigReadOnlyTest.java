@@ -42,16 +42,6 @@ public class NearCacheConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setMaxSizeOnReadOnlyNearCacheConfigShouldFail() {
-        getReadOnlyConfig().setMaxSize(125124);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setEvictionPolicyOnReadOnlyNearCacheConfigShouldFail() {
-        getReadOnlyConfig().setEvictionPolicy(EvictionPolicy.NONE.name());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void setMaxIdleSecondsOnReadOnlyNearCacheConfigShouldFail() {
         getReadOnlyConfig().setMaxIdleSeconds(523);
     }

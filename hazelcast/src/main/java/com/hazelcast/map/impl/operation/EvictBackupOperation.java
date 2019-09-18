@@ -62,14 +62,12 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
-        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
-        disableWanReplicationEvent = in.readBoolean();
     }
 
 }

@@ -32,20 +32,22 @@ import java.io.IOException;
  */
 public class TxnLockAndGetOperation extends LockAwareOperation implements MutatingOperation {
 
-    private VersionedValue response;
-    private String ownerUuid;
+    private long ttl;
     private boolean shouldLoad;
     private boolean blockReads;
+    private String ownerUuid;
+    private VersionedValue response;
 
     public TxnLockAndGetOperation() {
     }
 
     public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid,
                                   boolean shouldLoad, boolean blockReads) {
-        super(name, dataKey, ttl, -1);
+        super(name, dataKey);
         this.ownerUuid = ownerUuid;
         this.shouldLoad = shouldLoad;
         this.blockReads = blockReads;
+        this.ttl = ttl;
         setWaitTimeout(timeout);
     }
 
@@ -82,6 +84,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
         out.writeUTF(ownerUuid);
         out.writeBoolean(shouldLoad);
         out.writeBoolean(blockReads);
+        out.writeLong(ttl);
     }
 
     @Override
@@ -90,6 +93,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
         ownerUuid = in.readUTF();
         shouldLoad = in.readBoolean();
         blockReads = in.readBoolean();
+        ttl = in.readLong();
     }
 
     @Override

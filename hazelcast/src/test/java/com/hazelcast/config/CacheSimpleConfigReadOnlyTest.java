@@ -82,13 +82,13 @@ public class CacheSimpleConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setQuorumNameOfReadOnlyCacheSimpleConfigShouldFail() {
-        getReadOnlyConfig().setQuorumName("my-quorum");
+    public void setSplitBrainProtectionNameOfReadOnlyCacheSimpleConfigShouldFail() {
+        getReadOnlyConfig().setSplitBrainProtectionName("my-splitbrainprotection");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void setMergePolicyOfReadOnlyCacheSimpleConfigShouldFail() {
-        getReadOnlyConfig().setMergePolicy("my-merge-policy");
+        getReadOnlyConfig().setMergePolicyConfig(new MergePolicyConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -327,8 +327,14 @@ public class MapConfigTest {
                         new MapStoreConfig().setEnabled(true).setClassName("red"),
                         new MapStoreConfig().setEnabled(true).setClassName("black"))
                 .withPrefabValues(NearCacheConfig.class,
-                        new NearCacheConfig(10, 20, false, InMemoryFormat.BINARY),
-                        new NearCacheConfig(15, 25, true, InMemoryFormat.OBJECT))
+                        new NearCacheConfig().setTimeToLiveSeconds(10)
+                                .setMaxIdleSeconds(20)
+                                .setInvalidateOnChange(false)
+                                .setInMemoryFormat(InMemoryFormat.BINARY),
+                        new NearCacheConfig().setTimeToLiveSeconds(15)
+                                .setMaxIdleSeconds(25)
+                                .setInvalidateOnChange(true)
+                                .setInMemoryFormat(InMemoryFormat.OBJECT))
                 .withPrefabValues(WanReplicationRef.class,
                         new WanReplicationRef().setName("red"),
                         new WanReplicationRef().setName("black"))

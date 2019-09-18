@@ -23,12 +23,12 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -117,13 +117,12 @@ public class TestAdvancedNetworkApplicationContext {
                 Arrays.asList(HEALTH_CHECK, CLUSTER_READ));
 
         WanReplicationConfig testWan = config.getWanReplicationConfig("testWan");
-        WanPublisherConfig tokyoWanPublisherConfig = null;
-        for (WanPublisherConfig wanPublisherConfig : testWan.getWanPublisherConfigs()) {
-            if (wanPublisherConfig.getPublisherId().equals("tokyoPublisherId")) {
-                tokyoWanPublisherConfig = wanPublisherConfig;
-                break;
-            }
-        }
+        WanBatchReplicationPublisherConfig tokyoWanPublisherConfig =
+                testWan.getBatchPublisherConfigs()
+                       .stream()
+                       .filter(pc -> pc.getPublisherId().equals("tokyoPublisherId"))
+                       .findFirst()
+                       .get();
 
         assertNotNull(tokyoWanPublisherConfig);
         assertEquals("wan-tokyo", tokyoWanPublisherConfig.getEndpoint());

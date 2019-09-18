@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the code for the {@link com.hazelcast.spi.impl.eventservice.InternalEventService} implementation.
+ * Contains the code for the {@link com.hazelcast.spi.impl.eventservice.EventService} implementation.
  */
 package com.hazelcast.spi.impl.eventservice.impl;

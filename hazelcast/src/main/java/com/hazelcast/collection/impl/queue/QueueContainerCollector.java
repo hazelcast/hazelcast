@@ -17,7 +17,7 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractNamedContainerCollector;
 
 import java.util.Collection;

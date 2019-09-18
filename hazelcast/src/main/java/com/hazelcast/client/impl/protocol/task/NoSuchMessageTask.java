@@ -41,7 +41,7 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
     @Override
     protected void processMessage() {
         String message = "Unrecognized client message received with type: 0x"
-                + Integer.toHexString(parameters.getMessageType());
+                + Integer.toHexString(clientMessage.getMessageType());
         logger.warning(message);
         throw new UnsupportedOperationException(message);
     }
@@ -69,12 +69,6 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
     @Override
     public Object[] getParameters() {
         return null;
-    }
-
-    // overriding the partition ID send from client as it is not recognized
-    @Override
-    public int getPartitionId() {
-        return -1;
     }
 
     @Override

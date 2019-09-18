@@ -21,6 +21,8 @@ import com.hazelcast.map.EntryLoader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,15 +30,17 @@ public class TestEntryLoader implements EntryLoader<String, String> {
 
     static final String NULL_RETURNING_KEY = "nullReturningKey";
 
-    private Map<String, Record> records = new HashMap<>();
-    private AtomicInteger loadedEntryCount = new AtomicInteger();
-    private AtomicInteger loadAllCallCount = new AtomicInteger();
-    private AtomicInteger loadCallCount = new AtomicInteger();
-    private AtomicInteger loadKeysCallCount = new AtomicInteger();
+    private final Map<String, Record> records = new ConcurrentHashMap<>();
+    private final AtomicInteger loadedEntryCount = new AtomicInteger();
+    private final AtomicInteger loadAllCallCount = new AtomicInteger();
+    private final AtomicInteger loadCallCount = new AtomicInteger();
+    private final Set<String> loadUniqueKeys = ConcurrentHashMap.newKeySet();
+    private final AtomicInteger loadKeysCallCount = new AtomicInteger();
 
     @Override
     public MetadataAwareValue<String> load(String key) {
         loadCallCount.incrementAndGet();
+        loadUniqueKeys.add(key);
         if (NULL_RETURNING_KEY.equals(key)) {
             return null;
         }
@@ -84,6 +88,10 @@ public class TestEntryLoader implements EntryLoader<String, String> {
 
     public int getLoadCallCount() {
         return loadCallCount.get();
+    }
+
+    public int getLoadUniqueKeysCount() {
+        return loadUniqueKeys.size();
     }
 
     public int getLoadAllCallCount() {

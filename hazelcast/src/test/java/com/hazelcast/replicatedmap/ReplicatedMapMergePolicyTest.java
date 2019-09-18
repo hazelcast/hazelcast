@@ -21,10 +21,10 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.replicatedmap.merge.HigherHitsMapMergePolicy;
-import com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy;
-import com.hazelcast.replicatedmap.merge.PassThroughMergePolicy;
-import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -122,7 +122,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         config.getGroupConfig().setName(generateRandomString(10));
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(mapName);
-        replicatedMapConfig.setMergePolicy(mergePolicy);
+        replicatedMapConfig.getMergePolicyConfig().setPolicy(mergePolicy);
         return config;
     }
 
@@ -175,7 +175,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         @Override
         public String getMergePolicyClassName() {
-            return LatestUpdateMapMergePolicy.class.getName();
+            return LatestUpdateMergePolicy.class.getName();
         }
 
         @Override
@@ -209,7 +209,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         @Override
         public String getMergePolicyClassName() {
-            return HigherHitsMapMergePolicy.class.getName();
+            return HigherHitsMergePolicy.class.getName();
         }
 
         @Override
@@ -236,7 +236,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         @Override
         public String getMergePolicyClassName() {
-            return PutIfAbsentMapMergePolicy.class.getName();
+            return PutIfAbsentMergePolicy.class.getName();
         }
 
         @Override

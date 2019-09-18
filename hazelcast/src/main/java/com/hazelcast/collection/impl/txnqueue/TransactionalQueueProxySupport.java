@@ -28,11 +28,11 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.TransactionalDistributedObject;
+import com.hazelcast.spi.impl.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;

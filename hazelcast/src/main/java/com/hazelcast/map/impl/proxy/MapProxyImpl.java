@@ -22,12 +22,13 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
@@ -52,8 +53,8 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
@@ -76,6 +77,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
@@ -109,7 +111,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public V put(@Nonnull K key, @Nonnull V value) {
-        return put(key, value, -1, TimeUnit.MILLISECONDS);
+        return put(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -149,7 +151,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public V putIfAbsent(@Nonnull K key, @Nonnull V value) {
-        return putIfAbsent(key, value, -1, TimeUnit.MILLISECONDS);
+        return putIfAbsent(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -223,7 +225,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public void set(@Nonnull K key, @Nonnull V value) {
-        set(key, value, -1, TimeUnit.MILLISECONDS);
+        set(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -346,7 +348,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value) {
-        return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
+        return putAsync(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -369,7 +371,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(ttlUnit, NULL_TTL_UNIT_IS_NOT_ALLOWED);
-        checkNotNull(ttlUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
+        checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
         return new DelegatingFuture<>(
@@ -379,7 +381,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value) {
-        return setAsync(key, value, -1, TimeUnit.MILLISECONDS);
+        return setAsync(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -402,7 +404,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(ttlUnit, NULL_TTL_UNIT_IS_NOT_ALLOWED);
-        checkNotNull(ttlUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
+        checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
         return new DelegatingFuture<>(
@@ -449,7 +451,19 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void putAll(@Nonnull Map<? extends K, ? extends V> map) {
         checkNotNull(map, "Null argument map is not allowed");
-        putAllInternal(map);
+        putAllInternal(map, null);
+    }
+
+    /**
+     * This version does not support batching. Don't mutate the given map until the
+     * future completes.
+     */
+    // used by jet
+    public ICompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> map) {
+        checkNotNull(map, "Null argument map is not allowed");
+        SimpleCompletableFuture<Void> future = new SimpleCompletableFuture<>(getNodeEngine());
+        putAllInternal(map, future);
+        return future;
     }
 
     @Override
@@ -511,7 +525,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener listener) {
+    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(listener);
 
@@ -530,7 +544,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener listener,
+    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                         @Nonnull Predicate<K, V> predicate,
                                         boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -553,7 +567,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener listener,
+    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                         @Nonnull Predicate<K, V> predicate,
                                         @Nullable K key,
                                         boolean includeValue) {
@@ -573,7 +587,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener, boolean includeValue) {
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(listener);
 
@@ -590,7 +604,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener, @Nonnull K key, boolean includeValue) {
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(listener);
@@ -611,7 +625,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener,
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    @Nullable K key,
                                    boolean includeValue) {
@@ -634,7 +648,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener listener,
+    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -722,7 +736,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<K> keySet(@Nonnull Predicate predicate) {
+    public Set<K> keySet(@Nonnull Predicate<K, V> predicate) {
         return executePredicate(predicate, IterationType.KEY, true);
     }
 
@@ -772,7 +786,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public <R> R executeOnKey(@Nonnull K key,
-                              @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                              @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
@@ -782,7 +796,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
-                                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                                       @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         try {
             return submitToKeys(keys, entryProcessor).get();
         } catch (Exception e) {
@@ -793,8 +807,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     /**
      * Async version of {@link #executeOnKeys}.
      */
-    public <R> ICompletableFuture<Map<K, R>> submitToKeys(Set<K> keys,
-                                                          EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> ICompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
+                                                          @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
         if (keys.isEmpty()) {
             return new SimpleCompletedFuture<>(Collections.emptyMap());
@@ -807,7 +821,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public <R> void submitToKey(@Nonnull K key,
-                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                @Nonnull EntryProcessor<K, V, R> entryProcessor,
                                 ExecutionCallback<? super R> callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor, callback);
@@ -817,7 +831,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
-                                                 @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
+                                                 @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
@@ -826,12 +840,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor) {
         return executeOnEntries(entryProcessor, Predicates.alwaysTrue());
     }
 
     @Override
-    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
                                           @Nonnull Predicate<K, V> predicate) {
         handleHazelcastInstanceAwareParams(entryProcessor, predicate);
         List<Data> result = new ArrayList<>();
@@ -853,12 +867,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> R aggregate(@Nonnull Aggregator<Map.Entry<K, V>, R> aggregator) {
+    public <R> R aggregate(@Nonnull Aggregator<? super Map.Entry<K, V>, R> aggregator) {
         return aggregate(aggregator, Predicates.alwaysTrue());
     }
 
     @Override
-    public <R> R aggregate(@Nonnull Aggregator<Map.Entry<K, V>, R> aggregator, @Nonnull Predicate<K, V> predicate) {
+    public <R> R aggregate(@Nonnull Aggregator<? super Map.Entry<K, V>, R> aggregator,
+                           @Nonnull Predicate<K, V> predicate) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "aggregate");
@@ -871,12 +886,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> Collection<R> project(@Nonnull Projection<Map.Entry<K, V>, R> projection) {
+    public <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection) {
         return project(projection, Predicates.alwaysTrue());
     }
 
     @Override
-    public <R> Collection<R> project(@Nonnull Projection<Map.Entry<K, V>, R> projection, @Nonnull Predicate<K, V> predicate) {
+    public <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+                                     @Nonnull Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "project");
@@ -954,7 +970,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
-    public <R> Iterator<R> iterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,
+    public <R> Iterator<R> iterator(int fetchSize, int partitionId,
+                                    Projection<? super Map.Entry<K, V>, R> projection,
                                     Predicate<K, V> predicate) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
@@ -1018,7 +1035,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public QueryCache<K, V> getQueryCache(@Nonnull String name, @Nonnull Predicate<K, V> predicate, boolean includeValue) {
+    public QueryCache<K, V> getQueryCache(@Nonnull String name,
+                                          @Nonnull Predicate<K, V> predicate,
+                                          boolean includeValue) {
         checkNotNull(name, "name cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
         checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
@@ -1041,8 +1060,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return getQueryCacheInternal(name, listener, predicate, includeValue, this);
     }
 
-    private QueryCache<K, V> getQueryCacheInternal(String name, MapListener listener, Predicate<K, V> predicate,
-                                                   Boolean includeValue, IMap<K, V> map) {
+    private QueryCache<K, V> getQueryCacheInternal(@Nonnull String name,
+                                                   @Nullable MapListener listener,
+                                                   @Nullable Predicate<K, V> predicate,
+                                                   @Nullable Boolean includeValue,
+                                                   @Nonnull IMap<K, V> map) {
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
 
         QueryCacheRequest request = newQueryCacheRequest()

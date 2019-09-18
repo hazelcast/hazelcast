@@ -17,11 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
-import java.io.IOException;
 
 public class RemoveOperation extends BaseRemoveOperation {
 
@@ -30,8 +26,8 @@ public class RemoveOperation extends BaseRemoveOperation {
     public RemoveOperation() {
     }
 
-    public RemoveOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
-        super(name, dataKey, disableWanReplicationEvent);
+    public RemoveOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
     @Override
@@ -55,17 +51,5 @@ public class RemoveOperation extends BaseRemoveOperation {
     @Override
     public int getClassId() {
         return MapDataSerializerHook.REMOVE;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeBoolean(disableWanReplicationEvent);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        disableWanReplicationEvent = in.readBoolean();
     }
 }

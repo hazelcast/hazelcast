@@ -53,7 +53,7 @@ public class OperationServiceMBean extends HazelcastMBean<OperationServiceImpl> 
 
     @ManagedAnnotation("operationExecutorQueueSize")
     @ManagedDescription("The size of the operation executor queue")
-    int getOperationExecutorQueueSize() {
+    public int getOperationExecutorQueueSize() {
         return managedObject.getOperationExecutorQueueSize();
     }
 

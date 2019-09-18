@@ -95,7 +95,7 @@ public class ClearOperation extends AbstractNamedSerializableOperation implement
     protected Collection<Address> getMemberAddresses() {
         Address thisAddress = getNodeEngine().getThisAddress();
         Collection<Member> members = getNodeEngine().getClusterService().getMembers(DATA_MEMBER_SELECTOR);
-        Collection<Address> addresses = new ArrayList<Address>();
+        Collection<Address> addresses = new ArrayList<>();
         for (Member member : members) {
             Address address = member.getAddress();
             if (address.equals(thisAddress)) {

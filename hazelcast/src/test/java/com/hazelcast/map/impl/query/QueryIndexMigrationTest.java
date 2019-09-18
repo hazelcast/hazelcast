@@ -260,7 +260,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
     private void updateMapAndRunQuery(final IMap<Object, Value> map, final int runCount) {
         String name = randomString();
-        Predicate<?, ?> predicate = equal("name", name);
+        Predicate<Object, Value> predicate = equal("name", name);
         map.put(name, new Value(name, 0));
         // helper call on nodes to sync partitions (see issue github.com/hazelcast/hazelcast/issues/1282)
         map.size();

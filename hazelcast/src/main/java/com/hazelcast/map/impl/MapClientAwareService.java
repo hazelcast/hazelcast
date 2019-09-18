@@ -18,7 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
-import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.internal.services.ClientAwareService;
 
 /**
  * Defines {@link ClientAwareService} behavior of map service.

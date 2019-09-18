@@ -39,6 +39,7 @@ import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
@@ -351,13 +352,18 @@ public class ClusterStateManager {
         }
     }
 
-    void changeClusterState(ClusterStateChange stateChange, MemberMap memberMap,
-                            int partitionStateVersion, boolean isTransient) {
+    void changeClusterState(@Nonnull ClusterStateChange stateChange,
+                            @Nonnull MemberMap memberMap,
+                            int partitionStateVersion,
+                            boolean isTransient) {
         changeClusterState(stateChange, memberMap, DEFAULT_TX_OPTIONS, partitionStateVersion, isTransient);
     }
 
-    void changeClusterState(ClusterStateChange stateChange, MemberMap memberMap,
-                            TransactionOptions options, int partitionStateVersion, boolean isTransient) {
+    void changeClusterState(@Nonnull ClusterStateChange stateChange,
+                            @Nonnull MemberMap memberMap,
+                            @Nonnull TransactionOptions options,
+                            int partitionStateVersion,
+                            boolean isTransient) {
         checkParameters(stateChange, options);
         if (isCurrentStateEqualToRequestedOne(stateChange)) {
             return;

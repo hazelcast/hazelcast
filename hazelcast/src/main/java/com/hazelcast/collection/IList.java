@@ -16,6 +16,8 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
+
 import java.util.List;
 
 /**
@@ -25,7 +27,7 @@ import java.util.List;
  * of an IList is stored on a single machine (and in the backup). The IList
  * will not scale by adding more members to the cluster.
  *
- * <p>Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10
+ * <p>Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10
  * in cluster versions 3.10 and higher.
  *
  * @param <E>

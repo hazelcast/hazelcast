@@ -23,12 +23,7 @@ package com.hazelcast.internal.eviction;
  */
 public interface EvictionChecker {
 
-    EvictionChecker EVICT_ALWAYS = new EvictionChecker() {
-        @Override
-        public boolean isEvictionRequired() {
-            return true;
-        }
-    };
+    EvictionChecker EVICT_ALWAYS = () -> true;
 
     /**
      * Checks the state to see if it has reached its maximum configured size

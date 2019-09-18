@@ -27,7 +27,8 @@ import java.io.IOException;
 /**
  * Abstract {@link MapOperation} that serves as based for readonly operations.
  */
-public abstract class ReadonlyKeyBasedMapOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
+public abstract class ReadonlyKeyBasedMapOperation extends MapOperation
+        implements ReadonlyOperation, PartitionAwareOperation {
 
     protected Data dataKey;
     protected long threadId;

@@ -19,7 +19,7 @@ package com.hazelcast.internal.management;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.ClientSelectors;
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;

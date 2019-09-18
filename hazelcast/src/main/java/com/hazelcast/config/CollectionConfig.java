@@ -59,7 +59,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int maxSize = DEFAULT_MAX_SIZE;
     private boolean statisticsEnabled = true;
-    private String quorumName;
+    private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     protected CollectionConfig() {
@@ -72,7 +72,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
         this.statisticsEnabled = config.statisticsEnabled;
-        this.quorumName = config.quorumName;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
@@ -228,22 +228,22 @@ public abstract class CollectionConfig<T extends CollectionConfig>
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public T setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public T setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return (T) this;
     }
 
@@ -284,7 +284,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
@@ -296,7 +296,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         asyncBackupCount = in.readInt();
         maxSize = in.readInt();
         statisticsEnabled = in.readBoolean();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
     }
 
@@ -326,7 +326,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
@@ -343,7 +344,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         result = 31 * result + asyncBackupCount;
         result = 31 * result + getMaxSize();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
@@ -358,7 +359,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
                 + ", asyncBackupCount=" + asyncBackupCount
                 + ", maxSize=" + maxSize
                 + ", statisticsEnabled=" + statisticsEnabled
-                + ", quorumName='" + quorumName + "'"
+                + ", splitBrainProtectionName='" + splitBrainProtectionName + "'"
                 + ", mergePolicyConfig='" + mergePolicyConfig + "'";
     }
 }

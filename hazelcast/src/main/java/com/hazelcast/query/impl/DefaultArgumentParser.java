@@ -23,7 +23,7 @@ import com.hazelcast.query.extractor.ArgumentParser;
  *
  * @see ArgumentParser
  */
-public class DefaultArgumentParser extends ArgumentParser<Object, Object> {
+public class DefaultArgumentParser implements ArgumentParser<Object, Object> {
 
     @Override
     public Object parse(Object input) {

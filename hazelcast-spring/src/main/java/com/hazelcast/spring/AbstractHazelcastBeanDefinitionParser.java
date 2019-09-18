@@ -132,7 +132,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         @SuppressWarnings("SameParameterValue")
         protected BeanDefinitionBuilder createAndFillListedBean(Node node, Class clazz, String propertyName,
-                                               ManagedMap<String, AbstractBeanDefinition> managedMap, String... excludeNames) {
+                                                                ManagedMap<String, AbstractBeanDefinition> managedMap,
+                                                                String... excludeNames) {
 
             BeanDefinitionBuilder builder = createBeanBuilder(clazz);
             AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
@@ -160,7 +161,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void fillAttributeValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
             Collection<String> epn = excludeNames != null && excludeNames.length > 0
-                    ? new HashSet<String>(asList(excludeNames)) : null;
+                    ? new HashSet<>(asList(excludeNames)) : null;
             fillAttributeValues(node, builder, epn);
         }
 
@@ -387,7 +388,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         @SuppressWarnings("checkstyle:npathcomplexity")
-        protected BeanDefinition getEvictionConfig(Node node) {
+        protected BeanDefinition getEvictionConfig(Node node, boolean isNearCache) {
             Node size = node.getAttributes().getNamedItem("size");
             Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
             Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
@@ -425,7 +426,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
 
             try {
-                checkEvictionConfig(evictionPolicyValue, comparatorClassNameValue, comparatorBean, false);
+                checkEvictionConfig(evictionPolicyValue, comparatorClassNameValue, comparatorBean, isNearCache);
             } catch (IllegalArgumentException e) {
                 throw new InvalidConfigurationException(e.getMessage());
             }

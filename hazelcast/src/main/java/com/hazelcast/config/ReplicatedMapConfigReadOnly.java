@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
@@ -29,22 +28,7 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
     }
 
     @Override
-    public ReplicatedMapConfig setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
-        throw throwReadOnly();
-    }
-
-    @Override
     public ReplicatedMapConfig setName(String name) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public ReplicatedMapConfig setReplicationDelayMillis(long replicationDelayMillis) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public ReplicatedMapConfig setConcurrencyLevel(int concurrencyLevel) {
         throw throwReadOnly();
     }
 
@@ -69,12 +53,7 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
     }
 
     @Override
-    public ReplicatedMapConfig setQuorumName(String quorumName) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public ReplicatedMapConfig setMergePolicy(String mergePolicy) {
+    public ReplicatedMapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw throwReadOnly();
     }
 

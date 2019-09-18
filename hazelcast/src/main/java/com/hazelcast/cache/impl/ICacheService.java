@@ -23,12 +23,12 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.RemoteService;
 
 import java.util.Collection;
 
@@ -135,6 +135,13 @@ public interface ICacheService
      */
     CacheWanEventPublisher getCacheWanEventPublisher();
 
+
+    /**
+     * @param cacheNameWithPrefix the full name of the {@link
+     *                            com.hazelcast.cache.ICache}, including the manager scope prefix
+     */
+    void checkWanReplicationQueues(String cacheNameWithPrefix);
+
     /**
      * Returns an interface for interacting with the cache event journals.
      */
@@ -145,9 +152,9 @@ public interface ICacheService
      * cluster version 3.10 or greater, the cluster-wide invocation ensures that all members of
      * the cluster will receive the cache config even in the face of cluster membership changes.
      *
-     * @param cacheConfig   the cache config to create on all members of the cluster
-     * @param <K>           key type parameter
-     * @param <V>           value type parameter
+     * @param cacheConfig the cache config to create on all members of the cluster
+     * @param <K>         key type parameter
+     * @param <V>         value type parameter
      * @since 3.10
      */
     <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig);

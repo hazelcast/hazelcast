@@ -16,15 +16,14 @@
 
 package com.hazelcast.internal.management.dto;
 
+import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
-
-import java.util.List;
 
 /**
  * A JSON representation of {@link WanReplicationConfig}.
@@ -44,12 +43,17 @@ public class WanReplicationConfigDTO implements JsonSerializable {
             root.add("name", config.getName());
         }
 
-        JsonArray publishers = new JsonArray();
-        for (WanPublisherConfig publisherConfig : config.getWanPublisherConfigs()) {
-            WanPublisherConfigDTO dto = new WanPublisherConfigDTO(publisherConfig);
-            publishers.add(dto.toJson());
+        JsonArray batchPublishers = new JsonArray();
+        JsonArray customPublishers = new JsonArray();
+
+        for (WanBatchReplicationPublisherConfig publisherConfig : config.getBatchPublisherConfigs()) {
+            batchPublishers.add(new WanBatchReplicationPublisherConfigDTO(publisherConfig).toJson());
         }
-        root.add("publishers", publishers);
+        for (CustomWanPublisherConfig publisherConfig : config.getCustomPublisherConfigs()) {
+            customPublishers.add(new CustomWanPublisherConfigDTO(publisherConfig).toJson());
+        }
+        root.add("batchPublishers", batchPublishers);
+        root.add("customPublishers", customPublishers);
 
         WanConsumerConfig consumerConfig = config.getWanConsumerConfig();
         if (consumerConfig != null) {
@@ -67,13 +71,21 @@ public class WanReplicationConfigDTO implements JsonSerializable {
             config.setName(name.asString());
         }
 
-        JsonValue publishers = json.get("publishers");
-        if (publishers != null && !publishers.isNull()) {
-            List<WanPublisherConfig> publisherConfigs = config.getWanPublisherConfigs();
-            for (JsonValue publisher : publishers.asArray()) {
-                WanPublisherConfigDTO publisherDTO = new WanPublisherConfigDTO();
-                publisherDTO.fromJson(publisher.asObject());
-                publisherConfigs.add(publisherDTO.getConfig());
+        JsonValue batchPublishers = json.get("batchPublishers");
+        if (batchPublishers != null && !batchPublishers.isNull()) {
+            for (JsonValue jsonValue : batchPublishers.asArray()) {
+                WanBatchReplicationPublisherConfigDTO dto = new WanBatchReplicationPublisherConfigDTO();
+                dto.fromJson(jsonValue.asObject());
+                config.addWanBatchReplicationPublisherConfig(dto.getConfig());
+            }
+        }
+
+        JsonValue customPublishers = json.get("customPublishers");
+        if (customPublishers != null && !customPublishers.isNull()) {
+            for (JsonValue jsonValue : customPublishers.asArray()) {
+                CustomWanPublisherConfigDTO dto = new CustomWanPublisherConfigDTO();
+                dto.fromJson(jsonValue.asObject());
+                config.addCustomPublisherConfig(dto.getConfig());
             }
         }
 

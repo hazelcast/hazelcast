@@ -19,7 +19,7 @@ package com.hazelcast.transaction.impl.xa.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
@@ -28,6 +28,7 @@ import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.xa.XATransaction;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -44,7 +45,7 @@ public class PutRemoteTransactionOperation extends AbstractXAOperation implement
     public PutRemoteTransactionOperation() {
     }
 
-    public PutRemoteTransactionOperation(List<TransactionLogRecord> logs, String txnId, SerializableXID xid,
+    public PutRemoteTransactionOperation(Collection<TransactionLogRecord> logs, String txnId, SerializableXID xid,
                                          String txOwnerUuid, long timeoutMillis, long startTime) {
         records.addAll(logs);
         this.txnId = txnId;

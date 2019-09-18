@@ -28,9 +28,9 @@ import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.operations.Get
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.operations.SetOperation;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import static com.hazelcast.util.Preconditions.isNotNull;

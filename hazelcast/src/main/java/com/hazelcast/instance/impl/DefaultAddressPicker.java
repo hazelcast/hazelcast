@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.cluster.impl.TcpIpJoiner;
+import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InterfacesConfig;

@@ -24,6 +24,7 @@ import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class XATransactionDTO implements IdentifiedDataSerializable {
@@ -32,7 +33,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
     private String ownerUuid;
     private long timeoutMilis;
     private long startTime;
-    private List<TransactionLogRecord> records;
+    private Collection<TransactionLogRecord> records;
 
     public XATransactionDTO() {
     }
@@ -76,7 +77,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         return startTime;
     }
 
-    public List<TransactionLogRecord> getRecords() {
+    public Collection<TransactionLogRecord> getRecords() {
         return records;
     }
 

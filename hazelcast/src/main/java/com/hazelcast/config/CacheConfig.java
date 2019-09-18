@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
@@ -54,6 +55,7 @@ import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -70,16 +72,16 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     private String uriString;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
+    private String splitBrainProtectionName;
+    private WanReplicationRef wanReplicationRef;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10000 max entry count
     //      * LRU as eviction policy
     private EvictionConfig evictionConfig = new EvictionConfig();
-
-    private WanReplicationRef wanReplicationRef;
+    @SuppressFBWarnings("SE_BAD_FIELD")
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
-    private String quorumName;
-    private String mergePolicy = CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY;
 
     /**
      * Disables invalidation events for per entry but full-flush invalidation events are still enabled.
@@ -119,8 +121,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
                 this.partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>(
                         config.partitionLostListenerConfigs);
             }
-            this.quorumName = config.quorumName;
-            this.mergePolicy = config.mergePolicy;
+            this.splitBrainProtectionName = config.splitBrainProtectionName;
+            this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
             this.disablePerEntryInvalidationEvents = config.disablePerEntryInvalidationEvents;
             this.serializationService = config.serializationService;
             this.classLoader = config.classLoader;
@@ -153,8 +155,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
         }
         copyListeners(simpleConfig);
-        this.quorumName = simpleConfig.getQuorumName();
-        this.mergePolicy = simpleConfig.getMergePolicy();
+        this.splitBrainProtectionName = simpleConfig.getSplitBrainProtectionName();
+        this.mergePolicyConfig = new MergePolicyConfig(simpleConfig.getMergePolicyConfig());
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
         this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
         this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
@@ -436,43 +438,44 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     }
 
     /**
-     * Gets the name of the associated quorum if any.
+     * Gets the name of the associated split brain protection if any.
      *
-     * @return the name of the associated quorum if any
+     * @return the name of the associated split brain protection if any
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Associates this cache configuration to a quorum.
+     * Associates this cache configuration to a split brain protection.
      *
-     * @param quorumName name of the desired quorum
+     * @param splitBrainProtectionName name of the desired split brain protection
      * @return the updated CacheConfig
      */
-    public CacheConfig<K, V> setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public CacheConfig<K, V> setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
     /**
-     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation of this cache config.
+     * Gets the {@link MergePolicyConfig} for this map.
      *
-     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation of this cache config
+     * @return the {@link MergePolicyConfig} for this map
      */
-    public String getMergePolicy() {
-        return mergePolicy;
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
     }
 
     /**
-     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation to this cache config.
+     * Sets the {@link MergePolicyConfig} for this map.
      *
-     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation to be set to this cache
-     *                    config
+     * @return the updated map configuration
      */
-    public void setMergePolicy(String mergePolicy) {
-        this.mergePolicy = mergePolicy;
+    public CacheConfig<K, V> setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
+        return this;
     }
+
 
     @Override
     public Class getProvidedMergeTypes() {
@@ -523,14 +526,14 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         out.writeObject(hotRestartConfig);
         out.writeObject(eventJournalConfig);
 
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
 
         out.writeBoolean(hasListenerConfiguration());
         if (hasListenerConfiguration()) {
             writeListenerConfigurations(out);
         }
 
-        out.writeUTF(mergePolicy);
+        out.writeObject(mergePolicyConfig);
         out.writeBoolean(disablePerEntryInvalidationEvents);
     }
 
@@ -564,7 +567,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             hotRestartConfig = in.readObject();
             eventJournalConfig = in.readObject();
 
-            quorumName = in.readUTF();
+            splitBrainProtectionName = in.readUTF();
 
             final boolean listNotEmpty = in.readBoolean();
             if (listNotEmpty) {
@@ -574,7 +577,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             tenantContext.close();
         }
 
-        mergePolicy = in.readUTF();
+        mergePolicyConfig = in.readObject();
         disablePerEntryInvalidationEvents = in.readBoolean();
 
         setClassLoader(in.getClassLoader());
@@ -680,12 +683,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     /**
      * Copy this CacheConfig to given {@code target} object whose type extends CacheConfig.
      *
-     * @param target    the target object to which this configuration will be copied
-     * @param resolved  when {@code true}, it is assumed that this {@code cacheConfig}'s key-value types have already been
-     *                  or will be resolved to loaded classes and the actual {@code keyType} and {@code valueType} will be copied.
-     *                  Otherwise, this configuration's {@code keyClassName} and {@code valueClassName} will be copied to the
-     *                  target config, to be resolved at a later time.
-     * @return          the target config
+     * @param target   the target object to which this configuration will be copied
+     * @param resolved when {@code true}, it is assumed that this {@code cacheConfig}'s key-value types have already been
+     *                 or will be resolved to loaded classes and the actual {@code keyType} and {@code valueType} will be copied.
+     *                 Otherwise, this configuration's {@code keyClassName} and {@code valueClassName} will be copied to the
+     *                 target config, to be resolved at a later time.
+     * @return the target config
      */
     public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
         target.setTenantControl(getTenantControl());
@@ -715,10 +718,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
 
         target.setManagementEnabled(isManagementEnabled());
         target.setManagerPrefix(getManagerPrefix());
-        target.setMergePolicy(getMergePolicy());
+        target.setMergePolicyConfig(getMergePolicyConfig());
         target.setName(getName());
         target.setPartitionLostListenerConfigs(getPartitionLostListenerConfigs());
-        target.setQuorumName(getQuorumName());
+        target.setSplitBrainProtectionName(getSplitBrainProtectionName());
         target.setReadThrough(isReadThrough());
         target.setStatisticsEnabled(isStatisticsEnabled());
         target.setStoreByValue(isStoreByValue());

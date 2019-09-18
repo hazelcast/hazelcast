@@ -24,22 +24,15 @@ import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
-public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
+public abstract class BasePutOperation
+        extends LockAwareOperation implements BackupAwareOperation {
 
     protected transient Object oldValue;
-    protected transient Data dataMergingValue;
     protected transient EntryEventType eventType;
-    protected transient boolean putTransient;
 
     public BasePutOperation(String name, Data dataKey, Data value) {
-        super(name, dataKey, value, DEFAULT_TTL, DEFAULT_MAX_IDLE);
-    }
-
-    public BasePutOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
-        super(name, dataKey, value, ttl, maxIdle);
+        super(name, dataKey, value);
     }
 
     public BasePutOperation() {
@@ -48,9 +41,10 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     @Override
     protected void afterRunInternal() {
         mapServiceContext.interceptAfterPut(name, dataValue);
-        Object value = isPostProcessing(recordStore) ? recordStore.getRecord(dataKey).getValue() : dataValue;
+        Object value = isPostProcessing(recordStore)
+                ? recordStore.getRecord(dataKey).getValue() : dataValue;
         mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(),
-                dataKey, oldValue, value, dataMergingValue);
+                dataKey, oldValue, value);
         invalidateNearCache(dataKey);
         publishWanUpdate(dataKey, value);
         evict(dataKey);
@@ -76,8 +70,11 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         if (isPostProcessing(recordStore)) {
             dataValue = mapServiceContext.toData(record.getValue());
         }
-        return new PutBackupOperation(name, dataKey, dataValue, replicationInfo,
-                putTransient, disableWanReplicationEvent);
+        return newBackupOperation(replicationInfo);
+    }
+
+    protected PutBackupOperation newBackupOperation(RecordInfo replicationInfo) {
+        return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -171,8 +172,9 @@ public interface MetricsRegistry {
      * @param probeLevel the ProbeLevel publisher it publishing on. This is needed to prevent scheduling
      *                   publishers if their probe level isn't sufficient.
      * @throws NullPointerException if publisher or timeUnit is null.
+     * @return the ScheduledFuture that can be used to cancel the task, or null if nothing got scheduled.
      */
-    void scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit, ProbeLevel probeLevel);
+    ScheduledFuture<?> scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit, ProbeLevel probeLevel);
 
     /**
      * Renders the content of the MetricsRegistry.

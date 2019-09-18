@@ -188,6 +188,17 @@ public class XmlOnlyConfigBuilderTest {
         buildConfig(xml);
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void testInvalidRootElement() {
+        String xml = "<hazelcast-client>"
+                + "<group>"
+                + "<name>dev</name>"
+                + "<password>clusterpass</password>"
+                + "</group>"
+                + "</hazelcast-client>";
+        buildConfig(xml);
+    }
+
     @Test
     public void testAddWhitespaceToNonSpaceStrings() throws Exception {
         // parse the default config file

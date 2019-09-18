@@ -19,7 +19,7 @@ package usercodedeployment;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 
-public class CapitalizatingFirstnameExtractor extends ValueExtractor<Person, Object> {
+public class CapitalizatingFirstnameExtractor implements ValueExtractor<Person, Object> {
     @Override
     public void extract(Person target, Object argument, ValueCollector collector) {
         collector.addObject(target.getName().toUpperCase());

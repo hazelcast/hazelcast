@@ -17,12 +17,12 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.impl.JCacheDetector;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.json.Json;
@@ -56,8 +56,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.util.Clock;
@@ -86,7 +86,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -118,14 +118,15 @@ public class ManagementCenterService {
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
     private final ManagementCenterConnectionFactory connectionFactory;
-    private final AtomicReference<TimedMemberState> timedMemberState = new AtomicReference<TimedMemberState>();
-    private final BlockingQueue<Event> events = new LinkedBlockingQueue<Event>();
+    private final AtomicReference<TimedMemberState> timedMemberState = new AtomicReference<>();
+    private final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
     private volatile boolean manCenterConnectionLost;
     private volatile boolean taskPollFailed;
     private volatile boolean eventSendFailed;
+    private volatile ManagementCenterEventListener eventListener;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -305,14 +306,23 @@ public class ManagementCenterService {
         return commandHandler;
     }
 
+    public void setEventListener(ManagementCenterEventListener eventListener) {
+        this.eventListener = eventListener;
+    }
+
     /**
-     * Logs an event to Management Center.
+     * Logs an event to Management Center and calls the configured
+     * {@link ManagementCenterEventListener} with the logged event if it
+     * is set.
      * <p>
      * Events are used by Management Center to show the user what happens when on a cluster member.
      */
     public void log(Event event) {
         if (this.managementCenterConfig.isEnabled() && isRunning()) {
             events.add(event);
+            if (eventListener != null) {
+                eventListener.onEventLogged(event);
+            }
         }
     }
 

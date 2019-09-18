@@ -16,6 +16,7 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -23,14 +24,13 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitionAware;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
@@ -79,7 +79,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         return key;
     }
 
-    InternalExecutionService getExecutionService(HazelcastInstance instance) {
+    ExecutionService getExecutionService(HazelcastInstance instance) {
         return getNode(instance).getNodeEngine().getExecutionService();
     }
 

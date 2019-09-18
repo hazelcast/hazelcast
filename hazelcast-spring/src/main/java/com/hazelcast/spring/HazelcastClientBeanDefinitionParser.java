@@ -119,7 +119,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("reliableTopicConfigMap", reliableTopicConfigMap);
         }
 
-       public AbstractBeanDefinition handleClient(Node rootNode) {
+        public AbstractBeanDefinition handleClient(Node rootNode) {
             AbstractBeanDefinition configBean = createConfigBean(rootNode);
             builder.addConstructorArgValue(configBean);
             return builder.getBeanDefinition();
@@ -342,7 +342,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("eviction".equals(nodeName)) {
-                    handleEvictionConfig(childNode, nearCacheConfigBuilder);
+                    handleEvictionConfig(childNode, nearCacheConfigBuilder, true);
                 } else if ("preloader".equals(nodeName)) {
                     handlePreloaderConfig(childNode, nearCacheConfigBuilder);
                 }
@@ -365,8 +365,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             reliableTopicConfigMap.put(name, configBuilder.getBeanDefinition());
         }
 
-        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {
-            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder, boolean isNearCache) {
+            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node, isNearCache));
         }
 
         private void handlePreloaderConfig(Node node, BeanDefinitionBuilder configBuilder) {
@@ -439,7 +439,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 ManagedList indexes = getIndexes(node);
                 builder.addPropertyValue("indexConfigs", indexes);
             } else if ("eviction".equals(nodeName)) {
-                builder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+                builder.addPropertyValue("evictionConfig", getEvictionConfig(node, false));
             }
         }
 

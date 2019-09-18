@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.cluster.Joiner;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
@@ -43,6 +43,7 @@ import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.IO_WRITE_THROUGH_ENABLED;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 
@@ -172,6 +173,8 @@ public class DefaultNodeContext implements NodeContext {
                         .errorHandler(errorHandler)
                         .inputThreadCount(props.getInteger(IO_INPUT_THREAD_COUNT))
                         .outputThreadCount(props.getInteger(IO_OUTPUT_THREAD_COUNT))
-                        .balancerIntervalSeconds(props.getInteger(IO_BALANCER_INTERVAL_SECONDS)));
+                        .balancerIntervalSeconds(props.getInteger(IO_BALANCER_INTERVAL_SECONDS))
+                        .writeThroughEnabled(props.getBoolean(IO_WRITE_THROUGH_ENABLED))
+                        .concurrencyDetection(node.nodeEngine.getConcurrencyDetection()));
     }
 }

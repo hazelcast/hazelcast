@@ -261,6 +261,8 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
             } else if ("metadata-space-percentage".equals(nodeName)) {
                 String value = getTextContent(n);
                 nativeMemoryConfig.setMetadataSpacePercentage(Float.parseFloat(value));
+            } else if ("persistent-memory-directory".equals(nodeName)) {
+                nativeMemoryConfig.setPersistentMemoryDirectory(getTextContent(n).trim());
             }
         }
     }

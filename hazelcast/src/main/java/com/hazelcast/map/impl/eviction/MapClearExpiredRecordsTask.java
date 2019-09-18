@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.ClearExpiredOperation;
 import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperty;
 

@@ -29,21 +29,21 @@ import com.hazelcast.nio.serialization.Portable;
  * <p>
  * How to define a new custom attribute?
  * <code>
- * MapAttributeConfig attributeConfig = new MapAttributeConfig();
+ * AttributeConfig attributeConfig = new AttributeConfig();
  * extractorConfig.setName("currency");
- * extractorConfig.setExtractor("com.bank.CurrencyExtractor");
+ * extractorConfig.setExtractorClassName("com.bank.CurrencyExtractor");
  * </code>
  * <p>
  * How to register the newly-defined attribute in a configuration of a Map?
  * <code>
  * MapConfig mapConfig = (...);
- * mapConfig.addMapAttributeConfig(attributeConfig);
+ * mapConfig.addAttributeConfig(attributeConfig);
  * </code>
  * Extractors may be also defined in the XML configuration.
  * <pre>
  * &lt;map name="trades"&gt;
  *   &lt;attributes&gt;
- *     &lt;attribute extractor="com.bank.CurrencyExtractor"&gt;currency&lt;/attribute&gt;
+ *     &lt;attribute extractor-class-name="com.bank.CurrencyExtractor"&gt;currency&lt;/attribute&gt;
  *   &lt;/attributes&gt;
  * &lt;/map&gt;
  * </pre>
@@ -71,7 +71,8 @@ import com.hazelcast.nio.serialization.Portable;
  * @param <T> type of the target object to extract the value from
  * @param <A> type of the extraction argument object passed to the extract() method
  */
-public abstract class ValueExtractor<T, A> {
+@FunctionalInterface
+public interface ValueExtractor<T, A> {
 
     /**
      * Extracts a value from the given target object.
@@ -115,6 +116,6 @@ public abstract class ValueExtractor<T, A> {
      * @param collector collector of the extracted value(s)
      * @see ValueCollector
      */
-    public abstract void extract(T target, A argument, ValueCollector collector);
+    void extract(T target, A argument, ValueCollector collector);
 
 }

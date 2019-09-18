@@ -26,6 +26,8 @@ import java.io.IOException;
 
 public class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
+    private boolean disableWanReplicationEvent;
+
     public RemoveBackupOperation() {
     }
 
@@ -38,6 +40,11 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     @Override
     protected void runInternal() {
         recordStore.removeBackup(dataKey, getCallerProvenance());
+    }
+
+    @Override
+    protected boolean disableWanReplicationEvent() {
+        return disableWanReplicationEvent;
     }
 
     @Override
@@ -69,5 +76,4 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
         super.readInternal(in);
         disableWanReplicationEvent = in.readBoolean();
     }
-
 }

@@ -18,9 +18,9 @@ package com.hazelcast.multimap.impl;
 
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 

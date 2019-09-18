@@ -122,7 +122,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testPutAll() {
         Map<String, String> businessObjects = new HashMap<>();
         for (int i = 0; i < 100; i++) {
-            map.put("k" + i, "v" + i);
+            businessObjects.put("k" + i, "v" + i);
         }
         map.putAll(businessObjects);
         for (int i = 0; i < 100; i++) {

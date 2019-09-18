@@ -24,10 +24,11 @@ import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.NoSuchMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
@@ -37,23 +38,20 @@ public class CompositeMessageTaskFactory implements MessageTaskFactory {
 
     private final Node node;
     private final NodeEngine nodeEngine;
-    private final MessageTaskFactory[] factories = new MessageTaskFactory[Short.MAX_VALUE];
+    private final Int2ObjectHashMap<MessageTaskFactory> factories;
 
     public CompositeMessageTaskFactory(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = ((NodeEngineImpl) nodeEngine).getNode();
-        loadProvider(new DefaultMessageTaskFactoryProvider(this.nodeEngine));
+        MessageTaskFactoryProvider defaultProvider = new DefaultMessageTaskFactoryProvider(this.nodeEngine);
+        this.factories = new Int2ObjectHashMap<>(defaultProvider.getFactories().size());
+        loadProvider(defaultProvider);
         loadServices();
     }
 
     private void loadProvider(MessageTaskFactoryProvider provider) {
-        MessageTaskFactory[] providerFactories = provider.getFactories();
-
-        for (int idx = 0; idx < providerFactories.length; idx++) {
-            if (providerFactories[idx] != null) {
-                this.factories[idx] = providerFactories[idx];
-            }
-        }
+        Int2ObjectHashMap<MessageTaskFactory> providerFactories = provider.getFactories();
+        this.factories.putAll(providerFactories);
     }
 
     private void loadServices() {
@@ -77,7 +75,7 @@ public class CompositeMessageTaskFactory implements MessageTaskFactory {
     @Override
     public MessageTask create(ClientMessage clientMessage, Connection connection) {
         try {
-            final MessageTaskFactory factory = this.factories[clientMessage.getMessageType()];
+            final MessageTaskFactory factory = this.factories.get(clientMessage.getMessageType());
             if (factory != null) {
                 return factory.create(clientMessage, connection);
             }

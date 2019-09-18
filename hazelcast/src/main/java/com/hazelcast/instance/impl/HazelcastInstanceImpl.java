@@ -18,7 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
-import com.hazelcast.client.api.ClientService;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.client.impl.ClientServiceProxy;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
@@ -67,14 +67,14 @@ import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
@@ -116,7 +116,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) {
         this.name = name;
         this.lifecycleService = new LifecycleServiceImpl(this);
-        this.cpSubsystem = new CPSubsystemImpl(this);
 
         ManagedContext configuredManagedContext = config.getManagedContext();
         this.managedContext = new HazelcastManagedContext(this, configuredManagedContext);
@@ -126,6 +125,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         // in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances
         this.userContext.putAll(config.getUserContext());
         this.node = createNode(config, nodeContext);
+        this.cpSubsystem = new CPSubsystemImpl(this);
 
         try {
             this.logger = node.getLogger(getClass().getName());
@@ -344,8 +344,8 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     }
 
     @Override
-    public QuorumService getQuorumService() {
-        return node.getNodeEngine().getQuorumService();
+    public SplitBrainProtectionService getSplitBrainProtectionService() {
+        return node.getNodeEngine().getSplitBrainProtectionService();
     }
 
     @Override

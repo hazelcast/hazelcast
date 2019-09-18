@@ -18,14 +18,14 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.api.Client;
-import com.hazelcast.client.api.ClientType;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.ClientType;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionManagerService;

@@ -131,7 +131,7 @@ public interface QueryCache<K, V> {
     /**
      * @see IMap#keySet(Predicate)
      */
-    Set<K> keySet(Predicate predicate);
+    Set<K> keySet(Predicate<K, V> predicate);
 
     /**
      * @see IMap#entrySet()
@@ -141,7 +141,7 @@ public interface QueryCache<K, V> {
     /**
      * @see IMap#entrySet(Predicate)
      */
-    Set<Map.Entry<K, V>> entrySet(Predicate predicate);
+    Set<Map.Entry<K, V>> entrySet(Predicate<K, V> predicate);
 
     /**
      * @see IMap#values()
@@ -151,7 +151,7 @@ public interface QueryCache<K, V> {
     /**
      * @see IMap#values(Predicate)
      */
-    Collection<V> values(Predicate predicate);
+    Collection<V> values(Predicate<K, V> predicate);
 
     /**
      * @see IMap#addEntryListener(MapListener, boolean)
@@ -166,12 +166,17 @@ public interface QueryCache<K, V> {
     /**
      * @see IMap#addEntryListener(MapListener, Predicate, boolean)
      */
-    String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
+    String addEntryListener(MapListener listener,
+                            Predicate<K, V> predicate,
+                            boolean includeValue);
 
     /**
      * @see IMap#addEntryListener(MapListener, Predicate, Object, boolean)
      */
-    String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    String addEntryListener(MapListener listener,
+                            Predicate<K, V> predicate,
+                            K key,
+                            boolean includeValue);
 
     /**
      * @see IMap#removeEntryListener(String)

@@ -17,11 +17,10 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.util.comparators.ValueComparator;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
@@ -30,7 +29,6 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -232,20 +230,6 @@ public interface RecordStore<R extends Record> {
      */
     boolean merge(MapMergeTypes mergingEntry,
                   SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
-                  CallerProvenance provenance);
-
-    boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy);
-
-    /**
-     * Merges the given {@link EntryView} via the given {@link MapMergePolicy}.
-     *
-     * @param dataKey      the key to be merged
-     * @param mergingEntry the {@link EntryView} instance to merge
-     * @param mergePolicy  the {@link MapMergePolicy} instance to apply
-     * @param provenance   origin of call to this method.
-     * @return {@code true} if merge is applied, otherwise {@code false}
-     */
-    boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy,
                   CallerProvenance provenance);
 
     R getRecord(Data key);

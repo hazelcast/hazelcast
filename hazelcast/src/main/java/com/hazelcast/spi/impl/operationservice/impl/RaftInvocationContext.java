@@ -38,11 +38,10 @@ public class RaftInvocationContext {
 
     private final ILogger logger;
     private final RaftService raftService;
-    private final ConcurrentMap<CPGroupId, CPMember> knownLeaders =
-            new ConcurrentHashMap<CPGroupId, CPMember>();
+    private final ConcurrentMap<CPGroupId, CPMember> knownLeaders = new ConcurrentHashMap<>();
     private final boolean failOnIndeterminateOperationState;
 
-    private AtomicReference<ActiveCPMembersContainer> membersContainer = new AtomicReference<ActiveCPMembersContainer>(null);
+    private AtomicReference<ActiveCPMembersContainer> membersContainer = new AtomicReference<>();
 
     public RaftInvocationContext(ILogger logger, RaftService raftService) {
         this.logger = logger;
@@ -68,6 +67,10 @@ public class RaftInvocationContext {
                 return;
             }
         }
+    }
+
+    int getCPGroupPartitionId(CPGroupId groupId) {
+        return raftService.getCPGroupPartitionId(groupId);
     }
 
     CPMember getKnownLeader(CPGroupId groupId) {
@@ -165,7 +168,7 @@ public class RaftInvocationContext {
                 return 1;
             }
 
-            return version < other.version ? -1 : (version > other.version ? 1 : 0);
+            return Long.compare(version, other.version);
         }
     }
 }

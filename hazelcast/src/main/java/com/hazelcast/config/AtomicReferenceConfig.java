@@ -55,14 +55,14 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
     }
 
@@ -81,7 +81,8 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
         if (!mergePolicyConfig.equals(that.mergePolicyConfig)) {
             return false;
         }
-        return quorumName != null ? quorumName.equals(that.quorumName) : that.quorumName == null;
+        return splitBrainProtectionName != null ? splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName == null;
 
     }
 
@@ -89,7 +90,7 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
     public final int hashCode() {
         int result = name.hashCode();
         result = 31 * result + mergePolicyConfig.hashCode();
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
     }
 
@@ -119,7 +120,7 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
         }
 
         @Override
-        public AtomicReferenceConfig setQuorumName(String quorumName) {
+        public AtomicReferenceConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
             throw new UnsupportedOperationException("This is a read-only config!");
         }
 

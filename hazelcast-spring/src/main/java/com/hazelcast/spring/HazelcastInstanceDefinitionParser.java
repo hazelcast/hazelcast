@@ -44,7 +44,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  *          </hz:network>
  *          <hz:map name="map" backup-count="2" max-size="0"
  *             read-backup-data="true" eviction-policy="NONE"
- *          merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/>
+ *          merge-policy="com.hazelcast.spi.merge.PassThroughMergePolicy"/>
  *      </hz:config>
  * </hz:hazelcast>
  * }</pre>

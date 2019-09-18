@@ -41,7 +41,7 @@ public class ScheduledExecutorTaskGetDelayFromPartitionMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(clientMessage.getPartitionId(),
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(getPartitionId(),
                 parameters.schedulerName,
                 parameters.taskName);
         return new GetDelayOperation(handler, TimeUnit.NANOSECONDS);

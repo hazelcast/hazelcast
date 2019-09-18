@@ -22,37 +22,38 @@ import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
-import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.AddCacheConfigOperationSupplier;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.cache.impl.tenantcontrol.CacheDestroyEventContext;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.PartitionAwareService;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.PreJoinAwareService;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.PartitionAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -92,7 +93,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ClusterStateListener {
+        PartitionAwareService, SplitBrainProtectionAwareService, SplitBrainHandlerService, ClusterStateListener {
 
     public static final String TENANT_CONTROL_FACTORY = "com.hazelcast.spi.tenantcontrol.TenantControlFactory";
 
@@ -122,8 +123,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected final ConstructorFunction<String, CacheContext> cacheContextsConstructorFunction = name -> new CacheContext();
     protected final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
             name -> new CacheStatisticsImpl(
-            Clock.currentTimeMillis(),
-            CacheEntryCountResolver.createEntryCountResolver(getOrCreateCacheContext(name)));
+                    Clock.currentTimeMillis(),
+                    CacheEntryCountResolver.createEntryCountResolver(getOrCreateCacheContext(name)));
 
     protected final ConstructorFunction<String, Set<Closeable>> cacheResourcesConstructorFunction =
             name -> newSetFromMap(new ConcurrentHashMap<Closeable, Boolean>());
@@ -136,7 +137,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected CachePartitionSegment[] segments;
     protected CacheEventHandler cacheEventHandler;
     protected RingbufferCacheEventJournalImpl eventJournal;
-    protected CacheMergePolicyProvider mergePolicyProvider;
+    protected SplitBrainMergePolicyProvider mergePolicyProvider;
     protected CacheSplitBrainHandlerService splitBrainHandlerService;
     protected CacheClearExpiredRecordsTask clearExpiredRecordsTask;
     protected ExpirationManager expirationManager;
@@ -155,18 +156,18 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         this.splitBrainHandlerService = new CacheSplitBrainHandlerService(nodeEngine, segments);
         this.logger = nodeEngine.getLogger(getClass());
         this.eventJournal = new RingbufferCacheEventJournalImpl(nodeEngine);
-        this.mergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
+        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
 
         postInit(nodeEngine, properties);
     }
 
-    public CacheMergePolicyProvider getMergePolicyProvider() {
+    public SplitBrainMergePolicyProvider getMergePolicyProvider() {
         return mergePolicyProvider;
     }
 
-    public Object getMergePolicy(String name) {
-        CacheConfig cacheConfig = getCacheConfig(name);
-        String mergePolicyName = cacheConfig.getMergePolicy();
+    public SplitBrainMergePolicy getMergePolicy(String dataStructureName) {
+        CacheConfig cacheConfig = getCacheConfig(dataStructureName);
+        String mergePolicyName = cacheConfig.getMergePolicyConfig().getPolicy();
         return mergePolicyProvider.getMergePolicy(mergePolicyName);
     }
 
@@ -254,7 +255,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
             checkCacheConfig(cacheConfig, mergePolicyProvider);
 
-            Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
+            String mergePolicyName = cacheConfig.getMergePolicyConfig().getPolicy();
+            Object mergePolicy = mergePolicyProvider.getMergePolicy(mergePolicyName);
             checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(), true,
                     logger);
 
@@ -677,13 +679,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     protected void deleteCacheResources(String name) {
         Set<Closeable> cacheResources;
-        ContextMutexFactory.Mutex mutex = cacheResourcesMutexFactory.mutexFor(name);
-        try {
+        try (ContextMutexFactory.Mutex mutex = cacheResourcesMutexFactory.mutexFor(name)) {
             synchronized (mutex) {
                 cacheResources = resources.remove(name);
             }
-        } finally {
-            mutex.close();
         }
 
         if (cacheResources != null) {
@@ -759,19 +758,19 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     /**
-     * Gets the name of the quorum associated with specified cache
+     * Gets the name of the split brain protection associated with specified cache
      *
      * @param cacheName name of the cache
-     * @return name of the associated quorum
-     * null if there is no associated quorum
+     * @return name of the associated split brain protection
+     * null if there is no associated split brain protection
      */
     @Override
-    public String getQuorumName(String cacheName) {
+    public String getSplitBrainProtectionName(String cacheName) {
         CacheConfig cacheConfig = getCacheConfig(cacheName);
         if (cacheConfig == null) {
             return null;
         }
-        return cacheConfig.getQuorumName();
+        return cacheConfig.getSplitBrainProtectionName();
     }
 
     /**

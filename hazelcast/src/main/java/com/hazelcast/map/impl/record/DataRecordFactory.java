@@ -20,7 +20,7 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 public class DataRecordFactory implements RecordFactory<Data> {
 

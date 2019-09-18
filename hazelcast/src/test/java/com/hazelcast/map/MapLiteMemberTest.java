@@ -200,10 +200,10 @@ public class MapLiteMemberTest
         }
     }
 
-    private static class DummyEntryProcessor implements EntryProcessor<Object, Object, String> {
+    private static class DummyEntryProcessor implements EntryProcessor<Integer, Object, String> {
 
         @Override
-        public String process(java.util.Map.Entry<Object, Object> entry) {
+        public String process(java.util.Map.Entry<Integer, Object> entry) {
             entry.setValue("dummy");
             return "done";
         }

@@ -46,9 +46,9 @@ import com.hazelcast.map.MapStore;
  * <p>
  * Care should be taken if you are using the IdGenerator to provide keys for {@link IMap} or
  * {@link com.hazelcast.cache.ICache}, as after split brain it could be possible for two unique values to share
- * the same key. When a {@link com.hazelcast.map.merge.MapMergePolicy} is applied, one of these unique values will
+ * the same key. When a {@link com.hazelcast.spi.merge.SplitBrainMergePolicy} is applied, one of these unique values will
  * have to be discarded. Unless configured, the default merge policy is
- * {@link com.hazelcast.map.merge.PutIfAbsentMapMergePolicy}.
+ * {@link com.hazelcast.spi.merge.PutIfAbsentMergePolicy}.
  * <p>
  * It is NOT RECOMMENDED to use {@link IdGenerator} to provide keys that are also used as unique identifiers in
  * underlying persistent storage, for example in an {@link IMap} that writes to a relational database using {@link

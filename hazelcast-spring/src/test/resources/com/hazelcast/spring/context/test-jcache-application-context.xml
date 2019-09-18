@@ -109,12 +109,12 @@
                     <hz:partition-lost-listener class-name="DummyCachePartitionLostListenerImpl"/>
                 </hz:partition-lost-listeners>
             </hz:cache>
-            <hz:cache name="cacheWithQuorumRef">
-                <hz:quorum-ref>cacheQuorumRefString</hz:quorum-ref>
+            <hz:cache name="cacheWithSplitBrainProtectionRef">
+                <hz:split-brain-protection-ref>cacheSplitBrainProtectionRefString</hz:split-brain-protection-ref>
             </hz:cache>
             <hz:cache name="cacheWithDefaultMergePolicy"/>
             <hz:cache name="cacheWithCustomMergePolicy">
-                <hz:merge-policy>MyDummyMergePolicy</hz:merge-policy>
+                <hz:merge-policy batch-size="100">MyDummyMergePolicy</hz:merge-policy>
             </hz:cache>
             <hz:cache name="cacheWithComparatorClassName">
                 <hz:eviction size="50" max-size-policy="ENTRY_COUNT"

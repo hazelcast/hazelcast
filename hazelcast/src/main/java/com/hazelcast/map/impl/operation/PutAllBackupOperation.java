@@ -35,6 +35,7 @@ import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 public class PutAllBackupOperation extends MapOperation
         implements PartitionAwareOperation, BackupOperation {
 
+    private boolean disableWanReplicationEvent;
     private MapEntries entries;
     private List<RecordInfo> recordInfos;
 
@@ -60,6 +61,11 @@ public class PutAllBackupOperation extends MapOperation
             publishWanUpdate(dataKey, dataValue);
             evict(dataKey);
         }
+    }
+
+    @Override
+    protected boolean disableWanReplicationEvent() {
+        return disableWanReplicationEvent;
     }
 
     @Override

@@ -16,10 +16,10 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -39,28 +39,28 @@ import com.hazelcast.internal.metrics.metricsets.StatisticsAwareMetricsSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
+import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
@@ -68,8 +68,9 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -84,6 +85,8 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.CONCURRENT_WINDOW_MS;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
@@ -117,16 +120,18 @@ public class NodeEngineImpl implements NodeEngine {
     private final TransactionManagerServiceImpl transactionManagerService;
     private final WanReplicationService wanReplicationService;
     private final Consumer<Packet> packetDispatcher;
-    private final QuorumServiceImpl quorumService;
+    private final SplitBrainProtectionServiceImpl splitBrainProtectionService;
     private final SqlServiceImpl sqlService;
     private final Diagnostics diagnostics;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
+    private final ConcurrencyDetection concurrencyDetection;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
         this.node = node;
         try {
             this.serializationService = node.getSerializationService();
+            this.concurrencyDetection = newConcurrencyDetection();
             this.loggingService = node.loggingService;
             this.logger = node.getLogger(NodeEngine.class.getName());
             this.metricsRegistry = newMetricRegistry(node);
@@ -152,7 +157,7 @@ public class NodeEngineImpl implements NodeEngine {
                     operationService.getInvocationMonitor(),
                     eventService,
                     getJetPacketConsumer(node.getNodeExtension()));
-            this.quorumService = new QuorumServiceImpl(this);
+            this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
             this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
             this.sqlService = new SqlServiceImpl(this);
@@ -169,6 +174,18 @@ public class NodeEngineImpl implements NodeEngine {
                 ignore(ignored);
             }
             throw rethrow(e);
+        }
+    }
+
+    private ConcurrencyDetection newConcurrencyDetection() {
+        HazelcastProperties properties = node.getProperties();
+        boolean writeThrough = properties.getBoolean(GroupProperty.IO_WRITE_THROUGH_ENABLED);
+        boolean backPressureEnabled = properties.getBoolean(BACKPRESSURE_ENABLED);
+
+        if (writeThrough || backPressureEnabled) {
+            return ConcurrencyDetection.createEnabled(properties.getInteger(CONCURRENT_WINDOW_MS));
+        } else {
+            return ConcurrencyDetection.createDisabled();
         }
     }
 
@@ -213,10 +230,14 @@ public class NodeEngineImpl implements NodeEngine {
         serviceManager.start();
         proxyService.init();
         operationService.start();
-        quorumService.start();
+        splitBrainProtectionService.start();
         diagnostics.start();
 
         node.getNodeExtension().registerPlugins(diagnostics);
+    }
+
+    public ConcurrencyDetection getConcurrencyDetection() {
+        return concurrencyDetection;
     }
 
     public Consumer<Packet> getPacketDispatcher() {
@@ -261,7 +282,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public InternalEventService getEventService() {
+    public EventService getEventService() {
         return eventService;
     }
 
@@ -276,7 +297,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public InternalExecutionService getExecutionService() {
+    public ExecutionService getExecutionService() {
         return executionService;
     }
 
@@ -309,8 +330,8 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public QuorumServiceImpl getQuorumService() {
-        return quorumService;
+    public SplitBrainProtectionServiceImpl getSplitBrainProtectionService() {
+        return splitBrainProtectionService;
     }
 
     @Override

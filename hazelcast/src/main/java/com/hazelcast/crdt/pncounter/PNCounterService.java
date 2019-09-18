@@ -22,14 +22,14 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.crdt.CRDTReplicationAwareService;
 import com.hazelcast.crdt.CRDTReplicationContainer;
 import com.hazelcast.crdt.MutationDisallowedException;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.monitor.LocalPNCounterStats;
 import com.hazelcast.monitor.impl.LocalPNCounterStatsImpl;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
 
@@ -50,7 +50,7 @@ public class PNCounterService implements
         ManagedService,
         RemoteService,
         CRDTReplicationAwareService<PNCounterImpl>,
-        QuorumAwareService,
+        SplitBrainProtectionAwareService,
         StatisticsAwareService<LocalPNCounterStats> {
     /** The name under which this service is registered */
     public static final String SERVICE_NAME = "hz:impl:PNCounterService";
@@ -71,14 +71,14 @@ public class PNCounterService implements
                 }
             };
 
-    /** Cache for quorum config names */
-    private final Memoizer<String, Object> quorumConfigCache = new Memoizer<String, Object>(
+    /** Cache for split brain protection config names */
+    private final Memoizer<String, Object> splitBrainProtectionConfigCache = new Memoizer<String, Object>(
             new ConstructorFunction<String, Object>() {
                 @Override
                 public Object createNew(String name) {
                     final PNCounterConfig counterConfig = nodeEngine.getConfig().findPNCounterConfig(name);
-                    final String quorumName = counterConfig.getQuorumName();
-                    return quorumName == null ? Memoizer.NULL_OBJECT : quorumName;
+                    final String splitBrainProtectionName = counterConfig.getSplitBrainProtectionName();
+                    return splitBrainProtectionName == null ? Memoizer.NULL_OBJECT : splitBrainProtectionName;
                 }
             });
 
@@ -155,7 +155,7 @@ public class PNCounterService implements
     public void destroyDistributedObject(String objectName) {
         counters.remove(objectName);
         statsMap.remove(objectName);
-        quorumConfigCache.remove(objectName);
+        splitBrainProtectionConfigCache.remove(objectName);
     }
 
     @Override
@@ -250,8 +250,8 @@ public class PNCounterService implements
     }
 
     @Override
-    public String getQuorumName(String name) {
-        return (String) quorumConfigCache.getOrCalculate(name);
+    public String getSplitBrainProtectionName(String name) {
+        return (String) splitBrainProtectionConfigCache.getOrCalculate(name);
     }
 
     @Override

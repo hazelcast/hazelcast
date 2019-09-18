@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -77,7 +77,7 @@ public class MergePolicyValidatorReplicatedMapIntegrationTest extends AbstractMe
     @Test
     public void testReplicatedMap_withLegacyPutIfAbsentMergePolicy() {
         MergePolicyConfig legacyMergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(PutIfAbsentMapMergePolicy.class.getName());
+                .setPolicy(PutIfAbsentMergePolicy.class.getName());
 
         HazelcastInstance hz = getHazelcastInstance("legacyPutIfAbsent", legacyMergePolicyConfig);
 

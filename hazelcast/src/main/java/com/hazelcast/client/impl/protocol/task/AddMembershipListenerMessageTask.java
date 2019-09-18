@@ -19,13 +19,14 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MembershipEvent;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -102,7 +103,7 @@ public class AddMembershipListenerMessageTask
         public void init(InitialMembershipEvent membershipEvent) {
             ClusterService service = getService(ClusterServiceImpl.SERVICE_NAME);
             Collection<MemberImpl> members = service.getMemberImpls();
-            ArrayList membersToSend = new ArrayList();
+            Collection<Member> membersToSend = new ArrayList<>();
             for (MemberImpl member : members) {
                 membersToSend.add(translateMemberAddress(member));
             }
@@ -131,9 +132,8 @@ public class AddMembershipListenerMessageTask
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            ClientMessage eventMessage =
-                    ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member),
-                            MembershipEvent.MEMBER_REMOVED);
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member),
+                    MembershipEvent.MEMBER_REMOVED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -143,13 +143,12 @@ public class AddMembershipListenerMessageTask
                 return;
             }
 
-            MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
-            String uuid = member.getUuid();
             MemberAttributeOperationType op = memberAttributeEvent.getOperationType();
             String key = memberAttributeEvent.getKey();
             String value = memberAttributeEvent.getValue() == null ? null : memberAttributeEvent.getValue().toString();
-            ClientMessage eventMessage =
-                    ClientAddMembershipListenerCodec.encodeMemberAttributeChangeEvent(uuid, key, op.getId(), value);
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec
+                    .encodeMemberAttributeChangeEvent(memberAttributeEvent.getMember(), memberAttributeEvent.getMembers(), key,
+                            op.getId(), value);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 

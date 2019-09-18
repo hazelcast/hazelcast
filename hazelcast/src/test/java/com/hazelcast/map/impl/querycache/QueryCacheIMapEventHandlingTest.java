@@ -17,22 +17,23 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.map.impl.operation.LegacyMergeOperation;
+import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,9 +48,10 @@ import org.mockito.Mockito;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -99,14 +101,16 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
     private void executeMergeOperation(HazelcastInstance member, String mapName, int key, int mergedValue) throws Exception {
         Node node = getNode(member);
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         SerializationService serializationService = getSerializationService(member);
 
         Data keyData = serializationService.toData(key);
         Data valueData = serializationService.toData(mergedValue);
-        EntryView<Data, Data> entryView = createSimpleEntryView(keyData, valueData, Mockito.mock(Record.class));
+        SplitBrainMergeTypes.MapMergeTypes mergingEntry
+                = createMergingEntry(serializationService, keyData, valueData, Mockito.mock(Record.class));
 
-        LegacyMergeOperation mergeOperation = new LegacyMergeOperation(mapName, entryView, new PassThroughMergePolicy(), false);
+        Operation mergeOperation = new MergeOperation(mapName, singletonList(mergingEntry),
+                new PassThroughMergePolicy<>(), false);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         Future<Object> future = operationService.invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
         future.get();

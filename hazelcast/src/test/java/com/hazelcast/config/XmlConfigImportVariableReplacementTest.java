@@ -210,7 +210,6 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         buildConfig(xml, null);
     }
 
-    @Override
     @Test(expected = HazelcastException.class)
     public void testImportFromNonHazelcastConfigThrowsException() throws Exception {
         File file = createConfigFile("mymap", "config");

@@ -24,7 +24,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker for private api.
+ * Marker for private functionality. This code is not intended for public usage and no compatibility
+ * guarantees are given. So it could be that the functionality changes, moves, gets deleted etc without
+ * any form of warning.
  */
 @Target({ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)

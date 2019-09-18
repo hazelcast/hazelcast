@@ -91,6 +91,11 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             return false;
         }
 
+        if (current.getSequence() > incoming.getSequence()) {
+            // current is newer than incoming: do not remove
+            return false;
+        }
+
         Object currentValue = current.getValue();
         if (incomingValue == null && currentValue == null
                 || incomingValue != null && currentValue != null && incomingValue.equals(currentValue)) {

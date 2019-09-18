@@ -16,6 +16,7 @@
 
 package com.hazelcast.durableexecutor;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 
 import java.util.concurrent.Callable;
@@ -30,7 +31,7 @@ import java.util.concurrent.RejectedExecutionException;
  * DurableExecutor also provides a way to retrieve the result of an execution with the given taskId.
  * @see ExecutorService
  *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 public interface DurableExecutorService extends ExecutorService, DistributedObject {
 

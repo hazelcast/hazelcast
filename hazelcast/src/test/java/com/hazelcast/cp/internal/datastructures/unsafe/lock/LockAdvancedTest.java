@@ -17,20 +17,20 @@
 package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -67,11 +67,12 @@ public class LockAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCleanupOperationIgnoresQuorum() {
+    public void testCleanupOperationIgnoresSplitBrainProtection() {
         Config config = getConfig();
-        QuorumConfig quorum = new QuorumConfig("quorum", true, 2).setType(QuorumType.WRITE);
-        config.getQuorumConfigs().put("quorum", quorum);
-        config.getLockConfig("default").setQuorumName("quorum");
+        SplitBrainProtectionConfig splitBrainProtection
+                = new SplitBrainProtectionConfig("split-brain-protection", true, 2).setProtectOn(SplitBrainProtectionOn.WRITE);
+        config.getSplitBrainProtectionConfigs().put("split-brain-protection", splitBrainProtection);
+        config.getLockConfig("default").setSplitBrainProtectionName("split-brain-protection");
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = nodeFactory.newInstances(config);

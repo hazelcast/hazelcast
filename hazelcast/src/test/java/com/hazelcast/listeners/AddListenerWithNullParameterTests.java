@@ -81,32 +81,32 @@ public class AddListenerWithNullParameterTests extends HazelcastTestSupport {
         instance.getMultiMap("test").addEntryListener(null, "key", true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListener() {
         instance.getReplicatedMap("test").addEntryListener(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListenerKey() {
         instance.getReplicatedMap("test").addEntryListener(null, "key");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListenerPredicate() {
         instance.getReplicatedMap("test").addEntryListener(null, Predicates.alwaysTrue());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListener_NullPredicate() {
         instance.getReplicatedMap("test").addEntryListener(mock(EntryListener.class), null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListenerPredicateAndKey() {
         instance.getReplicatedMap("test").addEntryListener(null, Predicates.alwaysTrue(), "key");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListenerKeyAnd_NullPredicate() {
         instance.getReplicatedMap("test").addEntryListener(mock(EntryListener.class), null, "key");
     }

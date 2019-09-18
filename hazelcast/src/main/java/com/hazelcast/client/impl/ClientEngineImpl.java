@@ -17,28 +17,33 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.cache.impl.JCacheDetector;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.ClientListener;
+import com.hazelcast.client.ClientType;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.impl.operations.OnJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
-import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMessageTask;
-import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.AuthenticationBaseMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
-import com.hazelcast.client.impl.protocol.task.GetPartitionsMessageTask;
 import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
-import com.hazelcast.client.impl.protocol.task.PingMessageTask;
 import com.hazelcast.client.impl.protocol.task.TransactionalMessageTask;
+import com.hazelcast.client.impl.protocol.task.UrgentMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.AbstractMapQueryMessageTask;
-import com.hazelcast.client.api.Client;
-import com.hazelcast.client.api.ClientListener;
-import com.hazelcast.client.api.ClientType;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.MemberAttributeServiceEvent;
+import com.hazelcast.internal.services.MembershipAwareService;
+import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
@@ -47,25 +52,16 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.CoreService;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MemberAttributeServiceEvent;
-import com.hazelcast.spi.MembershipAwareService;
-import com.hazelcast.spi.MembershipServiceEvent;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.PreJoinAwareService;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -93,7 +89,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
@@ -171,7 +167,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
 
     private ExecutorService newClientsManagementExecutor() {
         //CLIENT_MANAGEMENT_EXECUTOR is a single threaded executor to ensure that disconnect/auth are executed in correct order.
-        InternalExecutionService executionService = nodeEngine.getExecutionService();
+        ExecutionService executionService = nodeEngine.getExecutionService();
         return executionService.register(CLIENT_MANAGEMENT_EXECUTOR, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
     }
 
@@ -248,37 +244,32 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         return endpointManager.size();
     }
 
-    @Override
     public void accept(ClientMessage clientMessage) {
-        int partitionId = clientMessage.getPartitionId();
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        if (partitionId < 0) {
-            if (isUrgent(messageTask)) {
-                operationService.execute(new PriorityPartitionSpecificRunnable(messageTask));
-            } else if (isQuery(messageTask)) {
-                queryExecutor.execute(messageTask);
-            } else if (messageTask instanceof TransactionalMessageTask) {
-                blockingExecutor.execute(messageTask);
-            } else if (messageTask instanceof BlockingMessageTask) {
-                blockingExecutor.execute(messageTask);
-            } else if (messageTask instanceof ListenerMessageTask) {
-                blockingExecutor.execute(messageTask);
-            } else {
-                executor.execute(messageTask);
-            }
+        if (isUrgent(messageTask)) {
+            operationService.execute((UrgentMessageTask) messageTask);
+        } else if (messageTask instanceof AbstractPartitionMessageTask) {
+            operationService.execute((AbstractPartitionMessageTask) messageTask);
+        } else if (isQuery(messageTask)) {
+            queryExecutor.execute(messageTask);
+        } else if (messageTask instanceof TransactionalMessageTask) {
+            blockingExecutor.execute(messageTask);
+        } else if (messageTask instanceof BlockingMessageTask) {
+            blockingExecutor.execute(messageTask);
+        } else if (messageTask instanceof ListenerMessageTask) {
+            blockingExecutor.execute(messageTask);
         } else {
-            operationService.execute(messageTask);
+            executor.execute(messageTask);
         }
     }
 
     private boolean isUrgent(MessageTask messageTask) {
-        Class clazz = messageTask.getClass();
-        return clazz == PingMessageTask.class
-                || clazz == GetPartitionsMessageTask.class
-                || ((clazz == AuthenticationMessageTask.class || clazz == AuthenticationCustomCredentialsMessageTask.class)
-                        && node.securityContext == null);
+        if (messageTask instanceof AuthenticationBaseMessageTask) {
+            return node.securityContext == null;
+        }
+        return messageTask instanceof UrgentMessageTask;
     }
 
     private boolean isQuery(MessageTask messageTask) {
@@ -738,29 +729,5 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             return member.getAddressMap().get(CLIENT);
         }
         throw new TargetNotMemberException("Could not locate member with member address " + memberAddress);
-    }
-
-    private static class PriorityPartitionSpecificRunnable implements PartitionSpecificRunnable, UrgentSystemOperation {
-
-        private final MessageTask task;
-
-        PriorityPartitionSpecificRunnable(MessageTask task) {
-            this.task = task;
-        }
-
-        @Override
-        public void run() {
-            task.run();
-        }
-
-        @Override
-        public int getPartitionId() {
-            return task.getPartitionId();
-        }
-
-        @Override
-        public String toString() {
-            return "PriorityPartitionSpecificRunnable:{ " + task + "}";
-        }
     }
 }

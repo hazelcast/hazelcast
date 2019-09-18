@@ -49,7 +49,7 @@ public abstract class AbstractReplicatedMapOperation extends AbstractNamedSerial
     protected Collection<Address> getMemberAddresses() {
         Address thisAddress = getNodeEngine().getThisAddress();
         Collection<Member> members = getNodeEngine().getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
-        Collection<Address> addresses = new ArrayList<Address>();
+        Collection<Address> addresses = new ArrayList<>();
         for (Member member : members) {
             Address address = member.getAddress();
             if (address.equals(getCallerAddress()) || address.equals(thisAddress)) {

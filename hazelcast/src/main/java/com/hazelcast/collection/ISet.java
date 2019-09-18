@@ -16,6 +16,8 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
+
 import java.util.Set;
 
 /**
@@ -28,7 +30,7 @@ import java.util.Set;
  * equals method this implementation compares the serialized byte version
  * of the objects.
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster
  * versions 3.10 and higher.
  *
  * @param <E> the type of elements maintained by this set

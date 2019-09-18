@@ -31,19 +31,17 @@ import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.JsonUtil;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.UUID;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.util.ExceptionUtil.peel;
@@ -364,12 +362,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleManagementCenterUrlChange(HttpPostCommand command) throws UnsupportedEncodingException {
-        HazelcastProperties properties = textCommandService.getNode().getProperties();
-        if (! properties.getBoolean(GroupProperty.MC_URL_CHANGE_ENABLED)) {
-            logger.warning("Hazelcast property " + GroupProperty.MC_URL_CHANGE_ENABLED.getName() + " is deprecated.");
-            command.setResponse(HttpCommand.RES_503);
-            return;
-        }
         byte[] res;
         String[] strList = bytesToString(command.getData()).split("&");
         if (authenticate(command, strList[0], strList.length > 1 ? strList[1] : null)) {
@@ -413,8 +405,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String publisherId = params[1];
         final String mapName = params[2];
         try {
-            textCommandService.getNode().getNodeEngine().getWanReplicationService().syncMap(wanRepName, publisherId, mapName);
-            res = response(ResponseType.SUCCESS, "message", "Sync initiated");
+            UUID uuid = textCommandService.getNode().getNodeEngine().getWanReplicationService()
+                                          .syncMap(wanRepName, publisherId, mapName);
+            res = response(ResponseType.SUCCESS, "message", "Sync initiated", "uuid", uuid.toString());
         } catch (Exception ex) {
             logger.warning("Error occurred while syncing map", ex);
             res = exceptionResponse(ex);
@@ -437,8 +430,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String wanRepName = params[0];
         final String publisherId = params[1];
         try {
-            textCommandService.getNode().getNodeEngine().getWanReplicationService().syncAllMaps(wanRepName, publisherId);
-            res = response(ResponseType.SUCCESS, "message", "Sync initiated");
+            UUID uuid = textCommandService.getNode().getNodeEngine().getWanReplicationService()
+                                          .syncAllMaps(wanRepName, publisherId);
+            res = response(ResponseType.SUCCESS, "message", "Sync initiated", "uuid", uuid.toString());
         } catch (Exception ex) {
             logger.warning("Error occurred while syncing maps", ex);
             res = exceptionResponse(ex);
@@ -463,8 +457,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         WanReplicationService service = textCommandService.getNode().getNodeEngine().getWanReplicationService();
 
         try {
-            service.consistencyCheck(wanReplicationName, publisherId, mapName);
-            res = response(ResponseType.SUCCESS, "message", "Consistency check initiated");
+            UUID uuid = service.consistencyCheck(wanReplicationName, publisherId, mapName);
+            res = response(ResponseType.SUCCESS, "message", "Consistency check initiated", "uuid", uuid.toString());
         } catch (Exception ex) {
             logger.warning("Error occurred while initiating consistency check", ex);
             res = exceptionResponse(ex);

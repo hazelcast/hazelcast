@@ -33,12 +33,11 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
 
     private static final long LOCK_TTL_MILLIS = 10000L;
     private String lockOwner;
-    private long lockThreadId;
 
     protected TxnPrepareBackupOperation(String name, Data dataKey, String lockOwner, long lockThreadId) {
         super(name, dataKey);
         this.lockOwner = lockOwner;
-        this.lockThreadId = lockThreadId;
+        this.threadId = lockThreadId;
     }
 
     public TxnPrepareBackupOperation() {
@@ -46,7 +45,7 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
 
     @Override
     protected void runInternal() {
-        if (!recordStore.txnLock(getKey(), lockOwner, lockThreadId, getCallId(), LOCK_TTL_MILLIS, true)) {
+        if (!recordStore.txnLock(getKey(), lockOwner, threadId, getCallId(), LOCK_TTL_MILLIS, true)) {
             throw new TransactionException("Lock is not owned by the transaction! Caller: " + lockOwner
                     + ", Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }
@@ -61,14 +60,12 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(lockOwner);
-        out.writeLong(lockThreadId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         lockOwner = in.readUTF();
-        lockThreadId = in.readLong();
     }
 
     @Override

@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -62,9 +63,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public abstract void testConfiguration_withNullInputStream();
-
-    @Test(expected = InvalidConfigurationException.class)
-    public abstract void testInvalidRootElement();
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testJoinValidation();
@@ -258,31 +256,31 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testWanConfig();
 
     @Test
-    public abstract void testQuorumConfig();
+    public abstract void testSplitBrainProtectionConfig();
 
     @Test
-    public abstract void testQuorumListenerConfig();
+    public abstract void testSplitBrainProtectionListenerConfig();
 
     @Test(expected = InvalidConfigurationException.class)
-    public abstract void testQuorumConfig_whenClassNameAndRecentlyActiveQuorumDefined_exceptionIsThrown();
+    public abstract void testConfig_whenClassNameAndRecentlyActiveSplitBrainProtectionDefined_exceptionIsThrown();
 
     @Test(expected = InvalidConfigurationException.class)
-    public abstract void testQuorumConfig_whenClassNameAndProbabilisticQuorumDefined_exceptionIsThrown();
+    public abstract void testConfig_whenClassNameAndProbabilisticSplitBrainProtectionDefined_exceptionIsThrown();
 
     @Test(expected = InvalidConfigurationException.class)
-    public abstract void testQuorumConfig_whenBothBuiltinQuorumsDefined_exceptionIsThrown();
+    public abstract void testConfig_whenBothBuiltinSplitBrainProtectionsDefined_exceptionIsThrown();
 
     @Test
-    public abstract void testQuorumConfig_whenRecentlyActiveQuorum_withDefaultValues();
+    public abstract void testConfig_whenRecentlyActiveSplitBrainProtection_withDefaultValues();
 
     @Test
-    public abstract void testQuorumConfig_whenRecentlyActiveQuorum_withCustomValues();
+    public abstract void testConfig_whenRecentlyActiveSplitBrainProtection_withCustomValues();
 
     @Test
-    public abstract void testQuorumConfig_whenProbabilisticQuorum_withDefaultValues();
+    public abstract void testConfig_whenProbabilisticSplitBrainProtection_withDefaultValues();
 
     @Test
-    public abstract void testQuorumConfig_whenProbabilisticQuorum_withCustomValues();
+    public abstract void testConfig_whenProbabilisticSplitBrainProtection_withCustomValues();
 
     @Test
     public abstract void testCacheConfig();
@@ -570,4 +568,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(expected.getName(), configured.getName());
         assertEquals(expected.getActions(), configured.getActions());
     }
+
+    public abstract void testPersistentMemoryDirectoryConfiguration() throws IOException;
 }

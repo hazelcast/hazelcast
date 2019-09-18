@@ -16,7 +16,7 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.client.api.Client;
+import com.hazelcast.client.Client;
 
 import java.net.SocketAddress;
 

@@ -61,21 +61,11 @@ public class AuthenticationCustomCredentialsMessageTask
         }
         credentials = new SimpleTokenCredentials(parameters.credentials.toByteArray());
         clientSerializationVersion = parameters.serializationVersion;
-        if (parameters.clientHazelcastVersionExist) {
-            clientVersion = parameters.clientHazelcastVersion;
-        }
-
-        if (parameters.clientNameExist) {
-            clientName = parameters.clientName;
-        }
-
-        if (parameters.labelsExist) {
-            labels = Collections.unmodifiableSet(new HashSet<String>(parameters.labels));
-        } else {
-            labels = Collections.emptySet();
-        }
-        partitionCount = parameters.partitionCountExist ? parameters.partitionCount : null;
-        clusterId = parameters.clusterIdExist ? parameters.clusterId : null;
+        clientVersion = parameters.clientHazelcastVersion;
+        clientName = parameters.clientName;
+        labels = Collections.unmodifiableSet(new HashSet<>(parameters.labels));
+        partitionCount = parameters.partitionCount;
+        clusterId = parameters.clusterId;
         return parameters;
     }
 

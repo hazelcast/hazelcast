@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.extractor;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -125,12 +125,12 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
      * reflection-based tests without any code changes and to use them with extractors.
      * In this way we avoid the name validation and can reuse the dot names
      */
-    public static class TestMapAttributeIndexConfig extends MapAttributeConfig {
+    public static class TestAttributeIndexConfig extends AttributeConfig {
 
         private String name;
 
         @Override
-        public MapAttributeConfig setName(String name) {
+        public AttributeConfig setName(String name) {
             this.name = name;
             return this;
         }

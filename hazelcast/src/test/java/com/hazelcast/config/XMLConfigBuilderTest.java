@@ -25,9 +25,9 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
-import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
+import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -59,7 +60,8 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
-import static com.hazelcast.config.WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
+import static com.hazelcast.config.WANQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -137,18 +139,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test(expected = IllegalArgumentException.class)
     public void testConfiguration_withNullInputStream() {
         new XmlConfigBuilder((InputStream) null);
-    }
-
-    @Override
-    @Test(expected = InvalidConfigurationException.class)
-    public void testInvalidRootElement() {
-        String xml = "<hazelcast-client>"
-                + "<group>"
-                + "<name>dev</name>"
-                + "<password>clusterpass</password>"
-                + "</group>"
-                + "</hazelcast-client>";
-        buildConfig(xml);
     }
 
     @Override
@@ -559,7 +549,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </semaphore>"
                 + "    <semaphore name=\"custom\">\n"
                 + "        <initial-permits>10</initial-permits>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "    </semaphore>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -567,7 +557,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
         assertEquals(1, defaultConfig.getInitialPermits());
         assertEquals(10, customConfig.getInitialPermits());
-        assertEquals("customQuorumRule", customConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -591,7 +581,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                <property name=\"bulk-load\">500</property>"
                 + "            </properties>"
                 + "        </queue-store>"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
                 + "    </queue>"
                 + HAZELCAST_END_TAG;
@@ -624,7 +614,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("1000", storeConfigProperties.getProperty("memory-limit"));
         assertEquals("false", storeConfigProperties.getProperty("binary"));
 
-        assertEquals("customQuorumRule", queueConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", queueConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -699,18 +689,18 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void readLockConfig() {
         String xml = HAZELCAST_START_TAG
                 + "  <lock name=\"default\">"
-                + "        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>"
+                + "        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>"
                 + "  </lock>"
                 + "  <lock name=\"custom\">"
-                + "       <quorum-ref>customQuorumRule</quorum-ref>"
+                + "       <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "  </lock>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         LockConfig defaultConfig = config.getLockConfig("default");
         LockConfig customConfig = config.getLockConfig("custom");
-        assertEquals("quorumRuleWithThreeNodes", defaultConfig.getQuorumName());
-        assertEquals("customQuorumRule", customConfig.getQuorumName());
+        assertEquals("splitBrainProtectionRuleWithThreeNodes", defaultConfig.getSplitBrainProtectionName());
+        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -758,7 +748,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                <property name=\"store-path\">.//tmp//bufferstore</property>"
                 + "            </properties>"
                 + "        </ringbuffer-store>"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
                 + "    </ringbuffer>"
                 + HAZELCAST_END_TAG;
@@ -776,7 +766,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("com.hazelcast.RingbufferStoreImpl", ringbufferStoreConfig.getClassName());
         Properties ringbufferStoreProperties = ringbufferStoreConfig.getProperties();
         assertEquals(".//tmp//bufferstore", ringbufferStoreProperties.get("store-path"));
-        assertEquals("customQuorumRule", ringbufferConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", ringbufferConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = ringbufferConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -789,13 +779,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <atomic-long name=\"custom\">"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "    </atomic-long>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
         assertEquals("custom", atomicLongConfig.getName());
-        assertEquals("customQuorumRule", atomicLongConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", atomicLongConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -808,13 +798,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <atomic-reference name=\"custom\">"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "    </atomic-reference>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
         assertEquals("custom", atomicReferenceConfig.getName());
-        assertEquals("customQuorumRule", atomicReferenceConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", atomicReferenceConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -826,13 +816,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void readCountDownLatch() {
         String xml = HAZELCAST_START_TAG
                 + "    <count-down-latch name=\"custom\">"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "    </count-down-latch>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         CountDownLatchConfig countDownLatchConfig = config.getCountDownLatchConfig("custom");
         assertEquals("custom", countDownLatchConfig.getName());
-        assertEquals("customQuorumRule", countDownLatchConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", countDownLatchConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -1034,8 +1024,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <eviction-policy>LRU</eviction-policy>\n"
                 + "    </map>\n"
                 + "<map name=\"lfuMap\">"
-                +
-                "        <eviction-policy>LFU</eviction-policy>\n"
+                + "        <eviction-policy>LFU</eviction-policy>\n"
                 + "    </map>\n"
                 + "<map name=\"noneMap\">"
                 + "        <eviction-policy>NONE</eviction-policy>\n"
@@ -1327,10 +1316,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <near-cache name=\"test\">\n"
                 + "      <in-memory-format>OBJECT</in-memory-format>\n"
                 + "      <serialize-keys>false</serialize-keys>\n"
-                + "      <max-size>1234</max-size>\n"
                 + "      <time-to-live-seconds>77</time-to-live-seconds>\n"
                 + "      <max-idle-seconds>92</max-idle-seconds>\n"
-                + "      <eviction-policy>LFU</eviction-policy>\n"
                 + "      <invalidate-on-change>false</invalidate-on-change>\n"
                 + "      <cache-local-entries>false</cache-local-entries>\n"
                 + "      <eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"3333\"/>\n"
@@ -1343,10 +1330,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
 
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
-        assertEquals(1234, nearCacheConfig.getMaxSize());
         assertEquals(77, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(92, nearCacheConfig.getMaxIdleSeconds());
-        assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
         assertFalse(nearCacheConfig.isInvalidateOnChange());
         assertFalse(nearCacheConfig.isCacheLocalEntries());
         assertEquals(LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
@@ -1389,22 +1374,45 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
-                + "        <wan-publisher group-name=\"nyc\" publisher-id=\"publisherId\">\n"
-                + "            <class-name>PublisherClassName</class-name>\n"
-                + "            <queue-capacity>15000</queue-capacity>\n"
-                + "            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>\n"
-                + "            <initial-publisher-state>STOPPED</initial-publisher-state>\n"
+                + "        <batch-publisher>\n"
+                + "                <group-name>nyc</group-name>\n"
+                + "                <publisher-id>publisherId</publisher-id>\n"
+                + "                <batch-size>100</batch-size>\n"
+                + "                <batch-max-delay-millis>200</batch-max-delay-millis>\n"
+                + "                <response-timeout-millis>300</response-timeout-millis>\n"
+                + "                <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>\n"
+                + "                <initial-publisher-state>STOPPED</initial-publisher-state>\n"
+                + "                <snapshot-enabled>true</snapshot-enabled>\n"
+                + "                <idle-min-park-ns>400</idle-min-park-ns>\n"
+                + "                <idle-max-park-ns>500</idle-max-park-ns>\n"
+                + "                <max-concurrent-invocations>600</max-concurrent-invocations>\n"
+                + "                <discovery-period-seconds>700</discovery-period-seconds>\n"
+                + "                <use-endpoint-private-address>true</use-endpoint-private-address>\n"
+                + "                <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n"
+                + "                <max-target-endpoints>800</max-target-endpoints>\n"
+                + "                <queue-capacity>21</queue-capacity>\n"
+                + "            <target-endpoints>a,b,c,d</target-endpoints>"
+                + "            <wan-sync>\n"
+                + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
+                + "            </wan-sync>\n"
                 + "            <properties>\n"
                 + "                <property name=\"propName1\">propValue1</property>\n"
                 + "            </properties>\n"
                 + "            <endpoint>nyc-endpoint</endpoint>\n"
-                + "        </wan-publisher>\n"
-                + "        <wan-consumer>\n"
+                + "        </batch-publisher>"
+                + "        <custom-publisher>\n"
+                + "                <class-name>PublisherClassName</class-name>\n"
+                + "                <publisher-id>customPublisherId</publisher-id>\n"
+                + "            <properties>\n"
+                + "                <property name=\"propName1\">propValue1</property>\n"
+                + "            </properties>\n"
+                + "        </custom-publisher>\n"
+                + "        <consumer>\n"
                 + "            <class-name>ConsumerClassName</class-name>\n"
                 + "            <properties>\n"
                 + "                <property name=\"propName1\">propValue1</property>\n"
                 + "            </properties>\n"
-                + "        </wan-consumer>\n"
+                + "        </consumer>\n"
                 + "    </wan-replication>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1422,19 +1430,44 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
 
-        List<WanPublisherConfig> publishers = wanReplicationConfig.getWanPublisherConfigs();
+        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanPublisherConfig publisherConfig = publishers.get(0);
-        assertEquals("PublisherClassName", publisherConfig.getClassName());
-        assertEquals("nyc", publisherConfig.getGroupName());
-        assertEquals("publisherId", publisherConfig.getPublisherId());
-        assertEquals(15000, publisherConfig.getQueueCapacity());
-        assertEquals(DISCARD_AFTER_MUTATION, publisherConfig.getQueueFullBehavior());
-        assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
-        assertEquals("nyc-endpoint", publisherConfig.getEndpoint());
+        WanBatchReplicationPublisherConfig pc = publishers.get(0);
 
-        properties = publisherConfig.getProperties();
+        assertEquals("nyc", pc.getGroupName());
+        assertEquals("publisherId", pc.getPublisherId());
+        assertEquals(100, pc.getBatchSize());
+        assertEquals(200, pc.getBatchMaxDelayMillis());
+        assertEquals(300, pc.getResponseTimeoutMillis());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, pc.getAcknowledgeType());
+        assertEquals(WanPublisherState.STOPPED, pc.getInitialPublisherState());
+        assertTrue(pc.isSnapshotEnabled());
+        assertEquals(400, pc.getIdleMinParkNs());
+        assertEquals(500, pc.getIdleMaxParkNs());
+        assertEquals(600, pc.getMaxConcurrentInvocations());
+        assertEquals(700, pc.getDiscoveryPeriodSeconds());
+        assertTrue(pc.isUseEndpointPrivateAddress());
+        assertEquals(THROW_EXCEPTION, pc.getQueueFullBehavior());
+        assertEquals(800, pc.getMaxTargetEndpoints());
+        assertEquals(21, pc.getQueueCapacity());
+        assertEquals("a,b,c,d", pc.getTargetEndpoints());
+        assertEquals("nyc-endpoint", pc.getEndpoint());
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc.getWanSyncConfig().getConsistencyCheckStrategy());
+
+        properties = pc.getProperties();
+        assertNotNull(properties);
+        assertEquals(1, properties.size());
+        assertEquals("propValue1", properties.get("propName1"));
+
+
+        List<CustomWanPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
+        assertNotNull(customPublishers);
+        assertEquals(1, customPublishers.size());
+        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        assertEquals("customPublisherId", customPublisher.getPublisherId());
+        assertEquals("PublisherClassName", customPublisher.getClassName());
+        properties = customPublisher.getProperties();
         assertNotNull(properties);
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
@@ -1446,8 +1479,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
-                + "        <wan-consumer>\n"
-                + "        </wan-consumer>\n"
+                + "        <consumer>\n"
+                + "        </consumer>\n"
                 + "    </wan-replication>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1463,12 +1496,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String configName = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
-                + "        <wan-publisher group-name=\"nyc\">\n"
-                + "            <class-name>PublisherClassName</class-name>\n"
-                + "            <wan-sync>\n"
-                + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
-                + "            </wan-sync>\n"
-                + "        </wan-publisher>\n"
+                + "        <batch-publisher>\n"
+                + "                <group-name>nyc</group-name>\n"
+                + "                <wan-sync>\n"
+                + "                    <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
+                + "                </wan-sync>\n"
+                + "            </batch-publisher>\n"
                 + "    </wan-replication>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1477,12 +1510,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(configName, wanReplicationConfig.getName());
 
-        List<WanPublisherConfig> publishers = wanReplicationConfig.getWanPublisherConfigs();
+        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanPublisherConfig publisherConfig = publishers.get(0);
-        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
-                .getConsistencyCheckStrategy());
+        WanBatchReplicationPublisherConfig pc = publishers.get(0);
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc.getWanSyncConfig().getConsistencyCheckStrategy());
     }
 
     @Override
@@ -1638,48 +1670,71 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testWanConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <wan-replication name=\"my-wan-cluster\">\n"
-                + "      <wan-publisher group-name=\"istanbul\" publisher-id=\"istanbulPublisherId\">\n"
-                + "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
-                + "         <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n"
-                + "         <queue-capacity>21</queue-capacity>\n"
-                + "         <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n"
-                + "            <access-key>sample-access-key</access-key>\n"
-                + "            <secret-key>sample-secret-key</secret-key>\n"
-                + "            <iam-role>sample-role</iam-role>\n"
-                + "            <region>sample-region</region>\n"
-                + "            <host-header>sample-header</host-header>\n"
-                + "            <security-group-name>sample-group</security-group-name>\n"
-                + "            <tag-key>sample-tag-key</tag-key>\n"
-                + "            <tag-value>sample-tag-value</tag-value>\n"
-                + "         </aws>\n"
-                + "         <discovery-strategies>\n"
-                + "            <node-filter class=\"DummyFilterClass\" />\n"
-                + "            <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n"
-                + "               <properties>\n"
-                + "                  <property name=\"key-string\">foo</property>\n"
-                + "                  <property name=\"key-int\">123</property>\n"
-                + "                  <property name=\"key-boolean\">true</property>\n"
-                + "               </properties>\n"
-                + "            </discovery-strategy>\n"
-                + "         </discovery-strategies>\n"
-                + "         <properties>\n"
-                + "            <property name=\"custom.prop.publisher\">prop.publisher</property>\n"
-                + "            <property name=\"discovery.period\">5</property>\n"
-                + "            <property name=\"maxEndpoints\">2</property>\n"
-                + "         </properties>\n"
-                + "      </wan-publisher>\n"
-                + "      <wan-publisher group-name=\"ankara\">\n"
-                + "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
-                + "         <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n"
-                + "         <initial-publisher-state>STOPPED</initial-publisher-state>\n"
-                + "      </wan-publisher>\n"
-                + "      <wan-consumer>\n"
-                + "         <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n"
-                + "         <properties>\n"
-                + "            <property name=\"custom.prop.consumer\">prop.consumer</property>\n"
-                + "         </properties>\n"
-                + "      <persist-wan-replicated-data>true</persist-wan-replicated-data>\n"
-                + "      </wan-consumer>\n"
+                + "        <batch-publisher>\n"
+                + "                <group-name>istanbul</group-name>\n"
+                + "                <publisher-id>istanbulPublisherId</publisher-id>\n"
+                + "                <batch-size>100</batch-size>\n"
+                + "                <batch-max-delay-millis>200</batch-max-delay-millis>\n"
+                + "                <response-timeout-millis>300</response-timeout-millis>\n"
+                + "                <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>\n"
+                + "                <initial-publisher-state>STOPPED</initial-publisher-state>\n"
+                + "                <snapshot-enabled>true</snapshot-enabled>\n"
+                + "                <idle-min-park-ns>400</idle-min-park-ns>\n"
+                + "                <idle-max-park-ns>500</idle-max-park-ns>\n"
+                + "                <max-concurrent-invocations>600</max-concurrent-invocations>\n"
+                + "                <discovery-period-seconds>700</discovery-period-seconds>\n"
+                + "                <use-endpoint-private-address>true</use-endpoint-private-address>\n"
+                + "                <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n"
+                + "                <max-target-endpoints>800</max-target-endpoints>\n"
+                + "                <queue-capacity>21</queue-capacity>\n"
+                + "                <target-endpoints>a,b,c,d</target-endpoints>\n"
+                + "            <wan-sync>\n"
+                + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
+                + "            </wan-sync>\n"
+                + "            <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n"
+                + "               <access-key>sample-access-key</access-key>\n"
+                + "               <secret-key>sample-secret-key</secret-key>\n"
+                + "               <iam-role>sample-role</iam-role>\n"
+                + "               <region>sample-region</region>\n"
+                + "               <host-header>sample-header</host-header>\n"
+                + "               <security-group-name>sample-group</security-group-name>\n"
+                + "               <tag-key>sample-tag-key</tag-key>\n"
+                + "               <tag-value>sample-tag-value</tag-value>\n"
+                + "            </aws>\n"
+                + "            <discovery-strategies>\n"
+                + "               <node-filter class=\"DummyFilterClass\" />\n"
+                + "               <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n"
+                + "                  <properties>\n"
+                + "                     <property name=\"key-string\">foo</property>\n"
+                + "                     <property name=\"key-int\">123</property>\n"
+                + "                     <property name=\"key-boolean\">true</property>\n"
+                + "                  </properties>\n"
+                + "               </discovery-strategy>\n"
+                + "            </discovery-strategies>\n"
+                + "            <properties>\n"
+                + "                <property name=\"custom.prop.publisher\">prop.publisher</property>\n"
+                + "            </properties>\n"
+                + "            <endpoint>nyc-endpoint</endpoint>\n"
+                + "        </batch-publisher>"
+                + "        <batch-publisher>\n"
+                + "                <group-name>ankara</group-name>\n"
+                + "                <initial-publisher-state>STOPPED</initial-publisher-state>\n"
+                + "                <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n"
+                + "        </batch-publisher>\n"
+                + "        <custom-publisher>\n"
+                + "                <publisher-id>customPublisherId</publisher-id>\n"
+                + "                <class-name>PublisherClassName</class-name>\n"
+                + "            <properties>\n"
+                + "                <property name=\"propName1\">propValue1</property>\n"
+                + "            </properties>\n"
+                + "        </custom-publisher>\n"
+                + "        <consumer>\n"
+                + "            <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n"
+                + "            <properties>\n"
+                + "                <property name=\"custom.prop.consumer\">prop.consumer</property>\n"
+                + "            </properties>\n"
+                + "            <persist-wan-replicated-data>true</persist-wan-replicated-data>\n"
+                + "        </consumer>\n"
                 + "   </wan-replication>"
                 + HAZELCAST_END_TAG;
 
@@ -1687,32 +1742,54 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
         assertNotNull(wanConfig);
 
-        List<WanPublisherConfig> publisherConfigs = wanConfig.getWanPublisherConfigs();
+        List<WanBatchReplicationPublisherConfig> publisherConfigs = wanConfig.getBatchPublisherConfigs();
         assertEquals(2, publisherConfigs.size());
-        WanPublisherConfig publisherConfig1 = publisherConfigs.get(0);
-        assertEquals("istanbul", publisherConfig1.getGroupName());
-        assertEquals("istanbulPublisherId", publisherConfig1.getPublisherId());
-        assertEquals("com.hazelcast.wan.custom.WanPublisher", publisherConfig1.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig1.getQueueFullBehavior());
-        assertEquals(WanPublisherState.REPLICATING, publisherConfig1.getInitialPublisherState());
-        assertEquals(21, publisherConfig1.getQueueCapacity());
-        Map<String, Comparable> pubProperties = publisherConfig1.getProperties();
+        WanBatchReplicationPublisherConfig pc1 = publisherConfigs.get(0);
+        assertEquals("istanbul", pc1.getGroupName());
+        assertEquals("istanbulPublisherId", pc1.getPublisherId());
+        assertEquals(100, pc1.getBatchSize());
+        assertEquals(200, pc1.getBatchMaxDelayMillis());
+        assertEquals(300, pc1.getResponseTimeoutMillis());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, pc1.getAcknowledgeType());
+        assertEquals(WanPublisherState.STOPPED, pc1.getInitialPublisherState());
+        assertTrue(pc1.isSnapshotEnabled());
+        assertEquals(400, pc1.getIdleMinParkNs());
+        assertEquals(500, pc1.getIdleMaxParkNs());
+        assertEquals(600, pc1.getMaxConcurrentInvocations());
+        assertEquals(700, pc1.getDiscoveryPeriodSeconds());
+        assertTrue(pc1.isUseEndpointPrivateAddress());
+        assertEquals(THROW_EXCEPTION, pc1.getQueueFullBehavior());
+        assertEquals(800, pc1.getMaxTargetEndpoints());
+        assertEquals(21, pc1.getQueueCapacity());
+        assertEquals("a,b,c,d", pc1.getTargetEndpoints());
+        assertEquals("nyc-endpoint", pc1.getEndpoint());
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc1.getWanSyncConfig().getConsistencyCheckStrategy());
+        Map<String, Comparable> pubProperties = pc1.getProperties();
         assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
-        assertEquals("5", pubProperties.get("discovery.period"));
-        assertEquals("2", pubProperties.get("maxEndpoints"));
-        assertFalse(publisherConfig1.getAwsConfig().isEnabled());
-        assertAwsConfig(publisherConfig1.getAwsConfig());
-        assertFalse(publisherConfig1.getGcpConfig().isEnabled());
-        assertFalse(publisherConfig1.getAzureConfig().isEnabled());
-        assertFalse(publisherConfig1.getKubernetesConfig().isEnabled());
-        assertFalse(publisherConfig1.getEurekaConfig().isEnabled());
-        assertDiscoveryConfig(publisherConfig1.getDiscoveryConfig());
+        assertFalse(pc1.getAwsConfig().isEnabled());
+        assertAwsConfig(pc1.getAwsConfig());
+        assertFalse(pc1.getGcpConfig().isEnabled());
+        assertFalse(pc1.getAzureConfig().isEnabled());
+        assertFalse(pc1.getKubernetesConfig().isEnabled());
+        assertFalse(pc1.getEurekaConfig().isEnabled());
+        assertDiscoveryConfig(pc1.getDiscoveryConfig());
 
-        WanPublisherConfig publisherConfig2 = publisherConfigs.get(1);
-        assertEquals("ankara", publisherConfig2.getGroupName());
-        assertNull(publisherConfig2.getPublisherId());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, publisherConfig2.getQueueFullBehavior());
-        assertEquals(WanPublisherState.STOPPED, publisherConfig2.getInitialPublisherState());
+        WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
+        assertEquals("ankara", pc2.getGroupName());
+        assertEquals("", pc2.getPublisherId());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
+        assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
+
+        List<CustomWanPublisherConfig> customPublishers = wanConfig.getCustomPublisherConfigs();
+        assertNotNull(customPublishers);
+        assertEquals(1, customPublishers.size());
+        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        assertEquals("customPublisherId", customPublisher.getPublisherId());
+        assertEquals("PublisherClassName", customPublisher.getClassName());
+        Map<String, Comparable> properties = customPublisher.getProperties();
+        assertNotNull(properties);
+        assertEquals(1, properties.size());
+        assertEquals("propValue1", properties.get("propName1"));
 
         WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
@@ -1736,57 +1813,57 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testQuorumConfig() {
+    public void testSplitBrainProtectionConfig() {
         String xml = HAZELCAST_START_TAG
-                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
-                + "        <quorum-size>3</quorum-size>\n"
-                + "        <quorum-function-class-name>com.my.quorum.function</quorum-function-class-name>\n"
-                + "        <quorum-type>READ</quorum-type>\n"
-                + "      </quorum>\n"
+                + "      <split-brain-protection enabled=\"true\" name=\"mySplitBrainProtection\">\n"
+                + "        <minimum-cluster-size>3</minimum-cluster-size>\n"
+                + "        <function-class-name>com.my.splitbrainprotection.function</function-class-name>\n"
+                + "        <protect-on>READ</protect-on>\n"
+                + "      </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
 
-        assertTrue("quorum should be enabled", quorumConfig.isEnabled());
-        assertEquals(3, quorumConfig.getSize());
-        assertEquals(QuorumType.READ, quorumConfig.getType());
-        assertEquals("com.my.quorum.function", quorumConfig.getQuorumFunctionClassName());
-        assertTrue(quorumConfig.getListenerConfigs().isEmpty());
+        assertTrue("split brain protection should be enabled", splitBrainProtectionConfig.isEnabled());
+        assertEquals(3, splitBrainProtectionConfig.getMinimumClusterSize());
+        assertEquals(SplitBrainProtectionOn.READ, splitBrainProtectionConfig.getProtectOn());
+        assertEquals("com.my.splitbrainprotection.function", splitBrainProtectionConfig.getFunctionClassName());
+        assertTrue(splitBrainProtectionConfig.getListenerConfigs().isEmpty());
     }
 
     @Override
     @Test
-    public void testQuorumListenerConfig() {
+    public void testSplitBrainProtectionListenerConfig() {
         String xml = HAZELCAST_START_TAG
-                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
-                + "        <quorum-size>3</quorum-size>\n"
-                + "        <quorum-listeners>"
-                + "           <quorum-listener>com.abc.my.quorum.listener</quorum-listener>"
-                + "           <quorum-listener>com.abc.my.second.listener</quorum-listener>"
-                + "       </quorum-listeners> "
-                + "        <quorum-function-class-name>com.hazelcast.SomeQuorumFunction</quorum-function-class-name>"
-                + "    </quorum>\n"
+                + "      <split-brain-protection enabled=\"true\" name=\"mySplitBrainProtection\">\n"
+                + "        <minimum-cluster-size>3</minimum-cluster-size>\n"
+                + "        <listeners>"
+                + "           <listener>com.abc.my.splitbrainprotection.listener</listener>"
+                + "           <listener>com.abc.my.second.listener</listener>"
+                + "       </listeners> "
+                + "        <function-class-name>com.hazelcast.SomesplitBrainProtectionFunction</function-class-name>"
+                + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
 
-        assertFalse(quorumConfig.getListenerConfigs().isEmpty());
-        assertEquals("com.abc.my.quorum.listener", quorumConfig.getListenerConfigs().get(0).getClassName());
-        assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
-        assertEquals("com.hazelcast.SomeQuorumFunction", quorumConfig.getQuorumFunctionClassName());
+        assertFalse(splitBrainProtectionConfig.getListenerConfigs().isEmpty());
+        assertEquals("com.abc.my.splitbrainprotection.listener", splitBrainProtectionConfig.getListenerConfigs().get(0).getClassName());
+        assertEquals("com.abc.my.second.listener", splitBrainProtectionConfig.getListenerConfigs().get(1).getClassName());
+        assertEquals("com.hazelcast.SomesplitBrainProtectionFunction", splitBrainProtectionConfig.getFunctionClassName());
     }
 
     @Override
     @Test
-    public void testQuorumConfig_whenClassNameAndRecentlyActiveQuorumDefined_exceptionIsThrown() {
+    public void testConfig_whenClassNameAndRecentlyActiveSplitBrainProtectionDefined_exceptionIsThrown() {
         String xml = HAZELCAST_START_TAG
-                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
-                + "        <quorum-size>3</quorum-size>\n"
-                + "        <quorum-function-class-name>com.hazelcast.SomeQuorumFunction</quorum-function-class-name>"
-                + "        <recently-active-quorum />"
-                + "    </quorum>\n"
+                + "      <split-brain-protection enabled=\"true\" name=\"mySplitBrainProtection\">\n"
+                + "        <minimum-cluster-size>3</minimum-cluster-size>\n"
+                + "        <function-class-name>com.hazelcast.SomesplitBrainProtectionFunction</function-class-name>"
+                + "        <recently-active-split-brain-protection />"
+                + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
         expected.expect(InvalidConfigurationException.class);
@@ -1795,13 +1872,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testQuorumConfig_whenClassNameAndProbabilisticQuorumDefined_exceptionIsThrown() {
+    public void testConfig_whenClassNameAndProbabilisticSplitBrainProtectionDefined_exceptionIsThrown() {
         String xml = HAZELCAST_START_TAG
-                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
-                + "        <quorum-size>3</quorum-size>\n"
-                + "        <quorum-function-class-name>com.hazelcast.SomeQuorumFunction</quorum-function-class-name>"
-                + "        <probabilistic-quorum />"
-                + "    </quorum>\n"
+                + "      <split-brain-protection enabled=\"true\" name=\"mySplitBrainProtection\">\n"
+                + "        <minimum-cluster-size>3</minimum-cluster-size>\n"
+                + "        <function-class-name>com.hazelcast.SomesplitBrainProtectionFunction</function-class-name>"
+                + "        <probabilistic-split-brain-protection />"
+                + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
         expected.expect(InvalidConfigurationException.class);
@@ -1810,13 +1887,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testQuorumConfig_whenBothBuiltinQuorumsDefined_exceptionIsThrown() {
+    public void testConfig_whenBothBuiltinSplitBrainProtectionsDefined_exceptionIsThrown() {
         String xml = HAZELCAST_START_TAG
-                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
-                + "        <quorum-size>3</quorum-size>\n"
-                + "        <probabilistic-quorum />"
-                + "        <recently-active-quorum />"
-                + "    </quorum>\n"
+                + "      <split-brain-protection enabled=\"true\" name=\"mySplitBrainProtection\">\n"
+                + "        <minimum-cluster-size>3</minimum-cluster-size>\n"
+                + "        <probabilistic-split-brain-protection />"
+                + "        <recently-active-split-brain-protection />"
+                + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
         expected.expect(InvalidConfigurationException.class);
@@ -1825,87 +1902,87 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testQuorumConfig_whenRecentlyActiveQuorum_withDefaultValues() {
+    public void testConfig_whenRecentlyActiveSplitBrainProtection_withDefaultValues() {
         String xml = HAZELCAST_START_TAG
-                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
-                + "        <quorum-size>3</quorum-size>\n"
-                + "        <recently-active-quorum />"
-                + "    </quorum>\n"
+                + "      <split-brain-protection enabled=\"true\" name=\"mySplitBrainProtection\">\n"
+                + "        <minimum-cluster-size>3</minimum-cluster-size>\n"
+                + "        <recently-active-split-brain-protection />"
+                + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
-        assertInstanceOf(RecentlyActiveQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
-        RecentlyActiveQuorumFunction quorumFunction = (RecentlyActiveQuorumFunction) quorumConfig
-                .getQuorumFunctionImplementation();
-        assertEquals(RecentlyActiveQuorumConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS,
-                quorumFunction.getHeartbeatToleranceMillis());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
+        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction = (RecentlyActiveSplitBrainProtectionFunction) splitBrainProtectionConfig
+                .getFunctionImplementation();
+        assertEquals(RecentlyActiveSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS,
+                splitBrainProtectionFunction.getHeartbeatToleranceMillis());
     }
 
     @Override
     @Test
-    public void testQuorumConfig_whenRecentlyActiveQuorum_withCustomValues() {
+    public void testConfig_whenRecentlyActiveSplitBrainProtection_withCustomValues() {
         String xml = HAZELCAST_START_TAG
-                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
-                + "        <quorum-size>3</quorum-size>\n"
-                + "        <recently-active-quorum heartbeat-tolerance-millis=\"13000\" />"
-                + "    </quorum>\n"
+                + "      <split-brain-protection enabled=\"true\" name=\"mySplitBrainProtection\">\n"
+                + "        <minimum-cluster-size>3</minimum-cluster-size>\n"
+                + "        <recently-active-split-brain-protection heartbeat-tolerance-millis=\"13000\" />"
+                + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
-        assertEquals(3, quorumConfig.getSize());
-        assertInstanceOf(RecentlyActiveQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
-        RecentlyActiveQuorumFunction quorumFunction = (RecentlyActiveQuorumFunction) quorumConfig
-                .getQuorumFunctionImplementation();
-        assertEquals(13000, quorumFunction.getHeartbeatToleranceMillis());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
+        assertEquals(3, splitBrainProtectionConfig.getMinimumClusterSize());
+        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction = (RecentlyActiveSplitBrainProtectionFunction) splitBrainProtectionConfig
+                .getFunctionImplementation();
+        assertEquals(13000, splitBrainProtectionFunction.getHeartbeatToleranceMillis());
     }
 
     @Override
     @Test
-    public void testQuorumConfig_whenProbabilisticQuorum_withDefaultValues() {
+    public void testConfig_whenProbabilisticSplitBrainProtection_withDefaultValues() {
         String xml = HAZELCAST_START_TAG
-                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
-                + "        <quorum-size>3</quorum-size>\n"
-                + "        <probabilistic-quorum />"
-                + "    </quorum>\n"
+                + "      <split-brain-protection enabled=\"true\" name=\"mySplitBrainProtection\">\n"
+                + "        <minimum-cluster-size>3</minimum-cluster-size>\n"
+                + "        <probabilistic-split-brain-protection />"
+                + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
-        assertInstanceOf(ProbabilisticQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
-        ProbabilisticQuorumFunction quorumFunction = (ProbabilisticQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS,
-                quorumFunction.getHeartbeatIntervalMillis());
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS,
-                quorumFunction.getAcceptableHeartbeatPauseMillis());
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_MIN_STD_DEVIATION,
-                quorumFunction.getMinStdDeviationMillis());
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_PHI_THRESHOLD, quorumFunction.getSuspicionThreshold(), 0.01);
-        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_SAMPLE_SIZE, quorumFunction.getMaxSampleSize());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
+        assertInstanceOf(ProbabilisticSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        ProbabilisticSplitBrainProtectionFunction splitBrainProtectionFunction = (ProbabilisticSplitBrainProtectionFunction) splitBrainProtectionConfig.getFunctionImplementation();
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS,
+                splitBrainProtectionFunction.getHeartbeatIntervalMillis());
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS,
+                splitBrainProtectionFunction.getAcceptableHeartbeatPauseMillis());
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_MIN_STD_DEVIATION,
+                splitBrainProtectionFunction.getMinStdDeviationMillis());
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_PHI_THRESHOLD, splitBrainProtectionFunction.getSuspicionThreshold(), 0.01);
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_SAMPLE_SIZE, splitBrainProtectionFunction.getMaxSampleSize());
     }
 
     @Override
     @Test
-    public void testQuorumConfig_whenProbabilisticQuorum_withCustomValues() {
+    public void testConfig_whenProbabilisticSplitBrainProtection_withCustomValues() {
         String xml = HAZELCAST_START_TAG
-                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
-                + "        <quorum-size>3</quorum-size>\n"
-                + "        <probabilistic-quorum acceptable-heartbeat-pause-millis=\"37400\" suspicion-threshold=\"3.14592\" "
+                + "      <split-brain-protection enabled=\"true\" name=\"mySplitBrainProtection\">\n"
+                + "        <minimum-cluster-size>3</minimum-cluster-size>\n"
+                + "        <probabilistic-split-brain-protection acceptable-heartbeat-pause-millis=\"37400\" suspicion-threshold=\"3.14592\" "
                 + "                 max-sample-size=\"42\" min-std-deviation-millis=\"1234\""
                 + "                 heartbeat-interval-millis=\"4321\" />"
-                + "    </quorum>\n"
+                + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
-        assertInstanceOf(ProbabilisticQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
-        ProbabilisticQuorumFunction quorumFunction = (ProbabilisticQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
-        assertEquals(4321, quorumFunction.getHeartbeatIntervalMillis());
-        assertEquals(37400, quorumFunction.getAcceptableHeartbeatPauseMillis());
-        assertEquals(1234, quorumFunction.getMinStdDeviationMillis());
-        assertEquals(3.14592d, quorumFunction.getSuspicionThreshold(), 0.001d);
-        assertEquals(42, quorumFunction.getMaxSampleSize());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
+        assertInstanceOf(ProbabilisticSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        ProbabilisticSplitBrainProtectionFunction splitBrainProtectionFunction = (ProbabilisticSplitBrainProtectionFunction) splitBrainProtectionConfig.getFunctionImplementation();
+        assertEquals(4321, splitBrainProtectionFunction.getHeartbeatIntervalMillis());
+        assertEquals(37400, splitBrainProtectionFunction.getAcceptableHeartbeatPauseMillis());
+        assertEquals(1234, splitBrainProtectionFunction.getMinStdDeviationMillis());
+        assertEquals(3.14592d, splitBrainProtectionFunction.getSuspicionThreshold(), 0.001d);
+        assertEquals(42, splitBrainProtectionFunction.getMaxSampleSize());
     }
 
     @Override
@@ -1913,7 +1990,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCacheConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <cache name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <key-type class-name=\"java.lang.Object\"/>"
                 + "        <value-type class-name=\"java.lang.Object\"/>"
                 + "        <statistics-enabled>false</statistics-enabled>"
@@ -1927,7 +2004,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <backup-count>1</backup-count>"
                 + "        <async-backup-count>0</async-backup-count>"
                 + "        <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"
-                + "        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>"
+                + "        <merge-policy batch-size=\"111\">LatestAccessMergePolicy</merge-policy>"
                 + "        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>"
                 + "        <event-journal enabled=\"true\">\n"
                 + "            <capacity>120</capacity>\n"
@@ -1954,7 +2031,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         CacheSimpleConfig cacheConfig = config.getCacheConfig("foobar");
 
         assertFalse(config.getCacheConfigs().isEmpty());
-        assertEquals("customQuorumRule", cacheConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", cacheConfig.getSplitBrainProtectionName());
         assertEquals("java.lang.Object", cacheConfig.getKeyType());
         assertEquals("java.lang.Object", cacheConfig.getValueType());
         assertFalse(cacheConfig.isStatisticsEnabled());
@@ -1970,7 +2047,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1000, cacheConfig.getEvictionConfig().getSize());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals("com.hazelcast.cache.merge.LatestAccessCacheMergePolicy", cacheConfig.getMergePolicy());
+        assertEquals("LatestAccessMergePolicy", cacheConfig.getMergePolicyConfig().getPolicy());
+        assertEquals(111, cacheConfig.getMergePolicyConfig().getBatchSize());
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
         assertFalse(cacheConfig.getHotRestartConfig().isFsync());
@@ -1992,7 +2070,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <executor-service name=\"foobar\">\n"
                 + "        <pool-size>2</pool-size>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <statistics-enabled>true</statistics-enabled>"
                 + "        <queue-capacity>0</queue-capacity>"
                 + "    </executor-service>"
@@ -2003,7 +2081,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(config.getExecutorConfigs().isEmpty());
         assertEquals(2, executorConfig.getPoolSize());
-        assertEquals("customQuorumRule", executorConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", executorConfig.getSplitBrainProtectionName());
         assertTrue(executorConfig.isStatisticsEnabled());
         assertEquals(0, executorConfig.getQueueCapacity());
     }
@@ -2016,7 +2094,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <pool-size>2</pool-size>\n"
                 + "        <durability>3</durability>\n"
                 + "        <capacity>4</capacity>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "    </durable-executor-service>"
                 + HAZELCAST_END_TAG;
 
@@ -2027,7 +2105,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(2, durableExecutorConfig.getPoolSize());
         assertEquals(3, durableExecutorConfig.getDurability());
         assertEquals(4, durableExecutorConfig.getCapacity());
-        assertEquals("customQuorumRule", durableExecutorConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", durableExecutorConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -2038,7 +2116,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <durability>4</durability>\n"
                 + "        <pool-size>5</pool-size>\n"
                 + "        <capacity>2</capacity>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <merge-policy batch-size='99'>PutIfAbsent</merge-policy>"
                 + "    </scheduled-executor-service>\n"
                 + HAZELCAST_END_TAG;
@@ -2050,7 +2128,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(4, scheduledExecutorConfig.getDurability());
         assertEquals(5, scheduledExecutorConfig.getPoolSize());
         assertEquals(2, scheduledExecutorConfig.getCapacity());
-        assertEquals("customQuorumRule", scheduledExecutorConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", scheduledExecutorConfig.getSplitBrainProtectionName());
         assertEquals(99, scheduledExecutorConfig.getMergePolicyConfig().getBatchSize());
         assertEquals("PutIfAbsent", scheduledExecutorConfig.getMergePolicyConfig().getPolicy());
     }
@@ -2062,7 +2140,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <cardinality-estimator name=\"foobar\">\n"
                 + "        <backup-count>2</backup-count>\n"
                 + "        <async-backup-count>3</async-backup-count>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <merge-policy>com.hazelcast.spi.merge.HyperLogLogMergePolicy</merge-policy>"
                 + "    </cardinality-estimator>\n"
                 + HAZELCAST_END_TAG;
@@ -2075,7 +2153,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(3, cardinalityEstimatorConfig.getAsyncBackupCount());
         assertEquals("com.hazelcast.spi.merge.HyperLogLogMergePolicy",
                 cardinalityEstimatorConfig.getMergePolicyConfig().getPolicy());
-        assertEquals("customQuorumRule", cardinalityEstimatorConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", cardinalityEstimatorConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -2085,7 +2163,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <cardinality-estimator name=\"foobar\">\n"
                 + "        <backup-count>2</backup-count>\n"
                 + "        <async-backup-count>3</async-backup-count>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <merge-policy>CustomMergePolicy</merge-policy>"
                 + "    </cardinality-estimator>\n"
                 + HAZELCAST_END_TAG;
@@ -2100,7 +2178,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <pn-counter name=\"pn-counter-1\">\n"
                 + "        <replica-count>100</replica-count>\n"
-                + "        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>\n"
+                + "        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>\n"
                 + "        <statistics-enabled>false</statistics-enabled>\n"
                 + "    </pn-counter>"
                 + HAZELCAST_END_TAG;
@@ -2110,7 +2188,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(config.getPNCounterConfigs().isEmpty());
         assertEquals(100, pnCounterConfig.getReplicaCount());
-        assertEquals("quorumRuleWithThreeMembers", pnCounterConfig.getQuorumName());
+        assertEquals("splitBrainProtectionRuleWithThreeMembers", pnCounterConfig.getSplitBrainProtectionName());
         assertFalse(pnCounterConfig.isStatisticsEnabled());
     }
 
@@ -2123,10 +2201,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <async-backup-count>3</async-backup-count>"
                 + "        <binary>false</binary>"
                 + "        <value-collection-type>SET</value-collection-type>"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <entry-listeners>\n"
-                +
-                "            <entry-listener include-value=\"true\" local=\"true\">com.hazelcast.examples.EntryListener</entry-listener>\n"
+                + "            <entry-listener include-value=\"true\" local=\"true\">com.hazelcast.examples.EntryListener</entry-listener>\n"
                 + "          </entry-listeners>"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
                 + "  </multimap>"
@@ -2147,7 +2224,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         MergePolicyConfig mergePolicyConfig = multiMapConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals("customQuorumRule", multiMapConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", multiMapConfig.getSplitBrainProtectionName());
         assertEquals(23, mergePolicyConfig.getBatchSize());
     }
 
@@ -2159,7 +2236,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <in-memory-format>BINARY</in-memory-format>\n"
                 + "        <async-fillup>false</async-fillup>\n"
                 + "        <statistics-enabled>false</statistics-enabled>\n"
-                + "        <quorum-ref>CustomQuorumRule</quorum-ref>\n"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>\n"
                 + "        <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>\n"
                 + "    </replicatedmap>\n"
                 + HAZELCAST_END_TAG;
@@ -2171,7 +2248,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(InMemoryFormat.BINARY, replicatedMapConfig.getInMemoryFormat());
         assertFalse(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
-        assertEquals("CustomQuorumRule", replicatedMapConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", replicatedMapConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = replicatedMapConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -2183,7 +2260,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testListConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <list name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <statistics-enabled>false</statistics-enabled>"
                 + "        <max-size>42</max-size>"
                 + "        <backup-count>2</backup-count>"
@@ -2199,7 +2276,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         ListConfig listConfig = config.getListConfig("foobar");
 
         assertFalse(config.getListConfigs().isEmpty());
-        assertEquals("customQuorumRule", listConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", listConfig.getSplitBrainProtectionName());
         assertEquals(42, listConfig.getMaxSize());
         assertEquals(2, listConfig.getBackupCount());
         assertEquals(1, listConfig.getAsyncBackupCount());
@@ -2216,7 +2293,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testSetConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <set name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <backup-count>2</backup-count>"
                 + "        <async-backup-count>1</async-backup-count>"
                 + "        <max-size>42</max-size>"
@@ -2231,7 +2308,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         SetConfig setConfig = config.getSetConfig("foobar");
 
         assertFalse(config.getSetConfigs().isEmpty());
-        assertEquals("customQuorumRule", setConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", setConfig.getSplitBrainProtectionName());
         assertEquals(2, setConfig.getBackupCount());
         assertEquals(1, setConfig.getAsyncBackupCount());
         assertEquals(42, setConfig.getMaxSize());
@@ -2249,7 +2326,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testMapConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <map name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
                 + "        <in-memory-format>BINARY</in-memory-format>"
                 + "        <statistics-enabled>true</statistics-enabled>"
                 + "        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>"
@@ -2280,17 +2357,15 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            </properties>\n"
                 + "          </map-store>"
                 + "        <near-cache>\n"
-                + "            <max-size>5000</max-size>\n"
                 + "            <time-to-live-seconds>42</time-to-live-seconds>\n"
                 + "            <max-idle-seconds>42</max-idle-seconds>\n"
-                + "            <eviction-policy>LRU</eviction-policy>\n"
                 + "            <invalidate-on-change>true</invalidate-on-change>\n"
                 + "            <in-memory-format>BINARY</in-memory-format>\n"
                 + "            <cache-local-entries>false</cache-local-entries>\n"
                 + "            <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>\n"
                 + "          </near-cache>"
                 + "        <wan-replication-ref name=\"my-wan-cluster-batch\">\n"
-                + "            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n"
+                + "            <merge-policy>PassThroughMergePolicy</merge-policy>\n"
                 + "            <filters>\n"
                 + "                <filter-impl>com.example.SampleFilter</filter-impl>\n"
                 + "            </filters>\n"
@@ -2300,14 +2375,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <index ordered=\"true\">age</index>\n"
                 + "          </indexes>"
                 + "        <attributes>\n"
-                + "            <attribute extractor=\"com.bank.CurrencyExtractor\">currency</attribute>\n"
+                + "            <attribute extractor-class-name=\"com.bank.CurrencyExtractor\">currency</attribute>\n"
                 + "           </attributes>"
                 + "        <partition-lost-listeners>\n"
                 + "            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>\n"
                 + "          </partition-lost-listeners>"
                 + "        <entry-listeners>\n"
-                +
-                "            <entry-listener include-value=\"false\" local=\"false\">com.your-package.MyEntryListener</entry-listener>\n"
+                + "            <entry-listener include-value=\"false\" local=\"false\">com.your-package.MyEntryListener</entry-listener>\n"
                 + "          </entry-listeners>"
                 + "    </map>\n"
                 + HAZELCAST_END_TAG;
@@ -2316,7 +2390,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         MapConfig mapConfig = config.getMapConfig("foobar");
 
         assertFalse(config.getMapConfigs().isEmpty());
-        assertEquals("customQuorumRule", mapConfig.getQuorumName());
+        assertEquals("customSplitBrainProtectionRule", mapConfig.getSplitBrainProtectionName());
         assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
         assertTrue(mapConfig.isStatisticsEnabled());
         assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig.getCacheDeserializedValues());
@@ -2332,9 +2406,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig.getMapIndexConfigs().size());
         assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
         assertTrue(mapConfig.getMapIndexConfigs().get(0).isOrdered());
-        assertEquals(1, mapConfig.getMapAttributeConfigs().size());
-        assertEquals("com.bank.CurrencyExtractor", mapConfig.getMapAttributeConfigs().get(0).getExtractor());
-        assertEquals("currency", mapConfig.getMapAttributeConfigs().get(0).getName());
+        assertEquals(1, mapConfig.getAttributeConfigs().size());
+        assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
+        assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
         assertEquals(1, mapConfig.getPartitionLostListenerConfigs().size());
         assertEquals("com.your-package.YourPartitionLostListener", mapConfig.getPartitionLostListenerConfigs().get(0).getClassName());
         assertEquals(1, mapConfig.getEntryListenerConfigs().size());
@@ -2364,7 +2438,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         assertNotNull(nearCacheConfig);
-        assertEquals(5000, nearCacheConfig.getMaxSize());
         assertEquals(42, nearCacheConfig.getMaxIdleSeconds());
         assertEquals(42, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(InMemoryFormat.BINARY, nearCacheConfig.getInMemoryFormat());
@@ -2377,7 +2450,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
         assertFalse(wanReplicationRef.isRepublishingEnabled());
-        assertEquals("com.hazelcast.map.merge.PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }
@@ -2413,8 +2486,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.PowerExtractor\">power</attribute>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\">weight</attribute>\n"
+                + "           <attribute extractor-class-name=\"com.car.PowerExtractor\">power</attribute>\n"
+                + "           <attribute extractor-class-name=\"com.car.WeightExtractor\">weight</attribute>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2422,9 +2495,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getMapAttributeConfigs().isEmpty());
-        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getMapAttributeConfigs().get(0));
-        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getMapAttributeConfigs().get(1));
+        assertFalse(mapConfig.getAttributeConfigs().isEmpty());
+        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getAttributeConfigs().get(0));
+        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getAttributeConfigs().get(1));
     }
 
     @Override
@@ -2433,7 +2506,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\"></attribute>\n"
+                + "           <attribute extractor-class-name=\"com.car.WeightExtractor\"></attribute>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2441,9 +2514,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         buildConfig(xml);
     }
 
-    private static void assertAttributeEqual(String expectedName, String expectedExtractor, MapAttributeConfig attributeConfig) {
+    private static void assertAttributeEqual(String expectedName, String expectedExtractor, AttributeConfig attributeConfig) {
         assertEquals(expectedName, attributeConfig.getName());
-        assertEquals(expectedExtractor, attributeConfig.getExtractor());
+        assertEquals(expectedExtractor, attributeConfig.getExtractorClassName());
     }
 
     @Override
@@ -2452,7 +2525,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\"/>\n"
+                + "           <attribute extractor-class-name=\"com.car.WeightExtractor\"/>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2480,7 +2553,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"\">weight</attribute>\n"
+                + "           <attribute extractor-class-name=\"\">weight</attribute>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -3207,10 +3280,24 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     public void testWhitespaceInNonSpaceStrings() {
         String xml = HAZELCAST_START_TAG
-                + "<quorum enabled='true' name='q'><quorum-type> \n WRITE \n </quorum-type></quorum>"
+                + "<split-brain-protection enabled='true' name='q'><protect-on> \n WRITE \n </protect-on></split-brain-protection>"
                 + HAZELCAST_END_TAG;
         buildConfig(xml);
     }
+
+    @Override
+    @Test
+    public void testPersistentMemoryDirectoryConfiguration() throws IOException {
+        String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
+
+        // remove imports to prevent the test from failing with importing non-existing files
+        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
+
+        Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
+
+        assertEquals("/mnt/optane", xmlConfig.getNativeMemoryConfig().getPersistentMemoryDirectory());
+    }
+
 
     @Override
     protected Config buildCompleteAdvancedNetworkConfig() {

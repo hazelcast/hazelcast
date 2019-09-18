@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockWaitNotifyKey;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockWaitNotifyKey;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -69,7 +69,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         verifyLock();
         try {
             operator(this).init(dataKey, oldValue, newValue, null, modificationType)
-                          .doPostOperateOps();
+                    .doPostOperateOps();
         } finally {
             unlockKey();
         }

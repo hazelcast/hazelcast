@@ -87,7 +87,7 @@ public class ReplicatedMapWriteOrderTest extends ReplicatedMapAbstractTest {
         System.out.println("operations = " + operations);
         System.out.println("keyCount = " + keyCount);
         Config config = new Config();
-        config.getReplicatedMapConfig("test").setReplicationDelayMillis(0);
+        config.getReplicatedMapConfig("test");
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(nodeCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         String replicatedMapName = "test";

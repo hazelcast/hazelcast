@@ -54,7 +54,7 @@ class ReplicatedMapSplitBrainHandlerService extends AbstractSplitBrainHandlerSer
     protected Iterator<ReplicatedRecordStore> storeIterator(int partitionId) {
         PartitionContainer partitionContainer = service.getPartitionContainer(partitionId);
         if (partitionContainer == null) {
-            return Collections.<ReplicatedRecordStore>emptyList().iterator();
+            return Collections.emptyIterator();
         }
         ConcurrentMap<String, ReplicatedRecordStore> stores = partitionContainer.getStores();
         return stores.values().iterator();

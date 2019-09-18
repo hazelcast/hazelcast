@@ -25,10 +25,12 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.Set;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
 import static java.util.Collections.EMPTY_SET;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * Event for member attribute changes.
@@ -40,15 +42,14 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
     private MemberAttributeOperationType operationType;
     private String key;
     private Object value;
-    private Member member;
 
     public MemberAttributeEvent() {
         super(null, null, MEMBER_ATTRIBUTE_CHANGED, EMPTY_SET);
     }
 
-    public MemberAttributeEvent(Cluster cluster, Member member, MemberAttributeOperationType operationType,
-                                String key, Object value) {
-        super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, EMPTY_SET);
+    public MemberAttributeEvent(Cluster cluster, Member member, Set<Member> members,
+                                MemberAttributeOperationType operationType, String key, Object value) {
+        super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, members);
         this.member = member;
         this.operationType = operationType;
         this.key = key;
@@ -82,10 +83,6 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         return value;
     }
 
-    public Member getMember() {
-        return member;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(key);
@@ -94,6 +91,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         if (operationType == PUT) {
             IOUtil.writeAttributeValue(value, out);
         }
+        out.writeObject(members);
     }
 
     @Override
@@ -106,5 +104,6 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
             value = IOUtil.readAttributeValue(in);
         }
         this.source = member;
+        this.members = unmodifiableSet(in.readObject());
     }
 }

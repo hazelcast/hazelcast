@@ -16,11 +16,15 @@
 
 package com.hazelcast.internal.management.dto;
 
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MetadataPolicy;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,89 +35,151 @@ import java.io.IOException;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 /**
  * Serializable adapter for {@link com.hazelcast.config.MapConfig}
  */
 public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializable {
 
-    private MapConfig config;
+    private MapConfig mapConfig;
 
     public MapConfigDTO() {
     }
 
     public MapConfigDTO(MapConfig mapConfig) {
-        this.config = mapConfig;
+        this.mapConfig = mapConfig;
     }
 
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
-        root.add("name", config.getName());
-        root.add("memoryFormat", config.getInMemoryFormat().toString());
-        root.add("backupCount", config.getBackupCount());
-        root.add("asyncBackupCount", config.getAsyncBackupCount());
-        root.add("ttl", config.getTimeToLiveSeconds());
-        root.add("maxIdle", config.getMaxIdleSeconds());
-        root.add("maxSize", config.getMaxSizeConfig().getSize());
-        root.add("maxSizePolicy", config.getMaxSizeConfig().getMaxSizePolicy().toString());
-        root.add("readBackupData", config.isReadBackupData());
-        root.add("evictionPolicy", config.getEvictionPolicy().name());
-        root.add("mergePolicy", config.getMergePolicy());
+
+        String name = mapConfig.getName();
+        if (!isNullOrEmpty(name)) {
+            root.add("name", name);
+        }
+
+        String splitBrainProtectionName = mapConfig.getSplitBrainProtectionName();
+        if (!isNullOrEmpty(splitBrainProtectionName)) {
+            root.add("splitBrainProtectionName", splitBrainProtectionName);
+        }
+
+        root.add("maxSize", mapConfig.getMaxSizeConfig().getSize());
+        root.add("maxSizePolicy", mapConfig.getMaxSizeConfig().getMaxSizePolicy().toString());
+        root.add("evictionPolicy", mapConfig.getEvictionPolicy().name());
+        root.add("memoryFormat", mapConfig.getInMemoryFormat().toString());
+        root.add("cacheDeserializedValues", mapConfig.getCacheDeserializedValues().toString());
+        root.add("metadataPolicy", mapConfig.getMetadataPolicy().toString());
+        root.add("backupCount", mapConfig.getBackupCount());
+        root.add("asyncBackupCount", mapConfig.getAsyncBackupCount());
+        root.add("ttl", mapConfig.getTimeToLiveSeconds());
+        root.add("maxIdle", mapConfig.getMaxIdleSeconds());
+        root.add("readBackupData", mapConfig.isReadBackupData());
+        root.add("statisticsEnabled", mapConfig.isStatisticsEnabled());
+        root.add("mergePolicy", new MergePolicyConfigDTO(mapConfig.getMergePolicyConfig()).toJson());
+        root.add("mapStoreConfig", new MapStoreConfigDTO(mapConfig.getMapStoreConfig()).toJson());
+
+        NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
+        if (nearCacheConfig != null) {
+            root.add("nearCacheConfig", new NearCacheConfigDTO(nearCacheConfig).toJson());
+        }
+
         return root;
     }
 
     @Override
     public void fromJson(JsonObject json) {
-        config = new MapConfig();
-        config.setName(getString(json, "name"));
-        config.setInMemoryFormat(InMemoryFormat.valueOf(getString(json, "memoryFormat")));
-        config.setBackupCount(getInt(json, "backupCount"));
-        config.setAsyncBackupCount(getInt(json, "asyncBackupCount"));
-        config.setTimeToLiveSeconds(getInt(json, "ttl"));
-        config.setMaxIdleSeconds(getInt(json, "maxIdle"));
-        config.setMaxSizeConfig(new MaxSizeConfig().setSize(getInt(json, "maxSize"))
-                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(getString(json, "maxSizePolicy"))));
-        config.setReadBackupData(getBoolean(json, "readBackupData"));
-        config.setEvictionPolicy(EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
-        config.setMergePolicy(getString(json, "mergePolicy"));
-    }
+        mapConfig = new MapConfig();
 
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        config = new MapConfig();
-        config.setName(in.readUTF());
-        config.setInMemoryFormat(InMemoryFormat.valueOf(in.readUTF()));
-        config.setBackupCount(in.readInt());
-        config.setAsyncBackupCount(in.readInt());
-        config.setTimeToLiveSeconds(in.readInt());
-        config.setMaxIdleSeconds(in.readInt());
-        config.setMaxSizeConfig(
-                new MaxSizeConfig()
-                        .setSize(in.readInt())
-                        .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
-        config.setReadBackupData(in.readBoolean());
-        config.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
-        config.setMergePolicy(in.readUTF());
+        JsonValue name = json.get("name");
+        if (name != null && !name.isNull()) {
+            mapConfig.setName(getString(json, "name"));
+        }
+
+        JsonValue splitBrainProtectionName = json.get("splitBrainProtectionName");
+        if (splitBrainProtectionName != null && !splitBrainProtectionName.isNull()) {
+            mapConfig.setSplitBrainProtectionName(getString(json, "splitBrainProtectionName"));
+        }
+
+        mapConfig.setMaxSizeConfig(new MaxSizeConfig().setSize(getInt(json, "maxSize"))
+                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(getString(json, "maxSizePolicy"))));
+        mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
+        mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(getString(json, "memoryFormat")));
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.valueOf(getString(json, "cacheDeserializedValues")));
+        mapConfig.setMetadataPolicy(MetadataPolicy.valueOf(getString(json, "metadataPolicy")));
+        mapConfig.setBackupCount(getInt(json, "backupCount"));
+        mapConfig.setAsyncBackupCount(getInt(json, "asyncBackupCount"));
+        mapConfig.setTimeToLiveSeconds(getInt(json, "ttl"));
+        mapConfig.setMaxIdleSeconds(getInt(json, "maxIdle"));
+        mapConfig.setReadBackupData(getBoolean(json, "readBackupData"));
+        mapConfig.setStatisticsEnabled(getBoolean(json, "statisticsEnabled"));
+
+        MergePolicyConfigDTO mergePolicyConfigDTO = new MergePolicyConfigDTO();
+        mergePolicyConfigDTO.fromJson(getObject(json, "mergePolicy"));
+        mapConfig.setMergePolicyConfig(mergePolicyConfigDTO.getConfig());
+
+        MapStoreConfigDTO mapStoreConfigDTO = new MapStoreConfigDTO();
+        mapStoreConfigDTO.fromJson(getObject(json, "mapStoreConfig"));
+        mapConfig.setMapStoreConfig(mapStoreConfigDTO.getConfig());
+
+        JsonValue nearCacheConfig = json.get("nearCacheConfig");
+        if (nearCacheConfig != null && !nearCacheConfig.isNull()) {
+            NearCacheConfigDTO nearCacheConfigDTO = new NearCacheConfigDTO();
+            nearCacheConfigDTO.fromJson(nearCacheConfig.asObject());
+            mapConfig.setNearCacheConfig(nearCacheConfigDTO.getConfig());
+        }
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(config.getName());
-        out.writeUTF(config.getInMemoryFormat().toString());
-        out.writeInt(config.getBackupCount());
-        out.writeInt(config.getAsyncBackupCount());
-        out.writeInt(config.getTimeToLiveSeconds());
-        out.writeInt(config.getMaxIdleSeconds());
-        out.writeInt(config.getMaxSizeConfig().getSize());
-        out.writeUTF(config.getMaxSizeConfig().getMaxSizePolicy().toString());
-        out.writeBoolean(config.isReadBackupData());
-        out.writeUTF(config.getEvictionPolicy().name());
-        out.writeUTF(config.getMergePolicy());
+        out.writeUTF(mapConfig.getName());
+        out.writeUTF(mapConfig.getSplitBrainProtectionName());
+        out.writeInt(mapConfig.getMaxSizeConfig().getSize());
+        out.writeUTF(mapConfig.getMaxSizeConfig().getMaxSizePolicy().toString());
+        out.writeUTF(mapConfig.getEvictionPolicy().name());
+        out.writeUTF(mapConfig.getInMemoryFormat().toString());
+        out.writeUTF(mapConfig.getCacheDeserializedValues().toString());
+        out.writeUTF(mapConfig.getMetadataPolicy().toString());
+        out.writeInt(mapConfig.getBackupCount());
+        out.writeInt(mapConfig.getAsyncBackupCount());
+        out.writeInt(mapConfig.getTimeToLiveSeconds());
+        out.writeInt(mapConfig.getMaxIdleSeconds());
+        out.writeBoolean(mapConfig.isReadBackupData());
+        out.writeBoolean(mapConfig.isStatisticsEnabled());
+        out.writeObject(mapConfig.getMergePolicyConfig());
+        out.writeObject(mapConfig.getMapStoreConfig());
+        out.writeObject(mapConfig.getNearCacheConfig());
     }
 
-    public MapConfig getMapConfig() {
-        return config;
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        mapConfig = new MapConfig();
+        mapConfig.setName(in.readUTF());
+        mapConfig.setSplitBrainProtectionName(in.readUTF());
+        mapConfig.setMaxSizeConfig(
+                new MaxSizeConfig()
+                        .setSize(in.readInt())
+                        .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
+        mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
+        mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(in.readUTF()));
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.valueOf(in.readUTF()));
+        mapConfig.setMetadataPolicy(MetadataPolicy.valueOf(in.readUTF()));
+        mapConfig.setBackupCount(in.readInt());
+        mapConfig.setAsyncBackupCount(in.readInt());
+        mapConfig.setTimeToLiveSeconds(in.readInt());
+        mapConfig.setMaxIdleSeconds(in.readInt());
+        mapConfig.setReadBackupData(in.readBoolean());
+        mapConfig.setStatisticsEnabled(in.readBoolean());
+        mapConfig.setMergePolicyConfig(in.readObject());
+        mapConfig.setMapStoreConfig(in.readObject());
+        mapConfig.setNearCacheConfig(in.readObject());
+    }
+
+    public MapConfig getConfig() {
+        return mapConfig;
     }
 
     @Override

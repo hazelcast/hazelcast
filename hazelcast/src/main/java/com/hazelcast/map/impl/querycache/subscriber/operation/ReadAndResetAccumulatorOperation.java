@@ -39,7 +39,8 @@ import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumula
  *
  * @see com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOperation
  */
-public class ReadAndResetAccumulatorOperation extends MapOperation implements PartitionAwareOperation {
+public class ReadAndResetAccumulatorOperation
+        extends MapOperation implements PartitionAwareOperation {
 
     private String cacheId;
     private List<Sequenced> eventDataList;

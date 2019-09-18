@@ -39,8 +39,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.quorum.QuorumException;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Notifier;
@@ -192,7 +192,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
             ensureNoPartitionProblems(op);
 
-//            ensureQuorumPresent(op);
+            ensureNoSplitBrain(op);
 
             op.beforeRun();
 
@@ -277,14 +277,17 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     /**
-     * Ensures that the quorum is present if the quorum is configured and the operation service is quorum aware.
+     * Ensures that there is no split brain if the split brain protection is configured and the operation
+     * service is split brain protection aware.
      *
-     * @param op the operation for which the quorum must be checked for presence
-     * @throws QuorumException if the operation requires a quorum and the quorum is not present
+     * @param op the operation for which the minimum cluster size property must satisfy
+     * @throws SplitBrainProtectionException if the operation requires a split brain protection and
+     * the the minimum cluster size property is not satisfied
      */
-    private void ensureQuorumPresent(Operation op) {
-        QuorumServiceImpl quorumService = operationService.nodeEngine.getQuorumService();
-        quorumService.ensureQuorumPresent(op);
+    private void ensureNoSplitBrain(Operation op) {
+        SplitBrainProtectionServiceImpl splitBrainProtectionService =
+                operationService.nodeEngine.getSplitBrainProtectionService();
+        splitBrainProtectionService.ensureNoSplitBrain(op);
     }
 
     private boolean timeout(Operation op) {

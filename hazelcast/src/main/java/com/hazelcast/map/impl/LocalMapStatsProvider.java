@@ -31,8 +31,8 @@ import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -199,13 +199,18 @@ public class LocalMapStatsProvider {
     }
 
     private static void addPrimaryStatsOf(RecordStore recordStore, LocalMapOnDemandCalculatedStats onDemandStats) {
+        if (recordStore != null) {
+            // we need to update the locked entry count here whether or not the map is empty
+            // keys that are not contained by a map can be locked
+            onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
+        }
+
         if (!hasRecords(recordStore)) {
             return;
         }
 
         LocalRecordStoreStats stats = recordStore.getLocalRecordStoreStats();
 
-        onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
         onDemandStats.incrementHits(stats.getHits());
         onDemandStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
         onDemandStats.incrementOwnedEntryMemoryCost(recordStore.getOwnedEntryCost());

@@ -22,9 +22,9 @@ import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.IsLockedO
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.LockOperation;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.UnlockOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;

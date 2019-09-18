@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCESS;
+import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_BUFFER_ACCESS;
 
 /**
  * Access and manipulate bits, bytes, primitives...
@@ -122,6 +123,10 @@ public final class Bits {
         return EndiannessUtil.readShortL(BYTE_ARRAY_ACCESS, buffer, pos);
     }
 
+    public static short readShortL(ByteBuffer buffer, int pos) {
+        return EndiannessUtil.readShortL(BYTE_BUFFER_ACCESS, buffer, pos);
+    }
+
     public static void writeShort(byte[] buffer, int pos, short v, boolean useBigEndian) {
         EndiannessUtil.writeShort(BYTE_ARRAY_ACCESS, buffer, pos, v, useBigEndian);
     }
@@ -132,6 +137,10 @@ public final class Bits {
 
     public static void writeShortL(byte[] buffer, int pos, short v) {
         EndiannessUtil.writeShortL(BYTE_ARRAY_ACCESS, buffer, pos, v);
+    }
+
+    public static void writeShortL(ByteBuffer buffer, int pos, short v) {
+        EndiannessUtil.writeShortL(BYTE_BUFFER_ACCESS, buffer, pos, v);
     }
 
     public static int readInt(byte[] buffer, int pos, boolean useBigEndian) {
@@ -146,12 +155,8 @@ public final class Bits {
         return EndiannessUtil.readIntL(BYTE_ARRAY_ACCESS, buffer, pos);
     }
 
-    public static int readIntL(ByteBuffer buffer) {
-        int byte3 = buffer.get() & 0xFF;
-        int byte2 = (buffer.get() & 0xFF) << 8;
-        int byte1 = (buffer.get() & 0xFF) << 16;
-        int byte0 = (buffer.get() & 0xFF) << 24;
-        return byte3 | byte2 | byte1 | byte0;
+    public static int readIntL(ByteBuffer buffer, int pos) {
+        return EndiannessUtil.readIntL(BYTE_BUFFER_ACCESS, buffer, pos);
     }
 
     public static void writeInt(byte[] buffer, int pos, int v, boolean useBigEndian) {
@@ -164,6 +169,10 @@ public final class Bits {
 
     public static void writeIntL(byte[] buffer, int pos, int v) {
         EndiannessUtil.writeIntL(BYTE_ARRAY_ACCESS, buffer, pos, v);
+    }
+
+    public static void writeIntL(ByteBuffer buffer, int pos, int v) {
+        EndiannessUtil.writeIntL(BYTE_BUFFER_ACCESS, buffer, pos, v);
     }
 
     public static long readLong(byte[] buffer, int pos, boolean useBigEndian) {

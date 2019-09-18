@@ -19,24 +19,25 @@ package com.hazelcast.cp.internal.datastructures.spi.blocking;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftNodeLifecycleAwareService;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.datastructures.spi.AbstractCPMigrationAwareService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.operation.ExpireWaitKeysOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
-import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.session.SessionAccessor;
 import com.hazelcast.cp.internal.session.SessionAwareService;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
 import com.hazelcast.cp.internal.util.Tuple2;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
 
@@ -48,9 +49,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -64,14 +67,15 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @param <R> concrete type of the resource
  * @param <RR> concrete ty;e lf the resource registry
  */
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractBlockingService<W extends WaitKey, R extends BlockingResource<W>, RR extends ResourceRegistry<W, R>>
+        extends AbstractCPMigrationAwareService
         implements RaftManagedService, RaftNodeLifecycleAwareService, RaftRemoteService, SessionAwareService,
-                   SnapshotAwareService<RR>, LiveOperationsTracker {
+                   SnapshotAwareService<RR>, LiveOperationsTracker, MigrationAwareService {
 
     public static final long WAIT_TIMEOUT_TASK_UPPER_BOUND_MILLIS = 1500;
     private static final long WAIT_TIMEOUT_TASK_PERIOD_MILLIS = 500;
 
-    protected final NodeEngineImpl nodeEngine;
     protected final ILogger logger;
     protected volatile RaftService raftService;
 
@@ -79,7 +83,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     private volatile SessionAccessor sessionAccessor;
 
     protected AbstractBlockingService(NodeEngine nodeEngine) {
-        this.nodeEngine = (NodeEngineImpl) nodeEngine;
+        super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
     }
 
@@ -101,6 +105,9 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
     @Override
     public void reset() {
+        if (!raftService.isCpSubsystemEnabled()) {
+            registries.clear();
+        }
     }
 
     @Override
@@ -199,10 +206,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         }
 
         completeFutures(groupId, expiredWaitKeys, new SessionExpiredException());
-        RaftNodeImpl raftNode = (RaftNodeImpl) raftService.getRaftNode(groupId);
-        for (Entry<Long, Object> entry : completedWaitKeys.entrySet()) {
-            raftNode.completeFuture(entry.getKey(), entry.getValue());
-        }
+        raftService.completeFutures(groupId, completedWaitKeys.entrySet());
     }
 
     @Override
@@ -314,12 +318,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
     private void completeFutures(CPGroupId groupId, Collection<Long> indices, Object result) {
         if (!indices.isEmpty()) {
-            RaftNodeImpl raftNode = (RaftNodeImpl) raftService.getRaftNode(groupId);
-            if (raftNode != null) {
-                for (Long index : indices) {
-                    raftNode.completeFuture(index, result);
-                }
-            } else {
+            if (!raftService.completeFutures(groupId, indices, result)) {
                 logger.severe("RaftNode not found for " + groupId + " to notify commit indices " + indices + " with " + result);
             }
         }
@@ -327,15 +326,24 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
     private void locallyInvokeExpireWaitKeysOp(CPGroupId groupId, Collection<Tuple2<String, UUID>> keys) {
         try {
-            RaftNode raftNode = raftService.getRaftNode(groupId);
-            if (raftNode != null) {
-                raftNode.replicate(new ExpireWaitKeysOp(serviceName(), keys)).get();
+            ExpireWaitKeysOp op = new ExpireWaitKeysOp(serviceName(), keys);
+            if (raftService.isCpSubsystemEnabled()) {
+                RaftNode raftNode = raftService.getRaftNode(groupId);
+                if (raftNode != null) {
+                    raftNode.replicate(op).get();
+                }
+            } else {
+                raftService.getInvocationManager().invokeOnPartition(new UnsafeRaftReplicateOp(groupId, op)).join();
             }
         } catch (Exception e) {
             if (logger.isFineEnabled()) {
                 logger.fine("Could not expire wait keys: " + keys + " in " + groupId, e);
             }
         }
+    }
+
+    protected Set<CPGroupId> getGroupIdSet() {
+        return registries.keySet();
     }
 
     private class ExpireWaitKeysTask implements Runnable {
@@ -374,5 +382,24 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
             return timeouts;
         }
+    }
+
+    @Override
+    protected int getBackupCount() {
+        return 1;
+    }
+
+    @Override
+    protected Map<CPGroupId, Object> getSnapshotMap(int partitionId) {
+        assert !raftService.isCpSubsystemEnabled();
+        return getGroupIdSet().stream()
+                .filter(groupId -> raftService.getCPGroupPartitionId(groupId) == partitionId)
+                .map(groupId -> Tuple2.of(groupId, takeSnapshot(groupId, 0L)))
+                .collect(Collectors.toMap(tuple -> tuple.element1, tuple -> tuple.element2));
+    }
+
+    @Override
+    protected void clearPartitionReplica(int partitionId) {
+        getGroupIdSet().removeIf(groupId -> raftService.getCPGroupPartitionId(groupId) == partitionId);
     }
 }

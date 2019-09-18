@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.List;
 import java.util.UUID;

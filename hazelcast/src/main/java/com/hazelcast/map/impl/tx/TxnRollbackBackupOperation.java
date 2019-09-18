@@ -32,12 +32,11 @@ import java.io.IOException;
 public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     private String lockOwner;
-    private long lockThreadId;
 
     protected TxnRollbackBackupOperation(String name, Data dataKey, String lockOwner, long lockThreadId) {
         super(name, dataKey);
         this.lockOwner = lockOwner;
-        this.lockThreadId = lockThreadId;
+        this.threadId = lockThreadId;
     }
 
     public TxnRollbackBackupOperation() {
@@ -45,7 +44,7 @@ public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements 
 
     @Override
     protected void runInternal() {
-        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), lockOwner, lockThreadId, getCallId())) {
+        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), lockOwner, threadId, getCallId())) {
             throw new TransactionException("Lock is not owned by the transaction! Owner: "
                     + recordStore.getLockOwnerInfo(getKey()));
         }
@@ -60,14 +59,12 @@ public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(lockOwner);
-        out.writeLong(lockThreadId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         lockOwner = in.readUTF();
-        lockThreadId = in.readLong();
     }
 
     @Override

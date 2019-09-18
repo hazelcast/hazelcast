@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -47,7 +48,7 @@ import java.util.concurrent.TimeUnit;
  * </li>
  * </ul>
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster versions 3.10 and higher.
  *
  * @param <K> type of the multimap key
  * @param <V> type of the multimap value
@@ -83,7 +84,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param key the key whose associated values are to be returned
      * @return the collection of the values associated with the key
      */
-    Collection<V> get(@Nonnull K key);
+    @Nonnull Collection<V> get(@Nonnull K key);
 
     /**
      * Removes the given key value pair from the multimap.
@@ -114,7 +115,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return the collection of removed values associated with the given key.
      * The returned collection might be modifiable but it has no effect on the multimap.
      */
-    Collection<V> remove(@Nonnull Object key);
+    @Nonnull Collection<V> remove(@Nonnull Object key);
 
     /**
      * Deletes all the entries with the given key.
@@ -142,7 +143,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *
      * @return the locally owned keys
      */
-    Set<K> localKeySet();
+    @Nonnull Set<K> localKeySet();
 
     /**
      * Returns the set of keys in the multimap.
@@ -154,7 +155,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return the set of keys in the multimap (the returned set might be
      * modifiable but it has no effect on the multimap)
      */
-    Set<K> keySet();
+    @Nonnull Set<K> keySet();
 
     /**
      * Returns the collection of values in the multimap.
@@ -166,7 +167,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return the collection of values in the multimap (the returned
      * collection might be modifiable but it has no effect on the multimap)
      */
-    Collection<V> values();
+    @Nonnull Collection<V> values();
 
     /**
      * Returns the set of key-value pairs in the multimap.
@@ -178,7 +179,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return the set of key-value pairs in the multimap (the returned
      * set might be modifiable but it has no effect on the multimap)
      */
-    Set<Map.Entry<K, V>> entrySet();
+    @Nonnull Set<Map.Entry<K, V>> entrySet();
 
     /**
      * Returns whether the multimap contains an entry with the key.
@@ -261,7 +262,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return returns registration ID for the entry listener
      * @see #localKeySet()
      */
-    String addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
+    @Nonnull String addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
 
     /**
      * Adds an entry listener for this multimap.
@@ -274,7 +275,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *                     {@code false} otherwise
      * @return returns registration ID for the entry listener
      */
-    String addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue);
+    @Nonnull String addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener.
@@ -302,7 +303,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *                     {@code false} otherwise
      * @return returns registration ID
      */
-    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    @Nonnull String addEntryListener(@Nonnull EntryListener<K, V> listener,
                             @Nonnull K key, boolean includeValue);
 
     /**
@@ -473,5 +474,5 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *
      * @return this multimap's local statistics.
      */
-    LocalMultiMapStats getLocalMultiMapStats();
+    @Nonnull LocalMultiMapStats getLocalMultiMapStats();
 }

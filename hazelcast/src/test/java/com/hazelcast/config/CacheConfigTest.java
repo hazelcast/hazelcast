@@ -304,7 +304,8 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig cacheWithDefaultMergePolicyConfig = config.getCacheConfig("cacheWithDefaultMergePolicy");
 
         assertNotNull(cacheWithDefaultMergePolicyConfig);
-        assertEquals(CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY, cacheWithDefaultMergePolicyConfig.getMergePolicy());
+        assertEquals(MergePolicyConfig.DEFAULT_MERGE_POLICY,
+                cacheWithDefaultMergePolicyConfig.getMergePolicyConfig().getPolicy());
     }
 
     @Test
@@ -314,7 +315,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig cacheWithCustomMergePolicyConfig = config.getCacheConfig("cacheWithCustomMergePolicy");
 
         assertNotNull(cacheWithCustomMergePolicyConfig);
-        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicy());
+        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicyConfig().getPolicy());
     }
 
     @Test

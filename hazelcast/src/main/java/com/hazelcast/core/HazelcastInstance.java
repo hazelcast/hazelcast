@@ -20,8 +20,8 @@ import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
-import com.hazelcast.client.api.Client;
-import com.hazelcast.client.api.ClientService;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cluster.Member;
@@ -39,7 +39,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -192,7 +192,6 @@ public interface HazelcastInstance {
      * @return the cluster that this Hazelcast instance is part of
      */
     Cluster getCluster();
-
 
     /**
      * Returns the local Endpoint which this HazelcastInstance belongs to.
@@ -405,19 +404,14 @@ public interface HazelcastInstance {
     PartitionService getPartitionService();
 
     /**
-     * Returns the quorum service of this Hazelcast instance.
+     * Returns the split brain protection service of this Hazelcast instance.
      * <p>
-     * Quorum service can be used to retrieve quorum callbacks which let you to notify quorum results of your own to
-     * the cluster quorum service.
+     * Split brain protection service can be used to retrieve split brain protection callbacks which let you to notify
+     * split brain protection results of your own to the cluster split brain protection service.
      *
-     * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-     * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-     * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-     * specified one.
-     *
-     * @return the quorum service of this Hazelcast instance
+     * @return the split brain protection service of this Hazelcast instance
      */
-    QuorumService getQuorumService();
+    SplitBrainProtectionService getSplitBrainProtectionService();
 
     /**
      * Returns the client service of this Hazelcast instance.

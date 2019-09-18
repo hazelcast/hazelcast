@@ -27,7 +27,8 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
  * <p>
  * Returns the previous state of the key loading and dispatching future.
  */
-public class TriggerLoadIfNeededOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class TriggerLoadIfNeededOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation {
 
     private Boolean isLoaded;
 

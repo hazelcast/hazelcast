@@ -34,8 +34,8 @@ import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
 import com.hazelcast.cp.internal.util.Tuple2;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -103,6 +103,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private final AtomicReference<CPMemberInfo> localCPMember = new AtomicReference<>();
     private final AtomicReference<RaftGroupId> metadataGroupIdRef = new AtomicReference<>(INITIAL_METADATA_GROUP_ID);
     private final AtomicBoolean discoveryCompleted = new AtomicBoolean();
+    private final boolean cpSubsystemEnabled;
 
     // all fields below are state of the Metadata CP group and put into Metadata snapshot and reset while restarting...
     // these fields are accessed outside of Raft while restarting or local querying, etc.
@@ -121,10 +122,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         this.raftService = raftService;
         this.logger = nodeEngine.getLogger(getClass());
         this.config = config;
+        this.cpSubsystemEnabled = raftService.isCpSubsystemEnabled();
     }
 
     boolean init() {
-        boolean cpSubsystemEnabled = (config.getCPMemberCount() > 0);
         if (cpSubsystemEnabled) {
             scheduleDiscoverInitialCPMembersTask(true);
         } else {
@@ -960,7 +961,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     public void disableDiscovery() {
-        if (config.getCPMemberCount() > 0) {
+        if (cpSubsystemEnabled) {
             logger.info("Disabling discovery of initial CP members since it is already completed...");
         }
 

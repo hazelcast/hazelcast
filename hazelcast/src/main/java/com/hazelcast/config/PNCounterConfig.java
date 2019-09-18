@@ -42,7 +42,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
 
     private String name = "default";
     private int replicaCount = DEFAULT_REPLICA_COUNT;
-    private String quorumName;
+    private String splitBrainProtectionName;
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
 
     private transient PNCounterConfigReadOnly readOnly;
@@ -50,10 +50,10 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
     public PNCounterConfig() {
     }
 
-    public PNCounterConfig(String name, int replicaCount, String quorumName, boolean statisticsEnabled) {
+    public PNCounterConfig(String name, int replicaCount, String splitBrainProtectionName, boolean statisticsEnabled) {
         this.name = name;
         this.replicaCount = replicaCount;
-        this.quorumName = quorumName;
+        this.splitBrainProtectionName = splitBrainProtectionName;
         this.statisticsEnabled = statisticsEnabled;
     }
 
@@ -62,7 +62,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
     }
 
     public PNCounterConfig(PNCounterConfig config) {
-        this(config.getName(), config.getReplicaCount(), config.getQuorumName(), config.isStatisticsEnabled());
+        this(config.getName(), config.getReplicaCount(), config.getSplitBrainProtectionName(), config.isStatisticsEnabled());
     }
 
     /** Gets the name of the PN counter. */
@@ -136,22 +136,22 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated PN counter config
      */
-    public PNCounterConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public PNCounterConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -178,7 +178,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         out.writeUTF(name);
         out.writeInt(replicaCount);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(quorumName);
+        out.writeUTF(splitBrainProtectionName);
     }
 
     @Override
@@ -186,7 +186,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         name = in.readUTF();
         replicaCount = in.readInt();
         statisticsEnabled = in.readBoolean();
-        quorumName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
     }
 
     @Override
@@ -210,14 +210,15 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         if (!name.equals(that.name)) {
             return false;
         }
-        return quorumName != null ? quorumName.equals(that.quorumName) : that.quorumName == null;
+        return splitBrainProtectionName != null ? splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName == null;
     }
 
     @Override
     public int hashCode() {
         int result = name.hashCode();
         result = 31 * result + replicaCount;
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         return result;
     }
@@ -240,7 +241,7 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         }
 
         @Override
-        public PNCounterConfig setQuorumName(String quorumName) {
+        public PNCounterConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
             throw new UnsupportedOperationException("This config is read-only PN counter: " + getName());
         }
 

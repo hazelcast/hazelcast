@@ -37,6 +37,10 @@ public class ServiceBeanWithTransactionalContext {
         transactionalContext.getMap("dummyObjectMap").put(object.getId(), object);
     }
 
+    public DummyObject get(Long id) {
+        return (DummyObject) transactionalContext.getMap("dummyObjectMap").get(id);
+    }
+
     public void putWithException(DummyObject object) {
         put(object);
         throw new RuntimeException("oops, let's rollback!");
@@ -50,8 +54,11 @@ public class ServiceBeanWithTransactionalContext {
         otherService.putWithException(object);
     }
 
-    public void putUsingOtherBean_newTransaction(DummyObject object) {
-        otherService.putInNewTransaction(object);
+    public boolean putUsingOtherBean_newTransaction(DummyObject object1, DummyObject object2) {
+        put(object1);
+        otherService.putInNewTransaction(object1, object2);
+
+        return get(object2.getId()) != null;
     }
 
     public void putUsingSameBean_thenOtherBeanThrowingException_sameTransaction(DummyObject object, DummyObject otherObject) {

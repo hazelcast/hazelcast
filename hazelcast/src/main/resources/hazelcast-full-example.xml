@@ -147,12 +147,187 @@
             IMap or ICache). Please see the <map> and <cache> configuration descriptions in this XML.
 
         The <wan-replication> element has the following sub-elements:
-        * <wan-publisher>:
-            Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
-            Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication:
+        * <batch-publisher>:
+            WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication.
             Waits until a batch size is reached or a delay time is passed.
-            Please see the `batch.size and batch.max.delay.millis configuration descriptions below.
-        * <wan-consumer>:
+            Please see the batch-size and batch-max-delay-millis configuration descriptions below.
+            * "<group-name>":
+                Sets the group name used as an endpoint group name for authentication
+                on the target endpoint.
+                If there is no separate publisher ID property defined, this group name
+                will also be used as a WAN publisher ID. This ID is then used for
+                identifying the publisher in a WanReplicationConfig.
+            * "<publisher-id>":
+                Sets the publisher ID used for identifying the publisher in a
+                WanReplicationConfig.
+                If there is no publisher ID defined (it is empty), the group name will
+                be used as a publisher ID.
+            * "<batch-size>":
+                Changes the maximum size of events that are sent to the target cluster
+                in a single batch. The batch of events is not sent until this size is
+                reached. Its default value is 500.
+            * "<batch-max-delay-millis>":
+                If the number of events generated does not reach the "batch-size", they
+                are sent to the target cluster after a certain amount of time is passed.
+                You can set this time in milliseconds using this element. Its default
+                value is 1000 milliseconds.
+            * "<response-timeout-millis>":
+                After a replication event is sent to the target cluster, the source member
+                waits for a confirmation that says the event has reached the target. If
+                confirmation is not received for a period of `response-timeout-millis`,
+                the event is resent to the target cluster. The default value is 60000
+                milliseconds.
+            * "<acknowledge-type>":
+                Acknowledgment type for each target cluster when the events are replicated.
+                You can set it to the following values:
+                - ACK_ON_RECEIPT:
+                    Guarantees that events are received by the target cluster. It does not
+                    guarantee that the received event is actually applied, but it is faster.
+                - ACK_ON_OPERATION_COMPLETE (default):
+                    Guarantees that the event is both received and applied by the target cluster.
+                    It is more time consuming, but it is the best way if you have strong
+                    consistency requirements.
+            * "<initial-publisher-state>":
+                Defines the initial state in which a WAN publisher is started.
+                - REPLICATING (default):
+                    State where both enqueuing new events is allowed, enqueued events are
+                    replicated to the target cluster and WAN sync is enabled.
+                - PAUSED:
+                    State where new events are enqueued but they not are dequeued. Some events
+                    which have been dequeued before the state was switched may still be replicated
+                    to the target cluster but further events will not be replicated. WAN sync
+                    is enabled.
+                - STOPPED:
+                    State where neither new events are enqueued nor dequeued. As with the PAUSED
+                    state, some events might still be replicated after the publisher has
+                    switched to this state. WAN sync is enabled.
+            * "<snapshot-enabled>":
+                Sets if key-based coalescing is configured for this WAN publisher.
+                When enabled, only the latest WanReplicationEvent of a key is sent to target.
+            * "<idle-max-park-ns>":
+                Sets the maximum duration in nanoseconds that the WAN replication thread
+                will be parked if there are no events to replicate.
+            * "<idle-min-park-ns>":
+                Sets the minimum duration in nanoseconds that the WAN replication thread
+                will be parked if there are no events to replicate.
+            * "<max-concurrent-invocations>":
+                Sets the maximum number of WAN event batches being sent to the target
+                cluster concurrently.
+                Setting this property to anything less than 2 will only allow a
+                single batch of events to be sent to each target endpoint and will
+                maintain causality of events for a single partition.
+                Setting this property to 2 or higher will allow multiple batches
+                of WAN events to be sent to each target endpoint. Since this allows
+                reordering or batches due to network conditions, causality and ordering
+                of events for a single partition is lost and batches for a single
+                partition are now sent randomly to any available target endpoint.
+                This, however, does present faster WAN replication for certain scenarios
+                such as replicating immutable, independent map entries which are only
+                added once and where ordering of when these entries are added is not
+                necessary.
+                Keep in mind that if you set this property to a value which is less than
+                the target endpoint count, you will lose performance as not all target
+                endpoints will be used at any point in time to process WAN event batches.
+                So, for instance, if you have a target cluster with 3 members (target
+                endpoints) and you want to use this property, it makes sense to set it
+                to a value higher than 3. Otherwise, you can simply disable it
+                by setting it to less than 2 in which case WAN will use the
+                default replication strategy and adapt to the target endpoint count
+                while maintaining causality.
+            * "<discovery-period-seconds>":
+                Sets the period in seconds in which WAN tries to discover new target
+                endpoints and reestablish connections to failed endpoints.
+            * "<use-endpoint-private-address>":
+                Sets whether the WAN connection manager should connect to the
+                endpoint on the private address returned by the discovery SPI.
+                By default this property is false which means the WAN connection
+                manager will always use the public address.
+            * "<queue-full-behavior>":
+                Policy to be applied when WAN Replication event queues are full. You can
+                set it to the following values:
+                - DISCARD_AFTER_MUTATION (default):
+                    The new WAN events generated are dropped and not replicated to the target
+                    cluster.
+                - THROW_EXCEPTION:
+                    The WAN queue size is checked before each supported mutating operation. If
+                    one of the queues of the target cluster is full,
+                    WANReplicationQueueFullException is thrown and the operation is not allowed.
+            * "<max-target-endpoints>":
+                Returns the maximum number of endpoints that WAN will connect to when
+                using a discovery mechanism to define endpoints.
+                This property has no effect when static endpoint addresses are defined
+                using target-endpoints.
+            * "<queue-capacity>":
+                Size of the queue of events. Its default value is 10000. If you exceed
+                this queue size, then the oldest, not yet replicated updates might get
+                lost. Therefore, if you have a large rate of put/update/remove operations,
+                you should increase queue capacity.
+            * "<target-endpoints>":
+                Comma separated list of IP addresses of the target cluster members for which the WAN replication is implemented.
+            * <wan-sync>:
+            Configuration for the WAN sync mechanism. It has the following sub-elements:
+                - <consistency-check-strategy>:
+                    Sets the strategy for checking consistency of data between source and
+                    target cluster. Any inconsistency will not be reconciled, it will be
+                    merely reported via the usual mechanisms (e.g. statistics, diagnostics).
+                    The user must initiate WAN sync to reconcile there differences. For the
+                    check procedure to work properly, the target cluster should support the
+                    chosen strategy.
+                    Default value is NONE, which means the check is disabled.
+            * <aws>:
+                Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
+                - <access-key>:
+                    Access key of your account on EC2.
+                - <secret-key>:
+                    Secret key of your account on EC2.
+                - <iam-role>:
+                    IAM role that binds with your instance.
+                - <region>:
+                    The region where your Hazelcast members run. Default value is us-east-1.
+                                It needs to be specified if the region is other than the default one.
+                - <host-header>:
+                    The URL that is the entry point for a web service. It is optional.
+                - <security-group-name>:
+                    Name of the security group you specified at the EC2 management console.
+                                It is used to narrow the Hazelcast members to be within this group. It is optional.
+                - <tag-key>:
+                    To narrow the members in the cloud down to only Hazelcast members, you can set
+                                this to the one you specified in the EC2 console. It is optional.
+                - <tag-value>:
+                    To narrow the members in the cloud down to only Hazelcast members, you can set
+                                this to the one you specified in the EC2 console. It is optional.
+            * <discovery-strategies>:
+                Set its "enabled" attribute to true for discovery in various cloud infrastructures.
+                You can define multiple discovery strategies using the <discovery-strategy> sub-element and its properties.
+                Please refer to
+                http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
+                to see the properties you can use.
+                The following is an example for EC2 cloud.
+                <discovery-strategies>
+                    <discovery-strategy enabled="true" class="com.hazelcast.aws.AwsDiscoveryStrategy">
+                        <properties>
+                            <property name="access-key">test-access-key</property>
+                            <property name="secret-key">test-secret-key</property>
+                            <property name="region">test-region</property>
+                            <property name="iam-role">test-iam-role</property>
+                            <property name="host-header">ec2.test-host-header</property>
+                            <property name="security-group-name">test-security-group-name</property>
+                            <property name="tag-key">test-tag-key</property>
+                            <property name="tag-value">test-tag-value</property>
+                            <property name="connection-timeout-seconds">10</property>
+                            <property name="hz-port">5702</property>
+                        </properties>
+                    </discovery-strategy>
+                </discovery-strategies>
+        * <custom-publisher>:
+            Custom implementation of a WAN publisher implementing WanReplicationEndpoint.
+            * "<class-name>":
+                Mandatory config value defining the fully qualified class name of the
+                WAN publisher implementation.
+            * "<publisher-id>":
+                Mandatory config value for the publisher ID used for identifying the
+                publisher in a WanReplicationConfig.
+        * <consumer>:
             Config for processing WAN events received from a target cluster.
             You can configure certain behaviour when processing incoming WAN events
             or even configure your own implementation for a WAN consumer. A custom
@@ -173,154 +348,65 @@
                 When true, an incoming event over WAN replication can be persisted to a
                 database for example, otherwise it will not be persisted. Default value
                 is true.
-        * "ack.type":
-            Acknowledgment type for each target cluster when the events are replicated. You can set it to the following values:
-            - ACK_ON_RECEIPT:
-                Guarantees that events are received by the target cluster. It does not guarantee that
-                the received event is actually applied, but it is faster.
-            - ACK_ON_OPERATION_COMPLETE:
-                Guarantees that the event is both received and applied by the target cluster.
-                It is more time consuming, but it is the best way if you have strong consistency requirements.
-        * "endpoints":
-            Comma separated list of IP addresses of the target cluster members for which the WAN replication is implemented.
-        * "batch.size":
-            This element is valid when you set <class-name> (the WAN Replication implementation) to
-            `WanBatchReplication`. It changes the maximum size of events that are sent to the target cluster in a
-            single batch. The batch of events is not sent until this size is reached. Its default value is 500.
-        * "batch.max.delay.millis":
-            This element is valid when you set <class-name> (the WAN Replication implementation) to
-            `WanBatchReplication`. If the number of events generated does not reach the "batch.size", they are sent to the
-            target cluster after a certain amount of time is passed. You can set this time in milliseconds using this
-            element. Its default value is 1000 milliseconds.
-        * "response.timeout.millis":
-            After a replication event is sent to the target cluster, the source member waits for a confirmation
-            that says the event has reached the target. If confirmation is not received for a period of
-            `response.timeout.millis`, the event is resent to the target cluster. The default value is 60000 milliseconds.
-        * <queue-capacity>:
-            Size of the queue of events. Its default value is 10000. If you exceed this queue size, then the
-            oldest, not yet replicated updates might get lost. Therefore, if you have a large rate of
-            put/update/remove operations, you should increase <queue-capacity>.
-        * <queue-full-behavior>:
-            Policy to be applied when WAN Replication event queues are full. You can set it to the following values:
-            - DISCARD_AFTER_MUTATION:
-                The new WAN events generated are dropped and not replicated to the target cluster.
-            - THROW_EXCEPTION:
-                The WAN queue size is checked before each supported mutating operation. If one of the queues of the target
-                cluster is full, WANReplicationQueueFullException is thrown and the operation is not allowed.
-        * <initial-publisher-state>:
-        Defines the initial state in which a WAN publisher is started.
-        - REPLICATING (default):
-            State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
-            and WAN sync is enabled.
-        - PAUSED:
-            State where new events are enqueued but they not are dequeued. Some events which have been dequeued before
-            the state was switched may still be replicated to the target cluster but further events will not be
-            replicated. WAN sync is enabled.
-        - STOPPED:
-            State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
-            still be replicated after the publisher has switched to this state. WAN sync is enabled.
-        * <wan-sync>:
-        Configuration for the WAN sync mechanism. It has the following sub-elements:
-            - <consistency-check-strategy>:
-                Sets the strategy for checking consistency of data between source and
-                target cluster. Any inconsistency will not be reconciled, it will be
-                merely reported via the usual mechanisms (e.g. statistics, diagnostics).
-                The user must initiate WAN sync to reconcile there differences. For the
-                check procedure to work properly, the target cluster should support the
-                chosen strategy.
-                Default value is NONE, which means the check is disabled.
-        * <aws>:
-            Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
-            - <access-key>:
-                Access key of your account on EC2.
-            - <secret-key>:
-                Secret key of your account on EC2.
-            - <iam-role>:
-                IAM role that binds with your instance.
-            - <region>:
-                The region where your Hazelcast members run. Default value is us-east-1.
-                            It needs to be specified if the region is other than the default one.
-            - <host-header>:
-                The URL that is the entry point for a web service. It is optional.
-            - <security-group-name>:
-                Name of the security group you specified at the EC2 management console.
-                            It is used to narrow the Hazelcast members to be within this group. It is optional.
-            - <tag-key>:
-                To narrow the members in the cloud down to only Hazelcast members, you can set
-                            this to the one you specified in the EC2 console. It is optional.
-            - <tag-value>:
-                To narrow the members in the cloud down to only Hazelcast members, you can set
-                            this to the one you specified in the EC2 console. It is optional.
-        * <discovery-strategies>:
-            Set its "enabled" attribute to true for discovery in various cloud infrastructures.
-            You can define multiple discovery strategies using the <discovery-strategy> sub-element and its properties.
-            Please refer to
-            http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
-            to see the properties you can use.
-            The following is an example for EC2 cloud.
-            <discovery-strategies>
-                <discovery-strategy enabled="true" class="com.hazelcast.aws.AwsDiscoveryStrategy">
-                    <properties>
-                        <property name="access-key">test-access-key</property>
-                        <property name="secret-key">test-secret-key</property>
-                        <property name="region">test-region</property>
-                        <property name="iam-role">test-iam-role</property>
-                        <property name="host-header">ec2.test-host-header</property>
-                        <property name="security-group-name">test-security-group-name</property>
-                        <property name="tag-key">test-tag-key</property>
-                        <property name="tag-value">test-tag-value</property>
-                        <property name="connection-timeout-seconds">10</property>
-                        <property name="hz-port">5702</property>
-                    </properties>
-                </discovery-strategy>
-            </discovery-strategies>
     -->
     <wan-replication name="my-wan-cluster-batch">
-        <wan-publisher group-name="nyc" publisher-id="nycPublisherId">
-            <class-name>com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication</class-name>
-            <queue-capacity>15000</queue-capacity>
-            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+        <batch-publisher>
+            <group-name>nyc</group-name>
+            <publisher-id>nycPublisherId</publisher-id>
+            <batch-size>1000</batch-size>
+            <batch-max-delay-millis>2000</batch-max-delay-millis>
+            <response-timeout-millis>60000</response-timeout-millis>
+            <acknowledge-type>ACK_ON_OPERATION_COMPLETE</acknowledge-type>
             <initial-publisher-state>REPLICATING</initial-publisher-state>
+            <snapshot-enabled>false</snapshot-enabled>
+            <idle-max-park-ns>250000000</idle-max-park-ns>
+            <idle-min-park-ns>10000000</idle-min-park-ns>
+            <max-concurrent-invocations>-1</max-concurrent-invocations>
+            <discovery-period-seconds>10</discovery-period-seconds>
+            <use-endpoint-private-address>false</use-endpoint-private-address>
+            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+            <max-target-endpoints>2147483647</max-target-endpoints>
+            <queue-capacity>10000</queue-capacity>
+            <target-endpoints>10.3.5.1:5701,10.3.5.2:5701</target-endpoints>
             <wan-sync>
                 <consistency-check-strategy>NONE</consistency-check-strategy>
             </wan-sync>
+            <!--            <aws enabled="false">-->
+            <!--                <access-key>my-access-key</access-key>-->
+            <!--                <secret-key>my-secret-key</secret-key>-->
+            <!--                <iam-role>dummy</iam-role>-->
+            <!--                <region>us-west-1</region>-->
+            <!--                <host-header>ec2.amazonaws.com</host-header>-->
+            <!--                <security-group-name>hazelcast-sg</security-group-name>-->
+            <!--                <tag-key>type</tag-key>-->
+            <!--                <tag-value>hz-nodes</tag-value>-->
+            <!--            </aws>-->
+            <!--            <discovery-strategies>-->
+            <!--                <discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">-->
+            <!--                    <properties>-->
+            <!--                        <property name="provider">google-compute-engine</property>-->
+            <!--                        <property name="identity">GCE_IDENTITY</property>-->
+            <!--                        <property name="credential">GCE_CREDENTIAL</property>-->
+            <!--                    </properties>-->
+            <!--                </discovery-strategy>-->
+            <!--            </discovery-strategies>-->
+        </batch-publisher>
+        <custom-publisher>
+            <publisher-id>customPublisherId</publisher-id>
+            <class-name>com.companyName.CustomWanPublisher</class-name>
             <properties>
-                <property name="endpoints">10.3.5.1:5701,10.3.5.2:5701</property>
-                <property name="batch.size">1000</property>
-                <property name="batch.max.delay.millis">2000</property>
-                <property name="response.timeout.millis">60000</property>
-                <property name="ack.type">ACK_ON_OPERATION_COMPLETE</property>
-                <property name="snapshot.enabled">false</property>
-                <property name="group.password">nyc-pass</property>
+                <property name="prop1">prop1-value</property>
+                <property name="prop2">prop2-value</property>
             </properties>
-            <!--<aws enabled="false">-->
-            <!--<access-key>my-access-key</access-key>-->
-            <!--<secret-key>my-secret-key</secret-key>-->
-            <!--<iam-role>dummy</iam-role>-->
-            <!--<region>us-west-1</region>-->
-            <!--<host-header>ec2.amazonaws.com</host-header>-->
-            <!--<security-group-name>hazelcast-sg</security-group-name>-->
-            <!--<tag-key>type</tag-key>-->
-            <!--<tag-value>hz-nodes</tag-value>-->
-            <!--</aws>-->
-            <!--<discovery-strategies>-->
-            <!--<discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">-->
-            <!--<properties>-->
-            <!--<property name="provider">google-compute-engine</property>-->
-            <!--<property name="identity">GCE_IDENTITY</property>-->
-            <!--<property name="credential">GCE_CREDENTIAL</property>-->
-            <!--</properties>-->
-            <!--</discovery-strategy>-->
-            <!--</discovery-strategies>-->
-        </wan-publisher>
-        <wan-consumer>
-            <!--<class-name>com.myCompany.CustomWanConsumer</class-name>-->
-            <!--<properties>-->
-            <!--<property name="prop1">prop1-value</property>-->
-            <!--<property name="prop2">prop2-value</property>-->
-            <!--</properties>-->
+        </custom-publisher>
+        <consumer>
+            <!--            <class-name>com.myCompany.CustomWanConsumer</class-name>-->
+            <!--            <properties>-->
+            <!--                <property name="prop1">prop1-value</property>-->
+            <!--                <property name="prop2">prop2-value</property>-->
+            <!--            </properties>-->
             <persist-wan-replicated-data>true</persist-wan-replicated-data>
-        </wan-consumer>
+        </consumer>
     </wan-replication>
     <!--
         ===== HAZELCAST NETWORK CONFIGURATION =====
@@ -742,15 +828,15 @@
         The number of executor threads per member for the executor. Its default value is 8.
         * <queue-capacity>:
         Task queue capacity of the executor. Its default value is 0, meaning Integer.MAX_VALUE.
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+        element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     -->
     <executor-service name="default">
         <statistics-enabled>true</statistics-enabled>
         <pool-size>16</pool-size>
         <queue-capacity>0</queue-capacity>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
     </executor-service>
 
     <!--
@@ -765,15 +851,15 @@
             Durability of the executor. The default value is 1.
         * <capacity>:
         Capacity of the executor task per partition. The default value is 100.
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+        element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     -->
     <durable-executor-service name="default">
         <pool-size>16</pool-size>
         <durability>1</durability>
         <capacity>100</capacity>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
     </durable-executor-service>
 
     <!--
@@ -789,9 +875,9 @@
         * <capacity>:
             Capacity of the scheduled executor. The default value is 100.
             This is the maximum number of tasks for a given scheduled executor on a particular partition.
-        * <quorum-ref>:
-            Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-            as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+            Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+            element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
         * <merge-policy>:
             The default policy is PutIfAbsentMergePolicy with a batch size of 100.
             This is the policy used when merging entries from sub-clusters (after split-brain recovery).
@@ -800,7 +886,7 @@
         <pool-size>16</pool-size>
         <durability>1</durability>
         <capacity>100</capacity>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </scheduled-executor-service>
 
@@ -818,9 +904,9 @@
         Number of asynchronous backups. For example, if 1 is set as the backup-count,
        then the cardinality estimation will be copied to one other JVM for
        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
-    * <quorum-ref>:
-       Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-       as the <quorum>'s name.
+    * <split-brain-protection-ref>:
+       Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+       element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     * <merge-policy>:
         The default policy is `com.hazelcast.spi.merge.HyperLogLogMergePolicy` with a batch size of 100.
         This is the policy used when merging estimators from sub-clusters (after split-brain recovery).
@@ -828,7 +914,7 @@
     <cardinality-estimator name="default">
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="102">PutIfAbsentMergePolicy</merge-policy>
     </cardinality-estimator>
 
@@ -875,9 +961,9 @@
         - bulk-load:
             Size of the bulks loaded from QueueStore when the queue is initialized. Its default
             value is 250.
-        * <quorum-ref>:
-            Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-            as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+            Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+            element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     -->
     <queue name="default">
         <statistics-enabled>true</statistics-enabled>
@@ -896,7 +982,7 @@
                 <property name="bulk-load">500</property>
             </properties>
         </queue-store>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </queue>
 
@@ -995,15 +1081,15 @@
             Hazelcast Enterprise HD.
         * <merge-policy>:
         Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
-        split-brain syndrome. Its default values is "com.hazelcast.map.merge.PutIfAbsentMapMergePolicy". Available
+        split-brain syndrome. Its default values is "com.hazelcast.spi.merge.PutIfAbsentMergePolicy". Available
         built-in policies are as follows:
-        - com.hazelcast.map.merge.PassThroughMergePolicy:
+        - com.hazelcast.spi.merge.PassThroughMergePolicy:
             Entry will be added if there is no existing entry for the key.
-        - com.hazelcast.map.merge.PutIfAbsentMapMergePolicy:
+        - com.hazelcast.spi.merge.PutIfAbsentMergePolicy:
             Entry will be added if the merging entry does not exist in the cluster.
-        - com.hazelcast.map.merge.HigherHitsMapMergePolicy:
+        - com.hazelcast.spi.merge.HigherHitsMergePolicy:
             Entry with the higher number of hits wins.
-        - com.hazelcast.map.merge.LatestUpdateMapMergePolicy:
+        - com.hazelcast.spi.merge.LatestUpdateMergePolicy:
             Entry with the latest update wins.
         * <read-backup-data>:
         Used to enable reading from local backup map entries. Its default value is false. It can be used if there is
@@ -1083,9 +1169,6 @@
         - name: You can give a name for your Near Cache. It is optional and its default value is "default".
 
         It has the following sub-elements:
-            - <max-size>:
-                Maximum size of the Near Cache. When this is reached, Near Cache is evicted based on the policy defined.
-                Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
             - <time-to-live-seconds>:
                 Maximum number of seconds for each entry to stay in the Near Cache. Entries that are older than this
                 period are automatically evicted from the Near Cache. Any integer between 0 and Integer.MAX_VALUE.
@@ -1094,13 +1177,6 @@
                 Maximum number of seconds each entry can stay in the Near Cache as untouched (not read). Entries that
                 are not read more than this period are removed from the Near Cache. Any integer between 0 and
                 Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
-            - <eviction-policy>:
-                Eviction policy configuration. Its default values is NONE. Available values are as follows:
-            - NONE:
-                No items will be evicted and the property max-size will be ignored. You still
-                can combine it with time-to-live-seconds and max-idle-seconds.
-            - LRU: 	Least Recently Used.
-            - LFU: 	Least Frequently Used.
             - <invalidate-on-change>:
                 Specifies whether the cached entries are evicted when the entries are updated or removed. Its default
                 value is true.
@@ -1121,8 +1197,7 @@
                 Specifies whether the local entries will be cached. It can be useful when in-memory format for
                 Near Cache is different from that of the map. By default, it is disabled.
             - <eviction>:
-                Configuration for the eviction when the in-memory format of the Near Cache is NATIVE. It has the
-                following attributes:
+                Configuration for the eviction. It has following attributes:
                 - size: Maximum size (entry count) of the Near Cache.
                 - max-size-policy: Maximum size policy for eviction of the Near Cache. Available values are as follows:
                     * ENTRY_COUNT: Maximum entry count per member.
@@ -1156,22 +1231,22 @@
                 ICache are provided out-of-the-box.
 
                 IMap has the following merge policies:
-                com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the
+                com.hazelcast.spi.merge.PutIfAbsentMergePolicy: Incoming entry merges from the
                 source map to the target map if it does not exist in the target map.
-                com.hazelcast.map.merge.HigherHitsMapMergePolicy: Incoming entry merges from the
+                com.hazelcast.spi.merge.HigherHitsMergePolicy: Incoming entry merges from the
                 source map to the target map if the source entry has more hits than the target one.
-                com.hazelcast.map.merge.PassThroughMergePolicy: Incoming entry merges from the
+                com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from the
                 source map to the target map unless the incoming entry is not null.
-                com.hazelcast.map.merge.LatestUpdateMapMergePolicy: Incoming entry merges from the
+                com.hazelcast.spi.merge.LatestUpdateMergePolicy: Incoming entry merges from the
                 source map to the target map if the source entry has been updated more recently
                 than the target entry. Please note that this merge policy can only be used when the
                 clusters' clocks are in sync.
 
                 ICache has the following merge policies:
-                com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
+                com.hazelcast.spi.merge.HigherHitsMergePolicy: Incoming entry merges from
                 the source cache to the target cache if the source entry has more hits than the
                 target one.
-                com.hazelcast.cache.merge.PassThroughCacheMergePolicy: Incoming entry merges from
+                com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
                 the source cache to the target cache unless the incoming entry is not null.
         * <indexes>:
         You can define indexes for your map using this element's <index> sub-elements. Each <index> has
@@ -1180,17 +1255,18 @@
         be set to false. Its default value is false.
         * <attributes>:
         You can define attributes that may be referenced in predicates, queries and indexes using this element's
-        <attribute> sub-elements. Each <attribute> has only the "extractor" attribute which you should define beforehand
-        by implementing Hazelcast's ValueExtractor class.
+        <attribute> sub-elements. Each <attribute> has only the "extractor-class-name" attribute which you should
+        define beforehand by implementing Hazelcast's ValueExtractor class.
         * <entry-listeners>:
             Adds listeners (listener classes) for the map entries using the <entry-listener> sub-elements. You can also set its
             attribute "include-value" to true if you want the entry event to contain the item values, and you can set its attribute
             "local" to true if you want to listen to the entries on the local member.
         * <partition-lost-listeners>:
             Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface.
-        * <quorum-ref>:
-        Adds the quorum for this map which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the split brain protection for this map which you configure using the <split-brain-protection> element.
+        You should set the <split-brain-protection-ref>'s value
+        as the <split-brain-protection>'s name.
      -->
     <map name="default">
         <in-memory-format>BINARY</in-memory-format>
@@ -1225,17 +1301,15 @@
             </properties>
         </map-store>
         <near-cache>
-            <max-size>5000</max-size>
             <time-to-live-seconds>0</time-to-live-seconds>
             <max-idle-seconds>60</max-idle-seconds>
-            <eviction-policy>LRU</eviction-policy>
             <invalidate-on-change>true</invalidate-on-change>
             <in-memory-format>BINARY</in-memory-format>
             <cache-local-entries>false</cache-local-entries>
             <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
         </near-cache>
         <wan-replication-ref name="my-wan-cluster-batch">
-            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
+            <merge-policy>PassThroughMergePolicy</merge-policy>
             <filters>
                 <filter-impl>com.example.SampleFilter</filter-impl>
                 <filter-impl>com.example.SampleFilter2</filter-impl>
@@ -1247,7 +1321,7 @@
             <index ordered="true">age</index>
         </indexes>
         <attributes>
-            <attribute extractor="com.bank.CurrencyExtractor">currency</attribute>
+            <attribute extractor-class-name="com.bank.CurrencyExtractor">currency</attribute>
         </attributes>
         <entry-listeners>
             <entry-listener include-value="false" local="false">com.your-package.MyEntryListener</entry-listener>
@@ -1255,7 +1329,7 @@
         <partition-lost-listeners>
             <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <!--
         ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
 
@@ -1319,9 +1393,9 @@
         By default, BINARY in-memory format is used, meaning that the object is stored in a serialized form.
         You can set the element <binary> to false, then, the OBJECT in-memory format is used.
         It has also the following sub-elements:
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+        element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     -->
     <multimap name="default">
         <backup-count>1</backup-count>
@@ -1331,7 +1405,7 @@
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </multimap>
 
@@ -1348,16 +1422,6 @@
             Data will be stored in serialized binary format. It is the default option.
         - OBJECT:
             Data will be stored in deserialized form.
-        * <concurrency-level>:
-            Number of parallel mutexes to minimize contention on keys. Its default value is 32.
-            If higher contention is seen on writes to values inside the replicated map, this value can
-            be adjusted to the needs.
-        * <replication-delay-millis>:
-            Time in milliseconds after a put is executed before the value is replicated
-        to other members. During this time, multiple puts can be operated and cached up to be sent
-        out all at once after the delay. Default value is 100ms. If set to 0, no delay is used and
-        all values are replicated one by one.
-        * <replication-delay-millis>:
         * <async-fillup>:
             Specifies whether the replicated map is available for reads before the initial
         replication is completed. Its default value is true. If false, no Exception will be
@@ -1370,20 +1434,18 @@
             Adds listeners (listener classes) for the replicated map entries using the <entry-listener> sub-elements.
             You can also set its attribute "include-value" to true if you want the entry event to contain the item values,
             and you can set its attribute "local" to true if you want to listen to the entries on the local member.
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+        element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     -->
     <replicatedmap name="replicatedMap1">
         <in-memory-format>BINARY</in-memory-format>
-        <concurrency-level>32</concurrency-level>
-        <replication-delay-millis>200</replication-delay-millis>
         <async-fillup>true</async-fillup>
         <statistics-enabled>true</statistics-enabled>
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">LatestAccessMergePolicy</merge-policy>
     </replicatedmap>
 
@@ -1493,23 +1555,23 @@
                 ICache are provided out-of-the-box.
 
                 ICache has the following merge policies:
-                com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
+                com.hazelcast.spi.merge.HigherHitsMergePolicy: Incoming entry merges from
                 the source cache to the target cache if the source entry has more hits than the
                 target one.
-                com.hazelcast.cache.merge.PassThroughCacheMergePolicy: Incoming entry merges from
+                com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
                 the source cache to the target cache unless the incoming entry is not null.
-        * <quorum-ref>:
-            Adds the quorum for this cache which you configure using the <quorum> element. You should set the
-            <quorum-ref>'s value as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+            Adds the split brain protection for this cache which you configure using the <split-brain-protection>
+            element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
         * <partition-lost-listeners>:
             Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface.
         * <merge-policy>:
             The following are the built-in merge policies for cache. You can either use their full class names or constant
             names (given in parentheses).
-        - com.hazelcast.cache.merge.PassThroughCacheMergePolicy (PASS_THROUGH)
-        - com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy (PUT_IF_ABSENT)
-        - com.hazelcast.cache.merge.HigherHitsCacheMergePolicy (HIGHER_HITS)
-        - com.hazelcast.cache.merge.LatestAccessCacheMergePolicy (LATEST_ACCESS)
+        - com.hazelcast.spi.merge.PassThroughMergePolicy (PASS_THROUGH)
+        - com.hazelcast.spi.merge.PutIfAbsentMergePolicy (PUT_IF_ABSENT)
+        - com.hazelcast.spi.merge.HigherHitsMergePolicy (HIGHER_HITS)
+        - com.hazelcast.spi.merge.LatestAccessMergePolicy (LATEST_ACCESS)
         * <hot-restart>:
         Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast
         Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
@@ -1566,17 +1628,17 @@
         <async-backup-count>0</async-backup-count>
         <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
         <wan-replication-ref name="my-wan-cluster-batch">
-            <merge-policy>com.hazelcast.cache.merge.PassThroughCacheMergePolicy</merge-policy>
+            <merge-policy>PassThroughMergePolicy</merge-policy>
             <republishing-enabled>true</republishing-enabled>
             <filters>
                 <filter-impl>com.example.SampleFilter</filter-impl>
             </filters>
         </wan-replication-ref>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <partition-lost-listeners>
             <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
-        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>
+        <merge-policy batch-size="100">LatestAccessMergePolicy</merge-policy>
         <hot-restart enabled="false">
             <fsync>false</fsync>
         </hot-restart>
@@ -1607,9 +1669,9 @@
         * <item-listeners>:
         Adds listeners (listener classes) for the List items using its sub-element <item-listener>. You can
         also set its attribute "include-value" to true if you want the item event to contain the item values.
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+        element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     -->
     <list name="default">
         <statistics-enabled>false</statistics-enabled>
@@ -1619,7 +1681,7 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </list>
 
@@ -1642,9 +1704,9 @@
         * <item-listeners>:
         Adds listeners (listener classes) for the Set items using its sub-element <item-listener>. You can
         also set its attribute "include-value" to true if you want the item event to contain the item values.
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+        element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     -->
     <set name="default">
         <backup-count>1</backup-count>
@@ -1653,7 +1715,7 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </set>
 
@@ -1779,15 +1841,16 @@
             are copied to one other member for fail-safety. Its default value is 1.
         * <async-backup-count>:
         Number of asynchronous backups. Its default value is 0.
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+        element. You should set the <split-brain-protection-ref>'s value
+        as the <split-brain-protection>'s name.
     -->
     <semaphore name="default">
         <initial-permits>0</initial-permits>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
     </semaphore>
 
     <!--
@@ -1796,12 +1859,13 @@
         Configuration element's name is <count-down-latch>. It has the required attribute "name" with which you
         can specify the name of your CountDownLatch. This attribute's default value is "default".
         It has the following sub-elements:
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
+        element. You should set the <split-brain-protection-ref>'s value
+        as the <split-brain-protection>'s name.
     -->
     <count-down-latch name="default">
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
     </count-down-latch>
 
     <!--
@@ -1810,13 +1874,13 @@
     Configuration element's name is <lock>. It has the required attribute "name" with which you
     can specify the name of your Lock. This attribute's default value is "default".
     It has the following sub-elements:
-    * <quorum-ref>:
-        Adds the quorum for this lock which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+    * <split-brain-protection-ref>:
+        Adds the split brain protection for this lock which you configure using the <split-brain-protection> element.
+        You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
 -->
 
     <lock name="default">
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
     </lock>
 
     <!--
@@ -1861,10 +1925,10 @@
         * <ringbuffer-store>:
             Includes the Ringbuffer store factory class name and property configurations.
             The store format is the same as the in-memory-format for the Ringbuffer.
-        * <quorum-ref>:
+        * <split-brain-protection-ref>:
             Adds the Split Brain Protection for this data-structure which you configure
-            using the <quorum> element. You should set the <quorum-ref>'s value as
-            the <quorum>'s name.
+            using the <split-brain-protection> element. You should set the
+            <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     -->
     <ringbuffer name="default">
         <capacity>10000</capacity>
@@ -1879,7 +1943,7 @@
                 <property name="prop2">prop2-value</property>
             </properties>
         </ringbuffer-store>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy>PutIfAbsentMergePolicy</merge-policy>
     </ringbuffer>
 
@@ -1943,13 +2007,14 @@
         Configuration element's name is <atomic-long>. It has the required attribute "name" with which you
         can specify the name of your IAtomicLong. This attribute's default value is "default".
         It has the following sub-elements:
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the
+        <split-brain-protection> element. You should set the <split-brain-protection-ref>'s value
+        as the <split-brain-protection>'s name.
     -->
     <atomic-long name="default">
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
     </atomic-long>
 
     <!--
@@ -1958,13 +2023,14 @@
         Configuration element's name is <atomic-reference>. It has the required attribute "name" with which you
         can specify the name of your IAtomicReference. This attribute's default value is "default".
         It has the following sub-elements:
-        * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+        * <split-brain-protection-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the
+        <split-brain-protection> element. You should set the <split-brain-protection-ref>'s value
+        as the <split-brain-protection>'s name.
     -->
     <atomic-reference name="default">
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
     </atomic-reference>
 
     <!--
@@ -2082,12 +2148,18 @@
         - <metadata-space-percentage>:
             Percentage of the allocated native memory that is used for the metadata such as indexes, offsets, etc. It is
             used only by the POOLED memory allocator. Its default value is 12.5.
+        - <persistent-memory-directory>:
+            Specifies the directory where the non-volatile memory (e.g. Intel Optane) is mounted. If this element is
+            not defined, the RAM is used as a native memory. This directory will be created automatically if it does not
+            exist. To avoid collisions, every member of the cluster will create its own subfolder to work with the
+            non-volatile memory.
     -->
     <native-memory allocator-type="POOLED" enabled="true">
         <size unit="MEGABYTES" value="256"/>
         <min-block-size>32</min-block-size>
         <page-size>4194304</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
+        <persistent-memory-directory>/mnt/optane</persistent-memory-directory>
     </native-memory>
     <!--
         ===== HAZELCAST USER DEFINED SERVICES CONFIGURATION =====
@@ -2324,43 +2396,44 @@
         <attribute name="CPU_CORE_FREQ">1033</attribute>
     </member-attributes>
     <!--
-        ===== HAZELCAST QUORUM CONFIGURATION =====
+        ===== HAZELCAST SPLIT BRAIN PROTECTION CONFIGURATION =====
 
-        Configuration element's name is <quorum>.
+        Configuration element's name is <split-brain-protection>.
         It has the following attributes:
         * name:
-            Name of your quorum. This name will be given as the value for <quorum-ref> element in the data structure
-            configuration for which you want to define a quorum. Currently, IMap, TransactionalMap and Cache
-            structures support quorum.
+            Name of your split brain protection. This name will be given as the value for <split-brain-protection-ref>
+            element in the data structure configuration for which you want to define a split brain protection.
+            Currently, IMap, TransactionalMap and Cache structures support split brain protection.
         * enabled:
-            Specifies whether this quorum is enabled.
+            Specifies whether this split brain protection is enabled.
 
         It has the following sub-elements:
-        * <quorum-size>:
+        * <minimum-cluster-size>:
             The minimum number of members required in a cluster for the cluster to remain in an
         operational state. If the number of members is below the defined minimum at any time,
-        the operations are rejected and the rejected operations return a QuorumException to
+        the operations are rejected and the rejected operations return a SplitBrainProtectionException to
         their callers.
-        * <quorum-type>:
-            Specifies for which operations the quorum will be applied. Available values are
+        * <protect-on>:
+            Specifies for which operations the split brain protection will be applied. Available values are
             READ, WRITE and READ_WRITE.
-        * <quorum-function-class-name>:
-            Name of the class that you develop by implementing Hazelcast's QuorumFunction interface to
-            conclude the absence/presence of your quorum. This function is triggered when any change happens to
-            the member list.
-        * <quorum-listeners>:
-            Provides the list of quorum listeners that you can register to be notified about quorum results.
-            Each listener is specified by <quorum-listener> sub-element. Quorum listeners are local to the member
-            that they are registered, so they receive only events occurred on that local member.
+        * <function-class-name>:
+            Name of the class that you develop by implementing Hazelcast's SplitBrainProtectionFunction interface to
+            conclude the absence/presence of your split brain protection.
+            This function is triggered when any change happens to the member list.
+        * <listeners>:
+            Provides the list of split brain protection listeners that you can register to be notified about
+            split brain protection results. Each listener is specified by <listener> sub-element.
+            Split brain protection listeners are local to the member that they are registered, so they receive
+            only events occurred on that local member.
     -->
-    <quorum name="quorumRuleWithThreeMembers" enabled="true">
-        <quorum-size>3</quorum-size>
-        <quorum-type>READ_WRITE</quorum-type>
-        <quorum-function-class-name>com.your-package.AbsPresMyQuorum</quorum-function-class-name>
-        <quorum-listeners>
-            <quorum-listener>com.your-package.ThreeMemberQuorumListener</quorum-listener>
-        </quorum-listeners>
-    </quorum>
+    <split-brain-protection name="splitBrainProtectionRuleWithThreeMembers" enabled="true">
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <protect-on>READ_WRITE</protect-on>
+        <function-class-name>com.your-package.AbsPresMySplitBrainProtection</function-class-name>
+        <listeners>
+            <listener>com.your-package.ThreeMemberSplitBrainProtectionListener</listener>
+        </listeners>
+    </split-brain-protection>
     <!--
         ===== HAZELCAST LITE MEMBER CONFIGURATION =====
 
@@ -2493,15 +2566,16 @@
        asynchronously between replicas.
        The number must be greater than 1 and up to 2147483647 (Integer.MAX_VALUE).
        The default value is 2147483647 (Integer.MAX_VALUE).
-    * <quorum-ref>:
-       Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-       as the <quorum>'s name.
+    * <split-brain-protection-ref>:
+       Adds the Split Brain Protection for this data-structure which you configure using the
+       <split-brain-protection> element. You should set the <split-brain-protection-ref>'s value as the
+       <split-brain-protection>'s name.
     * <statistics-enabled>:
         When you enable it, you can retrieve the PN counter statistics. Its default value is true.
     -->
     <pn-counter name="default">
         <replica-count>2147483647</replica-count>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <statistics-enabled>true</statistics-enabled>
     </pn-counter>
 

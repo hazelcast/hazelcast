@@ -16,6 +16,7 @@
 
 package com.hazelcast.test.starter.answer;
 
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import org.mockito.invocation.InvocationOnMock;
 
@@ -23,7 +24,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Default {@link org.mockito.stubbing.Answer} to create a mock for a proxied
- * {@link com.hazelcast.spi.NodeEngine}.
+ * {@link NodeEngine}.
  */
 public class NodeEngineAnswer extends AbstractAnswer {
 

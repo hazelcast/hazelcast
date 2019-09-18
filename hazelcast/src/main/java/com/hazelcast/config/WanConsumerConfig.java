@@ -36,7 +36,7 @@ import java.util.Map;
  * NOTE: EE only
  *
  * @see WanReplicationConfig#setWanConsumerConfig(WanConsumerConfig)
- * @see WanPublisherConfig#setClassName(String)
+ * @see CustomWanPublisherConfig#setClassName(String)
  */
 public class WanConsumerConfig implements IdentifiedDataSerializable {
 

@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -35,8 +36,10 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static com.hazelcast.internal.util.JavaVersion.JAVA_11;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +54,7 @@ public class AbstractMessageTaskTest {
 
     @Before
     public void setup() {
+        assumeTrue("This test uses PowerMock Whitebox.setInternalState which fails in JDK >= 12", JavaVersion.isAtMost(JAVA_11));
         Node node = mock(Node.class);
         when(node.getConfig()).thenReturn(config);
 

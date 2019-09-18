@@ -43,14 +43,14 @@ public class ReplicatedMapEntries implements Portable {
     }
 
     public ReplicatedMapEntries(int initialSize) {
-        keys = new ArrayList<Data>(initialSize);
-        values = new ArrayList<Data>(initialSize);
+        keys = new ArrayList<>(initialSize);
+        values = new ArrayList<>(initialSize);
     }
 
     public ReplicatedMapEntries(List<Map.Entry<Data, Data>> entries) {
         int initialSize = entries.size();
-        keys = new ArrayList<Data>(initialSize);
-        values = new ArrayList<Data>(initialSize);
+        keys = new ArrayList<>(initialSize);
+        values = new ArrayList<>(initialSize);
         for (Map.Entry<Data, Data> entry : entries) {
             keys.add(entry.getKey());
             values.add(entry.getValue());
@@ -64,7 +64,7 @@ public class ReplicatedMapEntries implements Portable {
     }
 
     public List<Map.Entry<Data, Data>> entries() {
-        ArrayList<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(keys.size());
+        ArrayList<Map.Entry<Data, Data>> entries = new ArrayList<>(keys.size());
         putAllToList(entries);
         return entries;
     }
@@ -88,14 +88,14 @@ public class ReplicatedMapEntries implements Portable {
         Iterator<Data> keyIterator = keys.iterator();
         Iterator<Data> valueIterator = values.iterator();
         while (keyIterator.hasNext()) {
-            targetList.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyIterator.next(), valueIterator.next()));
+            targetList.add(new AbstractMap.SimpleImmutableEntry<>(keyIterator.next(), valueIterator.next()));
         }
     }
 
     private void ensureEntriesCreated() {
         if (keys == null) {
-            keys = new ArrayList<Data>();
-            values = new ArrayList<Data>();
+            keys = new ArrayList<>();
+            values = new ArrayList<>();
         }
     }
 
@@ -123,8 +123,8 @@ public class ReplicatedMapEntries implements Portable {
     @Override
     public void readPortable(PortableReader reader) throws IOException {
         int size = reader.readInt("size");
-        keys = new ArrayList<Data>(size);
-        values = new ArrayList<Data>(size);
+        keys = new ArrayList<>(size);
+        values = new ArrayList<>(size);
         ObjectDataInput in = reader.getRawDataInput();
         for (int i = 0; i < size; i++) {
             keys.add(in.readData());

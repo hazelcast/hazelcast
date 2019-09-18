@@ -21,7 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.spi.CoreService;
+import com.hazelcast.internal.services.CoreService;
 
 import java.util.List;
 import java.util.Map;

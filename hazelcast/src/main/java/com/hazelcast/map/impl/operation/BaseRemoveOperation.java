@@ -27,16 +27,11 @@ public abstract class BaseRemoveOperation extends LockAwareOperation
 
     protected transient Data dataOldValue;
 
-    public BaseRemoveOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
-        super(name, dataKey);
-        this.disableWanReplicationEvent = disableWanReplicationEvent;
+    public BaseRemoveOperation() {
     }
 
     public BaseRemoveOperation(String name, Data dataKey) {
-        this(name, dataKey, false);
-    }
-
-    public BaseRemoveOperation() {
+        super(name, dataKey);
     }
 
     @Override
@@ -56,7 +51,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, dataKey, disableWanReplicationEvent);
+        return new RemoveBackupOperation(name, dataKey, disableWanReplicationEvent());
     }
 
     @Override

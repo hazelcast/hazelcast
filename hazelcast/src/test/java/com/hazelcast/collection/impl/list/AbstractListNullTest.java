@@ -32,7 +32,7 @@ public abstract class AbstractListNullTest extends HazelcastTestSupport {
     @Test
     public void testNullability() {
         assertThrowsNPE(l -> l.contains(null));
-        assertThrowsNPE(l -> l.toArray(null));
+        assertThrowsNPE(l -> l.toArray((Object[]) null));
         assertThrowsNPE(l -> l.add(null));
         assertThrowsNPE(l -> l.remove(null));
         assertThrowsNPE(l -> l.containsAll(null));

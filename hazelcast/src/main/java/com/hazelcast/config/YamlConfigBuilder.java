@@ -144,7 +144,7 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
 
         YamlNode imdgRoot = yamlRootNode.childAsMapping(ConfigSections.HAZELCAST.name);
         if (imdgRoot == null) {
-            throw new InvalidConfigurationException("No mapping with hazelcast key is found in the provided configuration");
+            imdgRoot = yamlRootNode;
         }
 
         YamlDomChecker.check(imdgRoot);

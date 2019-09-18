@@ -35,9 +35,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
@@ -238,22 +239,29 @@ public class MockIOService implements IOService {
             }
 
             @Override
-            public EventRegistration registerLocalListener(String serviceName, @Nonnull String topic, @Nonnull Object listener) {
+            public EventRegistration registerLocalListener(@Nonnull String serviceName,
+                                                           @Nonnull String topic,
+                                                           @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerLocalListener(String serviceName, @Nonnull String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
+            public EventRegistration registerLocalListener(@Nonnull String serviceName,
+                                                           @Nonnull String topic,
+                                                           @Nonnull EventFilter filter,
+                                                           @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(String serviceName, @Nonnull String topic, @Nonnull Object listener) {
+            public EventRegistration registerListener(@Nonnull String serviceName,
+                                                      @Nonnull String topic,
+                                                      @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(String serviceName, String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
+            public EventRegistration registerListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
                 return null;
             }
 
@@ -263,21 +271,21 @@ public class MockIOService implements IOService {
             }
 
             @Override
-            public void deregisterAllListeners(String serviceName, String topic) {
+            public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
             }
 
             @Override
-            public Collection<EventRegistration> getRegistrations(String serviceName, @Nonnull String topic) {
+            public Collection<EventRegistration> getRegistrations(@Nonnull String serviceName, @Nonnull String topic) {
                 return null;
             }
 
             @Override
-            public EventRegistration[] getRegistrationsAsArray(String serviceName, @Nonnull String topic) {
+            public EventRegistration[] getRegistrationsAsArray(@Nonnull String serviceName, @Nonnull String topic) {
                 return new EventRegistration[0];
             }
 
             @Override
-            public boolean hasEventRegistration(String serviceName, String topic) {
+            public boolean hasEventRegistration(@Nonnull String serviceName, @Nonnull String topic) {
                 return false;
             }
 
@@ -298,8 +306,26 @@ public class MockIOService implements IOService {
             }
 
             @Override
-            public void executeEventCallback(Runnable callback) {
+            public void executeEventCallback(@Nonnull Runnable callback) {
                 new Thread(callback).start();
+            }
+
+            @Override
+            public void close(EventRegistration eventRegistration) {
+            }
+
+            @Override
+            public Operation getPostJoinOperation() {
+                return null;
+            }
+
+            @Override
+            public Operation getPreJoinOperation() {
+                return null;
+            }
+
+            @Override
+            public void accept(Packet packet) {
             }
         };
     }

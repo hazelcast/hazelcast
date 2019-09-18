@@ -42,7 +42,7 @@ public final class JVMUtil {
     private JVMUtil() {
     }
 
-    static boolean is32bitJVM() {
+    public static boolean is32bitJVM() {
         // sun.arch.data.model is available on Oracle, Zing and (most probably) IBM JVMs
         String architecture = System.getProperty("sun.arch.data.model");
         return architecture != null && architecture.equals("32");

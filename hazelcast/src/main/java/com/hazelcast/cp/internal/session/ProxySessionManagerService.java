@@ -27,8 +27,8 @@ import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
 import com.hazelcast.cp.internal.session.operation.GenerateThreadIdOp;
 import com.hazelcast.cp.internal.session.operation.HeartbeatSessionOp;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.GracefulShutdownAwareService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.services.GracefulShutdownAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Iterator;

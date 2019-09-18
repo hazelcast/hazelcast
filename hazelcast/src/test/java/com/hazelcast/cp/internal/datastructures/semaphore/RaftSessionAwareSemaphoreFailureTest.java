@@ -17,10 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
-import com.hazelcast.cp.internal.datastructures.semaphore.proxy.RaftSessionAwareSemaphoreProxy;
-import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.cp.internal.session.ProxySessionManagerService.NO_SESSION_ID;
-import static com.hazelcast.cp.internal.session.ProxySessionManagerService.SERVICE_NAME;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -42,14 +38,8 @@ public class RaftSessionAwareSemaphoreFailureTest extends RaftSemaphoreFailureTe
     }
 
     @Override
-    RaftGroupId getGroupId(ISemaphore semaphore) {
-        return ((RaftSessionAwareSemaphoreProxy) semaphore).getGroupId();
-    }
-
-    @Override
     long getSessionId(HazelcastInstance semaphoreInstance, RaftGroupId groupId) {
-        ProxySessionManagerService service = getNodeEngineImpl(semaphoreInstance).getService(SERVICE_NAME);
-        long sessionId = service.getSession(groupId);
+        long sessionId = sessionManagerService.getSession(groupId);
         assertNotEquals(NO_SESSION_ID, sessionId);
 
         return sessionId;

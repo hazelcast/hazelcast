@@ -35,6 +35,7 @@ import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CountDownLatchConfig;
+import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -58,7 +59,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -82,7 +83,7 @@ import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RestApiConfig;
@@ -103,8 +104,8 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WANQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -134,9 +135,9 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
-import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
+import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
@@ -344,17 +345,17 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 fail("unknown index!");
             }
         }
-        assertEquals(2, testMapConfig.getMapAttributeConfigs().size());
-        for (MapAttributeConfig attribute : testMapConfig.getMapAttributeConfigs()) {
+        assertEquals(2, testMapConfig.getAttributeConfigs().size());
+        for (AttributeConfig attribute : testMapConfig.getAttributeConfigs()) {
             if ("power".equals(attribute.getName())) {
-                assertEquals("com.car.PowerExtractor", attribute.getExtractor());
+                assertEquals("com.car.PowerExtractor", attribute.getExtractorClassName());
             } else if ("weight".equals(attribute.getName())) {
-                assertEquals("com.car.WeightExtractor", attribute.getExtractor());
+                assertEquals("com.car.WeightExtractor", attribute.getExtractorClassName());
             } else {
                 fail("unknown attribute!");
             }
         }
-        assertEquals("my-quorum", testMapConfig.getQuorumName());
+        assertEquals("my-split-brain-protection", testMapConfig.getSplitBrainProtectionName());
         MergePolicyConfig mergePolicyConfig = testMapConfig.getMergePolicyConfig();
         assertNotNull(mergePolicyConfig);
         assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
@@ -488,7 +489,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2500, qConfig.getMaxSize());
         assertFalse(qConfig.isStatisticsEnabled());
         assertEquals(100, qConfig.getEmptyQueueTtl());
-        assertEquals("my-quorum", qConfig.getQuorumName());
+        assertEquals("my-split-brain-protection", qConfig.getSplitBrainProtectionName());
         MergePolicyConfig mergePolicyConfig = qConfig.getMergePolicyConfig();
         assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(2342, mergePolicyConfig.getBatchSize());
@@ -523,7 +524,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         LockConfig lockConfig = config.getLockConfig("lock");
         assertNotNull(lockConfig);
         assertEquals("lock", lockConfig.getName());
-        assertEquals("my-quorum", lockConfig.getQuorumName());
+        assertEquals("my-split-brain-protection", lockConfig.getSplitBrainProtectionName());
     }
 
     @Test
@@ -572,7 +573,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(testPNCounter);
         assertEquals("testPNCounter", testPNCounter.getName());
         assertEquals(100, testPNCounter.getReplicaCount());
-        assertEquals("my-quorum", testPNCounter.getQuorumName());
+        assertEquals("my-split-brain-protection", testPNCounter.getSplitBrainProtectionName());
         assertFalse(testPNCounter.isStatisticsEnabled());
     }
 
@@ -586,9 +587,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(23, clientPermissionConfigs.size());
         final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")
                 .addAction("create")
-                .setEndpoints(Collections.<String>emptySet());
+                .setEndpoints(Collections.emptySet());
         assertContains(clientPermissionConfigs, pnCounterPermission);
-        Set<PermissionType> permTypes = new HashSet<PermissionType>(Arrays.asList(PermissionType.values()));
+        Set<PermissionType> permTypes = new HashSet<>(Arrays.asList(PermissionType.values()));
         for (PermissionConfig pc : clientPermissionConfigs) {
             permTypes.remove(pc.getType());
         }
@@ -622,7 +623,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         CountDownLatchConfig testCountDownLatch = config.getCountDownLatchConfig("testCountDownLatch");
         assertNotNull(testCountDownLatch);
         assertEquals("testCountDownLatch", testCountDownLatch.getName());
-        assertEquals("my-quorum", testCountDownLatch.getQuorumName());
+        assertEquals("my-split-brain-protection", testCountDownLatch.getSplitBrainProtectionName());
     }
 
     @Test
@@ -981,38 +982,40 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
         assertNotNull(wcfg);
 
-        WanPublisherConfig publisherConfig = wcfg.getWanPublisherConfigs().get(0);
-        assertEquals("tokyo", publisherConfig.getGroupName());
-        assertEquals("tokyoPublisherId", publisherConfig.getPublisherId());
-        assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", publisherConfig.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
-        assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
-        assertEquals(1000, publisherConfig.getQueueCapacity());
-        Map<String, Comparable> publisherProps = publisherConfig.getProperties();
-        assertEquals("50", publisherProps.get("batch.size"));
-        assertEquals("3000", publisherProps.get("batch.max.delay.millis"));
-        assertEquals("false", publisherProps.get("snapshot.enabled"));
-        assertEquals("5000", publisherProps.get("response.timeout.millis"));
-        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE.name(), publisherProps.get("ack.type"));
-        assertEquals("pass", publisherProps.get("group.password"));
+        WanBatchReplicationPublisherConfig pc = wcfg.getBatchPublisherConfigs().get(0);
+        assertEquals("tokyo", pc.getGroupName());
+        assertEquals("tokyoPublisherId", pc.getPublisherId());
+        assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", pc.getClassName());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, pc.getQueueFullBehavior());
+        assertEquals(WanPublisherState.STOPPED, pc.getInitialPublisherState());
+        assertEquals(1000, pc.getQueueCapacity());
+        assertEquals(50, pc.getBatchSize());
+        assertEquals(3000, pc.getBatchMaxDelayMillis());
+        assertTrue(pc.isSnapshotEnabled());
+        assertEquals(5000, pc.getResponseTimeoutMillis());
+        assertEquals(5, pc.getMaxTargetEndpoints());
+        assertEquals(5, pc.getDiscoveryPeriodSeconds());
+        assertTrue(pc.isUseEndpointPrivateAddress());
+        assertEquals(5, pc.getIdleMinParkNs());
+        assertEquals(5, pc.getIdleMaxParkNs());
+        assertEquals(5, pc.getMaxConcurrentInvocations());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, pc.getAcknowledgeType());
+        assertEquals(5, pc.getDiscoveryPeriodSeconds());
+        assertEquals(5, pc.getMaxTargetEndpoints());
+        assertAwsConfig(pc.getAwsConfig());
+        assertGcpConfig(pc.getGcpConfig());
+        assertAzureConfig(pc.getAzureConfig());
+        assertKubernetesConfig(pc.getKubernetesConfig());
+        assertEurekaConfig(pc.getEurekaConfig());
+        assertDiscoveryConfig(pc.getDiscoveryConfig());
 
-        WanPublisherConfig customPublisher = wcfg.getWanPublisherConfigs().get(1);
-        assertEquals("istanbul", customPublisher.getGroupName());
+        CustomWanPublisherConfig customPublisher = wcfg.getCustomPublisherConfigs().get(0);
         assertEquals("istanbulPublisherId", customPublisher.getPublisherId());
         assertEquals("com.hazelcast.wan.custom.CustomPublisher", customPublisher.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, customPublisher.getQueueFullBehavior());
         Map<String, Comparable> customPublisherProps = customPublisher.getProperties();
         assertEquals("prop.publisher", customPublisherProps.get("custom.prop.publisher"));
-        assertEquals("5", customPublisherProps.get("discovery.period"));
-        assertEquals("2", customPublisherProps.get("maxEndpoints"));
-        assertAwsConfig(customPublisher.getAwsConfig());
-        assertGcpConfig(customPublisher.getGcpConfig());
-        assertAzureConfig(customPublisher.getAzureConfig());
-        assertKubernetesConfig(customPublisher.getKubernetesConfig());
-        assertEurekaConfig(customPublisher.getEurekaConfig());
-        assertDiscoveryConfig(customPublisher.getDiscoveryConfig());
 
-        WanPublisherConfig publisherPlaceHolderConfig = wcfg.getWanPublisherConfigs().get(2);
+        WanBatchReplicationPublisherConfig publisherPlaceHolderConfig = wcfg.getBatchPublisherConfigs().get(1);
         assertEquals(5000, publisherPlaceHolderConfig.getQueueCapacity());
 
         WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
@@ -1041,22 +1044,21 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testWanReplicationSyncConfig() {
         final WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan2");
         final WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
-        final Map<String, Comparable> consumerProps = new HashMap<String, Comparable>();
+        final Map<String, Comparable> consumerProps = new HashMap<>();
         consumerProps.put("custom.prop.consumer", "prop.consumer");
         consumerConfig.setProperties(consumerProps);
         assertInstanceOf(DummyWanConsumer.class, consumerConfig.getImplementation());
         assertEquals("prop.consumer", consumerConfig.getProperties().get("custom.prop.consumer"));
         assertFalse(consumerConfig.isPersistWanReplicatedData());
 
-        final List<WanPublisherConfig> publisherConfigs = wcfg.getWanPublisherConfigs();
+        final List<WanBatchReplicationPublisherConfig> publisherConfigs = wcfg.getBatchPublisherConfigs();
         assertNotNull(publisherConfigs);
         assertEquals(1, publisherConfigs.size());
 
-        final WanPublisherConfig publisherConfig = publisherConfigs.get(0);
-        assertEquals("tokyo", publisherConfig.getGroupName());
-        assertEquals("PublisherClassName", publisherConfig.getClassName());
+        final WanBatchReplicationPublisherConfig pc = publisherConfigs.get(0);
+        assertEquals("tokyo", pc.getGroupName());
 
-        final WanSyncConfig wanSyncConfig = publisherConfig.getWanSyncConfig();
+        final WanSyncConfig wanSyncConfig = pc.getWanSyncConfig();
         assertNotNull(wanSyncConfig);
         assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, wanSyncConfig.getConsistencyCheckStrategy());
     }
@@ -1176,6 +1178,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.POOLED, nativeMemoryConfig.getAllocatorType());
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
         assertEquals(10, nativeMemoryConfig.getMinBlockSize());
+        assertEquals("/mnt/optane", nativeMemoryConfig.getPersistentMemoryDirectory());
     }
 
     @Test
@@ -1187,11 +1190,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(replicatedMapConfig);
         assertEquals("replicatedMap", replicatedMapConfig.getName());
         assertEquals(InMemoryFormat.OBJECT, replicatedMapConfig.getInMemoryFormat());
-        assertEquals(200, replicatedMapConfig.getReplicationDelayMillis());
-        assertEquals(16, replicatedMapConfig.getConcurrencyLevel());
         assertFalse(replicatedMapConfig.isAsyncFillup());
         assertFalse(replicatedMapConfig.isStatisticsEnabled());
-        assertEquals("my-quorum", replicatedMapConfig.getQuorumName());
+        assertEquals("my-split-brain-protection", replicatedMapConfig.getSplitBrainProtectionName());
 
         MergePolicyConfig mergePolicyConfig = replicatedMapConfig.getMergePolicyConfig();
         assertNotNull(mergePolicyConfig);
@@ -1214,57 +1215,57 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQuorumConfig() {
+    public void testSplitBrainProtectionConfig() {
         assertNotNull(config);
-        assertEquals(3, config.getQuorumConfigs().size());
-        QuorumConfig quorumConfig = config.getQuorumConfig("my-quorum");
-        assertNotNull(quorumConfig);
-        assertEquals("my-quorum", quorumConfig.getName());
-        assertEquals("com.hazelcast.spring.DummyQuorumFunction", quorumConfig.getQuorumFunctionClassName());
-        assertTrue(quorumConfig.isEnabled());
-        assertEquals(2, quorumConfig.getSize());
-        assertEquals(2, quorumConfig.getListenerConfigs().size());
-        assertEquals(QuorumType.READ, quorumConfig.getType());
-        assertEquals("com.hazelcast.spring.DummyQuorumListener", quorumConfig.getListenerConfigs().get(0).getClassName());
-        assertNotNull(quorumConfig.getListenerConfigs().get(1).getImplementation());
+        assertEquals(3, config.getSplitBrainProtectionConfigs().size());
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("my-split-brain-protection");
+        assertNotNull(splitBrainProtectionConfig);
+        assertEquals("my-split-brain-protection", splitBrainProtectionConfig.getName());
+        assertEquals("com.hazelcast.spring.DummySplitBrainProtectionFunction", splitBrainProtectionConfig.getFunctionClassName());
+        assertTrue(splitBrainProtectionConfig.isEnabled());
+        assertEquals(2, splitBrainProtectionConfig.getMinimumClusterSize());
+        assertEquals(2, splitBrainProtectionConfig.getListenerConfigs().size());
+        assertEquals(SplitBrainProtectionOn.READ, splitBrainProtectionConfig.getProtectOn());
+        assertEquals("com.hazelcast.spring.DummySplitBrainProtectionListener", splitBrainProtectionConfig.getListenerConfigs().get(0).getClassName());
+        assertNotNull(splitBrainProtectionConfig.getListenerConfigs().get(1).getImplementation());
     }
 
     @Test
-    public void testProbabilisticQuorumConfig() {
-        QuorumConfig probabilisticQuorumConfig = config.getQuorumConfig("probabilistic-quorum");
-        assertNotNull(probabilisticQuorumConfig);
-        assertEquals("probabilistic-quorum", probabilisticQuorumConfig.getName());
-        assertNotNull(probabilisticQuorumConfig.getQuorumFunctionImplementation());
-        assertInstanceOf(ProbabilisticQuorumFunction.class, probabilisticQuorumConfig.getQuorumFunctionImplementation());
-        assertTrue(probabilisticQuorumConfig.isEnabled());
-        assertEquals(3, probabilisticQuorumConfig.getSize());
-        assertEquals(2, probabilisticQuorumConfig.getListenerConfigs().size());
-        assertEquals(QuorumType.READ_WRITE, probabilisticQuorumConfig.getType());
-        assertEquals("com.hazelcast.spring.DummyQuorumListener",
-                probabilisticQuorumConfig.getListenerConfigs().get(0).getClassName());
-        assertNotNull(probabilisticQuorumConfig.getListenerConfigs().get(1).getImplementation());
-        ProbabilisticQuorumFunction quorumFunction =
-                (ProbabilisticQuorumFunction) probabilisticQuorumConfig.getQuorumFunctionImplementation();
-        assertEquals(11, quorumFunction.getSuspicionThreshold(), 0.001d);
-        assertEquals(31415, quorumFunction.getAcceptableHeartbeatPauseMillis());
-        assertEquals(42, quorumFunction.getMaxSampleSize());
-        assertEquals(77123, quorumFunction.getHeartbeatIntervalMillis());
-        assertEquals(1000, quorumFunction.getMinStdDeviationMillis());
+    public void testProbabilisticSplitBrainProtectionConfig() {
+        SplitBrainProtectionConfig probabilisticSplitBrainProtectionConfig = config.getSplitBrainProtectionConfig("probabilistic-split-brain-protection");
+        assertNotNull(probabilisticSplitBrainProtectionConfig);
+        assertEquals("probabilistic-split-brain-protection", probabilisticSplitBrainProtectionConfig.getName());
+        assertNotNull(probabilisticSplitBrainProtectionConfig.getFunctionImplementation());
+        assertInstanceOf(ProbabilisticSplitBrainProtectionFunction.class, probabilisticSplitBrainProtectionConfig.getFunctionImplementation());
+        assertTrue(probabilisticSplitBrainProtectionConfig.isEnabled());
+        assertEquals(3, probabilisticSplitBrainProtectionConfig.getMinimumClusterSize());
+        assertEquals(2, probabilisticSplitBrainProtectionConfig.getListenerConfigs().size());
+        assertEquals(SplitBrainProtectionOn.READ_WRITE, probabilisticSplitBrainProtectionConfig.getProtectOn());
+        assertEquals("com.hazelcast.spring.DummySplitBrainProtectionListener",
+                probabilisticSplitBrainProtectionConfig.getListenerConfigs().get(0).getClassName());
+        assertNotNull(probabilisticSplitBrainProtectionConfig.getListenerConfigs().get(1).getImplementation());
+        ProbabilisticSplitBrainProtectionFunction splitBrainProtectionFunction =
+                (ProbabilisticSplitBrainProtectionFunction) probabilisticSplitBrainProtectionConfig.getFunctionImplementation();
+        assertEquals(11, splitBrainProtectionFunction.getSuspicionThreshold(), 0.001d);
+        assertEquals(31415, splitBrainProtectionFunction.getAcceptableHeartbeatPauseMillis());
+        assertEquals(42, splitBrainProtectionFunction.getMaxSampleSize());
+        assertEquals(77123, splitBrainProtectionFunction.getHeartbeatIntervalMillis());
+        assertEquals(1000, splitBrainProtectionFunction.getMinStdDeviationMillis());
     }
 
     @Test
-    public void testRecentlyActiveQuorumConfig() {
-        QuorumConfig recentlyActiveQuorumConfig = config.getQuorumConfig("recently-active-quorum");
-        assertNotNull(recentlyActiveQuorumConfig);
-        assertEquals("recently-active-quorum", recentlyActiveQuorumConfig.getName());
-        assertNotNull(recentlyActiveQuorumConfig.getQuorumFunctionImplementation());
-        assertInstanceOf(RecentlyActiveQuorumFunction.class, recentlyActiveQuorumConfig.getQuorumFunctionImplementation());
-        assertTrue(recentlyActiveQuorumConfig.isEnabled());
-        assertEquals(5, recentlyActiveQuorumConfig.getSize());
-        assertEquals(QuorumType.READ_WRITE, recentlyActiveQuorumConfig.getType());
-        RecentlyActiveQuorumFunction quorumFunction =
-                (RecentlyActiveQuorumFunction) recentlyActiveQuorumConfig.getQuorumFunctionImplementation();
-        assertEquals(5123, quorumFunction.getHeartbeatToleranceMillis());
+    public void testRecentlyActiveSplitBrainProtectionConfig() {
+        SplitBrainProtectionConfig recentlyActiveSplitBrainProtectionConfig = config.getSplitBrainProtectionConfig("recently-active-split-brain-protection");
+        assertNotNull(recentlyActiveSplitBrainProtectionConfig);
+        assertEquals("recently-active-split-brain-protection", recentlyActiveSplitBrainProtectionConfig.getName());
+        assertNotNull(recentlyActiveSplitBrainProtectionConfig.getFunctionImplementation());
+        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class, recentlyActiveSplitBrainProtectionConfig.getFunctionImplementation());
+        assertTrue(recentlyActiveSplitBrainProtectionConfig.isEnabled());
+        assertEquals(5, recentlyActiveSplitBrainProtectionConfig.getMinimumClusterSize());
+        assertEquals(SplitBrainProtectionOn.READ_WRITE, recentlyActiveSplitBrainProtectionConfig.getProtectOn());
+        RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction =
+                (RecentlyActiveSplitBrainProtectionFunction) recentlyActiveSplitBrainProtectionConfig.getFunctionImplementation();
+        assertEquals(5123, splitBrainProtectionFunction.getHeartbeatToleranceMillis());
     }
 
     @Test
@@ -1335,8 +1336,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testMemberNearCacheEvictionPolicies() {
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfuNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEvictionMap", config));
-        assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEvictionMap", config));
+        assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEvictionMap", config));
     }
 
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, Config config) {
