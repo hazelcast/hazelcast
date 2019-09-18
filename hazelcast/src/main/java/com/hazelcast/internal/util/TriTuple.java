@@ -14,39 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.util;
+package com.hazelcast.internal.util;
 
 import java.util.Objects;
 
 /**
- * An immutable container of 2 statically typed fields
+ * An immutable container of 3 statically typed fields
+ *
  * @param <X> type of the first element
  * @param <Y> type of the second element
+ * @param <Z> type of the third element
  */
 @SuppressWarnings("checkstyle:visibilitymodifier")
-public final class Tuple2<X, Y> {
+public final class TriTuple<X, Y, Z> {
 
     public final X element1;
     public final Y element2;
+    public final Z element3;
 
-    private Tuple2(X element1, Y element2) {
+    private TriTuple(X element1, Y element2, Z element3) {
         this.element1 = element1;
         this.element2 = element2;
+        this.element3 = element3;
     }
 
-    public static <X, Y> Tuple2<X, Y> of(X element1, Y element2) {
-        return new Tuple2<>(element1, element2);
-    }
-
-    public X element1() {
-        return element1;
-    }
-
-    public Y element2() {
-        return element2;
+    public static <X, Y, Z> TriTuple<X, Y, Z> of(X element1, Y element2, Z element3) {
+        return new TriTuple<>(element1, element2, element3);
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -55,23 +52,27 @@ public final class Tuple2<X, Y> {
             return false;
         }
 
-        Tuple2<?, ?> tuple2 = (Tuple2<?, ?>) o;
+        TriTuple<?, ?, ?> triTuple = (TriTuple<?, ?, ?>) o;
 
-        if (!Objects.equals(element1, tuple2.element1)) {
+        if (!Objects.equals(element1, triTuple.element1)) {
             return false;
         }
-        return Objects.equals(element2, tuple2.element2);
+        if (!Objects.equals(element2, triTuple.element2)) {
+            return false;
+        }
+        return Objects.equals(element3, triTuple.element3);
     }
 
     @Override
     public int hashCode() {
         int result = element1 != null ? element1.hashCode() : 0;
         result = 31 * result + (element2 != null ? element2.hashCode() : 0);
+        result = 31 * result + (element3 != null ? element3.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "Tuple2{" + "element1=" + element1 + ", element2=" + element2 + '}';
+        return "TriTuple{" + "element1=" + element1 + ", element2=" + element2 + ", element3=" + element3 + '}';
     }
 }

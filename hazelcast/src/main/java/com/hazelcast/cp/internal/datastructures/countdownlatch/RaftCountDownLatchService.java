@@ -22,7 +22,7 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.RaftCountDownLatchProxy;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
@@ -53,7 +53,7 @@ public class RaftCountDownLatchService
 
     public int countDown(CPGroupId groupId, String name, UUID invocationUuid, int expectedRound) {
         RaftCountDownLatchRegistry registry = getOrInitRegistry(groupId);
-        Tuple2<Integer, Collection<AwaitInvocationKey>> t = registry.countDown(name, invocationUuid, expectedRound);
+        BiTuple<Integer, Collection<AwaitInvocationKey>> t = registry.countDown(name, invocationUuid, expectedRound);
         notifyWaitKeys(groupId, name, t.element2, true);
 
         return t.element1;
