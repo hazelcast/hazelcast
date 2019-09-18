@@ -112,6 +112,7 @@ public class WanConfigurationTest extends HazelcastTestSupport {
         }
 
         CustomWanPublisherConfig customWanPublisherConfig = new CustomWanPublisherConfig()
+                .setPublisherId("dummyPublisherId")
                 .setClassName(DummyWanReplication.class.getName());
 
         WanReplicationConfig wanConfig = new WanReplicationConfig()
