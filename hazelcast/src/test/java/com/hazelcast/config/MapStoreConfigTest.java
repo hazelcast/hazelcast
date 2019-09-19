@@ -285,7 +285,6 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapStoreConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .withPrefabValues(MapStoreConfigReadOnly.class,
                         new MapStoreConfigReadOnly(cfgNotEnabled),

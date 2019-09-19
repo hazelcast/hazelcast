@@ -38,7 +38,6 @@ public class ListConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ListConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(ListConfigReadOnly.class,
                         new ListConfigReadOnly(new ListConfig("red")),

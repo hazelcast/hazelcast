@@ -55,7 +55,6 @@ public class SemaphoreConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(SemaphoreConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(SemaphoreConfigReadOnly.class,
                         new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("red")),

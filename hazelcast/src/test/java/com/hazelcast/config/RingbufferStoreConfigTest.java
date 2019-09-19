@@ -113,7 +113,6 @@ public class RingbufferStoreConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(RingbufferStoreConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
                       .suppress(Warning.NONFINAL_FIELDS)
                       .withPrefabValues(RingbufferStoreConfigReadOnly.class,
                               new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),

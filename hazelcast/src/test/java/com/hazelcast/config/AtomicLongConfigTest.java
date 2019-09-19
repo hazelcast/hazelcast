@@ -50,7 +50,6 @@ public class AtomicLongConfigTest extends AbstractBasicConfigTest<AtomicLongConf
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(AtomicLongConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
                       .withPrefabValues(AtomicLongConfigReadOnly.class,
                               new AtomicLongConfigReadOnly(new AtomicLongConfig("red")),

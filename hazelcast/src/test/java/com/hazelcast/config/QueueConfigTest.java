@@ -90,7 +90,6 @@ public class QueueConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(QueueConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .withPrefabValues(QueueConfigReadOnly.class,
                         new QueueConfigReadOnly(new QueueConfig("red")),

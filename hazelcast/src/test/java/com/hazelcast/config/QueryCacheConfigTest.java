@@ -116,7 +116,6 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(QueryCacheConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(PredicateConfig.class,
                         new PredicateConfig("red"), new PredicateConfig("black"))

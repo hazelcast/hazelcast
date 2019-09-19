@@ -63,7 +63,6 @@ public class DurableExecutorConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(DurableExecutorConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .withPrefabValues(DurableExecutorConfigReadOnly.class,
                               new DurableExecutorConfigReadOnly(new DurableExecutorConfig("red")),

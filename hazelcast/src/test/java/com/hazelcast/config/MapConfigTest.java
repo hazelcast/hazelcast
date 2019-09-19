@@ -323,7 +323,6 @@ public class MapConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .withPrefabValues(MaxSizeConfig.class,
                               new MaxSizeConfig(300, MaxSizeConfig.MaxSizePolicy.PER_PARTITION),

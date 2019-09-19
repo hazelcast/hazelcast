@@ -36,7 +36,6 @@ public class QueueStoreConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(QueueStoreConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(QueueStoreConfigReadOnly.class,
                         new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),

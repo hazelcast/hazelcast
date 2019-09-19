@@ -138,7 +138,6 @@ public class MergePolicyConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MergePolicyConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(MergePolicyConfig.class,
                         new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 1000),

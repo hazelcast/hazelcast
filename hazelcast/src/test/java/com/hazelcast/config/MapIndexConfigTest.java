@@ -53,7 +53,6 @@ public class MapIndexConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapIndexConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(MapIndexConfigReadOnly.class,
                         new MapIndexConfigReadOnly(new MapIndexConfig("red", false)),

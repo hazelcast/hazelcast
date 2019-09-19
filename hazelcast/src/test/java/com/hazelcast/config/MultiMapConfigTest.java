@@ -72,7 +72,6 @@ public class MultiMapConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MultiMapConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .withPrefabValues(MultiMapConfigReadOnly.class,
                         new MultiMapConfigReadOnly(new MultiMapConfig("red")),

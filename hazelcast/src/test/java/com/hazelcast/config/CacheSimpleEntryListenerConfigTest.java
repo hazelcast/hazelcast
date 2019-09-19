@@ -40,7 +40,6 @@ public class CacheSimpleEntryListenerConfigTest {
         CacheSimpleEntryListenerConfig blackEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         blackEntryListenerConfig.setCacheEntryListenerFactory("black");
         EqualsVerifier.forClass(CacheSimpleEntryListenerConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(CacheSimpleEntryListenerConfigReadOnly.class,
                         new CacheSimpleEntryListenerConfigReadOnly(redEntryListenerConfig),

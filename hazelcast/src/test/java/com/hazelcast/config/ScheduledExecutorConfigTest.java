@@ -73,7 +73,6 @@ public class ScheduledExecutorConfigTest extends HazelcastTestSupport {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ScheduledExecutorConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .withPrefabValues(ScheduledExecutorConfigReadOnly.class,
                               new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("red")),

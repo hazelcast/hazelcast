@@ -59,7 +59,6 @@ public class ExecutorConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ExecutorConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                 .withPrefabValues(ExecutorConfigReadOnly.class,
                         new ExecutorConfigReadOnly(new ExecutorConfig("red")),
