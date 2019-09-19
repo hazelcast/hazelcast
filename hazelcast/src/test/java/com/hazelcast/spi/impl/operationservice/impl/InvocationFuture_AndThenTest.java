@@ -63,7 +63,7 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
         future.andThen(null);
     }
 
-    @Test(expected = HazelcastInstanceNotActiveException.class)
+    @Test
     public void whenNodeIsShutdown() throws Throwable {
         Address address = getAddress(local);
         local.shutdown();
@@ -85,7 +85,7 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
             }
         });
         assertOpenEventually(latch);
-        throw reference.get();
+        assertInstanceOf(HazelcastInstanceNotActiveException.class, reference.get());
     }
 
     @Test(expected = IllegalArgumentException.class)

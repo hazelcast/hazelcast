@@ -143,8 +143,8 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         test.get("key");
     }
 
-    @Test(expected = HazelcastClientNotActiveException.class)
-    public void testCallbackAfterClientShutdown() throws Throwable {
+    @Test
+    public void testCallbackAfterClientShutdown() {
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
@@ -168,7 +168,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
             }
         });
         assertOpenEventually(latch);
-        throw reference.get();
+        assertInstanceOf(HazelcastClientNotActiveException.class, reference.get());
     }
 
     @Test(expected = HazelcastClientNotActiveException.class)
