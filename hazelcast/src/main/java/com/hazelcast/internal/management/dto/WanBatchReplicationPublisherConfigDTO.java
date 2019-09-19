@@ -23,7 +23,7 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
-import com.hazelcast.config.WANQueueFullBehavior;
+import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanPublisherState;
@@ -133,7 +133,7 @@ public class WanBatchReplicationPublisherConfigDTO implements JsonSerializable {
         consumeIfExists(json, "maxConcurrentInvocations", v -> config.setMaxConcurrentInvocations(v.asInt()));
         consumeIfExists(json, "discoveryPeriodSeconds", v -> config.setDiscoveryPeriodSeconds(v.asInt()));
         consumeIfExists(json, "useEndpointPrivateAddress", v -> config.setUseEndpointPrivateAddress(v.asBoolean()));
-        consumeIfExists(json, "queueFullBehavior", v -> config.setQueueFullBehavior(WANQueueFullBehavior.getByType(v.asInt())));
+        consumeIfExists(json, "queueFullBehavior", v -> config.setQueueFullBehavior(WanQueueFullBehavior.getByType(v.asInt())));
         consumeIfExists(json, "maxTargetEndpoints", v -> config.setMaxTargetEndpoints(v.asInt()));
         consumeIfExists(json, "queueCapacity", v -> config.setQueueCapacity(v.asInt()));
         consumeIfExists(json, "targetEndpoints", v -> config.setTargetEndpoints(v.asString()));

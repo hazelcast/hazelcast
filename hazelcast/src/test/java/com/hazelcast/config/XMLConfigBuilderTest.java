@@ -60,7 +60,7 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
-import static com.hazelcast.config.WANQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -1763,7 +1763,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
         assertEquals("ankara", pc2.getGroupName());
         assertEquals("", pc2.getPublisherId());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
+        assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
 
         List<CustomWanPublisherConfig> customPublishers = wanConfig.getCustomPublisherConfigs();

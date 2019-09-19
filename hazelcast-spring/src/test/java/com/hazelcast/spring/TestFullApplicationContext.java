@@ -101,7 +101,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.WANQueueFullBehavior;
+import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
@@ -977,7 +977,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("tokyo", pc.getGroupName());
         assertEquals("tokyoPublisherId", pc.getPublisherId());
         assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", pc.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, pc.getQueueFullBehavior());
+        assertEquals(WanQueueFullBehavior.THROW_EXCEPTION, pc.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc.getInitialPublisherState());
         assertEquals(1000, pc.getQueueCapacity());
         assertEquals(50, pc.getBatchSize());

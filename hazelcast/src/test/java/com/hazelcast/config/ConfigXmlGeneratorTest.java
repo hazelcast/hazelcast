@@ -1104,7 +1104,7 @@ public class ConfigXmlGeneratorTest {
                 .setBatchSize(500)
                 .setBatchMaxDelayMillis(1000)
                 .setResponseTimeoutMillis(60000)
-                .setQueueFullBehavior(WANQueueFullBehavior.DISCARD_AFTER_MUTATION)
+                .setQueueFullBehavior(WanQueueFullBehavior.DISCARD_AFTER_MUTATION)
                 .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
                 .setDiscoveryPeriodSeconds(20)
                 .setMaxTargetEndpoints(100)
