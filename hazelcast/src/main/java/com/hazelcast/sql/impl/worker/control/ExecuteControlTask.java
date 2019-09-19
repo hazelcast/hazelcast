@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.worker.control;
 
-import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultConsumer;
 import com.hazelcast.util.collection.PartitionIdSet;
@@ -32,14 +32,11 @@ public class ExecuteControlTask implements ControlTask {
     /** Query ID. */
     private final QueryId queryId;
 
-    /** Member IDs. */
-    private final List<String> ids;
-
     /** Partition mapping. */
     private final Map<String, PartitionIdSet> partitionMapping;
 
-    /** Fragments. */
-    private final List<QueryFragment> fragments;
+    /** Fragment descriptors. */
+    private final List<QueryFragmentDescriptor> fragmentDescriptors;
 
     /** Outbound edge mapping (from edge ID to owning fragment position). */
     private final Map<Integer, Integer> outboundEdgeMap;
@@ -50,31 +47,24 @@ public class ExecuteControlTask implements ControlTask {
     /** Query arguments. */
     private final List<Object> arguments;
 
-    /** Seed. */
-    private final int seed;
-
     /** Root consumer (available only on initiating node). */
     private final QueryResultConsumer rootConsumer;
 
     public ExecuteControlTask(
         QueryId queryId,
-        List<String> ids,
         Map<String, PartitionIdSet> partitionMapping,
-        List<QueryFragment> fragments,
+        List<QueryFragmentDescriptor> fragmentDescriptors,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
         List<Object> arguments,
-        int seed,
         QueryResultConsumer rootConsumer
     ) {
         this.queryId = queryId;
-        this.ids = ids;
         this.partitionMapping = partitionMapping;
-        this.fragments = fragments;
+        this.fragmentDescriptors = fragmentDescriptors;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.arguments = arguments;
-        this.seed = seed;
         this.rootConsumer = rootConsumer;
     }
 
@@ -83,16 +73,12 @@ public class ExecuteControlTask implements ControlTask {
         return queryId;
     }
 
-    public List<String> getIds() {
-        return ids;
-    }
-
     public Map<String, PartitionIdSet> getPartitionMapping() {
         return partitionMapping;
     }
 
-    public List<QueryFragment> getFragments() {
-        return fragments != null ? fragments : Collections.emptyList();
+    public List<QueryFragmentDescriptor> getFragmentDescriptors() {
+        return fragmentDescriptors != null ? fragmentDescriptors : Collections.emptyList();
     }
 
     public Map<Integer, Integer> getOutboundEdgeMap() {
@@ -105,10 +91,6 @@ public class ExecuteControlTask implements ControlTask {
 
     public List<Object> getArguments() {
         return arguments;
-    }
-
-    public int getSeed() {
-        return seed;
     }
 
     public QueryResultConsumer getRootConsumer() {

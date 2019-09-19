@@ -21,10 +21,12 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
 import com.hazelcast.sql.impl.worker.control.ControlThreadPool;
 import com.hazelcast.sql.impl.worker.control.ExecuteControlTask;
 import com.hazelcast.sql.impl.worker.data.BatchDataTask;
@@ -35,12 +37,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 
 /**
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
-public class SqlServiceImpl implements SqlService, ManagedService {
+public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Packet> {
     /** Calcite optimizer class name. */
     private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
@@ -115,25 +117,32 @@ public class SqlServiceImpl implements SqlService, ManagedService {
 
         QueryResultConsumer consumer = new QueryResultConsumerImpl();
 
-        QueryExecuteOperation op = new QueryExecuteOperation(
-            queryId,
-            plan.getMemberIds(),
-            plan.getPartitionMap(),
-            plan.getFragments(),
-            plan.getOutboundEdgeMap(),
-            plan.getInboundEdgeMap(),
+        String localMemberId = nodeEngine.getLocalMember().getUuid();
+
+        QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
+            plan,
             args,
-            ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE),
-            consumer
+            queryId,
+            localMemberId
         );
 
         // Start execution on local member.
-        controlThreadPool.submit(op.getTask());
+        QueryExecuteOperation localOp = operationFactory.create(localMemberId);
+
+        controlThreadPool.submit(localOp.getTask(consumer));
 
         // Start execution on remote members.
-        for (Address addresses : plan.getAddresses()) {
-            if (!addresses.equals(nodeEngine.getLocalMember().getAddress()))
-                nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, addresses);
+        for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
+            String memberId = plan.getDataMemberIds().get(i);
+
+            if (memberId.equals(localMemberId))
+                continue;
+
+            QueryExecuteOperation remoteOp = operationFactory.create(memberId);
+
+            Address address = plan.getDataMemberAddresses().get(i);
+
+            nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, remoteOp, address);
         }
 
         return new QueryHandle(queryId, consumer);
@@ -195,5 +204,10 @@ public class SqlServiceImpl implements SqlService, ManagedService {
         }
 
         return res;
+    }
+
+    @Override
+    public void accept(Packet packet) {
+        // TODO
     }
 }

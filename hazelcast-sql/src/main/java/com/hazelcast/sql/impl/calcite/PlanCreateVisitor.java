@@ -16,65 +16,68 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryFragment;
-import com.hazelcast.sql.impl.QueryFragmentDescriptor;
-import com.hazelcast.sql.impl.QueryPlan;
-import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedJoinPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
-import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedMapScanPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.SortMergeExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.SortPhysicalRel;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
-import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
-import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
-import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
-import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
-import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
-import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
-import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
-import com.hazelcast.sql.impl.physical.PhysicalNode;
-import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
-import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
-import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
-import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
-import com.hazelcast.sql.impl.physical.RootPhysicalNode;
-import com.hazelcast.sql.impl.physical.SendPhysicalNode;
-import com.hazelcast.sql.impl.physical.SortPhysicalNode;
-import com.hazelcast.util.collection.PartitionIdSet;
-import org.apache.calcite.rel.RelFieldCollation;
-import org.apache.calcite.rel.core.AggregateCall;
-import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.SqlAggFunction;
+ import com.hazelcast.nio.Address;
+ import com.hazelcast.sql.HazelcastSqlException;
+ import com.hazelcast.sql.impl.QueryFragment;
+ import com.hazelcast.sql.impl.QueryFragmentMapping;
+ import com.hazelcast.sql.impl.QueryPlan;
+ import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
+ import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionType;
+ import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
+ import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedJoinPhysicalRel;
+ import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
+ import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
+ import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
+ import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
+ import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedMapScanPhysicalRel;
+ import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
+ import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
+ import com.hazelcast.sql.impl.calcite.physical.rel.SortMergeExchangePhysicalRel;
+ import com.hazelcast.sql.impl.calcite.physical.rel.SortPhysicalRel;
+ import com.hazelcast.sql.impl.expression.ColumnExpression;
+ import com.hazelcast.sql.impl.expression.ConstantExpression;
+ import com.hazelcast.sql.impl.expression.Expression;
+ import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
+ import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
+ import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
+ import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
+ import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
+ import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
+ import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
+ import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
+ import com.hazelcast.sql.impl.physical.PhysicalNode;
+ import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
+ import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
+ import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
+ import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
+ import com.hazelcast.sql.impl.physical.RootPhysicalNode;
+ import com.hazelcast.sql.impl.physical.SendPhysicalNode;
+ import com.hazelcast.sql.impl.physical.SortPhysicalNode;
+ import com.hazelcast.util.collection.PartitionIdSet;
+ import org.apache.calcite.rel.RelFieldCollation;
+ import org.apache.calcite.rel.core.AggregateCall;
+ import org.apache.calcite.rex.RexNode;
+ import org.apache.calcite.sql.SqlAggFunction;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+ import java.util.ArrayDeque;
+ import java.util.ArrayList;
+ import java.util.Deque;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
 
 /**
  * Visitor which produces query plan.
  */
 public class PlanCreateVisitor implements PhysicalRelVisitor {
-    /** Members with partitions. */
-    private final Set<String> partMemberIds;
+    /** Partition mapping. */
+    private final Map<String, PartitionIdSet> partMap;
 
-    /** Local member ID. */
-    private final String localMemberId;
+    /** Data member IDs. */
+    private final List<String> dataMemberIds;
+
+    /** Data member addresses. */
+    private final List<Address> dataMemberAddresses;
 
     /** Prepared fragments. */
     private final List<QueryFragment> fragments = new ArrayList<>();
@@ -91,22 +94,22 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Current inbound edges. */
     private List<Integer> currentInboundEdges;
 
-    public PlanCreateVisitor(Set<String> partMemberIds, String localMemberId) {
-        this.partMemberIds = partMemberIds;
-        this.localMemberId = localMemberId;
+    public PlanCreateVisitor(
+        Map<String, PartitionIdSet> partMap,
+        List<String> dataMemberIds,
+        List<Address> dataMemberAddresses
+    ) {
+        this.partMap = partMap;
+        this.dataMemberIds = dataMemberIds;
+        this.dataMemberAddresses = dataMemberAddresses;
     }
 
-    public QueryPlan getPlan(Map<String, PartitionIdSet> partMap, List<Address> addresses, List<String> memberIds) {
-        List<PhysicalNode> fragmentNodes = new ArrayList<>(fragments.size());
-        List<QueryFragmentDescriptor> fragmentDescriptors = new ArrayList<>(fragments.size());
-
+    public QueryPlan getPlan() {
         Map<Integer, Integer> outboundEdgeMap = new HashMap<>();
         Map<Integer, Integer> inboundEdgeMap = new HashMap<>();
 
         for (int i = 0; i < fragments.size(); i++) {
             QueryFragment fragment = fragments.get(i);
-
-            fragmentNodes.add(fragment.getNode());
 
             Integer outboundEdge = fragment.getOutboundEdge();
 
@@ -119,7 +122,14 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             }
         }
 
-        return new QueryPlan(fragments, partMap, addresses, memberIds, outboundEdgeMap, inboundEdgeMap);
+        return new QueryPlan(
+            partMap,
+            dataMemberIds,
+            dataMemberAddresses,
+            fragments,
+            outboundEdgeMap,
+            inboundEdgeMap
+        );
     }
 
     @Override
@@ -130,11 +140,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             upstreamNode
         );
 
-        Set<String> memberIds = new HashSet<>();
-
-        memberIds.add(localMemberId);
-
-        addFragment(rootNode, memberIds);
+        addFragment(rootNode, QueryFragmentMapping.ROOT);
     }
 
     @Override
@@ -204,6 +210,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         // Get upstream node.
         PhysicalNode upstreamNode = pollSingleUpstream();
 
+        // Calculate mapping.
+        PhysicalDistributionTrait distTrait = RuleUtils.getPhysicalDistribution(rel);
+
+        QueryFragmentMapping mapping = distTrait.getType() == PhysicalDistributionType.REPLICATED ?
+            QueryFragmentMapping.REPLICATED : QueryFragmentMapping.DATA_MEMBERS;
+
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
@@ -215,7 +227,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             new ConstantExpression<>(1)  // Partitioning info: REWORK!
         );
 
-        addFragment(sendNode, partMemberIds);
+        addFragment(sendNode, mapping);
 
         // Create receiver.
         addInboundEdge(edge);
@@ -234,6 +246,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         SortPhysicalNode sortNode = (SortPhysicalNode)upstreamNode;
 
+        // Calculate mapping.
+        PhysicalDistributionTrait distTrait = RuleUtils.getPhysicalDistribution(rel);
+
+        QueryFragmentMapping mapping = distTrait.getType() == PhysicalDistributionType.REPLICATED ?
+            QueryFragmentMapping.REPLICATED : QueryFragmentMapping.DATA_MEMBERS;
+
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
@@ -245,7 +263,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             new ConstantExpression<>(1)  // Partitioning info: REWORK!
         );
 
-        addFragment(sendNode, partMemberIds);
+        addFragment(sendNode, mapping);
 
         // Create a receiver and push it to stack.
         addInboundEdge(edge);
@@ -371,12 +389,18 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
      * Create new fragment and clear intermediate state.
      *
      * @param node Node.
-     * @param memberIds Member IDs.
+     * @param mapping Fragment mapping mode.
      */
-    private void addFragment(PhysicalNode node, Set<String> memberIds) {
+    private void addFragment(PhysicalNode node, QueryFragmentMapping mapping) {
         assert upstreamNodes.isEmpty();
 
-        QueryFragment fragment = new QueryFragment(node, currentOutboundEdge, currentInboundEdges, memberIds, 1);
+        QueryFragment fragment = new QueryFragment(
+            node,
+            currentOutboundEdge,
+            currentInboundEdges,
+            mapping,
+            1
+        );
 
         currentOutboundEdge = null;
         currentInboundEdges = null;

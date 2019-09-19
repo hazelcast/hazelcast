@@ -26,17 +26,17 @@ import java.util.Map;
  * Prepared query plan.
  */
 public class QueryPlan {
-    /** Fragments. */
-    private final List<QueryFragment> fragments;
-
     /** Partition mapping. */
     private final Map<String, PartitionIdSet> partMap;
 
-    /** Addresses. */
-    private final List<Address> addresses;
+    /** Data member IDs. */
+    private final List<String> dataMemberIds;
 
-    /** Member IDs. */
-    private final List<String> ids;
+    /** Data member addresses. */
+    private final List<Address> dataMemberAddresses;
+
+    /** Fragment nodes. */
+    private final List<QueryFragment> fragments;
 
     /** Outbound edge mapping (from edge ID to owning fragment position). */
     private final Map<Integer, Integer> outboundEdgeMap;
@@ -45,35 +45,35 @@ public class QueryPlan {
     private final Map<Integer, Integer> inboundEdgeMap;
 
     public QueryPlan(
-        List<QueryFragment> fragments,
         Map<String, PartitionIdSet> partMap,
-        List<Address> addresses,
-        List<String> memberIds,
+        List<String> dataMemberIds,
+        List<Address> dataMemberAddresses,
+        List<QueryFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap
     ) {
-        this.fragments = fragments;
         this.partMap = partMap;
-        this.addresses = addresses;
-        this.ids = memberIds;
+        this.dataMemberIds = dataMemberIds;
+        this.dataMemberAddresses = dataMemberAddresses;
+        this.fragments = fragments;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
-    }
-
-    public List<QueryFragment> getFragments() {
-        return fragments;
     }
 
     public Map<String, PartitionIdSet> getPartitionMap() {
         return partMap;
     }
 
-    public List<Address> getAddresses() {
-        return addresses;
+    public List<String> getDataMemberIds() {
+        return dataMemberIds;
     }
 
-    public List<String> getMemberIds() {
-        return ids;
+    public List<Address> getDataMemberAddresses() {
+        return dataMemberAddresses;
+    }
+
+    public List<QueryFragment> getFragments() {
+        return fragments;
     }
 
     public Map<Integer, Integer> getOutboundEdgeMap() {

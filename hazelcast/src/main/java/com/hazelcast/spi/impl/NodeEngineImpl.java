@@ -150,17 +150,19 @@ public class NodeEngineImpl implements NodeEngine {
             }
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
+            this.sqlService = new SqlServiceImpl(this);
             this.packetDispatcher = new PacketDispatcher(
-                    logger,
-                    operationService.getOperationExecutor(),
-                    operationService.getInboundResponseHandlerSupplier().get(),
-                    operationService.getInvocationMonitor(),
-                    eventService,
-                    getJetPacketConsumer(node.getNodeExtension()));
+                logger,
+                operationService.getOperationExecutor(),
+                operationService.getInboundResponseHandlerSupplier().get(),
+                operationService.getInvocationMonitor(),
+                eventService,
+                getJetPacketConsumer(node.getNodeExtension()),
+                sqlService
+            );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
             this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
-            this.sqlService = new SqlServiceImpl(this);
 
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);

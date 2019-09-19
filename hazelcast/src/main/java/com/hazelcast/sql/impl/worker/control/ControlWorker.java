@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.worker.control;
 
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.exec.Exec;
@@ -83,11 +83,11 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
         // This data structure maps edge stripes to real threads.
         Map<Integer, int[]> edgeToStripeMap = new HashMap<>();
 
-        for (int i = 0; i < task.getFragments().size(); i++) {
-            QueryFragment fragment = task.getFragments().get(i);
+        for (int i = 0; i < task.getFragmentDescriptors().size(); i++) {
+            QueryFragmentDescriptor fragment = task.getFragmentDescriptors().get(i);
 
-            // Skip fragments which should not execute on a node.
-            if (!fragment.getMemberIds().contains(nodeEngine.getLocalMember().getUuid()))
+            // Fragment's node is null when it is not supposed to be executed on that node.
+            if (fragment.getNode() == null)
                 continue;
 
             List<StripeDeployment> stripeDeployments = new ArrayList<>(fragment.getParallelism());
@@ -99,14 +99,13 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
                     nodeEngine,
                     queryId,
                     nodeEngine.getPartitionService().getPartitionCount(),
-                    task.getIds(),
+                    task.getPartitionMapping().keySet(),
                     task.getPartitionMapping().get(nodeEngine.getLocalMember().getUuid()),
-                    task.getFragments(),
+                    task.getFragmentDescriptors(),
                     task.getOutboundEdgeMap(),
                     task.getInboundEdgeMap(),
                     j,
-                    fragment.getParallelism(),
-                    task.getSeed()
+                    fragment.getParallelism()
                 );
 
                 fragment.getNode().visit(visitor);

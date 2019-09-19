@@ -24,7 +24,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.HazelcastSqlTransientException;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
@@ -81,12 +80,9 @@ import org.apache.calcite.tools.RuleSets;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 /**
  * Calcite-based SQL optimizer.
@@ -306,7 +302,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         int partCnt = parts.size();
 
-        Map<String, PartitionIdSet> partMap = new HashMap<>();
+        LinkedHashMap<String, PartitionIdSet> partMap = new LinkedHashMap<>();
 
         for (Partition part : parts) {
             String ownerId = part.getOwner().getUuid();
@@ -314,30 +310,26 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
         }
 
-        // Prepare list of all nodes and current node.
-        Set<String> partMemberIds = new HashSet<>(partMap.keySet());
-        String localMemberId = nodeEngine.getLocalMember().getUuid();
-
         // Collect remote addresses.
-        List<Address> addresses = new ArrayList<>(partMemberIds.size());
-        List<String> memberIds = new ArrayList<>(partMemberIds.size());
+        List<Address> dataMemberAddresses = new ArrayList<>(partMap.size());
+        List<String> dataMemberIds = new ArrayList<>(partMap.size());
 
-        for (String partMemberId : partMemberIds) {
+        for (String partMemberId : partMap.keySet()) {
             MemberImpl member = nodeEngine.getClusterService().getMember(partMemberId);
 
             if (member == null)
                 throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE, "Participating member has " +
                     "left the topology: " + partMemberId);
 
-            addresses.add(member.getAddress());
-            memberIds.add(member.getUuid());
+            dataMemberAddresses.add(member.getAddress());
+            dataMemberIds.add(member.getUuid());
         }
 
         // Create the plan.
-        PlanCreateVisitor visitor = new PlanCreateVisitor(partMemberIds, localMemberId);
+        PlanCreateVisitor visitor = new PlanCreateVisitor(partMap, dataMemberIds, dataMemberAddresses);
 
         rel.visit(visitor);
 
-        return visitor.getPlan(partMap, addresses, memberIds);
+        return visitor.getPlan();
     }
 }

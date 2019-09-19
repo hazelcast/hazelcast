@@ -17,53 +17,41 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.impl.physical.PhysicalNode;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Single query fragment. Represents a node to be executed, it's inbound and outbound edges, members where it is
  * to be executed.
  */
-public class QueryFragment implements DataSerializable {
+public class QueryFragment {
     /** Node to be executed (null for root fragment). */
-    private PhysicalNode node;
+    private final PhysicalNode node;
 
     /** Outbound edge (if any). */
-    private Integer outboundEdge;
+    private final Integer outboundEdge;
 
     /** Inbound edges (if any). */
-    private List<Integer> inboundEdges;
+    private final List<Integer> inboundEdges;
 
-    /** Involved members. */
-    private Set<String> memberIds;
+    /** Mapping. */
+    private final QueryFragmentMapping mapping;
 
     /** Per-member parallelism. */
-    private int parallelism;
-
-    /** Fragment descriptor. */
-    private QueryFragmentDescriptor descriptor;
-
-    public QueryFragment() {
-        // No-op.
-    }
+    private final int parallelism;
 
     public QueryFragment(
         PhysicalNode node,
         Integer outboundEdge,
         List<Integer> inboundEdges,
-        Set<String> memberIds,
+        QueryFragmentMapping mapping,
         int parallelism
     ) {
         this.node = node;
         this.outboundEdge = outboundEdge;
         this.inboundEdges = inboundEdges;
-        this.memberIds = memberIds;
+        this.mapping = mapping;
         this.parallelism = parallelism;
     }
 
@@ -79,29 +67,11 @@ public class QueryFragment implements DataSerializable {
         return inboundEdges != null ? inboundEdges : Collections.emptyList();
     }
 
-    public Set<String> getMemberIds() {
-        return memberIds;
+    public QueryFragmentMapping getMapping() {
+        return mapping;
     }
 
     public int getParallelism() {
         return parallelism;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(node);
-        out.writeObject(outboundEdge);
-        out.writeObject(inboundEdges);
-        out.writeObject(memberIds);
-        out.writeInt(parallelism);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        node = in.readObject();
-        outboundEdge = in.readObject();
-        inboundEdges = in.readObject();
-        memberIds = in.readObject();
-        parallelism = in.readInt();
     }
 }

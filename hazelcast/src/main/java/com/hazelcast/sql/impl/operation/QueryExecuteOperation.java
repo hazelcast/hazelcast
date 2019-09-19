@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultConsumer;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -40,14 +40,11 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     /** Unique query ID. */
     private QueryId queryId;
 
-    /** Member IDs. */
-    private List<String> memberIds;
-
     /** Mapped ownership of partitions. */
     private Map<String, PartitionIdSet> partitionMapping;
 
-    /** Fragments. */
-    private List<QueryFragment> fragments;
+    /** Fragment descriptors. */
+    private List<QueryFragmentDescriptor> fragmentDescriptors;
 
     /** Outbound edge mapping (from edge ID to owning fragment position). */
     private Map<Integer, Integer> outboundEdgeMap;
@@ -58,38 +55,24 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     /** Arguments. */
     private List<Object> arguments;
 
-    /** Seed used for load balancing. */
-    private int seed;
-
-    /** Result consumer. */
-    private transient QueryResultConsumer rootConsumer;
-
     public QueryExecuteOperation() {
         // No-op.
     }
 
     public QueryExecuteOperation(
         QueryId queryId,
-        List<String> memberIds,
         Map<String, PartitionIdSet> partitionMapping,
-        List<QueryFragment> fragments,
+        List<QueryFragmentDescriptor> fragmentDescriptors,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
-        List<Object> arguments,
-        int seed,
-        QueryResultConsumer rootConsumer
+        List<Object> arguments
     ) {
-        assert fragments != null;
-
         this.queryId = queryId;
-        this.memberIds = memberIds;
         this.partitionMapping = partitionMapping;
-        this.fragments = fragments;
+        this.fragmentDescriptors = fragmentDescriptors;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.arguments = arguments;
-        this.seed = seed;
-        this.rootConsumer = rootConsumer;
     }
 
     @Override
@@ -100,15 +83,17 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     }
 
     public ExecuteControlTask getTask() {
+        return getTask(null);
+    }
+
+    public ExecuteControlTask getTask(QueryResultConsumer rootConsumer) {
         return new ExecuteControlTask(
             queryId,
-            memberIds,
             partitionMapping,
-            fragments,
+            fragmentDescriptors,
             outboundEdgeMap,
             inboundEdgeMap,
             arguments,
-            seed,
             rootConsumer
         );
     }
@@ -120,12 +105,6 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         // Write query ID.
         queryId.writeData(out);
 
-        // Write addresses.
-        out.writeInt(memberIds.size());
-
-        for (String memberId : memberIds)
-            out.writeUTF(memberId);
-
         // Write partitions.
         out.writeInt(partitionMapping.size());
 
@@ -136,10 +115,11 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         }
 
         // Write fragments.
-        out.writeInt(fragments.size());
+        out.writeInt(fragmentDescriptors.size());
 
-        for (QueryFragment fragment : fragments)
-            fragment.writeData(out);
+        for (QueryFragmentDescriptor fragmentDescriptor : fragmentDescriptors) {
+            out.writeObject(fragmentDescriptor);
+        }
 
         // Write edge mappings.
         out.writeInt(outboundEdgeMap.size());
@@ -165,8 +145,6 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
             for (Object argument : arguments)
                 out.writeObject(argument);
         }
-
-        out.writeInt(seed);
     }
 
     @Override
@@ -176,14 +154,6 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         // Read query ID.
         queryId = new QueryId();
         queryId.readData(in);
-
-        // Read IDs.
-        int idsCnt = in.readInt();
-
-        memberIds = new ArrayList<>(idsCnt);
-
-        for (int i = 0; i < idsCnt; i++)
-            memberIds.add(in.readUTF());
 
         // Read partitions.
         int partitionMappingCnt = in.readInt();
@@ -196,14 +166,10 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         // Read fragments.
         int fragmentCnt = in.readInt();
 
-        fragments = new ArrayList<>(fragmentCnt);
+        fragmentDescriptors = new ArrayList<>(fragmentDescriptors);
 
         for (int i = 0; i < fragmentCnt; i++) {
-            QueryFragment fragment = new QueryFragment();
-
-            fragment.readData(in);
-
-            fragments.add(fragment);
+            fragmentDescriptors.add(in.readObject());
         }
 
         // Read edge mappings.
@@ -234,7 +200,5 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
             for (int i = 0; i < argumentCnt; i++)
                 arguments.add(in.readObject());
         }
-
-        seed = in.readInt();
     }
 }

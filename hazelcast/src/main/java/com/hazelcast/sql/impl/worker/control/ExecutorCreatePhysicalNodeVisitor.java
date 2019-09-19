@@ -19,12 +19,12 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.map.impl.proxy.MapProxyImpl;
  import com.hazelcast.spi.impl.NodeEngine;
  import com.hazelcast.sql.HazelcastSqlException;
- import com.hazelcast.sql.impl.QueryFragment;
+ import com.hazelcast.sql.impl.QueryFragmentDescriptor;
  import com.hazelcast.sql.impl.QueryId;
- import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
  import com.hazelcast.sql.impl.exec.EmptyScanExec;
  import com.hazelcast.sql.impl.exec.Exec;
  import com.hazelcast.sql.impl.exec.FilterExec;
+ import com.hazelcast.sql.impl.exec.LocalSortExec;
  import com.hazelcast.sql.impl.exec.MapScanExec;
  import com.hazelcast.sql.impl.exec.ProjectExec;
  import com.hazelcast.sql.impl.exec.ReceiveExec;
@@ -32,7 +32,7 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.sql.impl.exec.ReplicatedMapScanExec;
  import com.hazelcast.sql.impl.exec.RootExec;
  import com.hazelcast.sql.impl.exec.SendExec;
- import com.hazelcast.sql.impl.exec.LocalSortExec;
+ import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
  import com.hazelcast.sql.impl.exec.join.LocalJoinExec;
  import com.hazelcast.sql.impl.mailbox.AbstractInbox;
  import com.hazelcast.sql.impl.mailbox.Outbox;
@@ -53,11 +53,12 @@ package com.hazelcast.sql.impl.worker.control;
  import com.hazelcast.util.collection.PartitionIdSet;
 
  import java.util.ArrayList;
+ import java.util.Collection;
  import java.util.Collections;
  import java.util.List;
  import java.util.Map;
 
-/**
+ /**
  * Visitor which builds an executor for every observed physical node.
  */
 public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
@@ -71,13 +72,13 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     private final int partCnt;
 
     /** Member IDs. */
-    private final List<String> memberIds;
+    private final Collection<String> dataMemberIds;
 
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
 
     /** All participating fragments. */
-    private final List<QueryFragment> fragments;
+    private final List<QueryFragmentDescriptor> fragments;
 
     /** Map from send (outbound) edge to it's fragment. */
     private final Map<Integer, Integer> outboundFragmentMap;
@@ -90,9 +91,6 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
     /** Number of stripes. */
     private final int stripeCnt;
-
-    /** Seed. */
-    private final int seed;
 
     /** Stack of elements to be merged. */
     private final ArrayList<Exec> stack = new ArrayList<>(1);
@@ -110,26 +108,24 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         NodeEngine nodeEngine,
         QueryId queryId,
         int partCnt,
-        List<String> memberIds,
+        Collection<String> dataMemberIds,
         PartitionIdSet localParts,
-        List<QueryFragment> fragments,
+        List<QueryFragmentDescriptor> fragments,
         Map<Integer, Integer> outboundFragmentMap,
         Map<Integer, Integer> inboundFragmentMap,
         int stripe,
-        int stripeCnt,
-        int seed
+        int stripeCnt
     ) {
         this.nodeEngine = nodeEngine;
         this.queryId = queryId;
         this.partCnt = partCnt;
-        this.memberIds = memberIds;
+        this.dataMemberIds = dataMemberIds;
         this.localParts = localParts;
         this.fragments = fragments;
         this.outboundFragmentMap = outboundFragmentMap;
         this.inboundFragmentMap = inboundFragmentMap;
         this.stripe = stripe;
         this.stripeCnt = stripeCnt;
-        this.seed = seed;
     }
 
     @Override
@@ -144,9 +140,11 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         // Navigate to sender exec and calculate total number of sender stripes.
         int edgeId = node.getEdgeId();
 
-        QueryFragment sendFragment = fragments.get(outboundFragmentMap.get(edgeId));
+        QueryFragmentDescriptor sendFragment = fragments.get(outboundFragmentMap.get(edgeId));
 
-        int remaining = sendFragment.getMemberIds().size() * sendFragment.getParallelism();
+        int fragmentMemberCount = sendFragment.getFragmentMembers(dataMemberIds).size();
+
+        int remaining = fragmentMemberCount * sendFragment.getParallelism();
 
         // Create and register inbox.
         SingleInbox inbox = new SingleInbox(
@@ -170,13 +168,13 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         int edgeId = node.getEdgeId();
 
         // Create and register inbox.
-        QueryFragment sendFragment = fragments.get(outboundFragmentMap.get(edgeId));
+        QueryFragmentDescriptor sendFragment = fragments.get(outboundFragmentMap.get(edgeId));
 
         StripedInbox inbox = new StripedInbox(
             queryId,
             edgeId,
             stripe,
-            sendFragment.getMemberIds(),
+            sendFragment.getFragmentMembers(dataMemberIds),
             sendFragment.getParallelism()
         );
 
@@ -199,15 +197,17 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         Outbox[] sendOutboxes;
 
         // Partition by member count * parallelism.
-        QueryFragment receiveFragment = fragments.get(inboundFragmentMap.get(node.getEdgeId()));
+        QueryFragmentDescriptor receiveFragment = fragments.get(inboundFragmentMap.get(node.getEdgeId()));
 
-        int partCnt = receiveFragment.getMemberIds().size() * receiveFragment.getParallelism();
+        Collection<String> receiveFragmentMemberIds = receiveFragment.getFragmentMembers(dataMemberIds);
+
+        int partCnt = receiveFragmentMemberIds.size() * receiveFragment.getParallelism();
 
         sendOutboxes = new Outbox[partCnt];
 
         int idx = 0;
 
-        for (String receiveMemberId : receiveFragment.getMemberIds()) {
+        for (String receiveMemberId : receiveFragmentMemberIds) {
             for (int j = 0; j < receiveFragment.getParallelism(); j++) {
                 Outbox outbox = new Outbox(
                     node.getEdgeId(),
@@ -267,14 +267,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
     @Override
     public void onReplicatedMapScanNode(ReplicatedMapScanPhysicalNode node) {
-        String memberId = memberIds.get(seed % memberIds.size());
-
-        Exec res;
-
-        if (nodeEngine.getLocalMember().getUuid().equals(memberId))
-            res = new ReplicatedMapScanExec(node.getMapName(), node.getProjections(), node.getFilter());
-        else
-            res = EmptyScanExec.INSTANCE;
+        Exec res = new ReplicatedMapScanExec(node.getMapName(), node.getProjections(), node.getFilter());
 
         push(res);
     }

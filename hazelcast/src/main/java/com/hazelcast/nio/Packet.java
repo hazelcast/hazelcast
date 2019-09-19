@@ -326,7 +326,7 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 7}
          */
-        UNDEFINED7;
+        SQL;
 
         final char headerEncoding;
 

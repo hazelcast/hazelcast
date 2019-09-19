@@ -50,6 +50,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
     private Consumer<Packet> invocationMonitor;
     private PacketDispatcher dispatcher;
     private Consumer<Packet> jetService;
+    private Consumer<Packet> sqlService;
 
     @Before
     public void setup() {
@@ -59,6 +60,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         eventService = mock(Consumer.class);
         invocationMonitor = mock(Consumer.class);
         jetService = mock(Consumer.class);
+        sqlService = mock(Consumer.class);
 
         dispatcher = new PacketDispatcher(
                 logger,
@@ -66,7 +68,9 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
                 responseHandler,
                 invocationMonitor,
                 eventService,
-                jetService);
+                jetService,
+                sqlService
+        );
     }
 
     @Test
@@ -77,7 +81,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         verify(operationExecutor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService);
+        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService, sqlService);
     }
 
     @Test
@@ -88,7 +92,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         verify(operationExecutor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService);
+        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService, sqlService);
     }
 
 
@@ -99,7 +103,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(responseHandler).accept(packet);
-        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService);
+        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService, sqlService);
     }
 
     @Test
@@ -109,7 +113,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(responseHandler).accept(packet);
-        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService);
+        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService, sqlService);
     }
 
 
@@ -121,7 +125,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         verify(invocationMonitor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, jetService);
+        verifyZeroInteractions(responseHandler, operationExecutor, eventService, jetService, sqlService);
     }
 
 
@@ -132,7 +136,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(eventService).accept(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, invocationMonitor, jetService);
+        verifyZeroInteractions(responseHandler, operationExecutor, invocationMonitor, jetService, sqlService);
     }
 
     @Test
@@ -141,7 +145,16 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(jetService).accept(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor);
+        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor, sqlService);
+    }
+
+    @Test
+    public void whenSqlPacket() {
+        Packet packet = new Packet().setPacketType(Packet.Type.SQL);
+        dispatcher.accept(packet);
+
+        verify(sqlService).accept(packet);
+        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor, jetService);
     }
 
     // unrecognized packets are logged. No handlers is contacted.
@@ -152,7 +165,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor,
-                jetService);
+                jetService, sqlService);
     }
 
     // when one of the handlers throws an exception, the exception is logged but not rethrown

@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.mailbox;
 import com.hazelcast.sql.impl.QueryId;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.Set;
 
 /**
  * AbstractInbox which puts requests from different stripes into isolated queues.
@@ -33,7 +33,7 @@ public class StripedInbox extends AbstractInbox {
     private final ArrayDeque<SendBatch>[] queues;
 
     @SuppressWarnings("unchecked")
-    public StripedInbox(QueryId queryId, int edgeId, int stripe, Set<String> senderMemberIds, int senderStripeCnt) {
+    public StripedInbox(QueryId queryId, int edgeId, int stripe, Collection<String> senderMemberIds, int senderStripeCnt) {
         super(queryId, edgeId, stripe, senderMemberIds.size() * senderStripeCnt);
 
         // Build inverse map from the member to it's index.
