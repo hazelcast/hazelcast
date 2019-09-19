@@ -498,7 +498,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
         @Override
         public Object call() {
-            hazelcastInstance.getCountDownLatch("callableStartedLatch").countDown();
+            hazelcastInstance.getCPSubsystem().getCountDownLatch("callableStartedLatch").countDown();
             try {
                 Thread.sleep(Long.MAX_VALUE);
             } catch (InterruptedException e) {

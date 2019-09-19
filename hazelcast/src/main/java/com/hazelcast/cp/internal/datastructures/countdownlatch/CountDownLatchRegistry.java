@@ -26,28 +26,28 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 /**
- * Contains {@link RaftCountDownLatch} resources and manages wait timeouts
+ * Contains {@link CountDownLatch} resources and manages wait timeouts
  */
-public class RaftCountDownLatchRegistry extends ResourceRegistry<AwaitInvocationKey, RaftCountDownLatch>
+public class CountDownLatchRegistry extends ResourceRegistry<AwaitInvocationKey, CountDownLatch>
         implements IdentifiedDataSerializable {
 
-    RaftCountDownLatchRegistry() {
+    CountDownLatchRegistry() {
     }
 
-    RaftCountDownLatchRegistry(CPGroupId groupId) {
+    CountDownLatchRegistry(CPGroupId groupId) {
         super(groupId);
     }
 
     @Override
-    protected RaftCountDownLatch createNewResource(CPGroupId groupId, String name) {
-        return new RaftCountDownLatch(groupId, name);
+    protected CountDownLatch createNewResource(CPGroupId groupId, String name) {
+        return new CountDownLatch(groupId, name);
     }
 
     @Override
-    protected RaftCountDownLatchRegistry cloneForSnapshot() {
-        RaftCountDownLatchRegistry clone = new RaftCountDownLatchRegistry();
+    protected CountDownLatchRegistry cloneForSnapshot() {
+        CountDownLatchRegistry clone = new CountDownLatchRegistry();
         clone.groupId = this.groupId;
-        for (Entry<String, RaftCountDownLatch> e : this.resources.entrySet()) {
+        for (Entry<String, CountDownLatch> e : this.resources.entrySet()) {
             clone.resources.put(e.getKey(), e.getValue().cloneForSnapshot());
         }
         clone.destroyedNames.addAll(this.destroyedNames);
@@ -61,7 +61,7 @@ public class RaftCountDownLatchRegistry extends ResourceRegistry<AwaitInvocation
     }
 
     BiTuple<Integer, Collection<AwaitInvocationKey>> countDown(String name, UUID invocationUuid, int expectedRound) {
-        RaftCountDownLatch latch = getOrInitResource(name);
+        CountDownLatch latch = getOrInitResource(name);
         BiTuple<Integer, Collection<AwaitInvocationKey>> t = latch.countDown(invocationUuid, expectedRound);
         for (AwaitInvocationKey key : t.element2) {
             removeWaitKey(name, key);
@@ -89,11 +89,11 @@ public class RaftCountDownLatchRegistry extends ResourceRegistry<AwaitInvocation
 
     @Override
     public int getFactoryId() {
-        return RaftCountDownLatchDataSerializerHook.F_ID;
+        return CountDownLatchDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftCountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_REGISTRY;
+        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_REGISTRY;
     }
 }

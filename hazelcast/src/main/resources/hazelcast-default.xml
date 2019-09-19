@@ -298,8 +298,6 @@
         <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </atomic-reference>
 
-    <count-down-latch name="default"/>
-
     <serialization>
         <portable-version>0</portable-version>
     </serialization>

@@ -458,7 +458,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             Member member = members.get(k % members.size());
             if (taskCount % totalThreadCount == 0) {
                 latchId = taskCount / totalThreadCount;
-                hazelcast.getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
+                hazelcast.getCPSubsystem().getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
 
             }
             Future f = executor.submitToMember(new SimulateLoadTask(durationSec, k + 1, "latch" + latchId), member);

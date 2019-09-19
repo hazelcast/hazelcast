@@ -16,22 +16,21 @@
 
 package com.hazelcast.internal.jmx;
 
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.collection.IList;
-import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.ISet;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -81,14 +80,6 @@ public class MBeanTest extends HazelcastTestSupport {
     @Test
     public void testConnection() throws Exception {
         holder.assertMBeanExistEventually("HazelcastInstance.NetworkingService", holder.getHz().getName());
-    }
-
-    @Test
-    public void testCountDownLatch() throws Exception {
-        ICountDownLatch countDownLatch = holder.getHz().getCountDownLatch("semaphore");
-        countDownLatch.getCount();
-
-        holder.assertMBeanExistEventually("ICountDownLatch", countDownLatch.getName());
     }
 
     @Test

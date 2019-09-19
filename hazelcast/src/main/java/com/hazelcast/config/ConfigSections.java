@@ -49,7 +49,6 @@ enum ConfigSections {
     RINGBUFFER("ringbuffer", true),
     ATOMIC_LONG("atomic-long", true),
     ATOMIC_REFERENCE("atomic-reference", true),
-    COUNT_DOWN_LATCH("count-down-latch", true),
     LISTENERS("listeners", false),
     SERIALIZATION("serialization", false),
     SERVICES("services", false),

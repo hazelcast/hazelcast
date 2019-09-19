@@ -34,7 +34,6 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -616,14 +615,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MergePolicyConfig mergePolicyConfig = testAtomicReference.getMergePolicyConfig();
         assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(4223, mergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void testCountDownLatchConfig() {
-        CountDownLatchConfig testCountDownLatch = config.getCountDownLatchConfig("testCountDownLatch");
-        assertNotNull(testCountDownLatch);
-        assertEquals("testCountDownLatch", testCountDownLatch.getName());
-        assertEquals("my-split-brain-protection", testCountDownLatch.getSplitBrainProtectionName());
     }
 
     @Test
@@ -1417,10 +1408,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(memcacheProtocolConfig.isEnabled());
     }
 
+    @Test
     public void testCPSubsystemConfig() {
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
-        assertEquals(10, cpSubsystemConfig.getCPMemberCount());
-        assertEquals(5, cpSubsystemConfig.getGroupSize());
+        assertEquals(0, cpSubsystemConfig.getCPMemberCount());
+        assertEquals(0, cpSubsystemConfig.getGroupSize());
         assertEquals(15, cpSubsystemConfig.getSessionTimeToLiveSeconds());
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());

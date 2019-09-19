@@ -17,11 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.countdownlatch.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchTrySetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.TrySetCountOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
@@ -33,7 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link TrySetCountOp}
  */
-public class TrySetCountMessageTask extends AbstractMessageTask<CPCountDownLatchTrySetCountCodec.RequestParameters>
+public class TrySetCountMessageTask extends AbstractMessageTask<CountDownLatchTrySetCountCodec.RequestParameters>
         implements ExecutionCallback<Boolean> {
 
     public TrySetCountMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -49,18 +49,18 @@ public class TrySetCountMessageTask extends AbstractMessageTask<CPCountDownLatch
     }
 
     @Override
-    protected CPCountDownLatchTrySetCountCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPCountDownLatchTrySetCountCodec.decodeRequest(clientMessage);
+    protected CountDownLatchTrySetCountCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CountDownLatchTrySetCountCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPCountDownLatchTrySetCountCodec.encodeResponse((Boolean) response);
+        return CountDownLatchTrySetCountCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftCountDownLatchService.SERVICE_NAME;
+        return CountDownLatchService.SERVICE_NAME;
     }
 
     @Override

@@ -28,7 +28,7 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
@@ -61,7 +61,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     @Override
     public ICountDownLatch getCountDownLatch(String name) {
-        return proxyFactory.createProxy(RaftCountDownLatchService.SERVICE_NAME, name);
+        return proxyFactory.createProxy(CountDownLatchService.SERVICE_NAME, name);
     }
 
     @Override

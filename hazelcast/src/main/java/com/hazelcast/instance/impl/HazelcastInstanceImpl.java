@@ -40,12 +40,10 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.CPSubsystemImpl;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
@@ -286,12 +284,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     public <E> IAtomicReference<E> getAtomicReference(String name) {
         checkNotNull(name, "Retrieving an atomic-reference instance with a null name is not allowed!");
         return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public ICountDownLatch getCountDownLatch(String name) {
-        checkNotNull(name, "Retrieving a countdown-latch instance with a null name is not allowed!");
-        return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
     }
 
     @Override

@@ -118,8 +118,6 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("set", c1, c2, c1.getSetConfigs(), c2.getSetConfigs(), new SetConfigChecker());
         checkCompatibleConfigs("flake id generator", c1, c2, c1.getFlakeIdGeneratorConfigs(), c2.getFlakeIdGeneratorConfigs(),
                 new FlakeIdGeneratorConfigChecker());
-        checkCompatibleConfigs("count down latch", c1, c2, c1.getCountDownLatchConfigs(), c2.getCountDownLatchConfigs(),
-                new CountDownLatchConfigChecker());
         checkCompatibleConfigs("cardinality estimator", c1, c2, c1.getCardinalityEstimatorConfigs(),
                 c2.getCardinalityEstimatorConfigs(), new CardinalityEstimatorConfigChecker());
         checkCompatibleConfigs("pn counter", c1, c2, c1.getPNCounterConfigs(), c2.getPNCounterConfigs(),
@@ -358,20 +356,6 @@ public class ConfigCompatibilityChecker {
         @Override
         SemaphoreConfig getDefault(Config c) {
             return c.getSemaphoreConfig("default");
-        }
-    }
-
-    private static class CountDownLatchConfigChecker extends ConfigChecker<CountDownLatchConfig> {
-        @Override
-        boolean check(CountDownLatchConfig c1, CountDownLatchConfig c2) {
-            return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
-        }
-
-        @Override
-        CountDownLatchConfig getDefault(Config c) {
-            return c.getCountDownLatchConfig("default");
         }
     }
 

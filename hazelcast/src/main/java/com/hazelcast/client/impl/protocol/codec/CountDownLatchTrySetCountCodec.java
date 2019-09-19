@@ -25,14 +25,15 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 /**
- * Sets the count to the given value if the current count is zero. If the count is not zero, then this method does
- * nothing and returns false
+ * Sets the count to the given value if the current count is zero.
+ * If the count is not zero, then this method does nothing
+ * and returns false
  */
 public final class CountDownLatchTrySetCountCodec {
-    //hex: 0x0C0400
-    public static final int REQUEST_MESSAGE_TYPE = 787456;
-    //hex: 0x0C0401
-    public static final int RESPONSE_MESSAGE_TYPE = 787457;
+    //hex: 0x0C0100
+    public static final int REQUEST_MESSAGE_TYPE = 786688;
+    //hex: 0x0C0101
+    public static final int RESPONSE_MESSAGE_TYPE = 786689;
     private static final int REQUEST_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -45,25 +46,32 @@ public final class CountDownLatchTrySetCountCodec {
     public static class RequestParameters {
 
         /**
-         * Name of the CountDownLatch
+         * CP group id of this CountDownLatch instance
+         */
+        public com.hazelcast.cp.internal.RaftGroupId groupId;
+
+        /**
+         * Name of the CountDownLatch instance
          */
         public java.lang.String name;
 
         /**
-         * The number of times countDown must be invoked before threads can pass through await
+         * The number of times countDown must be invoked before
+         * threads can pass through await
          */
         public int count;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int count) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, int count) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(false);
+        clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("CountDownLatch.TrySetCount");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, REQUEST_COUNT_FIELD_OFFSET, count);
         clientMessage.add(initialFrame);
+        RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
@@ -73,6 +81,7 @@ public final class CountDownLatchTrySetCountCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.count = decodeInt(initialFrame.content, REQUEST_COUNT_FIELD_OFFSET);
+        request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
         return request;
     }
@@ -81,7 +90,8 @@ public final class CountDownLatchTrySetCountCodec {
     public static class ResponseParameters {
 
         /**
-         * True if the new count was set, false if the current count is not zero.
+         * true if the new count was set,
+         * false if the current count is not zero.
          */
         public boolean response;
     }

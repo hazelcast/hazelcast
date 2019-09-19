@@ -21,7 +21,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.AwaitOp;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.CountDownOp;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetCountOp;
@@ -39,14 +39,14 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 /**
  * Server-side Raft-based proxy implementation of {@link ICountDownLatch}
  */
-public class RaftCountDownLatchProxy implements ICountDownLatch {
+public class CountDownLatchProxy implements ICountDownLatch {
 
     private final RaftInvocationManager invocationManager;
     private final RaftGroupId groupId;
     private final String proxyName;
     private final String objectName;
 
-    public RaftCountDownLatchProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
+    public CountDownLatchProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
         this.groupId = groupId;
@@ -90,7 +90,7 @@ public class RaftCountDownLatchProxy implements ICountDownLatch {
 
     @Override
     public String getServiceName() {
-        return RaftCountDownLatchService.SERVICE_NAME;
+        return CountDownLatchService.SERVICE_NAME;
     }
 
     @Override

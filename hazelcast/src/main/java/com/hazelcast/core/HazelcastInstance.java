@@ -17,19 +17,18 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.collection.IList;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
@@ -39,11 +38,11 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -328,19 +327,6 @@ public interface HazelcastInstance {
      */
     @Deprecated
     <E> IAtomicReference<E> getAtomicReference(String name);
-
-    /**
-     * Creates or returns a cluster-wide CountDownLatch. Hazelcast {@link ICountDownLatch} is distributed
-     * implementation of <code>java.util.concurrent.CountDownLatch</code>.
-     *
-     * @param name name of the {@link ICountDownLatch} proxy
-     * @return {@link ICountDownLatch} proxy for the given name
-     * @deprecated This implementation may lose strong consistency in case of network failures
-     * or server failures. Please use {@link CPSubsystem#getCountDownLatch(String)} instead.
-     * This method will be removed in Hazelcast 4.0.
-     */
-    @Deprecated
-    ICountDownLatch getCountDownLatch(String name);
 
     /**
      * Creates or returns a cluster-wide semaphore. Hazelcast {@link ISemaphore} is distributed

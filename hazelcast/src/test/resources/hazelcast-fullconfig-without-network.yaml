@@ -472,10 +472,6 @@ hazelcast:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
 
-  count-down-latch:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-
   ringbuffer:
     default:
       capacity: 25311

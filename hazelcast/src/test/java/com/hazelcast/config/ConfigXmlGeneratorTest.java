@@ -760,21 +760,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testCountDownLatch() {
-        CountDownLatchConfig expectedConfig = new CountDownLatchConfig("testCountDownLatchConfig")
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-
-        Config config = new Config()
-                .addCountDownLatchConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        CountDownLatchConfig actualConfig = xmlConfig.getCountDownLatchConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testList() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
                 .setPolicy(HigherHitsMergePolicy.class.getName())

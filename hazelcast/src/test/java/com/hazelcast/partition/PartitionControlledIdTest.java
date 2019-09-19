@@ -20,7 +20,6 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.InternalLockNamespace;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStore;
@@ -30,7 +29,6 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.collection.IList;
 import com.hazelcast.cp.lock.ILock;
@@ -233,20 +231,6 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         SetService service = getNodeEngine(hz).getService(SetService.SERVICE_NAME);
         assertTrue(service.getContainerMap().containsKey(set.getName()));
-    }
-
-    @Test
-    public void testCountDownLatch() {
-        String partitionKey = "hazelcast";
-        HazelcastInstance hz = getHazelcastInstance(partitionKey);
-
-        ICountDownLatch countDownLatch = hz.getCountDownLatch("countDownLatch@" + partitionKey);
-        countDownLatch.trySetCount(1);
-        assertEquals("countDownLatch@" + partitionKey, countDownLatch.getName());
-        assertEquals(partitionKey, countDownLatch.getPartitionKey());
-
-        CountDownLatchService service = getNodeEngine(hz).getService(CountDownLatchService.SERVICE_NAME);
-        assertTrue(service.containsLatch(countDownLatch.getName()));
     }
 
     @Test

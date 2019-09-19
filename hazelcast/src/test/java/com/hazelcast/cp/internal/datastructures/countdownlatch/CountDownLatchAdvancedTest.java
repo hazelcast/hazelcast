@@ -46,7 +46,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RaftCountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTest {
+public class CountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTest {
 
     private static final int LOG_ENTRY_COUNT_TO_SNAPSHOT = 10;
 
@@ -97,7 +97,7 @@ public class RaftCountDownLatchAdvancedTest extends AbstractCountDownLatchAdvanc
 
         assertTrueEventually(() -> {
             HazelcastInstance leader = getLeaderInstance(instances, groupId);
-            RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
+            CountDownLatchService service = getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
             ResourceRegistry registry = service.getRegistryOrNull(groupId);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
@@ -110,7 +110,7 @@ public class RaftCountDownLatchAdvancedTest extends AbstractCountDownLatchAdvanc
                 assertTrue(snapshotEntry.index() > 0);
                 List<RestoreSnapshotOp> ops = (List<RestoreSnapshotOp>) snapshotEntry.operation();
                 for (RestoreSnapshotOp op : ops) {
-                    if (op.getServiceName().equals(RaftCountDownLatchService.SERVICE_NAME)) {
+                    if (op.getServiceName().equals(CountDownLatchService.SERVICE_NAME)) {
                         ResourceRegistry registry = (ResourceRegistry) op.getSnapshot();
                         assertFalse(registry.getWaitTimeouts().isEmpty());
                         return;
@@ -126,8 +126,8 @@ public class RaftCountDownLatchAdvancedTest extends AbstractCountDownLatchAdvanc
         newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
 
         assertTrueEventually(() -> {
-            RaftCountDownLatchService service = getNodeEngineImpl(newInstance).getService(RaftCountDownLatchService.SERVICE_NAME);
-            RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
+            CountDownLatchService service = getNodeEngineImpl(newInstance).getService(CountDownLatchService.SERVICE_NAME);
+            CountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
             Assert.assertEquals(1, registry.getRemainingCount(objectName));

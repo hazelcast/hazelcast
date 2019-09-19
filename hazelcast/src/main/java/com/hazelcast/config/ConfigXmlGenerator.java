@@ -142,7 +142,6 @@ public class ConfigXmlGenerator {
         topicXmlGenerator(gen, config);
         semaphoreXmlGenerator(gen, config);
         lockXmlGenerator(gen, config);
-        countDownLatchXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
         atomicLongXmlGenerator(gen, config);
         atomicReferenceXmlGenerator(gen, config);
@@ -498,14 +497,6 @@ public class ConfigXmlGenerator {
                     .node("backup-count", sc.getBackupCount())
                     .node("async-backup-count", sc.getAsyncBackupCount())
                     .node("split-brain-protection-ref", sc.getSplitBrainProtectionName())
-                    .close();
-        }
-    }
-
-    private static void countDownLatchXmlGenerator(XmlGenerator gen, Config config) {
-        for (CountDownLatchConfig lc : config.getCountDownLatchConfigs().values()) {
-            gen.open("count-down-latch", "name", lc.getName())
-                    .node("split-brain-protection-ref", lc.getSplitBrainProtectionName())
                     .close();
         }
     }

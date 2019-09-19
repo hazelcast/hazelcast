@@ -16,6 +16,11 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetRoundCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
 import com.hazelcast.client.impl.protocol.task.AddPartitionListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
@@ -859,28 +864,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.ListCompareAndRetainAllCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.list.ListCompareAndRetainAllMessageTask(clientMessage, node, connection);
-            }
-        });
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.countdownlatch
-        factories.put(com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.countdownlatch.CountDownLatchAwaitMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.countdownlatch.CountDownLatchCountDownMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.countdownlatch.CountDownLatchGetCountMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.countdownlatch.CountDownLatchTrySetCountMessageTask(clientMessage, node, connection);
             }
         });
 //endregion
@@ -2244,31 +2227,31 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         });
 
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPCountDownLatchAwaitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(CountDownLatchAwaitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AwaitMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPCountDownLatchCountDownCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(CountDownLatchCountDownCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new CountDownMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPCountDownLatchGetCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(CountDownLatchGetCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetCountMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPCountDownLatchGetRoundCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(CountDownLatchGetRoundCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetRoundMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPCountDownLatchTrySetCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(CountDownLatchTrySetCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new TrySetCountMessageTask(clientMessage, node, connection);

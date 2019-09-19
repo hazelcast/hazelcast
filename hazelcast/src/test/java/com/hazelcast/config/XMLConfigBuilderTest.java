@@ -813,20 +813,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readCountDownLatch() {
-        String xml = HAZELCAST_START_TAG
-                + "    <count-down-latch name=\"custom\">"
-                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "    </count-down-latch>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        CountDownLatchConfig countDownLatchConfig = config.getCountDownLatchConfig("custom");
-        assertEquals("custom", countDownLatchConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", countDownLatchConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
     public void testCaseInsensitivityOfSettings() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"testCaseInsensitivity\">"

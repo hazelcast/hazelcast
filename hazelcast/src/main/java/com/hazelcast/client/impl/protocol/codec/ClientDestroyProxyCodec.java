@@ -53,7 +53,6 @@ public final class ClientDestroyProxyCodec {
          * "hz:impl:setService"
          * "hz:impl:atomicLongService"
          * "hz:impl:atomicReferenceService"
-         * "hz:impl:countDownLatchService"
          * "hz:impl:idGeneratorService"
          * "hz:impl:semaphoreService"
          * "hz:impl:executorService"

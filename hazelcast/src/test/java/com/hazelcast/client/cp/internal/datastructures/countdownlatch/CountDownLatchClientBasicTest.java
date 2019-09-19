@@ -19,7 +19,7 @@ package com.hazelcast.client.cp.internal.datastructures.countdownlatch;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchBasicTest;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchBasicTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RaftCountDownLatchClientBasicTest extends RaftCountDownLatchBasicTest {
+public class CountDownLatchClientBasicTest extends CountDownLatchBasicTest {
 
     private HazelcastInstance client;
 
