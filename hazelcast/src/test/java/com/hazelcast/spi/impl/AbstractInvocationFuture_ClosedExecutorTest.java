@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -51,7 +52,7 @@ public class AbstractInvocationFuture_ClosedExecutorTest extends AbstractInvocat
 
             @Override
             public void onFailure(Throwable t) {
-                if (t instanceof RejectedExecutionException) {
+                if (t instanceof HazelcastInstanceNotActiveException) {
                     onFailure.set(true);
                 }
             }
@@ -74,11 +75,57 @@ public class AbstractInvocationFuture_ClosedExecutorTest extends AbstractInvocat
 
             @Override
             public void onFailure(Throwable t) {
-                if (t instanceof RejectedExecutionException) {
+                if (t instanceof HazelcastInstanceNotActiveException) {
                     onFailure.set(true);
                 }
             }
         });
+        assertTrue(onFailure.get());
+    }
+
+    @Test
+    public void whenCompleteBeforeShutdown_customExecutor_thenCallback() {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        TestFuture future = new TestFuture(null, logger);
+        future.complete(new Object());
+        executorService.shutdown();
+        final AtomicBoolean onFailure = new AtomicBoolean();
+        future.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (t instanceof RejectedExecutionException) {
+                    onFailure.set(true);
+                }
+            }
+        }, executorService);
+        assertTrue(onFailure.get());
+    }
+
+    @Test
+    public void whenCompleteAfterShutdown_customExecutor_thenCallback() {
+        TestFuture future = new TestFuture(null, logger);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.shutdown();
+        future.complete(new Object());
+        final AtomicBoolean onFailure = new AtomicBoolean();
+        future.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (t instanceof RejectedExecutionException) {
+                    onFailure.set(true);
+                }
+            }
+        }, executorService);
         assertTrue(onFailure.get());
     }
 
