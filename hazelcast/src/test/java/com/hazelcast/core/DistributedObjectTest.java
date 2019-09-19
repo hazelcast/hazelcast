@@ -118,13 +118,6 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCountdownLatch() {
-        HazelcastInstance instance = createHazelcastInstance();
-        DistributedObject object = instance.getCountDownLatch("test");
-        test(instance, object);
-    }
-
-    @Test
     public void testIdGenerator() {
         HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getIdGenerator("test");

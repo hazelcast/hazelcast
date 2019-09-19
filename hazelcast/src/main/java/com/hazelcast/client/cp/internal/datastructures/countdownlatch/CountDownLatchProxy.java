@@ -17,11 +17,11 @@
 package com.hazelcast.client.cp.internal.datastructures.countdownlatch;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchAwaitCodec;
-import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchCountDownCodec;
-import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchGetCountCodec;
-import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchGetRoundCodec;
-import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchTrySetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetRoundCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
 import com.hazelcast.client.impl.protocol.codec.CPGroupDestroyCPObjectCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
@@ -30,7 +30,7 @@ import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.UUID;
@@ -42,13 +42,13 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 /**
  * Client-side Raft-based proxy implementation of {@link ICountDownLatch}
  */
-public class RaftCountDownLatchProxy extends ClientProxy implements ICountDownLatch {
+public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch {
 
     private final RaftGroupId groupId;
     private final String objectName;
 
-    public RaftCountDownLatchProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
-        super(RaftCountDownLatchService.SERVICE_NAME, proxyName, context);
+    public CountDownLatchProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
+        super(CountDownLatchService.SERVICE_NAME, proxyName, context);
         this.groupId = groupId;
         this.objectName = objectName;
     }
@@ -58,10 +58,10 @@ public class RaftCountDownLatchProxy extends ClientProxy implements ICountDownLa
         checkNotNull(unit);
 
         long timeoutMillis = Math.max(0, unit.toMillis(timeout));
-        ClientMessage request = CPCountDownLatchAwaitCodec.encodeRequest(groupId, objectName, newUnsecureUUID(), timeoutMillis);
+        ClientMessage request = CountDownLatchAwaitCodec.encodeRequest(groupId, objectName, newUnsecureUUID(), timeoutMillis);
         ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().join();
 
-        return CPCountDownLatchAwaitCodec.decodeResponse(response).response;
+        return CountDownLatchAwaitCodec.decodeResponse(response).response;
     }
 
     @Override
@@ -80,32 +80,32 @@ public class RaftCountDownLatchProxy extends ClientProxy implements ICountDownLa
     }
 
     private int getRound() {
-        ClientMessage request = CPCountDownLatchGetRoundCodec.encodeRequest(groupId, objectName);
+        ClientMessage request = CountDownLatchGetRoundCodec.encodeRequest(groupId, objectName);
         ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().join();
 
-        return CPCountDownLatchGetRoundCodec.decodeResponse(response).response;
+        return CountDownLatchGetRoundCodec.decodeResponse(response).response;
     }
 
     private void countDown(int round, UUID invocationUid) {
-        ClientMessage request = CPCountDownLatchCountDownCodec.encodeRequest(groupId, objectName, invocationUid, round);
+        ClientMessage request = CountDownLatchCountDownCodec.encodeRequest(groupId, objectName, invocationUid, round);
 
         new ClientInvocation(getClient(), request, name).invoke().join();
     }
 
     @Override
     public int getCount() {
-        ClientMessage request = CPCountDownLatchGetCountCodec.encodeRequest(groupId, objectName);
+        ClientMessage request = CountDownLatchGetCountCodec.encodeRequest(groupId, objectName);
         ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().join();
 
-        return CPCountDownLatchGetCountCodec.decodeResponse(response).response;
+        return CountDownLatchGetCountCodec.decodeResponse(response).response;
     }
 
     @Override
     public boolean trySetCount(int count) {
-        ClientMessage request = CPCountDownLatchTrySetCountCodec.encodeRequest(groupId, objectName, count);
+        ClientMessage request = CountDownLatchTrySetCountCodec.encodeRequest(groupId, objectName, count);
         ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().join();
 
-        return CPCountDownLatchTrySetCountCodec.decodeResponse(response).response;
+        return CountDownLatchTrySetCountCodec.decodeResponse(response).response;
     }
 
     @Override

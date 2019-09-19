@@ -39,16 +39,16 @@ import static java.lang.Math.max;
 /**
  * State-machine implementation of the Raft-based count down latch
  */
-public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> implements IdentifiedDataSerializable {
+public class CountDownLatch extends BlockingResource<AwaitInvocationKey> implements IdentifiedDataSerializable {
 
     private int round;
     private int countDownFrom;
     private final Set<UUID> countDownUids = new HashSet<>();
 
-    RaftCountDownLatch() {
+    CountDownLatch() {
     }
 
-    RaftCountDownLatch(CPGroupId groupId, String name) {
+    CountDownLatch(CPGroupId groupId, String name) {
         super(groupId, name);
     }
 
@@ -112,8 +112,8 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
         return max(0, countDownFrom - countDownUids.size());
     }
 
-    RaftCountDownLatch cloneForSnapshot() {
-        RaftCountDownLatch clone = new RaftCountDownLatch();
+    CountDownLatch cloneForSnapshot() {
+        CountDownLatch clone = new CountDownLatch();
         cloneForSnapshot(clone);
         clone.round = this.round;
         clone.countDownFrom = this.countDownFrom;
@@ -133,12 +133,12 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
 
     @Override
     public int getFactoryId() {
-        return RaftCountDownLatchDataSerializerHook.F_ID;
+        return CountDownLatchDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftCountDownLatchDataSerializerHook.COUNT_DOWN_LATCH;
+        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH;
     }
 
     @Override
@@ -167,7 +167,7 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
 
     @Override
     public String toString() {
-        return "RaftCountDownLatch{" + internalToString() + ", round=" + round
+        return "CountDownLatch{" + internalToString() + ", round=" + round
                 + ", countDownFrom=" + countDownFrom + ", countDownUids=" + countDownUids + '}';
     }
 }

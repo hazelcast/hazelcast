@@ -22,7 +22,6 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -237,23 +236,6 @@ public final class ConfigSearch {
             @Override
             public Map<String, AtomicReferenceConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getAtomicReferenceConfigs();
-            }
-        });
-        CONFIG_SUPPLIERS.put(CountDownLatchConfig.class, new ConfigSupplier<CountDownLatchConfig>() {
-            @Override
-            public CountDownLatchConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
-                                                         @Nonnull String name) {
-                return configurationService.findCountDownLatchConfig(name);
-            }
-
-            @Override
-            public CountDownLatchConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getCountDownLatchConfig(name);
-            }
-
-            @Override
-            public Map<String, CountDownLatchConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getCountDownLatchConfigs();
             }
         });
         CONFIG_SUPPLIERS.put(TopicConfig.class, new ConfigSupplier<TopicConfig>() {

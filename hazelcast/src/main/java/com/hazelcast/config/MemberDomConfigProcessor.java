@@ -52,7 +52,6 @@ import static com.hazelcast.config.ConfigSections.ATOMIC_LONG;
 import static com.hazelcast.config.ConfigSections.ATOMIC_REFERENCE;
 import static com.hazelcast.config.ConfigSections.CACHE;
 import static com.hazelcast.config.ConfigSections.CARDINALITY_ESTIMATOR;
-import static com.hazelcast.config.ConfigSections.COUNT_DOWN_LATCH;
 import static com.hazelcast.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
@@ -197,8 +196,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleAtomicLong(node);
         } else if (ATOMIC_REFERENCE.isEqual(nodeName)) {
             handleAtomicReference(node);
-        } else if (COUNT_DOWN_LATCH.isEqual(nodeName)) {
-            handleCountDownLatchConfig(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -2464,24 +2461,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.addAtomicReferenceConfig(atomicReferenceConfig);
-    }
-
-    protected void handleCountDownLatchConfig(Node node) {
-        Node attName = node.getAttributes().getNamedItem("name");
-        String name = getTextContent(attName);
-        CountDownLatchConfig countDownLatchConfig = new CountDownLatchConfig(name);
-        handleCountDownLatchNode(node, countDownLatchConfig);
-    }
-
-    void handleCountDownLatchNode(Node node, CountDownLatchConfig countDownLatchConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("split-brain-protection-ref".equals(nodeName)) {
-                countDownLatchConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addCountDownLatchConfig(countDownLatchConfig);
     }
 
     protected void handleListeners(Node node) {

@@ -244,7 +244,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         HazelcastInstance[] instances = createClusterWithCount(2);
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
         IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(schedulerName);
@@ -345,8 +345,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         }
 
         Object key = generateKeyOwnedBy(instances[0]);
-        ICountDownLatch startedLatch = instances[1].getCountDownLatch("startedLatch");
-        ICountDownLatch finishedLatch = instances[1].getCountDownLatch("finishedLatch");
+        ICountDownLatch startedLatch = instances[1].getCPSubsystem().getCountDownLatch("startedLatch");
+        ICountDownLatch finishedLatch = instances[1].getCPSubsystem().getCountDownLatch("finishedLatch");
         startedLatch.trySetCount(1);
         finishedLatch.trySetCount(1);
 
@@ -373,7 +373,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         int delay = 0;
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        ICountDownLatch runsCountLatch = instances[0].getCountDownLatch("runsCountLatchName");
+        ICountDownLatch runsCountLatch = instances[0].getCPSubsystem().getCountDownLatch("runsCountLatchName");
         runsCountLatch.trySetCount(1);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -500,7 +500,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     public void schedule_andCancel() {
         HazelcastInstance[] instances = createClusterWithCount(2);
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -522,7 +522,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
         Member localMember = instances[0].getCluster().getLocalMember();
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -545,7 +545,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(3);
         Object key = generateKeyOwnedBy(instances[1]);
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -729,7 +729,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String completionLatchName = "completionLatch";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        ICountDownLatch completionLatch = instances[0].getCountDownLatch(completionLatchName);
+        ICountDownLatch completionLatch = instances[0].getCPSubsystem().getCountDownLatch(completionLatchName);
         completionLatch.trySetCount(1);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -748,7 +748,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(4);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
         executorService.schedule(new StatefulRunnableTask("latch", "runC", "loadC"), 2, SECONDS);
@@ -759,7 +759,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void schedule_withNamedInstanceAware_whenLocalRun() {
         HazelcastInstance[] instances = createClusterWithCount(1);
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
@@ -772,7 +772,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void schedule_withNamedInstanceAware_whenRemoteRun() {
         HazelcastInstance[] instances = createClusterWithCount(2);
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
         MemberImpl member = getNodeEngineImpl(instances[1]).getLocalMember();
@@ -789,7 +789,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(3);
 
         IScheduledFuture future = s.scheduleAtFixedRate(new ICountdownLatchRunnableTask("latch"), 0, 1, SECONDS);
@@ -819,7 +819,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(4);
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(4);
 
         Map<Member, IScheduledFuture<Object>> futures = s.scheduleOnAllMembersAtFixedRate(
@@ -849,7 +849,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String key = generateKeyOwnedBy(instances[0]);
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
         s.scheduleOnKeyOwner(new ICountdownLatchRunnableTask("latch"), key, 2, SECONDS).get();
@@ -863,7 +863,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String key = generateKeyOwnedBy(instances[1]);
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
         IScheduledFuture future = s.scheduleOnKeyOwner(new ICountdownLatchRunnableTask("latch"), key, 2, SECONDS);
@@ -898,7 +898,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(5);
 
         IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
@@ -982,7 +982,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         String key = generateKeyOwnedBy(instances[1]);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        ICountDownLatch latch = instances[1].getCountDownLatch(completionLatchName);
+        ICountDownLatch latch = instances[1].getCPSubsystem().getCountDownLatch(completionLatchName);
         latch.trySetCount(1);
 
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
@@ -1004,7 +1004,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         String key = generateKeyOwnedBy(instances[1]);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        ICountDownLatch latch = instances[1].getCountDownLatch(completionLatchName);
+        ICountDownLatch latch = instances[1].getCPSubsystem().getCountDownLatch(completionLatchName);
         latch.trySetCount(1);
 
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(

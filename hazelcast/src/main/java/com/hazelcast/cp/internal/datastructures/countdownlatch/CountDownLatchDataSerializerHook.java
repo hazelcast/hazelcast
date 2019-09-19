@@ -26,7 +26,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
-public class RaftCountDownLatchDataSerializerHook implements DataSerializerHook {
+public class CountDownLatchDataSerializerHook implements DataSerializerHook {
     private static final int RAFT_COUNT_DOWN_LATCH_DS_FACTORY_ID = -1015;
     private static final String RAFT_COUNT_DOWN_LATCH_DS_FACTORY = "hazelcast.serialization.ds.raft.countdownlatch";
 
@@ -53,9 +53,9 @@ public class RaftCountDownLatchDataSerializerHook implements DataSerializerHook 
         return typeId -> {
             switch (typeId) {
                 case COUNT_DOWN_LATCH_REGISTRY:
-                    return new RaftCountDownLatchRegistry();
+                    return new CountDownLatchRegistry();
                 case COUNT_DOWN_LATCH:
-                    return new RaftCountDownLatch();
+                    return new CountDownLatch();
                 case AWAIT_INVOCATION_KEY:
                     return new AwaitInvocationKey();
                 case AWAIT_OP:

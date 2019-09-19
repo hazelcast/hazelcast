@@ -17,8 +17,8 @@
 package com.hazelcast.cp.internal.datastructures.countdownlatch.operation;
 
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.cp.CPGroupId;
@@ -42,13 +42,13 @@ public class TrySetCountOp extends AbstractCountDownLatchOp {
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftCountDownLatchService service = getService();
+        CountDownLatchService service = getService();
         return service.trySetCount(groupId, name, count);
     }
 
     @Override
     public int getClassId() {
-        return RaftCountDownLatchDataSerializerHook.TRY_SET_COUNT_OP;
+        return CountDownLatchDataSerializerHook.TRY_SET_COUNT_OP;
     }
 
     @Override

@@ -19,7 +19,6 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.collection.IList;
 import com.hazelcast.map.IMap;
@@ -77,15 +76,6 @@ public class MBeanDestroyTest extends HazelcastTestSupport {
         holder.assertMBeanExistEventually("ISemaphore", semaphore.getName());
 
         destroyObjectAndAssert(semaphore, "ISemaphore");
-    }
-
-    @Test
-    public void testCountDownLatch() throws Exception {
-        ICountDownLatch countDownLatch = holder.getHz().getCountDownLatch("semaphore");
-        countDownLatch.getCount();
-        holder.assertMBeanExistEventually("ICountDownLatch", countDownLatch.getName());
-
-        destroyObjectAndAssert(countDownLatch, "ICountDownLatch");
     }
 
     @Test

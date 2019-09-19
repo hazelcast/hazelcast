@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.RaftCountDownLatchProxy;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.CountDownLatchProxy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RaftCountDownLatchLongAwaitTest extends HazelcastRaftTestSupport {
+public class CountDownLatchLongAwaitTest extends HazelcastRaftTestSupport {
 
     private HazelcastInstance[] instances;
     private String objectName = "latch";
@@ -53,7 +53,7 @@ public class RaftCountDownLatchLongAwaitTest extends HazelcastRaftTestSupport {
     @Before
     public void setup() {
         instances = newInstances(groupSize);
-        groupId = ((RaftCountDownLatchProxy) instances[0].getCPSubsystem().getCountDownLatch(proxyName)).getGroupId();
+        groupId = ((CountDownLatchProxy) instances[0].getCPSubsystem().getCountDownLatch(proxyName)).getGroupId();
     }
 
     @Test
@@ -75,12 +75,12 @@ public class RaftCountDownLatchLongAwaitTest extends HazelcastRaftTestSupport {
         Future<Boolean> f = spawn(() -> latch.await(5, TimeUnit.MINUTES));
 
         assertTrueEventually(() -> {
-            RaftCountDownLatchService service = getNodeEngineImpl(instance).getService(RaftCountDownLatchService.SERVICE_NAME);
+            CountDownLatchService service = getNodeEngineImpl(instance).getService(CountDownLatchService.SERVICE_NAME);
             assertFalse(service.getLiveOperations(groupId).isEmpty());
         });
 
         assertTrueAllTheTime(() -> {
-            RaftCountDownLatchService service = getNodeEngineImpl(instance).getService(RaftCountDownLatchService.SERVICE_NAME);
+            CountDownLatchService service = getNodeEngineImpl(instance).getService(CountDownLatchService.SERVICE_NAME);
             assertFalse(service.getLiveOperations(groupId).isEmpty());
         }, callTimeoutSeconds + 5);
 

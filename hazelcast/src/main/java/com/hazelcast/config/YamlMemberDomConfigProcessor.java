@@ -316,15 +316,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleCountDownLatchConfig(Node node) {
-        for (Node countDownLatchNode : childElements(node)) {
-            CountDownLatchConfig countDownLatchConfig = new CountDownLatchConfig();
-            countDownLatchConfig.setName(countDownLatchNode.getNodeName());
-            handleCountDownLatchNode(countDownLatchNode, countDownLatchConfig);
-        }
-    }
-
-    @Override
     protected void handleMap(Node parentNode) throws Exception {
         for (Node mapNode : childElements(parentNode)) {
             MapConfig mapConfig = new MapConfig();

@@ -20,7 +20,7 @@ import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.RaftCountDownLatchProxy;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.CountDownLatchProxy;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -35,15 +35,15 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 /**
  * Contains Raft-based count down latch instances
  */
-public class RaftCountDownLatchService
-        extends AbstractBlockingService<AwaitInvocationKey, RaftCountDownLatch, RaftCountDownLatchRegistry> {
+public class CountDownLatchService
+        extends AbstractBlockingService<AwaitInvocationKey, CountDownLatch, CountDownLatchRegistry> {
 
     /**
      * Name of the service
      */
     public static final String SERVICE_NAME = "hz:raft:countDownLatchService";
 
-    public RaftCountDownLatchService(NodeEngine nodeEngine) {
+    public CountDownLatchService(NodeEngine nodeEngine) {
         super(nodeEngine);
     }
 
@@ -52,7 +52,7 @@ public class RaftCountDownLatchService
     }
 
     public int countDown(CPGroupId groupId, String name, UUID invocationUuid, int expectedRound) {
-        RaftCountDownLatchRegistry registry = getOrInitRegistry(groupId);
+        CountDownLatchRegistry registry = getOrInitRegistry(groupId);
         BiTuple<Integer, Collection<AwaitInvocationKey>> t = registry.countDown(name, invocationUuid, expectedRound);
         notifyWaitKeys(groupId, name, t.element2, true);
 
@@ -77,8 +77,8 @@ public class RaftCountDownLatchService
     }
 
     @Override
-    protected RaftCountDownLatchRegistry createNewRegistry(CPGroupId groupId) {
-        return new RaftCountDownLatchRegistry(groupId);
+    protected CountDownLatchRegistry createNewRegistry(CPGroupId groupId) {
+        return new CountDownLatchRegistry(groupId);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class RaftCountDownLatchService
             proxyName = withoutDefaultGroupName(proxyName);
             RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
             RaftGroupId groupId = service.createRaftGroupForProxy(proxyName);
-            return new RaftCountDownLatchProxy(nodeEngine, groupId, proxyName, getObjectNameForProxy(proxyName));
+            return new CountDownLatchProxy(nodeEngine, groupId, proxyName, getObjectNameForProxy(proxyName));
         } catch (Exception e) {
             throw rethrow(e);
         }

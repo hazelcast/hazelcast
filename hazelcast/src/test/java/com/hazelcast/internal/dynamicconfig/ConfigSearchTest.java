@@ -21,7 +21,6 @@ import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -576,53 +575,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 AtomicReferenceConfig dataConfig = hazelcastInstance.getConfig().findAtomicReferenceConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testCountDownLatchConfig_Static() {
-        TestCase<CountDownLatchConfig> testCase = new TestCase<CountDownLatchConfig>(
-                new CountDownLatchConfig().setName(STATIC_NAME),
-                new CountDownLatchConfig().setName(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addCountDownLatchConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addCountDownLatchConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                CountDownLatchConfig dataConfig = hazelcastInstance.getConfig().findCountDownLatchConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testCountDownLatchConfig_Dynamic() {
-        TestCase<CountDownLatchConfig> testCase = new TestCase<CountDownLatchConfig>(new CountDownLatchConfig(STATIC_NAME),
-                new CountDownLatchConfig(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addCountDownLatchConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addCountDownLatchConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                CountDownLatchConfig dataConfig = hazelcastInstance.getConfig().findCountDownLatchConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
             }
         };

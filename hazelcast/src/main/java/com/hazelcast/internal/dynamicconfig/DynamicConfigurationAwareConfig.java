@@ -24,7 +24,6 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -640,43 +639,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     private AtomicReferenceConfig getAtomicReferenceConfigInternal(String name, String fallbackName) {
         return (AtomicReferenceConfig) configSearcher.getConfig(name, fallbackName, supplierFor(AtomicReferenceConfig.class));
-    }
-
-    @Override
-    public CountDownLatchConfig findCountDownLatchConfig(String name) {
-        return getCountDownLatchConfigInternal(name, "default").getAsReadOnly();
-    }
-
-    @Override
-    public CountDownLatchConfig getCountDownLatchConfig(String name) {
-        return getCountDownLatchConfigInternal(name, name);
-    }
-
-    @Override
-    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getCountDownLatchConfigs(),
-                countDownLatchConfig.getName(), countDownLatchConfig);
-        if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(countDownLatchConfig);
-        }
-        return this;
-    }
-
-    @Override
-    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
-        Map<String, CountDownLatchConfig> staticConfigs = staticConfig.getCountDownLatchConfigs();
-        Map<String, CountDownLatchConfig> dynamicConfigs = configurationService.getCountDownLatchConfigs();
-
-        return aggregate(staticConfigs, dynamicConfigs);
-    }
-
-    @Override
-    public Config setCountDownLatchConfigs(Map<String, CountDownLatchConfig> countDownLatchConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    private CountDownLatchConfig getCountDownLatchConfigInternal(String name, String fallbackName) {
-        return (CountDownLatchConfig) configSearcher.getConfig(name, fallbackName, supplierFor(CountDownLatchConfig.class));
     }
 
     @Override

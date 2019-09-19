@@ -31,7 +31,6 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -202,7 +201,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> ringbufferManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> atomicLongManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> atomicReferenceManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> countDownLatchManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> reliableTopicManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> semaphoreManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> listManagedMap;
@@ -233,7 +231,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.ringbufferManagedMap = createManagedMap("ringbufferConfigs");
             this.atomicLongManagedMap = createManagedMap("atomicLongConfigs");
             this.atomicReferenceManagedMap = createManagedMap("atomicReferenceConfigs");
-            this.countDownLatchManagedMap = createManagedMap("countDownLatchConfigs");
             this.reliableTopicManagedMap = createManagedMap("reliableTopicConfigs");
             this.semaphoreManagedMap = createManagedMap("semaphoreConfigs");
             this.listManagedMap = createManagedMap("listConfigs");
@@ -294,8 +291,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleAtomicLong(node);
                     } else if ("atomic-reference".equals(nodeName)) {
                         handleAtomicReference(node);
-                    } else if ("count-down-latch".equals(nodeName)) {
-                        handleCountDownLatch(node);
                     } else if ("reliable-topic".equals(nodeName)) {
                         handleReliableTopic(node);
                     } else if ("semaphore".equals(nodeName)) {
@@ -1147,18 +1142,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             atomicReferenceManagedMap.put(getAttribute(node, "name"), atomicReferenceConfigBuilder.getBeanDefinition());
-        }
-
-        public void handleCountDownLatch(Node node) {
-            BeanDefinitionBuilder countDownLatchConfigBuilder = createBeanBuilder(CountDownLatchConfig.class);
-            fillAttributeValues(node, countDownLatchConfigBuilder);
-            for (Node childNode : childElements(node)) {
-                String nodeName = cleanNodeName(childNode);
-                if ("split-brain-protection-ref".equals(nodeName)) {
-                    countDownLatchConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
-                }
-            }
-            countDownLatchManagedMap.put(getAttribute(node, "name"), countDownLatchConfigBuilder.getBeanDefinition());
         }
 
         public void handleQueue(Node node) {

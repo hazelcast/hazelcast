@@ -360,10 +360,6 @@
                 <hz:merge-policy batch-size="4223">PassThroughMergePolicy</hz:merge-policy>
             </hz:atomic-reference>
 
-            <hz:count-down-latch name="testCountDownLatch">
-                <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-            </hz:count-down-latch>
-
             <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
             </hz:semaphore>
@@ -829,8 +825,8 @@
             </hz:pn-counter>
 
             <hz:cp-subsystem>
-                <hz:cp-member-count>10</hz:cp-member-count>
-                <hz:group-size>5</hz:group-size>
+                <hz:cp-member-count>0</hz:cp-member-count>
+                <hz:group-size>0</hz:group-size>
                 <hz:session-time-to-live-seconds>15</hz:session-time-to-live-seconds>
                 <hz:session-heartbeat-interval-seconds>3</hz:session-heartbeat-interval-seconds>
                 <hz:missing-cp-member-auto-removal-seconds>120</hz:missing-cp-member-auto-removal-seconds>

@@ -16,32 +16,52 @@
 
 package com.hazelcast.cp.internal.datastructures.countdownlatch;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.cp.internal.datastructures.AbstractAtomicRegisterSnapshotTest;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetCountOp;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.CountDownLatchProxy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.RandomPicker;
+import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RaftCountDownLatchBasicTest extends AbstractCountDownLatchBasicTest {
+public class CountDownLatchSnapshotTest extends AbstractAtomicRegisterSnapshotTest<Integer> {
 
-    @Override
-    protected String getName() {
-        return "latch@group";
+    private ICountDownLatch latch;
+    private String name = "latch";
+
+    @Before
+    public void createProxy() {
+        latch = getCPSubsystem().getCountDownLatch(name);
     }
 
     @Override
-    protected HazelcastInstance[] createInstances() {
-        return newInstances(3);
+    protected CPGroupId getGroupId() {
+        return ((CountDownLatchProxy) latch).getGroupId();
     }
 
     @Override
-    protected ICountDownLatch createLatch(String name) {
-        HazelcastInstance instance = instances[RandomPicker.getInt(instances.length)];
-        return instance.getCPSubsystem().getCountDownLatch(name);
+    protected Integer setAndGetInitialValue() {
+        assertTrue(latch.trySetCount(5));
+        latch.countDown();
+        return latch.getCount();
+    }
+
+    @Override
+    protected Integer readValue() {
+        return latch.getCount();
+    }
+
+    @Override
+    protected RaftOp getQueryRaftOp() {
+        return new GetCountOp(name);
     }
 }
