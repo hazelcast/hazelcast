@@ -16,18 +16,16 @@
 
 package com.hazelcast.splitbrainprotection.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.IcmpFailureDetectorConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.IcmpFailureDetectorConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.cluster.fd.PingFailureDetector;
 import com.hazelcast.splitbrainprotection.PingAware;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 
@@ -44,23 +42,16 @@ public abstract class AbstractPingAwareSplitBrainProtectionFunction implements P
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         Config config = hazelcastInstance.getConfig();
         IcmpFailureDetectorConfig icmpFailureDetectorConfig = getActiveMemberNetworkConfig(config).getIcmpFailureDetectorConfig();
-        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
-        boolean icmpEnabled = icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED)
-                : icmpFailureDetectorConfig.isEnabled();
-        boolean icmpParallelMode = icmpEnabled && (icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getBoolean(GroupProperty.ICMP_PARALLEL_MODE)
-                : icmpFailureDetectorConfig.isParallelMode());
+        boolean icmpEnabled = icmpFailureDetectorConfig != null && icmpFailureDetectorConfig.isEnabled();
+        boolean icmpParallelMode = icmpEnabled && icmpFailureDetectorConfig.isParallelMode();
 
         // only take into account ping information if ICMP parallel mode is enabled
         if (!icmpEnabled || !icmpParallelMode) {
             return;
         }
 
-        int icmpMaxAttempts = icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getInteger(GroupProperty.ICMP_MAX_ATTEMPTS)
-                : icmpFailureDetectorConfig.getMaxAttempts();
-        this.pingFailureDetector = new PingFailureDetector<Member>(icmpMaxAttempts);
+        int icmpMaxAttempts = icmpFailureDetectorConfig.getMaxAttempts();
+        this.pingFailureDetector = new PingFailureDetector<>(icmpMaxAttempts);
         this.pingFDEnabled = true;
     }
 

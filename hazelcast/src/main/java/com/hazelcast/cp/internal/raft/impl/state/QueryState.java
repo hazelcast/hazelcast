@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.raft.impl.state;
 
 import com.hazelcast.cluster.Endpoint;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 
 import java.util.ArrayList;
@@ -64,7 +64,7 @@ public class QueryState {
     /**
      * Queries waiting to be executed.
      */
-    private final List<Tuple2<Object, SimpleCompletableFuture>> operations = new ArrayList<>();
+    private final List<BiTuple<Object, SimpleCompletableFuture>> operations = new ArrayList<>();
 
     /**
      * The set of followers acknowledged the leader in the current heartbeat
@@ -87,7 +87,7 @@ public class QueryState {
             queryCommitIndex = commitIndex;
         }
 
-        operations.add(Tuple2.of(operation, resultFuture));
+        operations.add(BiTuple.of(operation, resultFuture));
         int size = operations.size();
         if (size == 1) {
             queryRound++;
@@ -161,7 +161,7 @@ public class QueryState {
     /**
      * Returns the queries waiting to be executed.
      */
-    public Collection<Tuple2<Object, SimpleCompletableFuture>> operations() {
+    public Collection<BiTuple<Object, SimpleCompletableFuture>> operations() {
         return operations;
     }
 

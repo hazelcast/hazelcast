@@ -20,7 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.RaftGroupId;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ public abstract class AbstractProxySessionManager {
 
     private final ConcurrentMap<RaftGroupId, Object> mutexes = new ConcurrentHashMap<>();
     private final ConcurrentMap<RaftGroupId, SessionState> sessions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Tuple2<RaftGroupId, Long>, Long> threadIds = new ConcurrentHashMap<>();
+    private final ConcurrentMap<BiTuple<RaftGroupId, Long>, Long> threadIds = new ConcurrentHashMap<>();
     private final AtomicBoolean scheduleHeartbeat = new AtomicBoolean(false);
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private boolean running = true;
@@ -98,7 +98,7 @@ public abstract class AbstractProxySessionManager {
     public final Long getOrCreateUniqueThreadId(RaftGroupId groupId) {
         lock.readLock().lock();
         try {
-            Tuple2<RaftGroupId, Long> key = Tuple2.of(groupId, getThreadId());
+            BiTuple<RaftGroupId, Long> key = BiTuple.of(groupId, getThreadId());
             Long globalThreadId = threadIds.get(key);
             if (globalThreadId != null) {
                 return globalThreadId;

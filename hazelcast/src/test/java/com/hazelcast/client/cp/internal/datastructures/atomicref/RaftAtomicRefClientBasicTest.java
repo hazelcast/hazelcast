@@ -49,7 +49,7 @@ public class RaftAtomicRefClientBasicTest extends RaftAtomicRefBasicTest {
     }
 
     @Override
-    protected <T> IAtomicReference<T> createAtomicRef(String name) {
+    protected IAtomicReference<String> createAtomicRef(String name) {
         return client.getCPSubsystem().getAtomicReference(name);
     }
 

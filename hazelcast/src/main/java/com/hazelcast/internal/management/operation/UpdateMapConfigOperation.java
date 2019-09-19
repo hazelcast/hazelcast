@@ -69,7 +69,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         mapName = in.readUTF();
         MapConfigDTO adapter = new MapConfigDTO();
         adapter.readData(in);
-        mapConfig = adapter.getMapConfig();
+        mapConfig = adapter.getConfig();
     }
 
     @Override

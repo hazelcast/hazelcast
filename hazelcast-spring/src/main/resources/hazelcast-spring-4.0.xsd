@@ -624,7 +624,7 @@
                                                 <xs:element name="attribute" minOccurs="0" maxOccurs="unbounded">
                                                     <xs:complexType>
                                                         <xs:attribute name="name" type="xs:string" use="required"/>
-                                                        <xs:attribute name="extractor" type="xs:string" use="required"/>
+                                                        <xs:attribute name="extractor-class-name" type="xs:string" use="required"/>
                                                     </xs:complexType>
                                                 </xs:element>
                                             </xs:sequence>
@@ -2736,7 +2736,7 @@
         <xs:attributeGroup ref="class-or-bean-name">
             <xs:annotation>
                 <xs:documentation>
-                    Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
+                    Fully qualified class name of WAN Replication implementation WanReplicationPublisher.
                 </xs:documentation>
             </xs:annotation>
         </xs:attributeGroup>

@@ -320,7 +320,7 @@
                     </discovery-strategy>
                 </discovery-strategies>
         * <custom-publisher>:
-            Custom implementation of a WAN publisher implementing WanReplicationEndpoint.
+            Custom implementation of a WAN publisher implementing WanReplicationPublisher.
             * "<class-name>":
                 Mandatory config value defining the fully qualified class name of the
                 WAN publisher implementation.
@@ -1255,8 +1255,8 @@
         be set to false. Its default value is false.
         * <attributes>:
         You can define attributes that may be referenced in predicates, queries and indexes using this element's
-        <attribute> sub-elements. Each <attribute> has only the "extractor" attribute which you should define beforehand
-        by implementing Hazelcast's ValueExtractor class.
+        <attribute> sub-elements. Each <attribute> has only the "extractor-class-name" attribute which you should
+        define beforehand by implementing Hazelcast's ValueExtractor class.
         * <entry-listeners>:
             Adds listeners (listener classes) for the map entries using the <entry-listener> sub-elements. You can also set its
             attribute "include-value" to true if you want the entry event to contain the item values, and you can set its attribute
@@ -1321,7 +1321,7 @@
             <index ordered="true">age</index>
         </indexes>
         <attributes>
-            <attribute extractor="com.bank.CurrencyExtractor">currency</attribute>
+            <attribute extractor-class-name="com.bank.CurrencyExtractor">currency</attribute>
         </attributes>
         <entry-listeners>
             <entry-listener include-value="false" local="false">com.your-package.MyEntryListener</entry-listener>

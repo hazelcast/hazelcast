@@ -21,8 +21,6 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.RaftCountDownLatchProxy;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
@@ -32,15 +30,12 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.RandomPicker;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -51,28 +46,25 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
+public class RaftCountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTest {
 
     private static final int LOG_ENTRY_COUNT_TO_SNAPSHOT = 10;
 
-    private HazelcastInstance[] instances;
-    private ICountDownLatch latch;
     private String objectName = "latch";
-    private String proxyName = objectName + "@group1";
     private int groupSize = 3;
 
-    @Before
-    public void setup() {
-        instances = createInstances();
-        latch = createLatch(proxyName);
-        assertNotNull(latch);
-    }
-
-    private HazelcastInstance[] createInstances() {
+    @Override
+    protected HazelcastInstance[] createInstances() {
         return newInstances(groupSize);
     }
 
-    private ICountDownLatch createLatch(String name) {
+    @Override
+    protected String getName() {
+        return objectName + "@group";
+    }
+
+    @Override
+    protected ICountDownLatch createLatch(String name) {
         HazelcastInstance instance = instances[RandomPicker.getInt(instances.length)];
         return instance.getCPSubsystem().getCountDownLatch(name);
     }
@@ -82,81 +74,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
         Config config = super.createConfig(cpNodeCount, groupSize);
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
         cpSubsystemConfig.getRaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(LOG_ENTRY_COUNT_TO_SNAPSHOT);
-
         return config;
-    }
-
-    @Test
-    public void testSuccessfulAwaitClearsWaitTimeouts() {
-        latch.trySetCount(1);
-
-        CPGroupId groupId = getGroupId(latch);
-        HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
-        RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
-
-        CountDownLatch threadLatch = new CountDownLatch(1);
-        spawn(() -> {
-            try {
-                latch.await(10, MINUTES);
-                threadLatch.countDown();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-
-        assertTrueEventually(() -> {
-            assertFalse(registry.getWaitTimeouts().isEmpty());
-            assertFalse(registry.getLiveOperations().isEmpty());
-        });
-
-        latch.countDown();
-
-        assertOpenEventually(threadLatch);
-
-        assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(registry.getLiveOperations().isEmpty());
-    }
-
-    @Test
-    public void testFailedAwaitClearsWaitTimeouts() throws InterruptedException {
-        latch.trySetCount(1);
-
-        CPGroupId groupId = getGroupId(latch);
-        HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
-        RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
-
-        boolean success = latch.await(1, TimeUnit.SECONDS);
-
-        assertFalse(success);
-        assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(registry.getLiveOperations().isEmpty());
-    }
-
-    @Test
-    public void testDestroyClearsWaitTimeouts() {
-        latch.trySetCount(1);
-
-        CPGroupId groupId = getGroupId(latch);
-        HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
-        RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
-
-        spawn(() -> {
-            try {
-                latch.await(10, MINUTES);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-
-        assertTrueEventually(() -> assertFalse(registry.getWaitTimeouts().isEmpty()));
-
-        latch.destroy();
-
-        assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -216,7 +134,8 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
         });
     }
 
-    private CPGroupId getGroupId(ICountDownLatch latch) {
-        return ((RaftCountDownLatchProxy) latch).getGroupId();
+    @Override
+    protected HazelcastInstance leaderInstanceOf(CPGroupId groupId) {
+        return getLeaderInstance(instances, groupId);
     }
 }

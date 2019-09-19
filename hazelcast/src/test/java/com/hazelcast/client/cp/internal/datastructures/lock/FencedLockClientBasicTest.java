@@ -39,6 +39,8 @@ import static org.junit.Assert.assertFalse;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class FencedLockClientBasicTest extends FencedLockBasicTest {
 
+    private HazelcastInstance client;
+
     @Override
     protected TestHazelcastInstanceFactory createTestFactory() {
         return new TestHazelcastFactory();
@@ -48,8 +50,13 @@ public class FencedLockClientBasicTest extends FencedLockBasicTest {
     protected HazelcastInstance[] createInstances() {
         HazelcastInstance[] instances = super.createInstances();
         TestHazelcastFactory f = (TestHazelcastFactory) factory;
-        lockInstance = f.newHazelcastClient();
+        client = f.newHazelcastClient();
         return instances;
+    }
+
+    @Override
+    protected HazelcastInstance getProxyInstance() {
+        return client;
     }
 
     @Test
@@ -57,7 +64,7 @@ public class FencedLockClientBasicTest extends FencedLockBasicTest {
         String proxyName = lock.getName();
         lock.lock();
 
-        lockInstance.shutdown();
+        client.shutdown();
 
         assertFalse(instances[0].getCPSubsystem().getLock(proxyName).isLocked());
     }
@@ -69,14 +76,15 @@ public class FencedLockClientBasicTest extends FencedLockBasicTest {
         instances[0].getCPSubsystem().getCPSubsystemManagementService().restart().get();
 
         assertTrueEventually(() -> {
-            HazelcastClientProxy clientProxy = (HazelcastClientProxy) lockInstance;
+            HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
             ClientProxySessionManager proxySessionManager = clientProxy.client.getProxySessionManager();
             assertEquals(NO_SESSION_ID, proxySessionManager.getSession((RaftGroupId) lock.getGroupId()));
         });
     }
 
+    @Override
     protected AbstractProxySessionManager getSessionManager(HazelcastInstance instance) {
-        return (((HazelcastClientProxy) lockInstance).client).getProxySessionManager();
+        return (((HazelcastClientProxy) client).client).getProxySessionManager();
     }
 
 }

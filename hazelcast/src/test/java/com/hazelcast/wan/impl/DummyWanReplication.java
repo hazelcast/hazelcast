@@ -18,19 +18,19 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationPublisher;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-class DummyWanReplication implements WanReplicationEndpoint {
+class DummyWanReplication implements WanReplicationPublisher {
 
     Queue<WanReplicationEvent> eventQueue = new ConcurrentLinkedQueue<>();
 
     @Override
-    public void init(Node node, WanReplicationConfig wanReplicationConfig, AbstractWanPublisherConfig wanPublisherConfig) {
+    public void init(WanReplicationConfig wanReplicationConfig,
+                     AbstractWanPublisherConfig wanPublisherConfig) {
     }
 
     @Override
@@ -52,7 +52,7 @@ class DummyWanReplication implements WanReplicationEndpoint {
     }
 
     @Override
-    public void checkWanReplicationQueues() {
+    public void doPrepublicationChecks() {
     }
 
     Queue<WanReplicationEvent> getEventQueue() {

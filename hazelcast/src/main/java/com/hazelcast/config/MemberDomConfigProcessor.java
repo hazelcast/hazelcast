@@ -1640,7 +1640,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("indexes".equals(nodeName)) {
                 mapIndexesHandle(node, mapConfig);
             } else if ("attributes".equals(nodeName)) {
-                mapAttributesHandle(node, mapConfig);
+                attributesHandle(node, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
                 handleEntryListeners(node, entryListenerConfig -> {
                     mapConfig.addEntryListenerConfig(entryListenerConfig);
@@ -1990,13 +1990,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void mapAttributesHandle(Node n, MapConfig mapConfig) {
+    protected void attributesHandle(Node n, MapConfig mapConfig) {
         for (Node extractorNode : childElements(n)) {
             if ("attribute".equals(cleanNodeName(extractorNode))) {
                 NamedNodeMap attrs = extractorNode.getAttributes();
-                String extractor = getTextContent(attrs.getNamedItem("extractor"));
+                String extractor = getTextContent(attrs.getNamedItem("extractor-class-name"));
                 String name = getTextContent(extractorNode);
-                mapConfig.addMapAttributeConfig(new MapAttributeConfig(name, extractor));
+                mapConfig.addAttributeConfig(new AttributeConfig(name, extractor));
             }
         }
     }

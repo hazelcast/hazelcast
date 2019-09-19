@@ -25,7 +25,7 @@ import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.session.RaftSessionService;
 import com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,12 +38,12 @@ import java.util.List;
  */
 public class ExpireSessionsOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
 
-    private Collection<Tuple2<Long, Long>> sessions;
+    private Collection<BiTuple<Long, Long>> sessions;
 
     public ExpireSessionsOp() {
     }
 
-    public ExpireSessionsOp(Collection<Tuple2<Long, Long>> sessionIds) {
+    public ExpireSessionsOp(Collection<BiTuple<Long, Long>> sessionIds) {
         this.sessions = sessionIds;
     }
 
@@ -77,7 +77,7 @@ public class ExpireSessionsOp extends RaftOp implements IndeterminateOperationSt
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(sessions.size());
-        for (Tuple2<Long, Long> s : sessions) {
+        for (BiTuple<Long, Long> s : sessions) {
             out.writeLong(s.element1);
             out.writeLong(s.element2);
         }
@@ -86,11 +86,11 @@ public class ExpireSessionsOp extends RaftOp implements IndeterminateOperationSt
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        List<Tuple2<Long, Long>> sessionIds = new ArrayList<>();
+        List<BiTuple<Long, Long>> sessionIds = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             long sessionId = in.readLong();
             long version = in.readLong();
-            sessionIds.add(Tuple2.of(sessionId, version));
+            sessionIds.add(BiTuple.of(sessionId, version));
         }
         this.sessions = sessionIds;
     }

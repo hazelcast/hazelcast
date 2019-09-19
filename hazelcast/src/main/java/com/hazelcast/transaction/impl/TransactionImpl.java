@@ -457,7 +457,7 @@ public class TransactionImpl implements Transaction {
 
     protected ReplicateTxBackupLogOperation createReplicateTxBackupLogOperation() {
         return new ReplicateTxBackupLogOperation(
-                transactionLog.getRecordList(), txOwnerUuid, txnId, timeoutMillis, startTime);
+                transactionLog.getRecords(), txOwnerUuid, txnId, timeoutMillis, startTime);
     }
 
     protected RollbackTxBackupLogOperation createRollbackTxBackupLogOperation() {

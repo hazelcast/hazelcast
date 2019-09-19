@@ -105,20 +105,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testScheduling_whenVersionCheckIsDisabled() {
-        Config config = new Config()
-                .setProperty(GroupProperty.VERSION_CHECK_ENABLED.getName(), "false");
-
-        HazelcastInstance hz = createHazelcastInstance(config);
-        Node node = getNode(hz);
-
-        PhoneHome phoneHome = new PhoneHome(node);
-        phoneHome.check(node);
-        assertNull(phoneHome.phoneHomeFuture);
-    }
-
-    @Test
     public void testScheduling_whenPhoneHomeIsDisabled() {
         Config config = new Config()
                 .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "false");

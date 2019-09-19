@@ -27,14 +27,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RaftSessionAwareSemaphoreClientBasicTest extends RaftSessionAwareSemaphoreBasicTest {
+
+    private HazelcastInstance client;
 
     @Override
     protected TestHazelcastInstanceFactory createTestFactory() {
@@ -45,13 +45,13 @@ public class RaftSessionAwareSemaphoreClientBasicTest extends RaftSessionAwareSe
     protected HazelcastInstance[] createInstances() {
         HazelcastInstance[] instances = super.createInstances();
         TestHazelcastFactory f = (TestHazelcastFactory) factory;
-        semaphoreInstance = f.newHazelcastClient();
+        client = f.newHazelcastClient();
         return instances;
     }
 
-    @After
-    public void shutdown() {
-        factory.terminateAll();
+    @Override
+    protected HazelcastInstance getProxyInstance() {
+        return client;
     }
 
     @Override
@@ -62,11 +62,6 @@ public class RaftSessionAwareSemaphoreClientBasicTest extends RaftSessionAwareSe
     @Override
     protected RaftGroupId getGroupId(ISemaphore semaphore) {
         return (RaftGroupId) ((RaftSessionAwareSemaphoreProxy) semaphore).getGroupId();
-    }
-
-    @Test
-    public void testInit() {
-        super.testInit();
     }
 
 }

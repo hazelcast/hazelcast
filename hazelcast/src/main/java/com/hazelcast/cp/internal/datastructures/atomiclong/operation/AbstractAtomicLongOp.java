@@ -43,7 +43,7 @@ public abstract class AbstractAtomicLongOp extends RaftOp implements IdentifiedD
 
     RaftAtomicLong getAtomicLong(CPGroupId groupId) {
         RaftAtomicLongService service = getService();
-        return service.getAtomicLong(groupId, name);
+        return service.getAtomicValue(groupId, name);
     }
 
     @Override

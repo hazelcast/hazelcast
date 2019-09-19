@@ -21,19 +21,19 @@ package com.hazelcast.config;
  *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
-public class MapAttributeConfigReadOnly extends MapAttributeConfig {
+public class AttributeConfigReadOnly extends AttributeConfig {
 
-    public MapAttributeConfigReadOnly(MapAttributeConfig config) {
+    public AttributeConfigReadOnly(AttributeConfig config) {
         super(config);
     }
 
     @Override
-    public MapAttributeConfig setName(String attribute) {
+    public AttributeConfig setName(String attribute) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public MapAttributeConfig setExtractor(String type) {
+    public AttributeConfig setExtractorClassName(String extractorClassName) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

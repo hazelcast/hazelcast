@@ -145,6 +145,10 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(uuid, deserialized.getUuid());
         assertEquals(cpMemberUuid, deserialized.getCpMemberUuid());
         assertEquals(endpoints, deserialized.getEndpoints());
+
+        assertNotNull(deserialized.getName());
+        assertEquals(deserialized.getName(), memberState.getName());
+
         assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
         assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());

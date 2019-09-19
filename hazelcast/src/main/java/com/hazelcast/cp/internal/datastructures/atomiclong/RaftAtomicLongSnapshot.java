@@ -16,71 +16,35 @@
 
 package com.hazelcast.cp.internal.datastructures.atomiclong;
 
+import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueSnapshot;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Snapshot of a {@link RaftAtomicLongService} state for a Raft group
  */
-public class RaftAtomicLongSnapshot implements IdentifiedDataSerializable {
-
-    private Map<String, Long> longs = Collections.emptyMap();
-    private Set<String> destroyed = Collections.emptySet();
+public class RaftAtomicLongSnapshot extends RaftAtomicValueSnapshot<Long> implements IdentifiedDataSerializable {
 
     public RaftAtomicLongSnapshot() {
     }
 
     public RaftAtomicLongSnapshot(Map<String, Long> longs, Set<String> destroyed) {
-        this.longs = longs;
-        this.destroyed = destroyed;
-    }
-
-    public Iterable<Map.Entry<String, Long>> getLongs() {
-        return longs.entrySet();
-    }
-
-    public Set<String> getDestroyed() {
-        return destroyed;
+        super(longs, destroyed);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(longs.size());
-        for (Map.Entry<String, Long> entry : longs.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeLong(entry.getValue());
-        }
-
-        out.writeInt(destroyed.size());
-        for (String name : destroyed) {
-            out.writeUTF(name);
-        }
+    protected void writeValue(ObjectDataOutput out, Long value) throws IOException {
+        out.writeLong(value);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        int len = in.readInt();
-        longs = new HashMap<>(len);
-        for (int i = 0; i < len; i++) {
-            String name = in.readUTF();
-            long value = in.readLong();
-            longs.put(name, value);
-        }
-
-        len = in.readInt();
-        destroyed = new HashSet<>(len);
-        for (int i = 0; i < len; i++) {
-            String name = in.readUTF();
-            destroyed.add(name);
-        }
+    protected Long readValue(ObjectDataInput in) throws IOException {
+        return in.readLong();
     }
 
     @Override
@@ -95,6 +59,6 @@ public class RaftAtomicLongSnapshot implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "RaftAtomicLongSnapshot{" + "longs=" + longs + ", destroyed=" + destroyed + '}';
+        return "RaftAtomicLongSnapshot{" + "longs=" + values + ", destroyed=" + destroyed + '}';
     }
 }

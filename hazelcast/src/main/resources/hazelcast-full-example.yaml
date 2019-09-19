@@ -310,7 +310,7 @@ hazelcast:
   #                  connection-timeout-seconds: 10
   #                  hz-port: 5702
   # * "custom-publisher":
-  #     Custom implementation of a WAN publisher implementing WanReplicationEndpoint.
+  #     Custom implementation of a WAN publisher implementing WanReplicationPublisher.
   #     * "class-name":
   #     Mandatory config value defining the fully qualified class name of the
   #     WAN publisher implementation.
@@ -1240,8 +1240,8 @@ hazelcast:
   # be set to false. Its default value is false.
   # * "attributes":
   # You can define attributes that may be referenced in predicates, queries and indexes using this element's
-  # "attribute" sub-elements. Each "attribute" has only the "extractor" attribute which you should define beforehand
-  # by implementing Hazelcast's ValueExtractor class.
+  # "attribute" sub-elements. Each "attribute" has only the "extractor-class-name" attribute which you should define
+  # beforehand by implementing Hazelcast's ValueExtractor class.
   # * "entry-listeners":
   #     Adds listeners (listener classes) for the map entries using the "entry-listener" sub-elements. You can also set its
   #     attribute "include-value" to true if you want the entry event to contain the item values, and you can set its attribute
@@ -1313,7 +1313,7 @@ hazelcast:
           ordered: true
       attributes:
         currency:
-          extractor: com.bank.CurrencyExtractor
+          extractor-class-name: com.bank.CurrencyExtractor
       entry-listeners:
         - class-name: com.your-package.MyEntryListener
           include-value: false

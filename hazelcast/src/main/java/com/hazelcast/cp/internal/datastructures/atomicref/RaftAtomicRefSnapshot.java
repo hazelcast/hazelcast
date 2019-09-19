@@ -16,40 +16,26 @@
 
 package com.hazelcast.cp.internal.datastructures.atomicref;
 
+import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueSnapshot;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Snapshot of a {@link RaftAtomicRefService} state for a Raft group
  */
-public class RaftAtomicRefSnapshot implements IdentifiedDataSerializable {
-
-    private Map<String, Data> refs = Collections.emptyMap();
-    private Set<String> destroyed = Collections.emptySet();
+public class RaftAtomicRefSnapshot extends RaftAtomicValueSnapshot<Data> implements IdentifiedDataSerializable {
 
     public RaftAtomicRefSnapshot() {
     }
 
     public RaftAtomicRefSnapshot(Map<String, Data> refs, Set<String> destroyed) {
-        this.refs = refs;
-        this.destroyed = destroyed;
-    }
-
-    public Iterable<Map.Entry<String, Data>> getRefs() {
-        return refs.entrySet();
-    }
-
-    public Set<String> getDestroyed() {
-        return destroyed;
+        super(refs, destroyed);
     }
 
     @Override
@@ -63,39 +49,17 @@ public class RaftAtomicRefSnapshot implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(refs.size());
-        for (Map.Entry<String, Data> entry : refs.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeData(entry.getValue());
-        }
-
-        out.writeInt(destroyed.size());
-        for (String name : destroyed) {
-            out.writeUTF(name);
-        }
+    protected void writeValue(ObjectDataOutput out, Data value) throws IOException {
+        out.writeData(value);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        int len = in.readInt();
-        refs = new HashMap<>(len);
-        for (int i = 0; i < len; i++) {
-            String name = in.readUTF();
-            Data value = in.readData();
-            refs.put(name, value);
-        }
-
-        len = in.readInt();
-        destroyed = new HashSet<>(len);
-        for (int i = 0; i < len; i++) {
-            String name = in.readUTF();
-            destroyed.add(name);
-        }
+    protected Data readValue(ObjectDataInput in) throws IOException {
+        return in.readData();
     }
 
     @Override
     public String toString() {
-        return "RaftAtomicRefSnapshot{" + "refs=" + refs + ", destroyed=" + destroyed + '}';
+        return "RaftAtomicRefSnapshot{" + "refs=" + values + ", destroyed=" + destroyed + '}';
     }
 }

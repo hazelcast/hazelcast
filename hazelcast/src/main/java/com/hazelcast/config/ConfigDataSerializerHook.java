@@ -133,7 +133,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[MAP_STORE_CONFIG] = arg -> new MapStoreConfig();
         constructors[MAP_PARTITION_LOST_LISTENER_CONFIG] = arg -> new MapPartitionLostListenerConfig();
         constructors[MAP_INDEX_CONFIG] = arg -> new MapIndexConfig();
-        constructors[MAP_ATTRIBUTE_CONFIG] = arg -> new MapAttributeConfig();
+        constructors[MAP_ATTRIBUTE_CONFIG] = arg -> new AttributeConfig();
         constructors[QUERY_CACHE_CONFIG] = arg -> new QueryCacheConfig();
         constructors[PREDICATE_CONFIG] = arg -> new PredicateConfig();
         constructors[PARTITION_STRATEGY_CONFIG] = arg -> new PartitioningStrategyConfig();

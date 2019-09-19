@@ -45,18 +45,22 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class GroupProperty {
 
     /**
-     * Use this property to verify that Hazelcast nodes only join the cluster when their 'application' level configuration is the
-     * same.
+     * Use this property to verify that Hazelcast nodes only join the cluster
+     * when their 'application' level configuration is the same.
      * <p>
-     * If you have multiple machines, you want to make sure that each machine that joins the cluster
-     * has exactly the same 'application level' settings (such as settings that are not part of the Hazelcast configuration,
-     * maybe some file path). To prevent the machines with potentially different application level configuration from forming
-     * a cluster, you can set this property.
+     * If you have multiple machines, you want to make sure that each machine
+     * that joins the cluster has exactly the same 'application level' settings
+     * (such as settings that are not part of the Hazelcast configuration, maybe
+     * some file path). To prevent the machines with potentially different
+     * application level configuration from forming a cluster, you can set this
+     * property.
      * <p>
-     * You could use actual values, such as string paths, but you can also use an md5 hash. We make a guarantee
-     * that nodes will form a cluster (become a member) only if the token is an exact match. If this token is different, the
-     * member can't be started and therefore you will get the guarantee that all members in the cluster will have exactly the same
-     * application validation token.
+     * You could use actual values, such as string paths, but you can also use
+     * an md5 hash. We make a guarantee that nodes will form a cluster (become a
+     * member) only if the token is an exact match. If this token is different,
+     * the member can't be started and therefore you will get the guarantee that
+     * all members in the cluster will have exactly the same application validation
+     * token.
      * <p>
      * This validation token will be checked before a member joins the cluster.
      */
@@ -72,18 +76,22 @@ public final class GroupProperty {
     /**
      * For more detail see {@link #PARTITION_OPERATION_THREAD_COUNT}.
      *
-     * If this property is set to false, Hazelcast will default to 3.x style operation thread configuration
-     * whereby the sum of the number of partition threads and IO threads exceeds the number of cores.
+     * If this property is set to false, Hazelcast will default to 3.x style
+     * operation thread configuration whereby the sum of the number of partition
+     * threads and IO threads exceeds the number of cores.
      *
-     * If this property is set to true (default) Hazelcast will subtract the number of IO threads from the number
-     * of available processors and that will be the number of partition threads.
+     * If this property is set to true (default) Hazelcast will subtract the
+     * number of IO threads from the number of available processors and that will
+     * be the number of partition threads.
      *
-     * If explicit number of partition threads is configured, this property is irrelevant.
+     * If explicit number of partition threads is configured, this property is
+     * irrelevant.
      *
-     * This property favors the typical get/set type of application. Application that are number crunching or query
-     * heavy, will get a performance hit because not all cores will be busy with processing operations since there
-     * are less operation threads than processors. So for such applications it is best to explicitly disable this
-     * property.
+     * This property favors the typical get/set type of application. Application
+     * that are number crunching or query heavy, will get a performance hit
+     * because not all cores will be busy with processing operations since there
+     * are less operation threads than processors. So for such applications it
+     * is best to explicitly disable this property.
      */
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_ISOLATED
             = new HazelcastProperty("hazelcast.operation.thread.isolated", new Function<HazelcastProperties, Boolean>() {
@@ -270,12 +278,8 @@ public final class GroupProperty {
      * smaller than 20, there will be 3+3 io threads, otherwise 4+4.
      */
     public static final HazelcastProperty IO_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.io.thread.count", new Function<HazelcastProperties, Integer>() {
-        @Override
-        public Integer apply(HazelcastProperties properties) {
-            return Runtime.getRuntime().availableProcessors() >= 20 ? 4 : 3;
-        }
-    });
+            = new HazelcastProperty("hazelcast.io.thread.count",
+            properties -> Runtime.getRuntime().availableProcessors() >= 20 ? 4 : 3);
 
     /**
      * Controls the number of socket input threads. By default it is the same as {@link #IO_THREAD_COUNT}.
@@ -329,10 +333,6 @@ public final class GroupProperty {
     @SuppressWarnings("checkstyle:constantname")
     public static final HazelcastProperty PREFER_IPv4_STACK
             = new HazelcastProperty("hazelcast.prefer.ipv4.stack", true);
-
-    @Deprecated
-    public static final HazelcastProperty VERSION_CHECK_ENABLED
-            = new HazelcastProperty("hazelcast.version.check.enabled", true);
 
     public static final HazelcastProperty PHONE_HOME_ENABLED
             = new HazelcastProperty("hazelcast.phone.home.enabled", true);
@@ -553,79 +553,6 @@ public final class GroupProperty {
     public static final HazelcastProperty CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.cluster.shutdown.timeout.seconds", 900, SECONDS);
 
-    /**
-     * If a member should be pinged when a sufficient amount of heartbeats have passed and the member has not sent any
-     * heartbeats. If the member is not reachable, it will be removed.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_ENABLED
-            = new HazelcastProperty("hazelcast.icmp.enabled", false);
-
-    /**
-     * Run ICMP detection in parallel with the Heartbeat failure detector.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_PARALLEL_MODE
-            = new HazelcastProperty("hazelcast.icmp.parallel.mode", true);
-
-    /**
-     * Enforce ICMP Echo Request mode for ping-detector. If OS is not supported,
-     * or not configured correctly as per reference-manual, hazelcast will fail to start.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_ECHO_FAIL_FAST
-            = new HazelcastProperty("hazelcast.icmp.echo.fail.fast.on.startup", true);
-
-    /**
-     * Ping timeout in milliseconds. This cannot be more than the interval value. Should always be smaller.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_TIMEOUT
-            = new HazelcastProperty("hazelcast.icmp.timeout", 1000, MILLISECONDS);
-
-    /**
-     * Interval between ping attempts in milliseconds. Default and min allowed, 1 second.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_INTERVAL
-            = new HazelcastProperty("hazelcast.icmp.interval", 1000, MILLISECONDS);
-
-    /**
-     * Max ping attempts before suspecting a member
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_MAX_ATTEMPTS
-            = new HazelcastProperty("hazelcast.icmp.max.attempts", 3);
-
-    /**
-     * Ping TTL, the maximum number of hops the packets should go through or 0 for the default.
-     * Zero in this case means unlimited hops.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_TTL
-            = new HazelcastProperty("hazelcast.icmp.ttl", 0);
-
     public static final HazelcastProperty INITIAL_MIN_CLUSTER_SIZE
             = new HazelcastProperty("hazelcast.initial.min.cluster.size", 0);
     public static final HazelcastProperty INITIAL_WAIT_SECONDS
@@ -686,13 +613,6 @@ public final class GroupProperty {
 
     public static final HazelcastProperty MC_MAX_VISIBLE_SLOW_OPERATION_COUNT
             = new HazelcastProperty("hazelcast.mc.max.visible.slow.operations.count", 10);
-    /**
-     * @deprecated Enable or disable the {@link com.hazelcast.config.RestEndpointGroup#CLUSTER_WRITE} group in
-     * {@link com.hazelcast.config.RestApiConfig} instead.
-     */
-    @Deprecated
-    public static final HazelcastProperty MC_URL_CHANGE_ENABLED
-            = new HazelcastProperty("hazelcast.mc.url.change.enabled", true);
 
     public static final HazelcastProperty CONNECTION_MONITOR_INTERVAL
             = new HazelcastProperty("hazelcast.connection.monitor.interval", 100, MILLISECONDS);
@@ -763,13 +683,6 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
             = new HazelcastProperty("hazelcast.slow.operation.detector.stacktrace.logging.enabled", false);
-
-    /**
-     * Property isn't used anymore.
-     */
-    @Deprecated
-    public static final HazelcastProperty SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
-            = new HazelcastProperty("hazelcast.slow.invocation.detector.threshold.millis", -1, MILLISECONDS);
 
     public static final HazelcastProperty LOCK_MAX_LEASE_TIME_SECONDS
             = new HazelcastProperty("hazelcast.lock.max.lease.time.seconds", Long.MAX_VALUE, SECONDS);
@@ -1098,6 +1011,18 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty SEARCH_DYNAMIC_CONFIG_FIRST
             = new HazelcastProperty("hazelcast.data.search.dynamic.config.first.enabled", false);
+
+    /**
+     * Defines whether Moby Names should be used for instance name generating when it is not provided by user.
+     * </p>
+     * Moby Name is a short human-readable name consisting of randomly chosen adjective and the surname of a famous person.
+     * </p>
+     * If set to true, Moby Name will be chosen, otherwise a name that is concatenation of static prefix, number and cluster name.
+     * </p>
+     * By default is true.
+     */
+    public static final HazelcastProperty MOBY_NAMING_ENABLED
+            = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
 
     private GroupProperty() {
     }

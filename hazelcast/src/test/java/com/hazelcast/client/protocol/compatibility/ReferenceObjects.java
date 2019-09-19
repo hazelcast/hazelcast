@@ -40,7 +40,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -126,7 +126,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -198,8 +197,8 @@ public class ReferenceObjects {
         if (a instanceof MapIndexConfig && b instanceof MapIndexConfig) {
             return isEqual((MapIndexConfig) a, (MapIndexConfig) b);
         }
-        if (a instanceof MapAttributeConfig && b instanceof MapAttributeConfig) {
-            return isEqual((MapAttributeConfig) a, (MapAttributeConfig) b);
+        if (a instanceof AttributeConfig && b instanceof AttributeConfig) {
+            return isEqual((AttributeConfig) a, (AttributeConfig) b);
         }
         if (a instanceof QueryCacheConfigHolder && b instanceof QueryCacheConfigHolder) {
             return isEqual((QueryCacheConfigHolder) a, (QueryCacheConfigHolder) b);
@@ -355,7 +354,7 @@ public class ReferenceObjects {
                 : that.getAttribute() == null;
     }
 
-    public static boolean isEqual(MapAttributeConfig a, MapAttributeConfig that) {
+    public static boolean isEqual(AttributeConfig a, AttributeConfig that) {
         if (a == that) {
             return true;
         }
@@ -366,8 +365,8 @@ public class ReferenceObjects {
         if (a.getName() != null ? !a.getName().equals(that.getName()) : that.getName() != null) {
             return false;
         }
-        return a.getExtractor() != null ? a.getExtractor().equals(that.getExtractor())
-                : that.getExtractor() == null;
+        return a.getExtractorClassName() != null ? a.getExtractorClassName().equals(that.getExtractorClassName())
+                : that.getExtractorClassName() == null;
     }
 
     public static boolean isEqual(MapStoreConfigHolder a, MapStoreConfigHolder b) {
@@ -689,7 +688,7 @@ public class ReferenceObjects {
     public static NearCachePreloaderConfig nearCachePreloaderConfig;
     public static NearCacheConfigHolder nearCacheConfig;
     public static List<MapIndexConfig> mapIndexConfigs;
-    public static List<MapAttributeConfig> mapAttributeConfigs;
+    public static List<AttributeConfig> attributeConfigs;
     public static List<QueryCacheConfigHolder> queryCacheConfigs;
     public static TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
     public static HotRestartConfig hotRestartConfig;
@@ -749,8 +748,8 @@ public class ReferenceObjects {
         mapIndexConfigs = new ArrayList<MapIndexConfig>();
         mapIndexConfigs.add(new MapIndexConfig("attr", false));
 
-        mapAttributeConfigs = new ArrayList<MapAttributeConfig>();
-        mapAttributeConfigs.add(new MapAttributeConfig("attr", "com.hazelcast.AttributeExtractor"));
+        attributeConfigs = new ArrayList<AttributeConfig>();
+        attributeConfigs.add(new AttributeConfig("attr", "com.hazelcast.AttributeExtractor"));
 
         queryCacheConfigs = new ArrayList<QueryCacheConfigHolder>();
         QueryCacheConfigHolder queryCacheConfig = new QueryCacheConfigHolder();

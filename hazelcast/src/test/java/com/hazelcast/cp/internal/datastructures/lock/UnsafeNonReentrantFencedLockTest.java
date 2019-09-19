@@ -14,30 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.cp.internal.datastructures.lock;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapAttributeConfigReadOnlyTest {
+public class UnsafeNonReentrantFencedLockTest extends AbstractNonReentrantFencedLockTest {
 
-    private MapAttributeConfig getReadOnlyConfig() {
-        return new MapAttributeConfig().getAsReadOnly();
+    @Override
+    protected String getProxyName() {
+        HazelcastInstance primaryInstance = instances[0];
+        warmUpPartitions(instances);
+        String group = generateKeyOwnedBy(primaryInstance);
+        return objectName + "@" + group;
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void setNameOfReadOnlyMapAttributeConfigShouldFail() throws Exception {
-        getReadOnlyConfig().setName("extractedName");
+    @Override
+    protected HazelcastInstance getProxyInstance() {
+        return instances[1];
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void setExtractorOfReadOnlyMapAttributeConfigShouldFail() throws Exception {
-        getReadOnlyConfig().setExtractor("com.test.Extractor");
+    @Override
+    protected HazelcastInstance[] createInstances() {
+        Config config = new Config();
+        FencedLockConfig lockConfig = new FencedLockConfig(objectName, 1);
+        config.getCPSubsystemConfig().addLockConfig(lockConfig);
+        return factory.newInstances(config, 2);
     }
 }

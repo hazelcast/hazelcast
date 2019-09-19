@@ -463,12 +463,12 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void mapAttributesHandle(Node n, MapConfig mapConfig) {
+    protected void attributesHandle(Node n, MapConfig mapConfig) {
         for (Node extractorNode : childElements(n)) {
             NamedNodeMap attrs = extractorNode.getAttributes();
-            String extractor = getTextContent(attrs.getNamedItem("extractor"));
+            String extractor = getTextContent(attrs.getNamedItem("extractor-class-name"));
             String name = extractorNode.getNodeName();
-            mapConfig.addMapAttributeConfig(new MapAttributeConfig(name, extractor));
+            mapConfig.addAttributeConfig(new AttributeConfig(name, extractor));
         }
     }
 

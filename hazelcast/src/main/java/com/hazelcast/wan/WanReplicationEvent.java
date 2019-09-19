@@ -16,8 +16,6 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.nio.serialization.Data;
-
 /**
  * Interface for all WAN replication messages
  */
@@ -30,14 +28,17 @@ public interface WanReplicationEvent {
     void incrementEventCount(DistributedServiceWanEventCounters counters);
 
     /**
-     * Returns the key for the entry on which the event occurred.
-     */
-    Data getKey();
-
-    /**
      * Returns the service name on which this event occurred.
      *
      * @return the service name
      */
     String getServiceName();
+
+    /**
+     * Returns the name of the distributed object (map or cache) on which this
+     * event occurred.
+     *
+     * @return the distributed object name
+     */
+    String getObjectName();
 }

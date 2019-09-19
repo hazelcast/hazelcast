@@ -394,8 +394,8 @@
                     <hz:index attribute="age" ordered="true"/>
                 </hz:indexes>
                 <hz:attributes>
-                    <hz:attribute name="power" extractor="com.car.PowerExtractor"/>
-                    <hz:attribute name="weight" extractor="com.car.WeightExtractor"/>
+                    <hz:attribute name="power" extractor-class-name="com.car.PowerExtractor"/>
+                    <hz:attribute name="weight" extractor-class-name="com.car.WeightExtractor"/>
                 </hz:attributes>
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>

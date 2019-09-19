@@ -376,6 +376,11 @@ public class TextCommandServiceImpl implements TextCommandService {
         }
     }
 
+    @Override
+    public String getInstanceName() {
+        return hazelcast.getName();
+    }
+
     class CommandExecutor implements Runnable {
         final TextCommand command;
 

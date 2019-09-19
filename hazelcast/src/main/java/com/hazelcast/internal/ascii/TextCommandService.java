@@ -93,4 +93,6 @@ public interface TextCommandService {
     byte[] toByteArray(Object value);
 
     void stop();
+
+    String getInstanceName();
 }

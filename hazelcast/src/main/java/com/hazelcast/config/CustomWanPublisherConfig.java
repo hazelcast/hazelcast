@@ -23,8 +23,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Configuration object for a custom WAN publisher. A single publisher defines
- * how WAN events are sent to a specific endpoint.
- * The endpoint can be some other external system which is not a Hazelcast
+ * how WAN events are sent to a specific publisher.
+ * The publisher can be some other external system which is not a Hazelcast
  * cluster (e.g. JMS queue).
  */
 public class CustomWanPublisherConfig extends AbstractWanPublisherConfig {

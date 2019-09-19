@@ -20,7 +20,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.lock.AcquireResult.AcquireStatus;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.BlockingResource;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKeyContainer;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -66,7 +66,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
      * and uid of the previous owner's last unlock() invocation.
      * Used for preventing duplicate execution of lock() / unlock() invocations
      */
-    private Map<Tuple2<LockEndpoint, UUID>, RaftLockOwnershipState> ownerInvocationRefUids = new HashMap<>();
+    private Map<BiTuple<LockEndpoint, UUID>, RaftLockOwnershipState> ownerInvocationRefUids = new HashMap<>();
 
     RaftLock() {
     }
@@ -94,7 +94,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
     AcquireResult acquire(LockInvocationKey key, boolean wait) {
         LockEndpoint endpoint = key.endpoint();
         UUID invocationUid = key.invocationUid();
-        RaftLockOwnershipState memorized = ownerInvocationRefUids.get(Tuple2.of(endpoint, invocationUid));
+        RaftLockOwnershipState memorized = ownerInvocationRefUids.get(BiTuple.of(endpoint, invocationUid));
         if (memorized != null) {
             AcquireStatus status = memorized.isLocked() ? SUCCESSFUL : FAILED;
             return new AcquireResult(status, memorized.getFence(), Collections.emptyList());
@@ -106,12 +106,12 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
 
         if (endpoint.equals(owner.endpoint())) {
             if (lockCount == lockCountLimit) {
-                ownerInvocationRefUids.put(Tuple2.of(endpoint, invocationUid), NOT_LOCKED);
+                ownerInvocationRefUids.put(BiTuple.of(endpoint, invocationUid), NOT_LOCKED);
                 return AcquireResult.failed(Collections.emptyList());
             }
 
             lockCount++;
-            ownerInvocationRefUids.put(Tuple2.of(endpoint, invocationUid), lockOwnershipState());
+            ownerInvocationRefUids.put(BiTuple.of(endpoint, invocationUid), lockOwnershipState());
             return AcquireResult.acquired(owner.commitIndex());
         }
 
@@ -154,7 +154,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
     }
 
     private ReleaseResult doRelease(LockEndpoint endpoint, UUID invocationUid, int releaseCount) {
-        RaftLockOwnershipState memorized = ownerInvocationRefUids.get(Tuple2.of(endpoint, invocationUid));
+        RaftLockOwnershipState memorized = ownerInvocationRefUids.get(BiTuple.of(endpoint, invocationUid));
         if (memorized != null) {
             return ReleaseResult.successful(memorized);
         }
@@ -166,7 +166,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
         lockCount = lockCount - min(lockCount, releaseCount);
         if (lockCount > 0) {
             RaftLockOwnershipState ownership = lockOwnershipState();
-            ownerInvocationRefUids.put(Tuple2.of(endpoint, invocationUid), ownership);
+            ownerInvocationRefUids.put(BiTuple.of(endpoint, invocationUid), ownership);
             return ReleaseResult.successful(ownership);
         }
 
@@ -174,13 +174,13 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
 
         Collection<LockInvocationKey> newOwnerWaitKeys = setNewLockOwner();
 
-        ownerInvocationRefUids.put(Tuple2.of(endpoint, invocationUid), lockOwnershipState());
+        ownerInvocationRefUids.put(BiTuple.of(endpoint, invocationUid), lockOwnershipState());
 
         return ReleaseResult.successful(lockOwnershipState(), newOwnerWaitKeys);
     }
 
     private void removeInvocationRefUids(LockEndpoint endpoint) {
-        ownerInvocationRefUids.keySet().removeIf(lockEndpointUUIDTuple2 -> lockEndpointUUIDTuple2.element1.equals(endpoint));
+        ownerInvocationRefUids.keySet().removeIf(lockEndpointUUIDBiTuple -> lockEndpointUUIDBiTuple.element1.equals(endpoint));
     }
 
     private Collection<LockInvocationKey> setNewLockOwner() {
@@ -194,7 +194,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
             iter.remove();
             owner = newOwner;
             lockCount = 1;
-            ownerInvocationRefUids.put(Tuple2.of(owner.endpoint(), owner.invocationUid()), lockOwnershipState());
+            ownerInvocationRefUids.put(BiTuple.of(owner.endpoint(), owner.invocationUid()), lockOwnershipState());
         } else {
             owner = null;
             newOwnerWaitKeys = Collections.emptyList();
@@ -239,7 +239,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
 
     private void removeInvocationRefUids(long sessionId) {
         ownerInvocationRefUids.keySet()
-                              .removeIf(lockEndpointUUIDTuple2 -> lockEndpointUUIDTuple2.element1.sessionId() == sessionId);
+                              .removeIf(lockEndpointUUIDBiTuple -> lockEndpointUUIDBiTuple.element1.sessionId() == sessionId);
     }
 
     /**
@@ -272,7 +272,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
         }
         out.writeInt(lockCount);
         out.writeInt(ownerInvocationRefUids.size());
-        for (Map.Entry<Tuple2<LockEndpoint, UUID>, RaftLockOwnershipState> e : ownerInvocationRefUids.entrySet()) {
+        for (Map.Entry<BiTuple<LockEndpoint, UUID>, RaftLockOwnershipState> e : ownerInvocationRefUids.entrySet()) {
             out.writeObject(e.getKey().element1);
             writeUUID(out, e.getKey().element2);
             out.writeObject(e.getValue());
@@ -293,7 +293,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
             LockEndpoint endpoint = in.readObject();
             UUID invocationUid = readUUID(in);
             RaftLockOwnershipState ownership = in.readObject();
-            ownerInvocationRefUids.put(Tuple2.of(endpoint, invocationUid), ownership);
+            ownerInvocationRefUids.put(BiTuple.of(endpoint, invocationUid), ownership);
         }
     }
 

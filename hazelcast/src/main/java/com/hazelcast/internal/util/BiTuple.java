@@ -14,28 +14,37 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.util;
+package com.hazelcast.internal.util;
 
 import java.util.Objects;
 
 /**
  * An immutable container of 2 statically typed fields
+ *
  * @param <X> type of the first element
  * @param <Y> type of the second element
  */
 @SuppressWarnings("checkstyle:visibilitymodifier")
-public final class Tuple2<X, Y> {
+public final class BiTuple<X, Y> {
 
     public final X element1;
     public final Y element2;
 
-    private Tuple2(X element1, Y element2) {
+    private BiTuple(X element1, Y element2) {
         this.element1 = element1;
         this.element2 = element2;
     }
 
-    public static <X, Y> Tuple2<X, Y> of(X element1, Y element2) {
-        return new Tuple2<>(element1, element2);
+    public static <X, Y> BiTuple<X, Y> of(X element1, Y element2) {
+        return new BiTuple<>(element1, element2);
+    }
+
+    public X element1() {
+        return element1;
+    }
+
+    public Y element2() {
+        return element2;
     }
 
     @Override
@@ -47,12 +56,12 @@ public final class Tuple2<X, Y> {
             return false;
         }
 
-        Tuple2<?, ?> tuple2 = (Tuple2<?, ?>) o;
+        BiTuple<?, ?> biTuple = (BiTuple<?, ?>) o;
 
-        if (!Objects.equals(element1, tuple2.element1)) {
+        if (!Objects.equals(element1, biTuple.element1)) {
             return false;
         }
-        return Objects.equals(element2, tuple2.element2);
+        return Objects.equals(element2, biTuple.element2);
     }
 
     @Override
@@ -64,6 +73,6 @@ public final class Tuple2<X, Y> {
 
     @Override
     public String toString() {
-        return "Tuple2{" + "element1=" + element1 + ", element2=" + element2 + '}';
+        return "BiTuple{" + "element1=" + element1 + ", element2=" + element2 + '}';
     }
 }

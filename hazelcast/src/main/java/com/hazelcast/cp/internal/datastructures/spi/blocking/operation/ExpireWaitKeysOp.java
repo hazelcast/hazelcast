@@ -20,7 +20,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.datastructures.RaftDataServiceDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -42,12 +42,12 @@ import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
 public class ExpireWaitKeysOp extends RaftOp implements IdentifiedDataSerializable {
 
     private String serviceName;
-    private Collection<Tuple2<String, UUID>> keys;
+    private Collection<BiTuple<String, UUID>> keys;
 
     public ExpireWaitKeysOp() {
     }
 
-    public ExpireWaitKeysOp(String serviceName, Collection<Tuple2<String, UUID>> keys) {
+    public ExpireWaitKeysOp(String serviceName, Collection<BiTuple<String, UUID>> keys) {
         this.serviceName = serviceName;
         this.keys = keys;
     }
@@ -78,7 +78,7 @@ public class ExpireWaitKeysOp extends RaftOp implements IdentifiedDataSerializab
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(serviceName);
         out.writeInt(keys.size());
-        for (Tuple2<String, UUID> key : keys) {
+        for (BiTuple<String, UUID> key : keys) {
             out.writeUTF(key.element1);
             writeUUID(out, key.element2);
         }
@@ -92,7 +92,7 @@ public class ExpireWaitKeysOp extends RaftOp implements IdentifiedDataSerializab
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             UUID invocationUid = readUUID(in);
-            keys.add(Tuple2.of(name, invocationUid));
+            keys.add(BiTuple.of(name, invocationUid));
         }
     }
 

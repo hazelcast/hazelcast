@@ -17,37 +17,40 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.nio.Bits;
 
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
-public final class MapAttributeConfigCodec {
+public final class MergePolicyConfigCodec {
+    private static final int BATCH_SIZE_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = BATCH_SIZE_OFFSET + Bits.INT_SIZE_IN_BYTES;
 
-    private MapAttributeConfigCodec() {
+    private MergePolicyConfigCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, MapAttributeConfig config) {
+    public static void encode(ClientMessage clientMessage, MergePolicyConfig config) {
         clientMessage.add(BEGIN_FRAME);
-
-        StringCodec.encode(clientMessage, config.getName());
-        StringCodec.encode(clientMessage, config.getExtractor());
-
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        encodeInt(initialFrame.content, BATCH_SIZE_OFFSET, config.getBatchSize());
+        clientMessage.add(initialFrame);
+        StringCodec.encode(clientMessage, config.getPolicy());
         clientMessage.add(END_FRAME);
     }
 
-    public static MapAttributeConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static MergePolicyConfig decode(ListIterator<ClientMessage.Frame> iterator) {
         // begin frame
         iterator.next();
-
-        String name = StringCodec.decode(iterator);
-        String extractor = StringCodec.decode(iterator);
-
+        ClientMessage.Frame initialFrame = iterator.next();
+        int batchSize = decodeInt(initialFrame.content, BATCH_SIZE_OFFSET);
+        String policy = StringCodec.decode(iterator);
         fastForwardToEndFrame(iterator);
-
-        return new MapAttributeConfig(name, extractor);
+        return new MergePolicyConfig(policy, batchSize);
     }
 }

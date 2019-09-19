@@ -43,7 +43,7 @@ public abstract class AbstractAtomicRefOp extends RaftOp implements IdentifiedDa
 
     RaftAtomicRef getAtomicRef(CPGroupId groupId) {
         RaftAtomicRefService service = getService();
-        return service.getAtomicRef(groupId, name);
+        return service.getAtomicValue(groupId, name);
     }
 
     @Override

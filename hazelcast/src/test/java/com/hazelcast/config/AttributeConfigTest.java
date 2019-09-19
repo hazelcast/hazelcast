@@ -31,88 +31,88 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapAttributeConfigTest {
+public class AttributeConfigTest {
 
     @Test
     public void empty() {
-        new MapAttributeConfig();
+        new AttributeConfig();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void nullName() {
-        new MapAttributeConfig(null, "com.class");
+        new AttributeConfig(null, "com.class");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void emptyName() {
-        new MapAttributeConfig("", "com.class");
+        new AttributeConfig("", "com.class");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void dotInName() {
-        new MapAttributeConfig("body.brain", "com.class");
+        new AttributeConfig("body.brain", "com.class");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void openingSquareBracketInName() {
-        new MapAttributeConfig("co[m", "com.test.Extractor");
+        new AttributeConfig("co[m", "com.test.Extractor");
     }
 
     public void closingSquareBracketInName() {
-        new MapAttributeConfig("co]m", "com.test.Extractor");
+        new AttributeConfig("co]m", "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void emptySquareBracketInName() {
-        new MapAttributeConfig("com[]", "com.test.Extractor");
+        new AttributeConfig("com[]", "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void bothSquareBracketInName() {
-        new MapAttributeConfig("com[007]", "com.test.Extractor");
+        new AttributeConfig("com[007]", "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void diactricsInName() {
-        new MapAttributeConfig("ąćżźć^∆Ō∑ęĺłęŌ", "com.test.Extractor");
+        new AttributeConfig("ąćżźć^∆Ō∑ęĺłęŌ", "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void spaceInName() {
-        new MapAttributeConfig("cool attribute", "com.test.Extractor");
+        new AttributeConfig("cool attribute", "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void queryConstantKeyAsName() {
-        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "com.test.Extractor");
+        new AttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void queryConstantThisAsName() {
-        new MapAttributeConfig(QueryConstants.THIS_ATTRIBUTE_NAME.value(), "com.test.Extractor");
+        new AttributeConfig(QueryConstants.THIS_ATTRIBUTE_NAME.value(), "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void nullExtractor() {
-        new MapAttributeConfig("iq", null);
+        new AttributeConfig("iq", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void emptyExtractor() {
-        new MapAttributeConfig("iq", "");
+        new AttributeConfig("iq", "");
     }
 
     @Test
     public void validDefinition() {
-        MapAttributeConfig config = new MapAttributeConfig("iq", "com.test.IqExtractor");
+        AttributeConfig config = new AttributeConfig("iq", "com.test.IqExtractor");
 
         assertEquals("iq", config.getName());
-        assertEquals("com.test.IqExtractor", config.getExtractor());
+        assertEquals("com.test.IqExtractor", config.getExtractorClassName());
     }
 
     @Test
     public void validToString() {
-        MapAttributeConfig config = new MapAttributeConfig("iq", "com.test.IqExtractor");
+        AttributeConfig config = new AttributeConfig("iq", "com.test.IqExtractor");
 
         String toString = config.toString();
 
@@ -122,13 +122,13 @@ public class MapAttributeConfigTest {
 
     @Test
     public void validReadOnly() {
-        MapAttributeConfig config = new MapAttributeConfig("iq", "com.test.IqExtractor");
+        AttributeConfig config = new AttributeConfig("iq", "com.test.IqExtractor");
 
-        MapAttributeConfigReadOnly readOnlyConfig = config.getAsReadOnly();
+        AttributeConfigReadOnly readOnlyConfig = config.getAsReadOnly();
 
-        assertThat(readOnlyConfig, instanceOf(MapAttributeConfigReadOnly.class));
+        assertThat(readOnlyConfig, instanceOf(AttributeConfigReadOnly.class));
         assertEquals("iq", readOnlyConfig.getName());
-        assertEquals("com.test.IqExtractor", readOnlyConfig.getExtractor());
+        assertEquals("com.test.IqExtractor", readOnlyConfig.getExtractorClassName());
     }
 
 }

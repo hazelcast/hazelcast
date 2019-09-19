@@ -29,21 +29,21 @@ import com.hazelcast.nio.serialization.Portable;
  * <p>
  * How to define a new custom attribute?
  * <code>
- * MapAttributeConfig attributeConfig = new MapAttributeConfig();
+ * AttributeConfig attributeConfig = new AttributeConfig();
  * extractorConfig.setName("currency");
- * extractorConfig.setExtractor("com.bank.CurrencyExtractor");
+ * extractorConfig.setExtractorClassName("com.bank.CurrencyExtractor");
  * </code>
  * <p>
  * How to register the newly-defined attribute in a configuration of a Map?
  * <code>
  * MapConfig mapConfig = (...);
- * mapConfig.addMapAttributeConfig(attributeConfig);
+ * mapConfig.addAttributeConfig(attributeConfig);
  * </code>
  * Extractors may be also defined in the XML configuration.
  * <pre>
  * &lt;map name="trades"&gt;
  *   &lt;attributes&gt;
- *     &lt;attribute extractor="com.bank.CurrencyExtractor"&gt;currency&lt;/attribute&gt;
+ *     &lt;attribute extractor-class-name="com.bank.CurrencyExtractor"&gt;currency&lt;/attribute&gt;
  *   &lt;/attributes&gt;
  * &lt;/map&gt;
  * </pre>

@@ -115,7 +115,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) {
         this.name = name;
         this.lifecycleService = new LifecycleServiceImpl(this);
-        this.cpSubsystem = new CPSubsystemImpl(this);
 
         ManagedContext configuredManagedContext = config.getManagedContext();
         this.managedContext = new HazelcastManagedContext(this, configuredManagedContext);
@@ -125,6 +124,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         // in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances
         this.userContext.putAll(config.getUserContext());
         this.node = createNode(config, nodeContext);
+        this.cpSubsystem = new CPSubsystemImpl(this);
 
         try {
             this.logger = node.getLogger(getClass().getName());

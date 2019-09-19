@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.extractor.predicates;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
@@ -63,15 +63,15 @@ public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredica
             public void doWithConfig(Config config, Multivalue mv) {
                 MapConfig mapConfig = config.getMapConfig("map");
 
-                MapAttributeConfig iqConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
+                AttributeConfig iqConfig = new TestAttributeIndexConfig();
                 iqConfig.setName("brain.iq");
-                iqConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
-                mapConfig.addMapAttributeConfig(iqConfig);
+                iqConfig.setExtractorClassName("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
+                mapConfig.addAttributeConfig(iqConfig);
 
-                MapAttributeConfig nameConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
+                AttributeConfig nameConfig = new TestAttributeIndexConfig();
                 nameConfig.setName("brain.name");
-                nameConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
-                mapConfig.addMapAttributeConfig(nameConfig);
+                nameConfig.setExtractorClassName("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
+                mapConfig.addAttributeConfig(nameConfig);
             }
         };
     }

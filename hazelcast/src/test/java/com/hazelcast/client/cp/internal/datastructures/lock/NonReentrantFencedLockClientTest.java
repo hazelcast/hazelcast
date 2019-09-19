@@ -30,6 +30,8 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NonReentrantFencedLockClientTest extends NonReentrantFencedLockTest {
 
+    private HazelcastInstance client;
+
     @Override
     protected TestHazelcastInstanceFactory createTestFactory() {
         return new TestHazelcastFactory();
@@ -39,8 +41,12 @@ public class NonReentrantFencedLockClientTest extends NonReentrantFencedLockTest
     protected HazelcastInstance[] createInstances() {
         HazelcastInstance[] instances = super.createInstances();
         TestHazelcastFactory f = (TestHazelcastFactory) factory;
-        lockInstance = f.newHazelcastClient();
+        client = f.newHazelcastClient();
         return instances;
     }
 
+    @Override
+    protected HazelcastInstance getProxyInstance() {
+        return client;
+    }
 }

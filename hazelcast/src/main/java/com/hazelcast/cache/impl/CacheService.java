@@ -158,7 +158,7 @@ public class CacheService extends AbstractCacheService {
     }
 
     @Override
-    public void checkWanReplicationQueues(String cacheName) {
+    public void doPrepublicationChecks(String cacheName) {
         // NOP intentionally
     }
 
