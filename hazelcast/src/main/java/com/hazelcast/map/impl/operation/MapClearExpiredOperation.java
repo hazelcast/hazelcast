@@ -16,27 +16,31 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
 
 /**
  * Clears expired records.
  */
-public class ClearExpiredOperation extends AbstractLocalOperation implements PartitionAwareOperation, MutatingOperation {
+public class MapClearExpiredOperation extends AbstractLocalOperation
+        implements PartitionAwareOperation, MutatingOperation {
 
     private int expirationPercentage;
 
-    public ClearExpiredOperation(int expirationPercentage) {
+    public MapClearExpiredOperation(int expirationPercentage) {
         this.expirationPercentage = expirationPercentage;
     }
 
@@ -58,7 +62,7 @@ public class ClearExpiredOperation extends AbstractLocalOperation implements Par
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
         ConcurrentMap<String, RecordStore> recordStores = partitionContainer.getMaps();
         boolean backup = !isOwner();
-        for (final RecordStore recordStore : recordStores.values()) {
+        for (RecordStore recordStore : recordStores.values()) {
             if (recordStore.size() > 0 && recordStore.isExpirable()) {
                 recordStore.evictExpiredEntries(expirationPercentage, backup);
                 recordStore.disposeDeferredBlocks();
@@ -78,6 +82,18 @@ public class ClearExpiredOperation extends AbstractLocalOperation implements Par
             super.onExecutionFailure(e);
         } finally {
             prepareForNextCleanup();
+        }
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        if (e instanceof PartitionMigratingException) {
+            ILogger logger = getLogger();
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, e.toString());
+            }
+        } else {
+            super.logError(e);
         }
     }
 
