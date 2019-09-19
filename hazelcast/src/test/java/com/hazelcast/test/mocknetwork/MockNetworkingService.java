@@ -157,8 +157,21 @@ class MockNetworkingService
 
             remoteConnection.localConnection = thisConnection;
             thisConnection.localConnection = remoteConnection;
+
+            if (!remoteConnection.isAlive()) {
+                // targetNode is not alive anymore.
+                suspectAddress(remote);
+                return null;
+            }
+
             ns.mapConnections.put(remote, remoteConnection);
             ns.logger.info("Created connection to endpoint: " + remote + ", connection: " + remoteConnection);
+
+            if (!remoteConnection.isAlive()) {
+                // If connection is not alive after inserting it into connection map,
+                // that means remote node is being stopping during connection creation.
+                suspectAddress(remote);
+            }
             return remoteConnection;
         }
 
