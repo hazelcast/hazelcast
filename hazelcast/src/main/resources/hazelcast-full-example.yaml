@@ -3148,6 +3148,7 @@ hazelcast:
 
   metrics:
     enabled: false
+    mc-enabled: false
     jmx-enabled: false
     collection-interval-seconds: 10
     retention-seconds: 30

@@ -39,6 +39,7 @@ public class MetricsConfig {
     public static final int DEFAULT_METRICS_RETENTION_SECONDS = 5;
 
     private boolean enabled = true;
+    private boolean mcEnabled = true;
     private boolean jmxEnabled = true;
     private int retentionSeconds = DEFAULT_METRICS_RETENTION_SECONDS;
     private boolean metricsForDataStructuresEnabled;
@@ -50,6 +51,7 @@ public class MetricsConfig {
 
     public MetricsConfig(MetricsConfig metricsConfig) {
         this.enabled = metricsConfig.enabled;
+        this.mcEnabled = metricsConfig.mcEnabled;
         this.jmxEnabled = metricsConfig.jmxEnabled;
         this.retentionSeconds = metricsConfig.retentionSeconds;
         this.metricsForDataStructuresEnabled = metricsConfig.metricsForDataStructuresEnabled;
@@ -76,7 +78,43 @@ public class MetricsConfig {
     }
 
     /**
+     * Returns whether metrics will be exposed to Hazelcast Management
+     * Center. If enabled, Hazelcast Management Center will be able to read
+     * out the recorder metrics from this member. It's enabled by default.
+     * <p/>
+     * This configuration acts as a fine-tuning option beyond
+     * enabling/disabling the Metrics collection entirely via the {@link #enabled}
+     * master switch.
+     *
+     * @return true if exporting to Hazelcast Management Center is enabled.
+     * @see #isEnabled()
+     */
+    public boolean isMcEnabled() {
+        return mcEnabled;
+    }
+
+    /**
+     * Enables exposing metrics to Hazelcast Management Center. If enabled,
+     * Hazelcast Management Center will be able to read out the recorded
+     * metrics from this member. It's enabled by default.
+     * <p/>
+     * This configuration acts as a fine-tuning option beyond
+     * enabling/disabling the Metrics collection entirely via the {@link #enabled}
+     * master switch.
+     *
+     * @see #setEnabled(boolean)
+     */
+    public MetricsConfig setMcEnabled(boolean mcEnabled) {
+        this.mcEnabled = mcEnabled;
+        return this;
+    }
+
+    /**
      * Returns whether metrics will be exposed through JMX MBeans.
+     * <p/>
+     * This configuration acts as a fine-tuning option beyond
+     * enabling/disabling the Metrics collection entirely via the {@link #enabled}
+     * master switch.
      */
     public boolean isJmxEnabled() {
         return jmxEnabled;
@@ -86,6 +124,10 @@ public class MetricsConfig {
      * Enables metrics exposure through JMX. It's enabled by default. Metric
      * values are collected in the {@linkplain #setCollectionIntervalSeconds
      * metric collection interval} and written to a set of MBeans.
+     * <p/>
+     * This configuration acts as a fine-tuning option beyond
+     * enabling/disabling the Metrics collection entirely via the {@link #enabled}
+     * master switch.
      */
     public MetricsConfig setJmxEnabled(boolean jmxEnabled) {
         this.jmxEnabled = jmxEnabled;
@@ -141,7 +183,7 @@ public class MetricsConfig {
      * Sets whether statistics for data structures are added to metrics.
      * It's disabled by default.
      * <p/>
-     * Note that enabling the data structures metrics also set {@link #minimumLevel}
+     * Note that enabling the data structures metrics also sets {@link #minimumLevel}
      * to {@link ProbeLevel#INFO}.
      *
      * @see #setMinimumLevel(ProbeLevel)
@@ -193,6 +235,9 @@ public class MetricsConfig {
         if (enabled != that.enabled) {
             return false;
         }
+        if (mcEnabled != that.mcEnabled) {
+            return false;
+        }
         if (jmxEnabled != that.jmxEnabled) {
             return false;
         }
@@ -211,6 +256,7 @@ public class MetricsConfig {
     @Override
     public final int hashCode() {
         int result = (enabled ? 1 : 0);
+        result = 31 * result + (mcEnabled ? 1 : 0);
         result = 31 * result + (jmxEnabled ? 1 : 0);
         result = 31 * result + retentionSeconds;
         result = 31 * result + (metricsForDataStructuresEnabled ? 1 : 0);
@@ -223,6 +269,7 @@ public class MetricsConfig {
     public String toString() {
         return "MetricsConfig{"
                 + "enabled=" + enabled
+                + ", mcEnabled=" + mcEnabled
                 + ", jmxEnabled=" + jmxEnabled
                 + ", retentionSeconds=" + retentionSeconds
                 + ", metricsForDataStructuresEnabled=" + metricsForDataStructuresEnabled

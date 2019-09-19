@@ -3205,7 +3205,7 @@
         </locks>
     </cp-subsystem>
 
-    <metrics enabled="false" jmx-enabled="false">
+    <metrics enabled="false" mc-enabled="false" jmx-enabled="false">
         <collection-interval-seconds>10</collection-interval-seconds>
         <retention-seconds>30</retention-seconds>
         <metrics-for-data-structures>true</metrics-for-data-structures>

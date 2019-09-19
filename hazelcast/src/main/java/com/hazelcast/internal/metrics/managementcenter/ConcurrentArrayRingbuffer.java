@@ -94,7 +94,7 @@ public class ConcurrentArrayRingbuffer<E> {
         return new RingbufferSlice<>(result, tail);
     }
 
-    public synchronized int getCapacity() {
+    public int getCapacity() {
         return capacity;
     }
 

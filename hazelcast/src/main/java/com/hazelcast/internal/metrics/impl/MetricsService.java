@@ -32,7 +32,6 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -66,6 +65,7 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
     private final ConcurrentMap<CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>>, Long>
             pendingReads = new ConcurrentHashMap<>();
     private final ProbeRenderer probeRenderer = new PublisherProbeRenderer();
+    private volatile boolean collectorScheduled;
 
     /**
      * Ringbuffer which stores a bounded history of metrics. For each round of collection,
@@ -94,19 +94,23 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        this.publishers.addAll(getPublishers());
+        if (config.isEnabled()) {
 
-        if (publishers.isEmpty()) {
-            return;
+            if (config.isMcEnabled()) {
+                publishers.add(createMcPublisher());
+            }
+
+            if (config.isJmxEnabled()) {
+                publishers.add(createJmxPublisher());
+            }
+
+            if (!publishers.isEmpty()) {
+                scheduleMetricsCollectorIfNeeded();
+            }
+
+        } else {
+            logger.fine("Metrics collection is disabled");
         }
-
-        logger.fine("Configuring metrics collection, collection interval=" + config.getCollectionIntervalSeconds()
-                + " seconds, retention=" + config.getRetentionSeconds() + " seconds, publishers="
-                + publishers.stream().map(MetricsPublisher::name).collect(joining(", ", "[", "]")));
-
-        ExecutionService executionService = nodeEngine.getExecutionService();
-        scheduledFuture = executionService.scheduleWithRepetition("MetricsPublisher", this::collectMetrics, 1,
-                config.getCollectionIntervalSeconds(), TimeUnit.SECONDS);
     }
 
     /**
@@ -118,8 +122,27 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
      *                         instance.
      */
     public void registerPublisher(Function<NodeEngine, MetricsPublisher> registerFunction) {
-        MetricsPublisher publisher = registerFunction.apply(nodeEngine);
-        publishers.add(publisher);
+        if (config.isEnabled()) {
+            MetricsPublisher publisher = registerFunction.apply(nodeEngine);
+            publishers.add(publisher);
+            scheduleMetricsCollectorIfNeeded();
+        } else {
+            logger.fine(String.format("Custom publisher is not registered with function %s as the metrics system is disabled",
+                    registerFunction));
+        }
+    }
+
+    private void scheduleMetricsCollectorIfNeeded() {
+        if (!collectorScheduled && !publishers.isEmpty()) {
+            logger.fine("Configuring metrics collection, collection interval=" + config.getCollectionIntervalSeconds()
+                    + " seconds, retention=" + config.getRetentionSeconds() + " seconds, publishers="
+                    + publishers.stream().map(MetricsPublisher::name).collect(joining(", ", "[", "]")));
+
+            ExecutionService executionService = nodeEngine.getExecutionService();
+            scheduledFuture = executionService.scheduleWithRepetition("MetricsPublisher", this::collectMetrics, 1,
+                    config.getCollectionIntervalSeconds(), TimeUnit.SECONDS);
+            collectorScheduled = true;
+        }
     }
 
     // visible for testing
@@ -197,27 +220,21 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
         }
     }
 
-    private List<MetricsPublisher> getPublishers() {
-        List<MetricsPublisher> publishers = new ArrayList<>();
-        if (config.isEnabled()) {
-            int journalSize = Math.max(
-                    1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
-            );
-            metricsJournal = new ConcurrentArrayRingbuffer<>(journalSize);
-            ManagementCenterPublisher publisher = new ManagementCenterPublisher(this.nodeEngine.getLoggingService(),
-                    (blob, ts) -> {
-                        metricsJournal.add(entry(ts, blob));
-                        pendingReads.forEach(this::tryCompleteRead);
-                    }
-            );
-            publishers.add(publisher);
-        }
+    private JmxPublisher createJmxPublisher() {
+        return new JmxPublisher(nodeEngine.getHazelcastInstance().getName(), "com.hazelcast");
+    }
 
-        if (config.isJmxEnabled()) {
-            publishers.add(new JmxPublisher(nodeEngine.getHazelcastInstance().getName(), "com.hazelcast"));
-        }
-
-        return publishers;
+    private ManagementCenterPublisher createMcPublisher() {
+        int journalSize = Math.max(
+                1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
+        );
+        metricsJournal = new ConcurrentArrayRingbuffer<>(journalSize);
+        return new ManagementCenterPublisher(this.nodeEngine.getLoggingService(),
+                (blob, ts) -> {
+                    metricsJournal.add(entry(ts, blob));
+                    pendingReads.forEach(this::tryCompleteRead);
+                }
+        );
     }
 
     /**

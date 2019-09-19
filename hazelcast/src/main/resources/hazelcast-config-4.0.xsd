@@ -4542,8 +4542,40 @@
             <xs:element name="metrics-for-data-structures" type="xs:boolean" default="false" minOccurs="0"/>
             <xs:element name="minimum-level" type="metric-minimum-level" default="MANDATORY" minOccurs="0"/>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
-        <xs:attribute name="jmx-enabled" type="xs:boolean" default="true"/>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Master-switch for the metrics system. Controls whether
+                    the metrics are collected and publishers are enabled.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="mc-enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls whether the metrics collected are exposed to
+                    Hazelcast Management Center. It is enabled by default.
+                    Please note that the metrics are polled by the
+                    Hazelcast Management Center, hence the members need to
+                    buffer the collected metrics between two polls. The aim
+                    for this switch is to reduce memory consumption of the
+                    metrics system if the Hazelcast Management Center is not
+                    used.
+                    In order to expose the metrics, the metrics system need
+                    to be enabled via the enabled master-switch attribute.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="jmx-enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls whether the metrics collected are exposed to
+                    through JMX. It is enabled by default.
+                    In order to expose the metrics, the metrics system need
+                    to be enabled via the enabled master-switch attribute.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:simpleType name="metric-minimum-level">

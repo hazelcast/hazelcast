@@ -1310,6 +1310,7 @@ public class ConfigXmlGeneratorTest {
 
         config.getMetricsConfig()
               .setEnabled(false)
+              .setMcEnabled(false)
               .setJmxEnabled(false)
               .setCollectionIntervalSeconds(10)
               .setRetentionSeconds(11)

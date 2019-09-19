@@ -650,7 +650,9 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            return c1.isEnabled() == c2.isEnabled() && c1.isJmxEnabled() == c2.isJmxEnabled()
+            return c1.isEnabled() == c2.isEnabled()
+                    && c1.isMcEnabled() == c2.isMcEnabled()
+                    && c1.isJmxEnabled() == c2.isJmxEnabled()
                     && c1.getCollectionIntervalSeconds() == c2.getCollectionIntervalSeconds()
                     && c1.getRetentionSeconds() == c2.getRetentionSeconds()
                     && c1.isMetricsForDataStructuresEnabled() == c2.isMetricsForDataStructuresEnabled()

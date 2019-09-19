@@ -2876,10 +2876,22 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleMetrics(Node node) {
         MetricsConfig metricsConfig = config.getMetricsConfig();
-        boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
-        metricsConfig.setEnabled(enabled);
-        boolean jmxEnabled = getBooleanValue(getAttribute(node, "jmx-enabled"));
-        metricsConfig.setJmxEnabled(jmxEnabled);
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                metricsConfig.setEnabled(enabled);
+            } else if ("mc-enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "mc-enabled"));
+                metricsConfig.setMcEnabled(enabled);
+            } else if ("jmx-enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "jmx-enabled"));
+                metricsConfig.setJmxEnabled(enabled);
+            }
+        }
+
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();

@@ -29,8 +29,10 @@ import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
@@ -56,13 +58,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MetricsServiceTest {
+public class MetricsServiceTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -184,6 +188,53 @@ public class MetricsServiceTest {
     }
 
     @Test
+    public void testNoCollectionIfMetricsDisabled() {
+        config.getMetricsConfig().setEnabled(false);
+        ExecutionService executionServiceMock = mock(ExecutionService.class);
+        when(nodeEngineMock.getExecutionService()).thenReturn(executionServiceMock);
+
+        MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
+        metricsService.init(nodeEngineMock, new Properties());
+
+        verifyNoMoreInteractions(executionServiceMock);
+    }
+
+    @Test
+    public void testNoCollectionIfMetricsEnabledAndMcJmxDisabled() {
+        config.getMetricsConfig()
+              .setEnabled(true)
+              .setMcEnabled(false)
+              .setJmxEnabled(false);
+        ExecutionService executionServiceMock = mock(ExecutionService.class);
+        when(nodeEngineMock.getExecutionService()).thenReturn(executionServiceMock);
+
+        MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
+        metricsService.init(nodeEngineMock, new Properties());
+
+        verifyNoMoreInteractions(executionServiceMock);
+    }
+
+    @Test
+    public void testNoCollectionIfMetricsEnabledAndMcJmxDisabledButCustomPublisherRegistered() {
+        config.getMetricsConfig()
+              .setEnabled(true)
+              .setMcEnabled(false)
+              .setJmxEnabled(false);
+
+        MetricsPublisher publisherMock = mock(MetricsPublisher.class);
+        MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
+        metricsService.init(nodeEngineMock, new Properties());
+        metricsService.registerPublisher(nodeEngine -> publisherMock);
+
+        //        metricsService.collectMetrics();
+
+        HazelcastTestSupport.assertTrueEventually(() -> {
+            verify(publisherMock, atLeastOnce()).publishDouble(anyString(), anyDouble());
+            verify(publisherMock, atLeastOnce()).publishLong(anyString(), anyLong());
+        });
+    }
+
+    @Test
     public void testReadMetricsThrowsOnFutureSequence() throws Exception {
         MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
         metricsService.init(nodeEngineMock, new Properties());
@@ -201,7 +252,7 @@ public class MetricsServiceTest {
     }
 
     @Test
-    public void testWithCustomPublisher() {
+    public void testCustomPublisherIsRegistered() {
         MetricsPublisher publisherMock = mock(MetricsPublisher.class);
         MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
         metricsService.init(nodeEngineMock, new Properties());
@@ -211,6 +262,21 @@ public class MetricsServiceTest {
 
         verify(publisherMock, atLeastOnce()).publishDouble(anyString(), anyDouble());
         verify(publisherMock, atLeastOnce()).publishLong(anyString(), anyLong());
+    }
+
+    @Test
+    public void testCustomPublisherIsNotRegisteredIfMetricsDisabled() {
+        config.getMetricsConfig().setEnabled(false);
+
+        MetricsPublisher publisherMock = mock(MetricsPublisher.class);
+        MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
+        metricsService.init(nodeEngineMock, new Properties());
+        metricsService.registerPublisher(nodeEngine -> publisherMock);
+
+        metricsService.collectMetrics();
+
+        verify(publisherMock, never()).publishDouble(anyString(), anyDouble());
+        verify(publisherMock, never()).publishLong(anyString(), anyLong());
     }
 
     private void readMetrics(MetricsService metricsService, long sequence, MetricConsumer metricConsumer)
@@ -247,33 +313,5 @@ public class MetricsServiceTest {
         void consumeLong(long value);
 
         void consumeDouble(double value);
-    }
-
-    private static class CustomMetricsPublisher implements MetricsPublisher {
-
-        @Override
-        public void publishLong(String name, long value) {
-
-        }
-
-        @Override
-        public void publishDouble(String name, double value) {
-
-        }
-
-        @Override
-        public void whenComplete() {
-
-        }
-
-        @Override
-        public void shutdown() {
-
-        }
-
-        @Override
-        public String name() {
-            return null;
-        }
     }
 }

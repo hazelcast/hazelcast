@@ -1447,7 +1447,10 @@ public class ConfigXmlGenerator {
 
     private static void metricsConfig(XmlGenerator gen, Config config) {
         MetricsConfig metricsConfig = config.getMetricsConfig();
-        gen.open("metrics", "enabled", metricsConfig.isEnabled(), "jmx-enabled", metricsConfig.isJmxEnabled())
+        gen.open("metrics",
+                "enabled", metricsConfig.isEnabled(),
+                "mc-enabled", metricsConfig.isMcEnabled(),
+                "jmx-enabled", metricsConfig.isJmxEnabled())
            .node("collection-interval-seconds", metricsConfig.getCollectionIntervalSeconds())
            .node("retention-seconds", metricsConfig.getRetentionSeconds())
            .node("metrics-for-data-structures", metricsConfig.isMetricsForDataStructuresEnabled())
