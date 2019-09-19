@@ -28,7 +28,7 @@ import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.RandomPicker;
+import com.hazelcast.internal.util.RandomPicker;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

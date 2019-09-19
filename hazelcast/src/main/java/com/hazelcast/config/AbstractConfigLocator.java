@@ -30,7 +30,7 @@ import java.util.Collection;
 
 import static com.hazelcast.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
 import static com.hazelcast.config.DeclarativeConfigUtil.throwUnacceptedSuffixInSystemProperty;
-import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static java.util.Objects.requireNonNull;
 
 /**

@@ -33,7 +33,7 @@ import com.hazelcast.topic.impl.TopicService;
 import java.security.Permission;
 import java.util.Random;
 
-import static com.hazelcast.util.HashUtil.hashToIndex;
+import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 
 public class TopicAddMessageListenerMessageTask
         extends AbstractCallableMessageTask<TopicAddMessageListenerCodec.RequestParameters>

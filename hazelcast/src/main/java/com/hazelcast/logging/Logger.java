@@ -17,7 +17,7 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 /**
  * Provides static utilities to access the global shared logging machinery.

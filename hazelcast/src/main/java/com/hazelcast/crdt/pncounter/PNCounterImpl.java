@@ -25,7 +25,7 @@ import com.hazelcast.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import java.io.IOException;
 import java.util.Map;

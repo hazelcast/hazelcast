@@ -28,11 +28,11 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.EventListener;
 
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Abstract {@link QueryCacheConfigurator} includes common functionality.

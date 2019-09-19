@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 
 /**
  * Contains various {@link com.hazelcast.multimap.impl.MultiMapContainer} support methods.

@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class ScheduledExecutorGetAllScheduledMessageTask
         extends AbstractMessageTask<ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters>

@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.ascii;
 
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -29,7 +29,7 @@ import java.net.Socket;
 
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 /**
  * Test client for verifying text protocols (HTTP REST API, Memcache, ...). Sample usage:

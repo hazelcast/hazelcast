@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 

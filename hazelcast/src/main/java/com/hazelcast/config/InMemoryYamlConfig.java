@@ -23,9 +23,9 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
  * Creates a {@link Config} loaded from an in-memory Hazelcast YAML String.

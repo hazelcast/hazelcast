@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,9 +29,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
-import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
-import static com.hazelcast.util.SetUtil.singletonPartitionIdSet;
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.SetUtil.singletonPartitionIdSet;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**

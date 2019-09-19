@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.util.RandomPicker.getInt;
+import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 

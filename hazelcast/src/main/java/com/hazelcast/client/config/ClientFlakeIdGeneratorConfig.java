@@ -21,7 +21,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_PREFETCH_COUNT;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_PREFETCH_VALIDITY_MILLIS;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.MAXIMUM_PREFETCH_COUNT;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * The {@code ClientFlakeIdGeneratorConfig} contains the configuration for the client

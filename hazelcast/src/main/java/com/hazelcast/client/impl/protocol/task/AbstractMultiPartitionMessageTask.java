@@ -23,7 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Map;
 

@@ -36,7 +36,7 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.ThreadUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Base class contains proxy helper methods for {@link com.hazelcast.map.impl.tx.TransactionalMapProxy}

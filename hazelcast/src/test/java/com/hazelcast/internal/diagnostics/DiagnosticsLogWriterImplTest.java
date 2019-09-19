@@ -28,7 +28,7 @@ import java.io.CharArrayWriter;
 import java.io.PrintWriter;
 import java.util.Locale;
 
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)

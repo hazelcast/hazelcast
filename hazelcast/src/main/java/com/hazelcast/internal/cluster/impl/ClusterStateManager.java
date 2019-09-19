@@ -34,9 +34,9 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 
 /**
  * ClusterStateManager stores cluster state and manages cluster state transactions.

@@ -47,7 +47,7 @@ import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.util.AddressUtil.getAddressHolder;
+import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
 import static java.net.InetAddress.getByName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;

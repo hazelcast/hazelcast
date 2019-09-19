@@ -46,7 +46,7 @@ import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.instance.EndpointQualifier.REST;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.singleton;
 
 public class TcpIpNetworkingService

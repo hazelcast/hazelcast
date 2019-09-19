@@ -23,9 +23,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook.F_ID;
 import static com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook.LOCK_STORE;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 @SuppressWarnings("checkstyle:methodcount")
 public final class LockStoreImpl implements IdentifiedDataSerializable, LockStore {

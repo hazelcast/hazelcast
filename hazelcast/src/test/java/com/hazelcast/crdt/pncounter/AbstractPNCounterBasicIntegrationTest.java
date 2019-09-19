@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.monitor.LocalPNCounterStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.FutureUtil;
 import org.junit.Test;
 
 import java.util.ArrayList;

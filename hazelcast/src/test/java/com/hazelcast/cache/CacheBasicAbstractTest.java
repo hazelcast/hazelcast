@@ -22,7 +22,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 import org.junit.Test;
 
 import javax.cache.Cache;
@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.logging.Logger.getLogger;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

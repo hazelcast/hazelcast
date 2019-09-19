@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import java.util.Collection;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the 3 different join configurations; TCP-IP/multicast/AWS. Only one of them should be enabled!

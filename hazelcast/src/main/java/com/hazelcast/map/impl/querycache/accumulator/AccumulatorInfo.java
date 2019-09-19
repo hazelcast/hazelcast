@@ -27,7 +27,7 @@ import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Metadata for an {@link Accumulator}.

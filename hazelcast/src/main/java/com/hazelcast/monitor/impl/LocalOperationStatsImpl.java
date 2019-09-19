@@ -22,14 +22,14 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.monitor.LocalOperationStats;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.spi.properties.GroupProperty.MC_MAX_VISIBLE_SLOW_OPERATION_COUNT;
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 /**
  * Hazelcast statistic implementations for local operations.

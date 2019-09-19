@@ -36,8 +36,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.UuidUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -54,13 +54,13 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.MapUtil.HASHMAP_DEFAULT_LOAD_FACTOR;
-import static com.hazelcast.util.MapUtil.calculateInitialCapacity;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.MapUtil.HASHMAP_DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.internal.util.MapUtil.calculateInitialCapacity;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"unchecked", "checkstyle:methodcount"})
 public class ScheduledExecutorServiceProxy

@@ -19,8 +19,8 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.collection.PartitionIdSet;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,8 +28,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
-import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**

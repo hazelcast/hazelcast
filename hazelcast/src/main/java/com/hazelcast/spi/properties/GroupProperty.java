@@ -34,7 +34,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.function.Function;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

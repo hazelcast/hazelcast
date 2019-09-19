@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Provides a basic configuration for a split-brain aware data structure.

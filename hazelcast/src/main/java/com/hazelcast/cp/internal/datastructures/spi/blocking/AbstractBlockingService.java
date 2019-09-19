@@ -38,8 +38,8 @@ import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.collection.Long2ObjectHashMap;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,7 +56,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**

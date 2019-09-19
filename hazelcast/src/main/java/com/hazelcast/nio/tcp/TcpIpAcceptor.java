@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;

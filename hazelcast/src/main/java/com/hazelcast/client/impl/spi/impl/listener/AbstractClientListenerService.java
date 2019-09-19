@@ -37,12 +37,12 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
-import com.hazelcast.util.executor.StripedExecutor;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
+import com.hazelcast.internal.util.executor.StripedExecutor;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -61,7 +61,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public abstract class AbstractClientListenerService implements ClientListenerService, MetricsProvider, ConnectionListener {
 

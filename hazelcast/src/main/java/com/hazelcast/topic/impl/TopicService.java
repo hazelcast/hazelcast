@@ -33,9 +33,9 @@ import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
         StatisticsAwareService<LocalTopicStats> {

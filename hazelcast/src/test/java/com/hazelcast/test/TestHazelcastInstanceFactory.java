@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableCollection;
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 
 import java.util.Collection;
 

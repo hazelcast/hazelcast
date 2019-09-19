@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.internal.util.EmptyStatement;
 
 import java.util.Collection;
 import java.util.Map;
@@ -34,8 +34,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * A ProxyRegistry contains all proxies for a given service. For example, it contains all proxies for the IMap.

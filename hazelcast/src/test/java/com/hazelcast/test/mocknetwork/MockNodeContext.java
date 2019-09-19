@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class MockNodeContext implements NodeContext {
 

@@ -38,7 +38,7 @@ import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.Acquir
 import static com.hazelcast.cp.internal.datastructures.lock.RaftLockOwnershipState.NOT_LOCKED;
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
-import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static java.lang.Math.min;
 
 /**

@@ -29,11 +29,11 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Collection;
 
-import static com.hazelcast.util.SetUtil.singletonPartitionIdSet;
+import static com.hazelcast.internal.util.SetUtil.singletonPartitionIdSet;
 
 /**
  * Runs query operations in the calling thread (thus blocking it)

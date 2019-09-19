@@ -20,9 +20,9 @@ import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 /**
  * Default implementation of {@link CyclicBuffer} interface.

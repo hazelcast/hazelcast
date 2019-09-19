@@ -22,14 +22,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.util.IterationType;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 
 /**
  * Base class for iterating a partition with a {@link Predicate} and a {@link Projection}.

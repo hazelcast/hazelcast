@@ -39,8 +39,8 @@ import javax.transaction.xa.Xid;
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.Clock.currentTimeMillis;
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 public class ClientTransactionManagerServiceImpl implements ClientTransactionManagerService {
 

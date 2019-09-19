@@ -48,7 +48,7 @@ import static com.hazelcast.internal.yaml.YamlUtil.isMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.isOfSameType;
 import static com.hazelcast.internal.yaml.YamlUtil.isScalar;
 import static com.hazelcast.internal.yaml.YamlUtil.isSequence;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Contains logic for replacing system variables in the YAML file and importing YAML files from different locations.

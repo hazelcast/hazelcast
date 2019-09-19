@@ -46,7 +46,7 @@ import static com.hazelcast.nio.IOUtil.getPath;
 import static com.hazelcast.nio.IOUtil.readFullyOrNothing;
 import static com.hazelcast.nio.IOUtil.rename;
 import static com.hazelcast.nio.IOUtil.toFileName;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.nio.ByteBuffer.allocate;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;

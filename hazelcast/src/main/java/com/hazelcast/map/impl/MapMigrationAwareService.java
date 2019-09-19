@@ -37,7 +37,7 @@ import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
 import java.util.Iterator;

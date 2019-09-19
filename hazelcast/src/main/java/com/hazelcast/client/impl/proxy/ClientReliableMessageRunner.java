@@ -30,7 +30,7 @@ import com.hazelcast.version.MemberVersion;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
-import static com.hazelcast.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 /**
  * Client implementation of  {@link com.hazelcast.topic.impl.reliable.MessageRunner}

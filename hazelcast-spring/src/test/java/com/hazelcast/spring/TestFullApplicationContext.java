@@ -176,7 +176,7 @@ import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_R
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

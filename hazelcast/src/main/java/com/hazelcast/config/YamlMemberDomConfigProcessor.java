@@ -40,8 +40,8 @@ import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlMapping;
 import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlSequence;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
 
 class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {

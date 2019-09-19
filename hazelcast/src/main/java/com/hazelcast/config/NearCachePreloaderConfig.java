@@ -24,8 +24,8 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for storing and pre-loading Near Cache keys.

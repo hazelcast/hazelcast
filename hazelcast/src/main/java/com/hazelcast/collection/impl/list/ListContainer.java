@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.sort;
 
 public class ListContainer extends CollectionContainer {

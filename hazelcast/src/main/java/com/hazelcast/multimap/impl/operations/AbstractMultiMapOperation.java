@@ -33,7 +33,7 @@ import com.hazelcast.internal.services.ServiceNamespaceAware;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public abstract class AbstractMultiMapOperation extends Operation
         implements NamedOperation, PartitionAwareOperation, ServiceNamespaceAware, IdentifiedDataSerializable {

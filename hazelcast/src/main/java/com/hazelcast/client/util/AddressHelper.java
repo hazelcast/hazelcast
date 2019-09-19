@@ -19,8 +19,8 @@ package com.hazelcast.client.util;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.AddressUtil;
-import com.hazelcast.util.AddressUtil.AddressHolder;
+import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.internal.util.AddressUtil.AddressHolder;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.util.AddressUtil.getPossibleInetAddressesFor;
+import static com.hazelcast.internal.util.AddressUtil.getPossibleInetAddressesFor;
 
 /**
  * This is a client side utility class for working with addresses and cluster connections

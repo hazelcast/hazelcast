@@ -18,7 +18,7 @@ package classloading;
 
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.util.FilteringClassLoader;
+import com.hazelcast.internal.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

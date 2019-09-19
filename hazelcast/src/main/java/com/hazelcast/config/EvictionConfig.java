@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for eviction.

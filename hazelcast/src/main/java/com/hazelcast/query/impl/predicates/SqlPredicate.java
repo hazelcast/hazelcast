@@ -25,7 +25,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,13 +37,8 @@ import java.util.Set;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
-import static com.hazelcast.query.Predicates.greaterEqual;
-import static com.hazelcast.query.Predicates.greaterThan;
 import static com.hazelcast.query.Predicates.ilike;
-import static com.hazelcast.query.Predicates.lessEqual;
-import static com.hazelcast.query.Predicates.lessThan;
 import static com.hazelcast.query.Predicates.like;
-import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.regex;
 
 /**

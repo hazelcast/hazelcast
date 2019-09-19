@@ -37,9 +37,9 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.FutureUtil.ExceptionHandler;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,11 +58,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class ExecutorServiceProxy

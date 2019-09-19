@@ -34,7 +34,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 
 import java.util.Collection;
 import java.util.Set;
@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.singletonMap;
 
 class MockNetworkingService

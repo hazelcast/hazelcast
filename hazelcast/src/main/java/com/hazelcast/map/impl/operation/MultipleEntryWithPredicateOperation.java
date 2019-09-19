@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class MultipleEntryWithPredicateOperation extends MultipleEntryOperation {
 

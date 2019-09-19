@@ -37,7 +37,7 @@ import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_SEMAPHORE;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
-import static com.hazelcast.util.StringUtil.getterIntoProperty;
+import static com.hazelcast.internal.util.StringUtil.getterIntoProperty;
 import static java.lang.String.format;
 
 /**

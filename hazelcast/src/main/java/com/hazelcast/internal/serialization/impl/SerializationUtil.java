@@ -30,7 +30,7 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
@@ -50,7 +50,7 @@ import java.util.Map;
 import java.util.PrimitiveIterator;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public final class SerializationUtil {
 

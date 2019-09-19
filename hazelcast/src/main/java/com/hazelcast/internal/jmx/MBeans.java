@@ -46,7 +46,7 @@ import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 
 /**
  * A helper class which contains various types of {@link HazelcastMBean} factory methods and metadata.

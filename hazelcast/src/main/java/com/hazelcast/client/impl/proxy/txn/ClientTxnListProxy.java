@@ -24,9 +24,9 @@ import com.hazelcast.client.impl.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.transaction.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 
-import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 
 /**
  * Proxy implementation of {@link TransactionalList}.

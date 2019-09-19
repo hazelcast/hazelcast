@@ -19,9 +19,9 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.memory.GarbageCollectorStats;
 import com.hazelcast.monitor.LocalGCStats;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
-import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 public class LocalGCStatsImpl implements LocalGCStats {
 

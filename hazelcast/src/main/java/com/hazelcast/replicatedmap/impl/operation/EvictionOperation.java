@@ -18,7 +18,7 @@ package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
 

@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.util.CollectionUtil.getItemAtPositionOrNull;
+import static com.hazelcast.internal.util.CollectionUtil.getItemAtPositionOrNull;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 

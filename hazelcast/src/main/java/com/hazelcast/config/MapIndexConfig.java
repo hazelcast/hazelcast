@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Contains the configuration for an index in a map. This class should be used in combination

@@ -24,15 +24,15 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.MapUtil;
 
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class ReliableTopicService implements ManagedService, RemoteService, StatisticsAwareService {
 

@@ -27,15 +27,15 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.executor.CachedExecutorServiceDelegate;
-import com.hazelcast.util.executor.ExecutorType;
-import com.hazelcast.util.executor.LoggingScheduledExecutor;
-import com.hazelcast.util.executor.ManagedExecutorService;
-import com.hazelcast.util.executor.NamedThreadPoolExecutor;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.executor.CachedExecutorServiceDelegate;
+import com.hazelcast.internal.util.executor.ExecutorType;
+import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.NamedThreadPoolExecutor;
+import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +49,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})

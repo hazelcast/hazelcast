@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAllAccumulators;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 /**
  * Default implementation of {@link PublisherContext}.

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.usercodedeployment.impl.filter;
 
 import com.hazelcast.internal.util.filter.Filter;
-import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 /**
  * All classes match unless they are in the explicit blacklist

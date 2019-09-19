@@ -28,7 +28,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
+import static com.hazelcast.internal.util.ExceptionUtil.fixAsyncStackTrace;
 
 public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
 

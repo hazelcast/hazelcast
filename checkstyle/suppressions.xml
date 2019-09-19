@@ -31,14 +31,13 @@
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]logging[\\/]Log4j2Factory"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]util[\\/]HashUtil"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]util[\\/]QuickMath"/>
-    <suppress checks="Header" files="com[\\/]hazelcast[\\/]util[\\/]collection[\\/]"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]concurrent[\\/]"/>
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]collection[\\/]"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]cluster[\\/]fd[\\/]PhiAccrualFailureDetector"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]instance[\\/]impl[\\/]MobyNames"/>
 
     <!-- Exclude internal, implementation and template packages from JavaDoc checks -->
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="com[\\/]hazelcast[\\/]internal[\\/]"/>
-    <suppress checks="Javadoc(Package|Method|Type|Variable)" files="com[\\/]hazelcast[\\/]util[\\/]executor[\\/]"/>
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="[\\/]impl[\\/]"/>
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="[\\/]template[\\/]"/>
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]"/>
@@ -294,13 +293,10 @@
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]querycache[\\/]event[\\/]DefaultQueryCacheEventData"/>
 
-    <!-- PhoneHome -->
-    <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]util[\\/]PhoneHome"/>
-
     <!-- Adopted public domain code with different style -->
     <suppress
             checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPathComplexity|CyclomaticComplexity"
-            files="com[\\/]hazelcast[\\/]util[\\/]ConcurrentReferenceHashMap"/>
+            files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]ConcurrentReferenceHashMap"/>
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>

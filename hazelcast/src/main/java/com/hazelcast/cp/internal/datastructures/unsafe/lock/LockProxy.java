@@ -26,8 +26,8 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
 

@@ -16,8 +16,8 @@
 
 package com.hazelcast.test.starter;
 
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.FilteringClassLoader;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.FilteringClassLoader;
 
 import java.io.Closeable;
 import java.io.IOException;

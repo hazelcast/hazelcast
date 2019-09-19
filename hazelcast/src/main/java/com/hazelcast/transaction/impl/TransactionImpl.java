@@ -33,7 +33,7 @@ import com.hazelcast.transaction.impl.operations.CreateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.PurgeTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.ReplicateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,14 +55,14 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 import static com.hazelcast.transaction.impl.TransactionManagerServiceImpl.SERVICE_NAME;
-import static com.hazelcast.util.Clock.currentTimeMillis;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.ExceptionHandler;
-import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.util.FutureUtil.waitUntilAllRespondedWithDeadline;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
+import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.internal.util.FutureUtil.waitUntilAllRespondedWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @SuppressWarnings("checkstyle:methodcount")

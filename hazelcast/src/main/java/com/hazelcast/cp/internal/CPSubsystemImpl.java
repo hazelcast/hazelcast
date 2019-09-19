@@ -37,7 +37,7 @@ import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Provides access to CP subsystem utilities

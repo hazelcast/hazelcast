@@ -31,9 +31,9 @@ import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
-import static com.hazelcast.util.ThreadUtil.getThreadId;
-import static com.hazelcast.util.TimeUtil.timeInMsOrTimeIfNullUnit;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowInterrupted;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.TimeUtil.timeInMsOrTimeIfNullUnit;
 import static java.lang.Thread.currentThread;
 
 public final class LockProxySupport {

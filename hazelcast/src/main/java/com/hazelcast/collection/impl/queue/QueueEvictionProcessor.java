@@ -21,9 +21,9 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.ScheduledEntry;
-import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.Collection;
 

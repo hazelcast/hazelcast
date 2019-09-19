@@ -34,9 +34,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Wrapper for the Queue Store.

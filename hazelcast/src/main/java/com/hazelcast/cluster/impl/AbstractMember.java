@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public abstract class AbstractMember implements Member {
 

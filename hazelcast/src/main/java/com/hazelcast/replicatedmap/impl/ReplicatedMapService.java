@@ -53,8 +53,8 @@ import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,8 +69,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and

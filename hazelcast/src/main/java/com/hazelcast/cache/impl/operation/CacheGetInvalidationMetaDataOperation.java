@@ -39,8 +39,8 @@ import java.util.UUID;
 
 import static com.hazelcast.cache.impl.CacheDataSerializerHook.CACHE_INVALIDATION_METADATA;
 import static com.hazelcast.cache.impl.CacheDataSerializerHook.CACHE_INVALIDATION_METADATA_RESPONSE;
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 public class CacheGetInvalidationMetaDataOperation extends Operation implements IdentifiedDataSerializable, ReadonlyOperation {
 

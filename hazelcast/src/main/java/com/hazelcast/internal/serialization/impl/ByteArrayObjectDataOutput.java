@@ -21,7 +21,7 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import java.io.IOException;
 import java.nio.ByteOrder;

@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.config.WanPublisherState.PAUSED;
 import static com.hazelcast.config.WanPublisherState.REPLICATING;
 import static com.hazelcast.config.WanPublisherState.STOPPED;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

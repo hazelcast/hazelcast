@@ -20,7 +20,7 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.HashMap;
 import java.util.Map;

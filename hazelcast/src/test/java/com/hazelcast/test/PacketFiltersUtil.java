@@ -23,8 +23,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.tcp.FirewallingNetworkingService.FirewallingEndpointManager;
 import com.hazelcast.nio.tcp.OperationPacketFilter;
 import com.hazelcast.nio.tcp.PacketFilter;
-import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.collection.IntHashSet;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.collection.IntHashSet;
 
 import java.util.ArrayList;
 import java.util.Collection;

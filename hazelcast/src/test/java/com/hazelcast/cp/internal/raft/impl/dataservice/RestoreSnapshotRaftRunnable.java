@@ -20,7 +20,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.testing.RaftRunnable;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 public class RestoreSnapshotRaftRunnable implements RaftRunnable {
 

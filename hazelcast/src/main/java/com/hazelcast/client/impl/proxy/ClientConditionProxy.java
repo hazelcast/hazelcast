@@ -25,13 +25,13 @@ import com.hazelcast.client.impl.protocol.codec.ConditionSignalCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.lock.ICondition;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ThreadUtil;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Proxy implementation of {@link ICondition}.

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;

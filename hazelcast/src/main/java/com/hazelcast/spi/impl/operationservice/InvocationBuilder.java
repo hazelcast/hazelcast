@@ -24,7 +24,7 @@ import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
-import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
 
 /**
  * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.

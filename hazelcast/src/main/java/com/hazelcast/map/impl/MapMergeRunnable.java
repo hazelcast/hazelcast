@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
 import java.util.Iterator;

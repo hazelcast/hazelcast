@@ -21,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 
 import java.util.Set;
 
-import static com.hazelcast.util.AddressUtil.matchAnyInterface;
+import static com.hazelcast.internal.util.AddressUtil.matchAnyInterface;
 import static java.lang.String.format;
 
 /**

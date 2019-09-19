@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 
 /**
  * Provider for client's Message task factories;

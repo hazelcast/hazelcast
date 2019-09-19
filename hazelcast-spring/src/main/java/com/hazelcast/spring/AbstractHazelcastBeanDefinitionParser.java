@@ -52,7 +52,7 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static org.springframework.util.Assert.isTrue;

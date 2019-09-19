@@ -28,7 +28,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.wan.WanReplicationQueueFullException;
 import com.hazelcast.wan.impl.FullQueueWanReplication;
 import org.junit.After;

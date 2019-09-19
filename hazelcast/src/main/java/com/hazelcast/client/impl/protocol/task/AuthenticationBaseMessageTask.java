@@ -31,7 +31,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;

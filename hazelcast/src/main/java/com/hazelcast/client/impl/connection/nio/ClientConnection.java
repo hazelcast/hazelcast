@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-import static com.hazelcast.util.StringUtil.timeToStringFriendly;
+import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
 /**
  * Client implementation of {@link Connection}.

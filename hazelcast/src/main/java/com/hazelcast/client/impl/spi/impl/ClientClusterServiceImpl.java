@@ -38,8 +38,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.UuidUtil;
 
 import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
@@ -55,7 +55,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * The {@link ClientClusterService} implementation.

@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.bytesToString;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class MemcacheEntry implements IdentifiedDataSerializable {

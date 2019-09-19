@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 /**
  * Constructor which is used to construct all parts/sides of a {@code QueryCache} system on nodes or on clients.

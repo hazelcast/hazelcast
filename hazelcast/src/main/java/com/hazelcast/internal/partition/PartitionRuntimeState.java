@@ -32,7 +32,7 @@ import java.util.Map;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 

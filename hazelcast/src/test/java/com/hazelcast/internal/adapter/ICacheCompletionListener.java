@@ -21,7 +21,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import javax.cache.integration.CompletionListener;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class ICacheCompletionListener implements CompletionListener {
 

@@ -27,12 +27,12 @@ import com.hazelcast.replicatedmap.impl.operation.PutAllOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.security.Permission;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class ReplicatedMapPutAllMessageTask
         extends AbstractAllPartitionsMessageTask<ReplicatedMapPutAllCodec.RequestParameters> {

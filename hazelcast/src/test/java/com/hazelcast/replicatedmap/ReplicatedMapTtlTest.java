@@ -24,7 +24,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

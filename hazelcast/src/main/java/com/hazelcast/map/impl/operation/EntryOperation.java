@@ -40,8 +40,8 @@ import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.UuidUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -53,7 +53,7 @@ import static com.hazelcast.spi.impl.executionservice.ExecutionService.OFFLOADAB
 import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

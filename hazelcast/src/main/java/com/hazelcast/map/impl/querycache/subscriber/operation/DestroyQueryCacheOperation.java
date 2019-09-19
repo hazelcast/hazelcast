@@ -29,7 +29,7 @@ import com.hazelcast.map.impl.querycache.publisher.QueryCacheListenerRegistry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.IOException;
 

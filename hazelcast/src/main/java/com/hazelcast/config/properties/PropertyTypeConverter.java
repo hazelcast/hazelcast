@@ -17,7 +17,7 @@
 package com.hazelcast.config.properties;
 
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 
 /**
  * This enum class contains basic {@link TypeConverter} implementations to

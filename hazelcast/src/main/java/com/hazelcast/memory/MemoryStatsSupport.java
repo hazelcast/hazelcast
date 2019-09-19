@@ -16,7 +16,7 @@
 
 package com.hazelcast.memory;
 
-import static com.hazelcast.util.OperatingSystemMXBeanSupport.readLongAttribute;
+import static com.hazelcast.internal.util.OperatingSystemMXBeanSupport.readLongAttribute;
 
 /**
  * This class provides heap usage statistics

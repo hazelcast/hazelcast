@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.nio.IOUtil.toByteArray;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public class ClientUserCodeDeploymentService {
 

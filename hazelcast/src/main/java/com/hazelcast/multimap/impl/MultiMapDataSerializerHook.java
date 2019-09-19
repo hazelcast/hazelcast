@@ -59,7 +59,7 @@ import com.hazelcast.multimap.impl.txn.TxnRollbackBackupOperation;
 import com.hazelcast.multimap.impl.txn.TxnRollbackOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MULTIMAP_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MULTIMAP_DS_FACTORY_ID;

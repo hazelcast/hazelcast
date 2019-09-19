@@ -40,8 +40,8 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.StripedExecutor;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
@@ -65,10 +65,10 @@ import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**

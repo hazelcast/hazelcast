@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Topic proxy used when global ordering is disabled (nodes get

@@ -21,7 +21,7 @@ import com.hazelcast.monitor.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.util.ConcurrencyUtil.setMax;
+import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 
 /**
  * {@link CacheStatistics} implementation for {@link com.hazelcast.cache.ICache}.

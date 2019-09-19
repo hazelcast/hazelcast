@@ -53,7 +53,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.MutableInteger;
+import com.hazelcast.internal.util.MutableInteger;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -79,8 +79,8 @@ import static com.hazelcast.spi.properties.GroupProperty.HOT_RESTART_FREE_NATIVE
 import static com.hazelcast.spi.properties.GroupProperty.HTTP_HEALTHCHECK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.MEMCACHE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.REST_ENABLED;
-import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 
 /**

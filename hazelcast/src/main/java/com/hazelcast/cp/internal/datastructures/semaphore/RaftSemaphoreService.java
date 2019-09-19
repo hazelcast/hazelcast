@@ -33,7 +33,7 @@ import java.util.UUID;
 
 import static com.hazelcast.cp.internal.RaftService.getObjectNameForProxy;
 import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Contains Raft-based semaphore instances

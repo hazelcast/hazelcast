@@ -56,10 +56,10 @@ import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.MutableInteger;
-import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.collection.PartitionIdSet;
-import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
+import com.hazelcast.internal.util.MutableInteger;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 
 import java.util.ArrayList;
 import java.util.Arrays;

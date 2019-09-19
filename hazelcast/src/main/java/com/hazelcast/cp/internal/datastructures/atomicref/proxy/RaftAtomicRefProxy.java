@@ -39,7 +39,7 @@ import static com.hazelcast.cp.internal.datastructures.atomicref.operation.Apply
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.RETURN_NEW_VALUE;
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.RETURN_OLD_VALUE;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Server-side Raft-based proxy implementation of {@link IAtomicReference}

@@ -22,7 +22,7 @@ import com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure
 import com.hazelcast.query.impl.predicates.AbstractPredicate;
 import com.hazelcast.query.impl.predicates.PredicateTestUtils;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
