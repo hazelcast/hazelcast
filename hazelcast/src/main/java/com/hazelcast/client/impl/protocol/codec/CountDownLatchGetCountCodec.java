@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current count.
  */
-@Generated({"2ecb7337d262b5e1e15d9515700956f4"})
+@Generated({"e9a2f35040122171ab3d14ca66c1d48a"})
 public final class CountDownLatchGetCountCodec {
     //hex: 0x0C0400
     public static final int REQUEST_MESSAGE_TYPE = 787456;
