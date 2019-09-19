@@ -16,18 +16,19 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.config.WANQueueFullBehavior;
+import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * A {@link com.hazelcast.core.HazelcastException} that is thrown when the wan replication queues are full
+ * A {@link com.hazelcast.core.HazelcastException} that
+ * is thrown when the wan replication queues are full
  *
  * This exception is only thrown when WAN is configured with
- * {@link WANQueueFullBehavior#THROW_EXCEPTION}
+ * {@link WanQueueFullBehavior#THROW_EXCEPTION}
  */
-public class WANReplicationQueueFullException extends HazelcastException {
+public class WanReplicationQueueFullException extends HazelcastException {
 
-    public WANReplicationQueueFullException(String message) {
+    public WanReplicationQueueFullException(String message) {
         super(message);
     }
 }

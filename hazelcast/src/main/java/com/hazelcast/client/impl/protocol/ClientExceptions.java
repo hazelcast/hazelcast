@@ -70,7 +70,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.util.AddressUtil;
-import com.hazelcast.wan.WANReplicationQueueFullException;
+import com.hazelcast.wan.WanReplicationQueueFullException;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
@@ -184,7 +184,7 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.NO_DATA_MEMBER, NoDataMemberInClusterException.class);
         register(ClientProtocolErrorCodes.REPLICATED_MAP_CANT_BE_CREATED, ReplicatedMapCantBeCreatedOnLiteMemberException.class);
         register(ClientProtocolErrorCodes.MAX_MESSAGE_SIZE_EXCEEDED, MaxMessageSizeExceeded.class);
-        register(ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL, WANReplicationQueueFullException.class);
+        register(ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL, WanReplicationQueueFullException.class);
 
         register(ClientProtocolErrorCodes.ASSERTION_ERROR, AssertionError.class);
         register(ClientProtocolErrorCodes.OUT_OF_MEMORY_ERROR, OutOfMemoryError.class);

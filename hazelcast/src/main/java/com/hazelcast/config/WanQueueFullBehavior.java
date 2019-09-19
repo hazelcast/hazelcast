@@ -17,34 +17,38 @@
 package com.hazelcast.config;
 
 /**
- * Determines the behavior of WAN replication impl. In case of WAN event queues are full.
+ * Determines the behavior of WAN replication
+ * impl. In case of WAN event queues are full.
  */
-public enum WANQueueFullBehavior {
+public enum WanQueueFullBehavior {
 
     /**
-     * Instruct WAN replication implementation to drop new events when WAN event queues are full.
+     * Instruct WAN replication implementation to
+     * drop new events when WAN event queues are full.
      */
     DISCARD_AFTER_MUTATION(0),
 
     /**
-     * Instruct WAN replication implementation to throw an exception and doesn't allow further processing.
+     * Instruct WAN replication implementation to throw
+     * an exception and doesn't allow further processing.
      */
     THROW_EXCEPTION(1),
 
     /**
-     * Similar to {@link #THROW_EXCEPTION} but only throws exception when WAN replication is active.
-     * Discards the new events if WAN replication is stopped.
+     * Similar to {@link #THROW_EXCEPTION} but only throws
+     * exception when WAN replication is active. Discards
+     * the new events if WAN replication is stopped.
      */
     THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE(2);
 
     private final int id;
 
-    WANQueueFullBehavior(int id) {
+    WanQueueFullBehavior(int id) {
         this.id = id;
     }
 
     /**
-     * Gets the ID for the given {@link WANQueueFullBehavior}.
+     * Gets the ID for the given {@link WanQueueFullBehavior}.
      * <p>
      * The reason this ID is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
      * reordering.
@@ -60,8 +64,8 @@ public enum WANQueueFullBehavior {
      *
      * @return the WANQueueFullBehavior as an enum
      */
-    public static WANQueueFullBehavior getByType(final int id) {
-        for (WANQueueFullBehavior behavior : values()) {
+    public static WanQueueFullBehavior getByType(final int id) {
+        for (WanQueueFullBehavior behavior : values()) {
             if (behavior.id == id) {
                 return behavior;
             }

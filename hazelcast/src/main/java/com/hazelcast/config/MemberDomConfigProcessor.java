@@ -564,7 +564,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("response-timeout-millis".equals(targetChildName)) {
                 config.setResponseTimeoutMillis(getIntegerValue("response-timeout-millis", getTextContent(targetChild)));
             } else if ("queue-full-behavior".equals(targetChildName)) {
-                config.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(getTextContent(targetChild))));
+                config.setQueueFullBehavior(WanQueueFullBehavior.valueOf(upperCaseInternal(getTextContent(targetChild))));
             } else if ("acknowledge-type".equals(targetChildName)) {
                 config.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(getTextContent(targetChild))));
             } else if ("discovery-period-seconds".equals(targetChildName)) {

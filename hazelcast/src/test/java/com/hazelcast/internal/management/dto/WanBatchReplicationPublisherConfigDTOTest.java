@@ -23,7 +23,7 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
-import com.hazelcast.config.WANQueueFullBehavior;
+import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanPublisherState;
@@ -63,7 +63,7 @@ public class WanBatchReplicationPublisherConfigDTOTest {
                 .setBatchSize(500)
                 .setBatchMaxDelayMillis(1000)
                 .setResponseTimeoutMillis(60000)
-                .setQueueFullBehavior(WANQueueFullBehavior.THROW_EXCEPTION)
+                .setQueueFullBehavior(WanQueueFullBehavior.THROW_EXCEPTION)
                 .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
                 .setDiscoveryPeriodSeconds(20)
                 .setMaxTargetEndpoints(100)

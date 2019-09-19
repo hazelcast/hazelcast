@@ -55,7 +55,7 @@ public class WanBatchReplicationPublisherConfigTest {
                 .setBatchSize(500)
                 .setBatchMaxDelayMillis(1000)
                 .setResponseTimeoutMillis(60000)
-                .setQueueFullBehavior(WANQueueFullBehavior.THROW_EXCEPTION)
+                .setQueueFullBehavior(WanQueueFullBehavior.THROW_EXCEPTION)
                 .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
                 .setDiscoveryPeriodSeconds(20)
                 .setMaxTargetEndpoints(100)
