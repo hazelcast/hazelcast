@@ -94,7 +94,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  cast.instance,com.hazelcast.internal.serialization,com.hazelcast.spi.
  exception,com.hazelcast.spi.impl";version="3.8.0.SNAPSHOT",com.hazelc
  ast.map.listener;uses:="com.hazelcast.core,com.hazelcast.map";version
- ="3.8.0.SNAPSHOT",com.hazelcast.internal.util;uses:="com.hazelcast.ut
+ ="3.8.0.SNAPSHOT",com.hazelcast.internal.util;uses:="com.hazelcast.internal.ut
  il,com.hazelcast.nio";version="3.8.0.SNAPSHOT",com.hazelcast.internal
  .networking.nonblocking.iobalancer;uses:="com.hazelcast.internal.netw
  orking.nonblocking,com.hazelcast.logging,com.hazelcast.internal.util.
@@ -105,7 +105,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  hazelcast.logging,com.hazelcast.core,com.hazelcast.instance,com.hazel
  cast.nio.serialization";version="3.8.0.SNAPSHOT",com.hazelcast.intern
  al.memory.impl;uses:="com.hazelcast.internal.memory,sun.misc,com.haze
- lcast.util,com.hazelcast.logging,com.hazelcast.nio";version="3.8.0.SN
+ lcast.internal.util,com.hazelcast.logging,com.hazelcast.nio";version="3.8.0.SN
  APSHOT",com.hazelcast.security.permission;uses:="com.hazelcast.concur
  rent.idgen,com.hazelcast.cp.internal.datastructures.unsafe.concurrent.countdownlatch,com.hazelcast.repl
  icatedmap.impl,com.hazelcast.cp.internal.datastructures.unsafe.concurrent.atomicreference,com.hazelcast
@@ -191,7 +191,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  st.spi,com.hazelcast.spi.impl.executionservice,com.hazelcast.schedule
  dexecutor,com.hazelcast.nio.serialization,com.hazelcast.nio,com.hazel
  cast.logging,com.hazelcast.scheduledexecutor.impl.operations,com.haze
- lcast.util,com.hazelcast.internal.serialization.impl,com.hazelcast.in
+ lcast.internal.util,com.hazelcast.internal.serialization.impl,com.hazelcast.in
  ternal.serialization,com.hazelcast.config,com.hazelcast.mapreduce.imp
  l,com.hazelcast.internal.cluster,com.hazelcast.partition,com.hazelcas
  t.spi.impl.operationservice,com.hazelcast.instance,com.hazelcast.spi.
@@ -224,7 +224,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  st.nio,com.hazelcast.cp.internal.datastructures.unsafe.concurrent.countdownlatch.operations,com.hazelca
  st.internal.serialization.impl,com.hazelcast.internal.serialization,c
  om.hazelcast.core,com.hazelcast.spi.partition,com.hazelcast.spi,com.h
- azelcast.util,com.hazelcast.partition.strategy";version="3.8.0.SNAPSH
+ azelcast.internal.util,com.hazelcast.partition.strategy";version="3.8.0.SNAPSH
  OT",com.hazelcast.map.impl.querycache.subscriber.operation;uses:="com
  .hazelcast.map.impl,com.hazelcast.map.impl.querycache.accumulator,com
  .hazelcast.map.impl.querycache.publisher,com.hazelcast.internal.util,com.hazel
@@ -239,12 +239,12 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  cast.map.impl.querycache.event.sequence,com.hazelcast.map.impl.queryc
  ache,com.hazelcast.map.impl.querycache.event,com.hazelcast.logging,co
  m.hazelcast.nio.serialization,com.hazelcast.core,com.hazelcast.spi,co
- m.hazelcast.util,com.hazelcast.internal.cluster,com.hazelcast.interna
+ m.hazelcast.internal.util,com.hazelcast.internal.cluster,com.hazelcast.interna
  l.cluster.impl,com.hazelcast.map.impl.query,com.hazelcast.query,com.h
  azelcast.nio";version="3.8.0.SNAPSHOT",com.hazelcast.spi.impl.eventse
  rvice;uses:="com.hazelcast.spi,com.hazelcast.spi.impl";version="3.8.0
  .SNAPSHOT",com.hazelcast.internal.util.function;version="3.8.0.SNAPSHOT",com.h
- azelcast.util;uses:="com.hazelcast.nio,com.hazelcast.nio.serializatio
+ azelcast.internal.util;uses:="com.hazelcast.nio,com.hazelcast.nio.serializatio
  n,com.hazelcast.spi.serialization,com.hazelcast.core,com.hazelcast.in
  stance,com.hazelcast.internal.usercodedeployment.impl,com.hazelc
  ast.logging,com.hazelcast.transaction,com.hazelcast.spi.annotation,co
@@ -271,7 +271,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  ast.nio,com.hazelcast.spi.impl,com.hazelcast.instance,com.hazelcast.i
  nternal.serialization,com.hazelcast.security.permission,com.hazelcast
  .spi";version="3.8.0.SNAPSHOT",com.hazelcast.memory;uses:="com.hazelc
- ast.util";version="3.8.0.SNAPSHOT",com.hazelcast.internal.metrics;use
+ ast.internal.util";version="3.8.0.SNAPSHOT",com.hazelcast.internal.metrics;use
  s:="com.hazelcast.internal.metrics.renderers";version="3.8.0.SNAPSHOT
  ",com.hazelcast.internal.util.sort;uses:="com.hazelcast.internal.memo
  ry,com.hazelcast.nio";version="3.8.0.SNAPSHOT",com.hazelcast.map.impl
@@ -307,10 +307,10 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  ersion="3.8.0.SNAPSHOT",com.hazelcast.nio.serialization.impl;uses:="c
  om.hazelcast.nio.serialization,com.hazelcast.nio";version="3.8.0.SNAP
  SHOT",com.hazelcast.internal.config;uses:="com.hazelcast.logging,com.
- hazelcast.util,com.hazelcast.config,com.hazelcast.internal.eviction,c
+ hazelcast.internal.util,com.hazelcast.config,com.hazelcast.internal.eviction,c
  om.hazelcast.instance";version="3.8.0.SNAPSHOT",com.hazelcast.mapredu
  ce.impl;uses:="com.hazelcast.mapreduce,com.hazelcast.internal.util,com.hazelca
- st.util.executor,com.hazelcast.spi,com.hazelcast.mapreduce.impl.task,
+ st.internal.util.executor,com.hazelcast.spi,com.hazelcast.mapreduce.impl.task,
  com.hazelcast.config,com.hazelcast.nio.serialization,com.hazelcast.ni
  o,com.hazelcast.core,com.hazelcast.internal.partition,com.hazelcast.s
  pi.serialization,com.hazelcast.nio.serialization.impl,com.hazelcast.c
@@ -330,7 +330,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  s:="com.hazelcast.logging,com.hazelcast.internal.util.counters,com.ha
  zelcast.internal.metrics,com.hazelcast.internal.networking,com.hazelc
  ast.internal.networking.nonblocking.iobalancer,com.hazelcast.core,com
- .hazelcast.util,com.hazelcast.spi.impl.operationexecutor,com.hazelcas
+ .hazelcast.internal.util,com.hazelcast.spi.impl.operationexecutor,com.hazelcas
  t.instance,com.hazelcast.nio";version="3.8.0.SNAPSHOT",com.hazelcast.
  map.impl.recordstore;uses:="com.hazelcast.map.impl.record,com.hazelca
  st.core,com.hazelcast.nio.serialization,com.hazelcast.spi,com.hazelca
@@ -358,7 +358,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  serialization,com.hazelcast.internal.eviction";version="3.8.0.SNAPSHO
  T",com.hazelcast.spi.impl.executionservice.impl;uses:="com.hazelcast.
  logging,com.hazelcast.spi,com.hazelcast.internal.util,com.hazelcast.spi.impl,c
- om.hazelcast.util.executor,com.hazelcast.config,com.hazelcast.core,co
+ om.hazelcast.internal.util.executor,com.hazelcast.config,com.hazelcast.core,co
  m.hazelcast.spi.impl.executionservice,com.hazelcast.internal.metrics,
  com.hazelcast.instance";version="3.8.0.SNAPSHOT",com.hazelcast.mapred
  uce;uses:="com.hazelcast.nio.serialization.impl,com.hazelcast.core,co
@@ -394,13 +394,13 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  .hazelcast.internal.serialization.impl.bufferpool;uses:="com.hazelcas
  t.nio.serialization,com.hazelcast.nio,com.hazelcast.internal.serializ
  ation,com.hazelcast.internal.serialization.impl,com.hazelcast.core,co
- m.hazelcast.util";version="3.8.0.SNAPSHOT",com.hazelcast.spi.impl.ser
+ m.hazelcast.internal.util";version="3.8.0.SNAPSHOT",com.hazelcast.spi.impl.ser
  vicemanager;uses:="com.hazelcast.spi";version="3.8.0.SNAPSHOT",com.ha
  zelcast.topic;uses:="com.hazelcast.core";version="3.8.0.SNAPSHOT",com
  .hazelcast.transaction.impl.xa;uses:="javax.transaction.xa,com.hazelc
  ast.nio.serialization,com.hazelcast.nio,com.hazelcast.nio.serializati
  on.impl,com.hazelcast.transaction,com.hazelcast.transaction.impl,com.
- hazelcast.logging,com.hazelcast.core,com.hazelcast.spi,com.hazelcast.
+ hazelcast.logging,com.hazelcast.core,com.hazelcast.spi,com.hazelcast.internal.
  util,com.hazelcast.config,com.hazelcast.spi.exception,com.hazelcast.s
  pi.partition,com.hazelcast.transaction.impl.xa.operations,com.hazelca
  st.internal.cluster,com.hazelcast.spi.impl,com.hazelcast.internal.par
@@ -408,12 +408,12 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  com.hazelcast.spi.impl.proxyservice,com.hazelcast.map.impl,com.hazelc
  ast.collection.impl.queue,com.hazelcast.collection.impl.list";version
  ="3.8.0.SNAPSHOT",com.hazelcast.client.impl.protocol.util;uses:="com.
- hazelcast.util,com.hazelcast.client.impl.protocol,com.hazelcast.inter
- nal.util.counters,com.hazelcast.internal.networking,com.hazelcast.uti
+ hazelcast.internal.util,com.hazelcast.client.impl.protocol,com.hazelcast.inter
+ nal.util.counters,com.hazelcast.internal.networking,com.hazelcast.internal.uti
  l.collection,com.hazelcast.nio.serialization,com.hazelcast.internal.s
  erialization.impl,com.hazelcast.nio,com.hazelcast.internal.memory";ve
  rsion="3.8.0.SNAPSHOT",com.hazelcast.internal.eviction;uses:="com.haz
- elcast.util,com.hazelcast.nio.serialization.impl,com.hazelcast.intern
+ elcast.internal.util,com.hazelcast.nio.serialization.impl,com.hazelcast.intern
  al.eviction.impl.evaluator,com.hazelcast.internal.eviction.impl.compa
  rator,com.hazelcast.nio,com.hazelcast.internal.eviction.impl.strategy
  .sampling";version="3.8.0.SNAPSHOT",com.hazelcast.spi.impl;uses:="com
@@ -463,10 +463,10 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  lcast.spi,com.hazelcast.nio,com.hazelcast.core";version="3.8.0.SNAPSH
  OT",com.hazelcast.internal.serialization.impl;uses:="com.hazelcast.lo
  gging,com.hazelcast.core,com.hazelcast.nio.serialization,com.hazelcas
- t.util,com.hazelcast.internal.usercodedeployment.impl,com.hazelc
+ t.internal.util,com.hazelcast.internal.usercodedeployment.impl,com.hazelc
  ast.internal.serialization.impl.bufferpool,com.hazelcast.nio,com.haze
  lcast.internal.serialization,com.hazelcast.nio.serialization.impl,com
- .hazelcast.util.collection,com.hazelcast.query.impl.getters,com.hazel
+ .hazelcast.internal.util.collection,com.hazelcast.query.impl.getters,com.hazel
  cast.query.extractor,com.hazelcast.spi.properties,com.hazelcast.confi
  g,com.hazelcast.spi.serialization,com.hazelcast.internal.memory,com.h
  azelcast.instance,javax.annotation";version="3.8.0.SNAPSHOT",com.haze
@@ -505,24 +505,24 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  tion.impl,com.hazelcast.query,com.hazelcast.query.impl.getters,com.ha
  zelcast.core,com.hazelcast.nio.serialization,com.hazelcast.internal.s
  erialization.impl,com.hazelcast.nio,com.hazelcast.internal.util.collection,com
- .hazelcast.util,com.hazelcast.internal.serialization,com.hazelcast.sp
+ .hazelcast.internal.util,com.hazelcast.internal.serialization,com.hazelcast.sp
  i.properties";version="3.8.0.SNAPSHOT",com.hazelcast.cache.impl.merge
  .entry;uses:="com.hazelcast.cache,com.hazelcast.nio.serialization,com
  .hazelcast.cache.impl,com.hazelcast.nio,com.hazelcast.spi.serializati
  on";version="3.8.0.SNAPSHOT",com.hazelcast.spi.discovery.multicast;us
  es:="com.hazelcast.config.properties,com.hazelcast.logging,com.hazelc
  ast.spi.discovery.multicast.impl,com.hazelcast.spi.discovery,com.haze
- lcast.util,com.hazelcast.spi.partitiongroup,com.hazelcast.nio,com.haz
+ lcast.internal.util,com.hazelcast.spi.partitiongroup,com.hazelcast.nio,com.haz
  elcast.core";version="3.8.0.SNAPSHOT",com.hazelcast.console;uses:="co
  m.hazelcast.monitor,com.hazelcast.core,com.hazelcast.memory,com.hazel
- cast.util,com.hazelcast.config,com.hazelcast.nio.serialization,com.ha
+ cast.internal.util,com.hazelcast.config,com.hazelcast.nio.serialization,com.ha
  zelcast.nio,com.hazelcast.nio.serialization.impl";version="3.8.0.SNAP
  SHOT",com.hazelcast.nio.ascii;uses:="com.hazelcast.logging,com.hazelc
  ast.nio.tcp,com.hazelcast.internal.ascii,com.hazelcast.internal.ascii
  .rest,com.hazelcast.internal.util,com.hazelcast.spi.annotation,com.hazelcast.i
  nternal.networking,com.hazelcast.nio,com.hazelcast.internal.ascii.mem
  cache";version="3.8.0.SNAPSHOT",com.hazelcast.internal.util.executor;uses:="co
- m.hazelcast.util,com.hazelcast.spi,com.hazelcast.logging,com.hazelcas
+ m.hazelcast.internal.util,com.hazelcast.spi,com.hazelcast.logging,com.hazelcas
  t.core,com.hazelcast.spi.impl,com.hazelcast.nio.serialization,com.haz
  elcast.spi.serialization,com.hazelcast.internal.serialization,com.haz
  elcast.instance,com.hazelcast.internal.metrics,com.hazelcast.internal
@@ -533,13 +533,13 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  om.hazelcast.nio,com.hazelcast.instance,com.hazelcast.security.permis
  sion,com.hazelcast.core,com.hazelcast.nio.serialization,com.hazelcast
  .internal.serialization,com.hazelcast.spi.impl";version="3.8.0.SNAPSH
- OT",com.hazelcast.internal.util.hashslot.impl;uses:="com.hazelcast.ut
+ OT",com.hazelcast.internal.util.hashslot.impl;uses:="com.hazelcast.internal.ut
  il,com.hazelcast.internal.memory,com.hazelcast.nio,com.hazelcast.inte
  rnal.util.hashslot";version="3.8.0.SNAPSHOT",com.hazelcast.replicated
  map.impl.record;uses:="com.hazelcast.replicatedmap.impl,com.hazelcast
  .monitor.impl,com.hazelcast.spi.partition,com.hazelcast.spi,com.hazel
- cast.util.scheduler,com.hazelcast.spi.serialization,com.hazelcast.con
- fig,com.hazelcast.core,com.hazelcast.nio.serialization,com.hazelcast.
+ cast.internal.util.scheduler,com.hazelcast.spi.serialization,com.hazelcast.con
+ fig,com.hazelcast.core,com.hazelcast.nio.serialization,com.hazelcast.internal.
  util,com.hazelcast.replicatedmap.merge,com.hazelcast.replicatedmap.im
  pl.operation,com.hazelcast.cluster.memberselector,com.hazelcast.inter
  nal.cluster,com.hazelcast.nio,com.hazelcast.query.impl,com.hazelcast.
@@ -554,7 +554,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  s,com.hazelcast.internal.partition,com.hazelcast.internal.serializati
  on.impl,com.hazelcast.internal.serialization,com.hazelcast.spi.impl.e
  xecutionservice,com.hazelcast.security,javax.security.auth.login,com.
- hazelcast.util.executor,com.hazelcast.spi.impl.eventservice,com.hazel
+ hazelcast.internal.util.executor,com.hazelcast.spi.impl.eventservice,com.hazel
  cast.transaction.impl,com.hazelcast.transaction,com.hazelcast.interna
  l.partition.impl,com.hazelcast.spi.exception,com.hazelcast.internal.u
  til,com.hazelcast.cluster.impl,com.hazelcast.spi.discovery.integratio
@@ -604,7 +604,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  io";version="3.8.0.SNAPSHOT",com.hazelcast.cache.impl.record;uses:="c
  om.hazelcast.cache.impl,com.hazelcast.nio.serialization,com.hazelcast
  .nio,com.hazelcast.internal.eviction,com.hazelcast.config,com.hazelca
- st.util,com.hazelcast.spi.serialization,com.hazelcast.cache,com.hazel
+ st.internal.util,com.hazelcast.spi.serialization,com.hazelcast.cache,com.hazel
  cast.internal.eviction.impl.strategy.sampling";version="3.8.0.SNAPSHO
  T",com.hazelcast.internal.eviction.impl.strategy.sampling;uses:="com.
  hazelcast.internal.eviction,com.hazelcast.internal.eviction.impl.stra
@@ -665,7 +665,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  PSHOT",com.hazelcast.instance;uses:="com.hazelcast.cluster,com.hazelc
  ast.logging,com.hazelcast.core,com.hazelcast.nio.serialization.impl,c
  om.hazelcast.spi.annotation,com.hazelcast.nio,com.hazelcast.version,c
- om.hazelcast.util,com.hazelcast.cluster.impl,com.hazelcast.spi.proper
+ om.hazelcast.internal.util,com.hazelcast.cluster.impl,com.hazelcast.spi.proper
  ties,com.hazelcast.config,com.hazelcast.nio.tcp,com.hazelcast.interna
  l.networking.spinning,com.hazelcast.internal.metrics,com.hazelcast.in
  ternal.networking,com.hazelcast.internal.networking.nio,com.h
@@ -725,7 +725,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  l,com.hazelcast.nio,com.hazelcast.nio.serialization";version="3.8.0.S
  NAPSHOT",com.hazelcast.spi.discovery.impl;uses:="com.hazelcast.loggin
  g,com.hazelcast.config.properties,com.hazelcast.core,com.hazelcast.sp
- i.discovery.integration,com.hazelcast.spi.discovery,com.hazelcast.uti
+ i.discovery.integration,com.hazelcast.spi.discovery,com.hazelcast.internal.uti
  l,com.hazelcast.config";version="3.8.0.SNAPSHOT",com.hazelcast.client
  .impl.protocol.task.transactionallist;uses:="com.hazelcast.core,com.h
  azelcast.nio.serialization,com.hazelcast.client,com.hazelcast.transac
@@ -751,7 +751,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  n,com.hazelcast.cp.internal.datastructures.unsafe.concurrent.lock,com.hazelcast.monitor.impl";version="
  3.8.0.SNAPSHOT",com.hazelcast.executor.impl;uses:="com.hazelcast.internal.util
  .executor,com.hazelcast.spi,com.hazelcast.executor.impl.operations,co
- m.hazelcast.util,com.hazelcast.spi.serialization,com.hazelcast.nio,co
+ m.hazelcast.internal.util,com.hazelcast.spi.serialization,com.hazelcast.nio,co
  m.hazelcast.monitor.impl,com.hazelcast.logging,com.hazelcast.core,com
  .hazelcast.config,com.hazelcast.monitor,com.hazelcast.nio.serializati
  on,com.hazelcast.internal.serialization.impl,com.hazelcast.internal.s
@@ -817,9 +817,9 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  regation,com.hazelcast.map.impl,com.hazelcast.nio.serialization,com.h
  azelcast.nio,com.hazelcast.spi.serialization,com.hazelcast.query,com.
  hazelcast.spi.exception,com.hazelcast.logging,com.hazelcast.spi,com.h
- azelcast.util,com.hazelcast.spi.partition,com.hazelcast.map,com.hazel
+ azelcast.internal.util,com.hazelcast.spi.partition,com.hazelcast.map,com.hazel
  cast.internal.cluster,com.hazelcast.internal.serialization,com.hazelc
- ast.util.executor,com.hazelcast.config,com.hazelcast.query.impl.gette
+ ast.internal.util.executor,com.hazelcast.config,com.hazelcast.query.impl.gette
  rs,com.hazelcast.map.impl.record,com.hazelcast.map.impl.recordstore,c
  om.hazelcast.projection,com.hazelcast.core,com.hazelcast.cluster.memb
  erselector,com.hazelcast.map.impl.operation,com.hazelcast.spi.propert
@@ -857,8 +857,8 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  impl.client,com.hazelcast.internal.partition,com.hazelcast.security,c
  om.hazelcast.client.impl,com.hazelcast.internal.util,com.hazelcast.spi.excepti
  on,javax.security.auth,com.hazelcast.internal.serialization,com.hazel
- cast.util.function,com.hazelcast.spi.impl.operationexecutor.impl,com.
- hazelcast.util.executor,com.hazelcast.spi.impl.executionservice,com.h
+ cast.internal.util.function,com.hazelcast.spi.impl.operationexecutor.impl,com.
+ hazelcast.internal.util.executor,com.hazelcast.spi.impl.executionservice,com.h
  azelcast.spi.impl.proxyservice.impl,com.hazelcast.internal.cluster,co
  m.hazelcast.cluster,com.hazelcast.internal.cluster.impl,com.hazelcast
  .partition,com.hazelcast.spi.partition,com.hazelcast.config,javax.sec
@@ -875,12 +875,12 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  8.0.SNAPSHOT",com.hazelcast.spi.impl.operationservice.impl;uses:="com
  .hazelcast.logging,com.hazelcast.internal.util.concurrent,com.hazelca
  st.spi.impl.operationexecutor,com.hazelcast.spi.properties,com.hazelc
- ast.util,com.hazelcast.internal.util.concurrent,com.hazelcast.nio,com.hazelcas
+ ast.internal.util,com.hazelcast.internal.util.concurrent,com.hazelcast.nio,com.hazelcas
  t.spi.impl,com.hazelcast.instance,com.hazelcast.internal.metrics,com.
  hazelcast.spi,com.hazelcast.internal.util,com.hazelcast.internal.util
  .counters,com.hazelcast.internal.partition,com.hazelcast.spi.impl.ope
  rationservice.impl.responses,com.hazelcast.internal.serialization,com
- .hazelcast.util.executor,com.hazelcast.spi.impl.executionservice,com.
+ .hazelcast.internal.util.executor,com.hazelcast.spi.impl.executionservice,com.
  hazelcast.internal.cluster,com.hazelcast.spi.impl.operationutil,com.h
  azelcast.core,com.hazelcast.partition,com.hazelcast.cluster,com.hazel
  cast.spi.exception,com.hazelcast.cluster.memberselector,com.hazelcast
@@ -926,7 +926,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  proxy,com.hazelcast.spi,com.hazelcast.map.impl.operation";version="3.
  8.0.SNAPSHOT",com.hazelcast.internal.nearcache.impl.store;uses:="com.
  hazelcast.internal.eviction,com.hazelcast.nio.serialization,com.hazel
- cast.util,com.hazelcast.config,com.hazelcast.spi.serialization,com.ha
+ cast.internal.util,com.hazelcast.config,com.hazelcast.spi.serialization,com.ha
  zelcast.internal.nearcache.impl,com.hazelcast.internal.nearcache,com.
  hazelcast.monitor.impl,com.hazelcast.internal.nearcache.impl.invalida
  tion,com.hazelcast.internal.memory,com.hazelcast.monitor,com.hazelcas
@@ -942,14 +942,14 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  es:="com.hazelcast.nio.serialization,com.hazelcast.wan.impl,com.hazel
  cast.nio,com.hazelcast.wan,com.hazelcast.core,com.hazelcast.map.merge
  ";version="3.8.0.SNAPSHOT",com.hazelcast.internal.util.concurrent;use
- s:="com.hazelcast.internal.util,com.hazelcast.internal.util.concurrent,com.hazelcast.ut
+ s:="com.hazelcast.internal.util,com.hazelcast.internal.util.concurrent,com.hazelcast.internal.ut
  il.function";version="3.8.0.SNAPSHOT",com.hazelcast.internal.memory;u
  ses:="com.hazelcast.internal.memory.impl,com.hazelcast.nio";version="
  3.8.0.SNAPSHOT",com.hazelcast.internal.nearcache.impl.record;uses:="c
  om.hazelcast.internal.nearcache,com.hazelcast.nio.serialization";vers
  ion="3.8.0.SNAPSHOT",com.hazelcast.collection.impl.queue;uses:="com.h
  azelcast.core,com.hazelcast.internal.diagnostics,com.hazelcast.loggin
- g,com.hazelcast.nio.serialization,com.hazelcast.spi,com.hazelcast.uti
+ g,com.hazelcast.nio.serialization,com.hazelcast.spi,com.hazelcast.internal.uti
  l,com.hazelcast.config,com.hazelcast.spi.serialization,com.hazelcast.
  collection.impl.txnqueue,com.hazelcast.transaction,com.hazelcast.moni
  tor.impl,com.hazelcast.nio,com.hazelcast.collection.impl.queue.operat
@@ -965,7 +965,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  .spi.partition,com.hazelcast.core";version="3.8.0.SNAPSHOT",com.hazel
  cast.internal.jmx;uses:="com.hazelcast.core,javax.management,com.haze
  lcast.client,com.hazelcast.nio,com.hazelcast.spi,com.hazelcast.monito
- r,com.hazelcast.spi.properties,com.hazelcast.instance,com.hazelcast.u
+ r,com.hazelcast.spi.properties,com.hazelcast.instance,com.hazelcast.internal.u
  til.executor,com.hazelcast.internal.partition,com.hazelcast.spi.impl.
  eventservice,com.hazelcast.client.impl,com.hazelcast.config,com.hazel
  cast.spi.impl.proxyservice,com.hazelcast.spi.impl.executionservice,co
@@ -979,7 +979,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  .impl,com.hazelcast.collection.impl.queue,com.hazelcast.cp.internal.datastructures.unsafe.concurrent.se
  maphore,com.hazelcast.logging,com.hazelcast.query";version="3.8.0.SNA
  PSHOT",com.hazelcast.config.properties;uses:="com.hazelcast.core,com.
- hazelcast.util";version="3.8.0.SNAPSHOT",com.hazelcast.internal.distr
+ hazelcast.internal.util";version="3.8.0.SNAPSHOT",com.hazelcast.internal.distr
  ibutedclassloading;uses:="com.hazelcast.logging,com.hazelcast.spi,com
  .hazelcast.internal.usercodedeployment.impl.filter,com.hazelcast
  .config,com.hazelcast.internal.usercodedeployment.impl,com.hazel
@@ -989,7 +989,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  re,com.hazelcast.spi.partition,com.hazelcast.nio.serialization,com.ha
  zelcast.partition.strategy,com.hazelcast.spi.serialization,com.hazelc
  ast.nio,com.hazelcast.internal.util,com.hazelcast.spi.annotation,com.hazelcast
- .util.executor,com.hazelcast.internal.partition,com.hazelcast.cluster
+ internal.util.executor,com.hazelcast.internal.partition,com.hazelcast.cluster
  ,com.hazelcast.instance,com.hazelcast.logging,com.hazelcast.splitbrainprotection,co
  m.hazelcast.spi.properties,com.hazelcast.config,com.hazelcast.wan,com
  .hazelcast.transaction,com.hazelcast.internal.cluster,com.hazelcast.v
@@ -1126,7 +1126,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  nio.serialization.impl,com.hazelcast.cache.impl.event";version="3.8.0
  .SNAPSHOT",com.hazelcast.internal.partition;uses:="com.hazelcast.spi.
  partition,com.hazelcast.nio,com.hazelcast.instance,com.hazelcast.spi,
- com.hazelcast.spi.impl,com.hazelcast.nio.serialization,com.hazelcast.
+ com.hazelcast.spi.impl,com.hazelcast.nio.serialization,com.hazelcast.internal.
  util,com.hazelcast.internal.cluster.impl,com.hazelcast.internal.parti
  tion.impl,com.hazelcast.logging,com.hazelcast.core,com.hazelcast.inte
  rnal.cluster,com.hazelcast.partition,com.hazelcast.spi.properties,com
@@ -1141,10 +1141,10 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  hazelcast.nio.serialization.impl,com.hazelcast.nio.serialization,com.
  hazelcast.internal.serialization.impl,com.hazelcast.internal.util,com.hazelcas
  t.query.impl.predicates,com.hazelcast.nio,com.hazelcast.core,com.haze
- lcast.util.collection";version="3.8.0.SNAPSHOT",com.hazelcast.concurr
+ lcast.internal.util.collection";version="3.8.0.SNAPSHOT",com.hazelcast.concurr
  ent.lock;uses:="com.hazelcast.core,com.hazelcast.spi,com.hazelcast.ni
  o.serialization,com.hazelcast.cp.internal.datastructures.unsafe.concurrent.lock.operations,com.hazelcas
- t.util,com.hazelcast.nio,com.hazelcast.internal.serialization.impl,co
+ t.internal.util,com.hazelcast.nio,com.hazelcast.internal.serialization.impl,co
  m.hazelcast.internal.serialization,com.hazelcast.logging,com.hazelcas
  t.spi.exception,com.hazelcast.spi.partition,com.hazelcast.internal.util.schedu
  ler,com.hazelcast.spi.impl.operationservice,com.hazelcast.spi.impl,co
@@ -1201,7 +1201,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  com.hazelcast.ringbuffer;uses:="com.hazelcast.core";version="3.8.0.SN
  APSHOT",com.hazelcast.internal.nearcache.impl.preloader;uses:="com.ha
  zelcast.internal.adapter,com.hazelcast.logging,com.hazelcast.nio.seri
- alization,com.hazelcast.internal.serialization.impl,com.hazelcast.uti
+ alization,com.hazelcast.internal.serialization.impl,com.hazelcast.internal.uti
  l,com.hazelcast.internal.util.collection,com.hazelcast.config,com.hazelcast.sp
  i.serialization,com.hazelcast.monitor.impl,com.hazelcast.memory,com.h
  azelcast.internal.util,com.hazelcast.nio,com.hazelcast.core";version=
@@ -1262,7 +1262,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  lcast.client.impl.protocol;uses:="javax.cache,com.hazelcast.internal.
  cluster.impl,com.hazelcast.config,com.hazelcast.spi.exception,com.haz
  elcast.core,javax.cache.integration,com.hazelcast.nio.serialization,c
- om.hazelcast.util,javax.cache.processor,com.hazelcast.query,com.hazel
+ om.hazelcast.internal.util,javax.cache.processor,com.hazelcast.query,com.hazel
  cast.map,com.hazelcast.splitbrainprotection,com.hazelcast.mapreduce,com.hazelcast.r
  ingbuffer,com.hazelcast.topic,com.hazelcast.transaction,javax.transac
  tion.xa,javax.security.auth.login,com.hazelcast.client,javax.security
@@ -1391,7 +1391,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  pl.xa,com.hazelcast.nio,com.hazelcast.spi.impl,com.hazelcast.core,jav
  ax.transaction.xa";version="3.8.0.SNAPSHOT",com.hazelcast.splitbrainprotection.impl
  ;uses:="com.hazelcast.splitbrainprotection,com.hazelcast.core,com.hazelcast.logging
- ,com.hazelcast.spi,com.hazelcast.spi.impl.eventservice,com.hazelcast.
+ ,com.hazelcast.spi,com.hazelcast.spi.impl.eventservice,com.hazelcast.internal.
  util,com.hazelcast.config,com.hazelcast.cluster.memberselector,com.ha
  zelcast.internal.cluster,com.hazelcast.nio,com.hazelcast.spi.impl,com
  .hazelcast.internal.cluster.impl";version="3.8.0.SNAPSHOT",com.hazelc
@@ -1422,7 +1422,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  tion,com.hazelcast.core,com.hazelcast.nio.serialization,com.hazelcast
  .spi.exception,com.hazelcast.internal.partition,com.hazelcast.cluster
  ,com.hazelcast.internal.cluster,com.hazelcast.spi.impl.operationservi
- ce,com.hazelcast.version,com.hazelcast.cluster.impl,com.hazelcast.uti
+ ce,com.hazelcast.version,com.hazelcast.cluster.impl,com.hazelcast.internal.uti
  l,com.hazelcast.internal.partition.impl,com.hazelcast.spi.impl.execut
  ionservice,com.hazelcast.hotrestart";version="3.8.0.SNAPSHOT",com.haz
  elcast.mapreduce.aggregation;uses:="com.hazelcast.mapreduce,com.hazel
@@ -1436,7 +1436,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  ast.nio,com.hazelcast.instance,com.hazelcast.security.permission,com.
  hazelcast.internal.serialization,com.hazelcast.query";version="3.8.0.
  SNAPSHOT",com.hazelcast.collection.impl.txnset;uses:="com.hazelcast.c
- ore,com.hazelcast.spi,com.hazelcast.nio.serialization,com.hazelcast.u
+ ore,com.hazelcast.spi,com.hazelcast.nio.serialization,com.hazelcast.internal.u
  til,com.hazelcast.collection.impl.set,com.hazelcast.collection.impl.t
  xncollection.operations,com.hazelcast.transaction,com.hazelcast.colle
  ction.impl.collection,com.hazelcast.transaction.impl,com.hazelcast.co
@@ -1512,7 +1512,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  m.hazelcast.aggregation,com.hazelcast.mapreduce.aggregation,com.hazel
  cast.map.impl,com.hazelcast.map,com.hazelcast.projection,com.hazelcas
  t.nio.serialization,com.hazelcast.nio,com.hazelcast.partition,com.haz
- elcast.util";version="3.8.0.SNAPSHOT",com.hazelcast.spi.impl.operatio
+ elcast.internal.util";version="3.8.0.SNAPSHOT",com.hazelcast.spi.impl.operatio
  nparker;uses:="com.hazelcast.spi";version="3.8.0.SNAPSHOT",com.hazelc
  ast.map.impl.proxy;uses:="com.hazelcast.mapreduce,com.hazelcast.internal.util.
  executor,com.hazelcast.spi,com.hazelcast.internal.util,com.hazelcast.spi.seria
@@ -1540,10 +1540,10 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  client,com.hazelcast.internal.util";version="3.8.0.SNAPSHOT",com.hazelcast.int
  ernal.eviction.impl.comparator;uses:="com.hazelcast.internal.eviction
  ";version="3.8.0.SNAPSHOT",com.hazelcast.internal.util.collection;uses:="com.h
- azelcast.util.function,com.hazelcast.internal.util";version="3.8.0.SNAPSHOT",c
+ azelcast.internal.util.function,com.hazelcast.internal.util";version="3.8.0.SNAPSHOT",c
  om.hazelcast.config;uses:="javax.cache.integration,javax.cache.config
  uration,javax.cache.expiry,com.hazelcast.nio.serialization,com.hazelc
- ast.util,com.hazelcast.nio.serialization.impl,javax.xml.namespace,com
+ ast.internal.util,com.hazelcast.nio.serialization.impl,javax.xml.namespace,com
  .hazelcast.logging,org.w3c.dom,javax.xml.xpath,javax.xml,javax.xml.va
  lidation,com.hazelcast.core,javax.xml.transform.sax,javax.xml.transfo
  rm.dom,javax.xml.transform,com.hazelcast.memory,javax.xml.transform.s
@@ -1584,7 +1584,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  .nio,com.hazelcast.cardinality.impl.hyperloglog,com.hazelcast.cardina
  lity.impl.operations,com.hazelcast.internal.serialization.impl,com.ha
  zelcast.internal.serialization,com.hazelcast.cardinality,com.hazelcas
- t.spi.partition,com.hazelcast.core,com.hazelcast.spi,com.hazelcast.ut
+ t.spi.partition,com.hazelcast.core,com.hazelcast.spi,com.hazelcast.internal.ut
  il,com.hazelcast.spi.serialization,com.hazelcast.partition.strategy";
  version="3.8.0.SNAPSHOT",com.hazelcast.cardinality.impl.operations;us
  es:="com.hazelcast.cardinality.impl,com.hazelcast.spi,com.hazelcast.n
@@ -1614,7 +1614,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  cast.spi.partition,com.hazelcast.spi,com.hazelcast.internal.util,com.hazelcast
  .partition.strategy,com.hazelcast.instance";version="3.8.0.SNAPSHOT",
  com.hazelcast.partition.membergroup;uses:="com.hazelcast.core,com.haz
- elcast.util,com.hazelcast.config,com.hazelcast.nio,com.hazelcast.inst
+ elcast.internal.util,com.hazelcast.config,com.hazelcast.nio,com.hazelcast.inst
  ance,com.hazelcast.spi.discovery.integration,com.hazelcast.config.pro
  perties,com.hazelcast.spi.discovery.impl,com.hazelcast.spi.discovery,
  com.hazelcast.spi.partitiongroup";version="3.8.0.SNAPSHOT",com.hazelc
