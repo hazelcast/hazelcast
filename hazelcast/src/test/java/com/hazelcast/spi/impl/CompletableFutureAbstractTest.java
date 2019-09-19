@@ -877,16 +877,17 @@ public abstract class CompletableFutureAbstractTest {
 
     @Test
     public void testWhenComplete_whenCancelled() {
-        InternalCompletableFuture<Object> future = newCompletableFuture(false, 10000L);
+        CompletableFuture<Object> future = newCompletableFuture(false, 10000L);
         assertTrue(future.cancel(true));
 
         CompletableFuture<Object> nextStage = future.whenComplete((v, t) -> {
             assertInstanceOf(CancellationException.class, t);
         });
 
-        expectedException.expect(CancellationException.class);
-        future.join();
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(CancellationException.class));
+        nextStage.join();
     }
 
-    protected abstract InternalCompletableFuture<Object> newCompletableFuture(boolean exceptional, long completeAfterMillis);
+    protected abstract CompletableFuture<Object> newCompletableFuture(boolean exceptional, long completeAfterMillis);
 }
