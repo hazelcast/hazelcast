@@ -77,8 +77,8 @@ public class CodecHashTest {
     }
 
     private String generateErrorMessage(String codecName, String cause) {
-        return codecName + " modified by hand. " +
-                "Instead, use hazelcast-client-protocol to generate this codec. Cause: "
+        return codecName + " modified by hand. "
+                + "Instead, use hazelcast-client-protocol to generate this codec. Cause: "
                 + cause;
     }
 
