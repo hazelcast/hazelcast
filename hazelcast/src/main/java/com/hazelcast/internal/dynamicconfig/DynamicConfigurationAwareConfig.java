@@ -60,7 +60,6 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
 import com.hazelcast.internal.config.AtomicReferenceConfigReadOnly;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
-import com.hazelcast.internal.config.CountDownLatchConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;

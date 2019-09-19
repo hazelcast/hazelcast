@@ -31,7 +31,6 @@ import com.hazelcast.internal.config.AtomicReferenceConfigReadOnly;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.internal.config.ConfigUtils;
-import com.hazelcast.internal.config.CountDownLatchConfigReadOnly;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
