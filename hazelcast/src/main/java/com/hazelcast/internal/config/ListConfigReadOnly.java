@@ -40,7 +40,7 @@ public class ListConfigReadOnly extends ListConfig {
         final List<ItemListenerConfig> readOnlyItemListenerConfigs =
                 new ArrayList<ItemListenerConfig>(itemListenerConfigs.size());
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
-            readOnlyItemListenerConfigs.add(itemListenerConfig.getAsReadOnly());
+            readOnlyItemListenerConfigs.add(new ItemListenerConfigReadOnly(itemListenerConfig));
         }
         return Collections.unmodifiableList(readOnlyItemListenerConfigs);
     }

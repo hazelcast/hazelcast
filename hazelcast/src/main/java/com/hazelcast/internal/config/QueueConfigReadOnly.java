@@ -41,7 +41,7 @@ public class QueueConfigReadOnly extends QueueConfig {
         final List<ItemListenerConfig> readOnlyItemListenerConfigs
                 = new ArrayList<ItemListenerConfig>(itemListenerConfigs.size());
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
-            readOnlyItemListenerConfigs.add(itemListenerConfig.getAsReadOnly());
+            readOnlyItemListenerConfigs.add(new ItemListenerConfigReadOnly(itemListenerConfig));
         }
         return Collections.unmodifiableList(readOnlyItemListenerConfigs);
     }
@@ -52,7 +52,7 @@ public class QueueConfigReadOnly extends QueueConfig {
         if (queueStoreConfig == null) {
             return null;
         }
-        return queueStoreConfig.getAsReadOnly();
+        return new QueueStoreConfigReadOnly(queueStoreConfig);
     }
 
     @Override

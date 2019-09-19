@@ -44,7 +44,7 @@ public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
         if (evictionConfig == null) {
             return null;
         }
-        return evictionConfig.getAsReadOnly();
+        return new EvictionConfigReadOnly(evictionConfig);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
         final List<CacheSimpleEntryListenerConfig> readOnlyListenerConfigs = new ArrayList<CacheSimpleEntryListenerConfig>(
                 listenerConfigs.size());
         for (CacheSimpleEntryListenerConfig listenerConfig : listenerConfigs) {
-            readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+            readOnlyListenerConfigs.add(new CacheSimpleEntryListenerConfigReadOnly(listenerConfig));
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }

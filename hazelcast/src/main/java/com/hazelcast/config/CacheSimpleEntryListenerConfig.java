@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.CacheSimpleEntryListenerConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -34,8 +32,6 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     private boolean oldValueRequired;
     private boolean synchronous;
 
-    private CacheSimpleEntryListenerConfigReadOnly readOnly;
-
     public CacheSimpleEntryListenerConfig(CacheSimpleEntryListenerConfig listenerConfig) {
         this.cacheEntryEventFilterFactory = listenerConfig.cacheEntryEventFilterFactory;
         this.cacheEntryListenerFactory = listenerConfig.cacheEntryListenerFactory;
@@ -44,19 +40,6 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     }
 
     public CacheSimpleEntryListenerConfig() {
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public CacheSimpleEntryListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CacheSimpleEntryListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     public String getCacheEntryListenerFactory() {

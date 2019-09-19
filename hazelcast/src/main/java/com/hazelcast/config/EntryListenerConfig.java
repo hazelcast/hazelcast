@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.internal.config.EntryListenerConfigReadOnly;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
@@ -33,7 +32,6 @@ import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.EventListener;
@@ -48,8 +46,6 @@ public class EntryListenerConfig extends ListenerConfig {
     private boolean local;
 
     private boolean includeValue = true;
-
-    private EntryListenerConfigReadOnly readOnly;
 
     public EntryListenerConfig() {
     }
@@ -77,20 +73,6 @@ public class EntryListenerConfig extends ListenerConfig {
         local = config.isLocal();
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @Override
-    @PrivateApi
-    public EntryListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new EntryListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override

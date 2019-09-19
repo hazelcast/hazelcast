@@ -18,11 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
-import com.hazelcast.internal.config.QueueStoreConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -40,7 +38,6 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
     private QueueStoreFactory factoryImplementation;
-    private transient QueueStoreConfigReadOnly readOnly;
 
     public QueueStoreConfig() {
     }
@@ -61,19 +58,6 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
         this.storeImplementation = storeImplementation;
         return this;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public QueueStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new QueueStoreConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     public boolean isEnabled() {

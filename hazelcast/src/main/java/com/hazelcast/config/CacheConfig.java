@@ -20,12 +20,10 @@ import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
@@ -215,16 +213,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
                 }
             }
         }
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public CacheConfigReadOnly<K, V> getAsReadOnly() {
-        return new CacheConfigReadOnly<>(this);
     }
 
     /**

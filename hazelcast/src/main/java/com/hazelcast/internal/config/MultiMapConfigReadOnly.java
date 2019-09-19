@@ -39,7 +39,7 @@ public class MultiMapConfigReadOnly extends MultiMapConfig {
         final List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
         final List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
-            readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+            readOnlyListenerConfigs.add(new EntryListenerConfigReadOnly(listenerConfig));
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }

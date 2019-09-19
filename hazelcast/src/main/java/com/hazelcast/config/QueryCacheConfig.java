@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.QueryCacheConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -131,8 +129,6 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
 
     private List<MapIndexConfig> indexConfigs;
 
-    private transient QueryCacheConfigReadOnly readOnly;
-
     public QueryCacheConfig() {
     }
 
@@ -153,19 +149,6 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         this.evictionConfig = other.evictionConfig;
         this.entryListenerConfigs = other.entryListenerConfigs;
         this.indexConfigs = other.indexConfigs;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public QueryCacheConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new QueryCacheConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

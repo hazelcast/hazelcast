@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
@@ -95,8 +93,6 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
 
-    private transient CacheSimpleConfig readOnly;
-
     private String splitBrainProtectionName;
 
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
@@ -144,19 +140,6 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     }
 
     public CacheSimpleConfig() {
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public CacheSimpleConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CacheSimpleConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

@@ -16,13 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
@@ -118,8 +116,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
 
-    private transient MapConfigReadOnly readOnly;
-
     public MapConfig() {
     }
 
@@ -157,19 +153,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public MapConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

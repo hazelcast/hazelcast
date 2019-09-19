@@ -16,13 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.MapIndexConfigReadOnly;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -40,7 +38,6 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
 
     private String attribute;
     private boolean ordered;
-    private transient MapIndexConfigReadOnly readOnly;
 
     /**
      * Creates a MapIndexConfig without an attribute and with ordered set to {@code false}.
@@ -64,19 +61,6 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
     public MapIndexConfig(MapIndexConfig config) {
         attribute = config.getAttribute();
         ordered = config.isOrdered();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public MapIndexConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapIndexConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

@@ -58,7 +58,7 @@ public class MapConfigReadOnly extends MapConfig {
         if (maxSizeConfig == null) {
             return null;
         }
-        return maxSizeConfig.getAsReadOnly();
+        return new MaxSizeConfigReadOnly(maxSizeConfig);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class MapConfigReadOnly extends MapConfig {
         if (wanReplicationRef == null) {
             return null;
         }
-        return wanReplicationRef.getAsReadOnly();
+        return new WanReplicationRefReadOnly(wanReplicationRef);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class MapConfigReadOnly extends MapConfig {
         final List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
         final List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
-            readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+            readOnlyListenerConfigs.add(new EntryListenerConfigReadOnly(listenerConfig));
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
@@ -86,7 +86,7 @@ public class MapConfigReadOnly extends MapConfig {
         final List<MapPartitionLostListenerConfig> readOnlyListenerConfigs =
                 new ArrayList<MapPartitionLostListenerConfig>(listenerConfigs.size());
         for (MapPartitionLostListenerConfig listenerConfig : listenerConfigs) {
-            readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+            readOnlyListenerConfigs.add(new MapPartitionLostListenerConfigReadOnly(listenerConfig));
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
@@ -96,7 +96,7 @@ public class MapConfigReadOnly extends MapConfig {
         final List<MapIndexConfig> mapIndexConfigs = super.getMapIndexConfigs();
         final List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
         for (MapIndexConfig mapIndexConfig : mapIndexConfigs) {
-            readOnlyMapIndexConfigs.add(mapIndexConfig.getAsReadOnly());
+            readOnlyMapIndexConfigs.add(new MapIndexConfigReadOnly(mapIndexConfig));
         }
         return Collections.unmodifiableList(readOnlyMapIndexConfigs);
     }
@@ -107,7 +107,7 @@ public class MapConfigReadOnly extends MapConfig {
         if (partitioningStrategyConfig == null) {
             return null;
         }
-        return partitioningStrategyConfig.getAsReadOnly();
+        return new PartitioningStrategyConfigReadOnly(partitioningStrategyConfig);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class MapConfigReadOnly extends MapConfig {
         if (mapStoreConfig == null) {
             return null;
         }
-        return mapStoreConfig.getAsReadOnly();
+        return new MapStoreConfigReadOnly(mapStoreConfig);
     }
 
     @Override
@@ -125,7 +125,7 @@ public class MapConfigReadOnly extends MapConfig {
         if (nearCacheConfig == null) {
             return null;
         }
-        return nearCacheConfig.getAsReadOnly();
+        return new NearCacheConfigReadOnly(nearCacheConfig);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class MapConfigReadOnly extends MapConfig {
         List<QueryCacheConfig> queryCacheConfigs = super.getQueryCacheConfigs();
         List<QueryCacheConfig> readOnlyOnes = new ArrayList<QueryCacheConfig>(queryCacheConfigs.size());
         for (QueryCacheConfig config : queryCacheConfigs) {
-            readOnlyOnes.add(config.getAsReadOnly());
+            readOnlyOnes.add(new QueryCacheConfigReadOnly(config));
         }
         return Collections.unmodifiableList(readOnlyOnes);
     }
@@ -142,7 +142,7 @@ public class MapConfigReadOnly extends MapConfig {
     @Override
     public MerkleTreeConfig getMerkleTreeConfig() {
         final MerkleTreeConfig merkleTreeConfig = super.getMerkleTreeConfig();
-        return merkleTreeConfig.getAsReadOnly();
+        return new MerkleTreeConfigReadOnly(merkleTreeConfig);
     }
 
     @Override
@@ -154,7 +154,7 @@ public class MapConfigReadOnly extends MapConfig {
     @Override
     public EventJournalConfig getEventJournalConfig() {
         final EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
-        return eventJournalConfig.getAsReadOnly();
+        return new EventJournalConfigReadOnly(eventJournalConfig);
     }
 
     @Override
@@ -166,7 +166,7 @@ public class MapConfigReadOnly extends MapConfig {
     @Override
     public HotRestartConfig getHotRestartConfig() {
         final HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
-        return hotRestartConfig.getAsReadOnly();
+        return new HotRestartConfigReadOnly(hotRestartConfig);
     }
 
     @Override

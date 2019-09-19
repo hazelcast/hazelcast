@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.internal.util.StringUtil;
@@ -63,8 +61,6 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-
-    private transient MultiMapConfigReadOnly readOnly;
 
     public MultiMapConfig() {
     }
@@ -453,18 +449,5 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration
-     */
-    @PrivateApi
-    public MultiMapConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MultiMapConfigReadOnly(this);
-        }
-        return readOnly;
     }
 }

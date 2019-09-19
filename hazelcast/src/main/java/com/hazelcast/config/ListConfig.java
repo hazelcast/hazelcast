@@ -17,15 +17,11 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.internal.config.ListConfigReadOnly;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Contains the configuration for an {@link IList}.
  */
 public class ListConfig extends CollectionConfig<ListConfig> {
-
-    private transient ListConfigReadOnly readOnly;
 
     public ListConfig() {
     }
@@ -36,20 +32,6 @@ public class ListConfig extends CollectionConfig<ListConfig> {
 
     public ListConfig(ListConfig config) {
         super(config);
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @Override
-    @PrivateApi
-    public ListConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ListConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override

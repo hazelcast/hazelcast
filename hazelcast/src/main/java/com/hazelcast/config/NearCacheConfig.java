@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.NearCacheConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -92,8 +90,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     private LocalUpdatePolicy localUpdatePolicy = DEFAULT_LOCAL_UPDATE_POLICY;
     private NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
 
-    private NearCacheConfigReadOnly readOnly;
-
     public NearCacheConfig() {
     }
 
@@ -112,19 +108,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
         this.cacheLocalEntries = config.cacheLocalEntries;
         this.localUpdatePolicy = config.localUpdatePolicy;
         this.preloaderConfig = config.preloaderConfig;
-    }
-
-    /**
-     * Returns an immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public NearCacheConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new NearCacheConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

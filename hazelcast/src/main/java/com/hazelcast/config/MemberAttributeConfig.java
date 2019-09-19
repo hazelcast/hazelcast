@@ -17,9 +17,6 @@
 package com.hazelcast.config;
 
 
-import com.hazelcast.internal.config.MemberAttributeConfigReadOnly;
-import com.hazelcast.spi.annotation.PrivateApi;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,15 +58,5 @@ public class MemberAttributeConfig {
     public MemberAttributeConfig removeAttribute(String key) {
         attributes.remove(key);
         return this;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public MemberAttributeConfig asReadOnly() {
-        return new MemberAttributeConfigReadOnly(this);
     }
 }

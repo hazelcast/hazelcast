@@ -16,12 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -57,8 +55,6 @@ public class ReplicatedMapConfig
     private List<ListenerConfig> listenerConfigs;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-
-    private transient volatile ReplicatedMapConfigReadOnly readOnly;
 
     public ReplicatedMapConfig() {
     }
@@ -180,19 +176,6 @@ public class ReplicatedMapConfig
     public ReplicatedMapConfig setAsyncFillup(boolean asyncFillup) {
         this.asyncFillup = asyncFillup;
         return this;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public ReplicatedMapConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ReplicatedMapConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

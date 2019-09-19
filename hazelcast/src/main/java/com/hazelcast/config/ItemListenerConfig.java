@@ -17,10 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.ItemListener;
-import com.hazelcast.internal.config.ItemListenerConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -30,8 +28,6 @@ import java.io.IOException;
 public class ItemListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;
-
-    private transient ItemListenerConfigReadOnly readOnly;
 
     public ItemListenerConfig() {
     }
@@ -50,20 +46,6 @@ public class ItemListenerConfig extends ListenerConfig {
         includeValue = config.isIncludeValue();
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @Override
-    @PrivateApi
-    public ItemListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ItemListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override

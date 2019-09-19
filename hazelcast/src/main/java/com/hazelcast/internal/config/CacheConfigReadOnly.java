@@ -57,7 +57,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
         if (evictionConfig == null) {
             return null;
         }
-        return evictionConfig.getAsReadOnly();
+        return new EvictionConfigReadOnly(evictionConfig);
     }
 
     @Override
@@ -66,21 +66,21 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
         if (wanReplicationRef == null) {
             return null;
         }
-        return wanReplicationRef.getAsReadOnly();
+        return new WanReplicationRefReadOnly(wanReplicationRef);
     }
 
     @Nonnull
     @Override
     public HotRestartConfig getHotRestartConfig() {
         HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
-        return hotRestartConfig.getAsReadOnly();
+        return new HotRestartConfigReadOnly(hotRestartConfig);
     }
 
     @Nonnull
     @Override
     public EventJournalConfig getEventJournalConfig() {
         EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
-        return eventJournalConfig.getAsReadOnly();
+        return new EventJournalConfigReadOnly(eventJournalConfig);
     }
 
     @Override

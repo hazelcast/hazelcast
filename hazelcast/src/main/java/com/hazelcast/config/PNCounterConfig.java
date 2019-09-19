@@ -45,8 +45,6 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
     private String splitBrainProtectionName;
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
 
-    private transient PNCounterConfigReadOnly readOnly;
-
     public PNCounterConfig() {
     }
 
@@ -155,14 +153,6 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         return this;
     }
 
-    /** Returns a read only instance of this config */
-    PNCounterConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new PNCounterConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -222,33 +212,4 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         return result;
     }
-
-    // not private for testing
-    static class PNCounterConfigReadOnly extends PNCounterConfig {
-
-        PNCounterConfigReadOnly(PNCounterConfig config) {
-            super(config);
-        }
-
-        @Override
-        public PNCounterConfig setName(String name) {
-            throw new UnsupportedOperationException("This config is read-only PN counter: " + getName());
-        }
-
-        @Override
-        public PNCounterConfig setReplicaCount(int replicaCount) {
-            throw new UnsupportedOperationException("This config is read-only PN counter: " + getName());
-        }
-
-        @Override
-        public PNCounterConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
-            throw new UnsupportedOperationException("This config is read-only PN counter: " + getName());
-        }
-
-        @Override
-        public PNCounterConfig setStatisticsEnabled(boolean statisticsEnabled) {
-            throw new UnsupportedOperationException("This config is read-only PN counter: " + getName());
-        }
-    }
-
 }

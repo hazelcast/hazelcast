@@ -106,7 +106,8 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCachePartitionLostListenerReadOnlyConfig_withClassName() {
-        CachePartitionLostListenerConfigReadOnly readOnly = new CachePartitionLostListenerConfig().getAsReadOnly();
+        CachePartitionLostListenerConfigReadOnly readOnly
+                = new CachePartitionLostListenerConfigReadOnly(new CachePartitionLostListenerConfig());
         readOnly.setClassName("com.hz");
     }
 
@@ -114,14 +115,15 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
     public void testCachePartitionLostListenerReadOnlyConfig_withImplementation() {
         CachePartitionLostListener listener = mock(CachePartitionLostListener.class);
         CachePartitionLostListenerConfig listenerConfig = new CachePartitionLostListenerConfig(listener);
-        CachePartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
+        CachePartitionLostListenerConfigReadOnly readOnly = new CachePartitionLostListenerConfigReadOnly(listenerConfig);
         assertEquals(listener, readOnly.getImplementation());
         readOnly.setImplementation(mock(CachePartitionLostListener.class));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCachePartitionLostListenerReadOnlyConfig_withEventListenerImplementation() {
-        CachePartitionLostListenerConfigReadOnly readOnly = new CachePartitionLostListenerConfig().getAsReadOnly();
+        CachePartitionLostListenerConfigReadOnly readOnly
+                = new CachePartitionLostListenerConfigReadOnly(new CachePartitionLostListenerConfig());
         readOnly.setImplementation(mock(EventListener.class));
     }
 

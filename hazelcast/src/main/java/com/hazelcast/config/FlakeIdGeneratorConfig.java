@@ -17,13 +17,10 @@
 package com.hazelcast.config;
 
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -67,8 +64,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     private long nodeIdOffset;
     private boolean statisticsEnabled = true;
 
-    private transient FlakeIdGeneratorConfigReadOnly readOnly;
-
     // for deserialization
     FlakeIdGeneratorConfig() {
     }
@@ -87,20 +82,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
         this.idOffset = other.idOffset;
         this.nodeIdOffset = other.nodeIdOffset;
         this.statisticsEnabled = other.statisticsEnabled;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @Probe
-    @PrivateApi
-    public FlakeIdGeneratorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new FlakeIdGeneratorConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

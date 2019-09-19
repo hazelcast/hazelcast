@@ -85,7 +85,7 @@ public class NearCacheConfigReadOnly extends NearCacheConfig {
 
     @Override
     public EvictionConfig getEvictionConfig() {
-        return super.getEvictionConfig().getAsReadOnly();
+        return new EvictionConfigReadOnly(super.getEvictionConfig());
     }
 
     @Override
@@ -95,7 +95,7 @@ public class NearCacheConfigReadOnly extends NearCacheConfig {
 
     @Override
     public NearCachePreloaderConfig getPreloaderConfig() {
-        return super.getPreloaderConfig().getAsReadOnly();
+        return new NearCachePreloaderConfigReadOnly(super.getPreloaderConfig());
     }
 
     @Override

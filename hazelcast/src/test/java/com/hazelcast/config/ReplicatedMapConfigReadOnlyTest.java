@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,7 +34,7 @@ import static org.junit.Assert.assertSame;
 public class ReplicatedMapConfigReadOnlyTest {
 
     private ReplicatedMapConfig getReadOnlyConfig() {
-        return new ReplicatedMapConfig().getAsReadOnly();
+        return new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -74,7 +75,7 @@ public class ReplicatedMapConfigReadOnlyTest {
     @Test
     public void testGetReadOnly_returnsSameInstance() {
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig(randomName());
-        ReplicatedMapConfig readOnly = replicatedMapConfig.getAsReadOnly();
-        assertSame(readOnly, replicatedMapConfig.getAsReadOnly());
+        ReplicatedMapConfig readOnly = new ReplicatedMapConfigReadOnly(replicatedMapConfig);
+        assertSame(readOnly, new ReplicatedMapConfigReadOnly(replicatedMapConfig));
     }
 }

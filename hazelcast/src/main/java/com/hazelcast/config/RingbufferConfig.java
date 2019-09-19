@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -488,79 +487,5 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public RingbufferConfig getAsReadOnly() {
-        return new RingbufferConfigReadOnly(this);
-    }
-
-    /**
-     * A readonly version of the {@link RingbufferConfig}.
-     */
-    private static class RingbufferConfigReadOnly extends RingbufferConfig {
-
-        RingbufferConfigReadOnly(RingbufferConfig config) {
-            super(config);
-        }
-
-        @Override
-        public RingbufferStoreConfig getRingbufferStoreConfig() {
-            final RingbufferStoreConfig storeConfig = super.getRingbufferStoreConfig();
-            if (storeConfig != null) {
-                return storeConfig.getAsReadOnly();
-            } else {
-                return null;
-            }
-        }
-
-        @Override
-        public RingbufferConfig setCapacity(int capacity) {
-            throw throwReadOnly();
-        }
-
-        @Override
-        public RingbufferConfig setAsyncBackupCount(int asyncBackupCount) {
-            throw throwReadOnly();
-        }
-
-        @Override
-        public RingbufferConfig setBackupCount(int backupCount) {
-            throw throwReadOnly();
-        }
-
-        @Override
-        public RingbufferConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-            throw throwReadOnly();
-        }
-
-        @Override
-        public RingbufferConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-            throw throwReadOnly();
-        }
-
-        @Override
-        public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
-            throw throwReadOnly();
-        }
-
-        @Override
-        public RingbufferConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
-            throw throwReadOnly();
-        }
-
-        @Override
-        public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-            throw throwReadOnly();
-        }
-
-        private UnsupportedOperationException throwReadOnly() {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
     }
 }

@@ -43,7 +43,7 @@ public class QueryCacheConfigReadOnly extends QueryCacheConfig {
         List<MapIndexConfig> mapIndexConfigs = super.getIndexConfigs();
         List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
         for (MapIndexConfig mapIndexConfig : mapIndexConfigs) {
-            readOnlyMapIndexConfigs.add(mapIndexConfig.getAsReadOnly());
+            readOnlyMapIndexConfigs.add(new MapIndexConfigReadOnly(mapIndexConfig));
         }
         return Collections.unmodifiableList(readOnlyMapIndexConfigs);
     }
@@ -53,19 +53,19 @@ public class QueryCacheConfigReadOnly extends QueryCacheConfig {
         List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
         List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
-            readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+            readOnlyListenerConfigs.add(new EntryListenerConfigReadOnly(listenerConfig));
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
 
     @Override
     public EvictionConfig getEvictionConfig() {
-        return super.getEvictionConfig().getAsReadOnly();
+        return new EvictionConfigReadOnly(super.getEvictionConfig());
     }
 
     @Override
     public PredicateConfig getPredicateConfig() {
-        return super.getPredicateConfig().getAsReadOnly();
+        return new PredicateConfigReadOnly(super.getPredicateConfig());
     }
 
     @Override

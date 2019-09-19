@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.EvictionConfigReadOnly;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
@@ -25,7 +24,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -108,8 +106,6 @@ public class EvictionConfig implements EvictionConfiguration,
     protected String comparatorClassName;
     protected EvictionPolicyComparator comparator;
 
-    protected EvictionConfig readOnly;
-
     /**
      * Used by the {@link NearCacheConfigAccessor} to
      * initialize the proper default value for on-heap maps.
@@ -126,19 +122,6 @@ public class EvictionConfig implements EvictionConfiguration,
         this.evictionPolicy = config.evictionPolicy;
         this.comparatorClassName = config.comparatorClassName;
         this.comparator = config.comparator;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public EvictionConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new EvictionConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

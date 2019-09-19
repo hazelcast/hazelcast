@@ -16,12 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.AttributeConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.QueryConstants;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -41,8 +39,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
 
     private String name;
     private String extractorClassName;
-
-    private transient AttributeConfigReadOnly readOnly;
 
     /**
      * Creates an empty AttributeConfig.
@@ -69,19 +65,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
     public AttributeConfig(AttributeConfig config) {
         name = config.getName();
         extractorClassName = config.getExtractorClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public AttributeConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new AttributeConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

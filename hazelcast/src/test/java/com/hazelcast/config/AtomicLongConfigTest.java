@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.AtomicLongConfig.AtomicLongConfigReadOnly;
+import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -50,14 +50,14 @@ public class AtomicLongConfigTest extends AbstractBasicConfigTest<AtomicLongConf
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(AtomicLongConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
-                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
-                .withPrefabValues(AtomicLongConfigReadOnly.class,
-                        new AtomicLongConfigReadOnly(new AtomicLongConfig("red")),
-                        new AtomicLongConfigReadOnly(new AtomicLongConfig("black")))
-                .withPrefabValues(MergePolicyConfig.class,
-                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
-                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                .verify();
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
+                      .withPrefabValues(AtomicLongConfigReadOnly.class,
+                              new AtomicLongConfigReadOnly(new AtomicLongConfig("red")),
+                              new AtomicLongConfigReadOnly(new AtomicLongConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                      .verify();
     }
 }

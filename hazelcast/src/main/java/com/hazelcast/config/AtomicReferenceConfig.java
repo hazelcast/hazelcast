@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
@@ -29,8 +28,6 @@ import java.io.IOException;
  * @since 3.10
  */
 public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceConfig> {
-
-    private transient AtomicReferenceConfigReadOnly readOnly;
 
     AtomicReferenceConfig() {
     }
@@ -93,41 +90,5 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
         result = 31 * result + mergePolicyConfig.hashCode();
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @Override
-    @PrivateApi
-    public AtomicReferenceConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new AtomicReferenceConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    static class AtomicReferenceConfigReadOnly extends AtomicReferenceConfig {
-
-        AtomicReferenceConfigReadOnly(AtomicReferenceConfig config) {
-            super(config);
-        }
-
-        @Override
-        public AtomicReferenceConfig setName(String name) {
-            throw new UnsupportedOperationException("This is a read-only config!");
-        }
-
-        @Override
-        public AtomicReferenceConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
-            throw new UnsupportedOperationException("This is a read-only config!");
-        }
-
-        @Override
-        public AtomicReferenceConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-            throw new UnsupportedOperationException("This is a read-only config!");
-        }
     }
 }

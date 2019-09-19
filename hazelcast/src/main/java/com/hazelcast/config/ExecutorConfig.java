@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -49,8 +47,6 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String splitBrainProtectionName;
 
-    private transient ExecutorConfigReadOnly readOnly;
-
     public ExecutorConfig() {
     }
 
@@ -69,19 +65,6 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         this.queueCapacity = config.queueCapacity;
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public ExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ExecutorConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

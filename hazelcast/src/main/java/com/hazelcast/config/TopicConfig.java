@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
 import java.io.IOException;
@@ -47,7 +45,6 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
     private boolean statisticsEnabled = true;
     private boolean multiThreadingEnabled;
     private List<ListenerConfig> listenerConfigs;
-    private transient TopicConfigReadOnly readOnly;
 
     /**
      * Creates a TopicConfig.
@@ -75,19 +72,6 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
         this.globalOrderingEnabled = config.globalOrderingEnabled;
         this.multiThreadingEnabled = config.multiThreadingEnabled;
         this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public TopicConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new TopicConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

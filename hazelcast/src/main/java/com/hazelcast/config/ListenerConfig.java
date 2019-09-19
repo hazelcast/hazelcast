@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.ListenerConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.EventListener;
@@ -38,8 +36,6 @@ public class ListenerConfig implements IdentifiedDataSerializable {
     protected String className;
 
     protected EventListener implementation;
-
-    private ListenerConfigReadOnly readOnly;
 
     /**
      * Creates a ListenerConfig without className/implementation.
@@ -70,19 +66,6 @@ public class ListenerConfig implements IdentifiedDataSerializable {
      */
     public ListenerConfig(EventListener implementation) {
         this.implementation = isNotNull(implementation, "implementation");
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public ListenerConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
@@ -190,17 +173,13 @@ public class ListenerConfig implements IdentifiedDataSerializable {
         if (className != null ? !className.equals(that.className) : that.className != null) {
             return false;
         }
-        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
-            return false;
-        }
-        return readOnly != null ? readOnly.equals(that.readOnly) : that.readOnly == null;
+        return implementation != null ? implementation.equals(that.implementation) : that.implementation == null;
     }
 
     @Override
     public int hashCode() {
         int result = className != null ? className.hashCode() : 0;
         result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
-        result = 31 * result + (readOnly != null ? readOnly.hashCode() : 0);
         return result;
     }
 }

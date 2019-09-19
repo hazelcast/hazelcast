@@ -17,11 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -71,7 +69,6 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-    private transient QueueConfigReadOnly readOnly;
 
     public QueueConfig() {
     }
@@ -92,19 +89,6 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public QueueConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new QueueConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

@@ -16,12 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.PartitioningStrategyConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -33,8 +31,6 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
     private String partitioningStrategyClass;
 
     private PartitioningStrategy partitioningStrategy;
-
-    private transient PartitioningStrategyConfigReadOnly readOnly;
 
     public PartitioningStrategyConfig() {
     }
@@ -50,19 +46,6 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
 
     public PartitioningStrategyConfig(PartitioningStrategy partitioningStrategy) {
         this.partitioningStrategy = partitioningStrategy;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public PartitioningStrategyConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new PartitioningStrategyConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     public String getPartitioningStrategyClass() {

@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
@@ -46,8 +45,6 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
 
     private String policy = DEFAULT_MERGE_POLICY;
     private int batchSize = DEFAULT_BATCH_SIZE;
-
-    private transient MergePolicyConfig readOnly;
 
     public MergePolicyConfig() {
     }
@@ -167,35 +164,5 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
                 + "policy='" + policy + '\''
                 + ", batchSize=" + batchSize
                 + '}';
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public MergePolicyConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MergePolicyConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    private static class MergePolicyConfigReadOnly extends MergePolicyConfig {
-
-        MergePolicyConfigReadOnly(MergePolicyConfig mergePolicyConfig) {
-            super(mergePolicyConfig);
-        }
-
-        @Override
-        public MergePolicyConfig setPolicy(String policy) {
-            throw new UnsupportedOperationException("This is a read-only configuration");
-        }
-
-        @Override
-        public MergePolicyConfig setBatchSize(int batchSize) {
-            throw new UnsupportedOperationException("This is a read-only configuration");
-        }
     }
 }

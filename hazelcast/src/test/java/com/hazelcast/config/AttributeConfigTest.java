@@ -125,7 +125,7 @@ public class AttributeConfigTest {
     public void validReadOnly() {
         AttributeConfig config = new AttributeConfig("iq", "com.test.IqExtractor");
 
-        AttributeConfigReadOnly readOnlyConfig = config.getAsReadOnly();
+        AttributeConfigReadOnly readOnlyConfig = new AttributeConfigReadOnly(config);
 
         assertThat(readOnlyConfig, instanceOf(AttributeConfigReadOnly.class));
         assertEquals("iq", readOnlyConfig.getName());

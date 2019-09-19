@@ -59,8 +59,6 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
 
     private String splitBrainProtectionName;
 
-    private transient ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
-
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     public ScheduledExecutorConfig() {
@@ -231,13 +229,6 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
                 + '}';
     }
 
-    ScheduledExecutorConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -308,42 +299,5 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
-    }
-
-    // non-private for testing
-    static class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
-
-        ScheduledExecutorConfigReadOnly(ScheduledExecutorConfig config) {
-            super(config);
-        }
-
-        @Override
-        public ScheduledExecutorConfig setName(String name) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setDurability(int durability) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setPoolSize(int poolSize) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setCapacity(int capacity) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        @Override
-        public ScheduledExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
-
-        public ScheduledExecutorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
-        }
     }
 }

@@ -16,12 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.PredicateConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -41,8 +39,6 @@ public class PredicateConfig implements IdentifiedDataSerializable {
     protected String sql;
 
     protected Predicate implementation;
-
-    private transient PredicateConfigReadOnly readOnly;
 
     /**
      * Creates a PredicateConfig without className/implementation.
@@ -74,19 +70,6 @@ public class PredicateConfig implements IdentifiedDataSerializable {
      */
     public PredicateConfig(Predicate implementation) {
         this.implementation = isNotNull(implementation, "implementation");
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public PredicateConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new PredicateConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

@@ -17,11 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.internal.config.SemaphoreConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 
@@ -48,7 +46,6 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
     private int initialPermits;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
-    private transient SemaphoreConfigReadOnly readOnly;
 
     private String splitBrainProtectionName;
 
@@ -71,19 +68,6 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
         this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
         this.splitBrainProtectionName = config.getSplitBrainProtectionName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    @PrivateApi
-    public SemaphoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new SemaphoreConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

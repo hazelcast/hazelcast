@@ -37,7 +37,7 @@ public class TopicConfigReadOnly extends TopicConfig {
         final List<ListenerConfig> messageListenerConfigs = super.getMessageListenerConfigs();
         final List<ListenerConfig> readOnlyMessageListenerConfigs = new ArrayList<ListenerConfig>(messageListenerConfigs.size());
         for (ListenerConfig messageListenerConfig : messageListenerConfigs) {
-            readOnlyMessageListenerConfigs.add(messageListenerConfig.getAsReadOnly());
+            readOnlyMessageListenerConfigs.add(new ListenerConfigReadOnly(messageListenerConfig));
         }
         return Collections.unmodifiableList(readOnlyMessageListenerConfigs);
     }

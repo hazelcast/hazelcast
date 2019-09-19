@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.WanReplicationRefReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +31,7 @@ import java.util.Collections;
 public class WanReplicationRefReadOnlyTest {
 
     private WanReplicationRef getReadOnlyRef() {
-        return new WanReplicationRef().getAsReadOnly();
+        return new WanReplicationRefReadOnly(new WanReplicationRef());
     }
 
     @Test(expected = UnsupportedOperationException.class)

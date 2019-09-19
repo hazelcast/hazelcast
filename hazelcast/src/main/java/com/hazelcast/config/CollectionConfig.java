@@ -76,8 +76,6 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
-    public abstract T getAsReadOnly();
-
     /**
      * Gets the name of this collection.
      *

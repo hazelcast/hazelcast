@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.AtomicReferenceConfig.AtomicReferenceConfigReadOnly;
+import com.hazelcast.internal.config.AtomicReferenceConfigReadOnly;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -50,14 +50,14 @@ public class AtomicReferenceConfigTest extends AbstractBasicConfigTest<AtomicRef
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(AtomicReferenceConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
-                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
-                .withPrefabValues(AtomicReferenceConfigReadOnly.class,
-                        new AtomicReferenceConfigReadOnly(new AtomicReferenceConfig("red")),
-                        new AtomicReferenceConfigReadOnly(new AtomicReferenceConfig("black")))
-                .withPrefabValues(MergePolicyConfig.class,
-                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
-                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                .verify();
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
+                      .withPrefabValues(AtomicReferenceConfigReadOnly.class,
+                              new AtomicReferenceConfigReadOnly(new AtomicReferenceConfig("red")),
+                              new AtomicReferenceConfigReadOnly(new AtomicReferenceConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                      .verify();
     }
 }
