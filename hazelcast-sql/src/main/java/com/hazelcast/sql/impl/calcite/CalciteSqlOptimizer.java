@@ -320,7 +320,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         // Collect remote addresses.
         List<Address> addresses = new ArrayList<>(partMemberIds.size());
-        List<String> ids = new ArrayList<>(partMemberIds.size());
+        List<String> memberIds = new ArrayList<>(partMemberIds.size());
 
         for (String partMemberId : partMemberIds) {
             MemberImpl member = nodeEngine.getClusterService().getMember(partMemberId);
@@ -330,7 +330,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     "left the topology: " + partMemberId);
 
             addresses.add(member.getAddress());
-            ids.add(member.getUuid());
+            memberIds.add(member.getUuid());
         }
 
         // Create the plan.
@@ -338,8 +338,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         rel.visit(visitor);
 
-        List<QueryFragment> fragments = visitor.getFragments();
-
-        return new QueryPlan(fragments, partMap, addresses, ids);
+        return visitor.getPlan(partMap, addresses, memberIds);
     }
 }

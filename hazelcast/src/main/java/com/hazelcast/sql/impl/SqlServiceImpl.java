@@ -117,9 +117,11 @@ public class SqlServiceImpl implements SqlService, ManagedService {
 
         QueryExecuteOperation op = new QueryExecuteOperation(
             queryId,
-            plan.getIds(),
+            plan.getMemberIds(),
             plan.getPartitionMap(),
             plan.getFragments(),
+            plan.getOutboundEdgeMap(),
+            plan.getInboundEdgeMap(),
             args,
             ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE),
             consumer

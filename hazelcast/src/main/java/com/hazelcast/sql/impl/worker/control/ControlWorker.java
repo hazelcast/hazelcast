@@ -45,6 +45,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
     /** Data thread pool. */
     private final DataThreadPool dataThreadPool;
 
+    /** Index of the last data thread. */
     private int lastDataThreadIdx = 0;
 
     /** Active queries. */
@@ -74,22 +75,6 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
     }
 
     private void handleExecute(ExecuteControlTask task) {
-        // Prepare map of outbound edges to their counts. This is needed to understand when to close the receiver.
-        Map<Integer, QueryFragment> sendFragmentMap = new HashMap<>();
-        Map<Integer, QueryFragment> receiveFragmentMap = new HashMap<>();
-
-        for (QueryFragment fragment : task.getFragments()) {
-            Integer outboundEdge = fragment.getOutboundEdge();
-
-            if (outboundEdge != null)
-                sendFragmentMap.put(outboundEdge, fragment);
-
-            if (fragment.getInboundEdges() != null) {
-                for (Integer inboundEdge : fragment.getInboundEdges())
-                    receiveFragmentMap.put(inboundEdge, fragment);
-            }
-        }
-
         QueryId queryId = task.getQueryId();
 
         // Fragment deployments.
@@ -98,7 +83,9 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
         // This data structure maps edge stripes to real threads.
         Map<Integer, int[]> edgeToStripeMap = new HashMap<>();
 
-        for (QueryFragment fragment : task.getFragments()) {
+        for (int i = 0; i < task.getFragments().size(); i++) {
+            QueryFragment fragment = task.getFragments().get(i);
+
             // Skip fragments which should not execute on a node.
             if (!fragment.getMemberIds().contains(nodeEngine.getLocalMember().getUuid()))
                 continue;
@@ -107,16 +94,17 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
 
             int[] stripeToThread = new int[fragment.getParallelism()];
 
-            for (int i = 0; i < fragment.getParallelism(); i++) {
+            for (int j = 0; j < fragment.getParallelism(); j++) {
                 ExecutorCreatePhysicalNodeVisitor visitor = new ExecutorCreatePhysicalNodeVisitor(
                     nodeEngine,
                     queryId,
                     nodeEngine.getPartitionService().getPartitionCount(),
                     task.getIds(),
                     task.getPartitionMapping().get(nodeEngine.getLocalMember().getUuid()),
-                    sendFragmentMap,
-                    receiveFragmentMap,
-                    i,
+                    task.getFragments(),
+                    task.getOutboundEdgeMap(),
+                    task.getInboundEdgeMap(),
+                    j,
                     fragment.getParallelism(),
                     task.getSeed()
                 );
@@ -127,7 +115,7 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
                 List<AbstractInbox> inboxes = visitor.getInboxes();
                 List<Outbox> outboxes = visitor.getOutboxes();
 
-                // Target thread is resolved *after* the executor is created, because it may depend in executor cost.
+                // Target thread is resolved *after* the executor is created, because it may depend on executor cost.
                 int thread = lastDataThreadIdx++ % dataThreadPool.getStripeCount();
 
                 for (AbstractInbox inbox : inboxes)
@@ -136,14 +124,20 @@ public class ControlWorker extends AbstractWorker<ControlTask> {
                 for (Outbox outbox : outboxes)
                     outbox.setThread(thread);
 
-                stripeToThread[i] = thread;
+                stripeToThread[j] = thread;
 
-                stripeDeployments.add(new StripeDeployment(exec, i, thread, inboxes, outboxes));
+                stripeDeployments.add(new StripeDeployment(exec, j, thread, inboxes, outboxes));
             }
 
             // Prepare edge mapping.
-            for (Integer edgeId : fragment.getInboundEdges())
-                edgeToStripeMap.put(edgeId, stripeToThread);
+            for (Map.Entry<Integer, Integer> inboundEdgeEntry : task.getInboundEdgeMap().entrySet()) {
+                int edgeId = inboundEdgeEntry.getKey();
+                int fragmentId = inboundEdgeEntry.getValue();
+
+                if (fragmentId == i) {
+                    edgeToStripeMap.put(edgeId, stripeToThread);
+                }
+            }
 
             fragmentDeployments.add(new FragmentDeployment(stripeDeployments));
         }

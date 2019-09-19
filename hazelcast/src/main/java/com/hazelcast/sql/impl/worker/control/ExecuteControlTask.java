@@ -41,6 +41,12 @@ public class ExecuteControlTask implements ControlTask {
     /** Fragments. */
     private final List<QueryFragment> fragments;
 
+    /** Outbound edge mapping (from edge ID to owning fragment position). */
+    private final Map<Integer, Integer> outboundEdgeMap;
+
+    /** Inbound edge mapping (from edge ID to owning fragment position). */
+    private final Map<Integer, Integer> inboundEdgeMap;
+
     /** Query arguments. */
     private final List<Object> arguments;
 
@@ -55,6 +61,8 @@ public class ExecuteControlTask implements ControlTask {
         List<String> ids,
         Map<String, PartitionIdSet> partitionMapping,
         List<QueryFragment> fragments,
+        Map<Integer, Integer> outboundEdgeMap,
+        Map<Integer, Integer> inboundEdgeMap,
         List<Object> arguments,
         int seed,
         QueryResultConsumer rootConsumer
@@ -63,6 +71,8 @@ public class ExecuteControlTask implements ControlTask {
         this.ids = ids;
         this.partitionMapping = partitionMapping;
         this.fragments = fragments;
+        this.outboundEdgeMap = outboundEdgeMap;
+        this.inboundEdgeMap = inboundEdgeMap;
         this.arguments = arguments;
         this.seed = seed;
         this.rootConsumer = rootConsumer;
@@ -83,6 +93,14 @@ public class ExecuteControlTask implements ControlTask {
 
     public List<QueryFragment> getFragments() {
         return fragments != null ? fragments : Collections.emptyList();
+    }
+
+    public Map<Integer, Integer> getOutboundEdgeMap() {
+        return outboundEdgeMap;
+    }
+
+    public Map<Integer, Integer> getInboundEdgeMap() {
+        return inboundEdgeMap;
     }
 
     public List<Object> getArguments() {

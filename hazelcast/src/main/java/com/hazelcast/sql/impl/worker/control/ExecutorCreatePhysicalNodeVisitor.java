@@ -76,11 +76,14 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
 
+    /** All participating fragments. */
+    private final List<QueryFragment> fragments;
+
     /** Map from send (outbound) edge to it's fragment. */
-    private final Map<Integer, QueryFragment> sendFragmentMap;
+    private final Map<Integer, Integer> outboundFragmentMap;
 
     /** Map from receive (inbound) edge to it's fragment. */
-    private final Map<Integer, QueryFragment> receiveFragmentMap;
+    private final Map<Integer, Integer> inboundFragmentMap;
 
     /** Stripe index. */
     private final int stripe;
@@ -109,8 +112,9 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         int partCnt,
         List<String> memberIds,
         PartitionIdSet localParts,
-        Map<Integer, QueryFragment> sendFragmentMap,
-        Map<Integer, QueryFragment> receiveFragmentMap,
+        List<QueryFragment> fragments,
+        Map<Integer, Integer> outboundFragmentMap,
+        Map<Integer, Integer> inboundFragmentMap,
         int stripe,
         int stripeCnt,
         int seed
@@ -120,8 +124,9 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         this.partCnt = partCnt;
         this.memberIds = memberIds;
         this.localParts = localParts;
-        this.sendFragmentMap = sendFragmentMap;
-        this.receiveFragmentMap = receiveFragmentMap;
+        this.fragments = fragments;
+        this.outboundFragmentMap = outboundFragmentMap;
+        this.inboundFragmentMap = inboundFragmentMap;
         this.stripe = stripe;
         this.stripeCnt = stripeCnt;
         this.seed = seed;
@@ -139,7 +144,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         // Navigate to sender exec and calculate total number of sender stripes.
         int edgeId = node.getEdgeId();
 
-        QueryFragment sendFragment = sendFragmentMap.get(edgeId);
+        QueryFragment sendFragment = fragments.get(outboundFragmentMap.get(edgeId));
 
         int remaining = sendFragment.getMemberIds().size() * sendFragment.getParallelism();
 
@@ -165,7 +170,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         int edgeId = node.getEdgeId();
 
         // Create and register inbox.
-        QueryFragment sendFragment = sendFragmentMap.get(edgeId);
+        QueryFragment sendFragment = fragments.get(outboundFragmentMap.get(edgeId));
 
         StripedInbox inbox = new StripedInbox(
             queryId,
@@ -194,7 +199,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         Outbox[] sendOutboxes;
 
         // Partition by member count * parallelism.
-        QueryFragment receiveFragment = receiveFragmentMap.get(node.getEdgeId());
+        QueryFragment receiveFragment = fragments.get(inboundFragmentMap.get(node.getEdgeId()));
 
         int partCnt = receiveFragment.getMemberIds().size() * receiveFragment.getParallelism();
 

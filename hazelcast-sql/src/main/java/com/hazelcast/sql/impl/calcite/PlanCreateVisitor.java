@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
@@ -48,6 +50,7 @@ import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.RootPhysicalNode;
 import com.hazelcast.sql.impl.physical.SendPhysicalNode;
 import com.hazelcast.sql.impl.physical.SortPhysicalNode;
+import com.hazelcast.util.collection.PartitionIdSet;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexNode;
@@ -56,8 +59,10 @@ import org.apache.calcite.sql.SqlAggFunction;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -69,6 +74,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     /** Local member ID. */
     private final String localMemberId;
+
+    /** Fragment nodes. */
+    private final List<PhysicalNode> fragmentNodes = new ArrayList<>();
 
     /** Prepared fragments. */
     private final List<QueryFragment> fragments = new ArrayList<>();
@@ -90,8 +98,25 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         this.localMemberId = localMemberId;
     }
 
-    public List<QueryFragment> getFragments() {
-        return fragments;
+    public QueryPlan getPlan(Map<String, PartitionIdSet> partMap, List<Address> addresses, List<String> memberIds) {
+        Map<Integer, Integer> outboundEdgeMap = new HashMap<>();
+        Map<Integer, Integer> inboundEdgeMap = new HashMap<>();
+
+        for (int i = 0; i < fragments.size(); i++) {
+            QueryFragment fragment = fragments.get(i);
+
+            Integer outboundEdge = fragment.getOutboundEdge();
+
+            if (outboundEdge != null)
+                outboundEdgeMap.put(outboundEdge, i);
+
+            if (fragment.getInboundEdges() != null) {
+                for (Integer inboundEdge : fragment.getInboundEdges())
+                    inboundEdgeMap.put(inboundEdge, i);
+            }
+        }
+
+        return new QueryPlan(fragments, partMap, addresses, memberIds, outboundEdgeMap, inboundEdgeMap);
     }
 
     @Override

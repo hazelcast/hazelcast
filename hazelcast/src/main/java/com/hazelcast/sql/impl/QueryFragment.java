@@ -95,8 +95,6 @@ public class QueryFragment implements DataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-
-
         node = in.readObject();
         outboundEdge = in.readObject();
         inboundEdges = in.readObject();

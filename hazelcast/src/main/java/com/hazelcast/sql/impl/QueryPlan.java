@@ -38,16 +38,26 @@ public class QueryPlan {
     /** Member IDs. */
     private final List<String> ids;
 
+    /** Outbound edge mapping (from edge ID to owning fragment position). */
+    private final Map<Integer, Integer> outboundEdgeMap;
+
+    /** Inbound edge mapping (from edge ID to owning fragment position). */
+    private final Map<Integer, Integer> inboundEdgeMap;
+
     public QueryPlan(
         List<QueryFragment> fragments,
         Map<String, PartitionIdSet> partMap,
         List<Address> addresses,
-        List<String> ids
+        List<String> memberIds,
+        Map<Integer, Integer> outboundEdgeMap,
+        Map<Integer, Integer> inboundEdgeMap
     ) {
         this.fragments = fragments;
         this.partMap = partMap;
         this.addresses = addresses;
-        this.ids = ids;
+        this.ids = memberIds;
+        this.outboundEdgeMap = outboundEdgeMap;
+        this.inboundEdgeMap = inboundEdgeMap;
     }
 
     public List<QueryFragment> getFragments() {
@@ -62,7 +72,15 @@ public class QueryPlan {
         return addresses;
     }
 
-    public List<String> getIds() {
+    public List<String> getMemberIds() {
         return ids;
+    }
+
+    public Map<Integer, Integer> getOutboundEdgeMap() {
+        return outboundEdgeMap;
+    }
+
+    public Map<Integer, Integer> getInboundEdgeMap() {
+        return inboundEdgeMap;
     }
 }
