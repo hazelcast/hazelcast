@@ -19,16 +19,20 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractLocalOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
 import java.util.Iterator;
+import java.util.logging.Level;
 
-public class CacheClearExpiredOperation extends AbstractLocalOperation implements PartitionAwareOperation, MutatingOperation {
+public class CacheClearExpiredOperation extends AbstractLocalOperation
+        implements PartitionAwareOperation, MutatingOperation {
 
     private int expirationPercentage;
 
@@ -76,6 +80,18 @@ public class CacheClearExpiredOperation extends AbstractLocalOperation implement
             super.onExecutionFailure(e);
         } finally {
             prepareForNextCleanup();
+        }
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        if (e instanceof PartitionMigratingException) {
+            ILogger logger = getLogger();
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, e.toString());
+            }
+        } else {
+            super.logError(e);
         }
     }
 
