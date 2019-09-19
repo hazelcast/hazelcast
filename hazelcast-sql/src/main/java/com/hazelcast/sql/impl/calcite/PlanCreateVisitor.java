@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite;
 import com.hazelcast.nio.Address;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedJoinPhysicalRel;
@@ -75,9 +76,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Local member ID. */
     private final String localMemberId;
 
-    /** Fragment nodes. */
-    private final List<PhysicalNode> fragmentNodes = new ArrayList<>();
-
     /** Prepared fragments. */
     private final List<QueryFragment> fragments = new ArrayList<>();
 
@@ -99,11 +97,16 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     public QueryPlan getPlan(Map<String, PartitionIdSet> partMap, List<Address> addresses, List<String> memberIds) {
+        List<PhysicalNode> fragmentNodes = new ArrayList<>(fragments.size());
+        List<QueryFragmentDescriptor> fragmentDescriptors = new ArrayList<>(fragments.size());
+
         Map<Integer, Integer> outboundEdgeMap = new HashMap<>();
         Map<Integer, Integer> inboundEdgeMap = new HashMap<>();
 
         for (int i = 0; i < fragments.size(); i++) {
             QueryFragment fragment = fragments.get(i);
+
+            fragmentNodes.add(fragment.getNode());
 
             Integer outboundEdge = fragment.getOutboundEdge();
 

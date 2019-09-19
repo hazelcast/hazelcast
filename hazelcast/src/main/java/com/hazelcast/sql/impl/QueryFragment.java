@@ -46,6 +46,9 @@ public class QueryFragment implements DataSerializable {
     /** Per-member parallelism. */
     private int parallelism;
 
+    /** Fragment descriptor. */
+    private QueryFragmentDescriptor descriptor;
+
     public QueryFragment() {
         // No-op.
     }
