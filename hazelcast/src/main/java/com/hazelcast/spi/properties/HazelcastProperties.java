@@ -43,6 +43,7 @@ public class HazelcastProperties {
 
     private final Set<String> keys;
     private final Properties properties = new Properties();
+    private Config config;
 
     /**
      * Creates a container with configured Hazelcast properties.
@@ -55,6 +56,7 @@ public class HazelcastProperties {
      */
     public HazelcastProperties(Config config) {
         this(config.getProperties());
+        this.config = config;
     }
 
     /**
@@ -73,6 +75,10 @@ public class HazelcastProperties {
         }
 
         this.keys = unmodifiableSet((Set) properties.keySet());
+    }
+
+    protected Config getConfig() {
+        return config;
     }
 
     /**
