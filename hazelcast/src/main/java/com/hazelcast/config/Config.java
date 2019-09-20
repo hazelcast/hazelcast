@@ -217,12 +217,14 @@ public class Config {
      *
      * @param configPatternMatcher the pattern matcher
      * @throws IllegalArgumentException if the pattern matcher is {@code null}
+     * @return this configuration
      */
-    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+    public Config setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
         }
         this.configPatternMatcher = configPatternMatcher;
+        return this;
     }
 
     /**
@@ -271,9 +273,11 @@ public class Config {
      * attributes are exchanged with other members, e.g. on membership events.
      *
      * @param memberAttributeConfig the member attribute configuration
+     * @return this configuration
      */
-    public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+    public Config setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
         this.memberAttributeConfig = memberAttributeConfig;
+        return this;
     }
 
     /**

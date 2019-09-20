@@ -73,8 +73,9 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return readonly;
     }
 
-    public void setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
+    public DiscoveryConfig setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
         this.discoveryServiceProvider = discoveryServiceProvider;
+        return this;
     }
 
     public DiscoveryServiceProvider getDiscoveryServiceProvider() {
@@ -85,16 +86,18 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return nodeFilter;
     }
 
-    public void setNodeFilter(NodeFilter nodeFilter) {
+    public DiscoveryConfig setNodeFilter(NodeFilter nodeFilter) {
         this.nodeFilter = nodeFilter;
+        return this;
     }
 
     public String getNodeFilterClass() {
         return nodeFilterClass;
     }
 
-    public void setNodeFilterClass(String nodeFilterClass) {
+    public DiscoveryConfig setNodeFilterClass(String nodeFilterClass) {
         this.nodeFilterClass = nodeFilterClass;
+        return this;
     }
 
     public boolean isEnabled() {
@@ -119,11 +122,13 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
      * Sets the strategy configurations for this discovery config.
      *
      * @param discoveryStrategyConfigs the strategy configurations
+     * @return this configuration
      */
-    public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
+    public DiscoveryConfig setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
         this.discoveryStrategyConfigs = discoveryStrategyConfigs == null
                 ? new ArrayList<DiscoveryStrategyConfig>(1)
                 : discoveryStrategyConfigs;
+        return this;
     }
 
     /**
@@ -133,9 +138,11 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
      * remember when building custom {@link com.hazelcast.config.Config} instances.
      *
      * @param discoveryStrategyConfig the {@link DiscoveryStrategyConfig} to add
+     * @return this configuration
      */
-    public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
+    public DiscoveryConfig addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
         discoveryStrategyConfigs.add(discoveryStrategyConfig);
+        return this;
     }
 
     @Override

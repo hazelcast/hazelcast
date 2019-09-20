@@ -118,8 +118,9 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
         return clientFailoverConfig;
     }
 
-    public void setProperties(Properties properties) {
+    public YamlClientFailoverConfigBuilder setProperties(Properties properties) {
         setPropertiesInternal(properties);
+        return this;
     }
 
     void build(ClientFailoverConfig clientFailoverConfig) {

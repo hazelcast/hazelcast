@@ -62,8 +62,9 @@ public class ClientFlakeIdGeneratorConfig {
      * Sets the name or name pattern for this config. Must not be modified after this
      * instance is added to {@link ClientConfig}.
      */
-    public void setName(String name) {
+    public ClientFlakeIdGeneratorConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
     /**

@@ -115,8 +115,9 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
         return clientConfig;
     }
 
-    public void setProperties(Properties properties) {
+    public YamlClientConfigBuilder setProperties(Properties properties) {
         setPropertiesInternal(properties);
+        return this;
     }
 
     void build(ClientConfig clientConfig, ClassLoader classLoader) {

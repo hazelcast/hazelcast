@@ -158,11 +158,13 @@ public class PredicateConfig implements IdentifiedDataSerializable {
      * If a className or implementation was set, it will be removed.
      *
      * @param sql sql string for this config
+     * @return this configuration
      */
-    public void setSql(String sql) {
+    public PredicateConfig setSql(String sql) {
         this.sql = sql;
         this.className = null;
         this.implementation = null;
+        return this;
     }
 
     @Override
