@@ -114,7 +114,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         }, 10);
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testNewAcquireCancelsPendingAcquireRequestWhenAlreadyAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -148,7 +148,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testNewAcquireCancelsPendingAcquireRequestWhenNotAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -184,7 +184,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testTryAcquireWithTimeoutCancelsPendingAcquireRequestWhenAlreadyAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -218,7 +218,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testNewTryAcquireWithTimeoutCancelsPendingAcquireRequestWhenNotAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -254,7 +254,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testNewTryAcquireWithoutTimeoutCancelsPendingAcquireRequestWhenAlreadyAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -288,7 +288,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testNewTryAcquireWithoutTimeoutCancelsPendingAcquireRequestsWhenNotAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -324,7 +324,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testReleaseCancelsPendingAcquireRequestWhenPermitsAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -398,7 +398,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testDrainCancelsPendingAcquireRequestWhenNotAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -433,7 +433,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testRetriedAcquireReceivesPermitsOnlyOnce() throws InterruptedException, ExecutionException {
         semaphore.init(1);
         semaphore.acquire();

@@ -325,7 +325,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         }
     }
 
-    private void locallyInvokeExpireWaitKeysOp(CPGroupId groupId, Collection<Tuple2<String, UUID>> keys) {
+    private void tryReplicateExpiredWaitKeys(CPGroupId groupId, Collection<Tuple2<String, UUID>> keys) {
         try {
             RaftNode raftNode = raftService.getRaftNode(groupId);
             if (raftNode != null) {
@@ -349,7 +349,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
         @Override
         public void run() {
-            locallyInvokeExpireWaitKeysOp(groupId, keys);
+            tryReplicateExpiredWaitKeys(groupId, keys);
         }
     }
 
@@ -357,7 +357,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         @Override
         public void run() {
             for (Entry<CPGroupId, Collection<Tuple2<String, UUID>>> e : getWaitKeysToExpire().entrySet()) {
-                locallyInvokeExpireWaitKeysOp(e.getKey(), e.getValue());
+                tryReplicateExpiredWaitKeys(e.getKey(), e.getValue());
             }
         }
 

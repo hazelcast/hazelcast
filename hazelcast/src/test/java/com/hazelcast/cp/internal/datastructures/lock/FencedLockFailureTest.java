@@ -52,6 +52,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.cp.internal.datastructures.lock.FencedLockBasicTest.assertInvalidFence;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
+import static com.hazelcast.cp.lock.FencedLock.INVALID_FENCE;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
 import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -124,7 +125,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
         }, 10);
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testNewLockCancelsPendingLockRequest() {
         lockByOtherThread();
 
@@ -216,7 +217,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
         });
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testNewTryLockWithTimeoutCancelsPendingLockRequest() {
         lockByOtherThread();
 
@@ -285,7 +286,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
         }, 10);
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 300000)
     public void testNewUnlockCancelsPendingLockRequest() {
         lockByOtherThread();
 
@@ -421,6 +422,52 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
         assertEquals(fence1, lock.getFence());
         assertEquals(fence1, fence2);
         assertEquals(1, lock.getLockCount());
+    }
+
+    @Test
+    public void testExpiredAndRetriedTryLockRequestReceivesFailureResponse() {
+        final CountDownLatch unlockLatch = new CountDownLatch(1);
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                assertOpenEventually(unlockLatch);
+                lock.unlock();
+            }
+        });
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(lock.isLocked());
+            }
+        });
+
+        final RaftGroupId groupId = lock.getGroupId();
+        long sessionId = getSessionManager().getSession(groupId);
+        RaftInvocationManager invocationManager = getRaftInvocationManager(lockInstance);
+        UUID invUid = newUnsecureUUID();
+
+        InternalCompletableFuture<Long> f1 = invocationManager
+                .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, SECONDS.toMillis(5)));
+
+        long fence1 = f1.join();
+        assertEquals(INVALID_FENCE, fence1);
+
+        unlockLatch.countDown();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse(lock.isLocked());
+            }
+        });
+
+        InternalCompletableFuture<Long> f2 = invocationManager
+                .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, SECONDS.toMillis(5)));
+
+        long fence2 = f2.join();
+        assertEquals(INVALID_FENCE, fence2);
     }
 
     @Test
@@ -603,7 +650,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final int partitionId = getRaftService(lockInstance).getCPGroupPartitionId(groupId);
                 final RaftLockRegistry registry = service.getRegistryOrNull(groupId);
                 final boolean[] verified = new boolean[1];
