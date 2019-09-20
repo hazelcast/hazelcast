@@ -55,6 +55,13 @@
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.1.0</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.excludePackageNames>
+            *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:*.util:
+            com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
+            *.client.console:*.buildutils:*.client.protocol.generator:*.cluster.client:
+            *.concurrent:*.collection:*.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:
+            *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
+        </maven.javadoc.plugin.excludePackageNames>
         <maven.antrun.plugin.version>1.7</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
@@ -735,6 +742,8 @@
                         <version>${maven.javadoc.plugin.version}</version>
                         <configuration>
                             <maxmemory>1024</maxmemory>
+                            <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
+                            <doclint>none</doclint>
                         </configuration>
                         <executions>
                             <execution>
@@ -742,9 +751,6 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
-                                <configuration>
-                                    <doclint>none</doclint>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -783,23 +789,8 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>${maven.javadoc.plugin.version}</version>
                         <configuration>
-                            <javaApiLinks>
-                                <property>
-                                    <name>api_1.6</name>
-                                    <value>http://download.oracle.com/javase/1.6.0/docs/api/</value>
-                                </property>
-                                <property>
-                                    <name>api_1.7</name>
-                                    <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
-                                </property>
-                            </javaApiLinks>
-                            <excludePackageNames>
-                                *.impl:*.internal:*.operations:*.proxy:*.util:com.hazelcast.aws.security:
-                                *.handlermigration:*.client.connection.nio:*.client.console:*.buildutils:
-                                *.cluster.client:*.concurrent:*.collection:
-                                *.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:*.transaction.client:
-                                *.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
-                            </excludePackageNames>
+                            <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
+                            <doclint>none</doclint>
                         </configuration>
                         <executions>
                             <execution>
@@ -807,9 +798,6 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
-                                <configuration>
-                                    <doclint>none</doclint>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
