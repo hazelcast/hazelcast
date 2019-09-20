@@ -23,7 +23,7 @@ import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.OFF;

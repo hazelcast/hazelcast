@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.map.IMap;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.memory.NativeOutOfMemoryError;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -96,7 +97,7 @@ public class NativeMemoryConfig {
      * <p>
      * Total size of the memory blocks allocated in native memory region cannot exceed this memory size.
      * When native memory region is completely allocated and in-use, further allocation requests will fail
-     * with {@link com.hazelcast.memory.NativeOutOfMemoryError}.
+     * with {@link NativeOutOfMemoryError}.
      *
      * @param size memory size
      * @return this {@link NativeMemoryConfig} instance

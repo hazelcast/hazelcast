@@ -17,7 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.memory.GarbageCollectorStats;
+import com.hazelcast.internal.memory.GarbageCollectorStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.internal.util.Clock;
 

@@ -29,7 +29,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPMember;
-import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;

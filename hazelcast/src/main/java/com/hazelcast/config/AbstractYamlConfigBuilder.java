@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.config.yaml.ElementAdapter;
+import com.hazelcast.internal.config.yaml.ElementAdapter;
 import com.hazelcast.internal.yaml.MutableYamlMapping;
 import com.hazelcast.internal.yaml.MutableYamlSequence;
 import com.hazelcast.internal.yaml.YamlLoader;
@@ -40,7 +40,7 @@ import java.util.Set;
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getAttribute;
-import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
+import static com.hazelcast.internal.config.yaml.W3cDomUtil.asW3cNode;
 import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 import static com.hazelcast.internal.yaml.YamlUtil.asSequence;

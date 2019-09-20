@@ -41,8 +41,8 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.memory.DefaultMemoryStats;
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.internal.memory.DefaultMemoryStats;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.partition.PartitioningStrategy;

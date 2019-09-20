@@ -24,7 +24,7 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.memory.DefaultMemoryStats;
+import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.NetworkingService;

@@ -71,7 +71,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongServ
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;

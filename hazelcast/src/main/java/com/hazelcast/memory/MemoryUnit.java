@@ -22,7 +22,7 @@ import static com.hazelcast.internal.util.QuickMath.divideByAndRoundToInt;
  * MemoryUnit represents memory size at a given unit of
  * granularity and provides utility methods to convert across units.
  *
- * @see com.hazelcast.memory.MemorySize
+ * @see MemorySize
  * @since 3.4
  */
 public enum MemoryUnit {

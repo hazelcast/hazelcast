@@ -2660,7 +2660,7 @@ public class Config {
     }
 
     /**
-     * Sets the replication configuration for {@link com.hazelcast.crdt.CRDT}
+     * Sets the replication configuration for {@link com.hazelcast.internal.crdt.CRDT}
      * implementations.
      *
      * @param crdtReplicationConfig the replication configuration

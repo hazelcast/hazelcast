@@ -22,9 +22,10 @@ import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec.RequestParamet
 import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.PNCounterConfig;
-import com.hazelcast.crdt.pncounter.PNCounterService;
-import com.hazelcast.crdt.pncounter.operations.CRDTTimestampedLong;
-import com.hazelcast.crdt.pncounter.operations.GetOperation;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.crdt.pncounter.operations.CRDTTimestampedLong;
+import com.hazelcast.internal.crdt.pncounter.operations.GetOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -37,7 +38,7 @@ import java.util.Map.Entry;
 
 /**
  * Task responsible for processing client messages for retrieving the
- * current {@link com.hazelcast.crdt.pncounter.PNCounter} state.
+ * current {@link PNCounter} state.
  * If this message was sent from a client with smart routing disabled, the
  * member may forward the request to a different target member.
  */
