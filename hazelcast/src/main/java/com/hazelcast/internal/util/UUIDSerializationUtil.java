@@ -34,8 +34,8 @@ public final class UUIDSerializationUtil {
         if (isNull) {
             return;
         }
-        out.writeLong(uuid.getLeastSignificantBits());
         out.writeLong(uuid.getMostSignificantBits());
+        out.writeLong(uuid.getLeastSignificantBits());
     }
 
     public static UUID readUUID(DataInput in) throws IOException {
@@ -43,8 +43,8 @@ public final class UUIDSerializationUtil {
         if (isNull) {
             return null;
         }
-        long least = in.readLong();
         long most = in.readLong();
+        long least = in.readLong();
         return new UUID(most, least);
     }
 }
