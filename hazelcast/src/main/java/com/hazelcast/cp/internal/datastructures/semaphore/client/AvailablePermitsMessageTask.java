@@ -17,11 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPSemaphoreAvailablePermitsCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AvailablePermitsOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
@@ -35,7 +35,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link AvailablePermitsOp}
  */
-public class AvailablePermitsMessageTask extends AbstractMessageTask<CPSemaphoreAvailablePermitsCodec.RequestParameters>
+public class AvailablePermitsMessageTask extends AbstractMessageTask<SemaphoreAvailablePermitsCodec.RequestParameters>
         implements ExecutionCallback<Integer> {
 
     public AvailablePermitsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -51,18 +51,18 @@ public class AvailablePermitsMessageTask extends AbstractMessageTask<CPSemaphore
     }
 
     @Override
-    protected CPSemaphoreAvailablePermitsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPSemaphoreAvailablePermitsCodec.decodeRequest(clientMessage);
+    protected SemaphoreAvailablePermitsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreAvailablePermitsCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPSemaphoreAvailablePermitsCodec.encodeResponse((Integer) response);
+        return SemaphoreAvailablePermitsCodec.encodeResponse((Integer) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftSemaphoreService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override

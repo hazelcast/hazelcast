@@ -24,7 +24,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFX;
+import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
 
 /**
  * BeanDefinitionParser for Type Configuration of Hazelcast Types like map, queue, topic etc.
@@ -72,7 +72,7 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
                 }
                 String instanceRef = getTextContent(instanceRefNode);
                 if (HazelcastNamespaceHandler.CP_TYPES.contains(type)) {
-                    builder.getRawBeanDefinition().setFactoryBeanName(instanceRef + CP_SUBSYSTEM_SUFFX);
+                    builder.getRawBeanDefinition().setFactoryBeanName(instanceRef + CP_SUBSYSTEM_SUFFIX);
                 } else {
                     builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);
                 }

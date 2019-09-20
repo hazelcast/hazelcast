@@ -33,9 +33,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Try to initialize this ISemaphore instance with the given permit count
+ * Initializes the ISemaphore instance with the given permit number, if not
+ * initialized before.
  */
-@Generated({"3af82024851816c74adad8fac26d1daf"})
+@Generated({"228385eff6d93ad959b3a0ec00bacea3"})
 public final class SemaphoreInitCodec {
     //hex: 0x0D0100
     public static final int REQUEST_MESSAGE_TYPE = 852224;
@@ -53,25 +54,31 @@ public final class SemaphoreInitCodec {
     public static class RequestParameters {
 
         /**
-         * Name of the Semaphore
+         * CP group id of this ISemaphore instance
+         */
+        public com.hazelcast.cp.internal.RaftGroupId groupId;
+
+        /**
+         * Name of this ISemaphore instance
          */
         public java.lang.String name;
 
         /**
-         * The given permit count
+         * Number of permits to initialize this ISemaphore
          */
         public int permits;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int permits) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, int permits) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(true);
+        clientMessage.setRetryable(true);
+        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Semaphore.Init");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, REQUEST_PERMITS_FIELD_OFFSET, permits);
         clientMessage.add(initialFrame);
+        RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
@@ -81,6 +88,7 @@ public final class SemaphoreInitCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.permits = decodeInt(initialFrame.content, REQUEST_PERMITS_FIELD_OFFSET);
+        request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
         return request;
     }
@@ -89,7 +97,7 @@ public final class SemaphoreInitCodec {
     public static class ResponseParameters {
 
         /**
-         * True if initialization succeeds, false otherwise.
+         * true if the ISemaphore is initialized with this call
          */
         public boolean response;
     }

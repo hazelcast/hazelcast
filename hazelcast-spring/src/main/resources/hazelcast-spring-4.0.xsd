@@ -419,50 +419,6 @@
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
-                        <xs:element name="semaphore" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:sequence>
-                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
-                                        <xs:annotation>
-                                            <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
-                                            </xs:documentation>
-                                        </xs:annotation>
-                                    </xs:element>
-                                </xs:sequence>
-                                <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="initial-permits" use="optional" type="parameterized-unsigned-int">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The thread count to which the concurrent access is limited. For example, if you set
-                                            it to "3", concurrent access to the object is limited to 3 threads.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="backup-count" use="optional" type="parameterized-backup-count" default="1">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Number of synchronous backups. For example, if 1 is set as the backup-count,
-                                            then the items in the ringbuffer are copied to one other JVM for fail-safety.
-                                            `backup-count` + `async-backup-count` cannot be bigger than maximum
-                                            backup count which is `6`. Valid numbers are 0 (no backup), 1, 2 ... 6.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count"
-                                              default="0">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                                            then the items in the ringbuffer are copied to one other JVM for fail-safety.
-                                            `backup-count` + `async-backup-count` cannot be bigger than maximum
-                                            backup count which is `6`. Valid numbers are 0 (no backup), 1, 2 ... 6.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:complexType>
-                        </xs:element>
                         <xs:element name="reliable-topic" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
@@ -4479,7 +4435,7 @@
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="cp-semaphore" type="cp-semaphore" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -4562,7 +4518,7 @@
         </xs:all>
     </xs:complexType>
 
-    <xs:complexType name="cp-semaphore">
+    <xs:complexType name="semaphore">
         <xs:all>
             <xs:element name="name" type="xs:string">
                 <xs:annotation>

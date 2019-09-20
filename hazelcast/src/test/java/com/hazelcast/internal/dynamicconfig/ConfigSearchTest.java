@@ -34,7 +34,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -856,52 +855,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             void asserts() {
                 CardinalityEstimatorConfig dataConfig
                         = hazelcastInstance.getConfig().findCardinalityEstimatorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testSemaphoreConfig_Static() {
-        TestCase<SemaphoreConfig> testCase = new TestCase<SemaphoreConfig>(new SemaphoreConfig().setName(STATIC_NAME),
-                new SemaphoreConfig().setName(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addSemaphoreConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addSemaphoreConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                SemaphoreConfig dataConfig = hazelcastInstance.getConfig().findSemaphoreConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testSemaphoreConfig_Dynamic() {
-        TestCase<SemaphoreConfig> testCase = new TestCase<SemaphoreConfig>(new SemaphoreConfig().setName(STATIC_NAME),
-                new SemaphoreConfig().setName(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addSemaphoreConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addSemaphoreConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                SemaphoreConfig dataConfig = hazelcastInstance.getConfig().findSemaphoreConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
             }
         };

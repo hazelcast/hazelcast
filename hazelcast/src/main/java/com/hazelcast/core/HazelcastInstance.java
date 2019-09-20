@@ -29,7 +29,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -327,19 +326,6 @@ public interface HazelcastInstance {
      */
     @Deprecated
     <E> IAtomicReference<E> getAtomicReference(String name);
-
-    /**
-     * Creates or returns a cluster-wide semaphore. Hazelcast {@link ISemaphore} is distributed
-     * implementation of <code>java.util.concurrent.Semaphore</code>.
-     *
-     * @param name name of the {@link ISemaphore} proxy
-     * @return {@link ISemaphore} proxy for the given name
-     * @deprecated This implementation may lose strong consistency in case of network failures
-     * or server failures. Please use {@link CPSubsystem#getSemaphore(String)} instead.
-     * This method will be removed in Hazelcast 4.0.
-     */
-    @Deprecated
-    ISemaphore getSemaphore(String name);
 
     /**
      * Returns all {@link DistributedObject}s, that is all maps, queues,

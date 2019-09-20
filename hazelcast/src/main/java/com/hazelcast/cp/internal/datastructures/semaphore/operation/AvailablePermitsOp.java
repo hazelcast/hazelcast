@@ -17,9 +17,9 @@
 package com.hazelcast.cp.internal.datastructures.semaphore.operation;
 
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphore;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.Semaphore;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,7 +32,7 @@ import java.io.IOException;
 /**
  * Operation for {@link ISemaphore#availablePermits()}
  *
- * @see RaftSemaphore#getAvailable()
+ * @see Semaphore#getAvailable()
  */
 public class AvailablePermitsOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
 
@@ -47,7 +47,7 @@ public class AvailablePermitsOp extends RaftOp implements IndeterminateOperation
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftSemaphoreService service = getService();
+        SemaphoreService service = getService();
         return service.availablePermits(groupId, name);
     }
 
@@ -58,17 +58,17 @@ public class AvailablePermitsOp extends RaftOp implements IndeterminateOperation
 
     @Override
     protected String getServiceName() {
-        return RaftSemaphoreService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override
     public int getFactoryId() {
-        return RaftSemaphoreDataSerializerHook.F_ID;
+        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftSemaphoreDataSerializerHook.AVAILABLE_PERMITS_OP;
+        return SemaphoreDataSerializerHook.AVAILABLE_PERMITS_OP;
     }
 
     @Override

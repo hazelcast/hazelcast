@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftOp;
@@ -60,7 +60,7 @@ public class UnsafeSessionAwareSemaphoreBasicTest extends AbstractSessionAwareSe
     @Override
     protected HazelcastInstance[] createInstances() {
         Config config = new Config();
-        CPSemaphoreConfig semaphoreConfig = new CPSemaphoreConfig(objectName, false);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, false);
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return factory.newInstances(config, 2);
     }
@@ -84,8 +84,8 @@ public class UnsafeSessionAwareSemaphoreBasicTest extends AbstractSessionAwareSe
         });
 
         assertTrueEventually(() -> {
-            RaftSemaphoreService service = getNodeEngineImpl(primaryInstance).getService(RaftSemaphoreService.SERVICE_NAME);
-            RaftSemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
+            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
@@ -96,8 +96,8 @@ public class UnsafeSessionAwareSemaphoreBasicTest extends AbstractSessionAwareSe
         assertOpenEventually(latch);
 
         assertTrueEventually(() -> {
-            RaftSemaphoreService service = getNodeEngineImpl(primaryInstance).getService(RaftSemaphoreService.SERVICE_NAME);
-            RaftSemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
+            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
             assertTrue(registry.getWaitTimeouts().isEmpty());
         });
     }

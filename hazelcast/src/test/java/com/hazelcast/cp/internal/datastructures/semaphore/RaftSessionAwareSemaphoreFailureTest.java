@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RaftSessionAwareSemaphoreFailureTest extends RaftSemaphoreFailureTest {
+public class RaftSessionAwareSemaphoreFailureTest extends SemaphoreFailureTest {
 
     @Override
     boolean isJDKCompatible() {

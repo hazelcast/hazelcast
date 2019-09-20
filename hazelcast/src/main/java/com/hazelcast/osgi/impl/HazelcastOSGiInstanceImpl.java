@@ -35,7 +35,6 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -196,11 +195,6 @@ class HazelcastOSGiInstanceImpl
     @Override
     public <E> IAtomicReference<E> getAtomicReference(String name) {
         return delegatedInstance.getAtomicReference(name);
-    }
-
-    @Override
-    public ISemaphore getSemaphore(String name) {
-        return delegatedInstance.getSemaphore(name);
     }
 
     @Override

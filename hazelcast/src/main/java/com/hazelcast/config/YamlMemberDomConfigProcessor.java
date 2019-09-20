@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.instance.ProtocolType;
@@ -222,15 +222,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 int portCount = parseInt(value);
                 networkConfig.setPortCount(portCount);
             }
-        }
-    }
-
-    @Override
-    protected void handleSemaphore(Node node) {
-        for (Node semaphoreNode : childElements(node)) {
-            SemaphoreConfig sConfig = new SemaphoreConfig();
-            sConfig.setName(semaphoreNode.getNodeName());
-            handleSemaphoreNode(semaphoreNode, sConfig);
         }
     }
 
@@ -878,18 +869,18 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    void handleCPSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
+    void handleSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
         for (Node child : childElements(node)) {
-            CPSemaphoreConfig cpSemaphoreConfig = new CPSemaphoreConfig();
-            cpSemaphoreConfig.setName(child.getNodeName());
+            SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
+            semaphoreConfig.setName(child.getNodeName());
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
                 String value = getTextContent(subChild).trim();
                 if ("jdk-compatible".equals(nodeName)) {
-                    cpSemaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
+                    semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
                 }
             }
-            cpSubsystemConfig.addSemaphoreConfig(cpSemaphoreConfig);
+            cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
         }
     }
 

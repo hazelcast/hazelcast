@@ -21,6 +21,13 @@ import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetRoundCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreChangeCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreGetSemaphoreTypeCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.client.impl.protocol.task.AddPartitionListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
@@ -48,7 +55,6 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddReliableTopicCon
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddReplicatedMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddRingbufferConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddScheduledExecutorConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddSemaphoreConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddSetConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddTopicConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
@@ -634,48 +640,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndIncrementCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetAndIncrementMessageTask(clientMessage, node, connection);
-            }
-        });
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.semaphore
-        factories.put(com.hazelcast.client.impl.protocol.codec.SemaphoreDrainPermitsCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreDrainPermitsMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreAvailablePermitsMessageTasks(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreInitMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreAcquireMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.SemaphoreReducePermitsCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreReducePermitsMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.SemaphoreIncreasePermitsCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreIncreasePermitsMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.SemaphoreTryAcquireCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreTryAcquireMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.semaphore.SemaphoreReleaseMessageTask(clientMessage, node, connection);
             }
         });
 //endregion
@@ -2048,11 +2012,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new AddSetConfigMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSemaphoreConfigCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new AddSemaphoreConfigMessageTask(clientMessage, node, connection);
-            }
-        });
         factories.put(com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddTopicConfigMessageTask(clientMessage, node, connection);
@@ -2283,43 +2242,43 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         });
 
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPSemaphoreAcquireCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(SemaphoreAcquireCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AcquirePermitsMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPSemaphoreAvailablePermitsCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(SemaphoreAvailablePermitsCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AvailablePermitsMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPSemaphoreChangeCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(SemaphoreChangeCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new ChangePermitsMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPSemaphoreDrainCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(SemaphoreDrainCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new DrainPermitsMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPSemaphoreGetSemaphoreTypeCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(SemaphoreGetSemaphoreTypeCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetSemaphoreTypeMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPSemaphoreInitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(SemaphoreInitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new InitSemaphoreMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPSemaphoreReleaseCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(SemaphoreReleaseCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new ReleasePermitsMessageTask(clientMessage, node, connection);

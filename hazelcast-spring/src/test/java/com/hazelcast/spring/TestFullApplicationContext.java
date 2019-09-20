@@ -91,7 +91,6 @@ import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.ServiceConfig;
@@ -109,7 +108,7 @@ import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -615,16 +614,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MergePolicyConfig mergePolicyConfig = testAtomicReference.getMergePolicyConfig();
         assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(4223, mergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void testSemaphoreConfig() {
-        SemaphoreConfig testSemaphore = config.getSemaphoreConfig("testSemaphore");
-        assertNotNull(testSemaphore);
-        assertEquals("testSemaphore", testSemaphore.getName());
-        assertEquals(1, testSemaphore.getBackupCount());
-        assertEquals(1, testSemaphore.getAsyncBackupCount());
-        assertEquals(10, testSemaphore.getInitialPermits());
     }
 
     @Test
@@ -1425,12 +1414,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(250, raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot());
         assertEquals(75, raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends());
         assertEquals(50, raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis());
-        CPSemaphoreConfig cpSemaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
-        CPSemaphoreConfig cpSemaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
-        assertNotNull(cpSemaphoreConfig1);
-        assertNotNull(cpSemaphoreConfig2);
-        assertTrue(cpSemaphoreConfig1.isJDKCompatible());
-        assertFalse(cpSemaphoreConfig2.isJDKCompatible());
+        SemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
+        SemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
+        assertNotNull(semaphoreConfig1);
+        assertNotNull(semaphoreConfig2);
+        assertTrue(semaphoreConfig1.isJDKCompatible());
+        assertFalse(semaphoreConfig2.isJDKCompatible());
         FencedLockConfig lockConfig1 = cpSubsystemConfig.findLockConfig("lock1");
         FencedLockConfig lockConfig2 = cpSubsystemConfig.findLockConfig("lock2");
         assertNotNull(lockConfig1);

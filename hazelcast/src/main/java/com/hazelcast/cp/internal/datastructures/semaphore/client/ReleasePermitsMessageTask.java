@@ -17,12 +17,12 @@
 package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPSemaphoreReleaseCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.ReleasePermitsOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
@@ -34,7 +34,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link ReleasePermitsOp}
  */
-public class ReleasePermitsMessageTask extends AbstractMessageTask<CPSemaphoreReleaseCodec.RequestParameters>
+public class ReleasePermitsMessageTask extends AbstractMessageTask<SemaphoreReleaseCodec.RequestParameters>
         implements ExecutionCallback<Boolean> {
 
     public ReleasePermitsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -52,18 +52,18 @@ public class ReleasePermitsMessageTask extends AbstractMessageTask<CPSemaphoreRe
     }
 
     @Override
-    protected CPSemaphoreReleaseCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPSemaphoreReleaseCodec.decodeRequest(clientMessage);
+    protected SemaphoreReleaseCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreReleaseCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPSemaphoreReleaseCodec.encodeResponse((Boolean) response);
+        return SemaphoreReleaseCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftSemaphoreService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override

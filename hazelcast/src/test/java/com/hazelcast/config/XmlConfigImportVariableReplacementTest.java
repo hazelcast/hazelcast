@@ -68,23 +68,20 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test
     public void readVariables() {
         String xml = HAZELCAST_START_TAG
-                + "    <semaphore name=\"${name}\">\n"
-                + "        <initial-permits>${initial.permits}</initial-permits>\n"
+                + "    <map name=\"${name}\">\n"
                 + "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n"
-                + "    </semaphore>"
+                + "    </map>"
                 + HAZELCAST_END_TAG;
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");
-        properties.setProperty("initial.permits", "25");
 
         properties.setProperty("backupcount.part1", "0");
         properties.setProperty("backupcount.part2", "6");
         Config config = buildConfig(xml, properties);
-        SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
-        assertEquals(25, semaphoreConfig.getInitialPermits());
-        assertEquals(6, semaphoreConfig.getBackupCount());
-        assertEquals(0, semaphoreConfig.getAsyncBackupCount());
+        MapConfig mapConfig = config.getMapConfig("s");
+        assertEquals(6, mapConfig.getBackupCount());
+        assertEquals(0, mapConfig.getAsyncBackupCount());
     }
 
     @Override

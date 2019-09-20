@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.ISemaphore;
@@ -51,7 +51,7 @@ public class RaftSessionlessSemaphoreBasicTest extends AbstractSessionlessSemaph
     protected Config createConfig(int cpNodeCount, int groupSize) {
         Config config = super.createConfig(cpNodeCount, groupSize);
 
-        CPSemaphoreConfig semaphoreConfig = new CPSemaphoreConfig(objectName, true);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, true);
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return config;
     }

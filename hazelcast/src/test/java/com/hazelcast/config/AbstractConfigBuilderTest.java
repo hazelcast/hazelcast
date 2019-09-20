@@ -104,9 +104,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void networkReuseAddress();
 
     @Test
-    public abstract void readSemaphoreConfig();
-
-    @Test
     public abstract void readQueueConfig();
 
     @Test

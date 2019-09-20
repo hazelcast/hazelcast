@@ -55,22 +55,19 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     public void readVariables() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  semaphore:\n"
+                + "  map:\n"
                 + "    ${name}:\n"
-                + "      initial-permits: ${initial.permits}\n"
                 + "      backup-count: ${backupcount.part1}${backupcount.part2}\n";
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");
-        properties.setProperty("initial.permits", "25");
 
         properties.setProperty("backupcount.part1", "0");
         properties.setProperty("backupcount.part2", "6");
         Config config = buildConfig(yaml, properties);
-        SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
-        assertEquals(25, semaphoreConfig.getInitialPermits());
-        assertEquals(6, semaphoreConfig.getBackupCount());
-        assertEquals(0, semaphoreConfig.getAsyncBackupCount());
+        MapConfig mapConfig = config.getMapConfig("s");
+        assertEquals(6, mapConfig.getBackupCount());
+        assertEquals(0, mapConfig.getAsyncBackupCount());
     }
 
     @Override

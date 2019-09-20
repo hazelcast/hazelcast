@@ -33,7 +33,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -85,11 +84,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public DurableExecutorConfig findDurableExecutorConfig(String name) {
-        return null;
-    }
-
-    @Override
-    public SemaphoreConfig findSemaphoreConfig(String name) {
         return null;
     }
 
@@ -230,11 +224,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, PNCounterConfig> getPNCounterConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public Map<String, SemaphoreConfig> getSemaphoreConfigs() {
         return emptyMap();
     }
 

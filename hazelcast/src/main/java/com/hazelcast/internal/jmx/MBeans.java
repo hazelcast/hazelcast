@@ -16,25 +16,23 @@
 
 package com.hazelcast.internal.jmx;
 
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.collection.IList;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -199,23 +197,6 @@ final class MBeans {
             @Override
             public String getServiceName() {
                 return QueueService.SERVICE_NAME;
-            }
-        },
-
-        SEMAPHORE {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new SemaphoreMBean((ISemaphore) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "ISemaphore";
-            }
-
-            @Override
-            public String getServiceName() {
-                return SemaphoreService.SERVICE_NAME;
             }
         },
 

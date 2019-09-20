@@ -34,7 +34,6 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicCon
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSemaphoreConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
@@ -72,29 +71,27 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -331,15 +328,6 @@ public class ClientDynamicClusterConfig extends Config {
                 cardinalityEstimatorConfig.getAsyncBackupCount(), cardinalityEstimatorConfig.getSplitBrainProtectionName(),
                 cardinalityEstimatorConfig.getMergePolicyConfig().getPolicy(),
                 cardinalityEstimatorConfig.getMergePolicyConfig().getBatchSize());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        ClientMessage request = DynamicConfigAddSemaphoreConfigCodec.encodeRequest(
-                semaphoreConfig.getName(), semaphoreConfig.getInitialPermits(), semaphoreConfig.getBackupCount(),
-                semaphoreConfig.getAsyncBackupCount(), semaphoreConfig.getSplitBrainProtectionName());
         invoke(request);
         return this;
     }
@@ -788,31 +776,6 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config setCardinalityEstimatorConfigs(
             Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public SemaphoreConfig findSemaphoreConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public SemaphoreConfig getSemaphoreConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Collection<SemaphoreConfig> getSemaphoreConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, SemaphoreConfig> getSemaphoreConfigsAsMap() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

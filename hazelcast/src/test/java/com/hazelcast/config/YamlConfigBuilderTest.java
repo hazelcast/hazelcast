@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -482,26 +482,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  network:\n"
                 + "    reuse-address: true\n");
         assertTrue(config.getNetworkConfig().isReuseAddress());
-    }
-
-    @Override
-    @Test
-    public void readSemaphoreConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  semaphore:\n"
-                + "    default:\n"
-                + "      initial-permits: 1\n"
-                + "    custom:\n"
-                + "      initial-permits: 10\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule";
-
-        Config config = buildConfig(yaml);
-        SemaphoreConfig defaultConfig = config.getSemaphoreConfig("default");
-        SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
-        assertEquals(1, defaultConfig.getInitialPermits());
-        assertEquals(10, customConfig.getInitialPermits());
-        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -3395,8 +3375,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(250, raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot());
         assertEquals(75, raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends());
         assertEquals(50, raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis());
-        CPSemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
-        CPSemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
+        SemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
+        SemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
         assertNotNull(semaphoreConfig1);
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());

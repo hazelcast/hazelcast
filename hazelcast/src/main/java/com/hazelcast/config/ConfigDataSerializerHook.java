@@ -149,7 +149,6 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[EXECUTOR_CONFIG] = arg -> new ExecutorConfig();
         constructors[DURABLE_EXECUTOR_CONFIG] = arg -> new DurableExecutorConfig();
         constructors[SCHEDULED_EXECUTOR_CONFIG] = arg -> new ScheduledExecutorConfig();
-        constructors[SEMAPHORE_CONFIG] = arg -> new SemaphoreConfig();
         constructors[REPLICATED_MAP_CONFIG] = arg -> new ReplicatedMapConfig();
         constructors[RINGBUFFER_CONFIG] = arg -> new RingbufferConfig();
         constructors[RINGBUFFER_STORE_CONFIG] = arg -> new RingbufferStoreConfig();
