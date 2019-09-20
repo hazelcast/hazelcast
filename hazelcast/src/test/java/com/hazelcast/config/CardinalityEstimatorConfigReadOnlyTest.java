@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith;
 public class CardinalityEstimatorConfigReadOnlyTest {
 
     private CardinalityEstimatorConfig getReadOnlyConfig() {
-        return new CardinalityEstimatorConfig().getAsReadOnly();
+        return new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

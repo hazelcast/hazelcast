@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;

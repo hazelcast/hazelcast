@@ -56,8 +56,6 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
 
     private String splitBrainProtectionName;
 
-    private transient DurableExecutorConfigReadOnly readOnly;
-
     public DurableExecutorConfig() {
     }
 
@@ -194,13 +192,6 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
                 + '}';
     }
 
-    DurableExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new DurableExecutorConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -264,38 +255,5 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         result = 31 * result + capacity;
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
-    }
-
-    // not private for testing
-    static class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
-
-        DurableExecutorConfigReadOnly(DurableExecutorConfig config) {
-            super(config);
-        }
-
-        @Override
-        public DurableExecutorConfig setName(String name) {
-            throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
-        }
-
-        @Override
-        public DurableExecutorConfig setPoolSize(int poolSize) {
-            throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
-        }
-
-        @Override
-        public DurableExecutorConfig setCapacity(int capacity) {
-            throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
-        }
-
-        @Override
-        public DurableExecutorConfig setDurability(int durability) {
-            throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
-        }
-
-        @Override
-        public DurableExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
-            throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
-        }
     }
 }

@@ -26,7 +26,26 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
+import com.hazelcast.internal.config.AtomicReferenceConfigReadOnly;
+import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
+import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
+import com.hazelcast.internal.config.ExecutorConfigReadOnly;
+import com.hazelcast.internal.config.ListConfigReadOnly;
+import com.hazelcast.internal.config.LockConfigReadOnly;
+import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.config.MultiMapConfigReadOnly;
+import com.hazelcast.internal.config.PNCounterConfigReadOnly;
+import com.hazelcast.internal.config.QueueConfigReadOnly;
+import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
+import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
+import com.hazelcast.internal.config.RingbufferConfigReadOnly;
+import com.hazelcast.internal.config.ScheduledExecutorConfigReadOnly;
+import com.hazelcast.internal.config.SemaphoreConfigReadOnly;
+import com.hazelcast.internal.config.SetConfigReadOnly;
+import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -405,9 +424,9 @@ public class Config {
         MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
         if (config != null) {
             initDefaultMaxSizeForOnHeapMaps(config.getNearCacheConfig());
-            return config.getAsReadOnly();
+            return new MapConfigReadOnly(config);
         }
-        return getMapConfig("default").getAsReadOnly();
+        return new MapConfigReadOnly(getMapConfig("default"));
     }
 
     /**
@@ -521,9 +540,9 @@ public class Config {
         name = getBaseName(name);
         final CacheSimpleConfig config = lookupByPattern(configPatternMatcher, cacheConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new CacheSimpleConfigReadOnly(config);
         }
-        return getCacheConfig("default").getAsReadOnly();
+        return new CacheSimpleConfigReadOnly(getCacheConfig("default"));
     }
 
     /**
@@ -639,9 +658,9 @@ public class Config {
         name = getBaseName(name);
         QueueConfig config = lookupByPattern(configPatternMatcher, queueConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new QueueConfigReadOnly(config);
         }
-        return getQueueConfig("default").getAsReadOnly();
+        return new QueueConfigReadOnly(getQueueConfig("default"));
     }
 
     /**
@@ -739,9 +758,9 @@ public class Config {
         name = getBaseName(name);
         final LockConfig config = lookupByPattern(configPatternMatcher, lockConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new LockConfigReadOnly(config);
         }
-        return getLockConfig("default").getAsReadOnly();
+        return new LockConfigReadOnly(getLockConfig("default"));
     }
 
     /**
@@ -839,9 +858,9 @@ public class Config {
         name = getBaseName(name);
         ListConfig config = lookupByPattern(configPatternMatcher, listConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ListConfigReadOnly(config);
         }
-        return getListConfig("default").getAsReadOnly();
+        return new ListConfigReadOnly(getListConfig("default"));
     }
 
     /**
@@ -939,9 +958,9 @@ public class Config {
         name = getBaseName(name);
         SetConfig config = lookupByPattern(configPatternMatcher, setConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new SetConfigReadOnly(config);
         }
-        return getSetConfig("default").getAsReadOnly();
+        return new SetConfigReadOnly(getSetConfig("default"));
     }
 
     /**
@@ -1039,9 +1058,9 @@ public class Config {
         name = getBaseName(name);
         MultiMapConfig config = lookupByPattern(configPatternMatcher, multiMapConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new MultiMapConfigReadOnly(config);
         }
-        return getMultiMapConfig("default").getAsReadOnly();
+        return new MultiMapConfigReadOnly(getMultiMapConfig("default"));
     }
 
     /**
@@ -1139,9 +1158,9 @@ public class Config {
         name = getBaseName(name);
         ReplicatedMapConfig config = lookupByPattern(configPatternMatcher, replicatedMapConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ReplicatedMapConfigReadOnly(config);
         }
-        return getReplicatedMapConfig("default").getAsReadOnly();
+        return new ReplicatedMapConfigReadOnly(getReplicatedMapConfig("default"));
     }
 
     /**
@@ -1240,9 +1259,9 @@ public class Config {
         name = getBaseName(name);
         RingbufferConfig config = lookupByPattern(configPatternMatcher, ringbufferConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new RingbufferConfigReadOnly(config);
         }
-        return getRingbufferConfig("default").getAsReadOnly();
+        return new RingbufferConfigReadOnly(getRingbufferConfig("default"));
     }
 
     /**
@@ -1339,9 +1358,9 @@ public class Config {
         name = getBaseName(name);
         AtomicLongConfig config = lookupByPattern(configPatternMatcher, atomicLongConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new AtomicLongConfigReadOnly(config);
         }
-        return getAtomicLongConfig("default").getAsReadOnly();
+        return new AtomicLongConfigReadOnly(getAtomicLongConfig("default"));
     }
 
     /**
@@ -1435,9 +1454,9 @@ public class Config {
         name = getBaseName(name);
         AtomicReferenceConfig config = lookupByPattern(configPatternMatcher, atomicReferenceConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new AtomicReferenceConfigReadOnly(config);
         }
-        return getAtomicReferenceConfig("default").getAsReadOnly();
+        return new AtomicReferenceConfigReadOnly(getAtomicReferenceConfig("default"));
     }
 
     /**
@@ -1533,9 +1552,9 @@ public class Config {
         name = getBaseName(name);
         TopicConfig config = lookupByPattern(configPatternMatcher, topicConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new TopicConfigReadOnly(config);
         }
-        return getTopicConfig("default").getAsReadOnly();
+        return new TopicConfigReadOnly(getTopicConfig("default"));
     }
 
     /**
@@ -1604,9 +1623,9 @@ public class Config {
         name = getBaseName(name);
         ReliableTopicConfig config = lookupByPattern(configPatternMatcher, reliableTopicConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ReliableTopicConfigReadOnly(config);
         }
-        return getReliableTopicConfig("default").getAsReadOnly();
+        return new ReliableTopicConfigReadOnly(getReliableTopicConfig("default"));
     }
 
     /**
@@ -1732,9 +1751,9 @@ public class Config {
         name = getBaseName(name);
         ExecutorConfig config = lookupByPattern(configPatternMatcher, executorConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ExecutorConfigReadOnly(config);
         }
-        return getExecutorConfig("default").getAsReadOnly();
+        return new ExecutorConfigReadOnly(getExecutorConfig("default"));
     }
 
     /**
@@ -1758,9 +1777,9 @@ public class Config {
         name = getBaseName(name);
         DurableExecutorConfig config = lookupByPattern(configPatternMatcher, durableExecutorConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new DurableExecutorConfigReadOnly(config);
         }
-        return getDurableExecutorConfig("default").getAsReadOnly();
+        return new DurableExecutorConfigReadOnly(getDurableExecutorConfig("default"));
     }
 
     /**
@@ -1784,9 +1803,9 @@ public class Config {
         name = getBaseName(name);
         ScheduledExecutorConfig config = lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ScheduledExecutorConfigReadOnly(config);
         }
-        return getScheduledExecutorConfig("default").getAsReadOnly();
+        return new ScheduledExecutorConfigReadOnly(getScheduledExecutorConfig("default"));
     }
 
     /**
@@ -1811,9 +1830,9 @@ public class Config {
         name = getBaseName(name);
         CardinalityEstimatorConfig config = lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new CardinalityEstimatorConfigReadOnly(config);
         }
-        return getCardinalityEstimatorConfig("default").getAsReadOnly();
+        return new CardinalityEstimatorConfigReadOnly(getCardinalityEstimatorConfig("default"));
     }
 
     /**
@@ -1838,9 +1857,9 @@ public class Config {
         name = getBaseName(name);
         PNCounterConfig config = lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new PNCounterConfigReadOnly(config);
         }
-        return getPNCounterConfig("default").getAsReadOnly();
+        return new PNCounterConfigReadOnly(getPNCounterConfig("default"));
     }
 
     /**
@@ -2236,9 +2255,9 @@ public class Config {
         name = getBaseName(name);
         SemaphoreConfig config = lookupByPattern(configPatternMatcher, semaphoreConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new SemaphoreConfigReadOnly(config);
         }
-        return getSemaphoreConfig("default").getAsReadOnly();
+        return new SemaphoreConfigReadOnly(getSemaphoreConfig("default"));
     }
 
     /**

@@ -29,8 +29,6 @@ public class ItemListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;
 
-    private transient ItemListenerConfigReadOnly readOnly;
-
     public ItemListenerConfig() {
     }
 
@@ -48,20 +46,6 @@ public class ItemListenerConfig extends ListenerConfig {
         includeValue = config.isIncludeValue();
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    @Override
-    public ItemListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ItemListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override

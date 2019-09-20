@@ -40,8 +40,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
     private String name;
     private String extractorClassName;
 
-    private transient AttributeConfigReadOnly readOnly;
-
     /**
      * Creates an empty AttributeConfig.
      */
@@ -67,19 +65,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
     public AttributeConfig(AttributeConfig config) {
         name = config.getName();
         extractorClassName = config.getExtractorClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public AttributeConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new AttributeConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

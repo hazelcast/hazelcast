@@ -59,14 +59,4 @@ public class MemberAttributeConfig {
         attributes.remove(key);
         return this;
     }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MemberAttributeConfig asReadOnly() {
-        return new MemberAttributeConfigReadOnly(this);
-    }
 }

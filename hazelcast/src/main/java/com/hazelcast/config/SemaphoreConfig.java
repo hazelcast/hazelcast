@@ -46,7 +46,6 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
     private int initialPermits;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
-    private transient SemaphoreConfigReadOnly readOnly;
 
     private String splitBrainProtectionName;
 
@@ -69,19 +68,6 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, NamedConfig 
         this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
         this.splitBrainProtectionName = config.getSplitBrainProtectionName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public SemaphoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new SemaphoreConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

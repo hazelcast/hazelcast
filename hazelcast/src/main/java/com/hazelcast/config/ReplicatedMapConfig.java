@@ -56,8 +56,6 @@ public class ReplicatedMapConfig
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
-    private transient volatile ReplicatedMapConfigReadOnly readOnly;
-
     public ReplicatedMapConfig() {
     }
 
@@ -178,19 +176,6 @@ public class ReplicatedMapConfig
     public ReplicatedMapConfig setAsyncFillup(boolean asyncFillup) {
         this.asyncFillup = asyncFillup;
         return this;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public ReplicatedMapConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ReplicatedMapConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

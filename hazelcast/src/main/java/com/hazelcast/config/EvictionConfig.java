@@ -106,8 +106,6 @@ public class EvictionConfig implements EvictionConfiguration,
     protected String comparatorClassName;
     protected EvictionPolicyComparator comparator;
 
-    protected EvictionConfig readOnly;
-
     /**
      * Used by the {@link NearCacheConfigAccessor} to
      * initialize the proper default value for on-heap maps.
@@ -124,20 +122,6 @@ public class EvictionConfig implements EvictionConfiguration,
         this.evictionPolicy = config.evictionPolicy;
         this.comparatorClassName = config.comparatorClassName;
         this.comparator = config.comparator;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in
-     * 4.0; it is meant for internal usage only
-     */
-    public EvictionConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new EvictionConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

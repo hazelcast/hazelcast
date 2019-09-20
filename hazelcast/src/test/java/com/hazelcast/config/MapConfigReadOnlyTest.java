@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,14 +34,14 @@ import static org.junit.Assert.assertNull;
 public class MapConfigReadOnlyTest {
 
     private MapConfig getReadOnlyConfig() {
-        return new MapConfig().getAsReadOnly();
+        return new MapConfigReadOnly(new MapConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void getMaxSizeConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
         MapConfig config = new MapConfig();
 
-        MaxSizeConfig maxSizeConfig = config.getAsReadOnly().getMaxSizeConfig();
+        MaxSizeConfig maxSizeConfig = new MapConfigReadOnly(config).getMaxSizeConfig();
         maxSizeConfig.setSize(2342);
     }
 
@@ -49,7 +50,7 @@ public class MapConfigReadOnlyTest {
         MapConfig config = new MapConfig()
                 .setMaxSizeConfig(null);
 
-        MaxSizeConfig maxSizeConfig = config.getAsReadOnly().getMaxSizeConfig();
+        MaxSizeConfig maxSizeConfig = new MapConfigReadOnly(config).getMaxSizeConfig();
         assertNull(maxSizeConfig);
     }
 
@@ -58,7 +59,7 @@ public class MapConfigReadOnlyTest {
         MapConfig config = new MapConfig()
                 .setWanReplicationRef(new WanReplicationRef());
 
-        WanReplicationRef wanReplicationRef = config.getAsReadOnly().getWanReplicationRef();
+        WanReplicationRef wanReplicationRef = new MapConfigReadOnly(config).getWanReplicationRef();
         wanReplicationRef.setName("myWanReplicationRef");
     }
 
@@ -67,7 +68,7 @@ public class MapConfigReadOnlyTest {
         MapConfig config = new MapConfig()
                 .setWanReplicationRef(null);
 
-        WanReplicationRef wanReplicationRef = config.getAsReadOnly().getWanReplicationRef();
+        WanReplicationRef wanReplicationRef = new MapConfigReadOnly(config).getWanReplicationRef();
         assertNull(wanReplicationRef);
     }
 
@@ -77,7 +78,7 @@ public class MapConfigReadOnlyTest {
                 .addEntryListenerConfig(new EntryListenerConfig())
                 .addEntryListenerConfig(new EntryListenerConfig());
 
-        List<EntryListenerConfig> listenerConfigs = config.getAsReadOnly().getEntryListenerConfigs();
+        List<EntryListenerConfig> listenerConfigs = new MapConfigReadOnly(config).getEntryListenerConfigs();
         listenerConfigs.add(new EntryListenerConfig());
     }
 
@@ -87,7 +88,7 @@ public class MapConfigReadOnlyTest {
                 .addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig())
                 .addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig());
 
-        List<MapPartitionLostListenerConfig> listenerConfigs = config.getAsReadOnly().getPartitionLostListenerConfigs();
+        List<MapPartitionLostListenerConfig> listenerConfigs = new MapConfigReadOnly(config).getPartitionLostListenerConfigs();
         listenerConfigs.add(new MapPartitionLostListenerConfig());
     }
 
@@ -97,7 +98,7 @@ public class MapConfigReadOnlyTest {
                 .addMapIndexConfig(new MapIndexConfig())
                 .addMapIndexConfig(new MapIndexConfig());
 
-        List<MapIndexConfig> mapIndexConfigs = config.getAsReadOnly().getMapIndexConfigs();
+        List<MapIndexConfig> mapIndexConfigs = new MapConfigReadOnly(config).getMapIndexConfigs();
         mapIndexConfigs.add(new MapIndexConfig());
     }
 
@@ -106,7 +107,7 @@ public class MapConfigReadOnlyTest {
         MapConfig config = new MapConfig()
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig());
 
-        PartitioningStrategyConfig partitioningStrategyConfig = config.getAsReadOnly().getPartitioningStrategyConfig();
+        PartitioningStrategyConfig partitioningStrategyConfig = new MapConfigReadOnly(config).getPartitioningStrategyConfig();
         partitioningStrategyConfig.setPartitioningStrategy(null);
     }
 
@@ -115,7 +116,7 @@ public class MapConfigReadOnlyTest {
         MapConfig config = new MapConfig()
                 .setPartitioningStrategyConfig(null);
 
-        PartitioningStrategyConfig partitioningStrategyConfig = config.getAsReadOnly().getPartitioningStrategyConfig();
+        PartitioningStrategyConfig partitioningStrategyConfig = new MapConfigReadOnly(config).getPartitioningStrategyConfig();
         assertNull(partitioningStrategyConfig);
     }
 
@@ -124,7 +125,7 @@ public class MapConfigReadOnlyTest {
         MapConfig config = new MapConfig()
                 .setMapStoreConfig(new MapStoreConfig());
 
-        MapStoreConfig mapStoreConfig = config.getAsReadOnly().getMapStoreConfig();
+        MapStoreConfig mapStoreConfig = new MapConfigReadOnly(config).getMapStoreConfig();
         mapStoreConfig.setEnabled(true);
     }
 
@@ -133,7 +134,7 @@ public class MapConfigReadOnlyTest {
         MapConfig config = new MapConfig()
                 .setMapStoreConfig(null);
 
-        MapStoreConfig mapStoreConfig = config.getAsReadOnly().getMapStoreConfig();
+        MapStoreConfig mapStoreConfig = new MapConfigReadOnly(config).getMapStoreConfig();
         assertNull(mapStoreConfig);
     }
 
@@ -142,7 +143,7 @@ public class MapConfigReadOnlyTest {
         MapConfig config = new MapConfig()
                 .setNearCacheConfig(new NearCacheConfig());
 
-        NearCacheConfig nearCacheConfig = config.getAsReadOnly().getNearCacheConfig();
+        NearCacheConfig nearCacheConfig = new MapConfigReadOnly(config).getNearCacheConfig();
         nearCacheConfig.setName("myNearCache");
     }
 
@@ -151,7 +152,7 @@ public class MapConfigReadOnlyTest {
         MapConfig config = new MapConfig()
                 .setNearCacheConfig(null);
 
-        NearCacheConfig nearCacheConfig = config.getAsReadOnly().getNearCacheConfig();
+        NearCacheConfig nearCacheConfig = new MapConfigReadOnly(config).getNearCacheConfig();
         assertNull(nearCacheConfig);
     }
 
@@ -161,7 +162,7 @@ public class MapConfigReadOnlyTest {
                 .addQueryCacheConfig(new QueryCacheConfig("myQueryCache1"))
                 .addQueryCacheConfig(new QueryCacheConfig("myQueryCache2"));
 
-        List<QueryCacheConfig> queryCacheConfigs = config.getAsReadOnly().getQueryCacheConfigs();
+        List<QueryCacheConfig> queryCacheConfigs = new MapConfigReadOnly(config).getQueryCacheConfigs();
         queryCacheConfigs.add(new QueryCacheConfig("myQueryCache3"));
     }
 

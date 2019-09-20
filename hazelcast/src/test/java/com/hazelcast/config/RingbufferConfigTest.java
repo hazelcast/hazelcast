@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.RingbufferStoreConfig.RingbufferStoreConfigReadOnly;
+import com.hazelcast.internal.config.RingbufferConfigReadOnly;
+import com.hazelcast.internal.config.RingbufferStoreConfigReadOnly;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
@@ -250,7 +251,7 @@ public class RingbufferConfigTest {
                 .setRingbufferStoreConfig(ringbufferStoreConfig)
                 .setMergePolicyConfig(mergePolicyConfig);
 
-        RingbufferConfig readonly = original.getAsReadOnly();
+        RingbufferConfig readonly = new RingbufferConfigReadOnly(original);
         assertNotNull(readonly);
 
         assertEquals(original.getName(), readonly.getName());
@@ -313,7 +314,7 @@ public class RingbufferConfigTest {
         }
 
         original.setRingbufferStoreConfig(null);
-        readonly = original.getAsReadOnly();
+        readonly = new RingbufferConfigReadOnly(original);
 
         assertNotNull(readonly.getRingbufferStoreConfig());
         assertFalse(readonly.getRingbufferStoreConfig().isEnabled());
@@ -323,14 +324,14 @@ public class RingbufferConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(RingbufferConfig.class)
-                .allFieldsShouldBeUsed()
-                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                .withPrefabValues(RingbufferStoreConfigReadOnly.class,
-                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
-                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
-                .withPrefabValues(MergePolicyConfig.class,
-                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
-                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                .verify();
+                      .allFieldsShouldBeUsed()
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(RingbufferStoreConfigReadOnly.class,
+                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
+                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                      .verify();
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.AtomicReferenceConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,6 +29,6 @@ public class AtomicReferenceConfigReadOnlyTest extends AbstractBasicConfigReadOn
 
     @Override
     protected AtomicReferenceConfig createConfig() {
-        return new AtomicReferenceConfig().getAsReadOnly();
+        return new AtomicReferenceConfigReadOnly(new AtomicReferenceConfig());
     }
 }

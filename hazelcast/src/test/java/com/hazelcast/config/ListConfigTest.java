@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -37,7 +38,6 @@ public class ListConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ListConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(ListConfigReadOnly.class,
                         new ListConfigReadOnly(new ListConfig("red")),

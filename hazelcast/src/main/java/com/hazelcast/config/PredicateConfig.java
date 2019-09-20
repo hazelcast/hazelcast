@@ -40,8 +40,6 @@ public class PredicateConfig implements IdentifiedDataSerializable {
 
     protected Predicate implementation;
 
-    private transient PredicateConfigReadOnly readOnly;
-
     /**
      * Creates a PredicateConfig without className/implementation.
      */
@@ -72,19 +70,6 @@ public class PredicateConfig implements IdentifiedDataSerializable {
      */
     public PredicateConfig(Predicate implementation) {
         this.implementation = isNotNull(implementation, "implementation");
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public PredicateConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new PredicateConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

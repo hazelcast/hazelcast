@@ -69,7 +69,6 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-    private transient QueueConfigReadOnly readOnly;
 
     public QueueConfig() {
     }
@@ -90,19 +89,6 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public QueueConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new QueueConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

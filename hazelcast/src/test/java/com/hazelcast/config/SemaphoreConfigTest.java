@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.SemaphoreConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -54,7 +55,6 @@ public class SemaphoreConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(SemaphoreConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(SemaphoreConfigReadOnly.class,
                         new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("red")),

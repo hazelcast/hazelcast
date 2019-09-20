@@ -36,8 +36,6 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
      */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
 
-    private MaxSizeConfigReadOnly readOnly;
-
     private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
     private int size = DEFAULT_MAX_SIZE;
@@ -106,19 +104,6 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
          * Policy based on minimum free native memory percentage per Hazelcast instance
          */
         FREE_NATIVE_MEMORY_PERCENTAGE
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MaxSizeConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MaxSizeConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

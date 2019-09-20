@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,7 +32,7 @@ import java.util.List;
 public class MultiMapConfigReadOnlyTest {
 
     private MultiMapConfig getReadOnlyConfig() {
-        return new MultiMapConfig().getAsReadOnly();
+        return new MultiMapConfigReadOnly(new MultiMapConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -40,7 +41,8 @@ public class MultiMapConfigReadOnlyTest {
                 .addEntryListenerConfig(new EntryListenerConfig())
                 .addEntryListenerConfig(new EntryListenerConfig());
 
-        List<EntryListenerConfig> entryListenerConfigs = config.getAsReadOnly().getEntryListenerConfigs();
+        List<EntryListenerConfig> entryListenerConfigs = new MultiMapConfigReadOnly(config)
+                .getEntryListenerConfigs();
         entryListenerConfigs.add(new EntryListenerConfig());
     }
 

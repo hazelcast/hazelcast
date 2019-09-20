@@ -112,16 +112,6 @@ public class LockConfig implements IdentifiedDataSerializable, NamedConfig {
         return this;
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public LockConfig getAsReadOnly() {
-        return new LockConfigReadOnly(this);
-    }
-
     @Override
     public String toString() {
         return "LockConfig{"
@@ -174,25 +164,5 @@ public class LockConfig implements IdentifiedDataSerializable, NamedConfig {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
-    }
-
-    /**
-     * A readonly version of the {@link LockConfig}.
-     */
-    private static class LockConfigReadOnly extends LockConfig {
-
-        LockConfigReadOnly(LockConfig config) {
-            super(config);
-        }
-
-        @Override
-        public LockConfig setName(String name) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public LockConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
     }
 }

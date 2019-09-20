@@ -93,8 +93,6 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
 
-    private transient CacheSimpleConfig readOnly;
-
     private String splitBrainProtectionName;
 
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
@@ -142,19 +140,6 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     }
 
     public CacheSimpleConfig() {
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public CacheSimpleConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CacheSimpleConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
