@@ -132,8 +132,8 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
-        staticConfig.setConfigPatternMatcher(configPatternMatcher);
+    public Config setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+        return staticConfig.setConfigPatternMatcher(configPatternMatcher);
     }
 
     @Override
@@ -152,8 +152,8 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
-        staticConfig.setMemberAttributeConfig(memberAttributeConfig);
+    public Config setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+        return staticConfig.setMemberAttributeConfig(memberAttributeConfig);
     }
 
     @Override

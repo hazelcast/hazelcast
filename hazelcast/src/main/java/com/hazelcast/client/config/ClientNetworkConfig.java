@@ -103,9 +103,11 @@ public class ClientNetworkConfig {
      *
      * @param discoveryConfig the Discovery Provider SPI configuration
      * @throws java.lang.IllegalArgumentException if discoveryConfig is null
+     * @return this configuration
      */
-    public void setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
+    public ClientNetworkConfig setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
         this.discoveryConfig = isNotNull(discoveryConfig, "discoveryConfig");
+        return this;
     }
 
     /**
@@ -446,9 +448,10 @@ public class ClientNetworkConfig {
         return cloudConfig;
     }
 
-    public void setCloudConfig(ClientCloudConfig cloudConfig) {
+    public ClientNetworkConfig setCloudConfig(ClientCloudConfig cloudConfig) {
         isNotNull(cloudConfig, "cloudConfig");
         this.cloudConfig = cloudConfig;
+        return this;
     }
 
     /**

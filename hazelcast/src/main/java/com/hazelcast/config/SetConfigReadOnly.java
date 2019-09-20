@@ -78,7 +78,7 @@ public class SetConfigReadOnly extends SetConfig {
     }
 
     @Override
-    public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
+    public SetConfig addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
 

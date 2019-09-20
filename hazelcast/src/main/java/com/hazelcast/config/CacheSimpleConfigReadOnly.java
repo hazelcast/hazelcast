@@ -137,7 +137,7 @@ public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
     }
 
     @Override
-    public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+    public CacheSimpleConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
@@ -163,7 +163,7 @@ public class CacheSimpleConfigReadOnly extends CacheSimpleConfig {
     }
 
     @Override
-    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+    public CacheSimpleConfig setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

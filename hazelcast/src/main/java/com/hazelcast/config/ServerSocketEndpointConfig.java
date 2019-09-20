@@ -118,12 +118,14 @@ public class ServerSocketEndpointConfig
      *
      * @param portCount the maximum number of ports allowed to use
      * @see #setPortAutoIncrement(boolean) for more information
+     * @return this configuration
      */
-    public void setPortCount(int portCount) {
+    public ServerSocketEndpointConfig setPortCount(int portCount) {
         if (portCount < 1) {
             throw new IllegalArgumentException("port count can't be smaller than 0");
         }
         this.portCount = portCount;
+        return this;
     }
 
     /**

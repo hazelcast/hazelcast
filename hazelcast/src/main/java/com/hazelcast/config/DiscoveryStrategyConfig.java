@@ -94,12 +94,14 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
         return discoveryStrategyFactory;
     }
 
-    public void addProperty(String key, Comparable value) {
+    public DiscoveryStrategyConfig addProperty(String key, Comparable value) {
         properties.put(key, value);
+        return this;
     }
 
-    public void removeProperty(String key) {
+    public DiscoveryStrategyConfig removeProperty(String key) {
         properties.remove(key);
+        return this;
     }
 
     public DiscoveryStrategyConfig setProperties(Map<String, Comparable> properties) {
