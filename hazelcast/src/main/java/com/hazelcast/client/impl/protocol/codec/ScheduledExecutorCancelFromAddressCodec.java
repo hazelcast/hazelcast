@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels further execution and scheduling of the task
  */
-@Generated({"0fbb2618d59915110513281c5cbbee0b"})
+@Generated("27cc1c5d5d427ba51294f1490fe614ee")
 public final class ScheduledExecutorCancelFromAddressCodec {
     //hex: 0x1D0A00
     public static final int REQUEST_MESSAGE_TYPE = 1903104;

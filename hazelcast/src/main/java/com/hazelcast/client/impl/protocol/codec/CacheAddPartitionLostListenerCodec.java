@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -39,7 +39,7 @@ import com.hazelcast.logging.Logger;
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-@Generated({"8c26989634dd02037e988d9daeff6363"})
+@Generated("f8a3d8975a8fe3303cccea5e242a97e7")
 public final class CacheAddPartitionLostListenerCodec {
     //hex: 0x151A00
     public static final int REQUEST_MESSAGE_TYPE = 1382912;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the ScheduledFuture's delay in nanoseconds for the task in the scheduler.
  */
-@Generated({"35ed865997fd4be90dfcd28437af4223"})
+@Generated("73ca2b2e8e2a4f8f4bcf03c2bda4daff")
 public final class ScheduledExecutorGetDelayFromPartitionCodec {
     //hex: 0x1D0700
     public static final int REQUEST_MESSAGE_TYPE = 1902336;

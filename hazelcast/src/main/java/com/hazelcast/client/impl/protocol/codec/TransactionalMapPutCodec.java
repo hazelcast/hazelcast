@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the key, the old value is replaced by the specified value. The object to be put will be accessible only in the
  * current transaction context till transaction is committed.
  */
-@Generated({"c109e8952bb2f1fd1cb0b5255147ac0d"})
+@Generated("3ad88a234f4d4151c69c0ced4f4b9c10")
 public final class TransactionalMapPutCodec {
     //hex: 0x100600
     public static final int REQUEST_MESSAGE_TYPE = 1050112;

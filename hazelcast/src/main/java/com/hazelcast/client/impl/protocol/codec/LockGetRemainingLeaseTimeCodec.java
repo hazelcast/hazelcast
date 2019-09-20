@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns remaining lease time in milliseconds. If the lock is not locked then -1 will be returned
  */
-@Generated({"7394b242eb12b8fc581635916e2bd3bb"})
+@Generated("7fa3217b0b511faa871a2568f23f90c7")
 public final class LockGetRemainingLeaseTimeCodec {
     //hex: 0x070400
     public static final int REQUEST_MESSAGE_TYPE = 459776;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Estimates the cardinality of the aggregation so far.
  * If it was previously estimated and never invalidated, then the cached version is used.
  */
-@Generated({"f84cb0a8143648c55712dfaebd10d358"})
+@Generated("16d8ffba17af1d5331eb274d545c71a3")
 public final class CardinalityEstimatorEstimateCodec {
     //hex: 0x1C0200
     public static final int REQUEST_MESSAGE_TYPE = 1835520;

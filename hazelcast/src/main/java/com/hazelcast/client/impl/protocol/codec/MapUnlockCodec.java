@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * then the lock is released.  If the current thread is not the holder of this lock,
  * then ILLEGAL_MONITOR_STATE is thrown.
  */
-@Generated({"039b5f763624d940bfdfc841e2da522c"})
+@Generated("f88273e7c8dc3f4757ddb740e4820140")
 public final class MapUnlockCodec {
     //hex: 0x011600
     public static final int REQUEST_MESSAGE_TYPE = 71168;

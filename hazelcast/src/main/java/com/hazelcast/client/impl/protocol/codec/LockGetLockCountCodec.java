@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns re-entrant lock hold count, regardless of lock ownership.
  */
-@Generated({"23b8cf127ead83bca092aebc87752fdd"})
+@Generated("879fc49e4d24094c81319a5594a37b71")
 public final class LockGetLockCountCodec {
     //hex: 0x070300
     public static final int REQUEST_MESSAGE_TYPE = 459520;

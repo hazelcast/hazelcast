@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified map partition lost listener. Returns silently if there is no such listener added before.
  */
-@Generated({"68329246e0cf6ef32ee0aea35e6715f3"})
+@Generated("b35e7f1c752dea7db3cf46d0ebbb5f49")
 public final class MapRemovePartitionLostListenerCodec {
     //hex: 0x012000
     public static final int REQUEST_MESSAGE_TYPE = 73728;

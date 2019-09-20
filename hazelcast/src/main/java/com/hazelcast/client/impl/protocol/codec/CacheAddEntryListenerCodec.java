@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -36,7 +36,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated({"37225931d05e7a4e6e0a9abf48091a80"})
+@Generated("7ade9a27bd5587c7f1ccb73efcdf8b56")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x150100
     public static final int REQUEST_MESSAGE_TYPE = 1376512;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -183,7 +183,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * nc.hz/StatICacheName.lastPersistenceWrittenBytes=0,nc.hz/StatICacheName.misses=1,nc.hz/StatICacheName.ownedEntryCount=1,
  * nc.hz/StatICacheName.expirations=0,nc.hz/StatICacheName.ownedEntryMemoryCost=140
  */
-@Generated({"ba6960158efbe4d177fc051e59169d1f"})
+@Generated("884d15749d52ea27d9316fe9bf9f8dec")
 public final class ClientStatisticsCodec {
     //hex: 0x001000
     public static final int REQUEST_MESSAGE_TYPE = 4096;

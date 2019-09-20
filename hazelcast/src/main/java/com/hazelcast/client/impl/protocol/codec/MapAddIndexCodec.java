@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Until the index finishes being created, any searches for the attribute will use a full Map scan, thus avoiding
  * using a partially built index and returning incorrect results.
  */
-@Generated({"7fda56d5f6da27116bee62c4393c686b"})
+@Generated("7eb3a1680bac9f0ff743bee2c56fe159")
 public final class MapAddIndexCodec {
     //hex: 0x012D00
     public static final int REQUEST_MESSAGE_TYPE = 77056;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * For every entry in the key set, the following are called: any registered CacheEntryRemovedListeners if the cache
  * is a write-through cache, the CacheWriter. If the key set is empty, the CacheWriter is not called.
  */
-@Generated({"1b5636f3384c11c67a277d1fdde8d423"})
+@Generated("6cc2c3d34d267d9769d0a1aa38ba6e85")
 public final class CacheRemoveAllKeysCodec {
     //hex: 0x150400
     public static final int REQUEST_MESSAGE_TYPE = 1377280;

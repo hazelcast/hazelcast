@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -38,7 +38,7 @@ import com.hazelcast.logging.Logger;
  * Eventually consistent client near caches should use this method to add invalidation listeners
  * instead of {@link #addInvalidationListener(String, boolean)}
  */
-@Generated({"f643d1d9b34a7417366b21a2da811f98"})
+@Generated("346786594511f6350f94aa22d1eb4e4d")
 public final class CacheAddNearCacheInvalidationListenerCodec {
     //hex: 0x151E00
     public static final int REQUEST_MESSAGE_TYPE = 1383936;

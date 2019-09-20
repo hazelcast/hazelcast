@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated({"b59ecd881852080ec40ee142396f4af4"})
+@Generated("8ed9f82b62ae21be25a6c7367e0e9ddc")
 public final class DynamicConfigAddAtomicReferenceConfigCodec {
     //hex: 0x1E1400
     public static final int REQUEST_MESSAGE_TYPE = 1971200;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if the reference contains the value.
  */
-@Generated({"587aeb50938a6f0f1810822f14851fd4"})
+@Generated("4a439b8003e3339bbdc9789f7ddd4aa9")
 public final class CPAtomicRefContainsCodec {
     //hex: 0x240300
     public static final int REQUEST_MESSAGE_TYPE = 2360064;

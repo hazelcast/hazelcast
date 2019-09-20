@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated({"a63f8f00f7124f5c5d966ce48b24ad88"})
+@Generated("9e031a989a1358830b9e8af345642c2b")
 public final class ClientRemoveAllListenersCodec {
     //hex: 0x000900
     public static final int REQUEST_MESSAGE_TYPE = 2304;

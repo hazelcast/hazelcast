@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cache configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated({"ea2c70f888ddb9b844fe3ae7b5e71b3d"})
+@Generated("24d947fb0686a874bb1a5006486802bc")
 public final class DynamicConfigAddCacheConfigCodec {
     //hex: 0x1E1000
     public static final int REQUEST_MESSAGE_TYPE = 1970176;
