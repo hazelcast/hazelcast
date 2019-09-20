@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves and disposes the result of the execution with the given sequence
  */
-@Generated("96de312fd4b8cdf59a7ebe76f4c7d044")
+@Generated("ee7f02622847005a429d85b235bf62f4")
 public final class DurableExecutorRetrieveAndDisposeResultCodec {
     //hex: 0x1B0600
     public static final int REQUEST_MESSAGE_TYPE = 1771008;
@@ -44,7 +44,7 @@ public final class DurableExecutorRetrieveAndDisposeResultCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1771009;
     private static final int REQUEST_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SEQUENCE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private DurableExecutorRetrieveAndDisposeResultCodec() {
     }

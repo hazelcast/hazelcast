@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * available then the current thread becomes disabled for thread scheduling purposes and lies dormant until the lock
  * has been acquired.
  */
-@Generated("f7780de58dba533c6003d5a20a5c83ff")
+@Generated("a18edc9a7c82f75ed9033ffb7120049a")
 public final class LockLockCodec {
     //hex: 0x070500
     public static final int REQUEST_MESSAGE_TYPE = 460032;
@@ -48,7 +48,7 @@ public final class LockLockCodec {
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_LEASE_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private LockLockCodec() {
     }

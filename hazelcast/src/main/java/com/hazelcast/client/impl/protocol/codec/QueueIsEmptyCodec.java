@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this collection contains no elements.
  */
-@Generated("7e095e99b2f2ba36c06085f7edb1222f")
+@Generated("49503af1c6d49a894e768555faad2902")
 public final class QueueIsEmptyCodec {
     //hex: 0x031400
     public static final int REQUEST_MESSAGE_TYPE = 201728;
     //hex: 0x031401
     public static final int RESPONSE_MESSAGE_TYPE = 201729;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private QueueIsEmptyCodec() {

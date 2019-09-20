@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Generates a new ID for the caller thread. The ID is unique in the given
  * CP group.
  */
-@Generated("fb41d460e55868da5484b5cdaf369849")
+@Generated("2fbbe0a55266d60abf6f520e049dede8")
 public final class CPSessionGenerateThreadIdCodec {
     //hex: 0x220400
     public static final int REQUEST_MESSAGE_TYPE = 2229248;
     //hex: 0x220401
     public static final int RESPONSE_MESSAGE_TYPE = 2229249;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private CPSessionGenerateThreadIdCodec() {

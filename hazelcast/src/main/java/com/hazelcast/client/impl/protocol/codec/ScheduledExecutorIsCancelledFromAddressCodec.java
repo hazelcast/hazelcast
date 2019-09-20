@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks whether a task as identified from the given handler is already cancelled.
  */
-@Generated("47ff2d52d5b17575f75ea1d1e969d541")
+@Generated("91e39e76394ffb52d041d53527d2498b")
 public final class ScheduledExecutorIsCancelledFromAddressCodec {
     //hex: 0x1D0C00
     public static final int REQUEST_MESSAGE_TYPE = 1903616;
     //hex: 0x1D0C01
     public static final int RESPONSE_MESSAGE_TYPE = 1903617;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private ScheduledExecutorIsCancelledFromAddressCodec() {

@@ -180,12 +180,23 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         eventHandlerMap.put(callId, handler);
     }
 
-    public void handleClientMessage(ClientMessage clientMessage) {
+    public void handleEventMessage(ClientMessage clientMessage) {
         try {
             eventExecutor.execute(new ClientEventProcessor(clientMessage));
         } catch (RejectedExecutionException e) {
             logger.warning("Event clientMessage could not be handled", e);
         }
+    }
+
+    public void handleEventMessageOnCallingThread(ClientMessage clientMessage) {
+        long correlationId = clientMessage.getCorrelationId();
+        EventHandler eventHandler = eventHandlerMap.get(correlationId);
+        if (eventHandler == null) {
+            logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+            return;
+        }
+
+        eventHandler.handle(clientMessage);
     }
 
     protected void invoke(ClientRegistrationKey registrationKey, Connection connection) throws Exception {
@@ -369,14 +380,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
         @Override
         public void run() {
-            long correlationId = clientMessage.getCorrelationId();
-            final EventHandler eventHandler = eventHandlerMap.get(correlationId);
-            if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
-                return;
-            }
-
-            eventHandler.handle(clientMessage);
+            handleEventMessageOnCallingThread(clientMessage);
         }
 
         @Override

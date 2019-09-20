@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("6741d09bb7160e3dc8dfb20fd9c657b9")
+@Generated("08e6ac2d7fe94a259dc9fb73bbd02111")
 public final class MapEventJournalReadCodec {
     //hex: 0x014800
     public static final int REQUEST_MESSAGE_TYPE = 83968;
@@ -53,7 +53,7 @@ public final class MapEventJournalReadCodec {
     private static final int REQUEST_MIN_SIZE_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_MIN_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_NEXT_SEQ_FIELD_OFFSET = RESPONSE_READ_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEXT_SEQ_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

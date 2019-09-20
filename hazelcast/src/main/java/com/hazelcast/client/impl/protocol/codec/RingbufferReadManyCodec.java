@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
-@Generated("92c9ab0393422bf7f74fb38166dfadf0")
+@Generated("ee88863bd66436fb11a6b16b04050548")
 public final class RingbufferReadManyCodec {
     //hex: 0x190A00
     public static final int REQUEST_MESSAGE_TYPE = 1640960;
@@ -52,7 +52,7 @@ public final class RingbufferReadManyCodec {
     private static final int REQUEST_MIN_COUNT_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_COUNT_FIELD_OFFSET = REQUEST_MIN_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_NEXT_SEQ_FIELD_OFFSET = RESPONSE_READ_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEXT_SEQ_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 

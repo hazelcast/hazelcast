@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Return true if this collection contains all of the elements in the specified collection.
  */
-@Generated("be229ea8004e0c744912f2aa203fea64")
+@Generated("e9d3e00f258721886169a6eb20a47e7e")
 public final class QueueContainsAllCodec {
     //hex: 0x030C00
     public static final int REQUEST_MESSAGE_TYPE = 199680;
     //hex: 0x030C01
     public static final int RESPONSE_MESSAGE_TYPE = 199681;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private QueueContainsAllCodec() {

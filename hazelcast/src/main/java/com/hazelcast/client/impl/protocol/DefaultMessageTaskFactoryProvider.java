@@ -40,6 +40,7 @@ import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreGetSemaphoreTypeCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
+import com.hazelcast.client.impl.protocol.task.AddBackupListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.AddPartitionListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
@@ -153,9 +154,9 @@ import com.hazelcast.internal.longregister.client.task.LongRegisterGetAndSetMess
 import com.hazelcast.internal.longregister.client.task.LongRegisterGetMessageTask;
 import com.hazelcast.internal.longregister.client.task.LongRegisterIncrementAndGetMessageTask;
 import com.hazelcast.internal.longregister.client.task.LongRegisterSetMessageTask;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
@@ -1674,6 +1675,13 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new IsFailoverSupportedMessageTask(clientMessage, node, connection);
             }
         });
+        factories.put(com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AddBackupListenerMessageTask(clientMessage, node, connection);
+            }
+        });
+
 //endregion
 //region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.queue
         factories.put(com.hazelcast.client.impl.protocol.codec.QueueCompareAndRemoveAllCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {

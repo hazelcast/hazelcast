@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Inserts the specified element into this queue, waiting if necessary for space to become available.
  */
-@Generated("a517f262a032ceefaa0391438d02374e")
+@Generated("317d7f42ac19a2b203b4acb67a3f9ff0")
 public final class QueuePutCodec {
     //hex: 0x030200
     public static final int REQUEST_MESSAGE_TYPE = 197120;
     //hex: 0x030201
     public static final int RESPONSE_MESSAGE_TYPE = 197121;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private QueuePutCodec() {
     }

@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this collection.  If this collection contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE
  */
-@Generated("cd06ebaf0ceb486a575703179eabf08d")
+@Generated("23bce5619613b934beb7ededcf571328")
 public final class QueueSizeCodec {
     //hex: 0x030300
     public static final int REQUEST_MESSAGE_TYPE = 197376;
     //hex: 0x030301
     public static final int RESPONSE_MESSAGE_TYPE = 197377;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private QueueSizeCodec() {

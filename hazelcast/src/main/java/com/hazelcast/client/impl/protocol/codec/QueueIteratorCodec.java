@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns an iterator over the elements in this collection.  There are no guarantees concerning the order in which
  * the elements are returned (unless this collection is an instance of some class that provides a guarantee).
  */
-@Generated("18281f510735ba420d35340ac2dfd94a")
+@Generated("18b0d4249b5f09f2dc7a6c38e1798f2a")
 public final class QueueIteratorCodec {
     //hex: 0x030800
     public static final int REQUEST_MESSAGE_TYPE = 198656;
     //hex: 0x030801
     public static final int RESPONSE_MESSAGE_TYPE = 198657;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private QueueIteratorCodec() {
     }

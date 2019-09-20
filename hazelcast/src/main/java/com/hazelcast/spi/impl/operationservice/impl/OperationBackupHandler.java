@@ -327,14 +327,14 @@ final class OperationBackupHandler {
         Operation op = (Operation) backupAwareOp;
         Backup backup;
         if (backupOp instanceof Operation) {
-            backup = new Backup((Operation) backupOp, op.getCallerAddress(), replicaVersions, respondBack);
+            backup = new Backup((Operation) backupOp, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
         } else if (backupOp instanceof Data) {
-            backup = new Backup((Data) backupOp, op.getCallerAddress(), replicaVersions, respondBack);
+            backup = new Backup((Data) backupOp, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
         } else {
             throw new IllegalArgumentException("Only 'Data' or 'Operation' typed backup operation is supported!");
         }
 
-        backup.setPartitionId(op.getPartitionId()).setReplicaIndex(replicaIndex);
+        backup.setPartitionId(op.getPartitionId()).setReplicaIndex(replicaIndex).setCallerUuid(op.getCallerUuid());
         if (hasActiveInvocation(op)) {
             setCallId(backup, op.getCallId());
         }

@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the result of the task ({@link java.util.concurrent.Callable})
  * The call will blocking until the result is ready.
  */
-@Generated("dd7b108b91d2694295a6abfc4e51b4c5")
+@Generated("041971b71890c74497dbf57d2352cad4")
 public final class ScheduledExecutorGetResultFromAddressCodec {
     //hex: 0x1D1000
     public static final int REQUEST_MESSAGE_TYPE = 1904640;
     //hex: 0x1D1001
     public static final int RESPONSE_MESSAGE_TYPE = 1904641;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ScheduledExecutorGetResultFromAddressCodec() {
     }

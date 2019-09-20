@@ -37,7 +37,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("5e66305176722a72517748007ee4ae15")
+@Generated("b0803a46923ef8c910e29544eed0854e")
 public final class ContinuousQueryAddListenerCodec {
     //hex: 0x180400
     public static final int REQUEST_MESSAGE_TYPE = 1573888;
@@ -45,7 +45,7 @@ public final class ContinuousQueryAddListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1573889;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_QUERY_CACHE_SINGLE_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     //hex: 0x180402

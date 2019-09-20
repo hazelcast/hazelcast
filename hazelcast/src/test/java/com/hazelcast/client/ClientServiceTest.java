@@ -460,7 +460,9 @@ public class ClientServiceTest extends ClientTestSupport {
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
 
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         client.shutdown();
         assertOpenEventually(latch);
         //client events will only be fired from one of the nodes.

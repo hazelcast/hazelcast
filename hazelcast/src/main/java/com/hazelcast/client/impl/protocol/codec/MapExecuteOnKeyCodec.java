@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entry mapped by the key. Returns the the object which is result of
  * the process() method of EntryProcessor.
  */
-@Generated("98d6ae01f232880378aa7b0e0e69d574")
+@Generated("7e3cdd8878eacdeb923cb50afba510b1")
 public final class MapExecuteOnKeyCodec {
     //hex: 0x013200
     public static final int REQUEST_MESSAGE_TYPE = 78336;
@@ -45,7 +45,7 @@ public final class MapExecuteOnKeyCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 78337;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MapExecuteOnKeyCodec() {
     }

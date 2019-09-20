@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the projection logic on all map entries and returns the result
  */
-@Generated("07422994b48e38cb72a567cb7bc468f9")
+@Generated("1558e79d02f6db13e95df2741d7af036")
 public final class MapProjectCodec {
     //hex: 0x014000
     public static final int REQUEST_MESSAGE_TYPE = 81920;
     //hex: 0x014001
     public static final int RESPONSE_MESSAGE_TYPE = 81921;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MapProjectCodec() {
     }

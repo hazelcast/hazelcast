@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Until the index finishes being created, any searches for the attribute will use a full Map scan, thus avoiding
  * using a partially built index and returning incorrect results.
  */
-@Generated("cb1175c1b757a60310d89e7a310e1f02")
+@Generated("6e2ee54d03954a78d7d9f182a33f61e1")
 public final class MapAddIndexCodec {
     //hex: 0x012D00
     public static final int REQUEST_MESSAGE_TYPE = 77056;
@@ -51,7 +51,7 @@ public final class MapAddIndexCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 77057;
     private static final int REQUEST_ORDERED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ORDERED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MapAddIndexCodec() {
     }

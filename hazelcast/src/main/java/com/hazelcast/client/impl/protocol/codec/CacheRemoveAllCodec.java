@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * a write-through cache, the CacheWriter.If the cache is empty, the CacheWriter is not called.
  * This is potentially an expensive operation as listeners are invoked. Use  #clear() to avoid this.
  */
-@Generated("2248b65621dfa9c52e0dad1ee253e271")
+@Generated("0d7af3ee32ced8336f24bb565ff6f93e")
 public final class CacheRemoveAllCodec {
     //hex: 0x150500
     public static final int REQUEST_MESSAGE_TYPE = 1377536;
@@ -47,7 +47,7 @@ public final class CacheRemoveAllCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1377537;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CacheRemoveAllCodec() {
     }

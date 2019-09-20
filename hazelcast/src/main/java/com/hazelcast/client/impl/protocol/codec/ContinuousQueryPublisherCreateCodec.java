@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("b7d6571da733c11aca558df0799f27ef")
+@Generated("4933ec9148d1c0a326c6bce95e8f3de3")
 public final class ContinuousQueryPublisherCreateCodec {
     //hex: 0x180200
     public static final int REQUEST_MESSAGE_TYPE = 1573376;
@@ -48,7 +48,7 @@ public final class ContinuousQueryPublisherCreateCodec {
     private static final int REQUEST_POPULATE_FIELD_OFFSET = REQUEST_DELAY_SECONDS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_COALESCE_FIELD_OFFSET = REQUEST_POPULATE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COALESCE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ContinuousQueryPublisherCreateCodec() {
     }

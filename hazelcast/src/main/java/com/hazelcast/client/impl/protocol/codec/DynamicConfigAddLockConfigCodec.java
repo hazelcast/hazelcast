@@ -38,14 +38,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a lock configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("a06be973e3fc83654104d0c96a4637da")
+@Generated("fd731c92f6e9de91e526d1948f2523ad")
 public final class DynamicConfigAddLockConfigCodec {
     //hex: 0x1E0400
     public static final int REQUEST_MESSAGE_TYPE = 1967104;
     //hex: 0x1E0401
     public static final int RESPONSE_MESSAGE_TYPE = 1967105;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private DynamicConfigAddLockConfigCodec() {
     }

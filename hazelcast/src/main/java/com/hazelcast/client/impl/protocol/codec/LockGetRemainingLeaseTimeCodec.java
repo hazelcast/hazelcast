@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns remaining lease time in milliseconds. If the lock is not locked then -1 will be returned
  */
-@Generated("5e4d5a68fd11dc5a39ef15df7f11fd13")
+@Generated("a8ff87fc313b6c1b438074f57dc5f883")
 public final class LockGetRemainingLeaseTimeCodec {
     //hex: 0x070400
     public static final int REQUEST_MESSAGE_TYPE = 459776;
     //hex: 0x070401
     public static final int RESPONSE_MESSAGE_TYPE = 459777;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private LockGetRemainingLeaseTimeCodec() {

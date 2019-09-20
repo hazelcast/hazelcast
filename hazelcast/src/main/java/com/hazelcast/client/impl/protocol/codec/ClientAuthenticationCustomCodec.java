@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("14bbd666beab619d81bbde1519dcd4c3")
+@Generated("3bd1a5506115cc167f18aa405a517b38")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -49,7 +49,7 @@ public final class ClientAuthenticationCustomCodec {
     private static final int REQUEST_PARTITION_COUNT_FIELD_OFFSET = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_CLUSTER_ID_FIELD_OFFSET = REQUEST_PARTITION_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLUSTER_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_STATUS_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_STATUS_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_UUID_FIELD_OFFSET = RESPONSE_STATUS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_OWNER_UUID_FIELD_OFFSET = RESPONSE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET = RESPONSE_OWNER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;

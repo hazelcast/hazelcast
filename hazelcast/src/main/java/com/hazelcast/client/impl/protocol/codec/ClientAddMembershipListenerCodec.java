@@ -37,7 +37,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("38e07c918de3086b55b827a9f1cf11b3")
+@Generated("1b405f85a75324c3488e487ce09f679a")
 public final class ClientAddMembershipListenerCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;
@@ -45,7 +45,7 @@ public final class ClientAddMembershipListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1025;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MEMBER_INITIAL_FRAME_SIZE = EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the cache is configured for write-through operation mode, the underlying configured
  * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
  */
-@Generated("f4acece3c9648262c8fb2b108aee39b9")
+@Generated("b3fcaf1e59293109503d4dfbfc6f52a6")
 public final class CacheReplaceCodec {
     //hex: 0x151800
     public static final int REQUEST_MESSAGE_TYPE = 1382400;
@@ -47,7 +47,7 @@ public final class CacheReplaceCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1382401;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CacheReplaceCodec() {
     }

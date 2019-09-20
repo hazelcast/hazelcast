@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified map partition lost listener. Returns silently if there is no such listener added before.
  */
-@Generated("f966b6e4d319f1b35b332424737ddd22")
+@Generated("96f9a46ed85c136fa793f7ec5a035d22")
 public final class MapRemovePartitionLostListenerCodec {
     //hex: 0x012000
     public static final int REQUEST_MESSAGE_TYPE = 73728;
@@ -44,7 +44,7 @@ public final class MapRemovePartitionLostListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 73729;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MapRemovePartitionLostListenerCodec() {

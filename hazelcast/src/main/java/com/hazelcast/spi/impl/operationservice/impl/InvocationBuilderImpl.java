@@ -45,7 +45,6 @@ class InvocationBuilderImpl extends InvocationBuilder {
     @Override
     public InternalCompletableFuture invoke() {
         op.setServiceName(serviceName);
-
         Invocation invocation;
         if (target == null) {
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex);

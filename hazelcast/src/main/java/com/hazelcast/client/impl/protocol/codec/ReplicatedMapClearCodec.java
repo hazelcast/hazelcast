@@ -39,14 +39,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * it is retried for at most 3 times (on the failing nodes only). If it does not work after the third time, this
  * method throws a OPERATION_TIMEOUT back to the caller.
  */
-@Generated("abcd1d700eee91fd10eb614c84e328f3")
+@Generated("70bd69560ff3646329fa15ac3468e350")
 public final class ReplicatedMapClearCodec {
     //hex: 0x0E0900
     public static final int REQUEST_MESSAGE_TYPE = 919808;
     //hex: 0x0E0901
     public static final int RESPONSE_MESSAGE_TYPE = 919809;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ReplicatedMapClearCodec() {
     }

@@ -38,14 +38,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("111c12fda0f37756bf14d718c00be7bf")
+@Generated("cea8aeb4ce498bf46479abf302b55be8")
 public final class MapEventJournalSubscribeCodec {
     //hex: 0x014700
     public static final int REQUEST_MESSAGE_TYPE = 83712;
     //hex: 0x014701
     public static final int RESPONSE_MESSAGE_TYPE = 83713;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET = RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
