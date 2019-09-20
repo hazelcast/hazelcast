@@ -25,6 +25,7 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AcquirePermitsOp;
+import com.hazelcast.cp.internal.datastructures.semaphore.operation.DrainPermitsOp;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.test.AssertTask;
@@ -38,10 +39,12 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
 public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport {
 
@@ -503,6 +506,68 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
         f2.join();
 
         assertEquals(2, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testExpiredAndRetriedTryAcquireRequestReceivesFailureResponse() throws InterruptedException, ExecutionException {
+        assumeFalse(isJDKCompatible());
+
+        semaphore.init(1);
+        semaphore.acquire();
+
+        final RaftGroupId groupId = getGroupId(semaphore);
+        long sessionId = getSessionId(semaphoreInstance, groupId);
+        long threadId = getThreadId(groupId);
+        UUID invUid = newUnsecureUUID();
+        RaftInvocationManager invocationManager = getRaftInvocationManager(semaphoreInstance);
+
+        InternalCompletableFuture<Boolean> f1 = invocationManager.invoke(groupId,
+                new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, SECONDS.toMillis(5)));
+
+        assertFalse(f1.join());
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                semaphore.release();
+            }
+        }).get();
+
+        InternalCompletableFuture<Boolean> f2 = invocationManager.invoke(groupId,
+                new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, SECONDS.toMillis(5)));
+
+        assertFalse(f2.join());
+    }
+
+    @Test
+    public void testRetriedDrainRequestIsNotProcessedAgain() throws InterruptedException, ExecutionException {
+        assumeFalse(isJDKCompatible());
+
+        semaphore.init(1);
+        semaphore.acquire();
+
+        final RaftGroupId groupId = getGroupId(semaphore);
+        long sessionId = getSessionId(semaphoreInstance, groupId);
+        long threadId = getThreadId(groupId);
+        UUID invUid = newUnsecureUUID();
+        RaftInvocationManager invocationManager = getRaftInvocationManager(semaphoreInstance);
+
+        InternalCompletableFuture<Integer> f1 = invocationManager
+                .invoke(groupId, new DrainPermitsOp(objectName, sessionId, threadId, invUid));
+
+        assertEquals(0, (int) f1.join());
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                semaphore.release();
+            }
+        }).get();
+
+        InternalCompletableFuture<Integer> f2 = invocationManager
+                .invoke(groupId, new DrainPermitsOp(objectName, sessionId, threadId, invUid));
+
+        assertEquals(0, (int) f2.join());
     }
 
     @Test

@@ -66,7 +66,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
-import static com.hazelcast.cp.internal.session.ProxySessionManagerService.SERVICE_NAME;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
 import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -635,74 +634,8 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         assertOpenEventually(acquiredLatch);
     }
 
-    @Test
-    public void testExpiredAndRetriedTryAcquireRequestReceivesFailureResponse() throws InterruptedException, ExecutionException {
-        semaphore.init(1);
-        semaphore.acquire();
-
-        final RaftGroupId groupId = semaphore.getGroupId();
-        long sessionId = getSessionId(semaphoreInstance, groupId);
-        long threadId = getThreadId();
-        UUID invUid = newUnsecureUUID();
-        RaftInvocationManager invocationManager = getRaftInvocationManager(semaphoreInstance);
-
-        InternalCompletableFuture<Boolean> f1 = invocationManager.invoke(groupId,
-                new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, SECONDS.toMillis(5)));
-
-        assertFalse(f1.join());
-
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.release();
-            }
-        }).get();
-
-        InternalCompletableFuture<Boolean> f2 = invocationManager.invoke(groupId,
-                new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, SECONDS.toMillis(5)));
-
-        assertFalse(f2.join());
-    }
-
-    @Test
-    public void testRetriedDrainRequestIsNotProcessedAgain() throws InterruptedException, ExecutionException {
-        semaphore.init(1);
-        semaphore.acquire();
-
-        final RaftGroupId groupId = semaphore.getGroupId();
-        long sessionId = getSessionId(semaphoreInstance, groupId);
-        long threadId = getThreadId();
-        UUID invUid = newUnsecureUUID();
-        RaftInvocationManager invocationManager = getRaftInvocationManager(semaphoreInstance);
-
-        InternalCompletableFuture<Integer> f1 = invocationManager
-                .invoke(groupId, new DrainPermitsOp(objectName, sessionId, threadId, invUid));
-
-        assertEquals(0, (int) f1.join());
-
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.release();
-            }
-        }).get();
-
-        InternalCompletableFuture<Integer> f2 = invocationManager
-                .invoke(groupId, new DrainPermitsOp(objectName, sessionId, threadId, invUid));
-
-        assertEquals(0, (int) f2.join());
-    }
-
     private AbstractProxySessionManager getSessionManager() {
         return getNodeEngineImpl(semaphoreInstance).getService(ProxySessionManagerService.SERVICE_NAME);
-    }
-
-    private long getSessionId(HazelcastInstance semaphoreInstance, RaftGroupId groupId) {
-        ProxySessionManagerService service = getNodeEngineImpl(semaphoreInstance).getService(SERVICE_NAME);
-        long sessionId = service.getSession(groupId);
-        assertNotEquals(NO_SESSION_ID, sessionId);
-
-        return sessionId;
     }
 
     @Override
