@@ -58,9 +58,9 @@ public class ClientInvocation implements Runnable {
     private static final AtomicLongFieldUpdater<ClientInvocation> INVOKE_COUNT
             = AtomicLongFieldUpdater.newUpdater(ClientInvocation.class, "invokeCount");
 
+    final LifecycleService lifecycleService;
     private final ClientInvocationFuture clientInvocationFuture;
     private final ILogger logger;
-    private final LifecycleService lifecycleService;
     private final ClientClusterService clientClusterService;
     private final AbstractClientInvocationService invocationService;
     private final ClientExecutionService executionService;
