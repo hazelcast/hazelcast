@@ -119,13 +119,18 @@ public interface GeneralStage<T> extends Stage {
      * serializable.
      * <p>
      * This sample takes a stream of {@code long} numbers representing request
-     * latencies and outputs the cumulative latency of all requests so far:
+     * latencies, computes the cumulative latency of all requests so far, and
+     * starts emitting alarm messages when the cumulative latency crosses a
+     * "bad behavior" threshold:
      * <pre>{@code
-     * StreamStage<Long> cumulativeLatency = latencies.mapStateful(
+     * StreamStage<Long> latencyAlarms = latencies.mapStateful(
      *         LongAccumulator::new,
      *         (sum, latency) -> {
      *             sum.add(latency);
-     *             return sum.get();
+     *             long cumulativeLatency = sum.get();
+     *             return (cumulativeLatency <= LATENCY_THRESHOLD)
+     *                     ? null
+     *                     : cumulativeLatency;
      *         }
      * );
      * }</pre>

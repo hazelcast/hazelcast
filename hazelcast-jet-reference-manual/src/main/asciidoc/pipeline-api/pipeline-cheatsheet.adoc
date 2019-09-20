@@ -33,6 +33,21 @@ This example splits the lines of text into individual words:
 include::{javasource}/CheatSheet.java[tag=s3]
 ----
 
+|Stateful map
+|Transform input into output with access to persistent, mutable state.
+Useful for pattern matching and custom rolling aggregation. To reuse
+an existing `AggregateOperation`, use `rollingAggregate`.
+
+This example processes a stream of reports on requests completed by a
+cluster of servers and emits output whenever it detects a request with
+record-breaking latency. If a server is inactive for 2 minutes, it
+emits the maximum latency for the server's period of activity that has
+just ended and then resets the score for that server:
+[source]
+----
+include::{javasource}/CheatSheet.java[tag=s13]
+----
+
 |Distinct
 |Suppress duplicate items from a stream. If you apply a grouping key,
 two items mapping to the same key will be duplicates. This operation

@@ -22,11 +22,24 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.examples.enrichment.datamodel.AddToCart;
+import com.hazelcast.jet.examples.enrichment.datamodel.Broker;
+import com.hazelcast.jet.examples.enrichment.datamodel.Delivery;
+import com.hazelcast.jet.examples.enrichment.datamodel.Market;
+import com.hazelcast.jet.examples.enrichment.datamodel.PageVisit;
+import com.hazelcast.jet.examples.enrichment.datamodel.Payment;
+import com.hazelcast.jet.examples.enrichment.datamodel.Person;
+import com.hazelcast.jet.examples.enrichment.datamodel.Product;
+import com.hazelcast.jet.examples.enrichment.datamodel.StockInfo;
+import com.hazelcast.jet.examples.enrichment.datamodel.Trade;
+import com.hazelcast.jet.examples.enrichment.datamodel.Tweet;
 import com.hazelcast.jet.function.ComparatorEx;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.BatchStage;
@@ -39,17 +52,6 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamHashJoinBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
-import com.hazelcast.jet.examples.enrichment.datamodel.AddToCart;
-import com.hazelcast.jet.examples.enrichment.datamodel.Broker;
-import com.hazelcast.jet.examples.enrichment.datamodel.Delivery;
-import com.hazelcast.jet.examples.enrichment.datamodel.Market;
-import com.hazelcast.jet.examples.enrichment.datamodel.PageVisit;
-import com.hazelcast.jet.examples.enrichment.datamodel.Payment;
-import com.hazelcast.jet.examples.enrichment.datamodel.Person;
-import com.hazelcast.jet.examples.enrichment.datamodel.Product;
-import com.hazelcast.jet.examples.enrichment.datamodel.StockInfo;
-import com.hazelcast.jet.examples.enrichment.datamodel.Trade;
-import com.hazelcast.jet.examples.enrichment.datamodel.Tweet;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -515,6 +517,61 @@ class BuildComputation {
 
     private static StreamSource<Tweet> twitterStream() {
         return null;
+    }
+
+    private static final long TIMED_OUT = -1;
+    private static final int TRANSACTION_START = 0;
+    private static final int TRANSACTION_END = 1;
+
+    static void s20() {
+        Pipeline p = Pipeline.create();
+        //tag::s20[]
+        StreamStage<Entry<String, Long>> transactionOutcomes = eventStream() // <1>
+            .groupingKey(TransactionEvent::transactionId)
+            .mapStateful(
+                SECONDS.toMillis(2),
+                () -> new TransactionEvent[2], // <2>
+                (startEnd, transactionId, transactionEvent) -> { // <3>
+                    switch (transactionEvent.type()) {
+                        case TRANSACTION_START:
+                            startEnd[0] = transactionEvent;
+                            break;
+                        case TRANSACTION_END:
+                            startEnd[1] = transactionEvent;
+                            break;
+                        default:
+                    }
+                    return (startEnd[0] != null && startEnd[1] != null)
+                            ? entry(transactionId, startEnd[1].timestamp() - startEnd[0].timestamp())
+                            : null;
+                },
+                (startEnd, transactionId, wm) -> // <4>
+                    (startEnd[0] == null || startEnd[1] == null)
+                        ? entry(transactionId, TIMED_OUT)
+                        : null
+            );
+        //end::s20[]
+    }
+
+    static void s21() {
+        StreamStage<String> stage = null;
+        AggregateOperation1<String, LongAccumulator, String> aggrOp = null;
+        //tag::s21[]
+        stage.mapStateful(aggrOp.createFn(), (acc, item) -> {
+            aggrOp.accumulateFn().accept(acc, item);
+            return aggrOp.exportFn().apply(acc);
+        });
+        //end::s21[]
+    }
+
+    private static class TransactionEvent {
+        int type() { return 0; }
+        String transactionId() { return ""; }
+        long timestamp() { return 0; }
+    }
+
+    private static StreamStage<TransactionEvent> eventStream() {
+        throw new UnsupportedOperationException();
     }
 
 

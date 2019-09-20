@@ -109,14 +109,14 @@ and Jet will process them right away.
 
 ## Features:
 
-* Constant low-latency - predictable latency is a design goal
+* Constant low latency - predictable latency is a design goal
 * Zero dependencies - single JAR which is embeddable (minimum JDK 8)
 * Cloud Native - with [Docker images](https://hub.docker.com/r/hazelcast/hazelcast-jet/)
 and [Kubernetes support](https://github.com/hazelcast/hazelcast-jet-code-samples/tree/master/integration/kubernetes)
 including Helm Charts.
 * Elastic - Jet can scale jobs up and down while running
 * Fault Tolerant - At-least-once and exactly-once processing guarantees
-* In memory storage - Jet provides robust distributed in memory storage
+* In-memory storage - Jet provides robust distributed in-memory storage
 for caching, enrichment or storing job results
 * Sources and sinks for Apache Kafka, Hadoop, Hazelcast IMDG, sockets, files
 * Dynamic node discovery for both on-premise and cloud deployments.

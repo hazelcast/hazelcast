@@ -26,10 +26,16 @@ samples using the Core API.
 
 ### [Early Window Results](early-window-results/src/main/java/com/hazelcast/jet/examples/earlyresults/TradingVolumeOverTime.java)
   - use the `SourceBuilder` to create a mock source of trade events from a
-  stock market
+    stock market
   - apply a tumbling window, configure to emit early results
   - aggregate by summing a derived value
   - present the results in a live GUI chart
+
+### [Pattern Matching](pattern-matching/src/main/java/com/hazelcast/jet/examples/patternmatching/TransactionTracking.java)
+  - use _stateful mapping_ on an event stream to track the state of many
+    concurrent transactions, detect when a transaction is done, and compute
+    its duration
+  - open a GUI window that shows the transaction status
 
 ### [Rolling Aggregation](rolling-aggregation/src/main/java/com/hazelcast/jet/examples/rollingaggregation/TradingVolume.java)
   - use `SourceBuilder` to create a mock source of trade events from a stock
@@ -67,7 +73,7 @@ samples using the Core API.
   - co-group three unbounded data streams on a common key
   - print the results on the console
 ### Hash Join
-  - see [here](#enrich-using-hash-join)
+  - see [below](#enrich-using-hash-join)
 
 ## Data Enrichment
 ### [Enrich Using IMap](enrichment/src/main/java/com/hazelcast/jet/examples/enrichment/Enrichment.java)

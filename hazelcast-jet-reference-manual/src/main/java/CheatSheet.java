@@ -19,6 +19,7 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.BatchStage;
@@ -39,6 +40,7 @@ import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Traversers.traverseArray;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.mapEventNewValue;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
@@ -50,9 +52,10 @@ import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRE
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.Sources.list;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class CheatSheet {
-    static Pipeline p;
+    private static Pipeline p;
 
     static void s1() {
         //tag::s1[]
@@ -217,6 +220,28 @@ public class CheatSheet {
         StreamStage<Trade> tradesNyAndTokyo =
                 tradesNewYork.merge(tradesTokyo);
         //end::s12[]
+    }
+
+    static void s13() {
+        StreamStage<Entry<String, Long>> latencies = null;
+        //tag::s13[]
+        StreamStage<Entry<String, Long>> topLatencies = latencies
+            .groupingKey(Entry::getKey)
+            .mapStateful(
+                MINUTES.toMillis(2),
+                LongAccumulator::new,
+                (topLatencyState, key, e) -> {
+                    long currLatency = e.getValue();
+                    long topLatency = topLatencyState.get();
+                    topLatencyState.set(Math.max(currLatency, topLatency));
+                    return currLatency > topLatency
+                        ? entry(String.format("%s:newRecord", key), e.getValue())
+                        : null;
+                },
+                (topLatencyState, key, time) -> entry(String.format(
+                    "%s:maxForSession:%d", key, time), topLatencyState.get())
+            );
+        //end::s13[]
     }
 
     private static StreamStage<Trade> tradeStream(String name) {

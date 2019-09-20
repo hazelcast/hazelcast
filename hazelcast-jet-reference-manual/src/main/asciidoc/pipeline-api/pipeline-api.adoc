@@ -76,10 +76,10 @@ builder factories are in their respective classes.
 There's a <<source-sink-connectors, dedicated chapter>> that discusses
 the topic of data sources and sinks in more detail.
 
-= Basic Transforms: map, filter, flatMap
+= Clean Up and Normalize Input Using Stateless Transforms
 
 The simplest kind of transformation is one that can be done on each item
-individually and independent of other items. The major examples are
+individually and independent of other items. These are
 {jet-javadoc}/pipeline/BatchStage.html#map-com.hazelcast.jet.function.FunctionEx-[`map`],
 {jet-javadoc}/pipeline/BatchStage.html#filter-com.hazelcast.jet.function.PredicateEx-[`filter`]
 and
@@ -87,8 +87,73 @@ and
 We already saw them in use in the previous examples. `map` transforms
 each item to another item; `filter` discards items that don't match its
 predicate; and `flatMap` transforms each item into zero or more output
-items. You can refer to their Javadoc for finer detail and here we'll
-move on to other kinds of transformations.
+items. These transforms are most often used to perform simple cleanup of
+the input stream by discarding unneeded data, adapting it to your data
+model, flattening nested lists into the top-level stream, etc.
+
+We won't spend much time on these transforms here; you can refer to
+their Javadoc for finer detail.
+
+[[stateful-mapping]]
+= Detect Patterns Using Stateful Transforms
+
+When you start with basic mapping and add to it an arbitrary object
+available over the entire lifetime of the processing job, you get a
+quite general and powerful tool: stateful mapping.
+
+The major use case of stateful mapping is recognizing a pattern in the
+event stream, such as matching start-transaction with end-transaction
+events based on an event correlation ID. More generally, you can
+implement any kind of state machine and detect patterns in the input of
+any complexity.
+
+Instead of keeping just one state object, you can define a grouping key
+and keep a separate object per distinct key. This is what you need for
+the above example of matching on correlation ID.
+
+When you define a grouping key, you should also consider key expiration.
+Usually a given key will occur in the input stream only for a while and
+then become stale. Jet offers you a way to specify the time-to-live (TTL)
+for keys. If more than TTL milliseconds (in terms of event time) pass
+without observing the same key again, Jet evicts the state object from
+memory. You can also provide a function Jet will call when discarding
+the object. On the example of transaction tracking, you can detect stuck
+transactions here and react to them.
+
+Here's the code sample that implements pattern matching on a stream of
+transaction-start and transaction-end events:
+
+[source]
+----
+include::{javasource}/BuildComputation.java[tag=s20]
+----
+<1> `transactionOutcomes` emits pairs
+`(transactionId, transactionDurationMillis)`. Transaction duration can
+also be the special value `TIMED_OUT`.
+<2> This function creates the state object: an array of
+`TransactionEvent` s. The first slot is for the start event, the second
+for the end event.
+<3> The mapping function takes the state, the grouping key, and the input item.
+It places the event into the appropriate array slot and emits the output if
+both slots are now occupied.
+<4> This function reacts to state eviction. It takes the state object
+being evicted, the key associated with it, and the current watermark
+(i.e., current event time). If it detects that a slot in the array was
+left unoccupied, it outputs "transaction timed out".
+
+Another thing you can do with stateful mapping is _rolling aggregation_,
+like accumulating the sum of a quantity across events, or its extreme
+values. You can also achieve these with the dedicated <<rolling-aggregation,
+rolling aggregation>> transform to reuse Jet's ready-made aggregate
+operations. However, if you can't find an existing aggregate operation
+to reuse, it's usually simpler to implement it with stateful mapping.
+
+There is one major caveat when considering to solve your problem with
+stateful mapping: it's sensitive to the order of the events in the stream.
+If the sequence of events in the stream can be different from the order of
+their occurrence in the real world, your state-updating logic will have to
+account for that, possibly leading to an explosion in complexity.
+
 
 [[distinct]]
 = Suppress Duplicates
@@ -790,6 +855,22 @@ after a new record-breaking trade.
 ----
 include::{javasource}/BuildComputation.java[tag=s19]
 ----
+
+[TIP]
+====
+Rolling aggregation is just a special case of <<stateful-mapping,
+stateful mapping>>, equivalent to this:
+
+[source]
+----
+include::{javasource}/BuildComputation.java[tag=s21]
+----
+
+The main advantage of rolling aggregation over stateful mapping is that
+it's the simplest way to reuse an existing `AggregateOperation`. If
+you're starting from scratch with the rolling aggregation logic, it will
+probably be simpler to implement it as stateful mapping.
+====
 
 = Apply a User-Defined Transformation
 
