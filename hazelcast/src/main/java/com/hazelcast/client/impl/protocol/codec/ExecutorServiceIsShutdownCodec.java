@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this executor has been shut down.
  */
-@Generated({"c60d0ae3f11d807997cc8ba2fc6560ee"})
+@Generated("6c04c6bc4836a446bde3d4b05af905ce")
 public final class ExecutorServiceIsShutdownCodec {
     //hex: 0x090200
     public static final int REQUEST_MESSAGE_TYPE = 590336;

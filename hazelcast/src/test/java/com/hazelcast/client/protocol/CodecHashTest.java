@@ -45,7 +45,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CodecHashTest {
     private static final String CODEC_DIRECTORY = "src/main/java/com/hazelcast/client/impl/protocol/codec";
-    private static final Pattern HASH_PATTERN = Pattern.compile("@Generated\\(\\{\"([a-f0-9]{32})\"}\\)");
+    private static final Pattern HASH_PATTERN = Pattern.compile("@Generated\\(\"([a-f0-9]{32})\"\\)");
 
     @Test
     public void testCodecHashCodes() throws IOException, NoSuchAlgorithmException {
@@ -94,7 +94,7 @@ public class CodecHashTest {
     private String calculateHashCode(String codecContent) throws NoSuchAlgorithmException {
         MessageDigest md5 = MessageDigest.getInstance("md5");
         byte[] digest = md5.digest(codecContent.replaceFirst(HASH_PATTERN.toString(),
-                "@Generated({\"!codec_hash!\"})").getBytes());
+                "@Generated(\"!codec_hash!\")").getBytes());
         return bytesToMD5HashString(digest);
     }
 

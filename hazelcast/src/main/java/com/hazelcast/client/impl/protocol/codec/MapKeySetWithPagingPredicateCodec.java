@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated({"65b9ec17c38e6a90ed3ed8386d4d3a01"})
+@Generated("5bfd01ae03273982d905d893b4f4a59e")
 public final class MapKeySetWithPagingPredicateCodec {
     //hex: 0x013800
     public static final int REQUEST_MESSAGE_TYPE = 79872;

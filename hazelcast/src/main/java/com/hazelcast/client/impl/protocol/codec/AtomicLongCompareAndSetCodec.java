@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the value to the given updated value only if the current value the expected value.
  */
-@Generated({"fafe91e3efdf1e749eb9ffdeb5631a8b"})
+@Generated("e7da957c7405e08134a4c925efbe8e37")
 public final class AtomicLongCompareAndSetCodec {
     //hex: 0x0A0600
     public static final int REQUEST_MESSAGE_TYPE = 656896;

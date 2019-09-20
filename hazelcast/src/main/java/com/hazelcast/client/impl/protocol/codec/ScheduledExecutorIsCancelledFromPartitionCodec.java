@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks whether a task as identified from the given handler is already cancelled.
  */
-@Generated({"686b02658b5a84b0f32d32bdb05c6b16"})
+@Generated("1ea7b7ef799b22081be6ade47fd92c0c")
 public final class ScheduledExecutorIsCancelledFromPartitionCodec {
     //hex: 0x1D0B00
     public static final int REQUEST_MESSAGE_TYPE = 1903360;

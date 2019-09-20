@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Causes the current thread to wait until it is signalled or interrupted, or the specified waiting time elapses.
  */
-@Generated({"e77f2a329166ea52c8730916efe5167d"})
+@Generated("d1bf75fdaacab94e475140027ed011b1")
 public final class ConditionAwaitCodec {
     //hex: 0x080100
     public static final int REQUEST_MESSAGE_TYPE = 524544;

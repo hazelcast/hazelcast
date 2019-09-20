@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated({"0ebc756ec7373538e030bbe426c24034"})
+@Generated("fdf1888e2a5d87d0e04b37a7a58f2187")
 public final class MapAssignAndGetUuidsCodec {
     //hex: 0x014300
     public static final int REQUEST_MESSAGE_TYPE = 82688;

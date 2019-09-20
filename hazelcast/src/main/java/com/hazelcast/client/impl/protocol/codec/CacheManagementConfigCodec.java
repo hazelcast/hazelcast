@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated({"f93c1e7a19b418f14c1a3a3f9883f29d"})
+@Generated("da6f5fd005ba1f753c9914622ad6cc86")
 public final class CacheManagementConfigCodec {
     //hex: 0x151200
     public static final int REQUEST_MESSAGE_TYPE = 1380864;

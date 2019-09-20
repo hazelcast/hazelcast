@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if the stored reference is null.
  */
-@Generated({"e9923cb2e55fbafa5fb3c6a76fae6760"})
+@Generated("9df261f1b44e4901dc6168fe2392884d")
 public final class AtomicReferenceIsNullCodec {
     //hex: 0x0B0D00
     public static final int REQUEST_MESSAGE_TYPE = 724224;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated({"f5e6ed6e03e2a40d2aed1438700169a5"})
+@Generated("d9f42ce8f7576b07c9fc3b58c1334325")
 public final class CacheEventJournalSubscribeCodec {
     //hex: 0x152100
     public static final int REQUEST_MESSAGE_TYPE = 1384704;
