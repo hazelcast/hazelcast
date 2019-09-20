@@ -21,11 +21,11 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -63,7 +63,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "inMemoryFormat: {0}, metadataPolicy: {1}")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][] {
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY, MetadataPolicy.OFF},
                 {InMemoryFormat.BINARY, MetadataPolicy.CREATE_ON_UPDATE},
                 {InMemoryFormat.OBJECT, MetadataPolicy.OFF},
@@ -87,7 +87,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         return config;
     }
 
-    private JsonObject createNameAgeOnDuty(String name, int age, boolean onDuty) {
+    private static JsonObject createNameAgeOnDuty(String name, int age, boolean onDuty) {
         JsonObject object = Json.object();
         object.add("name", name);
         object.add("age", age);
@@ -95,14 +95,14 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         return object;
     }
 
-    private HazelcastJsonValue putJsonString(Map map, String name, int age, boolean onDuty) {
+    private static HazelcastJsonValue putJsonString(Map map, String name, int age, boolean onDuty) {
         String f = createNameAgeOnDuty(name, age, onDuty).toString();
         HazelcastJsonValue json = new HazelcastJsonValue(f);
         map.put(name, json);
         return json;
     }
 
-    private String putWithJsonStringKey(Map map, String name, int age, boolean onDuty) {
+    private static String putWithJsonStringKey(Map map, String name, int age, boolean onDuty) {
         String f = createNameAgeOnDuty(name, age, onDuty).toString();
         HazelcastJsonValue json = new HazelcastJsonValue(f);
         map.put(json, name);
@@ -115,7 +115,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         return hazelcastJson;
     }
 
-    private String putWithJsonStringKey(Map map, JsonValue key, String value) {
+    private static String putWithJsonStringKey(Map map, JsonValue key, String value) {
         HazelcastJsonValue lazyKey = new HazelcastJsonValue(key.toString());
         map.put(lazyKey, value);
         return value;
