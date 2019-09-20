@@ -45,6 +45,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 /**
  * Query worker.
  */
+// TODO: Proper exception handling
 public class QueryWorker implements Runnable {
     /** Task queue. */
     private final LinkedBlockingDeque<QueryTask> queue = new LinkedBlockingDeque<>();
@@ -200,7 +201,7 @@ public class QueryWorker implements Runnable {
 
         exec.setup(fragmentContext);
 
-        exec.advance();
+        advanceExecutor(exec);
     }
 
     /**
@@ -228,7 +229,7 @@ public class QueryWorker implements Runnable {
         // Otherwise feed the batch to the inbox and continue iteration.
         inbox.onBatch(task.getSourceMemberId(), task.getBatch());
 
-        inbox.getExec().advance();
+        advanceExecutor(inbox.getExec());
     }
 
     /**
@@ -239,7 +240,7 @@ public class QueryWorker implements Runnable {
     private void handleAdvanceRootTask(AdvanceRootQueryTask task) {
         RootExec root = task.getRootExec();
 
-        root.advance();
+        advanceExecutor(root);
     }
 
     /**
@@ -247,5 +248,11 @@ public class QueryWorker implements Runnable {
      */
     private void onStop() {
         // TODO: Clear all pending stuff
+    }
+
+    private void advanceExecutor(Exec exec) {
+        exec.advance();
+
+        // TODO: Cleanup context if finished.
     }
 }
