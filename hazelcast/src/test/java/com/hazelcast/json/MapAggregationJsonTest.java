@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -43,6 +44,7 @@ import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -63,7 +65,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "inMemoryFormat: {0}, metadataPolicy: {1}")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][] {
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY, MetadataPolicy.OFF},
                 {InMemoryFormat.BINARY, MetadataPolicy.CREATE_ON_UPDATE},
                 {InMemoryFormat.OBJECT, MetadataPolicy.OFF},
@@ -192,8 +194,48 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
         return new HazelcastJsonValue(createJsonString(stringValue, longValue, doubleValue, nestedLongValue));
     }
 
+    @Test
+    public void testArrayWithNestedField() {
+        IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
+        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax(
+                "nestedArray[any].nestedArrayObject.secondary.nestedObjectLongValue"));
+        assertEquals((OBJECT_COUNT - 1) * 10, maxLongValue);
+    }
+
+    @Test
+    public void testArrayWithNestedField_when_field_nonexist() {
+        IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
+        Long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax(
+                "nestedArray[any].nestedArrayObject.secondary.nestedObjectLongValue.nonExistant"));
+        assertNull(maxLongValue);
+    }
+
+    @Test
+    public void testArrayWithNestedField_when_last_field_array() {
+        IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
+        Long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax(
+                "nestedArray[any].nestedArrayObject.secondary"));
+        assertNull(maxLongValue);
+    }
+
+    @Test
+    public void testArrayWithNestedField_when_field_name_is_wrongly_written() {
+        IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
+        Long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("nestedArray[any].nestedArrayObject.secondary.xnestedObjectLongValue"));
+        assertNull(maxLongValue);
+    }
+
     private String createJsonString(String stringValue, long longValue, double doubleValue, long nestedLongValue) {
         JsonObject object = Json.object();
+
+        JsonArray array = new JsonArray();
+        array.add(Json.object().add("nestedArrayObject",
+                Json.object().add("secondary",
+                        Json.object().add("nestedObjectLongValue", nestedLongValue))));
+
+
+        object.add("nestedArray", array);
+
         object.add("stringValue", stringValue)
                 .add("longValue", longValue)
                 .add("doubleValue", doubleValue)
