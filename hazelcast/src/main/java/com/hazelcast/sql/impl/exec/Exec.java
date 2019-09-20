@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 /**
  * Basic execution stage.
@@ -28,9 +27,8 @@ public interface Exec {
      * One-time setup of the executor.
      *
      * @param ctx Context.
-     * @param worker Worker responsible for execution of this instance.
      */
-    void setup(QueryContext ctx, DataWorker worker);
+    void setup(QueryContext ctx);
 
     /**
      * Try advancing executor. Content of the current batch will be changed as a result of this call.

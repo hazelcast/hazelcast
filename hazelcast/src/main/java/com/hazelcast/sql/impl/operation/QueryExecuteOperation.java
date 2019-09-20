@@ -20,9 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryResultConsumer;
-import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.worker.control.ExecuteControlTask;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.io.IOException;
@@ -36,7 +33,7 @@ import java.util.Map;
 /**
  * Operation which is broadcast to participating members to start query execution.
  */
-public class QueryExecuteOperation extends QueryAbstractOperation {
+public class QueryExecuteOperation extends QueryOperation {
     /** Unique query ID. */
     private QueryId queryId;
 
@@ -55,6 +52,9 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
     /** Arguments. */
     private List<Object> arguments;
 
+    /** Offset which defines which data thread will be used for fragments. */
+    private int baseDeploymentOffset;
+
     public QueryExecuteOperation() {
         // No-op.
     }
@@ -65,7 +65,8 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         List<QueryFragmentDescriptor> fragmentDescriptors,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
-        List<Object> arguments
+        List<Object> arguments,
+        int baseDeploymentOffset
     ) {
         this.queryId = queryId;
         this.partitionMapping = partitionMapping;
@@ -73,29 +74,35 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.arguments = arguments;
+        this.baseDeploymentOffset = baseDeploymentOffset;
     }
 
-    @Override
-    public void run() throws Exception {
-        SqlServiceImpl svc = getSqlService();
-
-        svc.onQueryExecuteRequest(getTask());
+    public QueryId getQueryId() {
+        return queryId;
     }
 
-    public ExecuteControlTask getTask() {
-        return getTask(null);
+    public Map<String, PartitionIdSet> getPartitionMapping() {
+        return partitionMapping;
     }
 
-    public ExecuteControlTask getTask(QueryResultConsumer rootConsumer) {
-        return new ExecuteControlTask(
-            queryId,
-            partitionMapping,
-            fragmentDescriptors,
-            outboundEdgeMap,
-            inboundEdgeMap,
-            arguments,
-            rootConsumer
-        );
+    public List<QueryFragmentDescriptor> getFragmentDescriptors() {
+        return fragmentDescriptors;
+    }
+
+    public Map<Integer, Integer> getOutboundEdgeMap() {
+        return outboundEdgeMap;
+    }
+
+    public Map<Integer, Integer> getInboundEdgeMap() {
+        return inboundEdgeMap;
+    }
+
+    public List<Object> getArguments() {
+        return arguments;
+    }
+
+    public int getBaseDeploymentOffset() {
+        return baseDeploymentOffset;
     }
 
     @Override
@@ -145,6 +152,9 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
             for (Object argument : arguments)
                 out.writeObject(argument);
         }
+
+        // Write deployment offset.
+        out.writeInt(baseDeploymentOffset);
     }
 
     @Override
@@ -200,5 +210,8 @@ public class QueryExecuteOperation extends QueryAbstractOperation {
             for (int i = 0; i < argumentCnt; i++)
                 arguments.add(in.readObject());
         }
+
+        // Read deployment offset.
+        baseDeploymentOffset = in.readInt();
     }
 }

@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 import java.util.Iterator;
 
@@ -88,8 +87,8 @@ public class UpstreamState implements Iterable<Row> {
         }
     }
 
-    public void setup(QueryContext ctx, DataWorker worker) {
-        upstream.setup(ctx, worker);
+    public void setup(QueryContext ctx) {
+        upstream.setup(ctx);
     }
 
     public RowBatch getCurrentBatch() {

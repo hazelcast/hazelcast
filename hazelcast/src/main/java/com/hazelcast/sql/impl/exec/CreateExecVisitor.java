@@ -14,30 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.worker.control;
+package com.hazelcast.sql.impl.exec;
 
  import com.hazelcast.map.impl.proxy.MapProxyImpl;
  import com.hazelcast.spi.impl.NodeEngine;
  import com.hazelcast.sql.HazelcastSqlException;
  import com.hazelcast.sql.impl.QueryFragmentDescriptor;
- import com.hazelcast.sql.impl.QueryId;
- import com.hazelcast.sql.impl.exec.EmptyScanExec;
- import com.hazelcast.sql.impl.exec.Exec;
- import com.hazelcast.sql.impl.exec.FilterExec;
- import com.hazelcast.sql.impl.exec.LocalSortExec;
- import com.hazelcast.sql.impl.exec.MapScanExec;
- import com.hazelcast.sql.impl.exec.ProjectExec;
- import com.hazelcast.sql.impl.exec.ReceiveExec;
- import com.hazelcast.sql.impl.exec.ReceiveSortMergeExec;
- import com.hazelcast.sql.impl.exec.ReplicatedMapScanExec;
- import com.hazelcast.sql.impl.exec.RootExec;
- import com.hazelcast.sql.impl.exec.SendExec;
  import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
  import com.hazelcast.sql.impl.exec.join.LocalJoinExec;
  import com.hazelcast.sql.impl.mailbox.AbstractInbox;
  import com.hazelcast.sql.impl.mailbox.Outbox;
  import com.hazelcast.sql.impl.mailbox.SingleInbox;
  import com.hazelcast.sql.impl.mailbox.StripedInbox;
+ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
  import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
  import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
  import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
@@ -56,41 +45,25 @@ package com.hazelcast.sql.impl.worker.control;
  import java.util.Collection;
  import java.util.Collections;
  import java.util.List;
- import java.util.Map;
 
  /**
  * Visitor which builds an executor for every observed physical node.
  */
-public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
-    /** Node engine. */
-    private final NodeEngine nodeEngine;
+public class CreateExecVisitor implements PhysicalNodeVisitor {
+     /** Node engine. */
+     private final NodeEngine nodeEngine;
 
-    /** Query ID. */
-    private final QueryId queryId;
+    /** Operation. */
+    private final QueryExecuteOperation operation;
 
-    /** Number of data partitions. */
-    private final int partCnt;
+    /** Current fragment. */
+    private final QueryFragmentDescriptor currentFragment;
 
     /** Member IDs. */
     private final Collection<String> dataMemberIds;
 
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
-
-    /** All participating fragments. */
-    private final List<QueryFragmentDescriptor> fragments;
-
-    /** Map from send (outbound) edge to it's fragment. */
-    private final Map<Integer, Integer> outboundFragmentMap;
-
-    /** Map from receive (inbound) edge to it's fragment. */
-    private final Map<Integer, Integer> inboundFragmentMap;
-
-    /** Stripe index. */
-    private final int stripe;
-
-    /** Number of stripes. */
-    private final int stripeCnt;
 
     /** Stack of elements to be merged. */
     private final ArrayList<Exec> stack = new ArrayList<>(1);
@@ -101,31 +74,18 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
     /** Inboxes. */
     private List<AbstractInbox> inboxes = new ArrayList<>(1);
 
-    /** Outboxes. */
-    private List<Outbox> outboxes = new ArrayList<>(1);
-
-    public ExecutorCreatePhysicalNodeVisitor(
+    public CreateExecVisitor(
         NodeEngine nodeEngine,
-        QueryId queryId,
-        int partCnt,
+        QueryExecuteOperation operation,
+        QueryFragmentDescriptor currentFragment,
         Collection<String> dataMemberIds,
-        PartitionIdSet localParts,
-        List<QueryFragmentDescriptor> fragments,
-        Map<Integer, Integer> outboundFragmentMap,
-        Map<Integer, Integer> inboundFragmentMap,
-        int stripe,
-        int stripeCnt
+        PartitionIdSet localParts
     ) {
         this.nodeEngine = nodeEngine;
-        this.queryId = queryId;
-        this.partCnt = partCnt;
+        this.operation = operation;
+        this.currentFragment = currentFragment;
         this.dataMemberIds = dataMemberIds;
         this.localParts = localParts;
-        this.fragments = fragments;
-        this.outboundFragmentMap = outboundFragmentMap;
-        this.inboundFragmentMap = inboundFragmentMap;
-        this.stripe = stripe;
-        this.stripeCnt = stripeCnt;
     }
 
     @Override
@@ -140,18 +100,16 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         // Navigate to sender exec and calculate total number of sender stripes.
         int edgeId = node.getEdgeId();
 
-        QueryFragmentDescriptor sendFragment = fragments.get(outboundFragmentMap.get(edgeId));
+        int sendFragmentPos = operation.getOutboundEdgeMap().get(edgeId);
+        QueryFragmentDescriptor sendFragment = operation.getFragmentDescriptors().get(sendFragmentPos);
 
         int fragmentMemberCount = sendFragment.getFragmentMembers(dataMemberIds).size();
 
-        int remaining = fragmentMemberCount * sendFragment.getParallelism();
-
         // Create and register inbox.
         SingleInbox inbox = new SingleInbox(
-            queryId,
+            operation.getQueryId(),
             node.getEdgeId(),
-            stripe,
-            remaining
+            fragmentMemberCount
         );
 
         inboxes.add(inbox);
@@ -168,14 +126,13 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
         int edgeId = node.getEdgeId();
 
         // Create and register inbox.
-        QueryFragmentDescriptor sendFragment = fragments.get(outboundFragmentMap.get(edgeId));
+        int sendFragmentPos = operation.getOutboundEdgeMap().get(edgeId);
+        QueryFragmentDescriptor sendFragment = operation.getFragmentDescriptors().get(sendFragmentPos);
 
         StripedInbox inbox = new StripedInbox(
-            queryId,
+            operation.getQueryId(),
             edgeId,
-            stripe,
-            sendFragment.getFragmentMembers(dataMemberIds),
-            sendFragment.getParallelism()
+            sendFragment.getFragmentMembers(dataMemberIds)
         );
 
         inboxes.add(inbox);
@@ -196,33 +153,29 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
         Outbox[] sendOutboxes;
 
-        // Partition by member count * parallelism.
-        QueryFragmentDescriptor receiveFragment = fragments.get(inboundFragmentMap.get(node.getEdgeId()));
+        int senderFragmentDeploymentOffset = currentFragment.getAbsoluteDeploymentOffset(operation);
 
+        int receiveFragmentPos = operation.getInboundEdgeMap().get(node.getEdgeId());
+        QueryFragmentDescriptor receiveFragment = operation.getFragmentDescriptors().get(receiveFragmentPos);
         Collection<String> receiveFragmentMemberIds = receiveFragment.getFragmentMembers(dataMemberIds);
+        int receiveFragmentDeploymentOffset = receiveFragment.getAbsoluteDeploymentOffset(operation);
 
-        int partCnt = receiveFragmentMemberIds.size() * receiveFragment.getParallelism();
-
-        sendOutboxes = new Outbox[partCnt];
+        sendOutboxes = new Outbox[receiveFragmentMemberIds.size()];
 
         int idx = 0;
 
         for (String receiveMemberId : receiveFragmentMemberIds) {
-            for (int j = 0; j < receiveFragment.getParallelism(); j++) {
-                Outbox outbox = new Outbox(
-                    node.getEdgeId(),
-                    stripe,
-                    queryId,
-                    nodeEngine,
-                    receiveMemberId,
-                    1024,
-                    j
-                );
+            Outbox outbox = new Outbox(
+                nodeEngine,
+                operation.getQueryId(),
+                node.getEdgeId(),
+                senderFragmentDeploymentOffset,
+                receiveMemberId,
+                receiveFragmentDeploymentOffset,
+                1024
+            );
 
-                sendOutboxes[idx++] = outbox;
-
-                outboxes.add(outbox);
-            }
+            sendOutboxes[idx++] = outbox;
         }
 
         exec = new SendExec(pop(), node.getPartitionHasher(), sendOutboxes);
@@ -230,26 +183,9 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
     @Override
     public void onMapScanNode(MapScanPhysicalNode node) {
-        PartitionIdSet stripeParts = new PartitionIdSet(partCnt);
-
-        int stripePartsCnt = 0;
-
-        if (localParts != null) {
-            int ctr = 0;
-
-            for (int i = 0; i < partCnt; i++) {
-                if (localParts.contains(i)) {
-                    if (ctr++ % stripeCnt == stripe) {
-                        stripeParts.add(i);
-                        stripePartsCnt++;
-                    }
-                }
-            }
-        }
-
         Exec res;
 
-        if (stripePartsCnt == 0)
+        if (localParts == null)
             res = EmptyScanExec.INSTANCE;
         else {
             String mapName = node.getMapName();
@@ -259,7 +195,7 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
             if (map == null)
                 throw new HazelcastSqlException(-1, "IMap doesn't exist: " + mapName);
 
-            res = new MapScanExec(map, stripeParts, node.getProjections(), node.getFilter());
+            res = new MapScanExec(map, localParts, node.getProjections(), node.getFilter());
         }
 
         push(res);
@@ -317,10 +253,6 @@ public class ExecutorCreatePhysicalNodeVisitor implements PhysicalNodeVisitor {
 
     public List<AbstractInbox> getInboxes() {
         return inboxes != null ? inboxes : Collections.emptyList();
-    }
-
-    public List<Outbox> getOutboxes() {
-        return outboxes != null ? outboxes : Collections.emptyList();
     }
 
     private Exec pop() {

@@ -33,8 +33,8 @@ public class StripedInbox extends AbstractInbox {
     private final ArrayDeque<SendBatch>[] queues;
 
     @SuppressWarnings("unchecked")
-    public StripedInbox(QueryId queryId, int edgeId, int stripe, Collection<String> senderMemberIds, int senderStripeCnt) {
-        super(queryId, edgeId, stripe, senderMemberIds.size() * senderStripeCnt);
+    public StripedInbox(QueryId queryId, int edgeId, Collection<String> senderMemberIds) {
+        super(queryId, edgeId, senderMemberIds.size());
 
         // Build inverse map from the member to it's index.
         int memberIdx = 0;
@@ -42,21 +42,19 @@ public class StripedInbox extends AbstractInbox {
         for (String senderMemberId : senderMemberIds) {
             memberToIdxMap.put(senderMemberId, memberIdx);
 
-            memberIdx += senderStripeCnt;
+            memberIdx++;
         }
 
         // Initialize queues.
-        int totalSenderStripeCnt = senderMemberIds.size() * senderStripeCnt;
+        queues = new ArrayDeque[memberIdx];
 
-        queues = new ArrayDeque[totalSenderStripeCnt];
-
-        for (int i = 0; i < totalSenderStripeCnt; i++)
+        for (int i = 0; i < memberIdx; i++)
             queues[i] = new ArrayDeque<>(1);
     }
 
     @Override
-    public void onBatch0(String sourceMemberId, int sourceStripe, int sourceThread, SendBatch batch) {
-        int idx = memberToIdxMap.get(sourceMemberId) + sourceStripe;
+    public void onBatch0(String sourceMemberId, SendBatch batch) {
+        int idx = memberToIdxMap.get(sourceMemberId);
 
         ArrayDeque<SendBatch> queue = queues[idx];
 
@@ -73,10 +71,6 @@ public class StripedInbox extends AbstractInbox {
 
     @Override
     public String toString() {
-        return "StripedInbox {queryId=" + queryId +
-            ", edgeId=" + getEdgeId() +
-            ", stripe=" + getStripe() +
-            ", thread=" + getThread() +
-        "}";
+        return "StripedInbox {queryId=" + queryId + ", edgeId=" + getEdgeId() + "}";
     }
 }

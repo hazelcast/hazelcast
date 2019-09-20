@@ -59,11 +59,7 @@ public class QueryId implements DataSerializable {
         this.localLow = localLow;
     }
 
-    public String getMemberId() {
-        return memberId;
-    }
-
-    public UUID getLocalId() {
+    private UUID getLocalId() {
         return new UUID(localHigh, localLow);
     }
 

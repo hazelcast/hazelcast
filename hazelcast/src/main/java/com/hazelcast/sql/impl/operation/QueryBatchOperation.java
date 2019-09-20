@@ -19,23 +19,19 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
-import com.hazelcast.sql.impl.worker.data.BatchDataTask;
 
 import java.io.IOException;
 
 /**
- * Execution batch.
+ * Batch operation.
  */
-public class QueryBatchOperation extends QueryAbstractOperation {
+public class QueryBatchOperation extends QueryOperation {
     private QueryId queryId;
     private int edgeId;
     private String sourceMemberId;
-    private int sourceStripe;
-    private int sourceThread;
-    private int targetStripe;
-    private int targetThread;
+    private int sourceDeploymentOffset;
+    private int targetDeploymentOffset;
     private SendBatch batch;
 
     public QueryBatchOperation() {
@@ -46,38 +42,40 @@ public class QueryBatchOperation extends QueryAbstractOperation {
         QueryId queryId,
         int edgeId,
         String sourceMemberId,
-        int sourceStripe,
-        int sourceThread,
-        int targetStripe,
-        int targetThread,
+        int sourceDeploymentOffset,
+        int targetDeploymentOffset,
         SendBatch batch
     ) {
         this.queryId = queryId;
         this.edgeId = edgeId;
         this.sourceMemberId = sourceMemberId;
-        this.sourceStripe = sourceStripe;
-        this.sourceThread = sourceThread;
-        this.targetStripe = targetStripe;
-        this.targetThread = targetThread;
+        this.sourceDeploymentOffset = sourceDeploymentOffset;
+        this.targetDeploymentOffset = targetDeploymentOffset;
         this.batch = batch;
     }
 
-    @Override
-    public void run() throws Exception {
-        SqlServiceImpl svc = getSqlService();
+    public QueryId getQueryId() {
+        return queryId;
+    }
 
-        BatchDataTask task = new BatchDataTask(
-            queryId,
-            edgeId,
-            sourceMemberId,
-            sourceStripe,
-            sourceThread,
-            targetStripe,
-            targetThread,
-            batch
-        );
+    public int getEdgeId() {
+        return edgeId;
+    }
 
-        svc.onQueryBatchRequest(task);
+    public String getSourceMemberId() {
+        return sourceMemberId;
+    }
+
+    public int getSourceDeploymentOffset() {
+        return sourceDeploymentOffset;
+    }
+
+    public int getTargetDeploymentOffset() {
+        return targetDeploymentOffset;
+    }
+
+    public SendBatch getBatch() {
+        return batch;
     }
 
     @Override
@@ -86,10 +84,8 @@ public class QueryBatchOperation extends QueryAbstractOperation {
 
         out.writeInt(edgeId);
         out.writeUTF(sourceMemberId);
-        out.writeInt(sourceStripe);
-        out.writeInt(sourceThread);
-        out.writeInt(targetStripe);
-        out.writeInt(targetThread);
+        out.writeInt(sourceDeploymentOffset);
+        out.writeInt(targetDeploymentOffset);
 
         batch.writeData(out);
     }
@@ -101,10 +97,8 @@ public class QueryBatchOperation extends QueryAbstractOperation {
 
         edgeId = in.readInt();
         sourceMemberId = in.readUTF();
-        sourceStripe = in.readInt();
-        sourceThread = in.readInt();
-        targetStripe = in.readInt();
-        targetThread = in.readInt();
+        sourceDeploymentOffset = in.readInt();
+        targetDeploymentOffset = in.readInt();
 
         batch = new SendBatch();
         batch.readData(in);

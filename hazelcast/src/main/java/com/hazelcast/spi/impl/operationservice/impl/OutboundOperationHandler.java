@@ -22,6 +22,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.sql.impl.operation.QueryOperation;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
@@ -55,7 +56,10 @@ public class OutboundOperationHandler {
     public boolean send(Operation op, Connection connection) {
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
-        Packet packet = new Packet(bytes, partitionId).setPacketType(Packet.Type.OPERATION);
+
+        Packet.Type type = op instanceof QueryOperation ? Packet.Type.SQL : Packet.Type.OPERATION;
+
+        Packet packet = new Packet(bytes, partitionId).setPacketType(type);
 
         if (op.isUrgent()) {
             packet.raiseFlags(FLAG_URGENT);

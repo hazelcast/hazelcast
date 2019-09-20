@@ -398,8 +398,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             node,
             currentOutboundEdge,
             currentInboundEdges,
-            mapping,
-            1
+            mapping
         );
 
         currentOutboundEdge = null;

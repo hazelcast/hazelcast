@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl;
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 
 /**
- * Common SQL engine utility methods used by both "core: and "sql" modules.
+ * Common SQL engine utility methods used by both "core" and "sql" modules.
  */
 public class SqlUtils {
     /**

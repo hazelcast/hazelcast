@@ -3,6 +3,7 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 
 import java.io.IOException;
@@ -24,14 +25,11 @@ public class QueryFragmentDescriptor implements DataSerializable {
     /** IDs of mapped nodes. May be null if nodes could be inherited from the context. */
     private List<String> mappedMemberIds;
 
-    /** Parallelism. */
-    private int parallelism;
-
     /**
      * Offset of the first stripe of this fragment. We use it to determine the data thread where the
      * fragment deployments are going to be executed.
      */
-    private int stripeOffset;
+    private int deploymentOffset;
 
     public QueryFragmentDescriptor() {
         // No-op.
@@ -41,14 +39,12 @@ public class QueryFragmentDescriptor implements DataSerializable {
         PhysicalNode node,
         QueryFragmentMapping mapping,
         List<String> mappedMemberIds,
-        int parallelism,
-        int stripeOffset
+        int deploymentOffset
     ) {
         this.node = node;
         this.mapping = mapping;
         this.mappedMemberIds = mappedMemberIds;
-        this.parallelism = parallelism;
-        this.stripeOffset = stripeOffset;
+        this.deploymentOffset = deploymentOffset;
     }
 
     public PhysicalNode getNode() {
@@ -63,12 +59,12 @@ public class QueryFragmentDescriptor implements DataSerializable {
         return mappedMemberIds != null ? mappedMemberIds : Collections.emptyList();
     }
 
-    public int getParallelism() {
-        return parallelism;
+    public int getDeploymentOffset() {
+        return deploymentOffset;
     }
 
-    public int getStripeOffset() {
-        return stripeOffset;
+    public int getAbsoluteDeploymentOffset(QueryExecuteOperation operation) {
+        return operation.getBaseDeploymentOffset() + deploymentOffset;
     }
 
     @Override
@@ -84,8 +80,7 @@ public class QueryFragmentDescriptor implements DataSerializable {
             out.writeUTF(mappedMemberId);
         }
 
-        out.writeInt(parallelism);
-        out.writeInt(stripeOffset);
+        out.writeInt(deploymentOffset);
     }
 
     @Override
@@ -103,8 +98,7 @@ public class QueryFragmentDescriptor implements DataSerializable {
             }
         }
 
-        parallelism = in.readInt();
-        stripeOffset = in.readInt();
+        deploymentOffset = in.readInt();
     }
 
     /**

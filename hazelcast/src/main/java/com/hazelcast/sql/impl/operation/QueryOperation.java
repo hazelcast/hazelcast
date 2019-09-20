@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.worker.data;
+package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.sql.impl.worker.control.StripeDeployment;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.sql.SqlService;
 
 /**
- * Task to start stripe execution.
+ * Base class for all query operations.
  */
-public class StartStripeDataTask implements DataTask {
-    /** Deployment. */
-    private final StripeDeployment stripeDeployment;
-
-    public StartStripeDataTask(StripeDeployment stripeDeployment) {
-        this.stripeDeployment = stripeDeployment;
-    }
-
-    public StripeDeployment getStripeDeployment() {
-        return stripeDeployment;
+public abstract class QueryOperation extends Operation {
+    @Override
+    public String getServiceName() {
+        return SqlService.SERVICE_NAME;
     }
 
     @Override
-    public int getThread() {
-        return stripeDeployment.getThread();
+    public void run() throws Exception {
+        throw new UnsupportedOperationException("Should not be called.");
     }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 /**
  * Abstract inbox implementation.
@@ -30,23 +29,23 @@ public abstract class AbstractInbox extends AbstractMailbox {
     /** Remaining remote sources. */
     private int remaining;
 
-    protected AbstractInbox(QueryId queryId, int edgeId, int stripe, int remaining) {
-        super(queryId, edgeId, stripe);
+    protected AbstractInbox(QueryId queryId, int edgeId, int remaining) {
+        super(queryId, edgeId);
 
         this.remaining = remaining;
     }
 
     /**
-     * Handle batch arrival. Always invoked from {@link DataWorker}.
+     * Handle batch arrival. Always invoked from the worker.
      */
-    public void onBatch(String sourceMemberId, int sourceStripe, int sourceThread, SendBatch batch) {
-        onBatch0(sourceMemberId, sourceStripe, sourceThread, batch);
+    public void onBatch(String sourceMemberId, SendBatch batch) {
+        onBatch0(sourceMemberId, batch);
 
         if (batch.isLast())
             remaining--;
     }
 
-    protected abstract void onBatch0(String sourceMemberId, int sourceStripe, int sourceThread, SendBatch batch);
+    protected abstract void onBatch0(String sourceMemberId, SendBatch batch);
 
     /**
      * @return {@code True} if no more incoming batches are expected.

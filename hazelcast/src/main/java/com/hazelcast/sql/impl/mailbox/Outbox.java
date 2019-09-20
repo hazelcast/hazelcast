@@ -24,7 +24,6 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -37,11 +36,14 @@ public class Outbox extends AbstractMailbox {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
+    /** Source deployment offset. */
+    private final int sourceDeploymentOffset;
+
     /** Target member ID. */
     private final String targetMemberId;
 
-    /** Target stripe. */
-    private final int targetStripe;
+    /** Target deployment offset. */
+    private final int targetDeploymentOffset;
 
     /** Batch size. */
     private final int batchSize;
@@ -49,19 +51,24 @@ public class Outbox extends AbstractMailbox {
     /** Target member. */
     private Member targetMember;
 
-    /** Target thread. */
-    private int targetThread = DataWorker.UNMAPPED_STRIPE;
-
     /** Pending rows.. */
     private List<Row> batch;
 
-    public Outbox(int edgeId, int stripe, QueryId queryId, NodeEngine nodeEngine, String targetMemberId, int batchSize,
-        int targetStripe) {
-        super(queryId, edgeId, stripe);
+    public Outbox(
+        NodeEngine nodeEngine,
+        QueryId queryId,
+        int edgeId,
+        int sourceDeploymentOffset,
+        String targetMemberId,
+        int targetDeploymentOffset,
+        int batchSize
+    ) {
+        super(queryId, edgeId);
 
         this.nodeEngine = nodeEngine;
+        this.sourceDeploymentOffset = sourceDeploymentOffset;
         this.targetMemberId = targetMemberId;
-        this.targetStripe = targetStripe;
+        this.targetDeploymentOffset = targetDeploymentOffset;
         this.batchSize = batchSize;
     }
 
@@ -105,10 +112,8 @@ public class Outbox extends AbstractMailbox {
             queryId,
             getEdgeId(),
             nodeEngine.getLocalMember().getUuid(),
-            getStripe(),
-            getThread(),
-            targetStripe,
-            targetThread,
+            sourceDeploymentOffset,
+            targetDeploymentOffset,
             new SendBatch(batch0, last)
         );
 
@@ -130,11 +135,8 @@ public class Outbox extends AbstractMailbox {
     public String toString() {
         return "Outbox {queryId=" + queryId +
             ", edgeId=" + getEdgeId() +
-            ", stripe=" + getStripe() +
-            ", thread=" + getThread() +
             ", targetMemberId=" + targetMemberId +
-            ", targetStripe=" + targetStripe +
-            ", targetThread=" + targetThread +
+            ", targetDeploymentOffset=" + targetDeploymentOffset +
         '}';
     }
 }

@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.worker;
+package com.hazelcast.sql.impl.worker.task;
 
 /**
  * Task to stop a worker.
  */
-public class StopWorkerTask implements WorkerTask {
+public class StopQueryTask implements QueryTask {
     /** Singleton instance. */
-    public static final StopWorkerTask INSTANCE = new StopWorkerTask();
+    public static final StopQueryTask INSTANCE = new StopQueryTask();
 
-    private StopWorkerTask() {
+    private StopQueryTask() {
         // No-op.
     }
 }

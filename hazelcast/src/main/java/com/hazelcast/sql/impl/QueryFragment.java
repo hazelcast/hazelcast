@@ -38,21 +38,16 @@ public class QueryFragment {
     /** Mapping. */
     private final QueryFragmentMapping mapping;
 
-    /** Per-member parallelism. */
-    private final int parallelism;
-
     public QueryFragment(
         PhysicalNode node,
         Integer outboundEdge,
         List<Integer> inboundEdges,
-        QueryFragmentMapping mapping,
-        int parallelism
+        QueryFragmentMapping mapping
     ) {
         this.node = node;
         this.outboundEdge = outboundEdge;
         this.inboundEdges = inboundEdges;
         this.mapping = mapping;
-        this.parallelism = parallelism;
     }
 
     public PhysicalNode getNode() {
@@ -69,9 +64,5 @@ public class QueryFragment {
 
     public QueryFragmentMapping getMapping() {
         return mapping;
-    }
-
-    public int getParallelism() {
-        return parallelism;
     }
 }

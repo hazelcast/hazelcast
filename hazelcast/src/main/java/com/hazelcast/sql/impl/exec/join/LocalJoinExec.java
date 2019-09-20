@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 /**
  * Executor for local join.
@@ -55,8 +54,8 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    protected void setup1(QueryContext ctx, DataWorker worker) {
-        rightState.setup(ctx, worker);
+    protected void setup1(QueryContext ctx) {
+        rightState.setup(ctx);
     }
 
     @Override

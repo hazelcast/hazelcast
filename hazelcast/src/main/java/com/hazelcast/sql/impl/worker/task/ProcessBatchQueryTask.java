@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.worker.data;
+package com.hazelcast.sql.impl.worker.task;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
-import com.hazelcast.sql.impl.worker.control.ControlTask;
 
 /**
  * Task to process incoming batch. Batch may be either mapped or unmapped. In the first case we submit it directly
  * to the data pool. Otherwise we pass it through the control pool to perform mapping when local context is ready.
  */
-public class BatchDataTask implements ControlTask, DataTask {
+public class ProcessBatchQueryTask implements QueryTask {
     /** Query ID. */
     private final QueryId queryId;
 
@@ -34,41 +33,33 @@ public class BatchDataTask implements ControlTask, DataTask {
     /** Source member which sent this batch. */
     private final String sourceMemberId;
 
-    /** Source member stripe. */
-    private final int sourceStripe;
+    /** Source deployment ID. */
+    private final int sourceDeploymentId;
 
-    /** Source member thread. */
-    private final int sourceThread;
-
-    /** Target stripe. */
-    private final int targetStripe;
-
-    /** Target thread. May be unknown on early execution stages. */
-    private int targetThread;
+    /** Target deployment ID. */
+    private final int targetDeploymentId;
 
     /** Data. */
     private final SendBatch batch;
 
-    public BatchDataTask(QueryId queryId, int edgeId, String sourceMemberId, int sourceStripe, int sourceThread,
-        int targetStripe, int targetThread, SendBatch batch) {
+    public ProcessBatchQueryTask(
+        QueryId queryId,
+        int edgeId,
+        String sourceMemberId,
+        int sourceDeploymentId,
+        int targetDeploymentId,
+        SendBatch batch
+    ) {
         this.queryId = queryId;
         this.edgeId = edgeId;
         this.sourceMemberId = sourceMemberId;
-        this.sourceStripe = sourceStripe;
-        this.sourceThread = sourceThread;
-        this.targetStripe = targetStripe;
-        this.targetThread = targetThread;
+        this.sourceDeploymentId = sourceDeploymentId;
+        this.targetDeploymentId = targetDeploymentId;
         this.batch = batch;
     }
 
-    @Override
     public QueryId getQueryId() {
         return queryId;
-    }
-
-    @Override
-    public int getThread() {
-        return getTargetThread();
     }
 
     public int getEdgeId() {
@@ -79,28 +70,12 @@ public class BatchDataTask implements ControlTask, DataTask {
         return sourceMemberId;
     }
 
-    public int getSourceStripe() {
-        return sourceStripe;
+    public int getSourceDeploymentId() {
+        return sourceDeploymentId;
     }
 
-    public int getSourceThread() {
-        return sourceThread;
-    }
-
-    public int getTargetStripe() {
-        return targetStripe;
-    }
-
-    public int getTargetThread() {
-        return targetThread;
-    }
-
-    public boolean isMapped() {
-        return getTargetThread() != DataWorker.UNMAPPED_STRIPE;
-    }
-
-    public void setTargetThread(int targetThread) {
-        this.targetThread = targetThread;
+    public int getTargetDeploymentId() {
+        return targetDeploymentId;
     }
 
     public SendBatch getBatch() {

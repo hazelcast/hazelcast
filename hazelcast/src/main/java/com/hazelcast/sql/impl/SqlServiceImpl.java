@@ -25,12 +25,13 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.operation.QueryBatchOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
-import com.hazelcast.sql.impl.worker.control.ControlThreadPool;
-import com.hazelcast.sql.impl.worker.control.ExecuteControlTask;
-import com.hazelcast.sql.impl.worker.data.BatchDataTask;
-import com.hazelcast.sql.impl.worker.data.DataThreadPool;
+import com.hazelcast.sql.impl.operation.QueryOperation;
+import com.hazelcast.sql.impl.worker.QueryWorkerPool;
+import com.hazelcast.sql.impl.worker.task.ProcessBatchQueryTask;
+import com.hazelcast.sql.impl.worker.task.StartFragmentQueryTask;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -55,11 +56,8 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
     /** Logger. */
     private final ILogger logger;
 
-    /** Control thread pool. */
-    private ControlThreadPool controlThreadPool;
-
-    /** Data thread pool. */
-    private DataThreadPool dataThreadPool;
+    /** Worker thread pool. */
+    private QueryWorkerPool workerPool;
 
     public SqlServiceImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -79,8 +77,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
                 cfg.getControlThreadCount());
         }
 
-        dataThreadPool = new DataThreadPool(nodeEngine, cfg.getDataThreadCount());
-        controlThreadPool = new ControlThreadPool(this, nodeEngine, cfg.getControlThreadCount(), dataThreadPool);
+        workerPool = new QueryWorkerPool(nodeEngine, cfg.getDataThreadCount());
     }
 
     @Override
@@ -129,7 +126,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         // Start execution on local member.
         QueryExecuteOperation localOp = operationFactory.create(localMemberId);
 
-        controlThreadPool.submit(localOp.getTask(consumer));
+        handleQueryExecuteOperation(localOp, consumer);
 
         // Start execution on remote members.
         for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
@@ -148,21 +145,9 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         return new QueryHandle(queryId, consumer);
     }
 
-    public void onQueryExecuteRequest(ExecuteControlTask task) {
-        controlThreadPool.submit(task);
-    }
-
-    public void onQueryBatchRequest(BatchDataTask task) {
-        if (task.isMapped())
-            dataThreadPool.submit(task);
-        else
-            controlThreadPool.submit(task);
-    }
-
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        dataThreadPool.start();
-        controlThreadPool.start();
+        workerPool.start();
     }
 
     @Override
@@ -172,8 +157,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
     @Override
     public void shutdown(boolean terminate) {
-        dataThreadPool.shutdown();
-        controlThreadPool.shutdown();
+        workerPool.shutdown();
     }
 
     public NodeEngine getNodeEngine() {
@@ -208,6 +192,55 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
     @Override
     public void accept(Packet packet) {
-        // TODO
+        QueryOperation op = nodeEngine.toObject(packet);
+
+        if (op instanceof QueryExecuteOperation) {
+            handleQueryExecuteOperation((QueryExecuteOperation)op, null);
+        }
+        else if (op instanceof QueryBatchOperation) {
+            handleQueryBatchOperation((QueryBatchOperation)op);
+        }
+    }
+
+    private void handleQueryExecuteOperation(QueryExecuteOperation operation, QueryResultConsumer consumer) {
+        for (QueryFragmentDescriptor fragmentDescriptor : operation.getFragmentDescriptors()) {
+            // Skip unrelated fragments.
+            if (fragmentDescriptor.getNode() == null)
+                continue;
+
+            int deploymentOffset = fragmentDescriptor.getAbsoluteDeploymentOffset(operation);
+            int thread = getThreadFromDeploymentOffset(deploymentOffset);
+
+            StartFragmentQueryTask task = new StartFragmentQueryTask(operation, fragmentDescriptor, consumer);
+
+            workerPool.submit(thread, task);
+        }
+    }
+
+    private void handleQueryBatchOperation(QueryBatchOperation operation) {
+        ProcessBatchQueryTask task = new ProcessBatchQueryTask(
+            operation.getQueryId(),
+            operation.getEdgeId(),
+            operation.getSourceMemberId(),
+            operation.getSourceDeploymentOffset(),
+            operation.getTargetDeploymentOffset(),
+            operation.getBatch()
+        );
+
+        int thread = getThreadFromDeploymentOffset(operation.getTargetDeploymentOffset());
+
+        workerPool.submit(thread, task);
+    }
+
+    /**
+     * Resolve target thread from deployment ID.
+     *
+     * @param absoluteDeploymentOffset Absolute deployment offset.
+     * @return Resolved thread.
+     */
+    private int getThreadFromDeploymentOffset(int absoluteDeploymentOffset) {
+        assert absoluteDeploymentOffset >= 0;
+
+        return absoluteDeploymentOffset % workerPool.getThreadCount();
     }
 }

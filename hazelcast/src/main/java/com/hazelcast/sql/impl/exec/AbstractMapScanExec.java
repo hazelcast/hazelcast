@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.KeyValueRowExtractor;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 import java.util.List;
 
@@ -62,7 +61,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
     }
 
     @Override
-    protected final void setup0(QueryContext ctx, DataWorker worker) {
+    protected final void setup0(QueryContext ctx) {
         serializationService = (InternalSerializationService)ctx.getNodeEngine().getSerializationService();
         extractors = createExtractors();
 

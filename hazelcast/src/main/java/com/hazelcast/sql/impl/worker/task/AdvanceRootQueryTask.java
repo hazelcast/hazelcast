@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.worker.control;
+package com.hazelcast.sql.impl.worker.task;
 
-import java.util.List;
+import com.hazelcast.sql.impl.exec.RootExec;
 
 /**
- * Fragment deployment with relevant stripes.
+ * The task to get more results from the root executor. Submitted from user thread.
  */
-public class FragmentDeployment {
-    /** Stripes. */
-    private final List<StripeDeployment> stripes;
+public class AdvanceRootQueryTask implements QueryTask {
+    /** Root executor. */
+    private final RootExec rootExec;
 
-    public FragmentDeployment(List<StripeDeployment> stripes) {
-        this.stripes = stripes;
+    public AdvanceRootQueryTask(RootExec rootExec) {
+        this.rootExec = rootExec;
     }
 
-    public List<StripeDeployment> getStripes() {
-        return stripes;
+    public RootExec getRootExec() {
+        return rootExec;
     }
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 import com.hazelcast.sql.impl.QueryContext;
 
 /**
@@ -27,13 +26,13 @@ public abstract class AbstractExec implements Exec {
     protected QueryContext ctx;
 
     @Override
-    public final void setup(QueryContext ctx, DataWorker worker) {
+    public final void setup(QueryContext ctx) {
         this.ctx = ctx;
 
-        setup0(ctx, worker);
+        setup0(ctx);
     }
 
-    protected void setup0(QueryContext ctx, DataWorker worker) {
+    protected void setup0(QueryContext ctx) {
         // No-op.
     }
 

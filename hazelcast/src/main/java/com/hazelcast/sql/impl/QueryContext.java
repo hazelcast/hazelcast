@@ -19,9 +19,9 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.worker.QueryWorker;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
@@ -41,23 +41,28 @@ public class QueryContext {
     /** Arguments. */
     private final List<Object> arguments;
 
+    /** Current worker. */
+    private final QueryWorker worker;
+
     /** Root consumer. */
     private final QueryResultConsumer rootConsumer;
-
-    /** Maps an edge to array, whose length is stripe length, and values are data thread IDs. */
-    private final Map<Integer, int[]> edgeToStripeMap;
 
     /** Extractors. */
     @SuppressWarnings("unused")
     private volatile Extractors extractors;
 
-    public QueryContext(NodeEngine nodeEngine, QueryId queryId, List<Object> arguments, QueryResultConsumer rootConsumer,
-        Map<Integer, int[]> edgeToStripeMap) {
+    public QueryContext(
+        NodeEngine nodeEngine,
+        QueryId queryId,
+        List<Object> arguments,
+        QueryWorker worker,
+        QueryResultConsumer rootConsumer
+    ) {
         this.nodeEngine = nodeEngine;
         this.queryId = queryId;
         this.arguments = arguments;
+        this.worker = worker;
         this.rootConsumer = rootConsumer;
-        this.edgeToStripeMap = edgeToStripeMap;
     }
 
     public NodeEngine getNodeEngine() {
@@ -68,12 +73,12 @@ public class QueryContext {
         return queryId;
     }
 
-    public QueryResultConsumer getRootConsumer() {
-        return rootConsumer;
+    public QueryWorker getWorker() {
+        return worker;
     }
 
-    public Map<Integer, int[]> getEdgeToStripeMap() {
-        return edgeToStripeMap;
+    public QueryResultConsumer getRootConsumer() {
+        return rootConsumer;
     }
 
     public Object getArgument(int idx) {

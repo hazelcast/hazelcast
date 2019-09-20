@@ -51,7 +51,7 @@ public class QueryExecuteOperationFactory {
 
         List<QueryFragmentDescriptor> descriptors = new ArrayList<>(fragments.size());
 
-        int stripeOffset = 0;
+        int baseDeploymentOffset = ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE / 2);
 
         for (QueryFragment fragment : fragments) {
             QueryFragmentMapping mapping = fragment.getMapping();
@@ -87,11 +87,8 @@ public class QueryExecuteOperationFactory {
                 node,
                 mapping,
                 mappedMemberIds,
-                fragment.getParallelism(),
-                stripeOffset
+                0 // At the moment we try to deploy all fragments to a single stripe for NUMA locality.
             ));
-
-            stripeOffset += fragment.getParallelism();
         }
 
         return new QueryExecuteOperation(
@@ -100,7 +97,8 @@ public class QueryExecuteOperationFactory {
             descriptors,
             plan.getOutboundEdgeMap(),
             plan.getInboundEdgeMap(),
-            args
+            args,
+            baseDeploymentOffset
         );
     }
 

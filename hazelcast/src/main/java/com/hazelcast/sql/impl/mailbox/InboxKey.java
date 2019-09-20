@@ -28,13 +28,9 @@ public class InboxKey {
     /** Edge ID. */
     private final int edgeId;
 
-    /** Stripe. */
-    private final int stripe;
-
-    public InboxKey(QueryId queryId, int edgeId, int stripe) {
+    public InboxKey(QueryId queryId, int edgeId) {
         this.queryId = queryId;
         this.edgeId = edgeId;
-        this.stripe = stripe;
     }
 
     @Override
@@ -47,7 +43,7 @@ public class InboxKey {
 
         InboxKey other = (InboxKey)o;
 
-        return queryId.equals(other.queryId) && edgeId == other.edgeId && stripe == other.stripe;
+        return queryId.equals(other.queryId) && edgeId == other.edgeId;
     }
 
     @Override
@@ -55,7 +51,6 @@ public class InboxKey {
         int result = queryId.hashCode();
 
         result = 31 * result + edgeId;
-        result = 31 * result + stripe;
 
         return result;
     }

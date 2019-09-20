@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 /**
  * Executor which has an upstream executor and hence delegate to it at some stages.
@@ -36,13 +35,13 @@ public abstract class AbstractUpstreamAwareExec extends AbstractExec {
     }
 
     @Override
-    protected final void setup0(QueryContext ctx, DataWorker worker) {
-        state.setup(ctx, worker);
+    protected final void setup0(QueryContext ctx) {
+        state.setup(ctx);
 
-        setup1(ctx, worker);
+        setup1(ctx);
     }
 
-    protected void setup1(QueryContext ctx, DataWorker worker) {
+    protected void setup1(QueryContext ctx) {
         // No-op.
     }
 

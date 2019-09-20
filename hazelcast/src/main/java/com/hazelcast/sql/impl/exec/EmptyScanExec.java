@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.exec;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.worker.data.DataWorker;
 
 /**
  * Scan over an empty result-set.
@@ -33,7 +32,7 @@ public class EmptyScanExec implements Exec {
     }
 
     @Override
-    public void setup(QueryContext ctx, DataWorker worker) {
+    public void setup(QueryContext ctx) {
         // No-op.
     }
 

@@ -27,17 +27,10 @@ public abstract class AbstractMailbox {
 
     /** Edge ID. */
     protected final int edgeId;
-    
-    /** Stripe (known in advance). */
-    protected final int stripe;
-    
-    /** Thread (known after prepare). */
-    private int thread;
 
-    public AbstractMailbox(QueryId queryId, int edgeId, int stripe) {
+    public AbstractMailbox(QueryId queryId, int edgeId) {
         this.queryId = queryId;
         this.edgeId = edgeId;
-        this.stripe = stripe;
     }
 
     public QueryId getQueryId() {
@@ -46,17 +39,5 @@ public abstract class AbstractMailbox {
 
     public int getEdgeId() {
         return edgeId;
-    }
-
-    public int getStripe() {
-        return stripe;
-    }
-
-    public int getThread() {
-        return thread;
-    }
-
-    public void setThread(int thread) {
-        this.thread = thread;
     }
 }

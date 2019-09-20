@@ -27,12 +27,12 @@ public class SingleInbox extends AbstractInbox {
     /** Queue of batches from all remote stripes. */
     private final ArrayDeque<SendBatch> batches = new ArrayDeque<>();
 
-    public SingleInbox(QueryId queryId, int edgeId, int stripe, int remaining) {
-        super(queryId, edgeId, stripe, remaining);
+    public SingleInbox(QueryId queryId, int edgeId, int remaining) {
+        super(queryId, edgeId, remaining);
     }
 
     @Override
-    public void onBatch0(String sourceMemberId, int sourceStripe, int sourceThread, SendBatch batch) {
+    public void onBatch0(String sourceMemberId, SendBatch batch) {
         batches.add(batch);
     }
 
@@ -42,10 +42,6 @@ public class SingleInbox extends AbstractInbox {
 
     @Override
     public String toString() {
-        return "SingleInbox {queryId=" + queryId +
-            ", edgeId=" + getEdgeId() +
-            ", stripe=" + getStripe() +
-            ", thread=" + getThread() +
-        "}";
+        return "SingleInbox {queryId=" + queryId + ", edgeId=" + getEdgeId() + "}";
     }
 }

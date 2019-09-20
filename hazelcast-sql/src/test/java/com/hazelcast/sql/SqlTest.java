@@ -130,6 +130,8 @@ public class SqlTest extends HazelcastTestSupport {
 
     @Test(timeout = Long.MAX_VALUE)
     public void testJoin() throws Exception {
+        int a = Math.abs(Integer.MAX_VALUE + 2);
+
         List<SqlRow> res = doQuery(
             member,
             "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
