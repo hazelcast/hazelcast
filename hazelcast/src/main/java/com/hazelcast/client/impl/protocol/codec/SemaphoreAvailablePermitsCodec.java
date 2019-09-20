@@ -33,15 +33,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Returns the current number of permits currently available in this semaphore. This method is typically used for
- * debugging and testing purposes.
+ * Returns the number of available permits.
  */
-@Generated({"d3bff9f6caa906186ec45c6d2ccd461e"})
+@Generated({"4249b2901e928e3006e3f3275f4daf80"})
 public final class SemaphoreAvailablePermitsCodec {
-    //hex: 0x0D0300
-    public static final int REQUEST_MESSAGE_TYPE = 852736;
-    //hex: 0x0D0301
-    public static final int RESPONSE_MESSAGE_TYPE = 852737;
+    //hex: 0x0D0600
+    public static final int REQUEST_MESSAGE_TYPE = 853504;
+    //hex: 0x0D0601
+    public static final int RESPONSE_MESSAGE_TYPE = 853505;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -53,12 +52,17 @@ public final class SemaphoreAvailablePermitsCodec {
     public static class RequestParameters {
 
         /**
-         * Name of the Semaphore
+         * CP group id of this ISemaphore instance
+         */
+        public com.hazelcast.cp.internal.RaftGroupId groupId;
+
+        /**
+         * Name of this ISemaphore instance
          */
         public java.lang.String name;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -66,6 +70,7 @@ public final class SemaphoreAvailablePermitsCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
+        RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
@@ -75,6 +80,7 @@ public final class SemaphoreAvailablePermitsCodec {
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
+        request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
         return request;
     }
@@ -83,7 +89,7 @@ public final class SemaphoreAvailablePermitsCodec {
     public static class ResponseParameters {
 
         /**
-         * The number of permits available in this semaphore.
+         * number of available permits
          */
         public int response;
     }

@@ -454,13 +454,6 @@
         </message-listeners>
     </reliable-topic>
 
-    <semaphore name="default">
-        <initial-permits>10</initial-permits>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-    </semaphore>
-
     <lock name="default">
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </lock>
@@ -820,14 +813,14 @@
             <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
         </raft-algorithm>
         <semaphores>
-            <cp-semaphore>
+            <semaphore>
                 <name>sem1</name>
                 <jdk-compatible>true</jdk-compatible>
-            </cp-semaphore>
-            <cp-semaphore>
+            </semaphore>
+            <semaphore>
                 <name>sem2</name>
                 <jdk-compatible>false</jdk-compatible>
-            </cp-semaphore>
+            </semaphore>
         </semaphores>
         <locks>
             <fenced-lock>

@@ -37,14 +37,12 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -59,8 +57,8 @@ import java.io.Serializable;
 
 import static com.hazelcast.splitbrainprotection.PartitionedCluster.SPLIT_BRAIN_PROTECTION_ID;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
-import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.WRITE;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ_WRITE;
+import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.WRITE;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Arrays.asList;
 
@@ -77,7 +75,6 @@ import static java.util.Arrays.asList;
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractSplitBrainProtectionTest {
 
-    protected static final String SEMAPHORE = "splitBrainProtection" + randomString();
     protected static final String REFERENCE_NAME = "reference" + "splitBrainProtection" + randomString();
     protected static final String LONG_NAME = "long" + "splitBrainProtection" + randomString();
     protected static final String CACHE_NAME = "splitBrainProtection" + randomString();
@@ -111,13 +108,6 @@ public abstract class AbstractSplitBrainProtectionTest {
         factory.terminateAll();
         factory = null;
         cluster = null;
-    }
-
-    protected static SemaphoreConfig newSemaphoreConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
-        semaphoreConfig.setName(SEMAPHORE + splitBrainProtectionOn.name());
-        semaphoreConfig.setSplitBrainProtectionName(splitBrainProtectionName);
-        return semaphoreConfig;
     }
 
     protected static AtomicReferenceConfig newAtomicReferenceConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
@@ -244,7 +234,6 @@ public abstract class AbstractSplitBrainProtectionTest {
             config.addSplitBrainProtectionConfig(newSplitBrainProtectionConfig(splitBrainProtectionOn, splitBrainProtectionName));
             splitBrainProtectionNames[i++] = splitBrainProtectionName;
 
-            config.addSemaphoreConfig(newSemaphoreConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addAtomicReferenceConfig(newAtomicReferenceConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addAtomicLongConfig(newAtomicLongConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addCacheConfig(newCacheConfig(splitBrainProtectionOn, splitBrainProtectionName));
@@ -278,12 +267,7 @@ public abstract class AbstractSplitBrainProtectionTest {
             for (int id = 0; id < 10000; id++) {
                 cluster.instance[0].getRingbuffer(RINGBUFFER_NAME + splitBrainProtectionOn.name()).add(String.valueOf(id));
             }
-            cluster.instance[0].getSemaphore(SEMAPHORE + splitBrainProtectionOn.name()).init(100);
         }
-    }
-
-    protected ISemaphore semaphore(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
-        return cluster.instance[index].getSemaphore(SEMAPHORE + splitBrainProtectionOn.name());
     }
 
     protected IAtomicReference<SplitBrainProtectionTestClass> aref(int index, SplitBrainProtectionOn splitBrainProtectionOn) {

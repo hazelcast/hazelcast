@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 
 public abstract class UnsafeSemaphoreFailureTest extends AbstractSemaphoreFailureTest {
@@ -42,7 +42,7 @@ public abstract class UnsafeSemaphoreFailureTest extends AbstractSemaphoreFailur
     @Override
     protected HazelcastInstance[] createInstances() {
         Config config = new Config();
-        CPSemaphoreConfig semaphoreConfig = new CPSemaphoreConfig(objectName, isJDKCompatible());
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, isJDKCompatible());
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return factory.newInstances(config, 2);
     }

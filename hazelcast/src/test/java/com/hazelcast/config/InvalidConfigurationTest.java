@@ -181,34 +181,6 @@ public class InvalidConfigurationTest {
     }
 
     @Test
-    public void testWhenInvalid_SemaphoreInitialPermits() {
-        expectInvalid();
-        buildConfig("semaphore-initial-permits", "-1");
-    }
-
-    @Test
-    public void testWhenInvalid_SemaphoreBackupCount() {
-        expectInvalid();
-        buildConfig("semaphore-backup-count", getInvalidBackupCount());
-    }
-
-    @Test
-    public void testWhenValid_SemaphoreBackupCount() {
-        buildConfig("semaphore-backup-count", getValidBackupCount());
-    }
-
-    @Test
-    public void testWhenInvalid_AsyncSemaphoreBackupCount() {
-        expectInvalid();
-        buildConfig("semaphore-async-backup-count", getInvalidBackupCount());
-    }
-
-    @Test
-    public void testWhenValid_AsyncSemaphoreBackupCount() {
-        buildConfig("semaphore-async-backup-count", getValidBackupCount());
-    }
-
-    @Test
     public void testWhenInvalidTcpIpConfiguration() {
         expectInvalid();
         buildConfig(HAZELCAST_START_TAG
@@ -507,12 +479,6 @@ public class InvalidConfigurationTest {
                 + "<set name=\"default\">\n"
                 + "<backup-count>${set-backup-count}</backup-count>\n"
                 + "</set>\n"
-
-                + "<semaphore name=\"default\">\n"
-                + "<initial-permits>${semaphore-initial-permits}</initial-permits>\n"
-                + "<backup-count>${semaphore-backup-count}</backup-count>\n"
-                + "<async-backup-count>${semaphore-async-backup-count}</async-backup-count>\n"
-                + "</semaphore>\n"
 
                 + "<lock name=\"default\">\n"
                 + "<split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>\n"

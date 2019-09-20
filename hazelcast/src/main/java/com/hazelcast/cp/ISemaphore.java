@@ -16,9 +16,8 @@
 
 package com.hazelcast.cp;
 
-import com.hazelcast.config.SplitBrainProtectionConfig;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
@@ -57,33 +56,13 @@ import java.util.concurrent.TimeUnit;
  * Correct usage of a semaphore is established by programming convention
  * in the application.
  * <p>
- * As of version 3.12, Hazelcast offers 2 different {@link ISemaphore} impls.
- * Behaviour of {@link ISemaphore} under failure scenarios, including network
- * partitions, depends on the impl. The first impl is the one accessed via
- * {@link HazelcastInstance#getSemaphore(String)}. It works on top of
- * Hazelcast's async replication algorithm and does not guarantee
- * linearizability during failures. During a split-brain scenario, this impl
- * loses its atomicity. It is possible for the same {@link ISemaphore} instance
- * to exist in each side of the network partition and therefore the permit
- * counters can diverge. When the cluster heals, Hazelcast will choose one of
- * the {@link ISemaphore} instances. By default, it is selected from the
- * largest partitioned cluster (by number of members). If the cluster sizes are
- * all equal, then a random {@link ISemaphore} instance will be chosen.
- * <p>
- * This {@link ISemaphore} impl also supports split brain protection
- * {@link SplitBrainProtectionConfig} in cluster versions 3.10 and higher.
- * However, Hazelcast split brain protections do not guarantee strong consistency
- * under failure scenarios.
- * <p>
- * The second impl is a new one introduced with the {@link CPSubsystem} in
- * version 3.12. It is accessed via {@link CPSubsystem#getSemaphore(String)}.
- * It has a major difference to the old implementation, that is, it works on
- * top of the Raft consensus algorithm. It offers linearizability during crash
+ * {@link ISemaphore} is accessed via {@link CPSubsystem#getSemaphore(String)}.
+ * It works on top of the Raft consensus algorithm. It offers linearizability during crash
  * failures and network partitions. It is CP with respect to the CAP principle.
  * If a network partition occurs, it remains available on at most one side of
  * the partition.
  * <p>
- * The new CP impl has 2 variations:
+ * It has 2 variations:
  * <ul>
  * <li>
  * The default impl accessed via {@link CPSubsystem} is session-aware. In this
@@ -99,7 +78,7 @@ import java.util.concurrent.TimeUnit;
  * HazelcastInstance, but not different instances of HazelcastInstance. This
  * behaviour is not compatible with {@link Semaphore#release()}. You can use
  * the session-aware CP {@link ISemaphore} impl by disabling JDK compatibility
- * via {@link CPSemaphoreConfig#setJDKCompatible(boolean)}. Although
+ * via {@link SemaphoreConfig#setJDKCompatible(boolean)}. Although
  * the session-aware impl has a minor difference to the JDK Semaphore, we think
  * it is a better fit for distributed environments because of its safe
  * auto-cleanup mechanism for acquired permits. Please see
@@ -114,7 +93,7 @@ import java.util.concurrent.TimeUnit;
  * server or a client fails while holding some permits, they will not be
  * automatically released. You can use the sessionless CP {@link ISemaphore}
  * impl by enabling JDK compatibility via
- * {@link CPSemaphoreConfig#setJDKCompatible(boolean)}.
+ * {@link SemaphoreConfig#setJDKCompatible(boolean)}.
  * </li>
  * </ul>
  * <p>
@@ -258,13 +237,13 @@ public interface ISemaphore extends DistributedObject {
      * of them will unblock by acquiring the permit released by this call.
      * <p>
      * If the underlying {@link ISemaphore} impl is the non-JDK compatible
-     * CP impl that is configured via {@link CPSemaphoreConfig} and fetched
+     * CP impl that is configured via {@link SemaphoreConfig} and fetched
      * via {@link CPSubsystem}, then a thread can only release a permit which
      * it has acquired before. In other words, a thread cannot release a permit
      * without acquiring it first.
      * <p>
      * Otherwise, which means the underlying impl is either the JDK compatible
-     * CP impl configured via {@link CPSemaphoreConfig} and fetched
+     * CP impl configured via {@link SemaphoreConfig} and fetched
      * via {@link CPSubsystem}, or it is the old impl fetched via
      * {@link HazelcastInstance#getSemaphore(String)}, there is no requirement
      * that a thread that releases a permit must have acquired that permit by
@@ -280,13 +259,13 @@ public interface ISemaphore extends DistributedObject {
      * blocked for acquiring permits, they will be notified.
      * <p>
      * If the underlying {@link ISemaphore} impl is the non-JDK compatible
-     * CP impl that is configured via {@link CPSemaphoreConfig} and fetched
+     * CP impl that is configured via {@link SemaphoreConfig} and fetched
      * via {@link CPSubsystem}, then a thread can only release a permit which
      * it has acquired before. In other words, a thread cannot release a permit
      * without acquiring it first.
      * <p>
      * Otherwise, which means the underlying impl is either the JDK compatible
-     * CP impl configured via {@link CPSemaphoreConfig} and fetched
+     * CP impl configured via {@link SemaphoreConfig} and fetched
      * via {@link CPSubsystem}, or it is the old impl fetched via
      * {@link HazelcastInstance#getSemaphore(String)}, there is no requirement
      * that a thread that releases a permit must have acquired that permit by

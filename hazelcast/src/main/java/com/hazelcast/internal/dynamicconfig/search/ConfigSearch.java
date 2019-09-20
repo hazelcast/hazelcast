@@ -35,7 +35,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
@@ -336,22 +335,6 @@ public final class ConfigSearch {
             @Override
             public Map<String, CardinalityEstimatorConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getCardinalityEstimatorConfigs();
-            }
-        });
-        CONFIG_SUPPLIERS.put(SemaphoreConfig.class, new ConfigSupplier<SemaphoreConfig>() {
-            @Override
-            public SemaphoreConfig getDynamicConfig(@Nonnull ConfigurationService configurationService, @Nonnull String name) {
-                return configurationService.findSemaphoreConfig(name);
-            }
-
-            @Override
-            public SemaphoreConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getSemaphoreConfig(name);
-            }
-
-            @Override
-            public Map<String, SemaphoreConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getSemaphoreConfigsAsMap();
             }
         });
         CONFIG_SUPPLIERS.put(FlakeIdGeneratorConfig.class, new ConfigSupplier<FlakeIdGeneratorConfig>() {

@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -99,8 +99,6 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("atomic-reference", c1, c2, c1.getAtomicReferenceConfigs(), c2.getAtomicReferenceConfigs(),
                 new AtomicReferenceConfigChecker());
         checkCompatibleConfigs("queue", c1, c2, c1.getQueueConfigs(), c2.getQueueConfigs(), new QueueConfigChecker());
-        checkCompatibleConfigs("semaphore", c1, c2, getSemaphoreConfigsByName(c1), getSemaphoreConfigsByName(c2),
-                new SemaphoreConfigChecker());
         checkCompatibleConfigs("lock", c1, c2, c1.getLockConfigs(), c2.getLockConfigs(), new LockConfigChecker());
         checkCompatibleConfigs("topic", c1, c2, c1.getTopicConfigs(), c2.getTopicConfigs(), new TopicConfigChecker());
         checkCompatibleConfigs("reliable topic", c1, c2, c1.getReliableTopicConfigs(), c2.getReliableTopicConfigs(),
@@ -143,15 +141,6 @@ public class ConfigCompatibilityChecker {
 
     public static void checkEndpointConfigCompatible(EndpointConfig c1, EndpointConfig c2) {
         checkCompatibleConfigs("endpoint-config", c1, c2, new EndpointConfigChecker());
-    }
-
-    private static Map<String, SemaphoreConfig> getSemaphoreConfigsByName(Config c) {
-        Collection<SemaphoreConfig> semaphoreConfigs = c.getSemaphoreConfigs();
-        HashMap<String, SemaphoreConfig> configsByName = new HashMap<>(semaphoreConfigs.size());
-        for (SemaphoreConfig config : semaphoreConfigs) {
-            configsByName.put(config.getName(), config);
-        }
-        return configsByName;
     }
 
     private static <T> void checkCompatibleConfigs(String type, T c1, T c2, ConfigChecker<T> checker) {
@@ -339,23 +328,6 @@ public class ConfigCompatibilityChecker {
         @Override
         QueueConfig getDefault(Config c) {
             return c.getQueueConfig("default");
-        }
-    }
-
-    private static class SemaphoreConfigChecker extends ConfigChecker<SemaphoreConfig> {
-        @Override
-        boolean check(SemaphoreConfig c1, SemaphoreConfig c2) {
-            return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getBackupCount(), c2.getBackupCount())
-                    && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
-                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && nullSafeEqual(c1.getInitialPermits(), c2.getInitialPermits());
-        }
-
-        @Override
-        SemaphoreConfig getDefault(Config c) {
-            return c.getSemaphoreConfig("default");
         }
     }
 
@@ -643,14 +615,14 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            Map<String, CPSemaphoreConfig> semaphores1 = c1.getSemaphoreConfigs();
+            Map<String, SemaphoreConfig> semaphores1 = c1.getSemaphoreConfigs();
 
             if (semaphores1.size() != c2.getSemaphoreConfigs().size()) {
                 return false;
             }
 
-            for (Entry<String, CPSemaphoreConfig> e : semaphores1.entrySet()) {
-                CPSemaphoreConfig s2 = c2.findSemaphoreConfig(e.getKey());
+            for (Entry<String, SemaphoreConfig> e : semaphores1.entrySet()) {
+                SemaphoreConfig s2 = c2.findSemaphoreConfig(e.getKey());
                 if (s2 == null) {
                     return false;
                 }

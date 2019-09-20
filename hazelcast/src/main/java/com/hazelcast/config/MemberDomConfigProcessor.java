@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -76,16 +76,15 @@ import static com.hazelcast.config.ConfigSections.PARTITION_GROUP;
 import static com.hazelcast.config.ConfigSections.PN_COUNTER;
 import static com.hazelcast.config.ConfigSections.PROPERTIES;
 import static com.hazelcast.config.ConfigSections.QUEUE;
-import static com.hazelcast.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
 import static com.hazelcast.config.ConfigSections.RELIABLE_TOPIC;
 import static com.hazelcast.config.ConfigSections.REPLICATED_MAP;
 import static com.hazelcast.config.ConfigSections.RINGBUFFER;
 import static com.hazelcast.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.SECURITY;
-import static com.hazelcast.config.ConfigSections.SEMAPHORE;
 import static com.hazelcast.config.ConfigSections.SERIALIZATION;
 import static com.hazelcast.config.ConfigSections.SERVICES;
 import static com.hazelcast.config.ConfigSections.SET;
+import static com.hazelcast.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
 import static com.hazelcast.config.ConfigSections.TOPIC;
 import static com.hazelcast.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.ConfigSections.WAN_REPLICATION;
@@ -186,8 +185,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleCache(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
             fillNativeMemoryConfig(node, config.getNativeMemoryConfig());
-        } else if (SEMAPHORE.isEqual(nodeName)) {
-            handleSemaphore(node);
         } else if (LOCK.isEqual(nodeName)) {
             handleLock(node);
         } else if (RINGBUFFER.isEqual(nodeName)) {
@@ -2355,33 +2352,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleSemaphore(Node node) {
-        Node attName = node.getAttributes().getNamedItem("name");
-        String name = getTextContent(attName);
-        SemaphoreConfig sConfig = new SemaphoreConfig();
-        sConfig.setName(name);
-        handleSemaphoreNode(node, sConfig);
-    }
-
-    void handleSemaphoreNode(Node node, SemaphoreConfig sConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("initial-permits".equals(nodeName)) {
-                sConfig.setInitialPermits(getIntegerValue("initial-permits", value));
-            } else if ("backup-count".equals(nodeName)) {
-                sConfig.setBackupCount(getIntegerValue("backup-count"
-                        , value));
-            } else if ("async-backup-count".equals(nodeName)) {
-                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
-                        , value));
-            } else if ("split-brain-protection-ref".equals(nodeName)) {
-                sConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addSemaphoreConfig(sConfig);
-    }
-
     protected void handleRingbuffer(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
@@ -2848,7 +2818,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("raft-algorithm".equals(nodeName)) {
                 handleRaftAlgorithm(cpSubsystemConfig.getRaftAlgorithmConfig(), child);
             } else if ("semaphores".equals(nodeName)) {
-                handleCPSemaphores(cpSubsystemConfig, child);
+                handleSemaphores(cpSubsystemConfig, child);
             } else if ("locks".equals(nodeName)) {
                 handleFencedLocks(cpSubsystemConfig, child);
             } else {
@@ -2892,19 +2862,19 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    void handleCPSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
+    void handleSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
         for (Node child : childElements(node)) {
-            CPSemaphoreConfig cpSemaphoreConfig = new CPSemaphoreConfig();
+            SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
                 String value = getTextContent(subChild).trim();
                 if ("name".equals(nodeName)) {
-                    cpSemaphoreConfig.setName(value);
+                    semaphoreConfig.setName(value);
                 } else if ("jdk-compatible".equals(nodeName)) {
-                    cpSemaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
+                    semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
                 }
             }
-            cpSubsystemConfig.addSemaphoreConfig(cpSemaphoreConfig);
+            cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
         }
     }
 

@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated({"75aef24594239e8260c00fed9d58e867"})
+@Generated({"17775574936774d9cf640e1e43572498"})
 public final class ClientDestroyProxyCodec {
     //hex: 0x000600
     public static final int REQUEST_MESSAGE_TYPE = 1536;
@@ -63,7 +63,6 @@ public final class ClientDestroyProxyCodec {
          * "hz:impl:atomicLongService"
          * "hz:impl:atomicReferenceService"
          * "hz:impl:idGeneratorService"
-         * "hz:impl:semaphoreService"
          * "hz:impl:executorService"
          * "hz:impl:mapService"
          * "hz:impl:multiMapService"

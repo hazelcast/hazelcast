@@ -97,7 +97,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
@@ -113,7 +112,7 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -202,7 +201,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> atomicLongManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> atomicReferenceManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> reliableTopicManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> semaphoreManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> listManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> setManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> topicManagedMap;
@@ -232,7 +230,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.atomicLongManagedMap = createManagedMap("atomicLongConfigs");
             this.atomicReferenceManagedMap = createManagedMap("atomicReferenceConfigs");
             this.reliableTopicManagedMap = createManagedMap("reliableTopicConfigs");
-            this.semaphoreManagedMap = createManagedMap("semaphoreConfigs");
             this.listManagedMap = createManagedMap("listConfigs");
             this.setManagedMap = createManagedMap("setConfigs");
             this.topicManagedMap = createManagedMap("topicConfigs");
@@ -293,8 +290,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleAtomicReference(node);
                     } else if ("reliable-topic".equals(nodeName)) {
                         handleReliableTopic(node);
-                    } else if ("semaphore".equals(nodeName)) {
-                        handleSemaphore(node);
                     } else if ("map".equals(nodeName)) {
                         handleMap(node);
                     } else if ("cache".equals(nodeName)) {
@@ -403,7 +398,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             raftAlgorithmConfigBuilder.getBeanDefinition());
                 } else if ("semaphores".equals(nodeName)) {
                     ManagedMap<String, AbstractBeanDefinition> semaphores = new ManagedMap<String, AbstractBeanDefinition>();
-                    handleCPSemaphores(semaphores, child);
+                    handleSemaphores(semaphores, child);
                     cpSubsystemConfigBuilder.addPropertyValue("SemaphoreConfigs", semaphores);
                 } else if ("locks".equals(nodeName)) {
                     ManagedMap<String, AbstractBeanDefinition> locks = new ManagedMap<String, AbstractBeanDefinition>();
@@ -424,21 +419,21 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("CPSubsystemConfig", cpSubsystemConfigBuilder.getBeanDefinition());
         }
 
-        private void handleCPSemaphores(ManagedMap<String, AbstractBeanDefinition> cpSemaphores, Node node) {
+        private void handleSemaphores(ManagedMap<String, AbstractBeanDefinition> semaphores, Node node) {
             for (Node child : childElements(node)) {
-                BeanDefinitionBuilder cpSemaphoreConfigBuilder = createBeanBuilder(CPSemaphoreConfig.class);
+                BeanDefinitionBuilder semaphoreConfigBuilder = createBeanBuilder(SemaphoreConfig.class);
                 for (Node subChild : childElements(child)) {
                     String nodeName = cleanNodeName(subChild);
                     String value = getTextContent(subChild).trim();
                     if ("name".equals(nodeName)) {
-                        cpSemaphoreConfigBuilder.addPropertyValue("name", value);
+                        semaphoreConfigBuilder.addPropertyValue("name", value);
                     } else if ("jdk-compatible".equals(nodeName)) {
-                        cpSemaphoreConfigBuilder.addPropertyValue("JDKCompatible", getBooleanValue(value));
+                        semaphoreConfigBuilder.addPropertyValue("JDKCompatible", getBooleanValue(value));
                     }
                 }
-                AbstractBeanDefinition beanDefinition = cpSemaphoreConfigBuilder.getBeanDefinition();
+                AbstractBeanDefinition beanDefinition = semaphoreConfigBuilder.getBeanDefinition();
                 String name = (String) beanDefinition.getPropertyValues().get("name");
-                cpSemaphores.put(name, beanDefinition);
+                semaphores.put(name, beanDefinition);
             }
         }
 
@@ -1062,18 +1057,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             reliableTopicManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
-        }
-
-        public void handleSemaphore(Node node) {
-            BeanDefinitionBuilder builder = createBeanBuilder(SemaphoreConfig.class);
-            fillAttributeValues(node, builder);
-            for (Node childNode : childElements(node)) {
-                String nodeName = cleanNodeName(childNode);
-                if ("split-brain-protection-ref".equals(nodeName)) {
-                    builder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
-                }
-            }
-            semaphoreManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
         }
 
         public void handleLock(Node node) {

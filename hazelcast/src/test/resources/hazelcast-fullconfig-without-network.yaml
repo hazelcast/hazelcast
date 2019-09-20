@@ -447,13 +447,6 @@ hazelcast:
       message-listeners:
         - com.hazelcast.examples.MessageListener
 
-  semaphore:
-    default:
-      initial-permits: 10
-      backup-count: 1
-      async-backup-count: 0
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-
   lock:
     default:
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers

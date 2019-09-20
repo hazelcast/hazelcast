@@ -72,12 +72,12 @@ public class AcquireInvocationKey extends WaitKey implements IdentifiedDataSeria
 
     @Override
     public int getFactoryId() {
-        return RaftSemaphoreDataSerializerHook.F_ID;
+        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftSemaphoreDataSerializerHook.ACQUIRE_INVOCATION_KEY;
+        return SemaphoreDataSerializerHook.ACQUIRE_INVOCATION_KEY;
     }
 
     @Override

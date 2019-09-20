@@ -21,7 +21,7 @@ import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
-import com.hazelcast.cp.internal.datastructures.semaphore.proxy.RaftSessionlessSemaphoreProxy;
+import com.hazelcast.cp.internal.datastructures.semaphore.proxy.SessionlessSemaphoreProxy;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import org.junit.Before;
 import org.junit.Test;
@@ -420,8 +420,8 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
         assertTrueEventually(() -> {
             CPGroupId groupId = getGroupId(semaphore);
             HazelcastInstance leader = leaderInstanceOf(groupId);
-            RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
-            RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+            SemaphoreService service = getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
 
@@ -440,6 +440,6 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
     }
 
     protected CPGroupId getGroupId(ISemaphore semaphore) {
-        return ((RaftSessionlessSemaphoreProxy) semaphore).getGroupId();
+        return ((SessionlessSemaphoreProxy) semaphore).getGroupId();
     }
 }

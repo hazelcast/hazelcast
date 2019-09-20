@@ -37,7 +37,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
@@ -119,7 +118,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, DurableExecutorConfig>();
     private final ConcurrentMap<String, ScheduledExecutorConfig> scheduledExecutorConfigs =
             new ConcurrentHashMap<String, ScheduledExecutorConfig>();
-    private final ConcurrentMap<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
     private final ConcurrentMap<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
     private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs =
             new ConcurrentHashMap<String, ReliableTopicConfig>();
@@ -147,7 +145,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             executorConfigs,
             durableExecutorConfigs,
             scheduledExecutorConfigs,
-            semaphoreConfigs,
             queueConfigs,
             reliableTopicConfigs,
             cacheSimpleConfigs,
@@ -329,9 +326,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             if (currentConfig == null) {
                 listener.onConfigRegistered(cacheSimpleConfig);
             }
-        } else if (newConfig instanceof SemaphoreConfig) {
-            SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
-            currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
         } else if (newConfig instanceof FlakeIdGeneratorConfig) {
             FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
             currentConfig = flakeIdGeneratorConfigs.putIfAbsent(config.getName(), config);
@@ -448,16 +442,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public ConcurrentMap<String, DurableExecutorConfig> getDurableExecutorConfigs() {
         return durableExecutorConfigs;
-    }
-
-    @Override
-    public SemaphoreConfig findSemaphoreConfig(String name) {
-        return lookupByPattern(configPatternMatcher, semaphoreConfigs, name);
-    }
-
-    @Override
-    public ConcurrentMap<String, SemaphoreConfig> getSemaphoreConfigs() {
-        return semaphoreConfigs;
     }
 
     @Override
@@ -621,7 +605,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         configToVersion.put(ExecutorConfig.class, V3_9);
         configToVersion.put(DurableExecutorConfig.class, V3_9);
         configToVersion.put(ScheduledExecutorConfig.class, V3_9);
-        configToVersion.put(SemaphoreConfig.class, V3_9);
         configToVersion.put(QueueConfig.class, V3_9);
         configToVersion.put(ReliableTopicConfig.class, V3_9);
         configToVersion.put(CacheSimpleConfig.class, V3_9);

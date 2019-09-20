@@ -21,7 +21,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.Duration
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfigChecker;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.memory.MemorySize;
@@ -620,24 +620,6 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         RingbufferConfig actualConfig = xmlConfig.getRingbufferConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testSemaphore() {
-        SemaphoreConfig expectedConfig = new SemaphoreConfig()
-                .setName("testSemaphore")
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setInitialPermits(3)
-                .setBackupCount(1)
-                .setAsyncBackupCount(2);
-
-        Config config = new Config()
-                .addSemaphoreConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        SemaphoreConfig actualConfig = xmlConfig.getSemaphoreConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -1331,8 +1313,8 @@ public class ConfigXmlGeneratorTest {
                 .setAppendRequestBackoffTimeoutInMillis(50);
 
         config.getCPSubsystemConfig()
-                .addSemaphoreConfig(new CPSemaphoreConfig("sem1", true))
-                .addSemaphoreConfig(new CPSemaphoreConfig("sem2", false));
+                .addSemaphoreConfig(new SemaphoreConfig("sem1", true))
+                .addSemaphoreConfig(new SemaphoreConfig("sem2", false));
 
         config.getCPSubsystemConfig()
                 .addLockConfig(new FencedLockConfig("lock1", 1))

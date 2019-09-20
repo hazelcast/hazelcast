@@ -47,7 +47,6 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
@@ -70,7 +69,6 @@ import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
 import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.internal.config.RingbufferConfigReadOnly;
-import com.hazelcast.internal.config.SemaphoreConfigReadOnly;
 import com.hazelcast.internal.config.SetConfigReadOnly;
 import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
@@ -82,8 +80,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -919,54 +915,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setPNCounterConfigs(Map<String, PNCounterConfig> pnCounterConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    public SemaphoreConfig findSemaphoreConfig(String name) {
-        return new SemaphoreConfigReadOnly(getSemaphoreConfigInternal(name, "default"));
-    }
-
-    @Override
-    public SemaphoreConfig getSemaphoreConfig(String name) {
-        return getSemaphoreConfigInternal(name, name);
-    }
-
-    private SemaphoreConfig getSemaphoreConfigInternal(String name, String fallbackName) {
-        return (SemaphoreConfig) configSearcher.getConfig(name, fallbackName, supplierFor(SemaphoreConfig.class));
-    }
-
-    @Override
-    public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getSemaphoreConfigsAsMap(),
-                semaphoreConfig.getName(), semaphoreConfig);
-        if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(semaphoreConfig);
-        }
-        return this;
-    }
-
-    @Override
-    public Collection<SemaphoreConfig> getSemaphoreConfigs() {
-        Collection<SemaphoreConfig> staticConfigs = staticConfig.getSemaphoreConfigs();
-        Map<String, SemaphoreConfig> semaphoreConfigs = configurationService.getSemaphoreConfigs();
-
-        ArrayList<SemaphoreConfig> aggregated = new ArrayList<SemaphoreConfig>(staticConfigs);
-        aggregated.addAll(semaphoreConfigs.values());
-
-        return aggregated;
-    }
-
-    @Override
-    public Map<String, SemaphoreConfig> getSemaphoreConfigsAsMap() {
-        Map<String, SemaphoreConfig> staticConfigs = staticConfig.getSemaphoreConfigsAsMap();
-        Map<String, SemaphoreConfig> dynamicConfigs = configurationService.getSemaphoreConfigs();
-
-        return aggregate(staticConfigs, dynamicConfigs);
-    }
-
-    @Override
-    public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

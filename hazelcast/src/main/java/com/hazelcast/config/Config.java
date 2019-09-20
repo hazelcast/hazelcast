@@ -23,7 +23,6 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
@@ -43,7 +42,6 @@ import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
 import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.internal.config.RingbufferConfigReadOnly;
 import com.hazelcast.internal.config.ScheduledExecutorConfigReadOnly;
-import com.hazelcast.internal.config.SemaphoreConfigReadOnly;
 import com.hazelcast.internal.config.SetConfigReadOnly;
 import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.map.IMap;
@@ -55,7 +53,6 @@ import com.hazelcast.topic.ITopic;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Collection;
 import java.util.EventListener;
 import java.util.LinkedList;
 import java.util.List;
@@ -124,8 +121,6 @@ public class Config {
 
     private final Map<String, ScheduledExecutorConfig> scheduledExecutorConfigs
             = new ConcurrentHashMap<String, ScheduledExecutorConfig>();
-
-    private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
     private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<String, ReplicatedMapConfig>();
 
@@ -2234,117 +2229,6 @@ public class Config {
     }
 
     /**
-     * Returns a read-only {@link ISemaphore}
-     * configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the semaphore config
-     * @return the semaphore configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     * @see EvictionConfig#setSize(int)
-     */
-    public SemaphoreConfig findSemaphoreConfig(String name) {
-        name = getBaseName(name);
-        SemaphoreConfig config = lookupByPattern(configPatternMatcher, semaphoreConfigs, name);
-        if (config != null) {
-            return new SemaphoreConfigReadOnly(config);
-        }
-        return new SemaphoreConfigReadOnly(getSemaphoreConfig("default"));
-    }
-
-    /**
-     * Returns the SemaphoreConfig for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking
-     * {@link #addSemaphoreConfig(SemaphoreConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the semaphore config
-     * @return the semaphore configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public SemaphoreConfig getSemaphoreConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, semaphoreConfigs, name, SemaphoreConfig.class);
-    }
-
-    /**
-     * Adds the {@link ISemaphore} configuration.
-     * The configuration is saved under the config name, which may be a
-     * pattern with which the configuration will be obtained in the future.
-     *
-     * @param semaphoreConfig semaphoreConfig config to add
-     * @return this config instance
-     */
-    public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        this.semaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
-        return this;
-    }
-
-    /**
-     * Returns the collection of {@link ISemaphore} configs
-     * added to this config object.
-     *
-     * @return semaphore configs
-     */
-    public Collection<SemaphoreConfig> getSemaphoreConfigs() {
-        return semaphoreConfigs.values();
-    }
-
-    /**
-     * Returns the map of {@link ISemaphore} configurations,
-     * mapped by config name. The config name may be a pattern with which the
-     * configuration was initially obtained.
-     *
-     * @return the semaphore configurations mapped by config name
-     */
-    public Map<String, SemaphoreConfig> getSemaphoreConfigsAsMap() {
-        return semaphoreConfigs;
-    }
-
-    /**
-     * Sets the map of semaphore configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param semaphoreConfigs the semaphore configuration map to set
-     * @return this config instance
-     */
-    public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
-        this.semaphoreConfigs.clear();
-        this.semaphoreConfigs.putAll(semaphoreConfigs);
-        for (final Entry<String, SemaphoreConfig> entry : this.semaphoreConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
      * Returns the WAN replication configuration with the given {@code name}.
      *
      * @param name the WAN replication config name
@@ -3028,7 +2912,6 @@ public class Config {
                 + ", queueConfigs=" + queueConfigs
                 + ", multiMapConfigs=" + multiMapConfigs
                 + ", executorConfigs=" + executorConfigs
-                + ", semaphoreConfigs=" + semaphoreConfigs
                 + ", ringbufferConfigs=" + ringbufferConfigs
                 + ", atomicLongConfigs=" + atomicLongConfigs
                 + ", atomicReferenceConfigs=" + atomicReferenceConfigs

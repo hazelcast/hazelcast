@@ -452,11 +452,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getSemaphore("my-semaphore")).thenReturn(mockSemaphore);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(cpSubsystem.getSemaphore("my-semaphore")).thenReturn(mockSemaphore);
 
-        assertEquals(mockSemaphore, hazelcastOSGiInstance.getSemaphore("my-semaphore"));
+        assertEquals(mockSemaphore, hazelcastOSGiInstance.getCPSubsystem().getSemaphore("my-semaphore"));
 
-        verify(mockHazelcastInstance).getSemaphore("my-semaphore");
+        verify(cpSubsystem).getSemaphore("my-semaphore");
     }
 
     @Test

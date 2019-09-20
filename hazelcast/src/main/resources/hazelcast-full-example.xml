@@ -1827,31 +1827,6 @@
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
     </reliable-topic>
-    <!--
-        ===== HAZELCAST SEMAPHORE CONFIGURATION =====
-
-        Configuration element's name is <semaphore>. It has the required attribute "name" with which you
-        can specify the name of your Semaphore. This attribute's default value is "default".
-        It has the following sub-elements:
-        * <initial-permits>:
-            The thread count to which the concurrent access is limited. For example, if you set
-        it to 3, concurrent access to the object is limited to 3 threads.
-        * <backup-count>:
-            Number of synchronous backups. For example, if it is set to 1, all permits of the semaphore
-            are copied to one other member for fail-safety. Its default value is 1.
-        * <async-backup-count>:
-        Number of asynchronous backups. Its default value is 0.
-        * <split-brain-protection-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
-        element. You should set the <split-brain-protection-ref>'s value
-        as the <split-brain-protection>'s name.
-    -->
-    <semaphore name="default">
-        <initial-permits>0</initial-permits>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-    </semaphore>
 
     <!--
     ===== HAZELCAST LOCK CONFIGURATION =====
@@ -3170,7 +3145,7 @@
 
         * <semaphores>:
             Configurations for CP semaphore instances. The semaphores can be configured
-            under <cp-semaphore> elements with the following sub-elements:
+            under <semaphore> elements with the following sub-elements:
             * <name>:
                 Name of the CP semaphore.
             * <jdk-compatible>:
@@ -3225,14 +3200,14 @@
             <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
         </raft-algorithm>
         <semaphores>
-            <cp-semaphore>
+            <semaphore>
                 <name>sem1</name>
                 <jdk-compatible>true</jdk-compatible>
-            </cp-semaphore>
-            <cp-semaphore>
+            </semaphore>
+            <semaphore>
                 <name>sem2</name>
                 <jdk-compatible>false</jdk-compatible>
-            </cp-semaphore>
+            </semaphore>
         </semaphores>
         <locks>
             <fenced-lock>

@@ -34,19 +34,16 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.CPSubsystemImpl;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.crdt.pncounter.PNCounterService;
@@ -60,20 +57,21 @@ import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -284,12 +282,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     public <E> IAtomicReference<E> getAtomicReference(String name) {
         checkNotNull(name, "Retrieving an atomic-reference instance with a null name is not allowed!");
         return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public ISemaphore getSemaphore(String name) {
-        checkNotNull(name, "Retrieving a semaphore instance with a null name is not allowed!");
-        return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
     }
 
     @Override

@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -538,26 +538,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </network>\n"
                 + HAZELCAST_END_TAG);
         assertTrue(config.getNetworkConfig().isReuseAddress());
-    }
-
-    @Override
-    @Test
-    public void readSemaphoreConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <semaphore name=\"default\">\n"
-                + "        <initial-permits>1</initial-permits>\n"
-                + "    </semaphore>"
-                + "    <semaphore name=\"custom\">\n"
-                + "        <initial-permits>10</initial-permits>\n"
-                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "    </semaphore>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        SemaphoreConfig defaultConfig = config.getSemaphoreConfig("default");
-        SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
-        assertEquals(1, defaultConfig.getInitialPermits());
-        assertEquals(10, customConfig.getInitialPermits());
-        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -3067,14 +3047,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <append-request-backoff-timeout-in-millis>50</append-request-backoff-timeout-in-millis>\n"
                 + "  </raft-algorithm>\n"
                 + "  <semaphores>\n"
-                + "    <cp-semaphore>\n"
+                + "    <semaphore>\n"
                 + "      <name>sem1</name>\n"
                 + "      <jdk-compatible>true</jdk-compatible>\n"
-                + "    </cp-semaphore>\n"
-                + "    <cp-semaphore>\n"
+                + "    </semaphore>\n"
+                + "    <semaphore>\n"
                 + "      <name>sem2</name>\n"
                 + "      <jdk-compatible>false</jdk-compatible>\n"
-                + "    </cp-semaphore>\n"
+                + "    </semaphore>\n"
                 + "  </semaphores>\n"
                 + "  <locks>\n"
                 + "    <fenced-lock>\n"
@@ -3104,8 +3084,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(250, raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot());
         assertEquals(75, raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends());
         assertEquals(50, raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis());
-        CPSemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
-        CPSemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
+        SemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
+        SemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
         assertNotNull(semaphoreConfig1);
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());

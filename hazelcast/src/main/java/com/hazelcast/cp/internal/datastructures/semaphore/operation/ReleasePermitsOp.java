@@ -19,9 +19,9 @@ package com.hazelcast.cp.internal.datastructures.semaphore.operation;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphore;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.Semaphore;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -33,7 +33,7 @@ import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_S
 /**
  * Operation for {@link ISemaphore#release()}
  *
- * @see RaftSemaphore#release(long, long, UUID, int)
+ * @see Semaphore#release(long, long, UUID, int)
  */
 public class ReleasePermitsOp extends AbstractSemaphoreOp implements IndeterminateOperationStateAware {
 
@@ -49,7 +49,7 @@ public class ReleasePermitsOp extends AbstractSemaphoreOp implements Indetermina
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftSemaphoreService service = getService();
+        SemaphoreService service = getService();
         service.releasePermits(groupId, commitIndex, name, getSemaphoreEndpoint(), invocationUid, permits);
         return true;
     }
@@ -61,7 +61,7 @@ public class ReleasePermitsOp extends AbstractSemaphoreOp implements Indetermina
 
     @Override
     public int getClassId() {
-        return RaftSemaphoreDataSerializerHook.RELEASE_PERMITS_OP;
+        return SemaphoreDataSerializerHook.RELEASE_PERMITS_OP;
     }
 
     @Override

@@ -25,7 +25,7 @@ import com.hazelcast.client.cp.internal.datastructures.semaphore.RaftSessionless
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec;
-import com.hazelcast.client.impl.protocol.codec.CPSemaphoreGetSemaphoreTypeCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreGetSemaphoreTypeCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.core.DistributedObject;
@@ -35,7 +35,7 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,7 +77,7 @@ public class ClientRaftProxyFactory {
             return (T) new CountDownLatchProxy(context, groupId, proxyName, objectName);
         } else if (serviceName.equals(RaftLockService.SERVICE_NAME)) {
             return (T) createFencedLock(groupId, proxyName, objectName);
-        } else if (serviceName.equals(RaftSemaphoreService.SERVICE_NAME)) {
+        } else if (serviceName.equals(SemaphoreService.SERVICE_NAME)) {
             return (T) createSemaphore(groupId, proxyName, objectName);
         } else {
             throw new IllegalArgumentException();
@@ -108,9 +108,9 @@ public class ClientRaftProxyFactory {
     }
 
     private ISemaphore createSemaphore(RaftGroupId groupId, String proxyName, String objectName) {
-        ClientMessage request = CPSemaphoreGetSemaphoreTypeCodec.encodeRequest(proxyName);
+        ClientMessage request = SemaphoreGetSemaphoreTypeCodec.encodeRequest(proxyName);
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().join();
-        boolean jdkCompatible = CPSemaphoreGetSemaphoreTypeCodec.decodeResponse(response).response;
+        boolean jdkCompatible = SemaphoreGetSemaphoreTypeCodec.decodeResponse(response).response;
 
         return jdkCompatible
                 ? new RaftSessionlessSemaphoreProxy(context, groupId, proxyName, objectName)
