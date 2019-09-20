@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Increases or decreases the number of permits by the given value.
  */
-@Generated({"963636359bb83a81bd68c083b9cd3b7f"})
+@Generated("71b12a3dc177056c9e8508be6028f830")
 public final class SemaphoreChangeCodec {
     //hex: 0x0D0500
     public static final int REQUEST_MESSAGE_TYPE = 853248;

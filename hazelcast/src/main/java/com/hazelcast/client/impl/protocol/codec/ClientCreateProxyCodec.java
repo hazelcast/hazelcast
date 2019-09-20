@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated({"06748e4f1be4be6064934662529a2dc6"})
+@Generated("10e20d8bcdf8f01e418eb3fd6951f989")
 public final class ClientCreateProxyCodec {
     //hex: 0x000500
     public static final int REQUEST_MESSAGE_TYPE = 1280;

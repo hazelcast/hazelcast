@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if the semaphore is JDK compatible
  */
-@Generated({"0fb66cc6d5e27b213cd838d3a91b6886"})
+@Generated("122dc2b9ce48c19d1f0b11b11905851e")
 public final class SemaphoreGetSemaphoreTypeCodec {
     //hex: 0x0D0700
     public static final int REQUEST_MESSAGE_TYPE = 853760;

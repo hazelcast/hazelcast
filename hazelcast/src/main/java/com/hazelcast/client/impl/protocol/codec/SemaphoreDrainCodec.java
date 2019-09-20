@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Acquires all available permits at once and returns immediately.
  */
-@Generated({"6fd8e5e182f2f589ba0c3afc76f50284"})
+@Generated("63cdecb3ff2911158873bb6d36f9b484")
 public final class SemaphoreDrainCodec {
     //hex: 0x0D0400
     public static final int REQUEST_MESSAGE_TYPE = 852992;
