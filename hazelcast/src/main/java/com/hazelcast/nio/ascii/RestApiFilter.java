@@ -92,7 +92,7 @@ public class RestApiFilter implements TextProtocolFilter {
         if (requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_STATE_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_NODES_URL)
-                || requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO)
+                || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO))
                 || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_VERSION_URL))
                 || requestUri.startsWith(HttpCommandProcessor.URI_INSTANCE)) {
             return RestEndpointGroup.CLUSTER_READ;
