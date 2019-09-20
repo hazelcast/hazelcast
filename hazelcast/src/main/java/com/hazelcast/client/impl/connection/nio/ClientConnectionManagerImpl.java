@@ -157,7 +157,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         HazelcastProperties properties = client.getProperties();
 
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-        boolean smartClient = networkConfig == null ? true : networkConfig.isSmartRouting();
+        boolean smartClient = networkConfig == null || networkConfig.isSmartRouting();
 
         int configuredInputThreads = properties.getInteger(IO_INPUT_THREAD_COUNT);
         int configuredOutputThreads = properties.getInteger(IO_OUTPUT_THREAD_COUNT);
