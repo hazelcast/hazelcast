@@ -4362,7 +4362,7 @@
 
     <xs:complexType name="cp-subsystem">
         <xs:all>
-            <xs:element name="cp-member-count" type="xs:unsignedInt" default="0">
+            <xs:element name="cp-member-count" type="xs:unsignedInt" default="0" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Number of CP Members to initialize the CP Subsystem.
@@ -4571,7 +4571,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="jdk-compatible" type="xs:boolean" default="false">
+            <xs:element name="jdk-compatible" type="xs:boolean" default="false" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Enables / disables JDK compatibility of the CP ISemaphore.
@@ -4605,7 +4605,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="lock-acquire-limit" type="xs:nonNegativeInteger" default="0">
+            <xs:element name="lock-acquire-limit" type="xs:nonNegativeInteger" default="0" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of reentrant lock acquires. Once a caller acquires
