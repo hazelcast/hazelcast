@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.lock.operations;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockResource;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreImpl;
 import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,7 +30,6 @@ import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.SplitBrainProtectionCheckAwareOperation;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.UUID;

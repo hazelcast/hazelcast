@@ -18,6 +18,7 @@ package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
@@ -25,7 +26,6 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

@@ -17,13 +17,13 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl.TxBackupLog;
-import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
