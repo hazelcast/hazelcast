@@ -37,7 +37,7 @@ import static com.hazelcast.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.nio.ascii.TextEncoder.TEXT_ENCODER;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_SEND_BUFFER_SIZE;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
  * The ProtocolEncoder is responsible for writing the protocol and once the protocol

@@ -40,8 +40,8 @@ import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlMapping;
 import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlSequence;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
 
 class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
@@ -312,15 +312,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig();
             atomicReferenceConfig.setName(atomicReferenceNode.getNodeName());
             handleAtomicReferenceNode(atomicReferenceNode, atomicReferenceConfig);
-        }
-    }
-
-    @Override
-    protected void handleCountDownLatchConfig(Node node) {
-        for (Node countDownLatchNode : childElements(node)) {
-            CountDownLatchConfig countDownLatchConfig = new CountDownLatchConfig();
-            countDownLatchConfig.setName(countDownLatchNode.getNodeName());
-            handleCountDownLatchNode(countDownLatchNode, countDownLatchConfig);
         }
     }
 

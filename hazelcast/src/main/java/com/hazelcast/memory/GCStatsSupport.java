@@ -21,7 +21,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Used to gather garbage collection statistics.

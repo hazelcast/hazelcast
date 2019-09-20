@@ -19,12 +19,12 @@ package com.hazelcast.query.impl.getters;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public final class ExtractorHelper {
 

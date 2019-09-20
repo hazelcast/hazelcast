@@ -24,7 +24,7 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Hazelcast {@code ICacheManager} implementation accessible via {@code HazelcastInstance} that provides access to JSR-107

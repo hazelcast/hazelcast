@@ -223,7 +223,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertTrue(instance1.getCountDownLatch("latch").trySetCount(1));
+        assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
         String name = randomString();
         IExecutorService executorService = instance2.getExecutorService(name);
@@ -232,7 +232,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ICompletableFuture<Boolean> future = (ICompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(1);
         future.andThen(callback);
-        instance1.getCountDownLatch("latch").countDown();
+        instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
         assertTrue(future.get());
         assertOpenEventually(callback.getLatch());
     }
@@ -261,7 +261,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertTrue(instance1.getCountDownLatch("latch").trySetCount(1));
+        assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
         String name = randomString();
         IExecutorService executorService = instance2.getExecutorService(name);
@@ -272,7 +272,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(latch);
         future.andThen(callback);
         future.andThen(callback);
-        instance1.getCountDownLatch("latch").countDown();
+        instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
         assertTrue(future.get());
         assertOpenEventually(latch, 10);
     }
@@ -1064,7 +1064,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
         @Override
         public Boolean call() throws Exception {
-            return instance.getCountDownLatch(name).await(100, TimeUnit.SECONDS);
+            return instance.getCPSubsystem().getCountDownLatch(name).await(100, TimeUnit.SECONDS);
         }
 
         @Override

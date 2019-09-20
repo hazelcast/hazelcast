@@ -52,8 +52,8 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.RejectedExecutionException;
@@ -77,8 +77,8 @@ import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CA
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Math.max;

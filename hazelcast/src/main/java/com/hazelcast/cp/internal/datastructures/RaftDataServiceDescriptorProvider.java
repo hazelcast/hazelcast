@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures;
 
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
@@ -39,7 +39,7 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
             new RaftSessionManagerServiceDescriptor(),
             new RaftAtomicRefServiceDescriptor(),
             new RaftSemaphoreServiceDescriptor(),
-            new RaftCountDownLatcherviceDescriptor(),
+            new CountDownLatcherviceDescriptor(),
         };
     }
 
@@ -103,15 +103,15 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
         }
     }
 
-    private static class RaftCountDownLatcherviceDescriptor implements ServiceDescriptor {
+    private static class CountDownLatcherviceDescriptor implements ServiceDescriptor {
         @Override
         public String getServiceName() {
-            return RaftCountDownLatchService.SERVICE_NAME;
+            return CountDownLatchService.SERVICE_NAME;
         }
 
         @Override
         public Object getService(NodeEngine nodeEngine) {
-            return new RaftCountDownLatchService(nodeEngine);
+            return new CountDownLatchService(nodeEngine);
         }
     }
 }

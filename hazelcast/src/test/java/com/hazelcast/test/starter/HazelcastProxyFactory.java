@@ -17,8 +17,8 @@
 package com.hazelcast.test.starter;
 
 import com.hazelcast.test.starter.constructor.EnumConstructor;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
+import com.hazelcast.internal.util.ConstructorFunction;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.MethodList;
@@ -54,7 +54,7 @@ import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.newCollectionFor;
 import static com.hazelcast.test.starter.ReflectionUtils.getConstructor;
 import static com.hazelcast.test.starter.ReflectionUtils.getReflectionsForTestPackage;
-import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
+import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.asList;
 import static net.bytebuddy.jar.asm.Opcodes.ACC_PUBLIC;

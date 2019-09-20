@@ -25,7 +25,7 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Proxy implementation of {@link CardinalityEstimator}.

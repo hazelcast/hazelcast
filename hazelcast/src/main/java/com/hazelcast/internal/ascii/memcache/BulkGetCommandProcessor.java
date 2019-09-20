@@ -17,8 +17,8 @@
 package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.util.collection.ComposedKeyMap;
-import com.hazelcast.util.collection.InternalSetMultimap;
+import com.hazelcast.internal.util.collection.ComposedKeyMap;
+import com.hazelcast.internal.util.collection.InternalSetMultimap;
 
 import java.util.ArrayList;
 import java.util.Collection;

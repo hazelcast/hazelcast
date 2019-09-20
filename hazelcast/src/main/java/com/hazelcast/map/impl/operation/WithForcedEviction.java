@@ -36,7 +36,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.String.format;
 
 /**

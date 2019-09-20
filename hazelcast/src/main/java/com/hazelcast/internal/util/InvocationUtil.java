@@ -29,8 +29,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.executor.CompletedFuture;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.Iterator;
 import java.util.concurrent.Executor;
@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.util.IterableUtil.map;
+import static com.hazelcast.internal.util.IterableUtil.map;
 
 /**
  * Utility methods for invocations.

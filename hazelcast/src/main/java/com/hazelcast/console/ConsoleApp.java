@@ -41,7 +41,7 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
@@ -68,10 +68,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.memory.MemoryUnit.BYTES;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.StringUtil.equalsIgnoreCase;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.util.StringUtil.trim;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.trim;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -447,7 +447,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             Member member = members.get(i % members.size());
             if (taskCount % totalThreadCount == 0) {
                 latchId = taskCount / totalThreadCount;
-                hazelcast.getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
+                hazelcast.getCPSubsystem().getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
 
             }
             Future f = executor.submitToMember(new SimulateLoadTask(durationSec, i + 1, "latch" + latchId), member);

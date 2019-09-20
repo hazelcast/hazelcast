@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.constructor;
 
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable;

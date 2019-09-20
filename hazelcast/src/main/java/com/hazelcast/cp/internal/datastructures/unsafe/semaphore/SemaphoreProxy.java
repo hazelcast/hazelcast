@@ -32,8 +32,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowInterrupted;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static java.lang.Thread.currentThread;
 
 public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> implements ISemaphore {

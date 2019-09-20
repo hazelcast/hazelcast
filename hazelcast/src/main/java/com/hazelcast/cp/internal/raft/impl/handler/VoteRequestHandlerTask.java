@@ -23,7 +23,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 

@@ -34,7 +34,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 
 import java.util.Collection;
 import java.util.Set;
@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.singletonMap;
 
 class MockNetworkingService
@@ -157,8 +157,21 @@ class MockNetworkingService
 
             remoteConnection.localConnection = thisConnection;
             thisConnection.localConnection = remoteConnection;
+
+            if (!remoteConnection.isAlive()) {
+                // targetNode is not alive anymore.
+                suspectAddress(remote);
+                return null;
+            }
+
             ns.mapConnections.put(remote, remoteConnection);
             ns.logger.info("Created connection to endpoint: " + remote + ", connection: " + remoteConnection);
+
+            if (!remoteConnection.isAlive()) {
+                // If connection is not alive after inserting it into connection map,
+                // that means remote node is being stopping during connection creation.
+                suspectAddress(remote);
+            }
             return remoteConnection;
         }
 

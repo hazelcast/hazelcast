@@ -33,7 +33,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Proxy implementation of {@link IAtomicReference}.

@@ -22,7 +22,7 @@ import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.nio.InboundHandlerWithCounters;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.util.collection.Long2ObjectHashMap;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;

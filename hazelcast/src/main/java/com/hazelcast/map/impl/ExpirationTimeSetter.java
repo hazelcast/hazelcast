@@ -20,7 +20,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.record.Record;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**

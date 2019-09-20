@@ -19,7 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexHeapMemoryCostUtil;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 

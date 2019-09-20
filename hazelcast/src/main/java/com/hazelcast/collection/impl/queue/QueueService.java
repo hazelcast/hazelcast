@@ -56,11 +56,11 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -75,9 +75,9 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.scheduler.ScheduleType.POSTPONE;
 
 /**
  * Provides important services via methods for the the Queue

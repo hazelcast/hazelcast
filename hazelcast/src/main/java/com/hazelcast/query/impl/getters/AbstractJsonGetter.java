@@ -26,7 +26,7 @@ import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.json.internal.JsonPattern;
 import com.hazelcast.json.internal.JsonSchemaHelper;
 import com.hazelcast.json.internal.JsonSchemaNode;
-import com.hazelcast.util.collection.WeightedEvictableList.WeightedItem;
+import com.hazelcast.internal.util.collection.WeightedEvictableList.WeightedItem;
 
 import java.io.IOException;
 import java.util.List;

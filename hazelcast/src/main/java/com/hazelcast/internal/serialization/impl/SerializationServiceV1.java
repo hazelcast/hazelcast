@@ -96,7 +96,7 @@ import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.E
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.HazelcastJsonValueSerializer;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class SerializationServiceV1 extends AbstractSerializationService {
 

@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
+import static com.hazelcast.internal.util.StringUtil.LOCALE_INTERNAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 

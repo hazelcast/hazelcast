@@ -31,7 +31,7 @@ import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.partition.PartitionAwareService;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * An abstract implementation of {@link MapServiceFactory} interface; this abstract class knows

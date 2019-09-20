@@ -50,7 +50,7 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains all the configuration to start a
@@ -107,9 +107,6 @@ public class Config {
             = new ConcurrentHashMap<String, ScheduledExecutorConfig>();
 
     private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
-
-    private final Map<String, CountDownLatchConfig> countDownLatchConfigs =
-            new ConcurrentHashMap<String, CountDownLatchConfig>();
 
     private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<String, ReplicatedMapConfig>();
 
@@ -1505,102 +1502,6 @@ public class Config {
         this.atomicReferenceConfigs.clear();
         this.atomicReferenceConfigs.putAll(atomicReferenceConfigs);
         for (Entry<String, AtomicReferenceConfig> entry : atomicReferenceConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Returns a read-only CountDownLatch configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the CountDownLatch config
-     * @return the CountDownLatch configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public CountDownLatchConfig findCountDownLatchConfig(String name) {
-        name = getBaseName(name);
-        CountDownLatchConfig config = lookupByPattern(configPatternMatcher, countDownLatchConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getCountDownLatchConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns the CountDownLatchConfig for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking {@link #addCountDownLatchConfig(CountDownLatchConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the CountDownLatch config
-     * @return the CountDownLatch configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public CountDownLatchConfig getCountDownLatchConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, countDownLatchConfigs, name, CountDownLatchConfig.class);
-    }
-
-    /**
-     * Adds the CountDownLatch configuration. The configuration is saved under the config
-     * name, which may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param countDownLatchConfig the CountDownLatch configuration
-     * @return this config instance
-     */
-    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
-        countDownLatchConfigs.put(countDownLatchConfig.getName(), countDownLatchConfig);
-        return this;
-    }
-
-    /**
-     * Returns the map of CountDownLatch configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration was initially obtained.
-     *
-     * @return the CountDownLatch configurations mapped by config name
-     */
-    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
-        return countDownLatchConfigs;
-    }
-
-    /**
-     * Sets the map of CountDownLatch configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be obtained in the future.
-     *
-     * @param countDownLatchConfigs the CountDownLatch configuration map to set
-     * @return this config instance
-     */
-    public Config setCountDownLatchConfigs(Map<String, CountDownLatchConfig> countDownLatchConfigs) {
-        this.countDownLatchConfigs.clear();
-        this.countDownLatchConfigs.putAll(countDownLatchConfigs);
-        for (Entry<String, CountDownLatchConfig> entry : countDownLatchConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -3105,7 +3006,6 @@ public class Config {
                 + ", multiMapConfigs=" + multiMapConfigs
                 + ", executorConfigs=" + executorConfigs
                 + ", semaphoreConfigs=" + semaphoreConfigs
-                + ", countDownLatchConfigs=" + countDownLatchConfigs
                 + ", ringbufferConfigs=" + ringbufferConfigs
                 + ", atomicLongConfigs=" + atomicLongConfigs
                 + ", atomicReferenceConfigs=" + atomicReferenceConfigs

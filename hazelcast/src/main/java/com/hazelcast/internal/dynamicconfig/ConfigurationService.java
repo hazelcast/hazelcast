@@ -20,7 +20,6 @@ import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -157,13 +156,6 @@ public interface ConfigurationService {
     AtomicReferenceConfig findAtomicReferenceConfig(String name);
 
     /**
-     * Finds existing CountDownLatch config.
-     *
-     * @return CountDownLatch Config or {@code null} when requested CountDownLatch configuration does not exist
-     */
-    CountDownLatchConfig findCountDownLatchConfig(String name);
-
-    /**
      * Finds existing Lock config.
      *
      * @param name name of the config
@@ -296,13 +288,6 @@ public interface ConfigurationService {
      * @return registered AtomicReference configurations
      */
     Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs();
-
-    /**
-     * Returns all registered CountDownLatchConfig configurations.
-     *
-     * @return registered CountDownLatchConfig configurations
-     */
-    Map<String, CountDownLatchConfig> getCountDownLatchConfigs();
 
     /**
      * Returns all registered topic configurations.

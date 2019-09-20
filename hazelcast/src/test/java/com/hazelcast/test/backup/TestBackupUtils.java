@@ -23,7 +23,7 @@ import javax.cache.expiry.ExpiryPolicy;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsStringFormat;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;

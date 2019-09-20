@@ -26,7 +26,7 @@ import com.hazelcast.query.Predicate;
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class MultipleEntryWithPredicateBackupOperation extends MultipleEntryBackupOperation {
 

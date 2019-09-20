@@ -27,7 +27,7 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLong;
 import java.io.IOException;
 
 import static com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp.AlterResultType.OLD_VALUE;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Operation for {@link IAtomicLong#alter(IFunction)}

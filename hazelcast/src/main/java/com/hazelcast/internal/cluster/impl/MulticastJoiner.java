@@ -20,8 +20,8 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.RandomPicker;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.RandomPicker;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;

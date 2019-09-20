@@ -56,7 +56,7 @@ import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.ThreadUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,8 +68,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.Thread.currentThread;
 
 /**

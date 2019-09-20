@@ -40,7 +40,7 @@ import com.hazelcast.spi.impl.operationservice.SplitBrainProtectionCheckAwareOpe
 import java.util.Collection;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * {@link SplitBrainProtectionImpl} can be used to notify split brain protection service for a particular split brain protection

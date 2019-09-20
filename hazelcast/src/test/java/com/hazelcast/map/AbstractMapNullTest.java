@@ -26,7 +26,7 @@ import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Assert;
 import org.junit.Test;
 

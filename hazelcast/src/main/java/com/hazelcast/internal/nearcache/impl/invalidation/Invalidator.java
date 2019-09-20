@@ -29,7 +29,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains shared functionality for Near Cache invalidation.

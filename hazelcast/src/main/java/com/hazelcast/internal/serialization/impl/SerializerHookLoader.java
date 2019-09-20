@@ -23,8 +23,8 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;

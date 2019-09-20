@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,8 +35,8 @@ import java.util.Set;
 
 import static com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook.F_ID;
 import static com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook.LOCK_RESOURCE;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 @SuppressWarnings("checkstyle:methodcount")
 final class LockResourceImpl implements IdentifiedDataSerializable, LockResource {

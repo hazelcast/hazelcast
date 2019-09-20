@@ -43,14 +43,14 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueService> implements InitializingObject {
 

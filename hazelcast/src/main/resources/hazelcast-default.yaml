@@ -293,9 +293,6 @@ hazelcast:
         batch-size: 100
         class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
 
-  count-down-latch:
-    default: {}
-
   serialization:
     portable-version: 0
 

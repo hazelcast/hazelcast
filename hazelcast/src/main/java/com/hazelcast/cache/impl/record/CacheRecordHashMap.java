@@ -26,7 +26,7 @@ import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.AbstractMap;

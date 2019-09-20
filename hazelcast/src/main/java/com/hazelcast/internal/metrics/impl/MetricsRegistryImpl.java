@@ -28,7 +28,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,8 +45,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.String.format;
 
 /**

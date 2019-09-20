@@ -28,7 +28,7 @@ import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

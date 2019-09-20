@@ -67,7 +67,6 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
@@ -81,7 +80,6 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.collection.IList;
 import com.hazelcast.cp.lock.ILock;
@@ -146,7 +144,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.internal.util.ServiceLoader;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -163,10 +161,10 @@ import static com.hazelcast.client.properties.ClientProperty.CONCURRENT_WINDOW_M
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
@@ -635,12 +633,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public <E> IAtomicReference<E> getAtomicReference(String name) {
         checkNotNull(name, "Retrieving an atomic-reference instance with a null name is not allowed!");
         return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public ICountDownLatch getCountDownLatch(String name) {
-        checkNotNull(name, "Retrieving a countdown-latch instance with a null name is not allowed!");
-        return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
     }
 
     @Override

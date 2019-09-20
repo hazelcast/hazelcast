@@ -38,7 +38,7 @@ import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.internal.util.ServiceLoader;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,7 +47,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 

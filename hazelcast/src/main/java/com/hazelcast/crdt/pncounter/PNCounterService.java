@@ -30,8 +30,8 @@ import com.hazelcast.monitor.LocalPNCounterStats;
 import com.hazelcast.monitor.impl.LocalPNCounterStatsImpl;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,7 +41,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
  * Service responsible for {@link PNCounter} proxies and replication operation.

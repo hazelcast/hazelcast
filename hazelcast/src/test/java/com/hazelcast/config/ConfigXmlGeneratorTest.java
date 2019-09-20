@@ -760,21 +760,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testCountDownLatch() {
-        CountDownLatchConfig expectedConfig = new CountDownLatchConfig("testCountDownLatchConfig")
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-
-        Config config = new Config()
-                .addCountDownLatchConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        CountDownLatchConfig actualConfig = xmlConfig.getCountDownLatchConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testList() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
                 .setPolicy(HigherHitsMergePolicy.class.getName())
@@ -1119,7 +1104,7 @@ public class ConfigXmlGeneratorTest {
                 .setBatchSize(500)
                 .setBatchMaxDelayMillis(1000)
                 .setResponseTimeoutMillis(60000)
-                .setQueueFullBehavior(WANQueueFullBehavior.DISCARD_AFTER_MUTATION)
+                .setQueueFullBehavior(WanQueueFullBehavior.DISCARD_AFTER_MUTATION)
                 .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
                 .setDiscoveryPeriodSeconds(20)
                 .setMaxTargetEndpoints(100)

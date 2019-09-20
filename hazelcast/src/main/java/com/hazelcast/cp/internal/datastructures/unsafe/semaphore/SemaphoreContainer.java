@@ -27,7 +27,7 @@ import java.util.Map;
 
 import static com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreDataSerializerHook.CONTAINER;
 import static com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreDataSerializerHook.F_ID;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class SemaphoreContainer implements IdentifiedDataSerializable {
 

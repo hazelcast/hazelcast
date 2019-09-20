@@ -27,13 +27,13 @@ import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.util.MemoryInfoAccessor;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 /**

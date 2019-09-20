@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.semaphore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.util.RandomPicker;
+import com.hazelcast.internal.util.RandomPicker;
 
 public abstract class RaftSemaphoreFailureTest extends AbstractSemaphoreFailureTest {
 

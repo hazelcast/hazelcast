@@ -54,7 +54,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
-import static com.hazelcast.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

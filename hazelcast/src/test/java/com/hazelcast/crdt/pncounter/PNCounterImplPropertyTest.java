@@ -21,7 +21,7 @@ import com.hazelcast.crdt.Operation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.MutableLong;
+import com.hazelcast.internal.util.MutableLong;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 

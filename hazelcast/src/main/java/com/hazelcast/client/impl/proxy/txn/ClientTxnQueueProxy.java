@@ -30,7 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static java.lang.Thread.currentThread;
 
 /**

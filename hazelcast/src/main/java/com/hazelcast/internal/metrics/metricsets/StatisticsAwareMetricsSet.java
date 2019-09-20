@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
-import static com.hazelcast.util.StringUtil.lowerCaseFirstChar;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseFirstChar;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**

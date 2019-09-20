@@ -67,10 +67,10 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createCacheEntryListenerCodec;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createHandler;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createPartitionLostListenerCodec;
-import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyMap;
 
 /**

@@ -28,7 +28,7 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.util.ByteArrayProcessor;
+import com.hazelcast.internal.util.ByteArrayProcessor;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -44,7 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public final class MulticastService implements Runnable {
 

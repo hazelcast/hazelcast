@@ -57,7 +57,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         localHz = factory.newHazelcastInstance();
         remoteHz = factory.newHazelcastInstance();
         taskStartedLatchName = randomName();
-        taskStartedLatch = localHz.getCountDownLatch(taskStartedLatchName);
+        taskStartedLatch = localHz.getCPSubsystem().getCountDownLatch(taskStartedLatchName);
         taskStartedLatch.trySetCount(1);
     }
 
@@ -171,7 +171,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
 
         @Override
         public Boolean call() throws InterruptedException {
-            hz.getCountDownLatch(taskStartedLatchName).countDown();
+            hz.getCPSubsystem().getCountDownLatch(taskStartedLatchName).countDown();
 
             sleepAtLeastSeconds((int) sleepSeconds);
             return true;

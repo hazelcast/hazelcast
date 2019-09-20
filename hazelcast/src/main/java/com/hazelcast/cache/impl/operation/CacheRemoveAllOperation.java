@@ -37,7 +37,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCompleteEvent;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * TODO add a proper JavaDoc

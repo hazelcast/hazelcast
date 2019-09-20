@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static com.hazelcast.util.Preconditions.checkState;
+import static com.hazelcast.internal.util.Preconditions.checkState;
 
 /**
  * When a CP member is added to a Raft group, a new member list is committed to

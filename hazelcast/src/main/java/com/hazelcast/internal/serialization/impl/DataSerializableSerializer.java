@@ -29,9 +29,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ServiceLoader;
-import com.hazelcast.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;

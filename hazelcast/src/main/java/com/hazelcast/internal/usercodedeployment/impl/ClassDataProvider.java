@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.IOUtil.toByteArray;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Provides {@link ClassData} to remote members.

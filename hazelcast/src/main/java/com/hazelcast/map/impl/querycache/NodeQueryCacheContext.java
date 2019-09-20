@@ -36,7 +36,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;

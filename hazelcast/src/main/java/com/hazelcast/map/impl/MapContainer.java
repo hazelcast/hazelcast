@@ -53,10 +53,10 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.MemoryInfoAccessor;
-import com.hazelcast.util.RuntimeMemoryInfoAccessor;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
+import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.impl.DelegatingWanReplicationScheme;
 import com.hazelcast.wan.impl.WanReplicationService;
 

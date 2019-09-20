@@ -34,7 +34,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectLis
 import com.hazelcast.client.impl.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.impl.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.impl.proxy.ClientCardinalityEstimatorProxy;
-import com.hazelcast.client.impl.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.impl.proxy.ClientDurableExecutorServiceProxy;
 import com.hazelcast.client.impl.proxy.ClientExecutorServiceProxy;
 import com.hazelcast.client.impl.proxy.ClientFlakeIdGeneratorProxy;
@@ -71,7 +70,6 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
@@ -105,8 +103,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ServiceLoader.classIterator;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ServiceLoader.classIterator;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -186,7 +184,6 @@ public final class ProxyManager {
         register(DistributedExecutorService.SERVICE_NAME, ClientExecutorServiceProxy.class);
         register(DistributedDurableExecutorService.SERVICE_NAME, ClientDurableExecutorServiceProxy.class);
         register(LockServiceImpl.SERVICE_NAME, ClientLockProxy.class);
-        register(CountDownLatchService.SERVICE_NAME, ClientCountDownLatchProxy.class);
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
         register(XAService.SERVICE_NAME, XAResourceProxy.class);
         register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);

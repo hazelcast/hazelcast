@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.SetUtil;
+import com.hazelcast.internal.util.SetUtil;
 
 import java.io.IOException;
 import java.util.Set;

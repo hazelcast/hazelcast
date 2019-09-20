@@ -30,7 +30,7 @@ import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -52,7 +52,6 @@ import static com.hazelcast.config.ConfigSections.ATOMIC_LONG;
 import static com.hazelcast.config.ConfigSections.ATOMIC_REFERENCE;
 import static com.hazelcast.config.ConfigSections.CACHE;
 import static com.hazelcast.config.ConfigSections.CARDINALITY_ESTIMATOR;
-import static com.hazelcast.config.ConfigSections.COUNT_DOWN_LATCH;
 import static com.hazelcast.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
@@ -103,10 +102,10 @@ import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_REC
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -197,8 +196,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleAtomicLong(node);
         } else if (ATOMIC_REFERENCE.isEqual(nodeName)) {
             handleAtomicReference(node);
-        } else if (COUNT_DOWN_LATCH.isEqual(nodeName)) {
-            handleCountDownLatchConfig(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -564,7 +561,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("response-timeout-millis".equals(targetChildName)) {
                 config.setResponseTimeoutMillis(getIntegerValue("response-timeout-millis", getTextContent(targetChild)));
             } else if ("queue-full-behavior".equals(targetChildName)) {
-                config.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(getTextContent(targetChild))));
+                config.setQueueFullBehavior(WanQueueFullBehavior.valueOf(upperCaseInternal(getTextContent(targetChild))));
             } else if ("acknowledge-type".equals(targetChildName)) {
                 config.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(getTextContent(targetChild))));
             } else if ("discovery-period-seconds".equals(targetChildName)) {
@@ -2464,24 +2461,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.addAtomicReferenceConfig(atomicReferenceConfig);
-    }
-
-    protected void handleCountDownLatchConfig(Node node) {
-        Node attName = node.getAttributes().getNamedItem("name");
-        String name = getTextContent(attName);
-        CountDownLatchConfig countDownLatchConfig = new CountDownLatchConfig(name);
-        handleCountDownLatchNode(node, countDownLatchConfig);
-    }
-
-    void handleCountDownLatchNode(Node node, CountDownLatchConfig countDownLatchConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("split-brain-protection-ref".equals(nodeName)) {
-                countDownLatchConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addCountDownLatchConfig(countDownLatchConfig);
     }
 
     protected void handleListeners(Node node) {

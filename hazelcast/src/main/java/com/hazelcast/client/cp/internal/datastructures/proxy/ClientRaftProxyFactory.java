@@ -18,7 +18,7 @@ package com.hazelcast.client.cp.internal.datastructures.proxy;
 
 import com.hazelcast.client.cp.internal.datastructures.atomiclong.RaftAtomicLongProxy;
 import com.hazelcast.client.cp.internal.datastructures.atomicref.RaftAtomicRefProxy;
-import com.hazelcast.client.cp.internal.datastructures.countdownlatch.RaftCountDownLatchProxy;
+import com.hazelcast.client.cp.internal.datastructures.countdownlatch.CountDownLatchProxy;
 import com.hazelcast.client.cp.internal.datastructures.lock.RaftFencedLockProxy;
 import com.hazelcast.client.cp.internal.datastructures.semaphore.RaftSessionAwareSemaphoreProxy;
 import com.hazelcast.client.cp.internal.datastructures.semaphore.RaftSessionlessSemaphoreProxy;
@@ -33,7 +33,7 @@ import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
@@ -73,8 +73,8 @@ public class ClientRaftProxyFactory {
             return (T) new RaftAtomicLongProxy(context, groupId, proxyName, objectName);
         } else if (serviceName.equals(RaftAtomicRefService.SERVICE_NAME)) {
             return (T) new RaftAtomicRefProxy(context, groupId, proxyName, objectName);
-        } else if (serviceName.equals(RaftCountDownLatchService.SERVICE_NAME)) {
-            return (T) new RaftCountDownLatchProxy(context, groupId, proxyName, objectName);
+        } else if (serviceName.equals(CountDownLatchService.SERVICE_NAME)) {
+            return (T) new CountDownLatchProxy(context, groupId, proxyName, objectName);
         } else if (serviceName.equals(RaftLockService.SERVICE_NAME)) {
             return (T) createFencedLock(groupId, proxyName, objectName);
         } else if (serviceName.equals(RaftSemaphoreService.SERVICE_NAME)) {

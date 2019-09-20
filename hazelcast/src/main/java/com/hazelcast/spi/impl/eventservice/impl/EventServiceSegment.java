@@ -21,8 +21,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.internal.services.ListenerWrapperEventFilter;
 import com.hazelcast.internal.services.NotifiableEventListener;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

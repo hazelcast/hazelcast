@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * HazelcastJsonValue is a wrapper for JSON formatted strings. It is preferred

@@ -22,7 +22,7 @@ import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector;
 import com.hazelcast.splitbrainprotection.HeartbeatAware;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
 

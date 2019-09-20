@@ -32,7 +32,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.reliable.DurableSubscriptionTest;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerMock;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;

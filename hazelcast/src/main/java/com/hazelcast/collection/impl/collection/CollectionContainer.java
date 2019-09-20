@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class CollectionContainer implements IdentifiedDataSerializable {

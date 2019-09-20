@@ -16,7 +16,7 @@
 
 package com.hazelcast.memory;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * MemorySize represents a memory size with given value and <code>{@link MemoryUnit}</code>.

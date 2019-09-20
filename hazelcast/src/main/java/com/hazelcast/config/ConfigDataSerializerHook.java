@@ -26,7 +26,7 @@ import com.hazelcast.map.eviction.LRUEvictionPolicy;
 import com.hazelcast.map.eviction.RandomEvictionPolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CONFIG_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CONFIG_DS_FACTORY_ID;
@@ -172,7 +172,6 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[ATOMIC_LONG_CONFIG] = arg -> new AtomicLongConfig();
         constructors[ATOMIC_REFERENCE_CONFIG] = arg -> new AtomicReferenceConfig();
         constructors[MERGE_POLICY_CONFIG] = arg -> new MergePolicyConfig();
-        constructors[COUNT_DOWN_LATCH_CONFIG] = arg -> new CountDownLatchConfig();
         constructors[PN_COUNTER_CONFIG] = arg -> new PNCounterConfig();
         constructors[MERKLE_TREE_CONFIG] = arg -> new MerkleTreeConfig();
         constructors[WAN_SYNC_CONFIG] = arg -> new WanSyncConfig();

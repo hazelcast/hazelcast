@@ -35,9 +35,9 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.HashMap;

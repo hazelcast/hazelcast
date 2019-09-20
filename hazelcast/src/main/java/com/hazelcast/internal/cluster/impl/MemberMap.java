@@ -28,7 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createLinkedHashMap;
+import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
 import static java.util.Collections.singletonMap;
 import static java.util.Collections.unmodifiableCollection;
 

@@ -25,7 +25,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.Properties;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * This is the factory that uses Credentials instance giving by either class name or implementation

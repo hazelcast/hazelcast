@@ -29,7 +29,7 @@ import com.hazelcast.query.Predicate;
 
 import static com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo.toAccumulatorInfo;
 import static com.hazelcast.map.impl.querycache.subscriber.NullQueryCache.NULL_QUERY_CACHE;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Provides generic functionality for {@code QueryCacheEndToEndConstructor} implementations.

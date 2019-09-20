@@ -45,8 +45,8 @@ import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE;
-import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.bytesToString;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
  * A {@link InboundHandler} that reads the protocol bytes

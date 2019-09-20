@@ -35,8 +35,8 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.client.impl.ClientEngineImpl.SERVICE_NAME;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.

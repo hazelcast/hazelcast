@@ -33,8 +33,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.util.Clock.currentTimeMillis;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * MultiMap container which holds a map of {@link MultiMapValue}.

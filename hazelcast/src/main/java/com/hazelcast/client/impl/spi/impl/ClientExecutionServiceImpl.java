@@ -25,8 +25,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.executor.LoggingScheduledExecutor;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
+import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;

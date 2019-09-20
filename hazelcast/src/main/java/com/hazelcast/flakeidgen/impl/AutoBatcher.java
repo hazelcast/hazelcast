@@ -16,7 +16,7 @@
 
 package com.hazelcast.flakeidgen.impl;
 
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 

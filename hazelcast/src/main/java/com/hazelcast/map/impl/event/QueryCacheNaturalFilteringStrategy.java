@@ -28,7 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 
 import java.util.Collection;
 
@@ -38,7 +38,7 @@ import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.util.MapUtil.createInt2ObjectHashMap;
+import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
 
 /**
  * A filtering strategy that preserves the default behavior in most cases, but processes entry events for listeners with

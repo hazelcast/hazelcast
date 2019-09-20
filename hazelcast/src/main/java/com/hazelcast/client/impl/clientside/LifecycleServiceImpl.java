@@ -25,8 +25,8 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 
 import java.util.EventListener;
 import java.util.List;
@@ -41,7 +41,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Default {@link com.hazelcast.core.LifecycleService} implementation for the client.

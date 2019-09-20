@@ -20,13 +20,13 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.util.ConcurrencyUtil.setMax;
-import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**

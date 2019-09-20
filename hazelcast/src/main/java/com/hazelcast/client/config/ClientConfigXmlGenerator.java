@@ -44,7 +44,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -60,7 +60,7 @@ import java.util.Map;
 
 import static com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * The ClientConfigXmlGenerator is responsible for transforming a

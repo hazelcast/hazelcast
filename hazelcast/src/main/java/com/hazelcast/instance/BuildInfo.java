@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.logging.Logger;
 
-import static com.hazelcast.util.StringUtil.tokenizeVersionString;
+import static com.hazelcast.internal.util.StringUtil.tokenizeVersionString;
 import static java.lang.Integer.parseInt;
 
 public class BuildInfo {

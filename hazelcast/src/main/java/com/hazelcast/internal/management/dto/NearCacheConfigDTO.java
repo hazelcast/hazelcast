@@ -22,10 +22,10 @@ import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.JsonSerializable;
 
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 class NearCacheConfigDTO implements JsonSerializable {
     private NearCacheConfig nearCacheConfig;

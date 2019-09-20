@@ -56,8 +56,8 @@ import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
-import static com.hazelcast.config.WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
-import static com.hazelcast.config.WANQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
+import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -824,26 +824,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         AtomicReferenceConfig defaultAtomicReferenceConfig = config.getAtomicReferenceConfig("default");
         assertEquals("customSplitBrainProtectionRule2", defaultAtomicReferenceConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
-    public void readCountDownLatch() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  count-down-latch:\n"
-                + "    custom:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
-                + "    default:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule2\n";
-
-        Config config = buildConfig(yaml);
-        CountDownLatchConfig countDownLatchConfig = config.getCountDownLatchConfig("custom");
-        assertEquals("custom", countDownLatchConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", countDownLatchConfig.getSplitBrainProtectionName());
-
-        CountDownLatchConfig defaultCountDownLatchConfig = config.getCountDownLatchConfig("default");
-        assertEquals("customSplitBrainProtectionRule2", defaultCountDownLatchConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -1775,7 +1755,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
         assertEquals("ankara", pc2.getGroupName());
         assertNull(pc2.getPublisherId());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
+        assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
 
         WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();

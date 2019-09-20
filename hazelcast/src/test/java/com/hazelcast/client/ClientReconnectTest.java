@@ -18,13 +18,15 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipAdapter;
 import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,6 +40,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -138,6 +141,34 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         test.put("key", "value");
         server.shutdown();
         test.get("key");
+    }
+
+    @Test
+    public void testCallbackAfterClientShutdown() {
+        final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        IMap<Object, Object> test = client.getMap("test");
+        server.shutdown();
+        ICompletableFuture<Object> future = test.putAsync("key", "value");
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Throwable> reference = new AtomicReference<>();
+        future.andThen(new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object response) {
+
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                reference.set(t);
+                latch.countDown();
+            }
+        });
+        assertOpenEventually(latch);
+        assertInstanceOf(HazelcastClientNotActiveException.class, reference.get());
     }
 
     @Test(expected = HazelcastClientNotActiveException.class)

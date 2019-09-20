@@ -34,7 +34,6 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -102,7 +101,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.WANQueueFullBehavior;
+import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
@@ -177,7 +176,7 @@ import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_R
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -619,14 +618,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCountDownLatchConfig() {
-        CountDownLatchConfig testCountDownLatch = config.getCountDownLatchConfig("testCountDownLatch");
-        assertNotNull(testCountDownLatch);
-        assertEquals("testCountDownLatch", testCountDownLatch.getName());
-        assertEquals("my-split-brain-protection", testCountDownLatch.getSplitBrainProtectionName());
-    }
-
-    @Test
     public void testSemaphoreConfig() {
         SemaphoreConfig testSemaphore = config.getSemaphoreConfig("testSemaphore");
         assertNotNull(testSemaphore);
@@ -986,7 +977,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("tokyo", pc.getGroupName());
         assertEquals("tokyoPublisherId", pc.getPublisherId());
         assertEquals("com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication", pc.getClassName());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, pc.getQueueFullBehavior());
+        assertEquals(WanQueueFullBehavior.THROW_EXCEPTION, pc.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc.getInitialPublisherState());
         assertEquals(1000, pc.getQueueCapacity());
         assertEquals(50, pc.getBatchSize());
@@ -1417,10 +1408,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(memcacheProtocolConfig.isEnabled());
     }
 
+    @Test
     public void testCPSubsystemConfig() {
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
-        assertEquals(10, cpSubsystemConfig.getCPMemberCount());
-        assertEquals(5, cpSubsystemConfig.getGroupSize());
+        assertEquals(0, cpSubsystemConfig.getCPMemberCount());
+        assertEquals(0, cpSubsystemConfig.getGroupSize());
         assertEquals(15, cpSubsystemConfig.getSessionTimeToLiveSeconds());
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());

@@ -20,7 +20,7 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.AbstractWaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A {@link AbstractWaitNotifyKey} to make it possible to wait

@@ -38,8 +38,8 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ThreadUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,7 +54,7 @@ import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Holder for raw IMap key-value pairs and their metadata.

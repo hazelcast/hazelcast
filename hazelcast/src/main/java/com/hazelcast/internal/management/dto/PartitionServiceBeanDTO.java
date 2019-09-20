@@ -22,7 +22,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.nio.Address;
 
-import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.internal.jmx.PartitionServiceMBean}.

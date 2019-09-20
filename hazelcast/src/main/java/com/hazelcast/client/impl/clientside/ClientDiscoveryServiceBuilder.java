@@ -57,8 +57,8 @@ import java.util.Map;
 import static com.hazelcast.client.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 class ClientDiscoveryServiceBuilder {
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.eviction;
 
-import com.hazelcast.util.MemoryInfoAccessor;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
 
 /**
  * Returns zero for every method call.

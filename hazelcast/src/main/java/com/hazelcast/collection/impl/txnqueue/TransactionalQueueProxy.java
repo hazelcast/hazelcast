@@ -24,7 +24,7 @@ import com.hazelcast.transaction.impl.Transaction;
 import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Thread.currentThread;
 
 /**

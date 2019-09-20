@@ -18,12 +18,12 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.util.collection.InternalListMultiMap;
+import com.hazelcast.internal.util.collection.InternalListMultiMap;
 
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.collection.ArrayUtils.createCopy;
+import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
 
 /**
  * Transforms predicate (attribute = 1 or attribute = 2 or attribute = 3) into

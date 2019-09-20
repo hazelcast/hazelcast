@@ -26,7 +26,6 @@ import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ListConfig;
@@ -45,7 +44,6 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
@@ -84,7 +82,6 @@ public abstract class AbstractSplitBrainProtectionTest {
     protected static final String LONG_NAME = "long" + "splitBrainProtection" + randomString();
     protected static final String CACHE_NAME = "splitBrainProtection" + randomString();
     protected static final String ESTIMATOR_NAME = "splitBrainProtection" + randomString();
-    protected static final String LATCH_NAME = "splitBrainProtection" + randomString();
     protected static final String DURABLE_EXEC_NAME = "splitBrainProtection" + randomString();
     protected static final String EXEC_NAME = "splitBrainProtection" + randomString();
     protected static final String LIST_NAME = "splitBrainProtection" + randomString();
@@ -144,12 +141,6 @@ public abstract class AbstractSplitBrainProtectionTest {
 
     protected static CardinalityEstimatorConfig newEstimatorConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
         CardinalityEstimatorConfig config = new CardinalityEstimatorConfig(ESTIMATOR_NAME + splitBrainProtectionOn.name());
-        config.setSplitBrainProtectionName(splitBrainProtectionName);
-        return config;
-    }
-
-    protected static CountDownLatchConfig newLatchConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
-        CountDownLatchConfig config = new CountDownLatchConfig(LATCH_NAME + splitBrainProtectionOn.name());
         config.setSplitBrainProtectionName(splitBrainProtectionName);
         return config;
     }
@@ -258,7 +249,6 @@ public abstract class AbstractSplitBrainProtectionTest {
             config.addAtomicLongConfig(newAtomicLongConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addCacheConfig(newCacheConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addCardinalityEstimatorConfig(newEstimatorConfig(splitBrainProtectionOn, splitBrainProtectionName));
-            config.addCountDownLatchConfig(newLatchConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addListConfig(newListConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addLockConfig(newLockConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addMapConfig(newMapConfig(splitBrainProtectionOn, splitBrainProtectionName));
@@ -310,10 +300,6 @@ public abstract class AbstractSplitBrainProtectionTest {
 
     protected CardinalityEstimator estimator(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
         return cluster.instance[index].getCardinalityEstimator(ESTIMATOR_NAME + splitBrainProtectionOn.name());
-    }
-
-    protected ICountDownLatch latch(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
-        return cluster.instance[index].getCountDownLatch(LATCH_NAME + splitBrainProtectionOn.name());
     }
 
     protected DurableExecutorService durableExec(int index, SplitBrainProtectionOn splitBrainProtectionOn) {

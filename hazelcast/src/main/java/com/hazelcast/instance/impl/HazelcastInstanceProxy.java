@@ -36,7 +36,6 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
@@ -189,11 +188,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public <E> IAtomicReference<E> getAtomicReference(String name) {
         return getOriginal().getAtomicReference(name);
-    }
-
-    @Override
-    public ICountDownLatch getCountDownLatch(String name) {
-        return getOriginal().getCountDownLatch(name);
     }
 
     @Override

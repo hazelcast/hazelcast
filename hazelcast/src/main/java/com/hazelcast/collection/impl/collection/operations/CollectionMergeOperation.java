@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 /**
  * Merges a {@link CollectionMergeTypes} for split-brain healing with a {@link SplitBrainMergePolicy}.

@@ -34,17 +34,17 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.datastructures.semaphore.proxy.RaftSessionAwareSemaphoreProxy.DRAIN_SESSION_ACQ_COUNT;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.ThreadUtil.getThreadId;
-import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static java.lang.Math.max;
 
 /**

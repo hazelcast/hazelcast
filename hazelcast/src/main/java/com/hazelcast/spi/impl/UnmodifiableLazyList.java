@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.UnmodifiableListIterator;
+import com.hazelcast.internal.util.UnmodifiableListIterator;
 
 import java.io.IOException;
 import java.util.AbstractList;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Predicate;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public class UnmodifiableLazyList<E> extends AbstractList<E> implements IdentifiedDataSerializable {
 

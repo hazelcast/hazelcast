@@ -131,9 +131,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void readAtomicReference();
 
     @Test
-    public abstract void readCountDownLatch();
-
-    @Test
     public abstract void testCaseInsensitivityOfSettings();
 
     @Test

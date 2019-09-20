@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * <p>Internal Set wrapper of {@link CacheEventData} items used during publishing and dispatching events.</p>

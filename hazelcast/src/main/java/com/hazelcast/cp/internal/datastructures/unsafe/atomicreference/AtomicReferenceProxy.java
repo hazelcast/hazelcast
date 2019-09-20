@@ -33,7 +33,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicReferenceService>
         implements IAtomicReference<E> {

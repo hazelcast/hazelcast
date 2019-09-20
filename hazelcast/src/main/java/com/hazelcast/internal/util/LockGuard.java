@@ -17,8 +17,6 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.Preconditions;
 
 /**
  * Object that provides additional functionalities to a simple lock. The user can define a lock owner and a lock expiry

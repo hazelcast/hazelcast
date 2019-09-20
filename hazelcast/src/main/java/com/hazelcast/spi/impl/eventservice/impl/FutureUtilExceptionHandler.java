@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.FutureUtil;
 
 import java.util.concurrent.ExecutionException;
 

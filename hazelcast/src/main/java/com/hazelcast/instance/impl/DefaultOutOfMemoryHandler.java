@@ -19,10 +19,10 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.util.MemoryInfoAccessor;
-import com.hazelcast.util.RuntimeMemoryInfoAccessor;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
+import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Default OutOfMemoryHandler implementation that tries to release local resources (threads, connections, memory)

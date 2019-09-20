@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class QueryOperation extends AbstractNamedOperation implements ReadonlyOperation {
     private Query query;

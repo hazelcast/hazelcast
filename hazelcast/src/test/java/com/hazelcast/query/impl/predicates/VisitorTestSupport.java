@@ -26,7 +26,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
-import static com.hazelcast.util.collection.ArrayUtils.createCopy;
+import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertArrayEquals;
