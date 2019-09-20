@@ -85,7 +85,7 @@ public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTas
 
         if (resp.expectedNextIndex() == nextIndex) {
             // Received a response for the last append request. Resetting the flag...
-            followerState.resetAppendRequestBackoff();
+            followerState.appendRequestAckReceived();
 
             // this is the response of the request I have sent for this nextIndex
             nextIndex--;

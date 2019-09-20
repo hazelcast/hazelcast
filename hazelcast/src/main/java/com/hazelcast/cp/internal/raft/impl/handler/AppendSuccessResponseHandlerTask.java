@@ -97,7 +97,7 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
 
         if (followerLastLogIndex > matchIndex) {
             // Received a response for the last append request. Resetting the flag...
-            followerState.resetAppendRequestBackoff();
+            followerState.appendRequestAckReceived();
 
             long newNextIndex = followerLastLogIndex + 1;
             followerState.matchIndex(followerLastLogIndex);

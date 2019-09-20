@@ -17,9 +17,11 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.LeaderDemotedException;
 import com.hazelcast.cp.exception.NotLeaderException;
+import com.hazelcast.cp.exception.StaleAppendRequestException;
 import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dataservice.RaftDataService;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
@@ -868,6 +870,23 @@ public class LocalRaftTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("valFinal")).get();
             fail();
         } catch (CannotReplicateException ignored) {
+        }
+    }
+
+    @Test
+    public void when_leaderStaysInMinority_then_itDemotesItselfToFollower() throws ExecutionException, InterruptedException {
+        group = newGroup(3);
+        group.start();
+
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+
+        group.split(leader.getLocalMember());
+        ICompletableFuture f = leader.replicate(new ApplyRaftRunnable("val"));
+
+        try {
+            f.get();
+            fail();
+        } catch (StaleAppendRequestException ignored) {
         }
     }
 

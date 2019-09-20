@@ -16,6 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.impl.state;
 
+import com.hazelcast.util.Clock;
+
 import static java.lang.Math.min;
 
 /**
@@ -42,9 +44,12 @@ public class FollowerState {
 
     private int nextBackoffPower;
 
+    private long appendRequestAckTimestamp;
+
     FollowerState(long matchIndex, long nextIndex) {
         this.matchIndex = matchIndex;
         this.nextIndex = nextIndex;
+        this.appendRequestAckTimestamp = Clock.currentTimeMillis();
     }
 
     /**
@@ -112,16 +117,26 @@ public class FollowerState {
     }
 
     /**
-     * Clears the flag for the append request backoff.
+     * Clears the flag for the append request backoff
+     * and updates the timestamp of append entries response
      */
-    public void resetAppendRequestBackoff() {
+    public void appendRequestAckReceived() {
         backoffRound = 0;
         nextBackoffPower = 0;
+        appendRequestAckTimestamp = Clock.currentTimeMillis();
+    }
+
+    /**
+     * Returns timestamp of the last append entries response
+     *
+     */
+    public long appendRequestAckTimestamp() {
+        return appendRequestAckTimestamp;
     }
 
     @Override
     public String toString() {
         return "FollowerState{" + "matchIndex=" + matchIndex + ", nextIndex=" + nextIndex + ", backoffRound=" + backoffRound
-                + ", nextBackoffRound=" + nextBackoffRound() + '}';
+                + ", nextBackoffPower=" + nextBackoffPower + ", appendRequestAckTime=" + appendRequestAckTimestamp + '}';
     }
 }
