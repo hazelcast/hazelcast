@@ -30,16 +30,16 @@ import com.hazelcast.cp.internal.session.SessionAccessor;
 import com.hazelcast.cp.internal.session.SessionAwareService;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -324,7 +324,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         }
     }
 
-    private void locallyInvokeExpireWaitKeysOp(CPGroupId groupId, Collection<BiTuple<String, UUID>> keys) {
+    private void tryReplicateExpiredWaitKeys(CPGroupId groupId, Collection<BiTuple<String, UUID>> keys) {
         try {
             ExpireWaitKeysOp op = new ExpireWaitKeysOp(serviceName(), keys);
             if (raftService.isCpSubsystemEnabled()) {
@@ -357,7 +357,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
         @Override
         public void run() {
-            locallyInvokeExpireWaitKeysOp(groupId, keys);
+            tryReplicateExpiredWaitKeys(groupId, keys);
         }
     }
 
@@ -365,7 +365,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         @Override
         public void run() {
             for (Entry<CPGroupId, Collection<BiTuple<String, UUID>>> e : getWaitKeysToExpire().entrySet()) {
-                locallyInvokeExpireWaitKeysOp(e.getKey(), e.getValue());
+                tryReplicateExpiredWaitKeys(e.getKey(), e.getValue());
             }
         }
 

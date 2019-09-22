@@ -17,13 +17,14 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.BlockingResource;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKeyContainer;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,12 +38,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.FAILED;
+import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.SUCCESSFUL;
+import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
-import static java.util.Collections.unmodifiableCollection;
 
 /**
  * State-machine implementation of the Raft-based semaphore.
@@ -100,23 +103,32 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
     AcquireResult acquire(AcquireInvocationKey key, boolean wait) {
         SemaphoreEndpoint endpoint = key.endpoint();
         SessionSemaphoreState state = sessionStates.get(key.sessionId());
-        if (state != null && state.containsInvocation(endpoint.threadId(), key.invocationUid())) {
-            return new AcquireResult(key.permits(), Collections.emptyList());
+        if (state != null) {
+            Integer acquired = state.getInvocationResponse(endpoint.threadId(), key.invocationUid());
+            if (acquired != null) {
+                AcquireStatus status = acquired > 0 ? SUCCESSFUL : FAILED;
+                return new AcquireResult(status, acquired, Collections.<AcquireInvocationKey>emptyList());
+            }
         }
 
         Collection<AcquireInvocationKey> cancelled = cancelWaitKeys(endpoint, key.invocationUid());
 
         if (!isAvailable(key.permits())) {
+            AcquireStatus status;
             if (wait) {
                 addWaitKey(endpoint, key);
+                status = WAIT_KEY_ADDED;
+            } else {
+                assignPermitsToInvocation(endpoint, key.invocationUid(), 0);
+                status = FAILED;
             }
 
-            return new AcquireResult(0, cancelled);
+            return new AcquireResult(status, 0, cancelled);
         }
 
         assignPermitsToInvocation(endpoint, key.invocationUid(), key.permits());
 
-        return new AcquireResult(key.permits(), cancelled);
+        return new AcquireResult(SUCCESSFUL, key.permits(), cancelled);
     }
 
     private void assignPermitsToInvocation(SemaphoreEndpoint endpoint, UUID invocationUid, int permits) {
@@ -161,11 +173,17 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
                 return ReleaseResult.failed(cancelWaitKeys(endpoint, invocationUid));
             }
 
-            if (state.containsInvocation(endpoint.threadId(), invocationUid)) {
-                return ReleaseResult.successful(Collections.emptyList(), Collections.emptyList());
+            Integer response = state.getInvocationResponse(endpoint.threadId(), invocationUid);
+            if (response != null) {
+                if (response > 0) {
+                    return ReleaseResult.successful(Collections.emptyList(), Collections.emptyList());
+                } else {
+                    return ReleaseResult.failed(cancelWaitKeys(endpoint, invocationUid));
+                }
             }
 
             if (state.acquiredPermits < permits) {
+                state.invocationRefUids.put(endpoint.threadId(), BiTuple.of(invocationUid, 0));
                 return ReleaseResult.failed(cancelWaitKeys(endpoint, invocationUid));
             }
 
@@ -237,19 +255,17 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
         if (state != null) {
             Integer permits = state.getInvocationResponse(endpoint.threadId(), invocationUid);
             if (permits != null) {
-                return new AcquireResult(permits, Collections.emptyList());
+                return new AcquireResult(SUCCESSFUL, permits, Collections.emptyList());
             }
         }
 
         Collection<AcquireInvocationKey> cancelled = cancelWaitKeys(endpoint, invocationUid);
 
         int drained = available;
-        if (drained > 0) {
-            assignPermitsToInvocation(endpoint, invocationUid, drained);
-        }
+        assignPermitsToInvocation(endpoint, invocationUid, drained);
         available = 0;
 
-        return new AcquireResult(drained, cancelled);
+        return new AcquireResult(SUCCESSFUL, drained, cancelled);
     }
 
     /**
@@ -277,7 +293,8 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
             }
 
             long threadId = endpoint.threadId();
-            if (state.containsInvocation(threadId, invocationUid)) {
+            Integer response = state.getInvocationResponse(threadId, invocationUid);
+            if (response != null) {
                 Collection<AcquireInvocationKey> c = Collections.emptyList();
                 return ReleaseResult.successful(c, c);
             }
@@ -303,8 +320,8 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
             if (state.acquiredPermits > 0) {
                 SemaphoreEndpoint endpoint = new SemaphoreEndpoint(sessionId, 0);
                 ReleaseResult result = release(endpoint, newUnsecureUUID(), state.acquiredPermits);
-                assert result.cancelled.isEmpty();
-                for (AcquireInvocationKey key : result.acquired) {
+                assert result.cancelledWaitKeys().isEmpty();
+                for (AcquireInvocationKey key : result.acquiredWaitKeys()) {
                     responses.put(key.commitIndex(), Boolean.TRUE);
                 }
             }
@@ -323,6 +340,11 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
         }
 
         return activeSessionIds;
+    }
+
+    @Override
+    protected void onWaitKeyExpire(AcquireInvocationKey key) {
+        assignPermitsToInvocation(key.endpoint(), key.invocationUid(), 0);
     }
 
     @Override
@@ -384,64 +406,6 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
                 + ", available=" + available + ", sessionStates=" + sessionStates + '}';
     }
 
-    /**
-     * Represents result of an acquire() request
-     */
-    static final class AcquireResult {
-
-        /**
-         * Number of acquired permits
-         */
-        final int acquired;
-
-        /**
-         * Cancelled wait keys of the caller if there is any, independent of the acquire request is successful or not.
-         */
-        final Collection<AcquireInvocationKey> cancelled;
-
-        private AcquireResult(int acquired, Collection<AcquireInvocationKey> cancelled) {
-            this.acquired = acquired;
-            this.cancelled = unmodifiableCollection(cancelled);
-        }
-    }
-
-    /**
-     * Represents result of a release() request
-     */
-    static final class ReleaseResult {
-
-        /**
-         * true if the release() request is successful
-         */
-        final boolean success;
-
-        /**
-         * If the release() request is successful and permits are assigned to some other endpoints, contains their wait keys.
-         */
-        final Collection<AcquireInvocationKey> acquired;
-
-        /**
-         * Cancelled wait keys of the caller if there is any, independent of the release request is successful or not.
-         */
-        final Collection<AcquireInvocationKey> cancelled;
-
-        private ReleaseResult(boolean success, Collection<AcquireInvocationKey> acquired,
-                              Collection<AcquireInvocationKey> cancelled) {
-            this.success = success;
-            this.acquired = unmodifiableCollection(acquired);
-            this.cancelled = unmodifiableCollection(cancelled);
-        }
-
-        private static ReleaseResult successful(Collection<AcquireInvocationKey> acquired,
-                                                Collection<AcquireInvocationKey> cancelled) {
-            return new ReleaseResult(true, acquired, cancelled);
-        }
-
-        private static ReleaseResult failed(Collection<AcquireInvocationKey> cancelled) {
-            return new ReleaseResult(false, Collections.emptyList(), cancelled);
-        }
-    }
-
     private static class SessionSemaphoreState {
 
         /**
@@ -450,11 +414,6 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
         private final Long2ObjectHashMap<BiTuple<UUID, Integer>> invocationRefUids = new Long2ObjectHashMap<>();
 
         private int acquiredPermits;
-
-        boolean containsInvocation(long threadId, UUID invocationUid) {
-            BiTuple<UUID, Integer> t = invocationRefUids.get(threadId);
-            return (t != null && t.element1.equals(invocationUid));
-        }
 
         Integer getInvocationResponse(long threadId, UUID invocationUid) {
             BiTuple<UUID, Integer> t = invocationRefUids.get(threadId);

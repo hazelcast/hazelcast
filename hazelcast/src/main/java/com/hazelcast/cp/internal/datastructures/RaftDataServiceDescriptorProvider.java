@@ -39,7 +39,7 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
             new RaftSessionManagerServiceDescriptor(),
             new RaftAtomicRefServiceDescriptor(),
             new SemaphoreServiceDescriptor(),
-            new CountDownLatcherviceDescriptor(),
+            new CountDownLatchServiceDescriptor(),
         };
     }
 
@@ -103,7 +103,7 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
         }
     }
 
-    private static class CountDownLatcherviceDescriptor implements ServiceDescriptor {
+    private static class CountDownLatchServiceDescriptor implements ServiceDescriptor {
         @Override
         public String getServiceName() {
             return CountDownLatchService.SERVICE_NAME;
