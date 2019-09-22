@@ -207,6 +207,8 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
         final int[] split = group.createMajoritySplitIndexes(false);
         group.split(split);
 
+        ICompletableFuture queryFuture = oldLeader.query(new QueryRaftRunnable(), LINEARIZABLE);
+
         assertTrueEventually(() -> {
             for (int ix : split) {
                 Endpoint newLeader = getLeaderMember(group.getNode(ix));
@@ -217,8 +219,6 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
 
         RaftNodeImpl newLeader = group.getNode(getLeaderMember(group.getNode(split[0])));
         newLeader.replicate(new ApplyRaftRunnable("value1")).get();
-
-        ICompletableFuture queryFuture = oldLeader.query(new QueryRaftRunnable(), LINEARIZABLE);
 
         group.merge();
         group.waitUntilLeaderElected();
