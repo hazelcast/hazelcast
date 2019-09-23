@@ -23,13 +23,14 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -42,49 +43,52 @@ public class StatefulMappingStressTest extends JetTestSupport {
     private static final Random RANDOM = new Random();
     private static final long TTL = SECONDS.toMillis(2);
 
-    private static AtomicLong functionCall;
-    private static AtomicLong evictionCall;
-
     private JetInstance instance;
 
     @Before
     public void setup() {
-        functionCall = new AtomicLong(0);
-        evictionCall = new AtomicLong(0);
         instance = createJetMembers(new JetConfig(), 2)[0];
     }
 
     @Test
     public void mapStateful_stressTest() {
-        stressTest(streamStageWithKey
-                -> streamStageWithKey.mapStateful(TTL,
+        AtomicLong functionCallCount = new AtomicLong();
+        AtomicLong evictionCallCount = new AtomicLong();
+        stressTest(functionCallCount, evictionCallCount,
+                streamStageWithKey -> streamStageWithKey.mapStateful(TTL,
                         Object::new,
                         (state, key, input) -> {
-                            functionCall.incrementAndGet();
+                            functionCallCount.incrementAndGet();
                             return null;
                         },
                         (state, key, wm) -> {
-                            evictionCall.incrementAndGet();
+                            evictionCallCount.incrementAndGet();
                             return null;
                         }));
     }
 
     @Test
     public void flatMapStateful_stressTest() {
-        stressTest(streamStageWithKey
-                -> streamStageWithKey.flatMapStateful(TTL,
+        AtomicLong functionCallCount = new AtomicLong();
+        AtomicLong evictionCallCount = new AtomicLong();
+        stressTest(functionCallCount, evictionCallCount,
+                streamStageWithKey -> streamStageWithKey.flatMapStateful(TTL,
                         Object::new,
                         (state, key, input) -> {
-                            functionCall.incrementAndGet();
+                            functionCallCount.incrementAndGet();
                             return Traversers.empty();
                         },
                         (state, key, wm) -> {
-                            evictionCall.incrementAndGet();
+                            evictionCallCount.incrementAndGet();
                             return Traversers.empty();
                         }));
     }
 
-    private void stressTest(Function<StreamStageWithKey<Integer, Integer>, StreamStage<Object>> statefulFn) {
+    private void stressTest(
+            AtomicLong functionCallCount,
+            AtomicLong evictionCallCount,
+            Function<StreamStageWithKey<Integer, Integer>, StreamStage<Object>> statefulFn
+    ) {
         int emitItemsCount = 2_000_000;
         Pipeline p = Pipeline.create();
         StreamStageWithKey<Integer, Integer> streamStageWithKey = p.drawFrom(TestSources.itemStream(100_000))
@@ -97,8 +101,8 @@ public class StatefulMappingStressTest extends JetTestSupport {
 
         instance.newJob(p);
         assertTrueEventually(() -> {
-            assertEquals(emitItemsCount, functionCall.get());
-            assertTrue(evictionCall.get() > 0);
+            assertEquals(emitItemsCount, functionCallCount.get());
+            assertTrue(evictionCallCount.get() > 0);
         });
     }
 }
