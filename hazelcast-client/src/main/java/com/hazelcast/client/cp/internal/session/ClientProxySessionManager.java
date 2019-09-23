@@ -104,9 +104,8 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
         return new ClientDelegatingFuture<Object>(future, client.getSerializationService(), CLOSE_SESSION_RESPONSE_DECODER);
     }
 
-    @Override
-    public Map<RaftGroupId, ICompletableFuture<Object>> shutdown() {
-        Map<RaftGroupId, ICompletableFuture<Object>> futures = super.shutdown();
+    public void shutdownAndAwait() {
+        Map<RaftGroupId, ICompletableFuture<Object>> futures = shutdown();
 
         ILogger logger = client.getLoggingService().getLogger(getClass());
 
@@ -138,13 +137,10 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
                 Thread.sleep(SHUTDOWN_WAIT_SLEEP_MILLIS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return futures;
+                return;
             }
 
             remainingTimeNanos -= MILLISECONDS.toNanos(SHUTDOWN_WAIT_SLEEP_MILLIS);
         }
-
-        return futures;
     }
-
 }
