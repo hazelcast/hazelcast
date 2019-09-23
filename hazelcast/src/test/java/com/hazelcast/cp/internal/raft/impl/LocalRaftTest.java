@@ -519,7 +519,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderStaysInMinorityDuringSplit_thenItMergesBackSuccessfully() {
-        int nodeCount = 5;
+        final int nodeCount = 5;
         group = new LocalRaftGroup(nodeCount);
         group.start();
         final Endpoint leaderEndpoint = group.waitUntilLeaderElected().getLocalMember();

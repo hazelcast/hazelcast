@@ -42,8 +42,6 @@ public class LockInvocationKey extends WaitKey implements IdentifiedDataSerializ
         super(commitIndex, invocationUid, callerAddress, callId);
         checkNotNull(endpoint);
         this.endpoint = endpoint;
-        this.commitIndex = commitIndex;
-        this.invocationUid = invocationUid;
     }
 
     @Override
