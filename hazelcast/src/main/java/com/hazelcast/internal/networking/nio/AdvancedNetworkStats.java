@@ -17,16 +17,12 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 
 import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.hazelcast.util.JsonUtil.getObject;
 
 /**
  * Stats per {@link ProtocolType} for a single direction of network traffic (inbound or outbound).
@@ -35,7 +31,7 @@ import static com.hazelcast.util.JsonUtil.getObject;
  * for inbound or outbound traffic. Works only when Advanced Networking is enabled and
  * {@link com.hazelcast.config.EndpointConfig} is added for the {@link ProtocolType} in question.
  */
-public final class AdvancedNetworkStats implements JsonSerializable {
+public final class AdvancedNetworkStats {
 
     private final EnumMap<ProtocolType, AtomicLong> bytesTransceived;
 
@@ -50,7 +46,6 @@ public final class AdvancedNetworkStats implements JsonSerializable {
         bytesTransceived.get(protocolType).lazySet(bytes);
     }
 
-    // used for tests only
     public long getBytesTransceivedForProtocol(ProtocolType protocolType) {
         return bytesTransceived.get(protocolType).get();
     }
@@ -74,37 +69,11 @@ public final class AdvancedNetworkStats implements JsonSerializable {
         }
     }
 
-    /**
-     * For serializing the stats before sending to Management Center.
-     *
-     * @return the JSON representation of this object
-     */
     @Override
-    public JsonObject toJson() {
-        JsonObject bytesTransceivedJson = new JsonObject();
-        for (ProtocolType type : ProtocolType.valuesAsSet()) {
-            bytesTransceivedJson.add(type.name(), bytesTransceived.get(type).get());
-        }
-
-        JsonObject result = new JsonObject();
-        result.add("bytesTransceived", bytesTransceivedJson);
-        return result;
-    }
-
-    /**
-     * Extracts the state from the given {@code json} object and mutates the
-     * state of this object.
-     *
-     * @param json the JSON object carrying state for this object
-     */
-    @Override
-    public void fromJson(JsonObject json) {
-        JsonObject bytesTransceivedJson = getObject(json, "bytesTransceived", null);
-        if (bytesTransceivedJson != null) {
-            for (ProtocolType type : ProtocolType.valuesAsSet()) {
-                bytesTransceived.get(type).set(bytesTransceivedJson.getLong(type.name(), 0));
-            }
-        }
+    public String toString() {
+        return "AdvancedNetworkStats{"
+                + "bytesTransceived=" + bytesTransceived
+                + '}';
     }
 
 }

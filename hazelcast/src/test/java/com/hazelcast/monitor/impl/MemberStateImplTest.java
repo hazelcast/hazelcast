@@ -25,6 +25,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
@@ -143,8 +144,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setHotRestartState(hotRestartState);
         memberState.setWanSyncState(wanSyncState);
         memberState.setClientStats(clientStats);
-        memberState.setInboundNetworkStats(inboundNetworkStats);
-        memberState.setOutboundNetworkStats(outboundNetworkStats);
+        memberState.setInboundNetworkStats(new AdvancedNetworkStatsDTO(inboundNetworkStats));
+        memberState.setOutboundNetworkStats(new AdvancedNetworkStatsDTO(outboundNetworkStats));
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
@@ -208,8 +209,10 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals("someStats", deserializedClientStats.get("abc123456"));
 
         assertNotNull(deserialized.getInboundNetworkStats());
-        assertEquals(42, deserialized.getInboundNetworkStats().getBytesTransceivedForProtocol(ProtocolType.MEMBER));
+        assertEquals(42, deserialized.getInboundNetworkStats().getAdvancedNetworkStats()
+                                     .getBytesTransceivedForProtocol(ProtocolType.MEMBER));
         assertNotNull(deserialized.getOutboundNetworkStats());
-        assertEquals(24, deserialized.getOutboundNetworkStats().getBytesTransceivedForProtocol(ProtocolType.MEMBER));
+        assertEquals(24, deserialized.getOutboundNetworkStats().getAdvancedNetworkStats()
+                                     .getBytesTransceivedForProtocol(ProtocolType.MEMBER));
     }
 }
