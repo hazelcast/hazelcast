@@ -192,6 +192,7 @@ public interface Channel extends Closeable {
      *
      * @param address       the address to connect to.
      * @param timeoutMillis the timeout in millis, or 0 if waiting indefinitely.
+     * @throws IllegalStateException if the connection is not in clientMode.
      * @throws IOException if connecting fails.
      */
     void connect(InetSocketAddress address, int timeoutMillis) throws IOException;
