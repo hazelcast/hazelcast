@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified item listener. Returns silently if the specified listener was not added before.
  */
-@Generated("5e52076b5582e23264e1a4fcb8695022")
+@Generated("3e87eadd525e30032deb86d29d5d45d5")
 public final class ListRemoveListenerCodec {
     //hex: 0x050C00
     public static final int REQUEST_MESSAGE_TYPE = 330752;

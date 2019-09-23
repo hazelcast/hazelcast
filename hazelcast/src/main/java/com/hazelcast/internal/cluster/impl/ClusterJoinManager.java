@@ -473,7 +473,7 @@ public class ClusterJoinManager {
             }
 
             clusterService.getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
-            clusterService.setClusterId(UuidUtil.createClusterUuid());
+            clusterService.setClusterId(UuidUtil.newUnsecureUUID());
             clusterService.getMembershipManager().setLocalMemberListJoinVersion(SINGLETON_MEMBER_LIST_VERSION);
             clusterService.setJoined(true);
 

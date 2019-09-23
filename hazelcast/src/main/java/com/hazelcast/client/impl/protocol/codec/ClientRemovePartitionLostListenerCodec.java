@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("867cfc120fd3abaff2698f4366872000")
+@Generated("98a12153a55c91d1a12da94fd9cdfc79")
 public final class ClientRemovePartitionLostListenerCodec {
     //hex: 0x000B00
     public static final int REQUEST_MESSAGE_TYPE = 2816;

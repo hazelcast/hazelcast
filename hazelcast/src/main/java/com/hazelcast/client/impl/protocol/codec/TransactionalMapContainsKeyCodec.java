@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains an entry for the specified key.
  */
-@Generated("53681875b890524771fdf57e8e9eec13")
+@Generated("cf196ca6182d336b69f157b62715a784")
 public final class TransactionalMapContainsKeyCodec {
     //hex: 0x100100
     public static final int REQUEST_MESSAGE_TYPE = 1048832;

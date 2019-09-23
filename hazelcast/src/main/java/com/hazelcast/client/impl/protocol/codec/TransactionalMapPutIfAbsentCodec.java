@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the specified key is not already associated with a value, associate it with the given value.
  * The object to be put will be accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("1369df081728ca51ee7f5fc026e8ada7")
+@Generated("d7785b77346f53ca0437923b008c112c")
 public final class TransactionalMapPutIfAbsentCodec {
     //hex: 0x100800
     public static final int REQUEST_MESSAGE_TYPE = 1050624;

@@ -36,7 +36,7 @@ import com.hazelcast.logging.Logger;
 /**
  * Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
  */
-@Generated("958a96a840a181f1d7bc4706496eaad5")
+@Generated("31f1f030d6b8583018e35cd82a8ea071")
 public final class MultiMapAddEntryListenerCodec {
     //hex: 0x020E00
     public static final int REQUEST_MESSAGE_TYPE = 134656;

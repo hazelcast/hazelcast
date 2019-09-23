@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("cf54695ccc3cfec1bd5597a99266e1b3")
+@Generated("23906fbf75fe239a07966e7db82e455f")
 public final class XATransactionPrepareCodec {
     //hex: 0x160600
     public static final int REQUEST_MESSAGE_TYPE = 1443328;

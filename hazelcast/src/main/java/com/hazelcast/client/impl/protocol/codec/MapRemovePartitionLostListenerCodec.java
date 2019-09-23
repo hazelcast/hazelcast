@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified map partition lost listener. Returns silently if there is no such listener added before.
  */
-@Generated("b35e7f1c752dea7db3cf46d0ebbb5f49")
+@Generated("9842df057a5a2142418ad30efbfc5b1c")
 public final class MapRemovePartitionLostListenerCodec {
     //hex: 0x012000
     public static final int REQUEST_MESSAGE_TYPE = 73728;

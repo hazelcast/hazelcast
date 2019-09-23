@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of entries in this map.
  */
-@Generated("da13b92921d0f54436c67d5c70f32703")
+@Generated("0b6df23aaf2b51264ad5037416cec15c")
 public final class TransactionalMapSizeCodec {
     //hex: 0x100400
     public static final int REQUEST_MESSAGE_TYPE = 1049600;

@@ -41,7 +41,7 @@ import com.hazelcast.logging.Logger;
  * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
  * to design limitations.
  */
-@Generated("e67612db1b4f85bfd03fcbf523fe374c")
+@Generated("b6dc7b28ac3046b54ab04070575fc7e9")
 public final class MapAddPartitionLostListenerCodec {
     //hex: 0x011F00
     public static final int REQUEST_MESSAGE_TYPE = 73472;

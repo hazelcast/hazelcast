@@ -36,7 +36,7 @@ import com.hazelcast.logging.Logger;
 /**
  * Adds an listener for this collection. Listener will be notified or all collection add/remove events.
  */
-@Generated("49682580d305049e268a39f9c6af3fb1")
+@Generated("1a0eb25dc70bec1be8f7dcf555a407a4")
 public final class QueueAddListenerCodec {
     //hex: 0x031100
     public static final int REQUEST_MESSAGE_TYPE = 200960;

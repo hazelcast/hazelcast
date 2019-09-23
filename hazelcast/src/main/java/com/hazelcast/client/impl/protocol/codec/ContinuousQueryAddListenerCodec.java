@@ -36,7 +36,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("394109da859ceebaac93610b62df70a0")
+@Generated("c4bee6b912ca46fadaa2eb5ae8024a6e")
 public final class ContinuousQueryAddListenerCodec {
     //hex: 0x180400
     public static final int REQUEST_MESSAGE_TYPE = 1573888;

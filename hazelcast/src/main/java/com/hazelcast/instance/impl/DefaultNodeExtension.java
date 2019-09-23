@@ -406,7 +406,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public UUID createMemberUuid() {
-        return UuidUtil.createMemberUuid();
+        return UuidUtil.newUnsecureUUID();
     }
 
     @Override

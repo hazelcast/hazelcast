@@ -36,7 +36,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("02afd66983709f499e2a77269acfb566")
+@Generated("6703077a680cf6808d3af83104e161e3")
 public final class CacheAddInvalidationListenerCodec {
     //hex: 0x150200
     public static final int REQUEST_MESSAGE_TYPE = 1376768;

@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains no entries.
  */
-@Generated("b63115d737b903c1922585b8dcf6f8f1")
+@Generated("79028681219a73284ad503870b842df3")
 public final class TransactionalMapIsEmptyCodec {
     //hex: 0x100500
     public static final int REQUEST_MESSAGE_TYPE = 1049856;

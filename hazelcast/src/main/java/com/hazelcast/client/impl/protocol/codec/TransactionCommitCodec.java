@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("8d8c87fbe129b70756c6372608e36746")
+@Generated("0a7d64d4c51fefcf95985419f68a2e49")
 public final class TransactionCommitCodec {
     //hex: 0x170100
     public static final int REQUEST_MESSAGE_TYPE = 1507584;

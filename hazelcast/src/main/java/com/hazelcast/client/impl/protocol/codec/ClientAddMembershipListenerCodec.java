@@ -36,7 +36,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("cd186c9de8aee14f9ba59587ac942fd2")
+@Generated("965d01c87351b02710e652829f8ded15")
 public final class ClientAddMembershipListenerCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;

@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("cf5f64a1c49315238f23c56f5d8ab078")
+@Generated("de1583fa74f25791e7d0941d29646735")
 public final class ClientRemoveDistributedObjectListenerCodec {
     //hex: 0x000E00
     public static final int REQUEST_MESSAGE_TYPE = 3584;

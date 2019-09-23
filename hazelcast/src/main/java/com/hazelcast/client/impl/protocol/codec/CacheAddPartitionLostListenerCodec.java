@@ -39,7 +39,7 @@ import com.hazelcast.logging.Logger;
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-@Generated("f8a3d8975a8fe3303cccea5e242a97e7")
+@Generated("80b99ffc98e2cc1159f8da2d0f84cbd8")
 public final class CacheAddPartitionLostListenerCodec {
     //hex: 0x151A00
     public static final int REQUEST_MESSAGE_TYPE = 1382912;

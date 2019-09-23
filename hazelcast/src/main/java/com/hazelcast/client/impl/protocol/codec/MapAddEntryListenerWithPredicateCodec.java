@@ -37,7 +37,7 @@ import com.hazelcast.logging.Logger;
  * Adds an continuous entry listener for this map. Listener will get notified for map add/remove/update/evict events
  * filtered by the given predicate.
  */
-@Generated("f6e54b9cff56a58d687a65524ca5239e")
+@Generated("2213336fd7ab36c3bff425dfe306f9aa")
 public final class MapAddEntryListenerWithPredicateCodec {
     //hex: 0x011A00
     public static final int REQUEST_MESSAGE_TYPE = 72192;

@@ -37,7 +37,7 @@ import com.hazelcast.logging.Logger;
  * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
  * MessageListener is called. More than one message listener can be added on one instance.
  */
-@Generated("2928215ea4c05caffa168893e00cc5b2")
+@Generated("4dbd45679e8d008f504f2e59a38f51cb")
 public final class TopicAddMessageListenerCodec {
     //hex: 0x040200
     public static final int REQUEST_MESSAGE_TYPE = 262656;

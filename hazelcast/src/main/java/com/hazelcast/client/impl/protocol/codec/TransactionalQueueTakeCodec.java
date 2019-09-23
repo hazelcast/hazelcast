@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
  */
-@Generated("ddf6e69d6f2432f5a32ac790e63e723b")
+@Generated("72a008e45b881f50bc4d960fa6246912")
 public final class TransactionalQueueTakeCodec {
     //hex: 0x140200
     public static final int REQUEST_MESSAGE_TYPE = 1311232;

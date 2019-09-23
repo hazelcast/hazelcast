@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of key-value pairs in the multimap.
  */
-@Generated("9ab68ff8ef432a11fcba376102560b7e")
+@Generated("e2b7b413d51866f28978d3e7ff01b5d2")
 public final class TransactionalMultiMapSizeCodec {
     //hex: 0x110600
     public static final int REQUEST_MESSAGE_TYPE = 1115648;

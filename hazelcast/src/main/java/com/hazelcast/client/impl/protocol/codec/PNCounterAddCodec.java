@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("fb1c223664aa474571d3b22a06a06bd2")
+@Generated("c5d1b560745c4d9ccb00ec2785bd5b1d")
 public final class PNCounterAddCodec {
     //hex: 0x200200
     public static final int REQUEST_MESSAGE_TYPE = 2097664;

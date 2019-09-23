@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("5026aa2556f02902f828d771020cc52b")
+@Generated("b134600aa61bdc92ad459ef99c260dbd")
 public final class ExecutorServiceCancelOnPartitionCodec {
     //hex: 0x090300
     public static final int REQUEST_MESSAGE_TYPE = 590592;

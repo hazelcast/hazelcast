@@ -38,7 +38,7 @@ import com.hazelcast.logging.Logger;
  * Eventually consistent client near caches should use this method to add invalidation listeners
  * instead of {@link #addNearCacheEntryListener(String, int, boolean)}
  */
-@Generated("8f4066abc4b597264b11bcfb7c40d135")
+@Generated("905bb948bdfc29d22f6a7fede595cd94")
 public final class MapAddNearCacheInvalidationListenerCodec {
     //hex: 0x014500
     public static final int REQUEST_MESSAGE_TYPE = 83200;

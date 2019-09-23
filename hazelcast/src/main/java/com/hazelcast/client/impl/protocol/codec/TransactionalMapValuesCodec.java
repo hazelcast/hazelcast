@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * so changes to the map are NOT reflected in the collection, and vice-versa. This method is always executed by a
  * distributed query, so it may throw a QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("c96de6d7fc065f162201333182bb2749")
+@Generated("7693d7ccfea77f03cbff2649e2e09d9b")
 public final class TransactionalMapValuesCodec {
     //hex: 0x101000
     public static final int REQUEST_MESSAGE_TYPE = 1052672;

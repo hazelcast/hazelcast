@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("04d95e53f6825cc4ccbb0a498c281faf")
+@Generated("53676eada1f1d32549c44deedd646c4c")
 public final class TransactionRollbackCodec {
     //hex: 0x170300
     public static final int REQUEST_MESSAGE_TYPE = 1508096;

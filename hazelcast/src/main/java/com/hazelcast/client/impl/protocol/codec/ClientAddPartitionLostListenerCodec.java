@@ -36,7 +36,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("1d9330f325cb9a9ca909f1a48528dc84")
+@Generated("91f5b5a49497bd56634d06299b9df536")
 public final class ClientAddPartitionLostListenerCodec {
     //hex: 0x000A00
     public static final int REQUEST_MESSAGE_TYPE = 2560;

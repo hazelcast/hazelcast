@@ -36,7 +36,7 @@ import com.hazelcast.logging.Logger;
 /**
  * Adds an entry listener for this map. Listener will get notified for all map add/remove/update/evict events.
  */
-@Generated("cc708f893a2d8497c3c44bb979a0220f")
+@Generated("f96da007017e9c2b25a499acdaf8c91e")
 public final class MapAddNearCacheEntryListenerCodec {
     //hex: 0x011D00
     public static final int REQUEST_MESSAGE_TYPE = 72960;

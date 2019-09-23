@@ -39,36 +39,6 @@ public final class UuidUtil {
     }
 
     /**
-     * Creates a new cluster {@link UUID},
-     * based on a cryptographically weak pseudo random number generator.
-     *
-     * @return a new cluster {@link UUID}
-     */
-    public static UUID createClusterUuid() {
-        return newUnsecureUUID();
-    }
-
-    /**
-     * Creates a new member {@link UUID},
-     * based on a cryptographically weak pseudo random number generator.
-     *
-     * @return a new member {@link UUID}
-     */
-    public static UUID createMemberUuid() {
-        return newUnsecureUUID();
-    }
-
-    /**
-     * Creates a new client {@link UUID},
-     * based on a cryptographically weak pseudo random number generator.
-     *
-     * @return a new client {@link UUID}
-     */
-    public static UUID createClientUuid() {
-        return newUnsecureUUID();
-    }
-
-    /**
      * Static factory to retrieve a type 4 (pseudo randomly generated) UUID based string.
      *
      * The {@code UUID} string is generated using a cryptographically weak pseudo random number generator.

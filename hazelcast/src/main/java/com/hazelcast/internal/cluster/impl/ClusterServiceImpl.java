@@ -328,7 +328,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         assert !isJoined() : "Cannot reset local member UUID when joined.";
 
         Map<EndpointQualifier, Address> addressMap = localMember.getAddressMap();
-        UUID newUuid = UuidUtil.createMemberUuid();
+        UUID newUuid = UuidUtil.newUnsecureUUID();
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
 

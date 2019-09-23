@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("2d4ec2b9b7b88f5d2a8ee190933ff6f5")
+@Generated("5d3de21c3c2fdb5f6044eb5a5c909efd")
 public final class CacheRemoveInvalidationListenerCodec {
     //hex: 0x151600
     public static final int REQUEST_MESSAGE_TYPE = 1381888;

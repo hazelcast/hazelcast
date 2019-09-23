@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * if the old value is not needed.
  * The object to be set will be accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("65bf5e2a70de9a8d4cd21170f8a0eb07")
+@Generated("eb7f2abb965ba21f465f4fd28bcf473a")
 public final class TransactionalMapSetCodec {
     //hex: 0x100700
     public static final int REQUEST_MESSAGE_TYPE = 1050368;

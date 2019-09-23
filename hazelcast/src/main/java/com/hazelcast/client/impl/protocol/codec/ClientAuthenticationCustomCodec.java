@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("06a3ebd61119a116caa61a2a93e674dd")
+@Generated("7ca2655b7a2a2fee269aa50e7774e46b")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
