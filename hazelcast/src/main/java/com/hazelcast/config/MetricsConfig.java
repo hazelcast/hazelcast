@@ -222,6 +222,7 @@ public class MetricsConfig {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:NPathComplexity")
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
