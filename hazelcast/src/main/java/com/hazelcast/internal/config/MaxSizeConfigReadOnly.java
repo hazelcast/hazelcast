@@ -17,7 +17,7 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 /**
  * Contains the configuration for a size of Map.

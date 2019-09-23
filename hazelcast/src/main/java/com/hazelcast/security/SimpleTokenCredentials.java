@@ -21,7 +21,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.util.Arrays;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

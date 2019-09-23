@@ -22,7 +22,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.UuidUtil;
 
 import java.security.Permission;

@@ -20,8 +20,8 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.hazelcast.internal.json.JsonReducedValueParser;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
 
 import java.io.DataInput;

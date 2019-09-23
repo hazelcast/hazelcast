@@ -19,7 +19,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class GroupMismatchOp extends AbstractClusterOperation {

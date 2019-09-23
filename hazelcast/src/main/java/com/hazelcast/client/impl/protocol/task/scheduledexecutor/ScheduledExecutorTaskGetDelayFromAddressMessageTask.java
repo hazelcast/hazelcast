@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromAdd
 import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;

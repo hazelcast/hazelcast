@@ -36,7 +36,7 @@ import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersionOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;

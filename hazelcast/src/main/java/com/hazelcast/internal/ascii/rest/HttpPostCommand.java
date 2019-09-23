@@ -17,9 +17,9 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.NoOpCommand;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ascii.TextDecoder;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.nio.ascii.TextDecoder;
 import com.hazelcast.internal.util.StringUtil;
 
 import java.nio.BufferOverflowException;

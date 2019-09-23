@@ -24,7 +24,7 @@ import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 import com.hazelcast.internal.util.hashslot.impl.HashSlotArray8byteKeyImpl;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 
 /**
  * a {@link Long2LongMap} implemented in terms of a {@link HashSlotArray8byteKey}.

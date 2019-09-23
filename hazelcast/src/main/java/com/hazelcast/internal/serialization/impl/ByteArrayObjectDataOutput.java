@@ -17,8 +17,8 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.ArrayUtils;
@@ -26,12 +26,12 @@ import com.hazelcast.internal.util.collection.ArrayUtils;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
-import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.UTF_8;
+import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
 class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {

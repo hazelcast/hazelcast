@@ -18,14 +18,14 @@ package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
+import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 /**
  * A specialization of {@link ObjectNamespace} intended to be used by ILock proxies.

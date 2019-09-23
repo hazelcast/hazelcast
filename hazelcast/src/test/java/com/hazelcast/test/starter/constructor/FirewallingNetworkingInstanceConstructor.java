@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.constructor;
 
-import com.hazelcast.nio.NetworkingService;
+import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 
 import java.lang.reflect.Constructor;
@@ -25,7 +25,7 @@ import java.util.Set;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-@HazelcastStarterConstructor(classNames = {"com.hazelcast.nio.tcp.FirewallingNetworkingService"})
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.internal.nio.tcp.FirewallingNetworkingService"})
 public class FirewallingNetworkingInstanceConstructor extends AbstractStarterObjectConstructor {
 
     public FirewallingNetworkingInstanceConstructor(Class<?> targetClass) {

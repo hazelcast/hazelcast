@@ -17,8 +17,8 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.NetworkingService;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.NetworkingService;
 
 import java.util.Map;
 

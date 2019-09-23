@@ -21,7 +21,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;

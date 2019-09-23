@@ -18,7 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.concurrent.ConcurrentHashMap;

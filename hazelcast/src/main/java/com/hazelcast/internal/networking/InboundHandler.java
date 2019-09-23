@@ -18,7 +18,7 @@ package com.hazelcast.internal.networking;
 
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
-import static com.hazelcast.nio.IOUtil.newByteBuffer;
+import static com.hazelcast.internal.nio.IOUtil.newByteBuffer;
 
 /**
  * The {@link InboundHandler} provides control when data is received and

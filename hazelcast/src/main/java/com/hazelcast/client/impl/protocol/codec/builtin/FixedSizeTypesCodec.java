@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 
 import java.util.UUID;
 

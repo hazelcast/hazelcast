@@ -22,7 +22,7 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.GET;
-import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
 
 public class GetCommand extends AbstractTextCommand {
 

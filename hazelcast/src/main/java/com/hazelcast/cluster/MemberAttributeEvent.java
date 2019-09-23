@@ -17,18 +17,18 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Set;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
-import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
+import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
 import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.unmodifiableSet;
 

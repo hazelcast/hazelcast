@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.util.Collections.enumeration;
 

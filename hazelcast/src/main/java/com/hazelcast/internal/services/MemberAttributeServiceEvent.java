@@ -21,11 +21,11 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.util.Set;
 
-import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
+import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 /**
  * This service event is fired to inform services about a change in a member's attributes collection

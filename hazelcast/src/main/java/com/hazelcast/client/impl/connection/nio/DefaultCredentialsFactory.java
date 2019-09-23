@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.connection.nio;
 
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;

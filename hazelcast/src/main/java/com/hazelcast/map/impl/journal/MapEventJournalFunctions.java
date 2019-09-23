@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.journal.DeserializingEntry;
 import com.hazelcast.map.journal.EventJournalMapEvent;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.io.Serializable;
 import java.util.Map.Entry;

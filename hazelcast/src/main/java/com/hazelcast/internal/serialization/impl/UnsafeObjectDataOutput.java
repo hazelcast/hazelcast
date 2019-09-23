@@ -39,13 +39,13 @@ import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_LONG_BASE_O
 import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_LONG_INDEX_SCALE;
 import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_SHORT_BASE_OFFSET;
 import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_SHORT_INDEX_SCALE;
-import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.DOUBLE_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.FLOAT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
-import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.DOUBLE_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.FLOAT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 

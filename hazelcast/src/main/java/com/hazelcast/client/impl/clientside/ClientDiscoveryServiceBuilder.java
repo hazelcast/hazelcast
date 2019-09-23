@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.ClientExtension;
+import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
@@ -38,8 +38,8 @@ import com.hazelcast.internal.config.DiscoveryConfigReadOnly;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;

@@ -18,7 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.Client;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
 

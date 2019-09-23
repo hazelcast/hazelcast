@@ -22,8 +22,8 @@ import com.hazelcast.internal.cluster.fd.PingFailureDetector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.ICMPHelper;
 
 import java.io.IOException;

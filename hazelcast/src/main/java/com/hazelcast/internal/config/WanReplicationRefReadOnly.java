@@ -17,7 +17,7 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.util.List;
 

@@ -20,7 +20,7 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -29,7 +29,7 @@ import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.nio.IOService.KILO_BYTE;
+import static com.hazelcast.internal.nio.IOService.KILO_BYTE;
 
 final class ServerSocketHelper {
 

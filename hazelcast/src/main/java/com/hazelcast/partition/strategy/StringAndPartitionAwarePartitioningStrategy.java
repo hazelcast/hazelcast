@@ -18,7 +18,7 @@ package com.hazelcast.partition.strategy;
 
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 @SerializableByConvention
 public final class StringAndPartitionAwarePartitioningStrategy implements PartitioningStrategy {

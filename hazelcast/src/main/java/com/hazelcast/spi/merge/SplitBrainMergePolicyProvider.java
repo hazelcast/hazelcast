@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**

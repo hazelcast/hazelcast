@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 

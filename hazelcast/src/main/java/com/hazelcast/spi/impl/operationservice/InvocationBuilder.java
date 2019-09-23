@@ -20,7 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
