@@ -27,15 +27,9 @@ import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.processor.Processors.mapStatefulP;
-import static java.lang.Math.max;
 
-public class MapStatefulTransform<T, K, S, R> extends AbstractTransform {
+public class MapStatefulTransform<T, K, S, R> extends StatefulKeyedTransformBase<T, K, S> {
 
-    private static final int TTL_TO_WM_STRIDE_RATIO = 4;
-    private final long ttl;
-    private final FunctionEx<? super T, ? extends K> keyFn;
-    private final ToLongFunctionEx<? super T> timestampFn;
-    private final Supplier<? extends S> createFn;
     private final TriFunction<? super S, ? super K, ? super T, ? extends R> statefulMapFn;
     @Nullable private TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn;
 
@@ -48,18 +42,9 @@ public class MapStatefulTransform<T, K, S, R> extends AbstractTransform {
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> statefulMapFn,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFn
     ) {
-        super("transform-stateful", upstream);
-        this.ttl = ttl;
-        this.keyFn = keyFn;
-        this.timestampFn = timestampFn;
-        this.createFn = createFn;
+        super("map-stateful-keyed", upstream, ttl, keyFn, timestampFn, createFn);
         this.statefulMapFn = statefulMapFn;
         this.onEvictFn = onEvictFn;
-    }
-
-    @Override
-    public long preferredWatermarkStride() {
-        return max(1, ttl / TTL_TO_WM_STRIDE_RATIO);
     }
 
     @Override

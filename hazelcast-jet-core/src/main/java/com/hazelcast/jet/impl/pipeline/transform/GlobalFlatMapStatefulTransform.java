@@ -28,11 +28,11 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.processor.Processors.flatMapStatefulP;
 
-public class GlobalFlatMapStatefulTransform<T, S, R, OUT> extends AbstractTransform {
+public class GlobalFlatMapStatefulTransform<T, S, R> extends AbstractTransform {
 
+    private final ToLongFunctionEx<? super T> timestampFn;
     private final Supplier<? extends S> createFn;
     private final TriFunction<? super S, Object, ? super T, ? extends Traverser<R>> statefulFlatMapFn;
-    private final ToLongFunctionEx<? super T> timestampFn;
 
     public GlobalFlatMapStatefulTransform(
             @Nonnull Transform upstream,
@@ -40,7 +40,7 @@ public class GlobalFlatMapStatefulTransform<T, S, R, OUT> extends AbstractTransf
             @Nonnull Supplier<? extends S> createFn,
             @Nonnull TriFunction<? super S, Object, ? super T, ? extends Traverser<R>> statefulFlatMapFn
     ) {
-        super("transform-stateful", upstream);
+        super("flatmap-stateful-global", upstream);
         this.timestampFn = timestampFn;
         this.createFn = createFn;
         this.statefulFlatMapFn = statefulFlatMapFn;

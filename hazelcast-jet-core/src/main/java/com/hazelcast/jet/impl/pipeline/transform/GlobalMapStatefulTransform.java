@@ -39,7 +39,7 @@ public class GlobalMapStatefulTransform<T, S, R> extends AbstractTransform {
             @Nonnull Supplier<? extends S> createFn,
             @Nonnull TriFunction<? super S, Object, ? super T, ? extends R> statefulMapFn
     ) {
-        super("transform-stateful", upstream);
+        super("map-stateful-global", upstream);
         this.timestampFn = timestampFn;
         this.createFn = createFn;
         this.statefulMapFn = statefulMapFn;

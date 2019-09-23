@@ -28,15 +28,9 @@ import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.processor.Processors.flatMapStatefulP;
-import static java.lang.Math.max;
 
-public class FlatMapStatefulTransform<T, K, S, R, OUT> extends AbstractTransform {
+public class FlatMapStatefulTransform<T, K, S, R> extends StatefulKeyedTransformBase<T, K, S> {
 
-    private static final int TTL_TO_WM_STRIDE_RATIO = 4;
-    private final long ttl;
-    private final FunctionEx<? super T, ? extends K> keyFn;
-    private final ToLongFunctionEx<? super T> timestampFn;
-    private final Supplier<? extends S> createFn;
     private final TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> statefulFlatMapFn;
     private final TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn;
 
@@ -49,25 +43,15 @@ public class FlatMapStatefulTransform<T, K, S, R, OUT> extends AbstractTransform
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn,
             @Nullable TriFunction<? super S, ? super K, ? super Long, ? extends Traverser<R>> onEvictFn
     ) {
-        super("transform-stateful", upstream);
-        this.ttl = ttl;
-        this.keyFn = keyFn;
-        this.timestampFn = timestampFn;
-        this.createFn = createFn;
+        super("flatmap-stateful-keyed", upstream, ttl, keyFn, timestampFn, createFn);
         this.statefulFlatMapFn = flatMapFn;
         this.onEvictFn = onEvictFn;
     }
 
     @Override
-    public long preferredWatermarkStride() {
-        return max(1, ttl / TTL_TO_WM_STRIDE_RATIO);
-    }
-
-    @Override
     public void addToDag(Planner p) {
         PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
-                flatMapStatefulP(
-                        ttl, keyFn, timestampFn, createFn, statefulFlatMapFn, onEvictFn));
+                flatMapStatefulP(ttl, keyFn, timestampFn, createFn, statefulFlatMapFn, onEvictFn));
         p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
 }
