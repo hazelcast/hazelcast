@@ -408,6 +408,23 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void mapStateful_global_returningNull() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+
+        // When
+        BatchStage<Long> stage = batchStageFromList(input)
+                .mapStateful(LongAccumulator::new, (acc, i) -> {
+                    acc.add(1);
+                    return (acc.get() == input.size()) ? acc.get() : null;
+                });
+
+        // Then
+        stage.drainTo(assertOrdered(Collections.singletonList((long) itemCount)));
+        execute();
+    }
+
+    @Test
     public void mapStateful_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -435,6 +452,28 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void mapStateful_keyed_returningNull() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+
+        // When
+        BatchStage<Entry<Integer, Long>> stage = batchStageFromList(input)
+                .groupingKey(i -> i % 2)
+                .mapStateful(LongAccumulator::new, (acc, k, i) -> {
+                    acc.add(1);
+                    if (acc.get() == input.size() / 2) {
+                        return entry(k, acc.get());
+                    }
+                    return null;
+                });
+
+        // Then
+        long expectedCount = itemCount / 2;
+        stage.drainTo(assertAnyOrder(Arrays.asList(entry(0, expectedCount), entry(1, expectedCount))));
+        execute();
+    }
+
+    @Test
     public void mapStateful_keyed_usedAsFilter() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -443,7 +482,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Entry<Integer, Long>> stage = batchStageFromList(input)
                 .groupingKey(i -> i % 2)
                 .mapStateful(LongAccumulator::new, (acc, k, i) -> {
-                    acc.addAllowingOverflow(1);
+                    acc.add(1);
                     return (acc.get() == input.size() / 2) ? entry(k, acc.get()) : null;
                 });
 

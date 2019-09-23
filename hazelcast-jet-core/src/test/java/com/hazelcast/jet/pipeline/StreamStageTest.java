@@ -654,19 +654,46 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Entry<Integer, Long>> stage = streamStageFromList(input)
-            .groupingKey(i -> i % 2)
-            .mapStateful(LongAccumulator::new, (acc, k, i) -> {
-                acc.addAllowingOverflow(1);
-                if (acc.get() == input.size() / 2) {
-                    return entry(k, acc.get());
-                }
-                return null;
-            });
+                .groupingKey(i -> i % 2)
+                .mapStateful(LongAccumulator::new, (acc, k, i) -> {
+                    acc.addAllowingOverflow(1);
+                    if (acc.get() == input.size() / 2) {
+                        return entry(k, acc.get());
+                    }
+                    return null;
+                });
 
         // Then
         long expectedCount = itemCount / 2;
         stage.drainTo(assertAnyOrder(Arrays.asList(entry(0, expectedCount), entry(1, expectedCount))));
         execute();
+    }
+
+    @Test
+    public void mapStateful_withEvictFnReturningNull() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        int ttl = 1;
+        String evictedSignal = "evicted";
+
+        // When
+        StreamStage<Entry<Integer, String>> stage = streamStageFromList(input)
+                .groupingKey(i -> min(2, i))
+                .mapStateful(
+                        ttl,
+                        Object::new,
+                        (acc, k, i) -> null,
+                        (acc, k, wm) -> (k == 1) ? entry(k, evictedSignal) : null
+                );
+
+        // Then
+        stage.drainTo(sink);
+        execute();
+        Function<Entry<Integer, String>, String> formatFn = e -> String.format("%d %s", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(Stream.of(entry(1, evictedSignal)), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn)
+        );
     }
 
     @Test
