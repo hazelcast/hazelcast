@@ -17,14 +17,14 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.datastructures.semaphore.Semaphore.AcquireResult;
-import com.hazelcast.cp.internal.datastructures.semaphore.Semaphore.ReleaseResult;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.UUID;
+
+import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
 
 /**
  * Contains {@link Semaphore} resources and manages wait timeouts
@@ -76,11 +76,11 @@ public class SemaphoreRegistry extends ResourceRegistry<AcquireInvocationKey, Se
     AcquireResult acquire(String name, AcquireInvocationKey key, long timeoutMs) {
         AcquireResult result = getOrInitResource(name).acquire(key, (timeoutMs != 0));
 
-        for (AcquireInvocationKey waitKey : result.cancelled) {
+        for (AcquireInvocationKey waitKey : result.cancelledWaitKeys()) {
             removeWaitKey(name, waitKey);
         }
 
-        if (result.acquired == 0) {
+        if (result.status() == WAIT_KEY_ADDED) {
             addWaitKey(name, key, timeoutMs);
         }
 
@@ -89,11 +89,11 @@ public class SemaphoreRegistry extends ResourceRegistry<AcquireInvocationKey, Se
 
     ReleaseResult release(String name, SemaphoreEndpoint endpoint, UUID invocationUid, int permits) {
         ReleaseResult result = getOrInitResource(name).release(endpoint, invocationUid, permits);
-        for (AcquireInvocationKey key : result.acquired) {
+        for (AcquireInvocationKey key : result.acquiredWaitKeys()) {
             removeWaitKey(name, key);
         }
 
-        for (AcquireInvocationKey key : result.cancelled) {
+        for (AcquireInvocationKey key : result.cancelledWaitKeys()) {
             removeWaitKey(name, key);
         }
 
@@ -102,7 +102,7 @@ public class SemaphoreRegistry extends ResourceRegistry<AcquireInvocationKey, Se
 
     AcquireResult drainPermits(String name, SemaphoreEndpoint endpoint, UUID invocationUid) {
         AcquireResult result = getOrInitResource(name).drain(endpoint, invocationUid);
-        for (AcquireInvocationKey key : result.cancelled) {
+        for (AcquireInvocationKey key : result.cancelledWaitKeys()) {
             removeWaitKey(name, key);
         }
 
@@ -111,11 +111,11 @@ public class SemaphoreRegistry extends ResourceRegistry<AcquireInvocationKey, Se
 
     ReleaseResult changePermits(String name, SemaphoreEndpoint endpoint, UUID invocationUid, int permits) {
         ReleaseResult result = getOrInitResource(name).change(endpoint, invocationUid, permits);
-        for (AcquireInvocationKey key : result.acquired) {
+        for (AcquireInvocationKey key : result.acquiredWaitKeys()) {
             removeWaitKey(name, key);
         }
 
-        for (AcquireInvocationKey key : result.cancelled) {
+        for (AcquireInvocationKey key : result.cancelledWaitKeys()) {
             removeWaitKey(name, key);
         }
 
