@@ -529,11 +529,16 @@ public class LocalRaftTest extends HazelcastTestSupport {
             }
         });
 
-        for (int i = 0; i < nodeCount; i++) {
-            if (Arrays.binarySearch(split, i) < 0) {
-                assertEquals(leaderEndpoint, getLeaderMember(group.getNode(i)));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (int i = 0; i < nodeCount; i++) {
+                    if (Arrays.binarySearch(split, i) < 0) {
+                        assertNull(getLeaderMember(group.getNode(i)));
+                    }
+                }
             }
-        }
+        });
 
         group.merge();
         group.waitUntilLeaderElected();

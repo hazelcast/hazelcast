@@ -83,6 +83,8 @@ public class InstallSnapshotHandlerTask extends RaftNodeStatusAwareTask implemen
             raftNode.leader(req.leader());
         }
 
+        raftNode.updateLastAppendEntriesTimestamp();
+
         if (raftNode.installSnapshot(snapshot)) {
             raftNode.send(new AppendSuccessResponse(localMember(), req.term(), snapshot.index(), req.queryRound()), req.leader());
         }

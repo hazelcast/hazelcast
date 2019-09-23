@@ -109,11 +109,12 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
             }
 
             return true;
-        } else if (followerLastLogIndex < matchIndex) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Will not update match index for follower: " + follower + ". follower last log index: "
-                        + followerLastLogIndex + ", match index: " + matchIndex);
-            }
+        } else if (followerLastLogIndex == matchIndex) {
+            // Received a response for the last append request. Resetting the flag...
+            followerState.appendRequestAckReceived();
+        } else if (logger.isFineEnabled()) {
+            logger.fine("Will not update match index for follower: " + follower + ". follower last log index: "
+                    + followerLastLogIndex + ", match index: " + matchIndex);
         }
 
         return false;
