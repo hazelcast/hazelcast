@@ -16,9 +16,6 @@
 
 package com.hazelcast.internal.nio;
 
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.EndpointManager;
-
 /**
  * A listener for the {@link EndpointManager} to listen to connections
  * being added or removed.

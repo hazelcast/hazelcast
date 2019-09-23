@@ -31,7 +31,7 @@ import static com.hazelcast.internal.nio.PacketIOHelper.HEADER_SIZE;
  * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
 // Declaration order suppressed due to private static int FLAG_TYPEx declarations
-@SuppressWarnings("checkstyle:declarationorder")
+@SuppressWarnings({"checkstyle:declarationorder", "checkstyle:magicnumber"})
 public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;

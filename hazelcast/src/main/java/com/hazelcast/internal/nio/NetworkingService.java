@@ -50,10 +50,14 @@ public interface NetworkingService<T extends Connection> {
      * On single-endpoint setups (legacy mode), then a View relevant to the requested Endpoint is returned which purely acts
      * as a facade to hide the API differences and maintain common signatures.
      * eg.
-     * {@link com.hazelcast.instance.ProtocolType#MEMBER} -&gt; {@link com.hazelcast.internal.nio.tcp.MemberViewUnifiedEndpointManager}
-     * {@link com.hazelcast.instance.ProtocolType#CLIENT} -&gt; {@link com.hazelcast.internal.nio.tcp.ClientViewUnifiedEndpointManager}
-     * {@link com.hazelcast.instance.ProtocolType#REST} -&gt; {@link com.hazelcast.internal.nio.tcp.TextViewUnifiedEndpointManager}
-     * {@link com.hazelcast.instance.ProtocolType#MEMCACHE} -&gt; {@link com.hazelcast.internal.nio.tcp.TextViewUnifiedEndpointManager}
+     * {@link com.hazelcast.instance.ProtocolType#MEMBER} -&gt;
+     * {@link com.hazelcast.internal.nio.tcp.MemberViewUnifiedEndpointManager}
+     * {@link com.hazelcast.instance.ProtocolType#CLIENT} -&gt;
+     * {@link com.hazelcast.internal.nio.tcp.ClientViewUnifiedEndpointManager}
+     * {@link com.hazelcast.instance.ProtocolType#REST} -&gt;
+     * {@link com.hazelcast.internal.nio.tcp.TextViewUnifiedEndpointManager}
+     * {@link com.hazelcast.instance.ProtocolType#MEMCACHE} -&gt;
+     * {@link com.hazelcast.internal.nio.tcp.TextViewUnifiedEndpointManager}
      */
     EndpointManager<T> getEndpointManager(EndpointQualifier qualifier);
 

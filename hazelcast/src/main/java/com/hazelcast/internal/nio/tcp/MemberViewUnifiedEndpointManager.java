@@ -23,7 +23,7 @@ import com.hazelcast.internal.nio.Packet;
 
 import java.util.Collection;
 
-class MemberViewUnifiedEndpointManager
+public class MemberViewUnifiedEndpointManager
         implements EndpointManager<TcpIpConnection> {
 
     private final TcpIpUnifiedEndpointManager unifiedEndpointManager;

@@ -24,7 +24,7 @@ import com.hazelcast.internal.nio.Packet;
 import java.util.Collection;
 import java.util.Set;
 
-class ClientViewUnifiedEndpointManager
+public class ClientViewUnifiedEndpointManager
         implements EndpointManager<TcpIpConnection> {
 
     private final TcpIpUnifiedEndpointManager unifiedEndpointManager;

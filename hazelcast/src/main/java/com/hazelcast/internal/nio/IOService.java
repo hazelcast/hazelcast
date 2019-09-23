@@ -37,6 +37,7 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
 
+@SuppressWarnings({"checkstyle:methodcount"})
 public interface IOService {
 
     int KILO_BYTE = 1024;

@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.nio;
 
-import com.hazelcast.internal.nio.MemberSocketInterceptor;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Properties;

@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.nio;
 
-import com.hazelcast.internal.nio.ConnectionListener;
-
 /**
  * Provides connection listen capabilities.
  */

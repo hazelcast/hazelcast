@@ -37,6 +37,7 @@ import static java.util.Collections.unmodifiableMap;
 /**
  * Utility class to deal with class loaders.
  */
+@SuppressWarnings({"checkstyle:magicnumber", "checkstyle:npathcomplexity"})
 public final class ClassLoaderUtil {
 
     public static final String HAZELCAST_BASE_PACKAGE = "com.hazelcast.";
