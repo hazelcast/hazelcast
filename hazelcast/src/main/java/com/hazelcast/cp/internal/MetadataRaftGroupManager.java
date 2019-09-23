@@ -106,6 +106,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private final AtomicReference<CPMemberInfo> localCPMember = new AtomicReference<CPMemberInfo>();
     private final AtomicReference<RaftGroupId> metadataGroupIdRef = new AtomicReference<RaftGroupId>(INITIAL_METADATA_GROUP_ID);
     private final AtomicBoolean discoveryCompleted = new AtomicBoolean();
+    private volatile DiscoverInitialCPMembersTask currentDiscoveryTask;
 
     // all fields below are state of the Metadata CP group and put into Metadata snapshot and reset while restarting...
     // these fields are accessed outside of Raft while restarting or local querying, etc.
@@ -171,6 +172,11 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         metadataGroupIdRef.set(new RaftGroupId(METADATA_CP_GROUP_NAME, seed, 0));
         localCPMember.set(null);
+
+        DiscoverInitialCPMembersTask discoveryTask = currentDiscoveryTask;
+        if (discoveryTask != null) {
+            discoveryTask.cancelAndAwaitCompletion();
+        }
         discoveryCompleted.set(false);
 
         scheduleDiscoverInitialCPMembersTask(false);
@@ -976,7 +982,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     private void scheduleDiscoverInitialCPMembersTask(boolean terminateOnDiscoveryFailure) {
-        Runnable task = new DiscoverInitialCPMembersTask(terminateOnDiscoveryFailure);
+        DiscoverInitialCPMembersTask task = new DiscoverInitialCPMembersTask(terminateOnDiscoveryFailure);
+        currentDiscoveryTask = task;
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.schedule(task, DISCOVER_INITIAL_CP_MEMBERS_TASK_DELAY_MILLIS, MILLISECONDS);
     }
@@ -988,18 +995,36 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
     }
 
+    private enum DiscoveryTaskState {
+        RUNNING, SCHEDULED, COMPLETED
+    }
+
     private class DiscoverInitialCPMembersTask implements Runnable {
 
         private Collection<Member> latestMembers = Collections.emptySet();
         private final boolean terminateOnDiscoveryFailure;
         private long lastLoggingTime;
+        private volatile boolean cancelled;
+        private volatile DiscoveryTaskState state;
 
         DiscoverInitialCPMembersTask(boolean terminateOnDiscoveryFailure) {
             this.terminateOnDiscoveryFailure = terminateOnDiscoveryFailure;
+            state = DiscoveryTaskState.SCHEDULED;
         }
 
         @Override
         public void run() {
+            state = DiscoveryTaskState.RUNNING;
+            try {
+                doRun();
+            } finally {
+                if (state == DiscoveryTaskState.RUNNING) {
+                    state = DiscoveryTaskState.COMPLETED;
+                }
+            }
+        }
+
+        private void doRun() {
             if (shouldRescheduleOrSkip()) {
                 return;
             }
@@ -1040,7 +1065,15 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             scheduleRaftGroupMembershipManagementTasks();
         }
 
+        /**
+         * Returns {@code true} if task is skipped or rescheduled
+         * or {@code false} if task should execute now.
+         */
         private boolean shouldRescheduleOrSkip() {
+            if (cancelled) {
+                return true;
+            }
+
             // When a node joins to the cluster, first, discoveryCompleted flag is set, then the join flag is set.
             // Hence, we need to check these flags in the reverse order here.
 
@@ -1075,6 +1108,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
 
         private void scheduleSelf() {
+            state = DiscoveryTaskState.SCHEDULED;
             nodeEngine.getExecutionService()
                       .schedule(this, DISCOVER_INITIAL_CP_MEMBERS_TASK_DELAY_MILLIS, MILLISECONDS);
         }
@@ -1139,6 +1173,19 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         private void terminateNode() {
             ((NodeEngineImpl) nodeEngine).getNode().shutdown(true);
+        }
+
+        @SuppressWarnings("checkstyle:magicnumber")
+        void cancelAndAwaitCompletion() {
+            cancelled = true;
+            while (state != DiscoveryTaskState.COMPLETED) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
     }
 
