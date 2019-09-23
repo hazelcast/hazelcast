@@ -67,6 +67,28 @@ public final class JVMUtil {
         return true;
     }
 
+    /**
+     * Returns used memory as reported by the {@link Runtime} and the function (totalMemory - freeMemory)
+     * It attempts to correct atomicity issues (ie. when totalMemory expands) and reported usedMemory
+     * results in negative values
+     *
+     * @param runtime
+     * @return an approximation to the total amount of memory currently
+ *             used, measured in bytes.
+     */
+    public static long usedMemory(final Runtime runtime) {
+        long totalBegin;
+        long totalEnd;
+        long used;
+        do {
+            totalBegin = runtime.totalMemory();
+            used = totalBegin - runtime.freeMemory();
+            totalEnd = runtime.totalMemory();
+        } while (totalBegin != totalEnd);
+
+        return used;
+    }
+
     // not private for testing
     @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
     static Boolean isHotSpotCompressedOopsOrNull() {

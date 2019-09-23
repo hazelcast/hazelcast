@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.util.JVMUtil;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -47,9 +47,7 @@ public final class RuntimeMetricSet {
         metricsRegistry.register(runtime, "runtime.freeMemory", MANDATORY, Runtime::freeMemory);
         metricsRegistry.register(runtime, "runtime.totalMemory", MANDATORY, Runtime::totalMemory);
         metricsRegistry.register(runtime, "runtime.maxMemory", MANDATORY, Runtime::maxMemory);
-        metricsRegistry.register(runtime, "runtime.usedMemory", MANDATORY,
-                (LongProbeFunction<Runtime>) runtime1 -> runtime1.totalMemory() - runtime1.freeMemory()
-        );
+        metricsRegistry.register(runtime, "runtime.usedMemory", MANDATORY, JVMUtil::usedMemory);
         metricsRegistry.register(runtime, "runtime.availableProcessors", MANDATORY, Runtime::availableProcessors);
         metricsRegistry.register(mxBean, "runtime.uptime", MANDATORY, RuntimeMXBean::getUptime);
     }
