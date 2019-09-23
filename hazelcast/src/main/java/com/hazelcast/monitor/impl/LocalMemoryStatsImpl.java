@@ -17,7 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 

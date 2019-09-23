@@ -101,8 +101,6 @@
               files="com[\\/]hazelcast[\\/]config[\\/]MemberDomConfigProcessor"/>
     <suppress checks="CyclomaticComplexity|ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount"
               files="com[\\/]hazelcast[\\/]config[\\/]YamlMemberDomConfigProcessor"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]yaml[\\/]ScalarTextNodeAdapter"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]yaml[\\/]ElementAdapter"/>
 
     <!-- YAML -->
     <suppress checks="BooleanExpressionComplexity" files="com[\\/]hazelcast[\\/]internal[\\/]yaml[\\/]YamlUtil"/>

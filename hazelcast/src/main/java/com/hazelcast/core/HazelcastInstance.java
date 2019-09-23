@@ -464,7 +464,7 @@ public interface HazelcastInstance {
     CardinalityEstimator getCardinalityEstimator(String name);
 
     /**
-     * Creates or returns a {@link com.hazelcast.crdt.pncounter.PNCounter} with the given
+     * Creates or returns a {@link PNCounter} with the given
      * name.
      * <p>
      * The PN counter can be used as a counter with strong eventual consistency
@@ -473,7 +473,7 @@ public interface HazelcastInstance {
      * converge to the same value.
      *
      * @param name the name of the PN counter
-     * @return a {@link com.hazelcast.crdt.pncounter.PNCounter}
+     * @return a {@link PNCounter}
      */
     PNCounter getPNCounter(String name);
 

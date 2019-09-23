@@ -36,7 +36,7 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlMapping;
+import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 
 class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {

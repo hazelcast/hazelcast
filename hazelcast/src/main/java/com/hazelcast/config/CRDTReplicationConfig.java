@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 /**
  * Configures the replication mechanism for all
- * {@link com.hazelcast.crdt.CRDT} implementations.
+ * {@link com.hazelcast.internal.crdt.CRDT} implementations.
  * The CRDT states are replicated in rounds (the period is configurable)
  * and in each round the state is replicated up to the configured number
  * of members.

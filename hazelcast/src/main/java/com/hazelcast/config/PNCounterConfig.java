@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,7 +26,7 @@ import java.io.IOException;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Configuration for a {@link com.hazelcast.crdt.pncounter.PNCounter}
+ * Configuration for a {@link PNCounter}
  *
  * @since 3.10
  */
