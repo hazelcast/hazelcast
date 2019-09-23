@@ -281,12 +281,6 @@ hazelcast:
         batch-size: 100
         class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
 
-  atomic-reference:
-    default:
-      merge-policy:
-        batch-size: 100
-        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
-
   serialization:
     portable-version: 0
 

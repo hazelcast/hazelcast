@@ -26,7 +26,7 @@ import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
@@ -69,7 +69,7 @@ public class CPSubsystemImpl implements CPSubsystem {
     @Override
     public <E> IAtomicReference<E> getAtomicReference(String name) {
         checkNotNull(name, "Retrieving an atomic reference instance with a null name is not allowed!");
-        return createProxy(RaftAtomicRefService.SERVICE_NAME, name);
+        return createProxy(AtomicRefService.SERVICE_NAME, name);
     }
 
     @Override

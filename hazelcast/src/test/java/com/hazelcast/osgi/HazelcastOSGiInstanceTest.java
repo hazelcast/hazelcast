@@ -424,11 +424,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getAtomicReference("my-atomicreference")).thenReturn(mockAtomicReference);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(cpSubsystem.getAtomicReference("my-atomicreference")).thenReturn(mockAtomicReference);
 
-        assertEquals(mockAtomicReference, hazelcastOSGiInstance.getAtomicReference("my-atomicreference"));
+        assertEquals(mockAtomicReference, hazelcastOSGiInstance.getCPSubsystem().getAtomicReference("my-atomicreference"));
 
-        verify(mockHazelcastInstance).getAtomicReference("my-atomicreference");
+        verify(cpSubsystem).getAtomicReference("my-atomicreference");
     }
 
     @Test

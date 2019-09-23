@@ -17,20 +17,20 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.services.ServiceConfigurationParser;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -49,7 +49,6 @@ import java.util.function.Function;
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.config.ConfigSections.ADVANCED_NETWORK;
 import static com.hazelcast.config.ConfigSections.ATOMIC_LONG;
-import static com.hazelcast.config.ConfigSections.ATOMIC_REFERENCE;
 import static com.hazelcast.config.ConfigSections.CACHE;
 import static com.hazelcast.config.ConfigSections.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.ConfigSections.CP_SUBSYSTEM;
@@ -191,8 +190,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleRingbuffer(node);
         } else if (ATOMIC_LONG.isEqual(nodeName)) {
             handleAtomicLong(node);
-        } else if (ATOMIC_REFERENCE.isEqual(nodeName)) {
-            handleAtomicReference(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -2410,27 +2407,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.addAtomicLongConfig(atomicLongConfig);
-    }
-
-    protected void handleAtomicReference(Node node) {
-        Node attName = node.getAttributes().getNamedItem("name");
-        String name = getTextContent(attName);
-        AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig(name);
-        handleAtomicReferenceNode(node, atomicReferenceConfig);
-    }
-
-    void handleAtomicReferenceNode(Node node, AtomicReferenceConfig atomicReferenceConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("merge-policy".equals(nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
-                atomicReferenceConfig.setMergePolicyConfig(mergePolicyConfig);
-            } else if ("split-brain-protection-ref".equals(nodeName)) {
-                atomicReferenceConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addAtomicReferenceConfig(atomicReferenceConfig);
     }
 
     protected void handleListeners(Node node) {

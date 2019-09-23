@@ -17,8 +17,8 @@
 package com.hazelcast.cp.internal.datastructures.atomicref.operation;
 
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRef;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicReferenceDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRef;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -46,7 +46,7 @@ public class CompareAndSetOp extends AbstractAtomicRefOp implements IdentifiedDa
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftAtomicRef ref = getAtomicRef(groupId);
+        AtomicRef ref = getAtomicRef(groupId);
         boolean contains = ref.contains(expectedValue);
         if (contains) {
             ref.set(newValue);
@@ -56,7 +56,7 @@ public class CompareAndSetOp extends AbstractAtomicRefOp implements IdentifiedDa
 
     @Override
     public int getClassId() {
-        return RaftAtomicReferenceDataSerializerHook.COMPARE_AND_SET_OP;
+        return AtomicRefDataSerializerHook.COMPARE_AND_SET_OP;
     }
 
     @Override

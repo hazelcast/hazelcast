@@ -22,7 +22,6 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -57,15 +56,6 @@ public class MBeanDestroyTest extends HazelcastTestSupport {
 
 
         destroyObjectAndAssert(atomicLong, "IAtomicLong");
-    }
-
-    @Test
-    public void testAtomicReference() throws Exception {
-        IAtomicReference<String> atomicReference = holder.getHz().getAtomicReference("atomicreference");
-        atomicReference.set(null);
-        holder.assertMBeanExistEventually("IAtomicReference", atomicReference.getName());
-
-        destroyObjectAndAssert(atomicReference, "IAtomicReference");
     }
 
     @Test

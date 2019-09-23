@@ -1979,22 +1979,6 @@ hazelcast:
         class-name: PutIfAbsentMergePolicy
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
-  #
-  # ===== HAZELCAST ATOMIC REFERENCE CONFIGURATION =====
-  #
-  # Configuration element's name is "atomic-reference". It has the required attribute "name" with which you
-  # can specify the name of your IAtomicReference. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  #
-  atomic-reference:
-    default:
-      merge-policy:
-        batch-size: 100
-        class-name: PutIfAbsentMergePolicy
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST LISTENER CONFIGURATIONS =====

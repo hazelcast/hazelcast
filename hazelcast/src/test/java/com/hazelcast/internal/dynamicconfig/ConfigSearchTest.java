@@ -17,7 +17,6 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -528,52 +527,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 AtomicLongConfig dataConfig = hazelcastInstance.getConfig().findAtomicLongConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testAtomicReferenceConfig_Static() {
-        TestCase<AtomicReferenceConfig> testCase = new TestCase<AtomicReferenceConfig>(new AtomicReferenceConfig(STATIC_NAME),
-                new AtomicReferenceConfig(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addAtomicReferenceConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addAtomicReferenceConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                AtomicReferenceConfig dataConfig = hazelcastInstance.getConfig().findAtomicReferenceConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testAtomicReferenceConfig_Dynamic() {
-        TestCase<AtomicReferenceConfig> testCase = new TestCase<AtomicReferenceConfig>(new AtomicReferenceConfig(STATIC_NAME),
-                new AtomicReferenceConfig(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addAtomicReferenceConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addAtomicReferenceConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                AtomicReferenceConfig dataConfig = hazelcastInstance.getConfig().findAtomicReferenceConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
             }
         };

@@ -17,8 +17,8 @@
 package com.hazelcast.cp.internal.datastructures.atomicref.operation;
 
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRef;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicReferenceDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRef;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -46,7 +46,7 @@ public class SetOp extends AbstractAtomicRefOp implements IdentifiedDataSerializ
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftAtomicRef ref = getAtomicRef(groupId);
+        AtomicRef ref = getAtomicRef(groupId);
         Data oldValue = ref.get();
         ref.set(newValue);
         return returnOldValue ? oldValue : null;
@@ -54,7 +54,7 @@ public class SetOp extends AbstractAtomicRefOp implements IdentifiedDataSerializ
 
     @Override
     public int getClassId() {
-        return RaftAtomicReferenceDataSerializerHook.SET_OP;
+        return AtomicRefDataSerializerHook.SET_OP;
     }
 
     @Override

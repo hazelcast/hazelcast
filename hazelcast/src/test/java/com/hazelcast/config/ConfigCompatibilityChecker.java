@@ -96,8 +96,6 @@ public class ConfigCompatibilityChecker {
                 new RingbufferConfigChecker());
         checkCompatibleConfigs("atomic-long", c1, c2, c1.getAtomicLongConfigs(), c2.getAtomicLongConfigs(),
                 new AtomicLongConfigChecker());
-        checkCompatibleConfigs("atomic-reference", c1, c2, c1.getAtomicReferenceConfigs(), c2.getAtomicReferenceConfigs(),
-                new AtomicReferenceConfigChecker());
         checkCompatibleConfigs("queue", c1, c2, c1.getQueueConfigs(), c2.getQueueConfigs(), new QueueConfigChecker());
         checkCompatibleConfigs("lock", c1, c2, c1.getLockConfigs(), c2.getLockConfigs(), new LockConfigChecker());
         checkCompatibleConfigs("topic", c1, c2, c1.getTopicConfigs(), c2.getTopicConfigs(), new TopicConfigChecker());
@@ -282,21 +280,6 @@ public class ConfigCompatibilityChecker {
         @Override
         AtomicLongConfig getDefault(Config c) {
             return c.getAtomicLongConfig("default");
-        }
-    }
-
-    private static class AtomicReferenceConfigChecker extends ConfigChecker<AtomicReferenceConfig> {
-        @Override
-        boolean check(AtomicReferenceConfig c1, AtomicReferenceConfig c2) {
-            return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
-        }
-
-        @Override
-        AtomicReferenceConfig getDefault(Config c) {
-            return c.getAtomicReferenceConfig("default");
         }
     }
 

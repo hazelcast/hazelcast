@@ -22,22 +22,20 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
+import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicProxy;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -129,23 +127,6 @@ final class MBeans {
             @Override
             public String getServiceName() {
                 return AtomicLongService.SERVICE_NAME;
-            }
-        },
-
-        ATOMIC_REFERENCE {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new AtomicReferenceMBean((IAtomicReference) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "IAtomicReference";
-            }
-
-            @Override
-            public String getServiceName() {
-                return AtomicReferenceService.SERVICE_NAME;
             }
         },
 

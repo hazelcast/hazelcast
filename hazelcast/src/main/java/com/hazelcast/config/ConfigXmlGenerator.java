@@ -143,7 +143,6 @@ public class ConfigXmlGenerator {
         lockXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
         atomicLongXmlGenerator(gen, config);
-        atomicReferenceXmlGenerator(gen, config);
         executorXmlGenerator(gen, config);
         durableExecutorXmlGenerator(gen, config);
         scheduledExecutorXmlGenerator(gen, config);
@@ -607,17 +606,6 @@ public class ConfigXmlGenerator {
             gen.open("atomic-long", "name", atomicLongConfig.getName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .node("split-brain-protection-ref", atomicLongConfig.getSplitBrainProtectionName())
-                    .close();
-        }
-    }
-
-    private static void atomicReferenceXmlGenerator(XmlGenerator gen, Config config) {
-        Collection<AtomicReferenceConfig> configs = config.getAtomicReferenceConfigs().values();
-        for (AtomicReferenceConfig atomicReferenceConfig : configs) {
-            MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
-            gen.open("atomic-reference", "name", atomicReferenceConfig.getName())
-                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
-                    .node("split-brain-protection-ref", atomicReferenceConfig.getSplitBrainProtectionName())
                     .close();
         }
     }

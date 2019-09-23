@@ -458,13 +458,6 @@ hazelcast:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
 
-  atomic-reference:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-      merge-policy:
-        batch-size: 100
-        class-name: PutIfAbsentMergePolicy
-
   ringbuffer:
     default:
       capacity: 25311

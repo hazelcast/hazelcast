@@ -22,7 +22,6 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -42,7 +41,6 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -108,12 +106,6 @@ public abstract class AbstractSplitBrainProtectionTest {
         factory.terminateAll();
         factory = null;
         cluster = null;
-    }
-
-    protected static AtomicReferenceConfig newAtomicReferenceConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
-        AtomicReferenceConfig config = new AtomicReferenceConfig(REFERENCE_NAME + splitBrainProtectionOn.name());
-        config.setSplitBrainProtectionName(splitBrainProtectionName);
-        return config;
     }
 
     protected static AtomicLongConfig newAtomicLongConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
@@ -234,7 +226,6 @@ public abstract class AbstractSplitBrainProtectionTest {
             config.addSplitBrainProtectionConfig(newSplitBrainProtectionConfig(splitBrainProtectionOn, splitBrainProtectionName));
             splitBrainProtectionNames[i++] = splitBrainProtectionName;
 
-            config.addAtomicReferenceConfig(newAtomicReferenceConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addAtomicLongConfig(newAtomicLongConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addCacheConfig(newCacheConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addCardinalityEstimatorConfig(newEstimatorConfig(splitBrainProtectionOn, splitBrainProtectionName));
@@ -268,10 +259,6 @@ public abstract class AbstractSplitBrainProtectionTest {
                 cluster.instance[0].getRingbuffer(RINGBUFFER_NAME + splitBrainProtectionOn.name()).add(String.valueOf(id));
             }
         }
-    }
-
-    protected IAtomicReference<SplitBrainProtectionTestClass> aref(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
-        return cluster.instance[index].getAtomicReference(REFERENCE_NAME + splitBrainProtectionOn.name());
     }
 
     protected IAtomicLong along(int index, SplitBrainProtectionOn splitBrainProtectionOn) {

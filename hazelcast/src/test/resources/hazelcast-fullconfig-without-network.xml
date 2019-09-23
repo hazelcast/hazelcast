@@ -463,11 +463,6 @@
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-long>
 
-    <atomic-reference name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-    </atomic-reference>
-
     <ringbuffer name="default">
         <capacity>25311</capacity>
         <backup-count>2</backup-count>

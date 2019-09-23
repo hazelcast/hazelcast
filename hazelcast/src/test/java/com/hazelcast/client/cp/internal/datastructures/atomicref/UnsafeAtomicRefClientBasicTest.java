@@ -60,7 +60,7 @@ public class UnsafeAtomicRefClientBasicTest extends UnsafeAtomicRefBasicTest {
 
     @Override
     protected CPGroupId getGroupId(IAtomicReference atomicRef) {
-        return ((RaftAtomicRefProxy) atomicRef).getGroupId();
+        return ((AtomicRefProxy) atomicRef).getGroupId();
     }
 
 

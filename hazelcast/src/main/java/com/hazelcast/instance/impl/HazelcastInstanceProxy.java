@@ -34,7 +34,6 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -182,11 +181,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return getOriginal().getReplicatedMap(name);
-    }
-
-    @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
-        return getOriginal().getAtomicReference(name);
     }
 
     @Override

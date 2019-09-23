@@ -298,15 +298,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleAtomicReference(Node node) {
-        for (Node atomicReferenceNode : childElements(node)) {
-            AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig();
-            atomicReferenceConfig.setName(atomicReferenceNode.getNodeName());
-            handleAtomicReferenceNode(atomicReferenceNode, atomicReferenceConfig);
-        }
-    }
-
-    @Override
     protected void handleMap(Node parentNode) throws Exception {
         for (Node mapNode : childElements(parentNode)) {
             MapConfig mapConfig = new MapConfig();

@@ -38,10 +38,8 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.internal.CPSubsystemImpl;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.lock.ILock;
@@ -276,12 +274,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     public IAtomicLong getAtomicLong(String name) {
         checkNotNull(name, "Retrieving an atomic-long instance with a null name is not allowed!");
         return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
-        checkNotNull(name, "Retrieving an atomic-reference instance with a null name is not allowed!");
-        return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
     }
 
     @Override

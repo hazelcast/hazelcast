@@ -781,33 +781,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readAtomicReference() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  atomic-reference:\n"
-                + "    custom:\n"
-                + "      merge-policy:\n"
-                + "        class-name: CustomMergePolicy\n"
-                + "        batch-size: 23\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
-                + "    default:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule2\n";
-
-        Config config = buildConfig(yaml);
-        AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
-        assertEquals("custom", atomicReferenceConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", atomicReferenceConfig.getSplitBrainProtectionName());
-
-        MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(23, mergePolicyConfig.getBatchSize());
-
-        AtomicReferenceConfig defaultAtomicReferenceConfig = config.getAtomicReferenceConfig("default");
-        assertEquals("customSplitBrainProtectionRule2", defaultAtomicReferenceConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
     public void testCaseInsensitivityOfSettings() {
         String yaml = ""
                 + "hazelcast:\n"
