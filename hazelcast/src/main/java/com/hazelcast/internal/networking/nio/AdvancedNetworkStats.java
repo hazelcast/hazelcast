@@ -22,7 +22,6 @@ import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,7 +35,6 @@ import static com.hazelcast.util.JsonUtil.getObject;
  * for inbound or outbound traffic. Works only when Advanced Networking is enabled and
  * {@link com.hazelcast.config.EndpointConfig} is added for the {@link ProtocolType} in question.
  */
-@PrivateApi
 public final class AdvancedNetworkStats implements JsonSerializable {
 
     private final EnumMap<ProtocolType, AtomicLong> bytesTransceived;
