@@ -885,6 +885,11 @@ public class RaftNodeImpl implements RaftNode {
         schedule(appendRequestBackoffResetTask, appendRequestBackoffTimeoutInMillis);
     }
 
+    private boolean isHeartbeatTimedOut(long timestamp) {
+        long missedHeartbeatThreshold = maxMissedLeaderHeartbeatCount * heartbeatPeriodInMillis;
+        return timestamp + missedHeartbeatThreshold < Clock.currentTimeMillis();
+    }
+
     /**
      * Periodic heartbeat task, which is scheduled on leader only with {@link #heartbeatPeriodInMillis} delay,
      * and sends heartbeat messages (append-entries) if no append-entries request is sent
@@ -898,6 +903,14 @@ public class RaftNodeImpl implements RaftNode {
         @Override
         protected void innerRun() {
             if (state.role() == LEADER) {
+                if (isHeartbeatTimedOut(state.leaderState().majorityAppendRequestAckTimestamp(state.majority()))) {
+                    logger.warning("Demoting to " + FOLLOWER  + " since not received acks from majority recently...");
+                    state.toFollower(state.term());
+                    raftNode.printMemberState();
+                    invalidateFuturesUntil(state.log().lastLogOrSnapshotIndex(), new StaleAppendRequestException(null));
+                    return;
+                }
+
                 if (lastAppendEntriesTimestamp < Clock.currentTimeMillis() - heartbeatPeriodInMillis) {
                     broadcastAppendRequest();
                 }
@@ -928,7 +941,7 @@ public class RaftNodeImpl implements RaftNode {
                 } else if (!raftIntegration.isReachable(leader)) {
                     logger.warning("Current leader " + leader + " is not reachable. Will start new election round...");
                     resetLeaderAndStartElection();
-                } else if (isLeaderHeartbeatTimedOut()) {
+                } else if (isHeartbeatTimedOut(lastAppendEntriesTimestamp)) {
                     // Even though leader endpoint is reachable by raft-integration,
                     // leader itself may be crashed and another member may be restarted on the same endpoint.
                     logger.warning("Current leader " + leader + "'s heartbeats are timed-out. Will start new election round...");
@@ -940,11 +953,6 @@ public class RaftNodeImpl implements RaftNode {
             } finally {
                 scheduleLeaderFailureDetection();
             }
-        }
-
-        private boolean isLeaderHeartbeatTimedOut() {
-            long missedHeartbeatThreshold = maxMissedLeaderHeartbeatCount * heartbeatPeriodInMillis;
-            return lastAppendEntriesTimestamp + missedHeartbeatThreshold < Clock.currentTimeMillis();
         }
 
         final void resetLeaderAndStartElection() {
