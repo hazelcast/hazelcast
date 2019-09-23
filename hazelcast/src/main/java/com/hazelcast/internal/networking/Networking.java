@@ -18,7 +18,6 @@ package com.hazelcast.internal.networking;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.nio.NioNetworking;
-import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -68,13 +67,4 @@ public interface Networking {
      * Shuts down Networking.
      */
     void shutdown();
-
-    /**
-     * Iterates over all registered channels using the provided consumer.
-     * <p>
-     * Implementations of this method must be thread-safe.
-     *
-     * @param consumer consumer used for iterating
-     */
-    void forEachChannel(Consumer<Channel> consumer);
 }

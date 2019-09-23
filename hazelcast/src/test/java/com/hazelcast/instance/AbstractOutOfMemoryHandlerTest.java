@@ -18,7 +18,6 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.AggregateEndpointManager;
 import com.hazelcast.nio.Connection;
@@ -170,16 +169,6 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             if (!dummyMode) {
                 throw new OutOfMemoryError();
             }
-        }
-
-        @Override
-        public AdvancedNetworkStats getInboundNetworkStats() {
-            return null;
-        }
-
-        @Override
-        public AdvancedNetworkStats getOutboundNetworkStats() {
-            return null;
         }
     }
 

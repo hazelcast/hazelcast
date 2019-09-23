@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
@@ -39,6 +39,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.executor.StripedRunnable;
 import com.hazelcast.util.function.Consumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -53,6 +54,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
@@ -64,6 +66,7 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableSet;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class TcpIpEndpointManager
         implements EndpointManager<TcpIpConnection>, Consumer<Packet> {
 
@@ -111,6 +114,19 @@ public class TcpIpEndpointManager
 
     @Probe
     private final MwCounter closedCount = newMwCounter();
+
+    private final BytesTransceivedCounter bytesReceived = new BytesTransceivedCounter(new ChannelBytesSupplier() {
+        @Override
+        public long get(Channel channel) {
+            return channel.bytesRead();
+        }
+    });
+    private final BytesTransceivedCounter bytesSent = new BytesTransceivedCounter(new ChannelBytesSupplier() {
+        @Override
+        public long get(Channel channel) {
+            return channel.bytesWritten();
+        }
+    });
 
     @Probe(name = "acceptedSocketCount", level = MANDATORY)
     private final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<Channel, Boolean>());
@@ -290,6 +306,14 @@ public class TcpIpEndpointManager
         return send(packet, target, null);
     }
 
+    long calculateBytesReceived() {
+        return bytesReceived.calculate();
+    }
+
+    long calculateBytesSent() {
+        return bytesSent.calculate();
+    }
+
     private TcpIpConnectionErrorHandler getErrorHandler(Address endpoint, boolean reset) {
         TcpIpConnectionErrorHandler monitor = ConcurrencyUtil.getOrPutIfAbsent(monitors, endpoint, monitorConstructor);
         if (reset) {
@@ -425,6 +449,10 @@ public class TcpIpEndpointManager
 
             activeConnections.remove(connection);
 
+            // Note: counters must be incremented after activeConnections.remove
+            bytesReceived.onConnectionClose(connection);
+            bytesSent.onConnectionClose(connection);
+
             Address endPoint = connection.getEndPoint();
             if (endPoint != null) {
                 connectionsInProgress.remove(endPoint);
@@ -440,6 +468,45 @@ public class TcpIpEndpointManager
             }
         }
 
+    }
+
+    private class BytesTransceivedCounter {
+
+        private final ChannelBytesSupplier channelBytesSupplier;
+        private final MwCounter bytesTransceivedOnClosed = newMwCounter();
+        private final AtomicLong bytesTransceivedLastCalc = new AtomicLong();
+
+        BytesTransceivedCounter(ChannelBytesSupplier channelBytesSupplier) {
+            this.channelBytesSupplier = channelBytesSupplier;
+        }
+
+        void onConnectionClose(TcpIpConnection connection) {
+            bytesTransceivedOnClosed.inc(connection.getChannel().bytesRead());
+        }
+
+        long calculate() {
+            MutableLong total = MutableLong.valueOf(bytesTransceivedOnClosed.get());
+            for (TcpIpConnection conn : activeConnections) {
+                total.value += channelBytesSupplier.get(conn.getChannel());
+            }
+            // result must be monotonically increasing
+            return updateToMaxAndGet(total.value);
+        }
+
+        private long updateToMaxAndGet(long candidateValue) {
+            long cur;
+            long next;
+            do {
+                cur = bytesTransceivedLastCalc.get();
+                next = Math.max(cur, candidateValue);
+            } while (!bytesTransceivedLastCalc.compareAndSet(cur, next));
+            return next;
+        }
+
+    }
+
+    private interface ChannelBytesSupplier {
+        long get(Channel channel);
     }
 
 }

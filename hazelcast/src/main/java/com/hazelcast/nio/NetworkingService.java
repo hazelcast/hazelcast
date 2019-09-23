@@ -18,7 +18,6 @@ package com.hazelcast.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.concurrent.TimeUnit;
@@ -58,20 +57,6 @@ public interface NetworkingService<T extends Connection> {
      * {@link com.hazelcast.instance.ProtocolType#TEXT} -> {@link com.hazelcast.nio.tcp.TextViewUnifiedEndpointManager}
      */
     EndpointManager<T> getEndpointManager(EndpointQualifier qualifier);
-
-    /**
-     * Gets network stats for incoming traffic. Stats are updated only when Advanced Networking is enabled.
-     *
-     * @return network stats for incoming traffic per-protocol
-     */
-    AdvancedNetworkStats getInboundNetworkStats();
-
-    /**
-     * Gets network stats for outgoing traffic. Stats are updated only when Advanced Networking is enabled.
-     *
-     * @return network stats for outgoing traffic per-protocol
-     */
-    AdvancedNetworkStats getOutboundNetworkStats();
 
     /**
      * Global scheduler for all Endpoints responsible of message retransmission

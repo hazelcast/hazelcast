@@ -50,7 +50,10 @@ public class AdvancedNetworkStatsDTO implements JsonSerializable {
     public JsonObject toJson() {
         JsonObject bytesTransceivedJson = new JsonObject();
         for (ProtocolType type : ProtocolType.valuesAsSet()) {
-            bytesTransceivedJson.add(type.name(), advancedNetworkStats.getBytesTransceivedForProtocol(type));
+            bytesTransceivedJson.add(
+                    type.name(),
+                    advancedNetworkStats != null ? advancedNetworkStats.getBytesTransceivedForProtocol(type) : 0
+            );
         }
 
         JsonObject result = new JsonObject();

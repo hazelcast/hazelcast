@@ -22,11 +22,9 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
-import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -37,7 +35,6 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.UnifiedAggregateEndpointManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.function.Consumer;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,9 +70,6 @@ public class TcpIpNetworkingService
             new ConcurrentHashMap<EndpointQualifier, EndpointManager<TcpIpConnection>>();
     private final TcpIpUnifiedEndpointManager unifiedEndpointManager;
     private final AggregateEndpointManager aggregateEndpointManager;
-    private final boolean advancedNetworkingEnabled;
-    private final AdvancedNetworkStats inboundNetworkStats = new AdvancedNetworkStats();
-    private final AdvancedNetworkStats outboundNetworkStats = new AdvancedNetworkStats();
 
     private final ScheduledExecutorService scheduler;
 
@@ -123,7 +117,6 @@ public class TcpIpNetworkingService
         }
 
         metricsRegistry.scanAndRegister(this, "tcp.connection");
-        advancedNetworkingEnabled = config.getAdvancedNetworkConfig().isEnabled();
     }
 
     private void initEndpointManager(Config config, IOService ioService,
@@ -187,12 +180,12 @@ public class TcpIpNetworkingService
         networking.start();
         startAcceptor();
 
-        if (advancedNetworkingEnabled) {
+        if (unifiedEndpointManager == null) {
             if (metricsRegistryScheduled.compareAndSet(false, true)) {
                 metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
             }
-            inboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesReceived");
-            outboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesSend");
+            aggregateEndpointManager.getInboundNetworkStats().registerMetrics(metricsRegistry, "tcp.bytesReceived");
+            aggregateEndpointManager.getOutboundNetworkStats().registerMetrics(metricsRegistry, "tcp.bytesSend");
         }
     }
 
@@ -204,9 +197,9 @@ public class TcpIpNetworkingService
         live = false;
         logger.finest("Stopping Networking Service");
 
-        if (advancedNetworkingEnabled) {
-            metricsRegistry.deregister(inboundNetworkStats);
-            metricsRegistry.deregister(outboundNetworkStats);
+        if (unifiedEndpointManager == null) {
+            metricsRegistry.deregister(aggregateEndpointManager.getInboundNetworkStats());
+            metricsRegistry.deregister(aggregateEndpointManager.getOutboundNetworkStats());
         }
 
         shutdownAcceptor();
@@ -279,16 +272,6 @@ public class TcpIpNetworkingService
         scheduler.schedule(task, delay, unit);
     }
 
-    @Override
-    public AdvancedNetworkStats getInboundNetworkStats() {
-        return inboundNetworkStats;
-    }
-
-    @Override
-    public AdvancedNetworkStats getOutboundNetworkStats() {
-        return outboundNetworkStats;
-    }
-
     private void startAcceptor() {
         if (acceptor != null) {
             logger.warning("TcpIpAcceptor is already running! Shutting down old acceptor...");
@@ -318,37 +301,21 @@ public class TcpIpNetworkingService
 
         @Override
         public void run() {
-            final NetworkStatsAccumulator accumulator = new NetworkStatsAccumulator();
-            for (final ProtocolType protocolType : ProtocolType.valuesAsSet()) {
-                accumulator.reset(protocolType);
-                networking.forEachChannel(accumulator);
-                inboundNetworkStats.setBytesTransceivedForProtocol(protocolType, accumulator.bytesRead);
-                outboundNetworkStats.setBytesTransceivedForProtocol(protocolType, accumulator.bytesWritten);
+            for (ProtocolType type : ProtocolType.valuesAsSet()) {
+                long bytesReceived = 0;
+                long bytesSent = 0;
+
+                for (EndpointManager endpointManager : endpointManagers.values()) {
+                    TcpIpEndpointManager tcpIpEndpointManager = (TcpIpEndpointManager) endpointManager;
+                    if (type == tcpIpEndpointManager.getEndpointQualifier().getType()) {
+                        bytesReceived += tcpIpEndpointManager.calculateBytesReceived();
+                        bytesSent += tcpIpEndpointManager.calculateBytesSent();
+                    }
+                }
+
+                aggregateEndpointManager.getInboundNetworkStats().setBytesTransceivedForProtocol(type, bytesReceived);
+                aggregateEndpointManager.getOutboundNetworkStats().setBytesTransceivedForProtocol(type, bytesSent);
             }
-        }
-
-    }
-
-    private static class NetworkStatsAccumulator implements Consumer<Channel> {
-
-        long bytesRead;
-        long bytesWritten;
-        private ProtocolType protocolType;
-
-        public void reset(ProtocolType protocolType) {
-            bytesRead = 0;
-            bytesWritten = 0;
-            this.protocolType = protocolType;
-        }
-
-        @Override
-        public void accept(Channel channel) {
-            ProtocolType type = (ProtocolType) channel.attributeMap().get(ProtocolType.class);
-            if (type == null || type != protocolType) {
-                return;
-            }
-            bytesRead += channel.bytesRead();
-            bytesWritten += channel.bytesWritten();
         }
 
     }

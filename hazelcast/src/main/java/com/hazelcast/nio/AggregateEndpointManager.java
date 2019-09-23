@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.util.Collection;
@@ -26,5 +27,19 @@ public interface AggregateEndpointManager
     Collection<TcpIpConnection> getConnections();
 
     Collection<TcpIpConnection> getActiveConnections();
+
+    /**
+     * Gets network stats for incoming traffic. Stats are available only when Advanced Networking is enabled.
+     *
+     * @return network stats for incoming traffic per-protocol or {@code null} if Advanced Networking is disabled
+     */
+    AdvancedNetworkStats getInboundNetworkStats();
+
+    /**
+     * Gets network stats for outgoing traffic. Stats are available only when Advanced Networking is enabled.
+     *
+     * @return network stats for outgoing traffic per-protocol or {@code null} if Advanced Networking is disabled
+     */
+    AdvancedNetworkStats getOutboundNetworkStats();
 
 }

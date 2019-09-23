@@ -128,16 +128,6 @@ public class FirewallingNetworkingService
         packetConsumer.accept(packet);
     }
 
-    @Override
-    public AdvancedNetworkStats getInboundNetworkStats() {
-        return delegate.getInboundNetworkStats();
-    }
-
-    @Override
-    public AdvancedNetworkStats getOutboundNetworkStats() {
-        return delegate.getOutboundNetworkStats();
-    }
-
     private class DelayedPacketTask implements Runnable {
 
         Packet packet;
@@ -202,6 +192,16 @@ public class FirewallingNetworkingService
         @Override
         public void addConnectionListener(ConnectionListener listener) {
             delegate.addConnectionListener(listener);
+        }
+
+        @Override
+        public AdvancedNetworkStats getInboundNetworkStats() {
+            return null;
+        }
+
+        @Override
+        public AdvancedNetworkStats getOutboundNetworkStats() {
+            return null;
         }
     }
 

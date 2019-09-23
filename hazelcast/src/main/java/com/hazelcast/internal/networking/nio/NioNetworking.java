@@ -32,7 +32,6 @@ import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
-import com.hazelcast.util.function.Consumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -274,13 +273,6 @@ public final class NioNetworking implements Networking {
                 errorHandler,
                 loggingService.getLogger(NioOutboundPipeline.class),
                 ioBalancer);
-    }
-
-    @Override
-    public void forEachChannel(Consumer<Channel> consumer) {
-        for (Channel ch : channels) {
-            consumer.accept(ch);
-        }
     }
 
     private NioInboundPipeline newInboundPipeline(NioChannel channel) {

@@ -22,7 +22,6 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,7 +43,7 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
     private HazelcastInstance instance2;
 
     @Test
-    public void testStats_advancedNetworkEnabled() {
+    public void testStats_advancedNetworkEnabledAndConnectionActive() {
         Config config = createCompleteMultiSocketConfig();
         configureTcpIpConfig(config);
         enableMetrics(config);
@@ -63,6 +62,29 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
 
         assertNonMemberNetworkStatsAreZero(instance1);
         assertNonMemberNetworkStatsAreZero(instance2);
+    }
+
+    @Test
+    public void testStats_advancedNetworkEnabledAndConnectionClosed() {
+        Config config = createCompleteMultiSocketConfig();
+        configureTcpIpConfig(config);
+        enableMetrics(config);
+        instance1 = newHazelcastInstance(config);
+        instance2 = startSecondInstance();
+        assertClusterSizeEventually(2, instance1, instance2);
+
+        instance2.shutdown();
+        assertClusterSizeEventually(1, instance1);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(getBytesReceived(instance1, MEMBER) > 0);
+                assertTrue(getBytesSent(instance1, MEMBER) > 0);
+            }
+        });
+
+        assertNonMemberNetworkStatsAreZero(instance1);
     }
 
     @Test
@@ -106,17 +128,19 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
     }
 
     private long getBytesReceived(HazelcastInstance instance, ProtocolType protocolType) {
-        return getNode(instance)
+        AdvancedNetworkStats inboundStats = getNode(instance)
                 .getNetworkingService()
-                .getInboundNetworkStats()
-                .getBytesTransceivedForProtocol(protocolType);
+                .getAggregateEndpointManager()
+                .getInboundNetworkStats();
+        return inboundStats != null ? inboundStats.getBytesTransceivedForProtocol(protocolType) : 0;
     }
 
     private long getBytesSent(HazelcastInstance instance, ProtocolType protocolType) {
-        return getNode(instance)
+        AdvancedNetworkStats outboundStats = getNode(instance)
                 .getNetworkingService()
-                .getInboundNetworkStats()
-                .getBytesTransceivedForProtocol(protocolType);
+                .getAggregateEndpointManager()
+                .getOutboundNetworkStats();
+        return outboundStats != null ? outboundStats.getBytesTransceivedForProtocol(protocolType) : 0;
     }
 
     private void enableMetrics(Config config) {

@@ -397,14 +397,4 @@ class MockNetworkingService
         scheduler.shutdownNow();
     }
 
-    @Override
-    public AdvancedNetworkStats getInboundNetworkStats() {
-        return inboundNetworkStats;
-    }
-
-    @Override
-    public AdvancedNetworkStats getOutboundNetworkStats() {
-        return outboundNetworkStats;
-    }
-
 }
