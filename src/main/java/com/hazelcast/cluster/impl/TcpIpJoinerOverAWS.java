@@ -22,7 +22,7 @@ import com.hazelcast.aws.AwsDiscoveryStrategy;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Collection;
 
