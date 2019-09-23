@@ -28,7 +28,6 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -313,19 +312,6 @@ public interface HazelcastInstance {
      */
     @Deprecated
     IAtomicLong getAtomicLong(String name);
-
-    /**
-     * Creates or returns a cluster-wide atomic reference. Hazelcast {@link IAtomicReference} is distributed
-     * implementation of <code>java.util.concurrent.atomic.AtomicReference</code>.
-     *
-     * @param name name of the {@link IAtomicReference} proxy
-     * @return {@link IAtomicReference} proxy for the given name
-     * @deprecated This implementation may lose strong consistency in case of network failures
-     * or server failures. Please use {@link CPSubsystem#getAtomicReference(String)} instead.
-     * This method will be removed in Hazelcast 4.0.
-     */
-    @Deprecated
-    <E> IAtomicReference<E> getAtomicReference(String name);
 
     /**
      * Returns all {@link DistributedObject}s, that is all maps, queues,

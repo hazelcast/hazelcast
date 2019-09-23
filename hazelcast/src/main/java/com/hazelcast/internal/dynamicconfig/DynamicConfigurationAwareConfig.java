@@ -18,7 +18,6 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -57,7 +56,6 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
-import com.hazelcast.internal.config.AtomicReferenceConfigReadOnly;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
@@ -617,43 +615,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     private AtomicLongConfig getAtomicLongConfigInternal(String name, String fallbackName) {
         return (AtomicLongConfig) configSearcher.getConfig(name, fallbackName, supplierFor(AtomicLongConfig.class));
-    }
-
-    @Override
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
-        return new AtomicReferenceConfigReadOnly(getAtomicReferenceConfigInternal(name, "default"));
-    }
-
-    @Override
-    public AtomicReferenceConfig getAtomicReferenceConfig(String name) {
-        return getAtomicReferenceConfigInternal(name, name);
-    }
-
-    @Override
-    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getAtomicReferenceConfigs(),
-                atomicReferenceConfig.getName(), atomicReferenceConfig);
-        if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(atomicReferenceConfig);
-        }
-        return this;
-    }
-
-    @Override
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
-        Map<String, AtomicReferenceConfig> staticConfigs = staticConfig.getAtomicReferenceConfigs();
-        Map<String, AtomicReferenceConfig> dynamicConfigs = configurationService.getAtomicReferenceConfigs();
-
-        return aggregate(staticConfigs, dynamicConfigs);
-    }
-
-    @Override
-    public Config setAtomicReferenceConfigs(Map<String, AtomicReferenceConfig> atomicReferenceConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    private AtomicReferenceConfig getAtomicReferenceConfigInternal(String name, String fallbackName) {
-        return (AtomicReferenceConfig) configSearcher.getConfig(name, fallbackName, supplierFor(AtomicReferenceConfig.class));
     }
 
     @Override

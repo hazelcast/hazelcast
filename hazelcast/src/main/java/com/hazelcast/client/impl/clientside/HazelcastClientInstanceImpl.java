@@ -71,21 +71,19 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
+import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
@@ -114,6 +112,7 @@ import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
@@ -142,7 +141,6 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.internal.util.ServiceLoader;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -625,12 +623,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public PNCounter getPNCounter(String name) {
         checkNotNull(name, "Retrieving a PN counter instance with a null name is not allowed!");
         return getDistributedObject(PNCounterService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
-        checkNotNull(name, "Retrieving an atomic-reference instance with a null name is not allowed!");
-        return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
     }
 
     @Override

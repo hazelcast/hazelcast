@@ -35,7 +35,6 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -193,11 +192,6 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public IAtomicLong getAtomicLong(String name) {
         return getClient().getAtomicLong(name);
-    }
-
-    @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
-        return getClient().getAtomicReference(name);
     }
 
     @Override

@@ -20,7 +20,6 @@ import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -199,7 +198,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> lockManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> ringbufferManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> atomicLongManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> atomicReferenceManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> reliableTopicManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> listManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> setManagedMap;
@@ -228,7 +226,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.lockManagedMap = createManagedMap("lockConfigs");
             this.ringbufferManagedMap = createManagedMap("ringbufferConfigs");
             this.atomicLongManagedMap = createManagedMap("atomicLongConfigs");
-            this.atomicReferenceManagedMap = createManagedMap("atomicReferenceConfigs");
             this.reliableTopicManagedMap = createManagedMap("reliableTopicConfigs");
             this.listManagedMap = createManagedMap("listConfigs");
             this.setManagedMap = createManagedMap("setConfigs");
@@ -243,7 +240,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.splitBrainProtectionManagedMap = createManagedMap("splitBrainProtectionConfigs");
             this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
             this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
-            this.endpointConfigsMap = new ManagedMap<EndpointQualifier, AbstractBeanDefinition>();
+            this.endpointConfigsMap = new ManagedMap<>();
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -286,8 +283,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleRingbuffer(node);
                     } else if ("atomic-long".equals(nodeName)) {
                         handleAtomicLong(node);
-                    } else if ("atomic-reference".equals(nodeName)) {
-                        handleAtomicReference(node);
                     } else if ("reliable-topic".equals(nodeName)) {
                         handleReliableTopic(node);
                     } else if ("map".equals(nodeName)) {
@@ -1111,20 +1106,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             atomicLongManagedMap.put(getAttribute(node, "name"), atomicLongConfigBuilder.getBeanDefinition());
-        }
-
-        public void handleAtomicReference(Node node) {
-            BeanDefinitionBuilder atomicReferenceConfigBuilder = createBeanBuilder(AtomicReferenceConfig.class);
-            fillAttributeValues(node, atomicReferenceConfigBuilder);
-            for (Node childNode : childElements(node)) {
-                String nodeName = cleanNodeName(childNode);
-                if ("merge-policy".equals(nodeName)) {
-                    handleMergePolicyConfig(childNode, atomicReferenceConfigBuilder);
-                } else if ("split-brain-protection-ref".equals(nodeName)) {
-                    atomicReferenceConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
-                }
-            }
-            atomicReferenceManagedMap.put(getAttribute(node, "name"), atomicReferenceConfigBuilder.getBeanDefinition());
         }
 
         public void handleQueue(Node node) {

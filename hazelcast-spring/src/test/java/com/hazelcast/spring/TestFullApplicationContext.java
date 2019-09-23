@@ -24,7 +24,7 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
@@ -58,7 +58,6 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -100,18 +99,18 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
-import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
@@ -172,10 +171,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -603,17 +602,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MergePolicyConfig mergePolicyConfig = testAtomicLong.getMergePolicyConfig();
         assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(2342, mergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void testAtomicReferenceConfig() {
-        AtomicReferenceConfig testAtomicReference = config.getAtomicReferenceConfig("testAtomicReference");
-        assertNotNull(testAtomicReference);
-        assertEquals("testAtomicReference", testAtomicReference.getName());
-
-        MergePolicyConfig mergePolicyConfig = testAtomicReference.getMergePolicyConfig();
-        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(4223, mergePolicyConfig.getBatchSize());
     }
 
     @Test

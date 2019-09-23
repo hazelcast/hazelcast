@@ -17,7 +17,6 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -138,13 +137,6 @@ public interface ConfigurationService {
      * @return AtomicLong Config or {@code null} when requested AtomicLong configuration does not exist
      */
     AtomicLongConfig findAtomicLongConfig(String name);
-
-    /**
-     * Finds existing AtomicReference config.
-     *
-     * @return AtomicReference Config or {@code null} when requested AtomicReference configuration does not exist
-     */
-    AtomicReferenceConfig findAtomicReferenceConfig(String name);
 
     /**
      * Finds existing Lock config.
@@ -272,13 +264,6 @@ public interface ConfigurationService {
      * @return registered AtomicLong configurations
      */
     Map<String, AtomicLongConfig> getAtomicLongConfigs();
-
-    /**
-     * Returns all registered AtomicReference configurations.
-     *
-     * @return registered AtomicReference configurations
-     */
-    Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs();
 
     /**
      * Returns all registered topic configurations.

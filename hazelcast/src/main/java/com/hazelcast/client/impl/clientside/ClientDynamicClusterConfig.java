@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicLongConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicReferenceConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
@@ -47,7 +46,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -337,16 +335,6 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddPNCounterConfigCodec.encodeRequest(
                 pnCounterConfig.getName(), pnCounterConfig.getReplicaCount(),
                 pnCounterConfig.isStatisticsEnabled(), pnCounterConfig.getSplitBrainProtectionName());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
-        ClientMessage request = DynamicConfigAddAtomicReferenceConfigCodec.encodeRequest(
-                atomicReferenceConfig.getName(), atomicReferenceConfig.getSplitBrainProtectionName(),
-                atomicReferenceConfig.getMergePolicyConfig().getPolicy(),
-                atomicReferenceConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -776,26 +764,6 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config setCardinalityEstimatorConfigs(
             Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicReferenceConfig getAtomicReferenceConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setAtomicReferenceConfigs(Map<String, AtomicReferenceConfig> atomicReferenceConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

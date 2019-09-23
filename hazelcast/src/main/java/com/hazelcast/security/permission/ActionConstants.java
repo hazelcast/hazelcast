@@ -22,14 +22,13 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -170,13 +169,7 @@ public final class ActionConstants {
                 return new ReplicatedMapPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(AtomicReferenceService.SERVICE_NAME, new PermissionFactory() {
-            @Override
-            public Permission create(String name, String... actions) {
-                return new AtomicReferencePermission(name, actions);
-            }
-        });
-        PERMISSION_FACTORY_MAP.put(RaftAtomicRefService.SERVICE_NAME, new PermissionFactory() {
+        PERMISSION_FACTORY_MAP.put(AtomicRefService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new AtomicReferencePermission(name, actions);

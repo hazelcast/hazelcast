@@ -17,7 +17,6 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -94,11 +93,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public AtomicLongConfig findAtomicLongConfig(String name) {
-        return null;
-    }
-
-    @Override
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
         return null;
     }
 
@@ -184,11 +178,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
         return emptyMap();
     }
 

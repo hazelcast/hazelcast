@@ -57,7 +57,6 @@
                 <xs:element name="lock" type="lock" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="atomic-long" type="atomic-long" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="atomic-reference" type="atomic-reference" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
@@ -1260,29 +1259,6 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the IAtomicLong. Required.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string"/>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
-    <xs:complexType name="atomic-reference">
-        <xs:all>
-            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                        You should set the split-brain-protection-ref's value as the split brain protection's name.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="name" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of the IAtomicReference. Required.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>

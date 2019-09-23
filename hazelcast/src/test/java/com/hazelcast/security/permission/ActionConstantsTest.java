@@ -21,7 +21,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
@@ -158,7 +158,7 @@ public class ActionConstantsTest {
 
     @Test
     public void getPermission_AtomicReference() {
-        Permission permission = ActionConstants.getPermission("foo", RaftAtomicRefService.SERVICE_NAME);
+        Permission permission = ActionConstants.getPermission("foo", AtomicRefService.SERVICE_NAME);
 
         assertNotNull(permission);
         assertTrue(permission instanceof AtomicReferencePermission);

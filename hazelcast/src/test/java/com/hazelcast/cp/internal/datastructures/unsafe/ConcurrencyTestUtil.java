@@ -16,18 +16,13 @@
 
 package com.hazelcast.cp.internal.datastructures.unsafe;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongContainer;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongContainer;
+import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.test.HazelcastTestSupport.getFirstBackupInstance;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
@@ -67,39 +62,5 @@ public final class ConcurrencyTestUtil {
         AtomicLongService service = getNodeEngineImpl(backupInstance).getService(AtomicLongService.SERVICE_NAME);
         AtomicLongContainer container = service.getLongContainer(atomicLongName);
         return new AtomicLong(container.get());
-    }
-
-    /**
-     * Returns the backup instance of an {@link IAtomicReference} by a given atomic reference name.
-     * <p>
-     * Note: Returns the backups from the first replica index.
-     *
-     * @param instances       the {@link HazelcastInstance} array to gather the data from
-     * @param atomicReference the {@link IAtomicReference} to retrieve the backup from
-     * @return the backup {@link AtomicReference}
-     */
-    public static <E> AtomicReference<E> getAtomicReferenceBackup(HazelcastInstance[] instances,
-                                                                  IAtomicReference<E> atomicReference) {
-        int partitionId = getPartitionIdViaReflection(atomicReference);
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        return getAtomicReferenceBackup(backupInstance, atomicReference.getName());
-    }
-
-    /**
-     * Returns the backup instance of an {@link IAtomicReference} by a given atomic reference name.
-     * <p>
-     * Note: You have to provide the {@link HazelcastInstance} you want to retrieve the backups from.
-     * Use {@link HazelcastTestSupport#getBackupInstance} to retrieve the backup instance for a given replica index.
-     *
-     * @param backupInstance      the {@link HazelcastInstance} to retrieve the backup {@link AtomicLong} from
-     * @param atomicReferenceName the atomic reference name
-     * @return the backup {@link AtomicReference}
-     */
-    public static <E> AtomicReference<E> getAtomicReferenceBackup(HazelcastInstance backupInstance, String atomicReferenceName) {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(backupInstance);
-        AtomicReferenceService service = nodeEngine.getService(AtomicReferenceService.SERVICE_NAME);
-        AtomicReferenceContainer container = service.getReferenceContainer(atomicReferenceName);
-        E value = nodeEngine.getSerializationService().toObject(container.get());
-        return new AtomicReference<E>(value);
     }
 }
