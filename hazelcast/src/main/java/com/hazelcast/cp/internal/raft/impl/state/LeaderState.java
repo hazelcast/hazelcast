@@ -17,7 +17,9 @@
 package com.hazelcast.cp.internal.raft.impl.state;
 
 import com.hazelcast.core.Endpoint;
+import com.hazelcast.util.Clock;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,5 +81,21 @@ public class LeaderState {
 
     public Map<Endpoint, FollowerState> getFollowerStates() {
         return followerStates;
+    }
+
+    /**
+     * Returns the earliest append response ack timestamp of the majority nodes
+     */
+    public long majorityAppendRequestAckTimestamp(int majority) {
+        long[] ackTimes = new long[followerStates.size() + 1];
+        int i = 0;
+        ackTimes[i] = Clock.currentTimeMillis();
+        for (FollowerState followerState : followerStates.values()) {
+            ackTimes[++i] = followerState.appendRequestAckTimestamp();
+        }
+
+        Arrays.sort(ackTimes);
+
+        return ackTimes[ackTimes.length - majority];
     }
 }

@@ -22,7 +22,6 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -37,6 +36,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -157,8 +157,9 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
     @Override
     protected Config createConfig(int cpNodeCount, int groupSize) {
         String callTimeoutStr = String.valueOf(SECONDS.toMillis(callTimeoutSeconds));
-        return super.createConfig(cpNodeCount, groupSize)
-                    .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), callTimeoutStr);
+        Config config = super.createConfig(cpNodeCount, groupSize);
+        config.getCPSubsystemConfig().getRaftAlgorithmConfig().setMaxMissedLeaderHeartbeatCount(10);
+        return config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), callTimeoutStr);
     }
 
 }

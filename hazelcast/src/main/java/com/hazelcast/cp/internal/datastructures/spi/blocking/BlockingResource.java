@@ -111,12 +111,15 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
         while (iter.hasNext()) {
             WaitKeyContainer<W> container = iter.next();
             if (container.invocationUid().equals(invocationUid)) {
-                expired.add(container.key());
-                expired.addAll(container.retries());
+                expired.addAll(container.keyAndRetries());
                 iter.remove();
+                onWaitKeyExpire(container.key());
                 return;
             }
         }
+    }
+
+    protected void onWaitKeyExpire(W waitKey) {
     }
 
     protected final Iterator<WaitKeyContainer<W>> waitKeyContainersIterator() {
@@ -132,8 +135,7 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
         while (iter.hasNext()) {
             WaitKeyContainer<W> container = iter.next();
             if (container.sessionId() == sessionId) {
-                expiredWaitKeys.add(container.key().commitIndex());
-                for (W retry : container.retries()) {
+                for (W retry : container.keyAndRetries()) {
                     expiredWaitKeys.add(retry.commitIndex());
                 }
 
