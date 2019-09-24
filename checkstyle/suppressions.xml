@@ -221,15 +221,10 @@
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]ByteBufferObjectDataOutput"/>
     <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]nio[\\/]CipherHelper"/>
-    <suppress checks="MagicNumber|NPathComplexity" files="com[\\/]hazelcast[\\/]nio[\\/]ClassLoaderUtil"/>
     <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]DefaultPortableReader"/>
     <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]DefaultPortableWriter"/>
     <suppress checks="MethodCount|MagicNumber" files="com[\\/]hazelcast[\\/]nio[\\/]DynamicByteBuffer"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]IOService"/>
-    <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]nio[\\/]IOUtil"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]NodeIOService"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]DefaultPortableReader"/>
-    <suppress checks="MagicNumber|MethodCount|NPathComplexity" files="com[\\/]hazelcast[\\/]nio[\\/]Packet"/>
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]nio[\\/]tcp[\\/]nonblocking[\\/]NonBlockingSocketReader"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]AbstractSerializationService"/>

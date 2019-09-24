@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.proxy.txn;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.internal.util.ExceptionUtil.RuntimeExceptionFactory;
 

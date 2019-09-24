@@ -28,7 +28,7 @@ import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.AbstractDistributedObject;

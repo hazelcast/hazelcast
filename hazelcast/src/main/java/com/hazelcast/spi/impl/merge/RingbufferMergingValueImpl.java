@@ -26,8 +26,8 @@ import com.hazelcast.internal.serialization.SerializationServiceAware;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.readObject;
-import static com.hazelcast.nio.IOUtil.writeObject;
+import static com.hazelcast.internal.nio.IOUtil.readObject;
+import static com.hazelcast.internal.nio.IOUtil.writeObject;
 
 /**
  * Implementation of {@link RingbufferMergeTypes}.

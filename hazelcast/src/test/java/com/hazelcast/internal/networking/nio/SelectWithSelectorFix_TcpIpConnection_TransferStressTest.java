@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.nio.tcp.TcpIpConnection_AbstractTransferStressTest;
+import com.hazelcast.internal.nio.tcp.TcpIpConnection_AbstractTransferStressTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Before;

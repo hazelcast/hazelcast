@@ -40,7 +40,7 @@ import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;

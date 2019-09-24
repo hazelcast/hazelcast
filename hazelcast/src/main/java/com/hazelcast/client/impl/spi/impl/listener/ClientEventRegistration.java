@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.spi.impl.listener;
 
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 

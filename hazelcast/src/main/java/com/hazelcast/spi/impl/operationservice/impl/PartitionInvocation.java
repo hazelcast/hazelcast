@@ -22,7 +22,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;

@@ -17,8 +17,8 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -46,7 +46,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
-import static com.hazelcast.nio.IOUtil.newObjectInputStream;
+import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static java.lang.Math.max;
 
 

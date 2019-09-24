@@ -17,7 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.eviction.Expirable;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.util.AbstractMap;
 import java.util.Collections;

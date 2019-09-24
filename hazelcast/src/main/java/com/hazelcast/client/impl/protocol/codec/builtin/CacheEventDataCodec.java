@@ -20,7 +20,7 @@ import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.ListIterator;

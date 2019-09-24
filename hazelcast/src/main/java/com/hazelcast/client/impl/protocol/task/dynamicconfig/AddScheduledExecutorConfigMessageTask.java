@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecuto
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddScheduledExecutorConfigMessageTask

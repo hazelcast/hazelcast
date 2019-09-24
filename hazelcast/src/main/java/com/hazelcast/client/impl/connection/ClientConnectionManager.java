@@ -20,8 +20,8 @@ import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListenable;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListenable;
 
 import java.io.IOException;
 import java.util.Collection;

@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.spi.impl.listener;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.internal.nio.ConnectionListener;
 
 public class NonSmartClientListenerService extends AbstractClientListenerService implements ConnectionListener {
 

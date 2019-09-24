@@ -20,8 +20,8 @@ import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.NetworkingService;
-import com.hazelcast.nio.tcp.FirewallingNetworkingService;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 
 import java.util.Collections;
 

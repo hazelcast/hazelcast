@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.nio.IOUtil.drainTo;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.drainTo;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static java.io.File.separator;

@@ -20,8 +20,8 @@ import com.hazelcast.internal.util.ConcurrencyDetection;
 
 import java.util.concurrent.atomic.AtomicLongArray;
 
-import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.CACHE_LINE_LENGTH;
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.QuickMath.modPowerOfTwo;
 

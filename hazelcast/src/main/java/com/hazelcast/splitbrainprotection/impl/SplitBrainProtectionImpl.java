@@ -39,7 +39,7 @@ import com.hazelcast.spi.impl.operationservice.SplitBrainProtectionCheckAwareOpe
 
 import java.util.Collection;
 
-import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**

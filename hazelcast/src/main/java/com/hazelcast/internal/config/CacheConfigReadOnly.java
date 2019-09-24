@@ -25,7 +25,7 @@ import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import javax.annotation.Nonnull;
 import javax.cache.configuration.CacheEntryListenerConfiguration;

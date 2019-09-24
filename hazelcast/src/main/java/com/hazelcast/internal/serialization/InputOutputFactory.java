@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization;
 
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.nio.ByteOrder;
