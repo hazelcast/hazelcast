@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -55,51 +56,84 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
         }
     }
 
+    /**
+     * Creates a new {@code InternalCompletableFuture} that is already completed with the value given
+     * as argument as its completion value.
+     *
+     * @param result    completion value
+     * @return          a completed future with the given {@code result} as its completion value.
+     */
     public static InternalCompletableFuture newCompletedFuture(Object result) {
         InternalCompletableFuture future = new InternalCompletableFuture();
         future.complete(result);
         return future;
     }
 
-    public static InternalCompletableFuture newCompletedFuture(Object result, SerializationService serializationService) {
-        InternalCompletableFuture future =
-                new DelegatingCompletableFuture(serializationService, newCompletedFuture(result));
+    /**
+     * Creates a new {@code InternalCompletableFuture} that is already completed with the value given
+     * as argument as its completion value. If the given {@code result} is of type {@link Data}, then
+     * it is deserialized before being passed on as argument to a {@code Function}, {@code Consumer},
+     * {@code BiFunction} or {@code BiConsumer} callback or before being returned from one of the methods
+     * which return the future's value in a blocking way.
+     *
+     * @param result                the result of the completed future.
+     * @param serializationService  instance of {@link SerializationService}
+     * @return                      a new {@code InternalCompletableFuture} completed with the given value
+     *                              as result, optionally deserializing the completion value
+     */
+    public static InternalCompletableFuture newCompletedFuture(Object result,
+                                                               @Nonnull SerializationService serializationService) {
+        InternalCompletableFuture future = new DeserializingCompletableFuture(serializationService, true);
+        future.complete(result);
         return future;
     }
 
-    public static InternalCompletableFuture newCompletedFuture(Object result, Executor defaultAsyncExecutor) {
+    /**
+     * Creates a new {@code InternalCompletableFuture} that is already completed with the value given
+     * as argument as its completion value and the provided {@code defaultAsyncExecutor} as the default
+     * executor for execution of callbacks registered with default async methods (i.e. *Async methods
+     * which do not have an explicit {@link Executor} argument).
+     *
+     * @param result                the result of the completed future.
+     * @param serializationService  default async callbacks executor
+     * @return                      a new {@code InternalCompletableFuture} completed with the given value
+     *                              as result
+     */
+    public static InternalCompletableFuture newCompletedFuture(Object result,
+                                                               @Nonnull Executor defaultAsyncExecutor) {
         DeserializingCompletableFuture future = new DeserializingCompletableFuture(defaultAsyncExecutor);
         future.complete(result);
         return future;
     }
 
     public static InternalCompletableFuture newCompletedFuture(Object result,
-                                                               SerializationService serializationService,
-                                                               Executor defaultAsyncExecutor) {
+                                                               @Nonnull SerializationService serializationService,
+                                                               @Nonnull Executor defaultAsyncExecutor) {
         DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService,
                 defaultAsyncExecutor, true);
         future.complete(result);
         return future;
     }
 
-    public static InternalCompletableFuture completedExceptionally(Throwable t) {
+    public static InternalCompletableFuture completedExceptionally(@Nonnull Throwable t) {
         InternalCompletableFuture future = new InternalCompletableFuture();
         future.completeExceptionally(t);
         return future;
     }
 
-    public static InternalCompletableFuture completedExceptionally(Throwable t, Executor defaultAsyncExecutor) {
+    public static InternalCompletableFuture completedExceptionally(@Nonnull Throwable t,
+                                                                   @Nonnull Executor defaultAsyncExecutor) {
         DeserializingCompletableFuture future = new DeserializingCompletableFuture(defaultAsyncExecutor);
         future.completeExceptionally(t);
         return future;
     }
 
-    public static <U> InternalCompletableFuture<U> withExecutor(Executor defaultAsyncExecutor) {
+    public static <U> InternalCompletableFuture<U> withExecutor(@Nonnull Executor defaultAsyncExecutor) {
         return new DeserializingCompletableFuture<>(defaultAsyncExecutor);
     }
 
-    public static <U> InternalCompletableFuture<U> deserializingFuture(SerializationService serializationService,
-                                                                       InternalCompletableFuture<Data> future) {
+    public static <U> InternalCompletableFuture<U> newDelegatingFuture(@Nonnull SerializationService serializationService,
+                                                                       @Nonnull InternalCompletableFuture<Data> future) {
         return new DelegatingCompletableFuture<U>(serializationService, future);
     }
 
@@ -112,14 +146,11 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
      *          {@code Throwable} argument is {@code null}
      */
     public static <U> BiConsumer<U, ? super Throwable> completingCallback(CompletableFuture future) {
-        return new BiConsumer<U, Throwable>() {
-            @Override
-            public void accept(U u, Throwable throwable) {
-                if (throwable == null) {
-                    future.complete(u);
-                } else {
-                    future.completeExceptionally(throwable);
-                }
+        return (BiConsumer<U, Throwable>) (u, throwable) -> {
+            if (throwable == null) {
+                future.complete(u);
+            } else {
+                future.completeExceptionally(throwable);
             }
         };
     }

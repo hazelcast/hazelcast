@@ -85,8 +85,8 @@ import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
-import static com.hazelcast.spi.impl.InternalCompletableFuture.deserializingFuture;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newDelegatingFuture;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -335,7 +335,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public InternalCompletableFuture<V> getAsync(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return deserializingFuture(serializationService, getAsyncInternal(key));
+        return newDelegatingFuture(serializationService, getAsyncInternal(key));
     }
 
     @Override
@@ -359,7 +359,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return deserializingFuture(
+        return newDelegatingFuture(
                 serializationService,
                 putAsyncInternal(key, valueData, ttl, timeunit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS));
     }
@@ -374,7 +374,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return deserializingFuture(
+        return newDelegatingFuture(
                 serializationService,
                 putAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit));
     }
@@ -391,7 +391,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return deserializingFuture(
+        return newDelegatingFuture(
                 serializationService,
                 setAsyncInternal(key, valueData, ttl, timeunit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS));
     }
@@ -407,7 +407,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return deserializingFuture(
+        return newDelegatingFuture(
                 serializationService,
                 setAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit));
     }
@@ -416,7 +416,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public InternalCompletableFuture<V> removeAsync(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return deserializingFuture(serializationService, removeAsyncInternal(key));
+        return newDelegatingFuture(serializationService, removeAsyncInternal(key));
     }
 
     @Override
@@ -836,7 +836,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(entryProcessor);
 
         InternalCompletableFuture future = executeOnKeyInternal(key, entryProcessor, null);
-        return deserializingFuture(serializationService, future);
+        return newDelegatingFuture(serializationService, future);
     }
 
     @Override

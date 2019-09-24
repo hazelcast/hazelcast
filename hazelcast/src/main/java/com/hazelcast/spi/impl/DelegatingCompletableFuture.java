@@ -20,12 +20,12 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -59,32 +59,18 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         }
     };
 
-    // Default executor for async callbacks: ForkJoinPool.commonPool() or a thread-per-task executor when
-    // the common pool does not support parallelism
-    private static final Executor DEFAULT_ASYNC_EXECUTOR;
-
-    static {
-        Executor asyncExecutor;
-        if (ForkJoinPool.getCommonPoolParallelism() > 1) {
-            asyncExecutor = ForkJoinPool.commonPool();
-        } else {
-            asyncExecutor = command -> new Thread(command).start();
-        }
-        DEFAULT_ASYNC_EXECUTOR = asyncExecutor;
-    }
-
     private final CompletableFuture future;
     private final InternalSerializationService serializationService;
     private final Object result;
     private volatile Object deserializedValue = VOID;
 
-    public DelegatingCompletableFuture(SerializationService serializationService,
-                                       CompletableFuture future) {
+    public DelegatingCompletableFuture(@Nonnull SerializationService serializationService,
+                                       @Nonnull CompletableFuture future) {
         this(serializationService, future, null);
     }
 
-    public DelegatingCompletableFuture(SerializationService serializationService,
-                                       CompletableFuture future,
+    public DelegatingCompletableFuture(@Nonnull SerializationService serializationService,
+                                       @Nonnull CompletableFuture future,
                                        V result) {
         this.future = future;
         this.serializationService = (InternalSerializationService) serializationService;
