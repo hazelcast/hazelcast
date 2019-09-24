@@ -152,6 +152,66 @@ public class TransformStatefulPTest {
     }
 
     @Test
+    public void mapStateful_withTtl_surviveWm() {
+        SupplierEx<Processor> supplier = createSupplier(
+                2,
+                jetEvent -> jetEvent.payload().getKey(),
+                JetEvent::timestamp,
+                () -> new long[1],
+                (long[] s, Object k, JetEvent<Entry<String, Long>> e) -> {
+                    s[0] += e.payload().getValue();
+                    return jetEvent(e.timestamp(), entry(k, s[0]));
+                },
+                null,
+                expandJetEventFn
+        );
+
+        TestSupport.verifyProcessor(supplier)
+                .input(asList(
+                        jetEvent(1, entry("b", 1L)),
+                        wm(2),
+                        jetEvent(2, entry("b", 2L))
+                ))
+                .expectOutput(asExpandedList(expandJetEventFn,
+                        jetEvent(1, entry("b", 1L)),
+                        wm(2),
+                        jetEvent(2, entry("b", 3L))
+                ));
+    }
+
+    @Test
+    public void mapStateful_withTtl_evictOnlyExpired() {
+        SupplierEx<Processor> supplier = createSupplier(
+                2,
+                jetEvent -> jetEvent.payload().getKey(),
+                JetEvent::timestamp,
+                () -> new long[1],
+                (long[] s, Object k, JetEvent<Entry<String, Long>> e) -> {
+                    s[0] += e.payload().getValue();
+                    return jetEvent(e.timestamp(), entry(k, s[0]));
+                },
+                null,
+                expandJetEventFn
+        );
+
+        TestSupport.verifyProcessor(supplier)
+                .input(asList(
+                        jetEvent(0, entry("a", 1L)),
+                        jetEvent(1, entry("b", 2L)),
+                        wm(3),
+                        jetEvent(3, entry("a", 3L)),
+                        jetEvent(3, entry("b", 4L))
+                ))
+                .expectOutput(asExpandedList(expandJetEventFn,
+                        jetEvent(0, entry("a", 1L)),
+                        jetEvent(1, entry("b", 2L)),
+                        wm(3),
+                        jetEvent(3, entry("a", 3L)),
+                        jetEvent(3, entry("b", 6L))
+                ));
+    }
+
+    @Test
     public void mapStateful_withTtlAndEvict() {
         long evictSignal = 99L;
         SupplierEx<Processor> supplier = createSupplier(
