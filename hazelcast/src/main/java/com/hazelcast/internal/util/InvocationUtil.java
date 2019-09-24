@@ -24,7 +24,6 @@ import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -78,13 +77,10 @@ public final class InvocationUtil {
                 memberIterator);
         Iterator<InternalCompletableFuture<Object>> invocationIterator = map(memberIterator, invokeOnMemberFunction);
 
-        ExecutionService executionService = nodeEngine.getExecutionService();
-        ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
-
         // ChainingFuture uses the iterator to start invocations
         // it invokes on another member only when the previous invocation is completed (so invocations are serial)
         // the future itself completes only when the last invocation completes (or if there is an error)
-        return new ChainingFuture(invocationIterator, executor, memberIterator);
+        return new ChainingFuture(invocationIterator, memberIterator);
     }
 
     /**

@@ -30,7 +30,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Thread.currentThread;
 
 /**
- * Wraps a {@code java.util.concurrent.Future} to make it a {@code com.hazelcast.core.ICompletableFuture}.
+ * Wraps a {@link Future} to make it a {@link InternalCompletableFuture}.
  * <p>
  * Ensures two-directional binding when it comes to cancellation:<ul>
  *     <li>if delegate future cancelled - this future may be done or cancelled

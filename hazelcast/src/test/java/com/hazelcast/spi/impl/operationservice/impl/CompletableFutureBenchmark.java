@@ -38,15 +38,15 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.util.concurrent.TimeUnit;
 
-@State(Scope.Thread)
+@State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @SuppressWarnings("unused")
 public class CompletableFutureBenchmark
         extends HazelcastTestSupport {
 
-    private static final int WARMUP_ITERATIONS_COUNT = 1000;
-    private static final int MEASUREMENT_ITERATIONS_COUNT = 10000;
+    private static final int WARMUP_ITERATIONS_COUNT = 10;
+    private static final int MEASUREMENT_ITERATIONS_COUNT = 100;
 
     private HazelcastInstanceProxy hz;
     private IAtomicLong atomicLong;
@@ -71,7 +71,11 @@ public class CompletableFutureBenchmark
 
     @Benchmark
     public long atomic_long_ops() {
-        return atomicLong.getAndIncrement();
+        long d = 0;
+        for (int i = 0; i < 10_000; i++) {
+            d = atomicLong.getAndIncrement();
+        }
+        return d;
     }
 
     public static void main(String[] args) throws RunnerException {

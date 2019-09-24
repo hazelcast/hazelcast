@@ -17,11 +17,9 @@
 
 package com.hazelcast.internal.util.futures;
 
-import com.hazelcast.spi.impl.DeserializingCompletableFuture;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Iterator;
-import java.util.concurrent.Executor;
 
 /**
  * Iterates over supplied {@link InternalCompletableFuture} serially.
@@ -31,13 +29,12 @@ import java.util.concurrent.Executor;
  *
  * @param <T>
  */
-public class ChainingFuture<T> extends DeserializingCompletableFuture<T> {
+public class ChainingFuture<T> extends InternalCompletableFuture<T> {
 
     private final ExceptionHandler exceptionHandler;
 
-    public ChainingFuture(Iterator<InternalCompletableFuture<T>> futuresToChain, Executor executor,
+    public ChainingFuture(Iterator<InternalCompletableFuture<T>> futuresToChain,
                           ExceptionHandler exceptionHandler) {
-        super(executor);
         this.exceptionHandler = exceptionHandler;
         if (!futuresToChain.hasNext()) {
             complete(null);
