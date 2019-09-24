@@ -33,7 +33,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.IOService;
-import com.hazelcast.internal.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;

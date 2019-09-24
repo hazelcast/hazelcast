@@ -14,39 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nio;
+package com.hazelcast.nio;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Properties;
 
 /**
- * An interface that provides the ability to intercept the creation of sockets.
- * It can be registered from client via config.
+ * Member Socket Interceptor can be registered via
+ * see {@link com.hazelcast.config.SocketInterceptorConfig}
  *
- * For members see {@link MemberSocketInterceptor}
- *
- * Warning: a SocketInterceptor provides access to the socket and will bypass
+ * Warning: a MemberSocketInterceptor provides access to the socket and will bypass
  * any TLS encryption. So be warned that any data send using the SocketInterceptor
  * could be visible as plain text and could therefor be a security risk.
- *
- * see {@link com.hazelcast.config.SocketInterceptorConfig}
  */
-public interface SocketInterceptor {
+public interface MemberSocketInterceptor extends SocketInterceptor {
 
     /**
-     * Initializes socket interceptor with properties which is set by
-     * {@link com.hazelcast.config.Config#setProperty(String, String)}
+     * This method will be called when a connection to a member node is accepted
+     * meaning security requirements and clusters are matching.
      *
-     * @param properties from hazelcast config
-     */
-    void init(Properties properties);
-
-    /**
-     * Called when a connection is established.
-     *
-     * @param connectedSocket related socket
+     * @param acceptedSocket accepted socket
      * @throws IOException
      */
-    void onConnect(Socket connectedSocket) throws IOException;
+    void onAccept(Socket acceptedSocket) throws IOException;
 }

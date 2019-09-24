@@ -73,7 +73,7 @@ import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.IOService;
-import com.hazelcast.internal.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.internal.nio.tcp.DefaultChannelInitializerProvider;
 import com.hazelcast.internal.nio.tcp.PacketDecoder;
 import com.hazelcast.internal.nio.tcp.PacketEncoder;

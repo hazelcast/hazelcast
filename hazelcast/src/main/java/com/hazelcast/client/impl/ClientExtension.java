@@ -26,7 +26,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.nio.SocketInterceptor;
+import com.hazelcast.nio.SocketInterceptor;
 
 /**
  * ClientExtension is a client extension mechanism to be able to plug different implementations of

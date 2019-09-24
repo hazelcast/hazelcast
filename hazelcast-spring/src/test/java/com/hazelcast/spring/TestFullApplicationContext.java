@@ -127,7 +127,7 @@ import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.internal.nio.SocketInterceptor;
+import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;

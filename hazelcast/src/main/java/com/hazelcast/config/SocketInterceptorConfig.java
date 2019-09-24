@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.nio.SocketInterceptor;
+import com.hazelcast.nio.SocketInterceptor;
 
 import java.util.Properties;
 
