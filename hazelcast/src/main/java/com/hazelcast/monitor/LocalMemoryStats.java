@@ -17,7 +17,7 @@
 package com.hazelcast.monitor;
 
 
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.internal.memory.MemoryStats;
 
 /**
  * Local memory statistics to be used by {@link MemberState} implementations.

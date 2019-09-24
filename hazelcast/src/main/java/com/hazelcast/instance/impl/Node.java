@@ -21,11 +21,9 @@ import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.NoOpClientEngine;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
@@ -47,6 +45,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
@@ -55,6 +54,9 @@ import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
+import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.internal.config.DiscoveryConfigReadOnly;
+import com.hazelcast.internal.config.MemberAttributeConfigReadOnly;
 import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -64,6 +66,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -79,7 +82,6 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
@@ -89,8 +91,8 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
@@ -122,12 +124,12 @@ import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_W
 import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
 
@@ -225,7 +227,8 @@ public class Node {
             boolean liteMember = config.isLiteMember();
             address = addressPicker.getPublicAddress(MEMBER);
             nodeExtension = nodeContext.createNodeExtension(this);
-            final Map<String, String> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
+            final Map<String, String> memberAttributes = findMemberAttributes(
+                    new MemberAttributeConfigReadOnly(config.getMemberAttributeConfig()));
             MemberImpl localMember = new MemberImpl.Builder(addressPicker.getPublicAddressMap())
                     .version(version)
                     .localMember(true)
@@ -253,7 +256,7 @@ public class Node {
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
-            DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig().getAsReadOnly();
+            DiscoveryConfig discoveryConfig = new DiscoveryConfigReadOnly(joinConfig.getDiscoveryConfig());
             List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                     AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(joinConfig);
             discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, localMember);

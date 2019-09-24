@@ -17,13 +17,14 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.services.ServiceConfigurationParser;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
@@ -31,7 +32,6 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -50,10 +50,8 @@ import java.util.function.Function;
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.config.ConfigSections.ADVANCED_NETWORK;
 import static com.hazelcast.config.ConfigSections.ATOMIC_LONG;
-import static com.hazelcast.config.ConfigSections.ATOMIC_REFERENCE;
 import static com.hazelcast.config.ConfigSections.CACHE;
 import static com.hazelcast.config.ConfigSections.CARDINALITY_ESTIMATOR;
-import static com.hazelcast.config.ConfigSections.COUNT_DOWN_LATCH;
 import static com.hazelcast.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
@@ -78,16 +76,15 @@ import static com.hazelcast.config.ConfigSections.PARTITION_GROUP;
 import static com.hazelcast.config.ConfigSections.PN_COUNTER;
 import static com.hazelcast.config.ConfigSections.PROPERTIES;
 import static com.hazelcast.config.ConfigSections.QUEUE;
-import static com.hazelcast.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
 import static com.hazelcast.config.ConfigSections.RELIABLE_TOPIC;
 import static com.hazelcast.config.ConfigSections.REPLICATED_MAP;
 import static com.hazelcast.config.ConfigSections.RINGBUFFER;
 import static com.hazelcast.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.SECURITY;
-import static com.hazelcast.config.ConfigSections.SEMAPHORE;
 import static com.hazelcast.config.ConfigSections.SERIALIZATION;
 import static com.hazelcast.config.ConfigSections.SERVICES;
 import static com.hazelcast.config.ConfigSections.SET;
+import static com.hazelcast.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
 import static com.hazelcast.config.ConfigSections.TOPIC;
 import static com.hazelcast.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.ConfigSections.WAN_REPLICATION;
@@ -104,10 +101,10 @@ import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_REC
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -188,18 +185,12 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleCache(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
             fillNativeMemoryConfig(node, config.getNativeMemoryConfig());
-        } else if (SEMAPHORE.isEqual(nodeName)) {
-            handleSemaphore(node);
         } else if (LOCK.isEqual(nodeName)) {
             handleLock(node);
         } else if (RINGBUFFER.isEqual(nodeName)) {
             handleRingbuffer(node);
         } else if (ATOMIC_LONG.isEqual(nodeName)) {
             handleAtomicLong(node);
-        } else if (ATOMIC_REFERENCE.isEqual(nodeName)) {
-            handleAtomicReference(node);
-        } else if (COUNT_DOWN_LATCH.isEqual(nodeName)) {
-            handleCountDownLatchConfig(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -565,7 +556,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("response-timeout-millis".equals(targetChildName)) {
                 config.setResponseTimeoutMillis(getIntegerValue("response-timeout-millis", getTextContent(targetChild)));
             } else if ("queue-full-behavior".equals(targetChildName)) {
-                config.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(getTextContent(targetChild))));
+                config.setQueueFullBehavior(WanQueueFullBehavior.valueOf(upperCaseInternal(getTextContent(targetChild))));
             } else if ("acknowledge-type".equals(targetChildName)) {
                 config.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(getTextContent(targetChild))));
             } else if ("discovery-period-seconds".equals(targetChildName)) {
@@ -1641,7 +1632,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("indexes".equals(nodeName)) {
                 mapIndexesHandle(node, mapConfig);
             } else if ("attributes".equals(nodeName)) {
-                mapAttributesHandle(node, mapConfig);
+                attributesHandle(node, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
                 handleEntryListeners(node, entryListenerConfig -> {
                     mapConfig.addEntryListenerConfig(entryListenerConfig);
@@ -1989,13 +1980,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void mapAttributesHandle(Node n, MapConfig mapConfig) {
+    protected void attributesHandle(Node n, MapConfig mapConfig) {
         for (Node extractorNode : childElements(n)) {
             if ("attribute".equals(cleanNodeName(extractorNode))) {
                 NamedNodeMap attrs = extractorNode.getAttributes();
-                String extractor = getTextContent(attrs.getNamedItem("extractor"));
+                String extractor = getTextContent(attrs.getNamedItem("extractor-class-name"));
                 String name = getTextContent(extractorNode);
-                mapConfig.addMapAttributeConfig(new MapAttributeConfig(name, extractor));
+                mapConfig.addAttributeConfig(new AttributeConfig(name, extractor));
             }
         }
     }
@@ -2357,33 +2348,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleSemaphore(Node node) {
-        Node attName = node.getAttributes().getNamedItem("name");
-        String name = getTextContent(attName);
-        SemaphoreConfig sConfig = new SemaphoreConfig();
-        sConfig.setName(name);
-        handleSemaphoreNode(node, sConfig);
-    }
-
-    void handleSemaphoreNode(Node node, SemaphoreConfig sConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("initial-permits".equals(nodeName)) {
-                sConfig.setInitialPermits(getIntegerValue("initial-permits", value));
-            } else if ("backup-count".equals(nodeName)) {
-                sConfig.setBackupCount(getIntegerValue("backup-count"
-                        , value));
-            } else if ("async-backup-count".equals(nodeName)) {
-                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
-                        , value));
-            } else if ("split-brain-protection-ref".equals(nodeName)) {
-                sConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addSemaphoreConfig(sConfig);
-    }
-
     protected void handleRingbuffer(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
@@ -2442,45 +2406,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.addAtomicLongConfig(atomicLongConfig);
-    }
-
-    protected void handleAtomicReference(Node node) {
-        Node attName = node.getAttributes().getNamedItem("name");
-        String name = getTextContent(attName);
-        AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig(name);
-        handleAtomicReferenceNode(node, atomicReferenceConfig);
-    }
-
-    void handleAtomicReferenceNode(Node node, AtomicReferenceConfig atomicReferenceConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("merge-policy".equals(nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
-                atomicReferenceConfig.setMergePolicyConfig(mergePolicyConfig);
-            } else if ("split-brain-protection-ref".equals(nodeName)) {
-                atomicReferenceConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addAtomicReferenceConfig(atomicReferenceConfig);
-    }
-
-    protected void handleCountDownLatchConfig(Node node) {
-        Node attName = node.getAttributes().getNamedItem("name");
-        String name = getTextContent(attName);
-        CountDownLatchConfig countDownLatchConfig = new CountDownLatchConfig(name);
-        handleCountDownLatchNode(node, countDownLatchConfig);
-    }
-
-    void handleCountDownLatchNode(Node node, CountDownLatchConfig countDownLatchConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("split-brain-protection-ref".equals(nodeName)) {
-                countDownLatchConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addCountDownLatchConfig(countDownLatchConfig);
     }
 
     protected void handleListeners(Node node) {
@@ -2868,7 +2793,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("raft-algorithm".equals(nodeName)) {
                 handleRaftAlgorithm(cpSubsystemConfig.getRaftAlgorithmConfig(), child);
             } else if ("semaphores".equals(nodeName)) {
-                handleCPSemaphores(cpSubsystemConfig, child);
+                handleSemaphores(cpSubsystemConfig, child);
             } else if ("locks".equals(nodeName)) {
                 handleFencedLocks(cpSubsystemConfig, child);
             } else {
@@ -2912,19 +2837,19 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    void handleCPSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
+    void handleSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
         for (Node child : childElements(node)) {
-            CPSemaphoreConfig cpSemaphoreConfig = new CPSemaphoreConfig();
+            SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
                 String value = getTextContent(subChild).trim();
                 if ("name".equals(nodeName)) {
-                    cpSemaphoreConfig.setName(value);
+                    semaphoreConfig.setName(value);
                 } else if ("jdk-compatible".equals(nodeName)) {
-                    cpSemaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
+                    semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
                 }
             }
-            cpSubsystemConfig.addSemaphoreConfig(cpSemaphoreConfig);
+            cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
         }
     }
 

@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -120,12 +120,14 @@ public class NetworkConfig {
      *
      * @param portCount the maximum number of ports allowed to use
      * @see #setPortAutoIncrement(boolean) for more information
+     * @return this configuration
      */
-    public void setPortCount(int portCount) {
+    public NetworkConfig setPortCount(int portCount) {
         if (portCount < 1) {
             throw new IllegalArgumentException("port count can't be smaller than 0");
         }
         this.portCount = portCount;
+        return this;
     }
 
     /**

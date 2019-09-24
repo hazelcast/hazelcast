@@ -53,7 +53,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OF
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_TYPE_FACTORY_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_TYPE_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_URGENT;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
 /**

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A {@link ChannelOptions} option for the {@link ChannelOptions}.

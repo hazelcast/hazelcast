@@ -22,8 +22,8 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ItemCounter;
 
 import static com.hazelcast.internal.diagnostics.OperationDescriptors.toOperationDesc;
 import static java.util.concurrent.TimeUnit.SECONDS;

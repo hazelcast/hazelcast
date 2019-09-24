@@ -20,7 +20,7 @@ import com.hazelcast.spi.MemberAddressProvider;
 
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 
 /**

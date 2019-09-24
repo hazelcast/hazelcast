@@ -118,11 +118,12 @@ public class RestApiConfig {
         return enabledGroups.contains(group);
     }
 
-    public void setEnabledGroups(Collection<RestEndpointGroup> groups) {
+    public RestApiConfig setEnabledGroups(Collection<RestEndpointGroup> groups) {
         enabledGroups.clear();
         if (groups != null) {
             enabledGroups.addAll(groups);
         }
+        return this;
     }
 
     @Override

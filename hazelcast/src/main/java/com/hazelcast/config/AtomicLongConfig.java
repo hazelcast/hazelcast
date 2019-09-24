@@ -29,8 +29,6 @@ import java.io.IOException;
  */
 public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
 
-    private transient AtomicLongConfigReadOnly readOnly;
-
     AtomicLongConfig() {
     }
 
@@ -92,41 +90,5 @@ public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
         result = 31 * result + mergePolicyConfig.hashCode();
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    @Override
-    public AtomicLongConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new AtomicLongConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    static class AtomicLongConfigReadOnly extends AtomicLongConfig {
-
-        AtomicLongConfigReadOnly(AtomicLongConfig config) {
-            super(config);
-        }
-
-        @Override
-        public AtomicLongConfig setName(String name) {
-            throw new UnsupportedOperationException("This is a read-only config!");
-        }
-
-        @Override
-        public AtomicLongConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
-            throw new UnsupportedOperationException("This is a read-only config!");
-        }
-
-        @Override
-        public AtomicLongConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-            throw new UnsupportedOperationException("This is a read-only config!");
-        }
     }
 }

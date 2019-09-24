@@ -25,13 +25,13 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class ClientLoggingService implements LoggingService {
 

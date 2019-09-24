@@ -21,14 +21,14 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 
 public class MultiMapPartitionContainer {
 

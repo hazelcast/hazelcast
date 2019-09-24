@@ -55,7 +55,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.util.IterationType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -71,8 +71,8 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

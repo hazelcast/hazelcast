@@ -51,10 +51,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class MemberStateImpl implements MemberState {
@@ -62,6 +62,7 @@ public class MemberStateImpl implements MemberState {
     private String address;
     private String uuid;
     private String cpMemberUuid;
+    private String name;
     private Map<EndpointQualifier, Address> endpoints = new HashMap<EndpointQualifier, Address>();
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
     private Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
@@ -178,6 +179,15 @@ public class MemberStateImpl implements MemberState {
 
     public void setCpMemberUuid(String cpMemberUuid) {
         this.cpMemberUuid = cpMemberUuid;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Map<EndpointQualifier, Address> getEndpoints() {
@@ -322,6 +332,7 @@ public class MemberStateImpl implements MemberState {
         root.add("address", address);
         root.add("uuid", uuid);
         root.add("cpMemberUuid", cpMemberUuid);
+        root.add("name", name);
 
         final JsonArray endpoints = new JsonArray();
         for (Entry<EndpointQualifier, Address> entry : this.endpoints.entrySet()) {
@@ -395,6 +406,7 @@ public class MemberStateImpl implements MemberState {
         address = getString(json, "address");
         uuid = getString(json, "uuid", null);
         cpMemberUuid = getString(json, "cpMemberUuid", null);
+        name = getString(json, "name", null);
 
         JsonArray endpoints = getArray(json, "endpoints");
         for (JsonValue obj : endpoints) {
@@ -527,6 +539,7 @@ public class MemberStateImpl implements MemberState {
                 + "address=" + address
                 + ", uuid=" + uuid
                 + ", cpMemberUuid=" + cpMemberUuid
+                + ", name=" + name
                 + ", runtimeProps=" + runtimeProps
                 + ", mapStats=" + mapStats
                 + ", multiMapStats=" + multiMapStats

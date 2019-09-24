@@ -42,7 +42,7 @@ import java.util.Map;
 
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Replication operation is the data migration operation of {@link com.hazelcast.cache.impl.CacheRecordStore}.

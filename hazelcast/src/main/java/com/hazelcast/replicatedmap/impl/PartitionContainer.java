@@ -21,12 +21,12 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.replicatedmap.impl.record.DataReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ObjectReplicatedRecordStorage;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
  * Contains the record storage for the replicated maps which are the actual place where the data is stored.

@@ -75,7 +75,7 @@ import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;

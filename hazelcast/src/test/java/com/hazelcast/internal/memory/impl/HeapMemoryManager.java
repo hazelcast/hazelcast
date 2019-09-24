@@ -19,7 +19,7 @@ package com.hazelcast.internal.memory.impl;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.util.collection.Long2LongHashMap;
+import com.hazelcast.internal.util.collection.Long2LongHashMap;
 import junit.framework.AssertionFailedError;
 
 import java.util.Arrays;

@@ -19,13 +19,13 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.internal.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
@@ -96,11 +96,7 @@ public class ConfigCompatibilityChecker {
                 new RingbufferConfigChecker());
         checkCompatibleConfigs("atomic-long", c1, c2, c1.getAtomicLongConfigs(), c2.getAtomicLongConfigs(),
                 new AtomicLongConfigChecker());
-        checkCompatibleConfigs("atomic-reference", c1, c2, c1.getAtomicReferenceConfigs(), c2.getAtomicReferenceConfigs(),
-                new AtomicReferenceConfigChecker());
         checkCompatibleConfigs("queue", c1, c2, c1.getQueueConfigs(), c2.getQueueConfigs(), new QueueConfigChecker());
-        checkCompatibleConfigs("semaphore", c1, c2, getSemaphoreConfigsByName(c1), getSemaphoreConfigsByName(c2),
-                new SemaphoreConfigChecker());
         checkCompatibleConfigs("lock", c1, c2, c1.getLockConfigs(), c2.getLockConfigs(), new LockConfigChecker());
         checkCompatibleConfigs("topic", c1, c2, c1.getTopicConfigs(), c2.getTopicConfigs(), new TopicConfigChecker());
         checkCompatibleConfigs("reliable topic", c1, c2, c1.getReliableTopicConfigs(), c2.getReliableTopicConfigs(),
@@ -118,8 +114,6 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("set", c1, c2, c1.getSetConfigs(), c2.getSetConfigs(), new SetConfigChecker());
         checkCompatibleConfigs("flake id generator", c1, c2, c1.getFlakeIdGeneratorConfigs(), c2.getFlakeIdGeneratorConfigs(),
                 new FlakeIdGeneratorConfigChecker());
-        checkCompatibleConfigs("count down latch", c1, c2, c1.getCountDownLatchConfigs(), c2.getCountDownLatchConfigs(),
-                new CountDownLatchConfigChecker());
         checkCompatibleConfigs("cardinality estimator", c1, c2, c1.getCardinalityEstimatorConfigs(),
                 c2.getCardinalityEstimatorConfigs(), new CardinalityEstimatorConfigChecker());
         checkCompatibleConfigs("pn counter", c1, c2, c1.getPNCounterConfigs(), c2.getPNCounterConfigs(),
@@ -145,15 +139,6 @@ public class ConfigCompatibilityChecker {
 
     public static void checkEndpointConfigCompatible(EndpointConfig c1, EndpointConfig c2) {
         checkCompatibleConfigs("endpoint-config", c1, c2, new EndpointConfigChecker());
-    }
-
-    private static Map<String, SemaphoreConfig> getSemaphoreConfigsByName(Config c) {
-        Collection<SemaphoreConfig> semaphoreConfigs = c.getSemaphoreConfigs();
-        HashMap<String, SemaphoreConfig> configsByName = new HashMap<>(semaphoreConfigs.size());
-        for (SemaphoreConfig config : semaphoreConfigs) {
-            configsByName.put(config.getName(), config);
-        }
-        return configsByName;
     }
 
     private static <T> void checkCompatibleConfigs(String type, T c1, T c2, ConfigChecker<T> checker) {
@@ -298,21 +283,6 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class AtomicReferenceConfigChecker extends ConfigChecker<AtomicReferenceConfig> {
-        @Override
-        boolean check(AtomicReferenceConfig c1, AtomicReferenceConfig c2) {
-            return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
-        }
-
-        @Override
-        AtomicReferenceConfig getDefault(Config c) {
-            return c.getAtomicReferenceConfig("default");
-        }
-    }
-
     private static class QueueConfigChecker extends ConfigChecker<QueueConfig> {
         @Override
         boolean check(QueueConfig c1, QueueConfig c2) {
@@ -341,37 +311,6 @@ public class ConfigCompatibilityChecker {
         @Override
         QueueConfig getDefault(Config c) {
             return c.getQueueConfig("default");
-        }
-    }
-
-    private static class SemaphoreConfigChecker extends ConfigChecker<SemaphoreConfig> {
-        @Override
-        boolean check(SemaphoreConfig c1, SemaphoreConfig c2) {
-            return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getBackupCount(), c2.getBackupCount())
-                    && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
-                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && nullSafeEqual(c1.getInitialPermits(), c2.getInitialPermits());
-        }
-
-        @Override
-        SemaphoreConfig getDefault(Config c) {
-            return c.getSemaphoreConfig("default");
-        }
-    }
-
-    private static class CountDownLatchConfigChecker extends ConfigChecker<CountDownLatchConfig> {
-        @Override
-        boolean check(CountDownLatchConfig c1, CountDownLatchConfig c2) {
-            return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
-        }
-
-        @Override
-        CountDownLatchConfig getDefault(Config c) {
-            return c.getCountDownLatchConfig("default");
         }
     }
 
@@ -659,14 +598,14 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            Map<String, CPSemaphoreConfig> semaphores1 = c1.getSemaphoreConfigs();
+            Map<String, SemaphoreConfig> semaphores1 = c1.getSemaphoreConfigs();
 
             if (semaphores1.size() != c2.getSemaphoreConfigs().size()) {
                 return false;
             }
 
-            for (Entry<String, CPSemaphoreConfig> e : semaphores1.entrySet()) {
-                CPSemaphoreConfig s2 = c2.findSemaphoreConfig(e.getKey());
+            for (Entry<String, SemaphoreConfig> e : semaphores1.entrySet()) {
+                SemaphoreConfig s2 = c2.findSemaphoreConfig(e.getKey());
                 if (s2 == null) {
                     return false;
                 }
@@ -770,10 +709,10 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class MapConfigChecker extends ConfigChecker<MapConfig> {
+    public static class MapConfigChecker extends ConfigChecker<MapConfig> {
         @Override
         @SuppressWarnings("deprecation")
-        boolean check(MapConfig c1, MapConfig c2) {
+        public boolean check(MapConfig c1, MapConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -804,8 +743,8 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getNearCacheConfig(), c2.getNearCacheConfig())
                     && isCompatible(c1.getWanReplicationRef(), c2.getWanReplicationRef())
                     && isCollectionCompatible(c1.getIndexConfigs(), c2.getIndexConfigs(), new IndexConfigChecker())
-                    && isCollectionCompatible(c1.getMapAttributeConfigs(), c2.getMapAttributeConfigs(),
-                    new MapAttributeConfigChecker())
+                    && isCollectionCompatible(c1.getAttributeConfigs(), c2.getAttributeConfigs(),
+                    new AttributeConfigChecker())
                     && isCollectionCompatible(c1.getEntryListenerConfigs(), c2.getEntryListenerConfigs(),
                     new EntryListenerConfigChecker())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
@@ -882,12 +821,12 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class MapAttributeConfigChecker extends ConfigChecker<MapAttributeConfig> {
+    private static class AttributeConfigChecker extends ConfigChecker<AttributeConfig> {
         @Override
-        boolean check(MapAttributeConfig c1, MapAttributeConfig c2) {
+        boolean check(AttributeConfig c1, AttributeConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getExtractor(), c2.getExtractor());
+                    && nullSafeEqual(c1.getExtractorClassName(), c2.getExtractorClassName());
         }
     }
 

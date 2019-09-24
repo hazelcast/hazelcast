@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.NearCachePreloaderConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith;
 public class NearCachePreloaderConfigReadOnlyTest {
 
     private NearCachePreloaderConfig getReadOnlyConfig() {
-        return new NearCachePreloaderConfig().getAsReadOnly();
+        return new NearCachePreloaderConfigReadOnly(new NearCachePreloaderConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

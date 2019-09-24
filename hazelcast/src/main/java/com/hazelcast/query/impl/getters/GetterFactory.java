@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.internal.util.CollectionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

@@ -45,7 +45,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.AddressUtil;
+import com.hazelcast.internal.util.AddressUtil;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -58,7 +58,7 @@ import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.internal.config.ConfigValidator.checkAndLogPropertyDeprecated;
 import static com.hazelcast.internal.config.ConfigValidator.ensurePropertyNotConfigured;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 
 @PrivateApi
 public class NodeIOService implements IOService {

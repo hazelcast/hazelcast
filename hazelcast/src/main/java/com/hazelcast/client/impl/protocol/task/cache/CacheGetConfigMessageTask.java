@@ -19,11 +19,12 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -79,9 +80,9 @@ public class CacheGetConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Data responseData = nodeEngine.toData(response);
+        CacheConfig cacheConfig = (CacheConfig) response;
 
-        return CacheGetConfigCodec.encodeResponse(responseData);
+        return CacheGetConfigCodec.encodeResponse(CacheConfigHolder.of(cacheConfig, serializationService));
     }
 
     @Override

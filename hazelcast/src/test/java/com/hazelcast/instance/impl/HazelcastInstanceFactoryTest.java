@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.instance.TestNodeContext;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
 import static classloading.ThreadLeakTestUtils.getThreads;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 
@@ -214,5 +216,48 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
+    }
+
+    @Test
+    public void mobyNameGeneratedIfPropertyEnabled() {
+        Config config = new Config();
+        config.getProperties().put(GroupProperty.MOBY_NAMING_ENABLED.getName(), "true");
+
+        hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
+        String name = hazelcastInstance.getName();
+        assertNotNull(name);
+        assertNotContains(name, "_hzInstance_");
+    }
+
+    @Test
+    public void fixedNameGeneratedIfPropertyDisabled() {
+        Config config = new Config();
+        config.getProperties().put(GroupProperty.MOBY_NAMING_ENABLED.getName(), "false");
+
+        hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
+        String name = hazelcastInstance.getName();
+        assertNotNull(name);
+        assertContains(name, "_hzInstance_");
+    }
+
+    @Test
+    public void fixedNameGeneratedIfPropertyNotDefined() {
+        Config config = new Config();
+
+        hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
+        String name = hazelcastInstance.getName();
+        assertNotNull(name);
+        assertNotContains(name, "_hzInstance_");
+    }
+
+    @Test
+    public void mobyNameGeneratedIfSystemPropertyEnabled() {
+        Config config = new Config();
+        GroupProperty.MOBY_NAMING_ENABLED.setSystemProperty("true");
+
+        hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
+        String name = hazelcastInstance.getName();
+        assertNotNull(name);
+        assertNotContains(name, "_hzInstance_");
     }
 }

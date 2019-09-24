@@ -20,7 +20,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.MutableInteger;
+import com.hazelcast.internal.util.MutableInteger;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Write behind queue impl. backed by a {@link java.util.Deque}.

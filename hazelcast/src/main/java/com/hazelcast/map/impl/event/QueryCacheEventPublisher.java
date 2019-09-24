@@ -38,8 +38,8 @@ import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.event.MapEventPublisherImpl.isIncludeValue;
 import static com.hazelcast.map.impl.querycache.event.QueryCacheEventDataBuilder.newQueryCacheEventDataBuilder;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 
 /**
  * Handles publishing of map events to continuous query caches

@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 public class NodeStateImpl implements NodeState {
 

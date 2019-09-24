@@ -37,8 +37,8 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCo
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
-import static com.hazelcast.util.Preconditions.checkNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class OnJoinOp
         extends AbstractJoinOperation implements UrgentSystemOperation, TargetAware {

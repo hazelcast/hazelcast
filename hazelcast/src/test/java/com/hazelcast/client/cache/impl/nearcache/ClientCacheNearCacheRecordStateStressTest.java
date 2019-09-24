@@ -55,7 +55,7 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.map.impl.nearcache.MapNearCacheRecordStateStressTest.assertNearCacheRecordStates;
-import static com.hazelcast.util.RandomPicker.getInt;
+import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.Arrays.asList;
 

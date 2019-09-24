@@ -17,7 +17,6 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.File;
 import java.io.IOException;

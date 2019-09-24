@@ -60,8 +60,8 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -87,11 +87,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.net.URLEncoder.encode;
 
 /**

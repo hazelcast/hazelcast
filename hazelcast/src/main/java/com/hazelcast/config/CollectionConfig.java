@@ -28,9 +28,9 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Provides configuration service for Collection.
@@ -75,8 +75,6 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = config.mergePolicyConfig;
     }
-
-    public abstract T getAsReadOnly();
 
     /**
      * Gets the name of this collection.
@@ -222,9 +220,11 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      * Adds an item listener to this collection (listens for when items are added or removed).
      *
      * @param itemListenerConfig the item listener to add to this collection
+     * @return this configuration
      */
-    public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
+    public T addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         getItemListenerConfigs().add(itemListenerConfig);
+        return (T) this;
     }
 
     /**

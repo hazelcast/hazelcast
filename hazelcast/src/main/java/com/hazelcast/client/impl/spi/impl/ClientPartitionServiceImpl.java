@@ -37,9 +37,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 
 import java.util.Collection;
 import java.util.List;
@@ -48,7 +48,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * The {@link ClientPartitionService} implementation.

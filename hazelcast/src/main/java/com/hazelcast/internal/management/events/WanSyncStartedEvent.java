@@ -23,8 +23,8 @@ import java.util.UUID;
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_STARTED;
 
 public class WanSyncStartedEvent extends AbstractWanAntiEntropyEventBase {
-    public WanSyncStartedEvent(UUID uuid, String wanReplicationName, String targetGroupName, String mapName) {
-        super(uuid, wanReplicationName, targetGroupName, mapName);
+    public WanSyncStartedEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName) {
+        super(uuid, wanReplicationName, wanPublisherId, mapName);
     }
 
     @Override

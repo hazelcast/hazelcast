@@ -26,14 +26,14 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class SetService extends CollectionService {
 

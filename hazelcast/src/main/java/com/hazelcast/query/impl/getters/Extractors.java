@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultArgumentParser;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 
 import java.util.Collections;
 import java.util.List;
@@ -56,11 +56,11 @@ public final class Extractors {
     private final EvictableGetterCache getterCache;
     private final DefaultArgumentParser argumentsParser;
 
-    private Extractors(List<MapAttributeConfig> mapAttributeConfigs,
+    private Extractors(List<AttributeConfig> attributeConfigs,
                        ClassLoader classLoader, InternalSerializationService ss) {
-        this.extractors = mapAttributeConfigs == null
+        this.extractors = attributeConfigs == null
                 ? Collections.<String, ValueExtractor>emptyMap()
-                : instantiateExtractors(mapAttributeConfigs, classLoader);
+                : instantiateExtractors(attributeConfigs, classLoader);
         this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE,
                 MAX_GETTERS_PER_CLASS_IN_CACHE, EVICTION_PERCENTAGE, false);
         this.argumentsParser = new DefaultArgumentParser();
@@ -163,7 +163,7 @@ public final class Extractors {
      */
     public static final class Builder {
         private ClassLoader classLoader;
-        private List<MapAttributeConfig> mapAttributeConfigs;
+        private List<AttributeConfig> attributeConfigs;
 
         private final InternalSerializationService ss;
 
@@ -171,8 +171,8 @@ public final class Extractors {
             this.ss = Preconditions.checkNotNull(ss);
         }
 
-        public Builder setMapAttributeConfigs(List<MapAttributeConfig> mapAttributeConfigs) {
-            this.mapAttributeConfigs = mapAttributeConfigs;
+        public Builder setAttributeConfigs(List<AttributeConfig> attributeConfigs) {
+            this.attributeConfigs = attributeConfigs;
             return this;
         }
 
@@ -185,7 +185,7 @@ public final class Extractors {
          * @return a new instance of Extractors
          */
         public Extractors build() {
-            return new Extractors(mapAttributeConfigs, classLoader, ss);
+            return new Extractors(attributeConfigs, classLoader, ss);
         }
     }
 }

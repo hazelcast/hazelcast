@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management.events;
 
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 public abstract class AbstractEventBase implements Event {
     private final long timestamp;

@@ -25,12 +25,12 @@ import com.hazelcast.monitor.impl.MemberStateImpl;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getLong;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.JsonUtil.getString;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Container for a {@link MemberState} with a timestamp.

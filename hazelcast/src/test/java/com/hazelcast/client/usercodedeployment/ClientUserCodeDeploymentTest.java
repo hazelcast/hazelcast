@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -30,7 +30,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.FilteringClassLoader;
+import com.hazelcast.internal.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -201,7 +201,7 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
         Config config = createNodeConfig();
-        config.getMapConfig(mapName).addMapAttributeConfig(new MapAttributeConfig(attributeName, "usercodedeployment.CapitalizatingFirstnameExtractor"));
+        config.getMapConfig(mapName).addAttributeConfig(new AttributeConfig(attributeName, "usercodedeployment.CapitalizatingFirstnameExtractor"));
 
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);

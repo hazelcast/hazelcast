@@ -67,10 +67,10 @@ import static com.hazelcast.spi.impl.operationservice.Operations.isJoinOperation
 import static com.hazelcast.spi.impl.operationservice.Operations.isWanReplicationOperation;
 import static com.hazelcast.spi.properties.GroupProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
-import static com.hazelcast.util.CollectionUtil.asIntegerList;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

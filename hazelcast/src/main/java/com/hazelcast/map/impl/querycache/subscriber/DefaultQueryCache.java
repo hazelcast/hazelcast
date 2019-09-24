@@ -42,9 +42,9 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -60,9 +60,9 @@ import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEnd
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEntryEvent;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.Preconditions.checkNoNullInside;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MINUTES;
 

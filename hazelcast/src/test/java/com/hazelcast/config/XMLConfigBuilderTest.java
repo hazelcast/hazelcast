@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -60,7 +60,7 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
-import static com.hazelcast.config.WANQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -542,26 +542,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readSemaphoreConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <semaphore name=\"default\">\n"
-                + "        <initial-permits>1</initial-permits>\n"
-                + "    </semaphore>"
-                + "    <semaphore name=\"custom\">\n"
-                + "        <initial-permits>10</initial-permits>\n"
-                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "    </semaphore>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        SemaphoreConfig defaultConfig = config.getSemaphoreConfig("default");
-        SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
-        assertEquals(1, defaultConfig.getInitialPermits());
-        assertEquals(10, customConfig.getInitialPermits());
-        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
     public void readQueueConfig() {
         String xml = HAZELCAST_START_TAG
                 + "      <queue name=\"custom\">"
@@ -790,39 +770,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(23, mergePolicyConfig.getBatchSize());
-    }
-
-    @Override
-    @Test
-    public void readAtomicReference() {
-        String xml = HAZELCAST_START_TAG
-                + "    <atomic-reference name=\"custom\">"
-                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
-                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "    </atomic-reference>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
-        assertEquals("custom", atomicReferenceConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", atomicReferenceConfig.getSplitBrainProtectionName());
-
-        MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(23, mergePolicyConfig.getBatchSize());
-    }
-
-    @Override
-    @Test
-    public void readCountDownLatch() {
-        String xml = HAZELCAST_START_TAG
-                + "    <count-down-latch name=\"custom\">"
-                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "    </count-down-latch>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        CountDownLatchConfig countDownLatchConfig = config.getCountDownLatchConfig("custom");
-        assertEquals("custom", countDownLatchConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", countDownLatchConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -1777,7 +1724,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
         assertEquals("ankara", pc2.getGroupName());
         assertEquals("", pc2.getPublisherId());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
+        assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
 
         List<CustomWanPublisherConfig> customPublishers = wanConfig.getCustomPublisherConfigs();
@@ -2379,7 +2326,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          </index>\n"
                 + "        </indexes>"
                 + "        <attributes>\n"
-                + "            <attribute extractor=\"com.bank.CurrencyExtractor\">currency</attribute>\n"
+                + "            <attribute extractor-class-name=\"com.bank.CurrencyExtractor\">currency</attribute>\n"
                 + "           </attributes>"
                 + "        <partition-lost-listeners>\n"
                 + "            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>\n"
@@ -2410,9 +2357,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig.getIndexConfigs().size());
         assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
         assertTrue(mapConfig.getIndexConfigs().get(0).getType() == IndexType.SORTED);
-        assertEquals(1, mapConfig.getMapAttributeConfigs().size());
-        assertEquals("com.bank.CurrencyExtractor", mapConfig.getMapAttributeConfigs().get(0).getExtractor());
-        assertEquals("currency", mapConfig.getMapAttributeConfigs().get(0).getName());
+        assertEquals(1, mapConfig.getAttributeConfigs().size());
+        assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
+        assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
         assertEquals(1, mapConfig.getPartitionLostListenerConfigs().size());
         assertEquals("com.your-package.YourPartitionLostListener", mapConfig.getPartitionLostListenerConfigs().get(0).getClassName());
         assertEquals(1, mapConfig.getEntryListenerConfigs().size());
@@ -2498,8 +2445,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.PowerExtractor\">power</attribute>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\">weight</attribute>\n"
+                + "           <attribute extractor-class-name=\"com.car.PowerExtractor\">power</attribute>\n"
+                + "           <attribute extractor-class-name=\"com.car.WeightExtractor\">weight</attribute>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2507,9 +2454,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getMapAttributeConfigs().isEmpty());
-        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getMapAttributeConfigs().get(0));
-        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getMapAttributeConfigs().get(1));
+        assertFalse(mapConfig.getAttributeConfigs().isEmpty());
+        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getAttributeConfigs().get(0));
+        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getAttributeConfigs().get(1));
     }
 
     @Override
@@ -2518,7 +2465,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\"></attribute>\n"
+                + "           <attribute extractor-class-name=\"com.car.WeightExtractor\"></attribute>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2526,9 +2473,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         buildConfig(xml);
     }
 
-    private static void assertAttributeEqual(String expectedName, String expectedExtractor, MapAttributeConfig attributeConfig) {
+    private static void assertAttributeEqual(String expectedName, String expectedExtractor, AttributeConfig attributeConfig) {
         assertEquals(expectedName, attributeConfig.getName());
-        assertEquals(expectedExtractor, attributeConfig.getExtractor());
+        assertEquals(expectedExtractor, attributeConfig.getExtractorClassName());
     }
 
     @Override
@@ -2537,7 +2484,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\"/>\n"
+                + "           <attribute extractor-class-name=\"com.car.WeightExtractor\"/>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2565,7 +2512,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"\">weight</attribute>\n"
+                + "           <attribute extractor-class-name=\"\">weight</attribute>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -3093,14 +3040,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <append-request-backoff-timeout-in-millis>50</append-request-backoff-timeout-in-millis>\n"
                 + "  </raft-algorithm>\n"
                 + "  <semaphores>\n"
-                + "    <cp-semaphore>\n"
+                + "    <semaphore>\n"
                 + "      <name>sem1</name>\n"
                 + "      <jdk-compatible>true</jdk-compatible>\n"
-                + "    </cp-semaphore>\n"
-                + "    <cp-semaphore>\n"
+                + "    </semaphore>\n"
+                + "    <semaphore>\n"
                 + "      <name>sem2</name>\n"
                 + "      <jdk-compatible>false</jdk-compatible>\n"
-                + "    </cp-semaphore>\n"
+                + "    </semaphore>\n"
                 + "  </semaphores>\n"
                 + "  <locks>\n"
                 + "    <fenced-lock>\n"
@@ -3130,8 +3077,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(250, raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot());
         assertEquals(75, raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends());
         assertEquals(50, raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis());
-        CPSemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
-        CPSemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
+        SemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
+        SemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
         assertNotNull(semaphoreConfig1);
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());

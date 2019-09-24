@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 import com.hazelcast.instance.BuildInfoProvider;
 

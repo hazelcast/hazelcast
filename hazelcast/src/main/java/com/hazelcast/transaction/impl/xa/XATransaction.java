@@ -29,13 +29,14 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionOperation;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.UuidUtil;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -51,9 +52,9 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 import static com.hazelcast.transaction.impl.xa.XAService.SERVICE_NAME;
-import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
+import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -99,7 +100,7 @@ public final class XATransaction implements Transaction {
         this.originatedFromClient = originatedFromClient;
     }
 
-    public XATransaction(NodeEngine nodeEngine, List<TransactionLogRecord> logs,
+    public XATransaction(NodeEngine nodeEngine, Collection<TransactionLogRecord> logs,
                          String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog(logs);
@@ -145,7 +146,7 @@ public final class XATransaction implements Transaction {
 
     private void putTransactionInfoRemote() throws ExecutionException, InterruptedException {
         PutRemoteTransactionOperation operation = new PutRemoteTransactionOperation(
-                transactionLog.getRecordList(), txnId, xid, txOwnerUuid, timeoutMillis, startTime);
+                transactionLog.getRecords(), txnId, xid, txOwnerUuid, timeoutMillis, startTime);
         OperationService operationService = nodeEngine.getOperationService();
         IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionId = partitionService.getPartitionId(xid);
@@ -221,8 +222,8 @@ public final class XATransaction implements Transaction {
         return startTime;
     }
 
-    public List<TransactionLogRecord> getTransactionRecords() {
-        return transactionLog.getRecordList();
+    public Collection<TransactionLogRecord> getTransactionRecords() {
+        return transactionLog.getRecords();
     }
 
     @Override

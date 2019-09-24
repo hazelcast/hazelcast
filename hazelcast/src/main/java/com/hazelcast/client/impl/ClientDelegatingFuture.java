@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ExecutionException;

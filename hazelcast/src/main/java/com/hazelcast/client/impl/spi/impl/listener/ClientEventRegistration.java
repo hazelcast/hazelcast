@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.spi.impl.listener;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.nio.Connection;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Keeps the information related to to an event registration made by clients.

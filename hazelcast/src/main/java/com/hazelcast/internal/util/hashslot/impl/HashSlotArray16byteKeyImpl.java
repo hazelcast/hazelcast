@@ -24,7 +24,7 @@ import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
 import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_CAPACITY;
 import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_LOAD_FACTOR;
-import static com.hazelcast.util.QuickMath.modPowerOfTwo;
+import static com.hazelcast.internal.util.QuickMath.modPowerOfTwo;
 
 /**
  * Implementation of {@link HashSlotArray16byteKey}.

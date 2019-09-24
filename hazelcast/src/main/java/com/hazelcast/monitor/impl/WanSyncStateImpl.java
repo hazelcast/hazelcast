@@ -18,7 +18,7 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.WanSyncState;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.wan.impl.WanSyncStatus;
 
 public class WanSyncStateImpl implements WanSyncState {

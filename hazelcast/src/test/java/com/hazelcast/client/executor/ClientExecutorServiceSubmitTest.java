@@ -62,7 +62,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.util.FutureUtil.waitForever;
+import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

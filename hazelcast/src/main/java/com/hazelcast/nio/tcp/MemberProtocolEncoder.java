@@ -28,7 +28,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.nio.Protocols.PROTOCOL_LENGTH;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 

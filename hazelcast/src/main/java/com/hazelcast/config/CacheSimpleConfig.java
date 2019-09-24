@@ -32,10 +32,10 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Simple configuration to hold parsed XML configuration.
@@ -93,8 +93,6 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
 
-    private transient CacheSimpleConfig readOnly;
-
     private String splitBrainProtectionName;
 
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
@@ -142,19 +140,6 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     }
 
     public CacheSimpleConfig() {
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public CacheSimpleConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CacheSimpleConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
@@ -563,9 +548,11 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
      * Sets the WAN target replication reference.
      *
      * @param wanReplicationRef the WAN target replication reference
+     * @return this configuration
      */
-    public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+    public CacheSimpleConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
+        return this;
     }
 
     /**
@@ -699,9 +686,11 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
      *
      * @param disablePerEntryInvalidationEvents Disables invalidation event sending behaviour if it is {@code true},
      *                                          otherwise enables it
+     * @return this configuration
      */
-    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+    public CacheSimpleConfig setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
+        return this;
     }
 
     @Override

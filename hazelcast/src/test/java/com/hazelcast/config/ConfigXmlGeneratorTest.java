@@ -21,16 +21,15 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.Duration
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfigChecker;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
-import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -624,24 +623,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testSemaphore() {
-        SemaphoreConfig expectedConfig = new SemaphoreConfig()
-                .setName("testSemaphore")
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setInitialPermits(3)
-                .setBackupCount(1)
-                .setAsyncBackupCount(2);
-
-        Config config = new Config()
-                .addSemaphoreConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        SemaphoreConfig actualConfig = xmlConfig.getSemaphoreConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testExecutor() {
         ExecutorConfig expectedConfig = new ExecutorConfig()
                 .setName("testExecutor")
@@ -734,44 +715,6 @@ public class ConfigXmlGeneratorTest {
         MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
         assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
         assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void testAtomicReference() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(PassThroughMergePolicy.class.getSimpleName())
-                .setBatchSize(4321);
-
-        AtomicReferenceConfig expectedConfig = new AtomicReferenceConfig("testAtomicReferenceConfig")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-        Config config = new Config()
-                .addAtomicReferenceConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        AtomicReferenceConfig actualConfig = xmlConfig.getAtomicReferenceConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-
-        MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
-        assertEquals(PassThroughMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
-        assertEquals(4321, xmlMergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void testCountDownLatch() {
-        CountDownLatchConfig expectedConfig = new CountDownLatchConfig("testCountDownLatchConfig")
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-
-        Config config = new Config()
-                .addCountDownLatchConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        CountDownLatchConfig actualConfig = xmlConfig.getCountDownLatchConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
     }
 
     @Test
@@ -897,7 +840,7 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testMapAttributesConfigWithStoreClass() {
+    public void testAttributesConfigWithStoreClass() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
@@ -925,7 +868,7 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testMapAttributesConfigWithStoreFactory() {
+    public void testAttributesConfigWithStoreFactory() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
@@ -940,9 +883,9 @@ public class ConfigXmlGeneratorTest {
 
     @SuppressWarnings("deprecation")
     private void testMap(MapStoreConfig mapStoreConfig) {
-        MapAttributeConfig attrConfig = new MapAttributeConfig()
+        AttributeConfig attrConfig = new AttributeConfig()
                 .setName("power")
-                .setExtractor("com.car.PowerExtractor");
+                .setExtractorClassName("com.car.PowerExtractor");
 
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig()
                 .setSize(10)
@@ -1014,7 +957,7 @@ public class ConfigXmlGeneratorTest {
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .addEntryListenerConfig(listenerConfig)
                 .setIndexConfigs(singletonList(indexConfig))
-                .addMapAttributeConfig(attrConfig)
+                .addAttributeConfig(attrConfig)
                 .setPartitionLostListenerConfigs(singletonList(
                         new MapPartitionLostListenerConfig("partitionLostListener")));
 
@@ -1026,9 +969,9 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         MapConfig actualConfig = xmlConfig.getMapConfig("carMap");
-        MapAttributeConfig xmlAttrConfig = actualConfig.getMapAttributeConfigs().get(0);
+        AttributeConfig xmlAttrConfig = actualConfig.getAttributeConfigs().get(0);
         assertEquals(attrConfig.getName(), xmlAttrConfig.getName());
-        assertEquals(attrConfig.getExtractor(), xmlAttrConfig.getExtractor());
+        assertEquals(attrConfig.getExtractorClassName(), xmlAttrConfig.getExtractorClassName());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -1117,7 +1060,7 @@ public class ConfigXmlGeneratorTest {
                 .setBatchSize(500)
                 .setBatchMaxDelayMillis(1000)
                 .setResponseTimeoutMillis(60000)
-                .setQueueFullBehavior(WANQueueFullBehavior.DISCARD_AFTER_MUTATION)
+                .setQueueFullBehavior(WanQueueFullBehavior.DISCARD_AFTER_MUTATION)
                 .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
                 .setDiscoveryPeriodSeconds(20)
                 .setMaxTargetEndpoints(100)
@@ -1344,8 +1287,8 @@ public class ConfigXmlGeneratorTest {
                 .setAppendRequestBackoffTimeoutInMillis(50);
 
         config.getCPSubsystemConfig()
-                .addSemaphoreConfig(new CPSemaphoreConfig("sem1", true))
-                .addSemaphoreConfig(new CPSemaphoreConfig("sem2", false));
+                .addSemaphoreConfig(new SemaphoreConfig("sem1", true))
+                .addSemaphoreConfig(new SemaphoreConfig("sem2", false));
 
         config.getCPSubsystemConfig()
                 .addLockConfig(new FencedLockConfig("lock1", 1))

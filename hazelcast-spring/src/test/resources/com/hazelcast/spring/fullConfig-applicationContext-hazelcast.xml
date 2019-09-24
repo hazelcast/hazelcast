@@ -355,19 +355,6 @@
                 <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
             </hz:atomic-long>
 
-            <hz:atomic-reference name="testAtomicReference">
-                <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-                <hz:merge-policy batch-size="4223">PassThroughMergePolicy</hz:merge-policy>
-            </hz:atomic-reference>
-
-            <hz:count-down-latch name="testCountDownLatch">
-                <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-            </hz:count-down-latch>
-
-            <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10">
-                <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-            </hz:semaphore>
-
             <hz:reliable-topic name="testReliableTopic" topic-overload-policy="BLOCK" read-batch-size="10"
                                statistics-enabled="false">
                 <hz:message-listeners>
@@ -403,8 +390,8 @@
                     </hz:index>
                 </hz:indexes>
                 <hz:attributes>
-                    <hz:attribute name="power" extractor="com.car.PowerExtractor"/>
-                    <hz:attribute name="weight" extractor="com.car.WeightExtractor"/>
+                    <hz:attribute name="power" extractor-class-name="com.car.PowerExtractor"/>
+                    <hz:attribute name="weight" extractor-class-name="com.car.WeightExtractor"/>
                 </hz:attributes>
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>
@@ -842,8 +829,8 @@
             </hz:pn-counter>
 
             <hz:cp-subsystem>
-                <hz:cp-member-count>10</hz:cp-member-count>
-                <hz:group-size>5</hz:group-size>
+                <hz:cp-member-count>0</hz:cp-member-count>
+                <hz:group-size>0</hz:group-size>
                 <hz:session-time-to-live-seconds>15</hz:session-time-to-live-seconds>
                 <hz:session-heartbeat-interval-seconds>3</hz:session-heartbeat-interval-seconds>
                 <hz:missing-cp-member-auto-removal-seconds>120</hz:missing-cp-member-auto-removal-seconds>
@@ -858,14 +845,14 @@
                     <hz:append-request-backoff-timeout-in-millis>50</hz:append-request-backoff-timeout-in-millis>
                 </hz:raft-algorithm>
                 <hz:semaphores>
-                    <hz:cp-semaphore>
+                    <hz:semaphore>
                         <hz:name>sem1</hz:name>
                         <hz:jdk-compatible>true</hz:jdk-compatible>
-                    </hz:cp-semaphore>
-                    <hz:cp-semaphore>
+                    </hz:semaphore>
+                    <hz:semaphore>
                         <hz:name>sem2</hz:name>
                         <hz:jdk-compatible>false</hz:jdk-compatible>
-                    </hz:cp-semaphore>
+                    </hz:semaphore>
                 </hz:semaphores>
                 <hz:locks>
                     <hz:fenced-lock>

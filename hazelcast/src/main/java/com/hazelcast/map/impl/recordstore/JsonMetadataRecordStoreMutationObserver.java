@@ -25,8 +25,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Creates json related metadata for map records.

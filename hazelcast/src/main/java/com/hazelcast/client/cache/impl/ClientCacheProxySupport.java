@@ -57,7 +57,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.FutureUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -90,10 +90,10 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.addCallback;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.getSafely;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.handleFailureOnCompletionListener;
-import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations

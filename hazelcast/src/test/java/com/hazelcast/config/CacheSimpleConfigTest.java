@@ -82,7 +82,6 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
         blackEntryListenerConfig.setCacheEntryListenerFactory("black");
 
         EqualsVerifier.forClass(CacheSimpleConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .withPrefabValues(EvictionConfig.class,
                         new EvictionConfig().setSize(1000)

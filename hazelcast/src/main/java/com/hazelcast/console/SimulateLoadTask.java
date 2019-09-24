@@ -59,7 +59,7 @@ public final class SimulateLoadTask implements Callable, Serializable, Hazelcast
             throw new RuntimeException(e);
         }
 
-        hz.getCountDownLatch(latchId).countDown();
+        hz.getCPSubsystem().getCountDownLatch(latchId).countDown();
         System.out.println("Finished task: " + taskId);
         return null;
     }

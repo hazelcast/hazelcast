@@ -34,7 +34,7 @@ import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.singletonMap;
 
 public class MemberInfo implements IdentifiedDataSerializable {

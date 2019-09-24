@@ -23,8 +23,6 @@ import com.hazelcast.collection.IList;
  */
 public class ListConfig extends CollectionConfig<ListConfig> {
 
-    private transient ListConfigReadOnly readOnly;
-
     public ListConfig() {
     }
 
@@ -34,20 +32,6 @@ public class ListConfig extends CollectionConfig<ListConfig> {
 
     public ListConfig(ListConfig config) {
         super(config);
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    @Override
-    public ListConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ListConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override

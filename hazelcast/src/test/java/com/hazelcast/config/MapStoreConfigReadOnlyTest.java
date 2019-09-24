@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MapStoreConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +31,7 @@ import java.util.Properties;
 public class MapStoreConfigReadOnlyTest {
 
     private MapStoreConfig getReadOnlyConfig() {
-        return new MapStoreConfig().getAsReadOnly();
+        return new MapStoreConfigReadOnly(new MapStoreConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

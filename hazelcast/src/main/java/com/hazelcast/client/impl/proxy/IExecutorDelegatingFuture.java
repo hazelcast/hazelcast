@@ -31,7 +31,7 @@ import com.hazelcast.nio.Address;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * An Abstract DelegatingFuture that can cancel a Runnable/Callable that is executed by an

@@ -27,7 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.io.Closeable;
 import java.security.PrivilegedAction;

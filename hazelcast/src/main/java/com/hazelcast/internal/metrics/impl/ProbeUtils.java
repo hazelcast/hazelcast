@@ -26,7 +26,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.unmodifiableMap;
 
 /**

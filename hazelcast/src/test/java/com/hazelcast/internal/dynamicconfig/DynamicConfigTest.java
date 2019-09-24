@@ -41,7 +41,7 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -56,7 +56,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -551,19 +550,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSemaphoreConfig() {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig()
-                .setName(name)
-                .setInitialPermits(33)
-                .setAsyncBackupCount(4)
-                .setBackupCount(2);
-
-        driver.getConfig().addSemaphoreConfig(semaphoreConfig);
-
-        assertConfigurationsEqualsOnAllMembers(semaphoreConfig);
-    }
-
-    @Test
     public void testTopicConfig() {
         TopicConfig topicConfig = new TopicConfig(name)
                 .setGlobalOrderingEnabled(true)
@@ -779,14 +765,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(SemaphoreConfig semaphoreConfig) {
-        String name = semaphoreConfig.getName();
-        for (HazelcastInstance instance : members) {
-            SemaphoreConfig registeredConfig = instance.getConfig().getSemaphoreConfig(name);
-            assertEquals(semaphoreConfig, registeredConfig);
-        }
-    }
-
     private CacheSimpleConfig getCacheConfig() {
         CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
         entryListenerConfig.setCacheEntryListenerFactory("CacheEntryListenerFactory");
@@ -867,7 +845,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setTimeToLiveSeconds(220)
                 .setMaxIdleSeconds(110)
                 .setSplitBrainProtectionName(randomString())
-                .addMapAttributeConfig(new MapAttributeConfig("attributeName", "com.attribute.extractor"))
+                .addAttributeConfig(new AttributeConfig("attributeName", "com.attribute.extractor"))
                 .addIndexConfig(new IndexConfig(IndexType.SORTED, "attr"))
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)

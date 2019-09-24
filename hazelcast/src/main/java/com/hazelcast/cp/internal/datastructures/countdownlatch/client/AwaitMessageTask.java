@@ -17,11 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.countdownlatch.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchAwaitCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.AwaitOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Client message task for {@link AwaitOp}
  */
-public class AwaitMessageTask extends AbstractMessageTask<CPCountDownLatchAwaitCodec.RequestParameters>
+public class AwaitMessageTask extends AbstractMessageTask<CountDownLatchAwaitCodec.RequestParameters>
         implements ExecutionCallback<Boolean> {
 
     public AwaitMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -50,18 +50,18 @@ public class AwaitMessageTask extends AbstractMessageTask<CPCountDownLatchAwaitC
     }
 
     @Override
-    protected CPCountDownLatchAwaitCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPCountDownLatchAwaitCodec.decodeRequest(clientMessage);
+    protected CountDownLatchAwaitCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CountDownLatchAwaitCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPCountDownLatchAwaitCodec.encodeResponse((Boolean) response);
+        return CountDownLatchAwaitCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftCountDownLatchService.SERVICE_NAME;
+        return CountDownLatchService.SERVICE_NAME;
     }
 
     @Override

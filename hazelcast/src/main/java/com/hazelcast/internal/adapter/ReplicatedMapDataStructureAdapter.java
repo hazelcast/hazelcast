@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {

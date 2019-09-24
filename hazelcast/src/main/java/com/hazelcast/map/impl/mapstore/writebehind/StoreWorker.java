@@ -29,14 +29,14 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

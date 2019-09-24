@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Carries set of replicated map records for a partition from one node to another

@@ -17,12 +17,12 @@
 package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPSemaphoreDrainCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.DrainPermitsOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
@@ -34,7 +34,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link DrainPermitsOp}
  */
-public class DrainPermitsMessageTask extends AbstractMessageTask<CPSemaphoreDrainCodec.RequestParameters>
+public class DrainPermitsMessageTask extends AbstractMessageTask<SemaphoreDrainCodec.RequestParameters>
         implements ExecutionCallback<Integer> {
 
     public DrainPermitsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -49,18 +49,18 @@ public class DrainPermitsMessageTask extends AbstractMessageTask<CPSemaphoreDrai
     }
 
     @Override
-    protected CPSemaphoreDrainCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPSemaphoreDrainCodec.decodeRequest(clientMessage);
+    protected SemaphoreDrainCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreDrainCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPSemaphoreDrainCodec.encodeResponse((Integer) response);
+        return SemaphoreDrainCodec.encodeResponse((Integer) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftSemaphoreService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override

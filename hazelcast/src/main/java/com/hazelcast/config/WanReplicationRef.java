@@ -42,14 +42,11 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     private String mergePolicy;
     private List<String> filters = new LinkedList<String>();
 
-    private WanReplicationRefReadOnly readOnly;
-
     public WanReplicationRef() {
     }
 
     public WanReplicationRef(WanReplicationRef ref) {
         this(ref.name, ref.mergePolicy, ref.filters, ref.republishingEnabled);
-        this.readOnly = ref.readOnly;
     }
 
     public WanReplicationRef(String name, String mergePolicy, List<String> filters,
@@ -58,20 +55,6 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         this.mergePolicy = mergePolicy;
         this.filters = filters;
         this.republishingEnabled = republishingEnabled;
-        this.readOnly = null;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public WanReplicationRefReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new WanReplicationRefReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

@@ -31,7 +31,7 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.util.IterationType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

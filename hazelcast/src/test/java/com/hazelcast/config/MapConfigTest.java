@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.config.MapPartitionLostListenerConfigReadOnly;
+import com.hazelcast.internal.config.MapStoreConfigReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -225,7 +228,8 @@ public class MapConfigTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMapPartitionLostListenerReadOnlyConfig_withClassName() {
-        MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
+        MapPartitionLostListenerConfigReadOnly readOnly
+                = new MapPartitionLostListenerConfigReadOnly(new MapPartitionLostListenerConfig());
         readOnly.setClassName("com.hz");
     }
 
@@ -233,14 +237,15 @@ public class MapConfigTest {
     public void testMapPartitionLostListenerReadOnlyConfig_withImplementation() {
         MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
         MapPartitionLostListenerConfig listenerConfig = new MapPartitionLostListenerConfig(listener);
-        MapPartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
+        MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfigReadOnly(listenerConfig);
         assertEquals(listener, readOnly.getImplementation());
         readOnly.setImplementation(mock(MapPartitionLostListener.class));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMapPartitionLostListenerReadOnlyConfig_withEventListenerImplementation() {
-        MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
+        MapPartitionLostListenerConfigReadOnly readOnly
+                = new MapPartitionLostListenerConfigReadOnly(new MapPartitionLostListenerConfig());
         readOnly.setImplementation(mock(EventListener.class));
     }
 
@@ -318,36 +323,35 @@ public class MapConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
-                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                .withPrefabValues(MaxSizeConfig.class,
-                        new MaxSizeConfig(300, MaxSizeConfig.MaxSizePolicy.PER_PARTITION),
-                        new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_NODE))
-                .withPrefabValues(MapStoreConfig.class,
-                        new MapStoreConfig().setEnabled(true).setClassName("red"),
-                        new MapStoreConfig().setEnabled(true).setClassName("black"))
-                .withPrefabValues(NearCacheConfig.class,
-                        new NearCacheConfig().setTimeToLiveSeconds(10)
-                                .setMaxIdleSeconds(20)
-                                .setInvalidateOnChange(false)
-                                .setInMemoryFormat(InMemoryFormat.BINARY),
-                        new NearCacheConfig().setTimeToLiveSeconds(15)
-                                .setMaxIdleSeconds(25)
-                                .setInvalidateOnChange(true)
-                                .setInMemoryFormat(InMemoryFormat.OBJECT))
-                .withPrefabValues(WanReplicationRef.class,
-                        new WanReplicationRef().setName("red"),
-                        new WanReplicationRef().setName("black"))
-                .withPrefabValues(PartitioningStrategyConfig.class,
-                        new PartitioningStrategyConfig("red"),
-                        new PartitioningStrategyConfig("black"))
-                .withPrefabValues(MapConfigReadOnly.class,
-                        new MapConfigReadOnly(new MapConfig("red")),
-                        new MapConfigReadOnly(new MapConfig("black")))
-                .withPrefabValues(MergePolicyConfig.class,
-                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
-                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                .verify();
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(MaxSizeConfig.class,
+                              new MaxSizeConfig(300, MaxSizeConfig.MaxSizePolicy.PER_PARTITION),
+                              new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_NODE))
+                      .withPrefabValues(MapStoreConfig.class,
+                              new MapStoreConfig().setEnabled(true).setClassName("red"),
+                              new MapStoreConfig().setEnabled(true).setClassName("black"))
+                      .withPrefabValues(NearCacheConfig.class,
+                              new NearCacheConfig().setTimeToLiveSeconds(10)
+                                                   .setMaxIdleSeconds(20)
+                                                   .setInvalidateOnChange(false)
+                                                   .setInMemoryFormat(InMemoryFormat.BINARY),
+                              new NearCacheConfig().setTimeToLiveSeconds(15)
+                                                   .setMaxIdleSeconds(25)
+                                                   .setInvalidateOnChange(true)
+                                                   .setInMemoryFormat(InMemoryFormat.OBJECT))
+                      .withPrefabValues(WanReplicationRef.class,
+                              new WanReplicationRef().setName("red"),
+                              new WanReplicationRef().setName("black"))
+                      .withPrefabValues(PartitioningStrategyConfig.class,
+                              new PartitioningStrategyConfig("red"),
+                              new PartitioningStrategyConfig("black"))
+                      .withPrefabValues(MapConfigReadOnly.class,
+                              new MapConfigReadOnly(new MapConfig("red")),
+                              new MapConfigReadOnly(new MapConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                      .verify();
     }
 
     @Test

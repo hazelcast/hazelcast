@@ -32,7 +32,7 @@ import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
@@ -40,7 +40,7 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.util.ByteArrayProcessor;
+import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
 import java.util.Map;

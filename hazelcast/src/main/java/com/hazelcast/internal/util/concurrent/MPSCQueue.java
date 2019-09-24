@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.util.concurrent;
 
-import com.hazelcast.util.concurrent.IdleStrategy;
-
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
@@ -26,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 import static java.util.concurrent.locks.LockSupport.park;
 import static java.util.concurrent.locks.LockSupport.unpark;
 

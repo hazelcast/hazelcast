@@ -20,7 +20,7 @@ import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Utility methods for indexes.

@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IndeterminateOperationState;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -27,15 +28,16 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
-import static com.hazelcast.util.Clock.currentTimeMillis;
-import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.ExceptionUtil.fixAsyncStackTrace;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 /**
  * The InvocationFuture is the {@link InternalCompletableFuture} that waits on the completion
@@ -73,6 +75,14 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     @Override
     protected void onInterruptDetected() {
         interrupted = true;
+    }
+
+    @Override
+    protected Exception wrapToInstanceNotActiveException(RejectedExecutionException e) {
+        if (!invocation.context.nodeEngine.isRunning()) {
+            return new HazelcastInstanceNotActiveException(e.getMessage());
+        }
+        return e;
     }
 
     @Override

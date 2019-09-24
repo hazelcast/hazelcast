@@ -25,9 +25,9 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.SortingUtil;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.SortingUtil;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.io.IOException;
 import java.util.Iterator;

@@ -56,9 +56,9 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.executor.DelegatingFuture;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.executor.DelegatingFuture;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -78,15 +78,15 @@ import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNoNullInside;
-import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.SetUtil.createHashSet;
-import static com.hazelcast.util.TimeUtil.timeInMsOrTimeIfNullUnit;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
+import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.TimeUtil.timeInMsOrTimeIfNullUnit;
 import static java.util.Collections.emptyMap;
 
 /**

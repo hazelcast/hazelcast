@@ -29,7 +29,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPMember;
-import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
@@ -79,7 +79,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * A Factory for creating {@link TimedMemberState} instances.
@@ -168,6 +168,7 @@ public class TimedMemberStateFactory {
             serializableClientEndPoints.add(new ClientEndPointDTO(client));
         }
         memberState.setClients(serializableClientEndPoints);
+        memberState.setName(instance.getName());
 
         memberState.setUuid(node.getThisUuid());
         if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {

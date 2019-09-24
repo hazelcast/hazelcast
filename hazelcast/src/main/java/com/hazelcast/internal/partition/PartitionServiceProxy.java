@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.FutureUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,7 +41,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class PartitionServiceProxy implements PartitionService {
 

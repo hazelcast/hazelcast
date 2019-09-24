@@ -140,7 +140,7 @@ public interface ICacheService
      * @param cacheNameWithPrefix the full name of the {@link
      *                            com.hazelcast.cache.ICache}, including the manager scope prefix
      */
-    void checkWanReplicationQueues(String cacheNameWithPrefix);
+    void doPrepublicationChecks(String cacheNameWithPrefix);
 
     /**
      * Returns an interface for interacting with the cache event journals.

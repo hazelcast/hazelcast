@@ -17,12 +17,12 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * A specific {@link ExecutionCallback} base implementation which has this behaviour:

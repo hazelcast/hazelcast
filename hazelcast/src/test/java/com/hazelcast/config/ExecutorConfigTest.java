@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -58,7 +59,6 @@ public class ExecutorConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ExecutorConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                 .withPrefabValues(ExecutorConfigReadOnly.class,
                         new ExecutorConfigReadOnly(new ExecutorConfig("red")),

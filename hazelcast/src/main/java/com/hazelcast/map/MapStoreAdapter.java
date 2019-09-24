@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import java.util.Collection;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Adapter for MapStore.

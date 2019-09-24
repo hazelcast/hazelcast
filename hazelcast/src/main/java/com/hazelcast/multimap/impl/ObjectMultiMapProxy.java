@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,9 +41,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class ObjectMultiMapProxy<K, V>

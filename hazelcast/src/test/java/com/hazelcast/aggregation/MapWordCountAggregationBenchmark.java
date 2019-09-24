@@ -24,8 +24,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.StringUtil;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;

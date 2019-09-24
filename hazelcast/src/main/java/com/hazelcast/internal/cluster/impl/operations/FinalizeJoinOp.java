@@ -32,7 +32,7 @@ import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;

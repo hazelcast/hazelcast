@@ -53,10 +53,10 @@ import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}.
@@ -213,16 +213,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
                 }
             }
         }
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public CacheConfigReadOnly<K, V> getAsReadOnly() {
-        return new CacheConfigReadOnly<>(this);
     }
 
     /**
@@ -496,9 +486,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      *
      * @param disablePerEntryInvalidationEvents disables invalidation event sending behaviour if it is {@code true},
      *                                          otherwise enables it
+     * @return this configuration
      */
-    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+    public CacheConfig<K, V> setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
+        return this;
     }
 
     @Override

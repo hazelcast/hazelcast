@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.memory.impl;
 
-import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import java.nio.ByteOrder;
 

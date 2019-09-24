@@ -22,8 +22,8 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collections;
 import java.util.Map;

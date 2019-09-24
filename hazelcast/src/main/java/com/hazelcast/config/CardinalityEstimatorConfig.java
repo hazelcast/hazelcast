@@ -24,9 +24,9 @@ import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 /**
@@ -66,8 +66,6 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
     private String splitBrainProtectionName;
 
     private MergePolicyConfig mergePolicyConfig = DEFAULT_MERGE_POLICY_CONFIG;
-
-    private transient CardinalityEstimatorConfigReadOnly readOnly;
 
     public CardinalityEstimatorConfig() {
     }
@@ -223,16 +221,12 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
 
     @Override
     public String toString() {
-        return "CardinalityEstimatorConfig{" + "name='" + name + '\'' + ", backupCount=" + backupCount
-                + ", asyncBackupCount=" + asyncBackupCount + ", readOnly=" + readOnly + ", splitBrainProtectionName="
-                + splitBrainProtectionName + ", mergePolicyConfig=" + mergePolicyConfig + '}';
-    }
-
-    CardinalityEstimatorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CardinalityEstimatorConfigReadOnly(this);
-        }
-        return readOnly;
+        return "CardinalityEstimatorConfig{"
+                + "name='" + name + '\''
+                + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
+                + ", mergePolicyConfig=" + mergePolicyConfig + '}';
     }
 
     @Override
@@ -305,39 +299,6 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
         if (!Arrays.asList(ALLOWED_POLICIES).contains(mergePolicyConfig.getPolicy())) {
             throw new InvalidConfigurationException(format("Policy %s is not allowed as a merge-policy "
                     + "for CardinalityEstimator.", mergePolicyConfig.getPolicy()));
-        }
-    }
-
-    // not private for testing
-    static class CardinalityEstimatorConfigReadOnly extends CardinalityEstimatorConfig {
-
-        CardinalityEstimatorConfigReadOnly(CardinalityEstimatorConfig config) {
-            super(config);
-        }
-
-        @Override
-        public CardinalityEstimatorConfig setName(String name) {
-            throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
-        }
-
-        @Override
-        public CardinalityEstimatorConfig setBackupCount(int backupCount) {
-            throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
-        }
-
-        @Override
-        public CardinalityEstimatorConfig setAsyncBackupCount(int asyncBackupCount) {
-            throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
-        }
-
-        @Override
-        public CardinalityEstimatorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
-            throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
-        }
-
-        @Override
-        public CardinalityEstimatorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-            throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
         }
     }
 }

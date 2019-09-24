@@ -34,7 +34,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

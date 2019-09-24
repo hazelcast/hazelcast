@@ -20,7 +20,7 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,9 +33,9 @@ import java.util.Map;
 public class LocalWanStatsImpl implements LocalWanStats {
     /**
      * Local WAN replication statistics for a single scheme, grouped by WAN
-     * publisher name.
+     * publisher ID.
      */
-    private volatile Map<String, LocalWanPublisherStats> localPublisherStatsMap = new HashMap<String, LocalWanPublisherStats>();
+    private volatile Map<String, LocalWanPublisherStats> localPublisherStatsMap = new HashMap<>();
     private volatile long creationTime;
 
     public LocalWanStatsImpl() {

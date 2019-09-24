@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import static com.hazelcast.util.HashUtil.hashToIndex;
+import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static java.lang.System.identityHashCode;
 
 /**

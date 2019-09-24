@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +31,7 @@ import java.util.Collections;
 public class QueueConfigReadOnlyTest {
 
     private QueueConfig getReadOnlyConfig() {
-        return new QueueConfig().getAsReadOnly();
+        return new QueueConfigReadOnly(new QueueConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

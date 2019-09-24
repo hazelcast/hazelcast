@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
@@ -25,10 +26,11 @@ import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
+import static com.hazelcast.internal.util.ExceptionUtil.fixAsyncStackTrace;
 
 public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
 
@@ -83,6 +85,14 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     @Override
     public void andThen(ExecutionCallback<ClientMessage> callback, Executor executor) {
         super.andThen(new InternalDelegatingExecutionCallback(callback), executor);
+    }
+
+    @Override
+    protected Exception wrapToInstanceNotActiveException(RejectedExecutionException e) {
+        if (!invocation.lifecycleService.isRunning()) {
+            return new HazelcastClientNotActiveException("Client is shut down", e);
+        }
+        return e;
     }
 
     @Override

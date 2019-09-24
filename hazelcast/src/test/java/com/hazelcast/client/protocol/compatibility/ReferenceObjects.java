@@ -42,7 +42,7 @@ import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
@@ -91,9 +91,9 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
-import com.hazelcast.util.AddressUtil;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.version.MemberVersion;
-import com.hazelcast.wan.WANReplicationQueueFullException;
+import com.hazelcast.wan.WanReplicationQueueFullException;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
@@ -198,8 +198,8 @@ public class ReferenceObjects {
         if (a instanceof IndexConfig && b instanceof IndexConfig) {
             return isEqual((IndexConfig) a, (IndexConfig) b);
         }
-        if (a instanceof MapAttributeConfig && b instanceof MapAttributeConfig) {
-            return isEqual((MapAttributeConfig) a, (MapAttributeConfig) b);
+        if (a instanceof AttributeConfig && b instanceof AttributeConfig) {
+            return isEqual((AttributeConfig) a, (AttributeConfig) b);
         }
         if (a instanceof QueryCacheConfigHolder && b instanceof QueryCacheConfigHolder) {
             return isEqual((QueryCacheConfigHolder) a, (QueryCacheConfigHolder) b);
@@ -359,7 +359,7 @@ public class ReferenceObjects {
         return a.getAttributes() != null ? a.getAttributes().equals(that.getAttributes()) : that.getAttributes() == null;
     }
 
-    public static boolean isEqual(MapAttributeConfig a, MapAttributeConfig that) {
+    public static boolean isEqual(AttributeConfig a, AttributeConfig that) {
         if (a == that) {
             return true;
         }
@@ -370,8 +370,8 @@ public class ReferenceObjects {
         if (a.getName() != null ? !a.getName().equals(that.getName()) : that.getName() != null) {
             return false;
         }
-        return a.getExtractor() != null ? a.getExtractor().equals(that.getExtractor())
-                : that.getExtractor() == null;
+        return a.getExtractorClassName() != null ? a.getExtractorClassName().equals(that.getExtractorClassName())
+                : that.getExtractorClassName() == null;
     }
 
     public static boolean isEqual(MapStoreConfigHolder a, MapStoreConfigHolder b) {
@@ -693,7 +693,7 @@ public class ReferenceObjects {
     public static NearCachePreloaderConfig nearCachePreloaderConfig;
     public static NearCacheConfigHolder nearCacheConfig;
     public static List<IndexConfig> indexConfigs;
-    public static List<MapAttributeConfig> mapAttributeConfigs;
+    public static List<AttributeConfig> attributeConfigs;
     public static List<QueryCacheConfigHolder> queryCacheConfigs;
     public static TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
     public static HotRestartConfig hotRestartConfig;
@@ -753,8 +753,8 @@ public class ReferenceObjects {
         indexConfigs = new ArrayList<IndexConfig>();
         indexConfigs.add(new IndexConfig(IndexType.HASH, "attr"));
 
-        mapAttributeConfigs = new ArrayList<MapAttributeConfig>();
-        mapAttributeConfigs.add(new MapAttributeConfig("attr", "com.hazelcast.AttributeExtractor"));
+        attributeConfigs = new ArrayList<AttributeConfig>();
+        attributeConfigs.add(new AttributeConfig("attr", "com.hazelcast.AttributeExtractor"));
 
         queryCacheConfigs = new ArrayList<QueryCacheConfigHolder>();
         QueryCacheConfigHolder queryCacheConfig = new QueryCacheConfigHolder();
@@ -823,7 +823,7 @@ public class ReferenceObjects {
             aString), new AccessControlException(aString), new LoginException(aString), new UnsupportedCallbackException(
             new Callback() {
             }), new NoDataMemberInClusterException(aString), new ReplicatedMapCantBeCreatedOnLiteMemberException(
-            aString), new MaxMessageSizeExceeded(), new WANReplicationQueueFullException(aString), new AssertionError(
+            aString), new MaxMessageSizeExceeded(), new WanReplicationQueueFullException(aString), new AssertionError(
             aString), new OutOfMemoryError(aString), new StackOverflowError(aString), new NativeOutOfMemoryError(aString)};
 
     public static Throwable[] throwables_1_1 = {new StaleTaskIdException(aString), new ServiceNotFoundException(aString)};

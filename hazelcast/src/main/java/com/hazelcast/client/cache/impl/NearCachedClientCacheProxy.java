@@ -35,7 +35,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
@@ -54,8 +54,8 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * An {@link ICacheInternal} implementation which handles Near Cache specific behaviour of methods.

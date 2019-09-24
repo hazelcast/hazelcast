@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 
 /**
  * An event processor responsible of fetching the registration and service responsible for the published event

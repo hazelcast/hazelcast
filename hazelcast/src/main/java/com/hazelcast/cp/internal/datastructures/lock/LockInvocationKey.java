@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Represents lock() invocation of a LockEndpoint.
@@ -42,8 +42,6 @@ public class LockInvocationKey extends WaitKey implements IdentifiedDataSerializ
         super(commitIndex, invocationUid, callerAddress, callId);
         checkNotNull(endpoint);
         this.endpoint = endpoint;
-        this.commitIndex = commitIndex;
-        this.invocationUid = invocationUid;
     }
 
     @Override

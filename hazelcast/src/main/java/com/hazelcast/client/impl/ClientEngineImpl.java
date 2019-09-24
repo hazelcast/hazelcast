@@ -65,9 +65,9 @@ import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionManagerService;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
@@ -90,8 +90,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
-import static com.hazelcast.util.SetUtil.createHashSet;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 
 /**
  * Class that requests, listeners from client handled in node side.

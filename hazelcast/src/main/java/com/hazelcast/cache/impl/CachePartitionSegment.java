@@ -19,8 +19,8 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.HashSet;

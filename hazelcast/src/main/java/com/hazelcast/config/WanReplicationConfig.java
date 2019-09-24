@@ -27,7 +27,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for WAN replication. This configuration is referenced from a

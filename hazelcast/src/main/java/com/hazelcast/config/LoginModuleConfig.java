@@ -16,11 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Properties;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Configuration for Login Module

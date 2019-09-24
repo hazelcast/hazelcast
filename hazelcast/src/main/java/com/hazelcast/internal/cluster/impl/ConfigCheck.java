@@ -29,8 +29,8 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Contains enough information about Hazelcast Config to do a validation check so that clusters with different configurations

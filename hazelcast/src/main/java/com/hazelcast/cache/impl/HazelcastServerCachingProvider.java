@@ -31,9 +31,9 @@ import java.util.Properties;
 import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION;
 import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_INSTANCE_ITSELF;
 import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
  * Hazelcast server implementation of {@link javax.cache.spi.CachingProvider}.

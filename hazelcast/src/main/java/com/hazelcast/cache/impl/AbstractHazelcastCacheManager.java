@@ -41,9 +41,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.CacheUtil.getPrefix;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createLinkedHashSet;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createLinkedHashSet;
 
 /**
  * Abstract {@link HazelcastCacheManager} (also indirect {@link CacheManager})

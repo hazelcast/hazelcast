@@ -38,7 +38,7 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.xa.operations.ClearRemoteTransactionOperation;
 import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperation;
 import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionOperation;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;

@@ -28,8 +28,8 @@ import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.client.impl.ClientEndpoint}.

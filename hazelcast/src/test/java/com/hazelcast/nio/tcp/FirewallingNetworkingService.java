@@ -37,9 +37,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.checkState;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkState;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

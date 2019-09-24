@@ -28,7 +28,7 @@ import com.hazelcast.logging.Logger;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
 
 /**
  * Handles client B/W list configuration received from Management Center and applies changes.

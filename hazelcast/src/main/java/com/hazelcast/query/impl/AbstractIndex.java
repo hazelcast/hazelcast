@@ -35,7 +35,7 @@ import java.util.Set;
 
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.emptySet;
 
 /**

@@ -40,8 +40,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Loads all entries of the keys to partition record store {@link com.hazelcast.cache.impl.ICacheRecordStore}.

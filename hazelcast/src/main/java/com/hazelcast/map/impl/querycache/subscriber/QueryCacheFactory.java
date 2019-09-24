@@ -20,8 +20,8 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

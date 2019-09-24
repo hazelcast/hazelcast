@@ -23,9 +23,9 @@ import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyCompa
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.nio.ClassLoaderUtil;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Provider to get any kind ({@link EvictionPolicyType}) of {@link EvictionPolicyEvaluator}.

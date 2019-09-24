@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.IndexConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +31,7 @@ import java.util.Collections;
 public class IndexConfigReadOnlyTest {
 
     private static IndexConfig getConfig() {
-        return new IndexConfig().getAsReadOnly();
+        return new IndexConfigReadOnly(new IndexConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

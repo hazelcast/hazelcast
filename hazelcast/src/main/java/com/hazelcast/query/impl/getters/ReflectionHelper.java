@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -36,7 +36,7 @@ import static com.hazelcast.query.impl.getters.NullGetter.NULL_GETTER;
 import static com.hazelcast.query.impl.getters.NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
 import static com.hazelcast.query.impl.getters.SuffixModifierUtils.getModifierSuffix;
 import static com.hazelcast.query.impl.getters.SuffixModifierUtils.removeModifierSuffix;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Scans your classpath, indexes the metadata, allows you to query it on runtime.

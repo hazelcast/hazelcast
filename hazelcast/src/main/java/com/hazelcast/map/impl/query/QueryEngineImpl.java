@@ -32,8 +32,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,8 +45,8 @@ import java.util.function.IntConsumer;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.query.Target.ALL_NODES;
 import static com.hazelcast.map.impl.query.Target.LOCAL_NODE;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.SetUtil.allPartitionIds;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.SetUtil.allPartitionIds;
 import static java.util.Collections.singletonList;
 
 /**

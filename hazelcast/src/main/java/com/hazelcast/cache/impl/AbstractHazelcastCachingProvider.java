@@ -20,7 +20,7 @@ import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -36,7 +36,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.System.getProperty;
 

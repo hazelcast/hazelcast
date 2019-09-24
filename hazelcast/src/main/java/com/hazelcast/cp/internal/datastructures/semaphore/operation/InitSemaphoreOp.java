@@ -17,9 +17,9 @@
 package com.hazelcast.cp.internal.datastructures.semaphore.operation;
 
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphore;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.Semaphore;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,7 +32,7 @@ import java.io.IOException;
 /**
  * Operation for {@link ISemaphore#init(int)}
  *
- * @see RaftSemaphore#init(int)
+ * @see Semaphore#init(int)
  */
 public class InitSemaphoreOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
 
@@ -49,7 +49,7 @@ public class InitSemaphoreOp extends RaftOp implements IndeterminateOperationSta
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftSemaphoreService service = getService();
+        SemaphoreService service = getService();
         return service.initSemaphore(groupId, name, permits);
     }
 
@@ -60,17 +60,17 @@ public class InitSemaphoreOp extends RaftOp implements IndeterminateOperationSta
 
     @Override
     protected String getServiceName() {
-        return RaftSemaphoreService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override
     public int getFactoryId() {
-        return RaftSemaphoreDataSerializerHook.F_ID;
+        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftSemaphoreDataSerializerHook.INIT_SEMAPHORE_OP;
+        return SemaphoreDataSerializerHook.INIT_SEMAPHORE_OP;
     }
 
     @Override

@@ -17,13 +17,13 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.map.MapLoader;
-import com.hazelcast.util.IterableUtil;
+import com.hazelcast.internal.util.IterableUtil;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * MapLoader that pauses once while loading keys until resumed using {@link #resume()}

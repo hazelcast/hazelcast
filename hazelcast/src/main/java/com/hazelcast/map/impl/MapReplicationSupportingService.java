@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 class MapReplicationSupportingService implements ReplicationSupportingService {
     private final MapServiceContext mapServiceContext;
@@ -58,9 +58,9 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     private void handleRemove(MapReplicationRemove replicationRemove) {
-        String mapName = replicationRemove.getMapName();
+        String mapName = replicationRemove.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
-        MapOperation operation = operationProvider.createDeleteOperation(replicationRemove.getMapName(),
+        MapOperation operation = operationProvider.createDeleteOperation(replicationRemove.getObjectName(),
                 replicationRemove.getKey(), true);
 
         try {
@@ -76,7 +76,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
 
     private void handleUpdate(MapReplicationUpdate replicationUpdate) {
         SplitBrainMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
-        String mapName = replicationUpdate.getMapName();
+        String mapName = replicationUpdate.getObjectName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
 
         SerializationService serializationService = nodeEngine.getSerializationService();

@@ -68,8 +68,8 @@ import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.memory.DefaultMemoryStats;
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.internal.memory.DefaultMemoryStats;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
@@ -87,12 +87,12 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.ByteArrayProcessor;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.PhoneHome;
-import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.ByteArrayProcessor;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.PhoneHome;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -500,5 +500,9 @@ public class DefaultNodeExtension implements NodeExtension {
 
     protected void createAndSetPhoneHome() {
         this.phoneHome = new PhoneHome(node);
+    }
+
+    public void setLicenseKey(String licenseKey) {
+        // NOP
     }
 }

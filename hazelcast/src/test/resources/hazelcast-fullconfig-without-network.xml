@@ -361,8 +361,8 @@
         </indexes>
 
         <attributes>
-            <attribute extractor="com.example.CurrencyExtractor">currency</attribute>
-            <attribute extractor="com.example.AgeExtractor">age</attribute>
+            <attribute extractor-class-name="com.example.CurrencyExtractor">currency</attribute>
+            <attribute extractor-class-name="com.example.AgeExtractor">age</attribute>
         </attributes>
 
         <entry-listeners>
@@ -470,13 +470,6 @@
         </message-listeners>
     </reliable-topic>
 
-    <semaphore name="default">
-        <initial-permits>10</initial-permits>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-    </semaphore>
-
     <lock name="default">
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </lock>
@@ -485,15 +478,6 @@
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-long>
-
-    <atomic-reference name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-    </atomic-reference>
-
-    <count-down-latch name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-    </count-down-latch>
 
     <ringbuffer name="default">
         <capacity>25311</capacity>
@@ -840,14 +824,14 @@
             <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
         </raft-algorithm>
         <semaphores>
-            <cp-semaphore>
+            <semaphore>
                 <name>sem1</name>
                 <jdk-compatible>true</jdk-compatible>
-            </cp-semaphore>
-            <cp-semaphore>
+            </semaphore>
+            <semaphore>
                 <name>sem2</name>
                 <jdk-compatible>false</jdk-compatible>
-            </cp-semaphore>
+            </semaphore>
         </semaphores>
         <locks>
             <fenced-lock>

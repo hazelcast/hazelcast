@@ -28,7 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Contains all wait keys for an invocation uid within the same session,

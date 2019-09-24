@@ -27,9 +27,9 @@ public class WanSyncProgressUpdateEvent extends AbstractWanAntiEntropyEventBase 
     private final int partitionsSynced;
     private final int recordsSynced;
 
-    public WanSyncProgressUpdateEvent(UUID uuid, String wanReplicationName, String targetGroupName, String mapName,
+    public WanSyncProgressUpdateEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName,
                                       int partitionsToSync, int partitionsSynced, int recordsSynced) {
-        super(uuid, wanReplicationName, targetGroupName, mapName);
+        super(uuid, wanReplicationName, wanPublisherId, mapName);
         this.partitionsToSync = partitionsToSync;
         this.partitionsSynced = partitionsSynced;
         this.recordsSynced = recordsSynced;

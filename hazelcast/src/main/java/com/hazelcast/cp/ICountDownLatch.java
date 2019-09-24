@@ -16,9 +16,7 @@
 
 package com.hazelcast.cp;
 
-import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * {@link java.util.concurrent.CountDownLatch java.util.concurrent.CountDownLatch}:
  * <ol>
  * <li>
- * the ICountDownLatch count can be reset using {@link #trySetCount(int)} after
+ * ICountDownLatch count can be reset using {@link #trySetCount(int)} after
  * a countdown has finished but not during an active count. This allows
  * the same latch instance to be reused.
  * </li>
@@ -45,41 +43,10 @@ import java.util.concurrent.TimeUnit;
  * an explicit timeout so you have the ability to deal with these situations.
  * </li>
  * </ol>
- * As of version 3.12, Hazelcast offers 2 different {@link ICountDownLatch}
- * impls. Behaviour of {@link ICountDownLatch} under failure scenarios,
- * including network partitions, depend on the impl. The first impl is the
- * one accessed via {@link HazelcastInstance#getCountDownLatch(String)}.
- * This impl works on top of Hazelcast's async replication algorithm and
- * does not guarantee linearizability during failures. During a split, each
- * partitioned cluster will either create a brand new and uninitialised (zero'd)
- * {@link ICountDownLatch} instance, or it will continue to use the primary or
- * backup replica. For example, it is possible for both the primary and backup
- * replicas to be resident in one cluster partition, and for another one to be
- * created as new in the other side of the network partition. In any of these
- * cases, the counter value in the respective {@link ICountDownLatch} instance
- * may diverge.
  * <p>
- * In this impl, when the split heals, Hazelcast performs a default largest
- * cluster wins resolution, or a random winner is chosen where clusters sizes
- * are equal. This can lead to situations where the {@link ICountDownLatch}
- * can fall into an unpredictable state, and a countdown to zero may never be
- * achieved.
- * <p>
- * If required, when using {@link ICountDownLatch} as an orchestration
- * mechanism, you should assess the state of the orchestration outcome and
- * the associated countdown actors after a split-brain heal has taken place,
- * and take steps to re-orchestrate if needed.
- * <p>
- * This {@link ICountDownLatch} impl also supports split brain protection
- * {@link SplitBrainProtectionConfig} in cluster versions 3.10 and higher.
- * However, Hazelcast split brain protections do not guarantee strong consistency
- * under failure scenarios.
- * <p>
- * The second {@link ICountDownLatch} impl is a new one introduced with the
- * {@link CPSubsystem} in version 3.12. It is accessed via
- * {@link CPSubsystem#getCountDownLatch(String)}. It has a major difference to
- * the old implementation, that is, it works on top of the Raft consensus
- * algorithm. It offers linearizability during crash failures and network
+ * {@link ICountDownLatch} is accessed via
+ * {@link CPSubsystem#getCountDownLatch(String)}. It works on top of the Raft
+ * consensus algorithm. It offers linearizability during crash failures and network
  * partitions. It is CP with respect to the CAP principle. If a network
  * partition occurs, it remains available on at most one side of the partition.
  * <p>

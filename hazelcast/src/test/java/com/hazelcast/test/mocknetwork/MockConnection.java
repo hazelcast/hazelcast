@@ -34,7 +34,7 @@ import java.security.cert.Certificate;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.mocknetwork.MockNetworkingService.MockEndpointManager.isTargetLeft;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static org.junit.Assert.assertNotNull;
 
 public class MockConnection implements Connection {

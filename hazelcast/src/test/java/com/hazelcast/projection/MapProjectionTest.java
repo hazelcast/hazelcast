@@ -136,6 +136,16 @@ public class MapProjectionTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void projection_3Nodes_multiAttribute() {
+        IMap<String, Person> map = getMapWithNodeCount(3);
+        populateMapWithPersons(map);
+
+        Collection<Object[]> result = map.project(Projections.multiAttribute("age", "state"));
+
+        assertThat(result, containsInAnyOrder(new Object[]{1.0d, "NY"}, new Object[]{4.0d, "DC"}, new Object[]{7.0d, "OH"}));
+    }
+
+    @Test
     public void projection_1Node_objectValue_withPredicate() {
         IMap<String, Person> map = getMapWithNodeCount(1);
         populateMapWithPersons(map);
@@ -185,14 +195,15 @@ public class MapProjectionTest extends HazelcastTestSupport {
     }
 
     private void populateMapWithPersons(IMap<String, Person> map) {
-        map.put("key1", new Person(1.0d));
-        map.put("key2", new Person(4.0d));
-        map.put("key3", new Person(7.0d));
+        map.put("key1", new Person(1.0d, "NY"));
+        map.put("key2", new Person(4.0d, "DC"));
+        map.put("key3", new Person(7.0d, "OH"));
     }
 
     public static class Person implements DataSerializable {
 
         public double age;
+        public String state;
 
         public Person() {
         }
@@ -201,14 +212,21 @@ public class MapProjectionTest extends HazelcastTestSupport {
             this.age = age;
         }
 
+        public Person(double age, String state) {
+            this.age = age;
+            this.state = state;
+        }
+
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeDouble(age);
+            out.writeUTF(state);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             age = in.readDouble();
+            state = in.readUTF();
         }
     }
 

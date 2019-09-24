@@ -16,6 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.EvictionConfigReadOnly;
+import com.hazelcast.internal.config.IndexConfigReadOnly;
+import com.hazelcast.internal.config.PredicateConfigReadOnly;
+import com.hazelcast.internal.config.QueryCacheConfigReadOnly;
+import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class QueryCacheConfigReadOnlyTest {
 
     private QueryCacheConfig getReadOnlyConfig() {
-        return new QueryCacheConfig().getAsReadOnly();
+        return new QueryCacheConfigReadOnly(new QueryCacheConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -42,7 +47,7 @@ public class QueryCacheConfigReadOnlyTest {
                 .addIndexConfig(new IndexConfig())
                 .addIndexConfig(new IndexConfig());
 
-        List<IndexConfig> indexConfigs = config.getAsReadOnly().getIndexConfigs();
+        List<IndexConfig> indexConfigs = new QueryCacheConfigReadOnly(config).getIndexConfigs();
         indexConfigs.add(new IndexConfig());
     }
 
@@ -52,7 +57,8 @@ public class QueryCacheConfigReadOnlyTest {
                 .addEntryListenerConfig(new EntryListenerConfig())
                 .addEntryListenerConfig(new EntryListenerConfig());
 
-        List<EntryListenerConfig> entryListenerConfigs = config.getAsReadOnly().getEntryListenerConfigs();
+        List<EntryListenerConfig> entryListenerConfigs = new QueryCacheConfigReadOnly(config)
+                .getEntryListenerConfigs();
         entryListenerConfigs.add(new EntryListenerConfig());
     }
 

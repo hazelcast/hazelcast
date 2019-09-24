@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.EMPTY_MAP;
 
 public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageTask<P> {

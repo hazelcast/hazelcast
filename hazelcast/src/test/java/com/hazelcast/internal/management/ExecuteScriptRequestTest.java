@@ -33,9 +33,9 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

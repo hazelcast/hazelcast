@@ -310,7 +310,7 @@ hazelcast:
   #                  connection-timeout-seconds: 10
   #                  hz-port: 5702
   # * "custom-publisher":
-  #     Custom implementation of a WAN publisher implementing WanReplicationEndpoint.
+  #     Custom implementation of a WAN publisher implementing WanReplicationPublisher.
   #     * "class-name":
   #     Mandatory config value defining the fully qualified class name of the
   #     WAN publisher implementation.
@@ -1238,8 +1238,8 @@ hazelcast:
   # optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
   # * "attributes":
   # You can define attributes that may be referenced in predicates, queries and indexes using this element's
-  # "attribute" sub-elements. Each "attribute" has only the "extractor" attribute which you should define beforehand
-  # by implementing Hazelcast's ValueExtractor class.
+  # "attribute" sub-elements. Each "attribute" has only the "extractor-class-name" attribute which you should define
+  # beforehand by implementing Hazelcast's ValueExtractor class.
   # * "entry-listeners":
   #     Adds listeners (listener classes) for the map entries using the "entry-listener" sub-elements. You can also set its
   #     attribute "include-value" to true if you want the entry event to contain the item values, and you can set its attribute
@@ -1312,7 +1312,7 @@ hazelcast:
           - "age"
       attributes:
         currency:
-          extractor: com.bank.CurrencyExtractor
+          extractor-class-name: com.bank.CurrencyExtractor
       entry-listeners:
         - class-name: com.your-package.MyEntryListener
           include-value: false
@@ -1827,44 +1827,6 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
-  #
-  # ===== HAZELCAST SEMAPHORE CONFIGURATION =====
-  #
-  # Configuration element's name is "semaphore". It has the required attribute "name" with which you
-  # can specify the name of your Semaphore. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "initial-permits":
-  #     The thread count to which the concurrent access is limited. For example, if you set
-  # it to 3, concurrent access to the object is limited to 3 threads.
-  # * "backup-count":
-  #     Number of synchronous backups. For example, if it is set to 1, all permits of the semaphore
-  #     are copied to one other member for fail-safety. Its default value is 1.
-  # * "async-backup-count":
-  # Number of asynchronous backups. Its default value is 0.
-  # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  #
-  semaphore:
-    default:
-      initial-permits: 0
-      backup-count: 1
-      async-backup-count: 0
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
-
-  #
-  # ===== HAZELCAST COUNT-DOWN-LATCH CONFIGURATION =====
-  #
-  # Configuration element's name is "count-down-latch". It has the required attribute "name" with which you
-  # can specify the name of your CountDownLatch. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  #
-  count-down-latch:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST LOCK CONFIGURATION =====
@@ -2016,22 +1978,6 @@ hazelcast:
         class-name: PutIfAbsentMergePolicy
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
-  #
-  # ===== HAZELCAST ATOMIC REFERENCE CONFIGURATION =====
-  #
-  # Configuration element's name is "atomic-reference". It has the required attribute "name" with which you
-  # can specify the name of your IAtomicReference. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  #
-  atomic-reference:
-    default:
-      merge-policy:
-        batch-size: 100
-        class-name: PutIfAbsentMergePolicy
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST LISTENER CONFIGURATIONS =====

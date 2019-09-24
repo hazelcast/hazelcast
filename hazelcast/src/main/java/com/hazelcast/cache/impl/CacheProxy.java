@@ -25,19 +25,20 @@ import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.spi.impl.eventservice.EventFilter;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -59,11 +60,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -84,7 +85,7 @@ import static java.util.Collections.emptyMap;
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         implements EventJournalReader<EventJournalCacheEvent<K, V>> {
 
@@ -219,7 +220,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
         if (clazz.isInstance(cacheConfig)) {
-            return clazz.cast(cacheConfig.getAsReadOnly());
+            return clazz.cast(new CacheConfigReadOnly<>(cacheConfig));
         }
         throw new IllegalArgumentException("The configuration class " + clazz + " is not supported by this implementation");
     }

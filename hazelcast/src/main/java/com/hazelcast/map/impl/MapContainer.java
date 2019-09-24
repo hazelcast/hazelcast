@@ -28,6 +28,8 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.map.eviction.LFUEvictionPolicy;
 import com.hazelcast.map.eviction.LRUEvictionPolicy;
@@ -50,15 +52,13 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.MemoryInfoAccessor;
-import com.hazelcast.util.RuntimeMemoryInfoAccessor;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
+import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
+import com.hazelcast.wan.impl.DelegatingWanReplicationScheme;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.HashMap;
@@ -104,7 +104,7 @@ public class MapContainer {
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
 
     protected SplitBrainMergePolicy wanMergePolicy;
-    protected WanReplicationPublisher wanReplicationPublisher;
+    protected DelegatingWanReplicationScheme wanReplicationDelegate;
 
     protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
@@ -131,7 +131,7 @@ public class MapContainer {
         initWanReplication(nodeEngine);
         ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
         this.extractors = Extractors.newBuilder(serializationService)
-                                    .setMapAttributeConfigs(mapConfig.getMapAttributeConfigs())
+                                    .setAttributeConfigs(mapConfig.getAttributeConfigs())
                                     .setClassLoader(classloader)
                                     .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
@@ -253,7 +253,7 @@ public class MapContainer {
         }
 
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
-        wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
+        wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
         wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
@@ -313,8 +313,8 @@ public class MapContainer {
         return globalIndexes != null;
     }
 
-    public WanReplicationPublisher getWanReplicationPublisher() {
-        return wanReplicationPublisher;
+    public DelegatingWanReplicationScheme getWanReplicationDelegate() {
+        return wanReplicationDelegate;
     }
 
     public SplitBrainMergePolicy getWanMergePolicy() {
@@ -322,7 +322,7 @@ public class MapContainer {
     }
 
     public boolean isWanReplicationEnabled() {
-        return wanReplicationPublisher != null && wanMergePolicy != null;
+        return wanReplicationDelegate != null && wanMergePolicy != null;
     }
 
     public boolean isWanRepublishingEnabled() {

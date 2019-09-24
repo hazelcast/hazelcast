@@ -21,11 +21,11 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduleType;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.internal.util.scheduler.ScheduleType;
 
 import java.util.Collection;
 import java.util.Collections;

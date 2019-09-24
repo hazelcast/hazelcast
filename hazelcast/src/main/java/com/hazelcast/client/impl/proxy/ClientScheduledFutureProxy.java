@@ -50,8 +50,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Proxy implementation of {@link IScheduledFuture}.

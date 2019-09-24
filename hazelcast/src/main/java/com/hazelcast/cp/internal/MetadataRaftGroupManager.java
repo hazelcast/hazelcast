@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal;
 
-import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -32,16 +32,16 @@ import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
 import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -64,10 +64,10 @@ import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkState;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkState;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableCollection;
@@ -104,6 +104,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private final AtomicReference<RaftGroupId> metadataGroupIdRef = new AtomicReference<>(INITIAL_METADATA_GROUP_ID);
     private final AtomicBoolean discoveryCompleted = new AtomicBoolean();
     private final boolean cpSubsystemEnabled;
+    private volatile DiscoverInitialCPMembersTask currentDiscoveryTask;
 
     // all fields below are state of the Metadata CP group and put into Metadata snapshot and reset while restarting...
     // these fields are accessed outside of Raft while restarting or local querying, etc.
@@ -169,6 +170,11 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         metadataGroupIdRef.set(new RaftGroupId(METADATA_CP_GROUP_NAME, seed, 0));
         localCPMember.set(null);
+
+        DiscoverInitialCPMembersTask discoveryTask = currentDiscoveryTask;
+        if (discoveryTask != null) {
+            discoveryTask.cancelAndAwaitCompletion();
+        }
         discoveryCompleted.set(false);
 
         scheduleDiscoverInitialCPMembersTask(false);
@@ -664,7 +670,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     public MembershipChangeSchedule completeRaftGroupMembershipChanges(long commitIndex,
-                                                                       Map<CPGroupId, Tuple2<Long, Long>> changedGroups) {
+                                                                       Map<CPGroupId, BiTuple<Long, Long>> changedGroups) {
         checkNotNull(changedGroups);
         if (membershipChangeSchedule == null) {
             String msg = "Cannot apply CP membership changes: " + changedGroups + " since there is no membership change context!";
@@ -677,7 +683,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             CPGroupInfo group = groups.get(groupId);
             checkState(group != null, groupId + "not found in CP groups: " + groups.keySet()
                     + "to apply " + change);
-            Tuple2<Long, Long> t = changedGroups.get(groupId);
+            BiTuple<Long, Long> t = changedGroups.get(groupId);
 
             if (t != null) {
                 if (!applyMembershipChange(change, group, t.element1, t.element2)) {
@@ -687,7 +693,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 if (logger.isFineEnabled()) {
                     logger.warning(groupId + " is already destroyed so will skip: " + change);
                 }
-                changedGroups.put(groupId, Tuple2.of(0L, 0L));
+                changedGroups.put(groupId, BiTuple.of(0L, 0L));
             }
         }
 
@@ -969,7 +975,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     private void scheduleDiscoverInitialCPMembersTask(boolean terminateOnDiscoveryFailure) {
-        Runnable task = new DiscoverInitialCPMembersTask(terminateOnDiscoveryFailure);
+        DiscoverInitialCPMembersTask task = new DiscoverInitialCPMembersTask(terminateOnDiscoveryFailure);
+        currentDiscoveryTask = task;
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.schedule(task, DISCOVER_INITIAL_CP_MEMBERS_TASK_DELAY_MILLIS, MILLISECONDS);
     }
@@ -981,18 +988,36 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
     }
 
+    private enum DiscoveryTaskState {
+        RUNNING, SCHEDULED, COMPLETED
+    }
+
     private class DiscoverInitialCPMembersTask implements Runnable {
 
         private Collection<Member> latestMembers = Collections.emptySet();
         private final boolean terminateOnDiscoveryFailure;
         private long lastLoggingTime;
+        private volatile boolean cancelled;
+        private volatile DiscoveryTaskState state;
 
         DiscoverInitialCPMembersTask(boolean terminateOnDiscoveryFailure) {
             this.terminateOnDiscoveryFailure = terminateOnDiscoveryFailure;
+            state = DiscoveryTaskState.SCHEDULED;
         }
 
         @Override
         public void run() {
+            state = DiscoveryTaskState.RUNNING;
+            try {
+                doRun();
+            } finally {
+                if (state == DiscoveryTaskState.RUNNING) {
+                    state = DiscoveryTaskState.COMPLETED;
+                }
+            }
+        }
+
+        private void doRun() {
             if (shouldRescheduleOrSkip()) {
                 return;
             }
@@ -1033,7 +1058,15 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             scheduleRaftGroupMembershipManagementTasks();
         }
 
+        /**
+         * Returns {@code true} if task is skipped or rescheduled
+         * or {@code false} if task should execute now.
+         */
         private boolean shouldRescheduleOrSkip() {
+            if (cancelled) {
+                return true;
+            }
+
             // When a node joins to the cluster, first, discoveryCompleted flag is set, then the join flag is set.
             // Hence, we need to check these flags in the reverse order here.
 
@@ -1061,6 +1094,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
 
         private void scheduleSelf() {
+            state = DiscoveryTaskState.SCHEDULED;
             nodeEngine.getExecutionService()
                       .schedule(this, DISCOVER_INITIAL_CP_MEMBERS_TASK_DELAY_MILLIS, MILLISECONDS);
         }
@@ -1125,6 +1159,19 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         private void terminateNode() {
             ((NodeEngineImpl) nodeEngine).getNode().shutdown(true);
+        }
+
+        @SuppressWarnings("checkstyle:magicnumber")
+        void cancelAndAwaitCompletion() {
+            cancelled = true;
+            while (state != DiscoveryTaskState.COMPLETED) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
     }
 

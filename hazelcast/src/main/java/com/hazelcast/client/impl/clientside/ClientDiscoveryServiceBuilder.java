@@ -34,6 +34,7 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.internal.config.DiscoveryConfigReadOnly;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -57,8 +58,8 @@ import java.util.Map;
 import static com.hazelcast.client.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 class ClientDiscoveryServiceBuilder {
 
@@ -219,7 +220,7 @@ class ClientDiscoveryServiceBuilder {
 
         ILogger logger = loggingService.getLogger(DiscoveryService.class);
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig().getAsReadOnly();
+        DiscoveryConfig discoveryConfig = new DiscoveryConfigReadOnly(networkConfig.getDiscoveryConfig());
 
         DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {

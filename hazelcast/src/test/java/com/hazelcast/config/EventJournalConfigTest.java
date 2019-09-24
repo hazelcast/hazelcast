@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.EventJournalConfig.EventJournalConfigReadOnly;
+import com.hazelcast.internal.config.EventJournalConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

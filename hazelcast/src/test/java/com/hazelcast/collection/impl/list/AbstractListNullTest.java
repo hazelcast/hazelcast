@@ -19,7 +19,7 @@ package com.hazelcast.collection.impl.list;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Assert;
 import org.junit.Test;
 

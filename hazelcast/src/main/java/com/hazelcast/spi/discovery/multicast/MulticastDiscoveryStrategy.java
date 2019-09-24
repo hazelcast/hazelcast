@@ -35,7 +35,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Map;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * The multicast {@link com.hazelcast.spi.discovery.DiscoveryStrategy}.

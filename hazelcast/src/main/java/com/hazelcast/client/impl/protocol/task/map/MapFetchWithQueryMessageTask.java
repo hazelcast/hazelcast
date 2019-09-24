@@ -32,7 +32,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.util.IterationType;
 
 import java.security.Permission;
 import java.util.ArrayList;

@@ -17,7 +17,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.util.IterationType;
 
 import java.util.Map;
 

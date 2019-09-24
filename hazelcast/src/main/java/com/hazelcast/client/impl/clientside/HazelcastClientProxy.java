@@ -17,43 +17,40 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientService;
+import com.hazelcast.client.HazelcastClientNotActiveException;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.ICacheManager;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.collection.IList;
-import com.hazelcast.cp.lock.ILock;
-import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.TerminatedLifecycleService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -195,21 +192,6 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public IAtomicLong getAtomicLong(String name) {
         return getClient().getAtomicLong(name);
-    }
-
-    @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
-        return getClient().getAtomicReference(name);
-    }
-
-    @Override
-    public ICountDownLatch getCountDownLatch(String name) {
-        return getClient().getCountDownLatch(name);
-    }
-
-    @Override
-    public ISemaphore getSemaphore(String name) {
-        return getClient().getSemaphore(name);
     }
 
     @Override

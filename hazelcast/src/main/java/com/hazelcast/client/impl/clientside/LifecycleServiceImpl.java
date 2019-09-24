@@ -25,8 +25,8 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 
 import java.util.EventListener;
 import java.util.List;
@@ -41,7 +41,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Default {@link com.hazelcast.core.LifecycleService} implementation for the client.
@@ -137,12 +137,13 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     @Override
     public void shutdown() {
-        doShutdown(true);
+        client.onGracefulShutdown();
+        doShutdown();
     }
 
     @Override
     public void terminate() {
-        doShutdown(false);
+        doShutdown();
     }
 
     public void start() {
@@ -151,14 +152,14 @@ public final class LifecycleServiceImpl implements LifecycleService {
         fireLifecycleEvent(STARTED);
     }
 
-    private void doShutdown(boolean isGraceful) {
+    private void doShutdown() {
         if (!active.compareAndSet(true, false)) {
             return;
         }
 
         fireLifecycleEvent(SHUTTING_DOWN);
         HazelcastClient.shutdown(client.getName());
-        client.doShutdown(isGraceful);
+        client.doShutdown();
         fireLifecycleEvent(SHUTDOWN);
 
         shutdownExecutor();

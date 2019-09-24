@@ -28,7 +28,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Properties;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Spring utility class for connecting {@link HazelcastCachingProvider} interface and Hazelcast instance.

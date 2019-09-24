@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ScheduledExecutorConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith;
 public class ScheduledExecutorConfigReadOnlyTest {
 
     private ScheduledExecutorConfig getReadOnlyConfig() {
-        return new ScheduledExecutorConfig().getAsReadOnly();
+        return new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

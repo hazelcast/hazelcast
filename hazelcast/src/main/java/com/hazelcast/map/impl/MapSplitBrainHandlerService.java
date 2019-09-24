@@ -24,7 +24,7 @@ import com.hazelcast.spi.merge.DiscardMergePolicy;
 import java.util.Collection;
 import java.util.Iterator;
 
-import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
+import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 
 class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<RecordStore> {
 

@@ -41,7 +41,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -51,7 +51,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
-import static com.hazelcast.util.SortingUtil.compareAnchor;
+import static com.hazelcast.internal.util.SortingUtil.compareAnchor;
 
 /**
  * Responsible for running a full-partition scan for a single partition in the calling thread.

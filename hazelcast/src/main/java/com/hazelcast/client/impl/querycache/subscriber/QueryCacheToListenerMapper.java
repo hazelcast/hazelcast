@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.querycache.subscriber;
 
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -27,8 +27,8 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * This class includes mappings for cacheId to its listener-info-collection

@@ -23,9 +23,10 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.impl.Extractable;
 
 import java.io.IOException;
+import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Projection that extracts the values of the given attribute and returns it.
@@ -75,5 +76,22 @@ public final class SingleAttributeProjection<I, O> implements Projection<I, O>, 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         attributePath = in.readUTF();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SingleAttributeProjection<?, ?> that = (SingleAttributeProjection<?, ?>) o;
+        return Objects.equals(attributePath, that.attributePath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(attributePath);
     }
 }

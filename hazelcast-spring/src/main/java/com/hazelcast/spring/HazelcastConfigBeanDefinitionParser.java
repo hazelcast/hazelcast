@@ -20,7 +20,6 @@ import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -31,7 +30,6 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -55,7 +53,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MCMutualAuthConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -97,7 +95,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
@@ -113,7 +110,7 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -125,7 +122,7 @@ import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -149,10 +146,10 @@ import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static org.springframework.util.Assert.isTrue;
@@ -200,10 +197,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> lockManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> ringbufferManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> atomicLongManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> atomicReferenceManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> countDownLatchManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> reliableTopicManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> semaphoreManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> listManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> setManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> topicManagedMap;
@@ -231,10 +225,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.lockManagedMap = createManagedMap("lockConfigs");
             this.ringbufferManagedMap = createManagedMap("ringbufferConfigs");
             this.atomicLongManagedMap = createManagedMap("atomicLongConfigs");
-            this.atomicReferenceManagedMap = createManagedMap("atomicReferenceConfigs");
-            this.countDownLatchManagedMap = createManagedMap("countDownLatchConfigs");
             this.reliableTopicManagedMap = createManagedMap("reliableTopicConfigs");
-            this.semaphoreManagedMap = createManagedMap("semaphoreConfigs");
             this.listManagedMap = createManagedMap("listConfigs");
             this.setManagedMap = createManagedMap("setConfigs");
             this.topicManagedMap = createManagedMap("topicConfigs");
@@ -248,7 +239,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.splitBrainProtectionManagedMap = createManagedMap("splitBrainProtectionConfigs");
             this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
             this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
-            this.endpointConfigsMap = new ManagedMap<EndpointQualifier, AbstractBeanDefinition>();
+            this.endpointConfigsMap = new ManagedMap<>();
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -291,14 +282,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleRingbuffer(node);
                     } else if ("atomic-long".equals(nodeName)) {
                         handleAtomicLong(node);
-                    } else if ("atomic-reference".equals(nodeName)) {
-                        handleAtomicReference(node);
-                    } else if ("count-down-latch".equals(nodeName)) {
-                        handleCountDownLatch(node);
                     } else if ("reliable-topic".equals(nodeName)) {
                         handleReliableTopic(node);
-                    } else if ("semaphore".equals(nodeName)) {
-                        handleSemaphore(node);
                     } else if ("map".equals(nodeName)) {
                         handleMap(node);
                     } else if ("cache".equals(nodeName)) {
@@ -407,7 +392,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             raftAlgorithmConfigBuilder.getBeanDefinition());
                 } else if ("semaphores".equals(nodeName)) {
                     ManagedMap<String, AbstractBeanDefinition> semaphores = new ManagedMap<String, AbstractBeanDefinition>();
-                    handleCPSemaphores(semaphores, child);
+                    handleSemaphores(semaphores, child);
                     cpSubsystemConfigBuilder.addPropertyValue("SemaphoreConfigs", semaphores);
                 } else if ("locks".equals(nodeName)) {
                     ManagedMap<String, AbstractBeanDefinition> locks = new ManagedMap<String, AbstractBeanDefinition>();
@@ -428,21 +413,21 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("CPSubsystemConfig", cpSubsystemConfigBuilder.getBeanDefinition());
         }
 
-        private void handleCPSemaphores(ManagedMap<String, AbstractBeanDefinition> cpSemaphores, Node node) {
+        private void handleSemaphores(ManagedMap<String, AbstractBeanDefinition> semaphores, Node node) {
             for (Node child : childElements(node)) {
-                BeanDefinitionBuilder cpSemaphoreConfigBuilder = createBeanBuilder(CPSemaphoreConfig.class);
+                BeanDefinitionBuilder semaphoreConfigBuilder = createBeanBuilder(SemaphoreConfig.class);
                 for (Node subChild : childElements(child)) {
                     String nodeName = cleanNodeName(subChild);
                     String value = getTextContent(subChild).trim();
                     if ("name".equals(nodeName)) {
-                        cpSemaphoreConfigBuilder.addPropertyValue("name", value);
+                        semaphoreConfigBuilder.addPropertyValue("name", value);
                     } else if ("jdk-compatible".equals(nodeName)) {
-                        cpSemaphoreConfigBuilder.addPropertyValue("JDKCompatible", getBooleanValue(value));
+                        semaphoreConfigBuilder.addPropertyValue("JDKCompatible", getBooleanValue(value));
                     }
                 }
-                AbstractBeanDefinition beanDefinition = cpSemaphoreConfigBuilder.getBeanDefinition();
+                AbstractBeanDefinition beanDefinition = semaphoreConfigBuilder.getBeanDefinition();
                 String name = (String) beanDefinition.getPropertyValues().get("name");
-                cpSemaphores.put(name, beanDefinition);
+                semaphores.put(name, beanDefinition);
             }
         }
 
@@ -1068,18 +1053,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             reliableTopicManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
         }
 
-        public void handleSemaphore(Node node) {
-            BeanDefinitionBuilder builder = createBeanBuilder(SemaphoreConfig.class);
-            fillAttributeValues(node, builder);
-            for (Node childNode : childElements(node)) {
-                String nodeName = cleanNodeName(childNode);
-                if ("split-brain-protection-ref".equals(nodeName)) {
-                    builder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
-                }
-            }
-            semaphoreManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
-        }
-
         public void handleLock(Node node) {
             BeanDefinitionBuilder lockConfigBuilder = createBeanBuilder(LockConfig.class);
             fillAttributeValues(node, lockConfigBuilder);
@@ -1132,32 +1105,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             atomicLongManagedMap.put(getAttribute(node, "name"), atomicLongConfigBuilder.getBeanDefinition());
-        }
-
-        public void handleAtomicReference(Node node) {
-            BeanDefinitionBuilder atomicReferenceConfigBuilder = createBeanBuilder(AtomicReferenceConfig.class);
-            fillAttributeValues(node, atomicReferenceConfigBuilder);
-            for (Node childNode : childElements(node)) {
-                String nodeName = cleanNodeName(childNode);
-                if ("merge-policy".equals(nodeName)) {
-                    handleMergePolicyConfig(childNode, atomicReferenceConfigBuilder);
-                } else if ("split-brain-protection-ref".equals(nodeName)) {
-                    atomicReferenceConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
-                }
-            }
-            atomicReferenceManagedMap.put(getAttribute(node, "name"), atomicReferenceConfigBuilder.getBeanDefinition());
-        }
-
-        public void handleCountDownLatch(Node node) {
-            BeanDefinitionBuilder countDownLatchConfigBuilder = createBeanBuilder(CountDownLatchConfig.class);
-            fillAttributeValues(node, countDownLatchConfigBuilder);
-            for (Node childNode : childElements(node)) {
-                String nodeName = cleanNodeName(childNode);
-                if ("split-brain-protection-ref".equals(nodeName)) {
-                    countDownLatchConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
-                }
-            }
-            countDownLatchManagedMap.put(getAttribute(node, "name"), countDownLatchConfigBuilder.getBeanDefinition());
         }
 
         public void handleQueue(Node node) {
@@ -1299,11 +1246,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("attributes".equals(nodeName)) {
                     ManagedList<BeanDefinition> attributes = new ManagedList<BeanDefinition>();
                     for (Node attributeNode : childElements(childNode)) {
-                        BeanDefinitionBuilder attributeConfBuilder = createBeanBuilder(MapAttributeConfig.class);
+                        BeanDefinitionBuilder attributeConfBuilder = createBeanBuilder(AttributeConfig.class);
                         fillAttributeValues(attributeNode, attributeConfBuilder);
                         attributes.add(attributeConfBuilder.getBeanDefinition());
                     }
-                    mapConfigBuilder.addPropertyValue("mapAttributeConfigs", attributes);
+                    mapConfigBuilder.addPropertyValue("attributeConfigs", attributes);
                 } else if ("entry-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);

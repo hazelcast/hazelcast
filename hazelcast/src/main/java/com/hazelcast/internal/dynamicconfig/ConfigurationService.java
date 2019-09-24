@@ -17,10 +17,8 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -35,7 +33,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -127,14 +124,6 @@ public interface ConfigurationService {
     DurableExecutorConfig findDurableExecutorConfig(String name);
 
     /**
-     * Finds existing Semaphore config.
-     *
-     * @param name name of the config
-     * @return Semaphore config or {@code null} when requested Semaphore configuration does not exist
-     */
-    SemaphoreConfig findSemaphoreConfig(String name);
-
-    /**
      * Finds existing Ringbuffer config.
      *
      * @param name name of the config
@@ -148,20 +137,6 @@ public interface ConfigurationService {
      * @return AtomicLong Config or {@code null} when requested AtomicLong configuration does not exist
      */
     AtomicLongConfig findAtomicLongConfig(String name);
-
-    /**
-     * Finds existing AtomicReference config.
-     *
-     * @return AtomicReference Config or {@code null} when requested AtomicReference configuration does not exist
-     */
-    AtomicReferenceConfig findAtomicReferenceConfig(String name);
-
-    /**
-     * Finds existing CountDownLatch config.
-     *
-     * @return CountDownLatch Config or {@code null} when requested CountDownLatch configuration does not exist
-     */
-    CountDownLatchConfig findCountDownLatchConfig(String name);
 
     /**
      * Finds existing Lock config.
@@ -291,20 +266,6 @@ public interface ConfigurationService {
     Map<String, AtomicLongConfig> getAtomicLongConfigs();
 
     /**
-     * Returns all registered AtomicReference configurations.
-     *
-     * @return registered AtomicReference configurations
-     */
-    Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs();
-
-    /**
-     * Returns all registered CountDownLatchConfig configurations.
-     *
-     * @return registered CountDownLatchConfig configurations
-     */
-    Map<String, CountDownLatchConfig> getCountDownLatchConfigs();
-
-    /**
      * Returns all registered topic configurations.
      *
      * @return registered topic configurations
@@ -352,13 +313,6 @@ public interface ConfigurationService {
      * @return registered PN counter configurations
      */
     Map<String, PNCounterConfig> getPNCounterConfigs();
-
-    /**
-     * Returns all registered semaphore configurations.
-     *
-     * @return registered semaphore configurations
-     */
-    Map<String, SemaphoreConfig> getSemaphoreConfigs();
 
     /**
      * Returns all registered cache configurations.

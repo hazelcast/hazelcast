@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith;
 public class CacheSimpleConfigReadOnlyTest {
 
     private CacheSimpleConfig getReadOnlyConfig() {
-        return new CacheSimpleConfig().getAsReadOnly();
+        return new CacheSimpleConfigReadOnly(new CacheSimpleConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

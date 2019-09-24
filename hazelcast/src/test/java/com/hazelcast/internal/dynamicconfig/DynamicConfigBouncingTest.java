@@ -23,7 +23,7 @@ import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -134,7 +134,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
                 .addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig("foo.bar.Classname"))
                 .addIndexConfig(new IndexConfig(IndexType.SORTED, "orderAttribute"))
                 .addIndexConfig(new IndexConfig(IndexType.HASH, "unorderedAttribute"))
-                .addMapAttributeConfig(new MapAttributeConfig("attribute", "foo.bar.ExtractorClass"))
+                .addAttributeConfig(new AttributeConfig("attribute", "foo.bar.ExtractorClass"))
                 .addQueryCacheConfig(queryCacheConfig)
                 .setStatisticsEnabled(false)
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig("foo.bar.Class"))

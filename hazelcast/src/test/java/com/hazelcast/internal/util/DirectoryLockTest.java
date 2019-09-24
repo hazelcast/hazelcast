@@ -22,7 +22,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;

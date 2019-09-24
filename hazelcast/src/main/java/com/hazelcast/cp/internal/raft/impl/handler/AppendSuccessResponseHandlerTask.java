@@ -25,7 +25,7 @@ import com.hazelcast.cp.internal.raft.impl.state.FollowerState;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.QueryState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 
 import java.util.Arrays;
@@ -102,7 +102,7 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
 
         if (followerLastLogIndex > matchIndex) {
             // Received a response for the last append request. Resetting the flag...
-            followerState.resetAppendRequestBackoff();
+            followerState.appendRequestAckReceived();
 
             long newNextIndex = followerLastLogIndex + 1;
             followerState.matchIndex(followerLastLogIndex);
@@ -114,7 +114,10 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
             }
 
             return true;
-        } else if (followerLastLogIndex < matchIndex) {
+        } else if (followerLastLogIndex == matchIndex) {
+            // Received a response for the last append request. Resetting the flag...
+            followerState.appendRequestAckReceived();
+        } else {
             if (logger.isFineEnabled()) {
                 logger.fine("Will not update match index for follower: " + follower + ". follower last log index: "
                         + followerLastLogIndex + ", match index: " + matchIndex);
@@ -191,14 +194,14 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
             return;
         }
 
-        Collection<Tuple2<Object, SimpleCompletableFuture>> operations = queryState.operations();
+        Collection<BiTuple<Object, SimpleCompletableFuture>> operations = queryState.operations();
 
         if (logger.isFineEnabled()) {
             logger.fine("Running " + operations.size() + " queries at commit index: " + commitIndex
                     + ", query round: " + queryState.queryRound());
         }
 
-        for (Tuple2<Object, SimpleCompletableFuture> t : operations) {
+        for (BiTuple<Object, SimpleCompletableFuture> t : operations) {
             raftNode.runQuery(t.element1, t.element2);
         }
 

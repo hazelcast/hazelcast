@@ -23,7 +23,7 @@ import com.hazelcast.query.impl.Indexes;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.collection.ArrayUtils.createCopy;
+import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
 
 /**
  * Rewrites predicates:

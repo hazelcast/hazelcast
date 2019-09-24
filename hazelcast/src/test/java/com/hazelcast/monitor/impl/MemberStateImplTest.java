@@ -35,7 +35,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanSyncStatus;
@@ -145,6 +145,10 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(uuid, deserialized.getUuid());
         assertEquals(cpMemberUuid, deserialized.getCpMemberUuid());
         assertEquals(endpoints, deserialized.getEndpoints());
+
+        assertNotNull(deserialized.getName());
+        assertEquals(deserialized.getName(), memberState.getName());
+
         assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
         assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());

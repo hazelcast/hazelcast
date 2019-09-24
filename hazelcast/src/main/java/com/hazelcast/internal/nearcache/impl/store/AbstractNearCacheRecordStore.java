@@ -33,7 +33,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Function;
@@ -47,7 +47,7 @@ import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.RESERVED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.UPDATE_STARTED;
 import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 

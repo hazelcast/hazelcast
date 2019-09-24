@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

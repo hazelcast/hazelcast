@@ -26,7 +26,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.RootCauseMatcher;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;

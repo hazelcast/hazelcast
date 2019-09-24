@@ -22,16 +22,16 @@ import com.hazelcast.map.MapStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
-import com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;

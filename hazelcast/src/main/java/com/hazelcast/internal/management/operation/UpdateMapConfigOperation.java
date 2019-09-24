@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.map.impl.MapContainer;
@@ -54,7 +55,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         newConfig.setReadBackupData(mapConfig.isReadBackupData());
         newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
         MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
-        mapContainer.setMapConfig(newConfig.getAsReadOnly());
+        mapContainer.setMapConfig(new MapConfigReadOnly(newConfig));
         mapContainer.initEvictor();
     }
 
@@ -69,7 +70,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         mapName = in.readUTF();
         MapConfigDTO adapter = new MapConfigDTO();
         adapter.readData(in);
-        mapConfig = adapter.getMapConfig();
+        mapConfig = adapter.getConfig();
     }
 
     @Override

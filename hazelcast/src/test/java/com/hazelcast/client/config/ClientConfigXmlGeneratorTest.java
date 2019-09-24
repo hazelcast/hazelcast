@@ -43,7 +43,10 @@ import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -67,6 +70,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static final boolean DEBUG = false;
@@ -351,7 +355,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         expected.setInMemoryFormat(InMemoryFormat.NATIVE)
                 .setSerializeKeys(true)
                 .setInvalidateOnChange(false)
-                .setCacheLocalEntries(true)
                 .setTimeToLiveSeconds(randomInt())
                 .setMaxIdleSeconds(randomInt())
                 .setLocalUpdatePolicy(CACHE_ON_UPDATE)

@@ -143,6 +143,28 @@ public class ManagementCenterServiceIntegrationTest {
         });
     }
 
+    @Test
+    public void testMemberStateNameProvided() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                String responseString = doHttpGet("/mancen/memberStateCheck");
+                assertNotNull(responseString);
+                assertNotEquals("", responseString);
+
+                JsonObject object;
+                try {
+                    object = Json.parse(responseString).asObject();
+                } catch (ParseException e) {
+                    throw new AssertionError("Failed to parse JSON: " + responseString);
+                }
+                TimedMemberState memberState = new TimedMemberState();
+                memberState.fromJson(object);
+                assertEquals(instance.getName(), memberState.getMemberState().getName());
+            }
+        });
+    }
+
     private InetSocketAddress createInetSocketAddress(String name) {
         try {
             return new InetSocketAddress(InetAddress.getByName(name), 5000);

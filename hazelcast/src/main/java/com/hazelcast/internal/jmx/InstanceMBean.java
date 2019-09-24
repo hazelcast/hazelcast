@@ -38,7 +38,7 @@ import java.util.Set;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.jmx.ManagementService.quote;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Management bean for {@link com.hazelcast.core.HazelcastInstance}
@@ -97,8 +97,8 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
             final LocalWanStats localWanStats = replicationStatsEntry.getValue();
             final Map<String, LocalWanPublisherStats> publisherStats = localWanStats.getLocalWanPublisherStats();
 
-            for (String targetGroupName : publisherStats.keySet()) {
-                register(new WanPublisherMBean(wanReplicationService, wanReplicationName, targetGroupName, service));
+            for (String wanPublisherId : publisherStats.keySet()) {
+                register(new WanPublisherMBean(wanReplicationService, wanReplicationName, wanPublisherId, service));
             }
         }
     }

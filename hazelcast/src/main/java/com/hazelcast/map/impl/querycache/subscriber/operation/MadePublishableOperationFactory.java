@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Operation factory for {@link MadePublishableOperation}.

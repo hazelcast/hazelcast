@@ -21,11 +21,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.cp.session.CPSession;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.Math.max;
 
 /**

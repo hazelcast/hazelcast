@@ -28,7 +28,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.internal.util.EmptyStatement;
 
 import java.util.Collection;
 import java.util.Collections;

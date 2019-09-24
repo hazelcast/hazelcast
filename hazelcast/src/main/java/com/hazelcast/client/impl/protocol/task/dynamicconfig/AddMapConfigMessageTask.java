@@ -71,7 +71,7 @@ public class AddMapConfigMessageTask
         config.setEventJournalConfig(parameters.eventJournalConfig);
         config.setHotRestartConfig(parameters.hotRestartConfig);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
-        config.setMapAttributeConfigs(parameters.mapAttributeConfigs);
+        config.setAttributeConfigs(parameters.attributeConfigs);
         config.setReadBackupData(parameters.readBackupData);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.mapEvictionPolicy != null) {

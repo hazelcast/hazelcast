@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -34,9 +34,9 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * A XML {@link ConfigBuilder} implementation.

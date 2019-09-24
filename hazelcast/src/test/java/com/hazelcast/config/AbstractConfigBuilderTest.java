@@ -104,9 +104,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void networkReuseAddress();
 
     @Test
-    public abstract void readSemaphoreConfig();
-
-    @Test
     public abstract void readQueueConfig();
 
     @Test
@@ -126,12 +123,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void readAtomicLong();
-
-    @Test
-    public abstract void readAtomicReference();
-
-    @Test
-    public abstract void readCountDownLatch();
 
     @Test
     public abstract void testCaseInsensitivityOfSettings();

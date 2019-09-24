@@ -43,7 +43,7 @@ import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

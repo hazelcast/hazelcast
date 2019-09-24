@@ -33,7 +33,7 @@ import com.hazelcast.transaction.TransactionException;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 
 /**
  * Proxy implementation of {@link TransactionalMultiMap}

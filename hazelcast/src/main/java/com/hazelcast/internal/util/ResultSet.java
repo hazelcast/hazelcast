@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.util.IterationType;
-
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;

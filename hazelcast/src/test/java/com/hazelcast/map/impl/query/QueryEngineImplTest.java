@@ -33,9 +33,9 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
-import static com.hazelcast.util.IterationType.ENTRY;
-import static com.hazelcast.util.IterationType.KEY;
-import static com.hazelcast.util.IterationType.VALUE;
+import static com.hazelcast.internal.util.IterationType.ENTRY;
+import static com.hazelcast.internal.util.IterationType.KEY;
+import static com.hazelcast.internal.util.IterationType.VALUE;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)

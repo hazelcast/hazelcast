@@ -44,8 +44,8 @@ import java.util.logging.Level;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
@@ -202,7 +202,7 @@ public abstract class MapOperation extends AbstractNamedOperation
                 && !disableWanReplicationEvent();
 
         if (canPublishWanEvent) {
-            mapContainer.getWanReplicationPublisher().checkWanReplicationQueues();
+            mapContainer.getWanReplicationDelegate().doPrepublicationChecks();
         }
         return canPublishWanEvent;
     }

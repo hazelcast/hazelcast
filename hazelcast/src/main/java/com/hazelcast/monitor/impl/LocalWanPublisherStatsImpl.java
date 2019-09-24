@@ -27,10 +27,10 @@ import com.hazelcast.wan.ConsistencyCheckResult;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getLong;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {

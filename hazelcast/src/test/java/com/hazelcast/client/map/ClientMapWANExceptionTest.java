@@ -28,8 +28,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.MapUtil;
-import com.hazelcast.wan.WANReplicationQueueFullException;
+import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.wan.WanReplicationQueueFullException;
 import com.hazelcast.wan.impl.FullQueueWanReplication;
 import org.junit.After;
 import org.junit.Before;
@@ -59,13 +59,13 @@ public class ClientMapWANExceptionTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    @Test(expected = WANReplicationQueueFullException.class)
+    @Test(expected = WanReplicationQueueFullException.class)
     public void testMapPut() {
         IMap<Object, Object> map = client.getMap("wan-exception-client-test-map");
         map.put(1, 1);
     }
 
-    @Test(expected = WANReplicationQueueFullException.class)
+    @Test(expected = WanReplicationQueueFullException.class)
     public void testMapPutAll() {
         IMap<Object, Object> map = client.getMap("wan-exception-client-test-map");
         Map<Object, Object> inputMap = MapUtil.createHashMap(1);

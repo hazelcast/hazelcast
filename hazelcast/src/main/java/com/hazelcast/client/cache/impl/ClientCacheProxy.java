@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheEventJournalReadCodec;
@@ -32,16 +33,16 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -67,10 +68,10 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createCacheEntryListenerCodec;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createHandler;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createPartitionLostListenerCodec;
-import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -259,7 +260,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
         if (clazz.isInstance(cacheConfig)) {
-            return clazz.cast(cacheConfig.getAsReadOnly());
+            return clazz.cast(new CacheConfigReadOnly<>(cacheConfig));
         }
         throw new IllegalArgumentException("The configuration class " + clazz + " is not supported by this implementation");
     }

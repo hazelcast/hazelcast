@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.QueryCacheConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -115,7 +116,6 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(QueryCacheConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(PredicateConfig.class,
                         new PredicateConfig("red"), new PredicateConfig("black"))

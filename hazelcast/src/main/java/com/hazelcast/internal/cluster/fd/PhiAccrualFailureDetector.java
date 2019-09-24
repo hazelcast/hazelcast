@@ -19,8 +19,8 @@ package com.hazelcast.internal.cluster.fd;
 
 import java.util.LinkedList;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Port of Akka's PhiAccrualFailureDetector.scala

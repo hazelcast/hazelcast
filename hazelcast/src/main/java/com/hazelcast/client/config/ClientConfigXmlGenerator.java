@@ -38,13 +38,13 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.util.Preconditions;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -59,8 +59,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 /**
  * The ClientConfigXmlGenerator is responsible for transforming a
@@ -549,7 +549,6 @@ public final class ClientConfigXmlGenerator {
                 .node("in-memory-format", nearCache.getInMemoryFormat())
                 .node("serialize-keys", nearCache.isSerializeKeys())
                 .node("invalidate-on-change", nearCache.isInvalidateOnChange())
-                .node("cache-local-entries", nearCache.isCacheLocalEntries())
                 .node("time-to-live-seconds", nearCache.getTimeToLiveSeconds())
                 .node("max-idle-seconds", nearCache.getMaxIdleSeconds())
                 .node("local-update-policy", nearCache.getLocalUpdatePolicy())

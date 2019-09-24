@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

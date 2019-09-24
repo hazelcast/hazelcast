@@ -35,9 +35,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Contains configuration options for the {@link CPSubsystem}.
@@ -247,7 +247,7 @@ public class CPSubsystemConfig {
     /**
      * Configurations for CP {@link ISemaphore} instances
      */
-    private final Map<String, CPSemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, CPSemaphoreConfig>();
+    private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
     /**
      * Configurations for {@link FencedLock} instances
@@ -267,8 +267,8 @@ public class CPSubsystemConfig {
         this.sessionHeartbeatIntervalSeconds = config.sessionHeartbeatIntervalSeconds;
         this.failOnIndeterminateOperationState = config.failOnIndeterminateOperationState;
         this.missingCPMemberAutoRemovalSeconds = config.missingCPMemberAutoRemovalSeconds;
-        for (CPSemaphoreConfig semaphoreConfig : config.semaphoreConfigs.values()) {
-            this.semaphoreConfigs.put(semaphoreConfig.getName(), new CPSemaphoreConfig(semaphoreConfig));
+        for (SemaphoreConfig semaphoreConfig : config.semaphoreConfigs.values()) {
+            this.semaphoreConfigs.put(semaphoreConfig.getName(), new SemaphoreConfig(semaphoreConfig));
         }
         for (FencedLockConfig lockConfig : config.lockConfigs.values()) {
             this.lockConfigs.put(lockConfig.getName(), new FencedLockConfig(lockConfig));
@@ -449,7 +449,7 @@ public class CPSubsystemConfig {
      *
      * @return the map of CP {@link ISemaphore} configurations
      */
-    public Map<String, CPSemaphoreConfig> getSemaphoreConfigs() {
+    public Map<String, SemaphoreConfig> getSemaphoreConfigs() {
         return semaphoreConfigs;
     }
 
@@ -463,7 +463,7 @@ public class CPSubsystemConfig {
      * @param name name of the CP {@link ISemaphore}
      * @return the CP {@link ISemaphore} configuration
      */
-    public CPSemaphoreConfig findSemaphoreConfig(String name) {
+    public SemaphoreConfig findSemaphoreConfig(String name) {
         return lookupByPattern(configPatternMatcher, semaphoreConfigs, getBaseName(name));
     }
 
@@ -472,11 +472,11 @@ public class CPSubsystemConfig {
      * {@link ISemaphore} could optionally contain a {@link CPGroup} name,
      * like "mySemaphore@group1".
      *
-     * @param cpSemaphoreConfig the CP {@link ISemaphore} configuration
+     * @param semaphoreConfig the CP {@link ISemaphore} configuration
      * @return this config instance
      */
-    public CPSubsystemConfig addSemaphoreConfig(CPSemaphoreConfig cpSemaphoreConfig) {
-        semaphoreConfigs.put(cpSemaphoreConfig.getName(), cpSemaphoreConfig);
+    public CPSubsystemConfig addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
+        semaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
         return this;
     }
 
@@ -485,13 +485,13 @@ public class CPSubsystemConfig {
      * mapped by config name. Names could optionally contain
      * a {@link CPGroup} name, such as "mySemaphore@group1".
      *
-     * @param cpSemaphoreConfigs the CP {@link ISemaphore} config map to set
+     * @param semaphoreConfigs the CP {@link ISemaphore} config map to set
      * @return this config instance
      */
-    public CPSubsystemConfig setSemaphoreConfigs(Map<String, CPSemaphoreConfig> cpSemaphoreConfigs) {
+    public CPSubsystemConfig setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
         this.semaphoreConfigs.clear();
-        this.semaphoreConfigs.putAll(cpSemaphoreConfigs);
-        for (Entry<String, CPSemaphoreConfig> entry : this.semaphoreConfigs.entrySet()) {
+        this.semaphoreConfigs.putAll(semaphoreConfigs);
+        for (Entry<String, SemaphoreConfig> entry : this.semaphoreConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

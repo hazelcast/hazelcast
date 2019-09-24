@@ -50,7 +50,7 @@ public class AllowedDuringPassiveStateTransactionImpl
 
     protected ReplicateTxBackupLogOperation createReplicateTxBackupLogOperation() {
         return new ReplicateAllowedDuringPassiveStateTxBackupLogOperation(
-                getTransactionLog().getRecordList(), getOwnerUuid(), getTxnId(), getTimeoutMillis(), getStartTime());
+                getTransactionLog().getRecords(), getOwnerUuid(), getTxnId(), getTimeoutMillis(), getStartTime());
     }
 
     protected RollbackTxBackupLogOperation createRollbackTxBackupLogOperation() {

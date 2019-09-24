@@ -31,8 +31,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Map;
@@ -41,7 +41,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.util.Collections.singletonMap;
 
 public final class MemberImpl

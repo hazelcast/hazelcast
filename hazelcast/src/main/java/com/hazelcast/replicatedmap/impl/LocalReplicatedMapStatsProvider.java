@@ -25,12 +25,12 @@ import com.hazelcast.monitor.impl.EmptyLocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.max;
 
 /**

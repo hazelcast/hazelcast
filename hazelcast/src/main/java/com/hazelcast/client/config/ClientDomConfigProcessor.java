@@ -67,7 +67,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
@@ -254,8 +254,6 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 nearCacheConfig.setSerializeKeys(serializeKeys);
             } else if ("invalidate-on-change".equals(nodeName)) {
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
-            } else if ("cache-local-entries".equals(nodeName)) {
-                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
             } else if ("local-update-policy".equals(nodeName)) {
                 nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.valueOf(value));
             } else if ("eviction".equals(nodeName)) {

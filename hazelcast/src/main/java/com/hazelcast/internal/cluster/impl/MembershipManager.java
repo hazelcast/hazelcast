@@ -38,8 +38,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.executor.ExecutorType;
 
 import java.util.ArrayList;
 import java.util.Collection;

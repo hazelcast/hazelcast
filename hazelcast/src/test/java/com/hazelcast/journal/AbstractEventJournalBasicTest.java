@@ -32,7 +32,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.SetUtil;
+import com.hazelcast.internal.util.SetUtil;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,7 +53,7 @@ import java.util.function.Predicate;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.ADDED;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.EVICTED;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.LOADED;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;

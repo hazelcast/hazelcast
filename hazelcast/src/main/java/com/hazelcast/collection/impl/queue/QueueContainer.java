@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,9 +47,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.MapUtil.createLinkedHashMap;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * The {@code QueueContainer} contains the actual queue and provides functionalities such as :

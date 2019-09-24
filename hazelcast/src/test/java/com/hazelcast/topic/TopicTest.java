@@ -34,7 +34,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.topic.impl.TopicService;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

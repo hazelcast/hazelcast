@@ -16,25 +16,25 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public final class ExtractorHelper {
 
     private ExtractorHelper() {
     }
 
-    static Map<String, ValueExtractor> instantiateExtractors(List<MapAttributeConfig> mapAttributeConfigs,
+    static Map<String, ValueExtractor> instantiateExtractors(List<AttributeConfig> attributeConfigs,
                                                              ClassLoader classLoader) {
-        Map<String, ValueExtractor> extractors = createHashMap(mapAttributeConfigs.size());
-        for (MapAttributeConfig config : mapAttributeConfigs) {
+        Map<String, ValueExtractor> extractors = createHashMap(attributeConfigs.size());
+        for (AttributeConfig config : attributeConfigs) {
             if (extractors.containsKey(config.getName())) {
                 throw new IllegalArgumentException("Could not add " + config
                         + ". Extractor for this attribute name already added.");
@@ -44,7 +44,7 @@ public final class ExtractorHelper {
         return extractors;
     }
 
-    static ValueExtractor instantiateExtractor(MapAttributeConfig config, ClassLoader classLoader) {
+    static ValueExtractor instantiateExtractor(AttributeConfig config, ClassLoader classLoader) {
         ValueExtractor extractor = null;
         if (classLoader != null) {
             try {
@@ -62,9 +62,9 @@ public final class ExtractorHelper {
         return extractor;
     }
 
-    private static ValueExtractor instantiateExtractorWithConfigClassLoader(MapAttributeConfig config, ClassLoader classLoader) {
+    private static ValueExtractor instantiateExtractorWithConfigClassLoader(AttributeConfig config, ClassLoader classLoader) {
         try {
-            Class<?> clazz = classLoader.loadClass(config.getExtractor());
+            Class<?> clazz = classLoader.loadClass(config.getExtractorClassName());
             Object extractor = clazz.newInstance();
             if (extractor instanceof ValueExtractor) {
                 return (ValueExtractor) extractor;
@@ -80,9 +80,9 @@ public final class ExtractorHelper {
         }
     }
 
-    private static ValueExtractor instantiateExtractorWithClassForName(MapAttributeConfig config) {
+    private static ValueExtractor instantiateExtractorWithClassForName(AttributeConfig config) {
         try {
-            Class<?> clazz = Class.forName(config.getExtractor());
+            Class<?> clazz = Class.forName(config.getExtractorClassName());
             Object extractor = clazz.newInstance();
             if (extractor instanceof ValueExtractor) {
                 return (ValueExtractor) extractor;

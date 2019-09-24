@@ -40,8 +40,8 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -58,10 +58,10 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyMap;
 
 /**

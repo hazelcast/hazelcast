@@ -16,14 +16,14 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 class EvictableGetterCache {
 

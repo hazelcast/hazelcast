@@ -21,9 +21,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**

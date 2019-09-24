@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static java.util.Collections.newSetFromMap;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;

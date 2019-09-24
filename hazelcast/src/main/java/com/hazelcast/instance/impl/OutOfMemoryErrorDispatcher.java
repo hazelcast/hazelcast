@@ -22,8 +22,8 @@ import com.hazelcast.core.OutOfMemoryHandler;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.lang.System.arraycopy;
 
 public final class OutOfMemoryErrorDispatcher {

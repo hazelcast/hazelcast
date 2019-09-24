@@ -25,7 +25,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_INTERVAL;
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;

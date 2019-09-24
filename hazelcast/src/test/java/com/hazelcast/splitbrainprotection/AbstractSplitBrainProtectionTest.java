@@ -22,11 +22,9 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ListConfig;
@@ -38,15 +36,11 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -61,8 +55,8 @@ import java.io.Serializable;
 
 import static com.hazelcast.splitbrainprotection.PartitionedCluster.SPLIT_BRAIN_PROTECTION_ID;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
-import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.WRITE;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ_WRITE;
+import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.WRITE;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Arrays.asList;
 
@@ -79,12 +73,10 @@ import static java.util.Arrays.asList;
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractSplitBrainProtectionTest {
 
-    protected static final String SEMAPHORE = "splitBrainProtection" + randomString();
     protected static final String REFERENCE_NAME = "reference" + "splitBrainProtection" + randomString();
     protected static final String LONG_NAME = "long" + "splitBrainProtection" + randomString();
     protected static final String CACHE_NAME = "splitBrainProtection" + randomString();
     protected static final String ESTIMATOR_NAME = "splitBrainProtection" + randomString();
-    protected static final String LATCH_NAME = "splitBrainProtection" + randomString();
     protected static final String DURABLE_EXEC_NAME = "splitBrainProtection" + randomString();
     protected static final String EXEC_NAME = "splitBrainProtection" + randomString();
     protected static final String LIST_NAME = "splitBrainProtection" + randomString();
@@ -116,19 +108,6 @@ public abstract class AbstractSplitBrainProtectionTest {
         cluster = null;
     }
 
-    protected static SemaphoreConfig newSemaphoreConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
-        semaphoreConfig.setName(SEMAPHORE + splitBrainProtectionOn.name());
-        semaphoreConfig.setSplitBrainProtectionName(splitBrainProtectionName);
-        return semaphoreConfig;
-    }
-
-    protected static AtomicReferenceConfig newAtomicReferenceConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
-        AtomicReferenceConfig config = new AtomicReferenceConfig(REFERENCE_NAME + splitBrainProtectionOn.name());
-        config.setSplitBrainProtectionName(splitBrainProtectionName);
-        return config;
-    }
-
     protected static AtomicLongConfig newAtomicLongConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
         AtomicLongConfig config = new AtomicLongConfig(LONG_NAME + splitBrainProtectionOn.name());
         config.setSplitBrainProtectionName(splitBrainProtectionName);
@@ -144,12 +123,6 @@ public abstract class AbstractSplitBrainProtectionTest {
 
     protected static CardinalityEstimatorConfig newEstimatorConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
         CardinalityEstimatorConfig config = new CardinalityEstimatorConfig(ESTIMATOR_NAME + splitBrainProtectionOn.name());
-        config.setSplitBrainProtectionName(splitBrainProtectionName);
-        return config;
-    }
-
-    protected static CountDownLatchConfig newLatchConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
-        CountDownLatchConfig config = new CountDownLatchConfig(LATCH_NAME + splitBrainProtectionOn.name());
         config.setSplitBrainProtectionName(splitBrainProtectionName);
         return config;
     }
@@ -253,12 +226,9 @@ public abstract class AbstractSplitBrainProtectionTest {
             config.addSplitBrainProtectionConfig(newSplitBrainProtectionConfig(splitBrainProtectionOn, splitBrainProtectionName));
             splitBrainProtectionNames[i++] = splitBrainProtectionName;
 
-            config.addSemaphoreConfig(newSemaphoreConfig(splitBrainProtectionOn, splitBrainProtectionName));
-            config.addAtomicReferenceConfig(newAtomicReferenceConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addAtomicLongConfig(newAtomicLongConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addCacheConfig(newCacheConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addCardinalityEstimatorConfig(newEstimatorConfig(splitBrainProtectionOn, splitBrainProtectionName));
-            config.addCountDownLatchConfig(newLatchConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addListConfig(newListConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addLockConfig(newLockConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addMapConfig(newMapConfig(splitBrainProtectionOn, splitBrainProtectionName));
@@ -288,16 +258,7 @@ public abstract class AbstractSplitBrainProtectionTest {
             for (int id = 0; id < 10000; id++) {
                 cluster.instance[0].getRingbuffer(RINGBUFFER_NAME + splitBrainProtectionOn.name()).add(String.valueOf(id));
             }
-            cluster.instance[0].getSemaphore(SEMAPHORE + splitBrainProtectionOn.name()).init(100);
         }
-    }
-
-    protected ISemaphore semaphore(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
-        return cluster.instance[index].getSemaphore(SEMAPHORE + splitBrainProtectionOn.name());
-    }
-
-    protected IAtomicReference<SplitBrainProtectionTestClass> aref(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
-        return cluster.instance[index].getAtomicReference(REFERENCE_NAME + splitBrainProtectionOn.name());
     }
 
     protected IAtomicLong along(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
@@ -310,10 +271,6 @@ public abstract class AbstractSplitBrainProtectionTest {
 
     protected CardinalityEstimator estimator(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
         return cluster.instance[index].getCardinalityEstimator(ESTIMATOR_NAME + splitBrainProtectionOn.name());
-    }
-
-    protected ICountDownLatch latch(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
-        return cluster.instance[index].getCountDownLatch(LATCH_NAME + splitBrainProtectionOn.name());
     }
 
     protected DurableExecutorService durableExec(int index, SplitBrainProtectionOn splitBrainProtectionOn) {

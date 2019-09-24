@@ -38,9 +38,9 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.executor.CompletedFuture;
-import com.hazelcast.util.executor.DelegatingFuture;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.executor.DelegatingFuture;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -57,9 +57,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class DurableExecutorServiceProxy extends AbstractDistributedObject<DistributedDurableExecutorService>
         implements DurableExecutorService {

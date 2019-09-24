@@ -27,7 +27,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration of an index. Hazelcast support two types of indexes: sorted index and hash index.
@@ -188,16 +188,6 @@ public class IndexConfig implements IdentifiedDataSerializable {
         }
 
         return this;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public IndexConfig getAsReadOnly() {
-        return new IndexConfigReadOnly(this);
     }
 
     @Override

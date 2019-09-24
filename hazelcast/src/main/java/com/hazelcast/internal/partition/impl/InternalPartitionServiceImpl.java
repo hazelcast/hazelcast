@@ -63,10 +63,10 @@ import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.partition.PartitionAwareService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -91,7 +91,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 import static java.lang.Math.min;

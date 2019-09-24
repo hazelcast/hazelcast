@@ -34,8 +34,8 @@ import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 
 /**

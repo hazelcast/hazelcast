@@ -19,7 +19,7 @@ package com.hazelcast.spi.properties;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static java.lang.String.format;
 
 /**

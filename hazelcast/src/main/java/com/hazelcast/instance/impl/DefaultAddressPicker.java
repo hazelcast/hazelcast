@@ -27,7 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.AddressUtil;
+import com.hazelcast.internal.util.AddressUtil;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -49,11 +49,11 @@ import java.util.Objects;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.impl.ServerSocketHelper.createServerSocketChannel;
-import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
-import static com.hazelcast.util.MapUtil.createLinkedHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.AddressUtil.fixScopeIdAndGetInetAddress;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 class DefaultAddressPicker
         implements AddressPicker {

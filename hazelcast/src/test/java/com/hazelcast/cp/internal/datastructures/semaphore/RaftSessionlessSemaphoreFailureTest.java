@@ -28,7 +28,7 @@ import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_S
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RaftSessionlessSemaphoreFailureTest extends RaftSemaphoreFailureTest {
+public class RaftSessionlessSemaphoreFailureTest extends SemaphoreFailureTest {
 
     @Override
     boolean isJDKCompatible() {

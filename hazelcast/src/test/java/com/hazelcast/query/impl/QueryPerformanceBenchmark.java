@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
@@ -70,13 +70,13 @@ public class QueryPerformanceBenchmark extends HazelcastTestSupport {
     @Setup
     public void setup() {
         // object map
-        MapAttributeConfig nameWithExtractor = new MapAttributeConfig()
+        AttributeConfig nameWithExtractor = new AttributeConfig()
                 .setName("nameWithExtractor")
-                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$NameExtractor");
+                .setExtractorClassName("com.hazelcast.query.impl.QueryPerformanceTest$NameExtractor");
 
-        MapAttributeConfig limbNameWithExtractor = new MapAttributeConfig()
+        AttributeConfig limbNameWithExtractor = new AttributeConfig()
                 .setName("limbNameWithExtractor")
-                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$LimbNameExtractor");
+                .setExtractorClassName("com.hazelcast.query.impl.QueryPerformanceTest$LimbNameExtractor");
 
         MapConfig objectMapConfig = new MapConfig()
                 .setName("objectMap")
@@ -85,22 +85,22 @@ public class QueryPerformanceBenchmark extends HazelcastTestSupport {
         MapConfig objectMapWithExtractorConfig = new MapConfig()
                 .setName("objectMapWithExtractor")
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .addMapAttributeConfig(nameWithExtractor)
-                .addMapAttributeConfig(limbNameWithExtractor);
+                .addAttributeConfig(nameWithExtractor)
+                .addAttributeConfig(limbNameWithExtractor);
 
         // portable map
-        MapAttributeConfig portableNameWithExtractor = new MapAttributeConfig()
+        AttributeConfig portableNameWithExtractor = new AttributeConfig()
                 .setName("nameWithExtractor")
-                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$PortableNameExtractor");
+                .setExtractorClassName("com.hazelcast.query.impl.QueryPerformanceTest$PortableNameExtractor");
 
-        MapAttributeConfig portableLimbNameWithExtractor = new MapAttributeConfig()
+        AttributeConfig portableLimbNameWithExtractor = new AttributeConfig()
                 .setName("limbNameWithExtractor")
-                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$PortableLimbNameExtractor");
+                .setExtractorClassName("com.hazelcast.query.impl.QueryPerformanceTest$PortableLimbNameExtractor");
 
         MapConfig portableMapConfig = new MapConfig()
                 .setName("portableMapWithExtractor")
-                .addMapAttributeConfig(portableNameWithExtractor)
-                .addMapAttributeConfig(portableLimbNameWithExtractor);
+                .addAttributeConfig(portableNameWithExtractor)
+                .addAttributeConfig(portableLimbNameWithExtractor);
 
         // config
         Config config = new Config()

@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftOp;
@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.RandomPicker;
+import com.hazelcast.internal.util.RandomPicker;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -57,7 +57,7 @@ public class RaftSessionAwareSemaphoreBasicTest extends AbstractSessionAwareSema
     protected Config createConfig(int cpNodeCount, int groupSize) {
         Config config = super.createConfig(cpNodeCount, groupSize);
 
-        CPSemaphoreConfig semaphoreConfig = new CPSemaphoreConfig(objectName, false);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, false);
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return config;
     }

@@ -43,7 +43,7 @@ import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.ascii.TextEncoder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
@@ -79,8 +79,8 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling"})
@@ -374,6 +374,11 @@ public class TextCommandServiceImpl implements TextCommandService {
             logger.info("Stopping text command service...");
             rtr.stop();
         }
+    }
+
+    @Override
+    public String getInstanceName() {
+        return hazelcast.getName();
     }
 
     class CommandExecutor implements Runnable {

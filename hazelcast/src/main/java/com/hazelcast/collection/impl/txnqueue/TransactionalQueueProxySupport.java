@@ -36,7 +36,7 @@ import com.hazelcast.spi.impl.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.HashSet;
 import java.util.LinkedList;

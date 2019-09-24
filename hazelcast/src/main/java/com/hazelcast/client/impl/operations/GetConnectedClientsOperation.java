@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import java.util.Collection;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 
 public class GetConnectedClientsOperation extends AbstractClientOperation implements ReadonlyOperation {

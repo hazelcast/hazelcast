@@ -32,8 +32,6 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     private boolean oldValueRequired;
     private boolean synchronous;
 
-    private CacheSimpleEntryListenerConfigReadOnly readOnly;
-
     public CacheSimpleEntryListenerConfig(CacheSimpleEntryListenerConfig listenerConfig) {
         this.cacheEntryEventFilterFactory = listenerConfig.cacheEntryEventFilterFactory;
         this.cacheEntryListenerFactory = listenerConfig.cacheEntryListenerFactory;
@@ -44,33 +42,22 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     public CacheSimpleEntryListenerConfig() {
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public CacheSimpleEntryListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CacheSimpleEntryListenerConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     public String getCacheEntryListenerFactory() {
         return cacheEntryListenerFactory;
     }
 
-    public void setCacheEntryListenerFactory(String cacheEntryListenerFactory) {
+    public CacheSimpleEntryListenerConfig setCacheEntryListenerFactory(String cacheEntryListenerFactory) {
         this.cacheEntryListenerFactory = cacheEntryListenerFactory;
+        return this;
     }
 
     public String getCacheEntryEventFilterFactory() {
         return cacheEntryEventFilterFactory;
     }
 
-    public void setCacheEntryEventFilterFactory(String cacheEntryEventFilterFactory) {
+    public CacheSimpleEntryListenerConfig setCacheEntryEventFilterFactory(String cacheEntryEventFilterFactory) {
         this.cacheEntryEventFilterFactory = cacheEntryEventFilterFactory;
+        return this;
     }
 
     /**
@@ -89,9 +76,11 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
      * creates additional traffic. Default value is {@code false}.
      *
      * @param oldValueRequired {@code true} to have old value required, {@code false} otherwise
+     * @return this configuration
      */
-    public void setOldValueRequired(boolean oldValueRequired) {
+    public CacheSimpleEntryListenerConfig setOldValueRequired(boolean oldValueRequired) {
         this.oldValueRequired = oldValueRequired;
+        return this;
     }
 
     /**
@@ -109,9 +98,11 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
      *
      * @param synchronous {@code true} to have this cache entry listener implementation called in a synchronous manner,
      *                    {@code false} otherwise.
+     * @return this configuration
      */
-    public void setSynchronous(boolean synchronous) {
+    public CacheSimpleEntryListenerConfig setSynchronous(boolean synchronous) {
         this.synchronous = synchronous;
+        return this;
     }
 
     @Override

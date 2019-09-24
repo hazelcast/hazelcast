@@ -19,11 +19,11 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 public class LocalExecutorStatsImpl implements LocalExecutorStats {
 

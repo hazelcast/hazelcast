@@ -24,17 +24,14 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.crdt.CRDTReplicationMigrationService;
-import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.crdt.CRDTReplicationMigrationService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
@@ -64,7 +61,7 @@ import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.lang.reflect.Constructor;
@@ -79,8 +76,8 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public final class ServiceManagerImpl implements ServiceManager {
@@ -156,9 +153,6 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
         registerService(DistributedDurableExecutorService.SERVICE_NAME, new DistributedDurableExecutorService(nodeEngine));
         registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
-        registerService(AtomicReferenceService.SERVICE_NAME, new AtomicReferenceService());
-        registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
-        registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
         registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
         registerService(FlakeIdGeneratorService.SERVICE_NAME, new FlakeIdGeneratorService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));

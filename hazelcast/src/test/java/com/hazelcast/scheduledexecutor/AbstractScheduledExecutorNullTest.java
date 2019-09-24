@@ -21,7 +21,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Test;
 
 import java.util.Collections;

@@ -23,9 +23,9 @@ import static com.hazelcast.internal.management.events.EventMetadata.EventType.W
 public class WanConsistencyCheckIgnoredEvent extends AbstractWanAntiEntropyEventBase {
     private final String reason;
 
-    public WanConsistencyCheckIgnoredEvent(String wanReplicationName, String targetGroupName, String mapName,
+    public WanConsistencyCheckIgnoredEvent(String wanReplicationName, String wanPublisherId, String mapName,
                                            String reason) {
-        super(null, wanReplicationName, targetGroupName, mapName);
+        super(null, wanReplicationName, wanPublisherId, mapName);
 
         this.reason = reason;
     }

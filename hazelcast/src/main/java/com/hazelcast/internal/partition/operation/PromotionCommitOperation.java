@@ -37,7 +37,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 
 import java.io.IOException;
 import java.util.Collection;

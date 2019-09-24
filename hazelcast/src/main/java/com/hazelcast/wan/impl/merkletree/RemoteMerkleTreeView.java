@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan.impl.merkletree;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Represents the readonly view of a remote Merkle Tree. Used to compare

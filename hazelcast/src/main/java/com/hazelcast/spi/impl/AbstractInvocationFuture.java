@@ -17,8 +17,8 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.util.executor.UnblockableThread;
+import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.CancellationException;
@@ -30,8 +30,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 import static java.util.concurrent.locks.LockSupport.park;
 import static java.util.concurrent.locks.LockSupport.parkNanos;
@@ -262,9 +262,11 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
 
             });
         } catch (RejectedExecutionException e) {
-            callback.onFailure(e);
+            callback.onFailure(wrapToInstanceNotActiveException(e));
         }
     }
+
+    protected abstract Exception wrapToInstanceNotActiveException(RejectedExecutionException e);
 
     // this method should not be needed; but there is a difference between client and server how it handles async throwables
     protected Throwable unwrap(Throwable throwable) {

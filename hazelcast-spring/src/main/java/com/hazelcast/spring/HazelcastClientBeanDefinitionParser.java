@@ -42,7 +42,9 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.cp.CPSubsystem;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -59,7 +61,8 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
 import static org.springframework.util.Assert.isTrue;
 
@@ -86,7 +89,20 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
-        return springXmlBuilder.handleClient(element);
+        AbstractBeanDefinition bean = springXmlBuilder.handleClient(element);
+        registerCPSubsystemBean(element, parserContext);
+        return bean;
+    }
+
+    private void registerCPSubsystemBean(Element element, ParserContext parserContext) {
+        String instanceBeanRef = element.getAttribute("id");
+        BeanDefinitionBuilder cpBeanDefBuilder = BeanDefinitionBuilder.rootBeanDefinition(CPSubsystem.class);
+        cpBeanDefBuilder.setFactoryMethodOnBean("getCPSubsystem", instanceBeanRef);
+        cpBeanDefBuilder.setLazyInit(true);
+
+        BeanDefinitionHolder holder =
+                new BeanDefinitionHolder(cpBeanDefBuilder.getBeanDefinition(), instanceBeanRef + CP_SUBSYSTEM_SUFFIX);
+        registerBeanDefinition(holder, parserContext.getRegistry());
     }
 
     /**
@@ -501,6 +517,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             configBuilder.addPropertyValue("labels", labels);
         }
+
     }
 
 }

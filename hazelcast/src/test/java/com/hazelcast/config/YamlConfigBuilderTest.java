@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -56,8 +56,8 @@ import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
-import static com.hazelcast.config.WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
-import static com.hazelcast.config.WANQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
+import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -486,26 +486,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readSemaphoreConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  semaphore:\n"
-                + "    default:\n"
-                + "      initial-permits: 1\n"
-                + "    custom:\n"
-                + "      initial-permits: 10\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule";
-
-        Config config = buildConfig(yaml);
-        SemaphoreConfig defaultConfig = config.getSemaphoreConfig("default");
-        SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
-        assertEquals(1, defaultConfig.getInitialPermits());
-        assertEquals(10, customConfig.getInitialPermits());
-        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
     public void readQueueConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -797,53 +777,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         AtomicLongConfig defaultAtomicLongConfig = config.getAtomicLongConfig("default");
         assertEquals("customSplitBrainProtectionRule2", defaultAtomicLongConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
-    public void readAtomicReference() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  atomic-reference:\n"
-                + "    custom:\n"
-                + "      merge-policy:\n"
-                + "        class-name: CustomMergePolicy\n"
-                + "        batch-size: 23\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
-                + "    default:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule2\n";
-
-        Config config = buildConfig(yaml);
-        AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
-        assertEquals("custom", atomicReferenceConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", atomicReferenceConfig.getSplitBrainProtectionName());
-
-        MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(23, mergePolicyConfig.getBatchSize());
-
-        AtomicReferenceConfig defaultAtomicReferenceConfig = config.getAtomicReferenceConfig("default");
-        assertEquals("customSplitBrainProtectionRule2", defaultAtomicReferenceConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
-    public void readCountDownLatch() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  count-down-latch:\n"
-                + "    custom:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
-                + "    default:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule2\n";
-
-        Config config = buildConfig(yaml);
-        CountDownLatchConfig countDownLatchConfig = config.getCountDownLatchConfig("custom");
-        assertEquals("custom", countDownLatchConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", countDownLatchConfig.getSplitBrainProtectionName());
-
-        CountDownLatchConfig defaultCountDownLatchConfig = config.getCountDownLatchConfig("default");
-        assertEquals("customSplitBrainProtectionRule2", defaultCountDownLatchConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -1775,7 +1708,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
         assertEquals("ankara", pc2.getGroupName());
         assertNull(pc2.getPublisherId());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
+        assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
 
         WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
@@ -2421,7 +2354,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          - \"age\"\n"
                 + "      attributes:\n"
                 + "        currency:\n"
-                + "          extractor: com.bank.CurrencyExtractor\n"
+                + "          extractor-class-name: com.bank.CurrencyExtractor\n"
                 + "      partition-lost-listeners:\n"
                 + "         - com.your-package.YourPartitionLostListener\n"
                 + "      entry-listeners:\n"
@@ -2449,9 +2382,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig.getIndexConfigs().size());
         assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
         assertTrue(mapConfig.getIndexConfigs().get(0).getType() == IndexType.SORTED);
-        assertEquals(1, mapConfig.getMapAttributeConfigs().size());
-        assertEquals("com.bank.CurrencyExtractor", mapConfig.getMapAttributeConfigs().get(0).getExtractor());
-        assertEquals("currency", mapConfig.getMapAttributeConfigs().get(0).getName());
+        assertEquals(1, mapConfig.getAttributeConfigs().size());
+        assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
+        assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
         assertEquals(1, mapConfig.getPartitionLostListenerConfigs().size());
         assertEquals("com.your-package.YourPartitionLostListener",
                 mapConfig.getPartitionLostListenerConfigs().get(0).getClassName());
@@ -2530,16 +2463,16 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    people:\n"
                 + "      attributes:\n"
                 + "        power:\n"
-                + "          extractor: com.car.PowerExtractor\n"
+                + "          extractor-class-name: com.car.PowerExtractor\n"
                 + "        weight:\n"
-                + "          extractor: com.car.WeightExtractor\n";
+                + "          extractor-class-name: com.car.WeightExtractor\n";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getMapAttributeConfigs().isEmpty());
-        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getMapAttributeConfigs().get(0));
-        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getMapAttributeConfigs().get(1));
+        assertFalse(mapConfig.getAttributeConfigs().isEmpty());
+        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getAttributeConfigs().get(0));
+        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getAttributeConfigs().get(1));
     }
 
     @Override
@@ -2550,14 +2483,14 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "    people:\n"
                 + "      attributes:\n"
-                + "        - extractor: com.car.WeightExtractor\n";
+                + "        - extractor-class-name: com.car.WeightExtractor\n";
 
         buildConfig(yaml);
     }
 
-    private static void assertAttributeEqual(String expectedName, String expectedExtractor, MapAttributeConfig attributeConfig) {
+    private static void assertAttributeEqual(String expectedName, String expectedExtractor, AttributeConfig attributeConfig) {
         assertEquals(expectedName, attributeConfig.getName());
-        assertEquals(expectedExtractor, attributeConfig.getExtractor());
+        assertEquals(expectedExtractor, attributeConfig.getExtractorClassName());
     }
 
     @Override
@@ -2568,7 +2501,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "   people:\n"
                 + "     attributes:\n"
-                + "       - extractor: com.car.WeightExtractor\n";
+                + "       - extractor-class-name: com.car.WeightExtractor\n";
         buildConfig(yaml);
     }
 
@@ -2593,7 +2526,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    people:\n"
                 + "      attributes:\n"
                 + "        weight:\n"
-                + "          extractor: \"\"\n";
+                + "          extractor-class-name: \"\"\n";
         buildConfig(yaml);
     }
 
@@ -3417,8 +3350,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(250, raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot());
         assertEquals(75, raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends());
         assertEquals(50, raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis());
-        CPSemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
-        CPSemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
+        SemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
+        SemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
         assertNotNull(semaphoreConfig1);
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());

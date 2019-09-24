@@ -21,8 +21,8 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.CallerAware;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.AwaitInvocationKey;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -56,7 +56,7 @@ public class AwaitOp extends AbstractCountDownLatchOp implements CallerAware, In
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftCountDownLatchService service = getService();
+        CountDownLatchService service = getService();
         AwaitInvocationKey key = new AwaitInvocationKey(commitIndex, invocationUid, callerAddress, callId);
         if (service.await(groupId, name, key, timeoutMillis)) {
             return true;
@@ -78,7 +78,7 @@ public class AwaitOp extends AbstractCountDownLatchOp implements CallerAware, In
 
     @Override
     public int getClassId() {
-        return RaftCountDownLatchDataSerializerHook.AWAIT_OP;
+        return CountDownLatchDataSerializerHook.AWAIT_OP;
     }
 
     @Override

@@ -27,8 +27,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 

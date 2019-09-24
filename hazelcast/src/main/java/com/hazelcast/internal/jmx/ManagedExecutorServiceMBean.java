@@ -17,15 +17,15 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
- * Management bean for {@link com.hazelcast.util.executor.ManagedExecutorService}
+ * Management bean for {@link com.hazelcast.internal.util.executor.ManagedExecutorService}
  */
 @ManagedDescription("HazelcastInstance.ManagedExecutorService")
 public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorService> {

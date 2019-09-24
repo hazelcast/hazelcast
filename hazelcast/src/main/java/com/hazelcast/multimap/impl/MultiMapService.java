@@ -58,9 +58,9 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -77,10 +77,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Thread.currentThread;

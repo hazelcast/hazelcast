@@ -337,9 +337,9 @@ hazelcast:
 
       attributes:
         currency:
-          extractor: com.example.CurrencyExtractor
+          extractor-class-name: com.example.CurrencyExtractor
         age:
-          extractor: com.example.AgeExtractor
+          extractor-class-name: com.example.AgeExtractor
 
       entry-listeners:
         - include-value: true
@@ -449,13 +449,6 @@ hazelcast:
       message-listeners:
         - com.hazelcast.examples.MessageListener
 
-  semaphore:
-    default:
-      initial-permits: 10
-      backup-count: 1
-      async-backup-count: 0
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-
   lock:
     default:
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
@@ -466,17 +459,6 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-
-  atomic-reference:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-      merge-policy:
-        batch-size: 100
-        class-name: PutIfAbsentMergePolicy
-
-  count-down-latch:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   ringbuffer:
     default:

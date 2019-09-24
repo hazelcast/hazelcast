@@ -20,7 +20,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ClearWanQueuesOperation;
 
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * Request coming from Management Center for {@link ClearWanQueuesRequest}

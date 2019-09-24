@@ -24,7 +24,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.internal.util.StringUtil.bytesToString;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class RestValue implements IdentifiedDataSerializable {
