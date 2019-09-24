@@ -99,6 +99,7 @@ public final class NioNetworking implements Networking {
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
+    private final boolean selectionKeyWakeupEnabled;
     private volatile ExecutorService closeListenerExecutor;
     private final ConcurrencyDetection concurrencyDetection;
     private final boolean writeThroughEnabled;
@@ -134,6 +135,7 @@ public final class NioNetworking implements Networking {
         metricsRegistry.scanAndRegister(this, "tcp");
         this.concurrencyDetection = ctx.concurrencyDetection;
         this.writeThroughEnabled = ctx.writeThroughEnabled;
+        this.selectionKeyWakeupEnabled = ctx.selectionKeyWakeupEnabled;
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -302,7 +304,8 @@ public final class NioNetworking implements Networking {
                 loggingService.getLogger(NioOutboundPipeline.class),
                 ioBalancer,
                 concurrencyDetection,
-                writeThroughEnabled);
+                writeThroughEnabled,
+                selectionKeyWakeupEnabled);
     }
 
     private NioInboundPipeline newInboundPipeline(NioChannel channel) {
@@ -399,6 +402,8 @@ public final class NioNetworking implements Networking {
         // In Hazelcast 3.8, selector mode must be set via HazelcastProperties
         private SelectorMode selectorMode = SelectorMode.getConfiguredValue();
         private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
+        private boolean selectionKeyWakeupEnabled
+                = Boolean.parseBoolean(System.getProperty("hazelcast.io.selectionKeyWakeupEnabled", "true"));
         private ConcurrencyDetection concurrencyDetection;
 
         // if the calling thread is allowed to write through to the socket if that is possible.
@@ -410,6 +415,10 @@ public final class NioNetworking implements Networking {
             if (selectorModeString.startsWith(SELECT_NOW_STRING + ",")) {
                 idleStrategy = createBackoffIdleStrategy(selectorModeString);
             }
+        }
+
+        public void setSelectionKeyWakeupEnabled(boolean selectionKeyWakeupEnabled) {
+            this.selectionKeyWakeupEnabled = selectionKeyWakeupEnabled;
         }
 
         public Context writeThroughEnabled(boolean writeThroughEnabled) {
