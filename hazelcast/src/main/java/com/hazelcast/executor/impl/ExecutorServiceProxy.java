@@ -618,7 +618,6 @@ public class ExecutorServiceProxy
         return "IExecutorService{" + "name='" + name + '\'' + '}';
     }
 
-    // todo this replaces new CompletedFuture which also deserializes the value...
     private static <V> InternalCompletableFuture<V> completedSynchronously(Future<V> future,
                                                                            SerializationService serializationService) {
         try {

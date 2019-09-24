@@ -685,7 +685,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
     }
 
-    protected CompletableFuture<Void> unblockAccept(@Nonnull final Consumer<? super V> consumer,
+    private CompletableFuture<Void> unblockAccept(@Nonnull final Consumer<? super V> consumer,
                                                     @Nonnull Executor executor,
                                                     @Nonnull CompletableFuture<Void> future) {
         final Object value = resolve(state);
