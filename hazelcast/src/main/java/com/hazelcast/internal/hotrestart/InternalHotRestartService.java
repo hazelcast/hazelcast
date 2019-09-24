@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hotrestart;
+package com.hazelcast.internal.hotrestart;
 
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;

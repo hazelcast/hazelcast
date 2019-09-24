@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hotrestart;
+package com.hazelcast.internal.hotrestart;
+
+import com.hazelcast.hotrestart.BackupTaskState;
+import com.hazelcast.hotrestart.BackupTaskStatus;
+import com.hazelcast.hotrestart.HotRestartService;
 
 /**
  * Empty implementation of HotRestartService to avoid null checks. This will provide default behaviour when hot restart is

@@ -18,7 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.hotrestart.InternalHotRestartService;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
