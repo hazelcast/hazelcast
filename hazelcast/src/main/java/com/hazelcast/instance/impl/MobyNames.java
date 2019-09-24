@@ -17,7 +17,7 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.util.RandomPicker;
+import com.hazelcast.internal.util.RandomPicker;
 
 import java.util.Arrays;
 
