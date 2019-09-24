@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -263,7 +262,6 @@ public class BasicCompletableFutureTest {
     }
 
     private static <V> BasicCompletableFuture<V> basicCompletableFuture(Future<V> future) {
-        NodeEngine engine = mock(NodeEngine.class);
-        return new BasicCompletableFuture<>(future, engine);
+        return new BasicCompletableFuture<>(future);
     }
 }

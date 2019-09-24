@@ -43,7 +43,7 @@ class BasicCompletableFuture<V> extends InternalCompletableFuture<V> {
 
     final Future<V> delegate;
 
-    BasicCompletableFuture(Future<V> delegate, NodeEngine nodeEngine) {
+    BasicCompletableFuture(Future<V> delegate) {
         this.delegate = delegate;
     }
 
