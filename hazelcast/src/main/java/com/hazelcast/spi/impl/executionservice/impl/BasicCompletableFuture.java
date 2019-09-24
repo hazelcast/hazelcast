@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.executionservice.impl;
 
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;

@@ -38,8 +38,6 @@ import java.util.function.BiConsumer;
  * default async executor or deserialization of completion value.
  */
 public class InternalCompletableFuture<V> extends CompletableFuture<V> {
-    public InternalCompletableFuture() {
-    }
 
     /**
      * Similarly to {@link #join()}, returns the value when complete or throws an unchecked exception if

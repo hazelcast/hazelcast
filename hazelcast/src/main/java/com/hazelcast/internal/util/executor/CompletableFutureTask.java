@@ -19,7 +19,6 @@ package com.hazelcast.internal.util.executor;
 import com.hazelcast.spi.impl.DeserializingCompletableFuture;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -36,13 +35,13 @@ public class CompletableFutureTask<V> extends DeserializingCompletableFuture<V>
 
     private volatile Thread runner;
 
-    CompletableFutureTask(Callable<V> callable, ExecutorService asyncExecutor) {
-        super(asyncExecutor);
+    CompletableFutureTask(Callable<V> callable) {
+        super();
         this.callable = callable;
     }
 
-    CompletableFutureTask(Runnable runnable, V result, ExecutorService asyncExecutor) {
-        super(asyncExecutor);
+    CompletableFutureTask(Runnable runnable, V result) {
+        super();
         this.callable = Executors.callable(runnable, result);
     }
 

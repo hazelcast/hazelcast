@@ -196,7 +196,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
             if (threadFactory != null) {
                 throw new IllegalArgumentException("Cached executor can not be used with external thread factory");
             }
-            executor = new CachedExecutorServiceDelegate(nodeEngine, name, cachedExecutorService, poolSize, queueCapacity);
+            executor = new CachedExecutorServiceDelegate(name, cachedExecutorService, poolSize, queueCapacity);
         } else if (type == ExecutorType.CONCRETE) {
             if (threadFactory == null) {
                 ClassLoader classLoader = nodeEngine.getConfigClassLoader();
