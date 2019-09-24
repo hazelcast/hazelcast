@@ -17,10 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.EvictionConfigReadOnly;
-import com.hazelcast.internal.config.IndexConfigReadOnly;
 import com.hazelcast.internal.config.PredicateConfigReadOnly;
 import com.hazelcast.internal.config.QueryCacheConfigReadOnly;
-import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
