@@ -17,12 +17,12 @@
 package com.hazelcast.cp.internal.datastructures.atomicref.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicRefCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicRefCompareAndSetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.CompareAndSetOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
@@ -34,7 +34,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link CompareAndSetOp}
  */
-public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicRefCompareAndSetCodec.RequestParameters>
+public class CompareAndSetMessageTask extends AbstractMessageTask<AtomicRefCompareAndSetCodec.RequestParameters>
         implements ExecutionCallback<Boolean> {
 
     public CompareAndSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -49,18 +49,18 @@ public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicRefCom
     }
 
     @Override
-    protected CPAtomicRefCompareAndSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicRefCompareAndSetCodec.decodeRequest(clientMessage);
+    protected AtomicRefCompareAndSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicRefCompareAndSetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicRefCompareAndSetCodec.encodeResponse((Boolean) response);
+        return AtomicRefCompareAndSetCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftAtomicRefService.SERVICE_NAME;
+        return AtomicRefService.SERVICE_NAME;
     }
 
     @Override

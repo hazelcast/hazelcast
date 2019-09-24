@@ -38,7 +38,6 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     private DiscoveryServiceProvider discoveryServiceProvider;
     private NodeFilter nodeFilter;
     private String nodeFilterClass;
-    private DiscoveryConfig readonly;
 
     public DiscoveryConfig() {
     }
@@ -56,21 +55,6 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         discoveryServiceProvider = discoveryConfig.discoveryServiceProvider;
         nodeFilter = discoveryConfig.nodeFilter;
         nodeFilterClass = discoveryConfig.nodeFilterClass;
-        readonly = discoveryConfig.readonly;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public DiscoveryConfig getAsReadOnly() {
-        if (readonly != null) {
-            return readonly;
-        }
-        readonly = new DiscoveryConfigReadOnly(this);
-        return readonly;
     }
 
     public DiscoveryConfig setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {

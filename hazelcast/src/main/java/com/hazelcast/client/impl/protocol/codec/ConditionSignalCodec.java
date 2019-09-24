@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * document this precondition and any actions taken if the lock is not held. Typically, an exception such as
  * ILLEGAL_MONITOR_STATE will be thrown.
  */
-@Generated({"ce0825c6fe0a403a3d3ba3939a9b8276"})
+@Generated("dd90e0351bdb97d39f7a31a77005ec60")
 public final class ConditionSignalCodec {
     //hex: 0x080300
     public static final int REQUEST_MESSAGE_TYPE = 525056;

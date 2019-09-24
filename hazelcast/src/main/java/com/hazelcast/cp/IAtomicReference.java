@@ -16,10 +16,8 @@
 
 package com.hazelcast.cp;
 
-import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 
@@ -43,33 +41,14 @@ import com.hazelcast.core.IFunction;
  *     }
  * });
  * </pre>
- * As of version 3.12, Hazelcast offers 2 different {@link IAtomicReference}
- * impls. Behaviour of {@link IAtomicReference} under failure scenarios,
- * including network partitions, depends on the impl. The first impl is
- * the good old {@link IAtomicReference} that is accessed via
- * {@link HazelcastInstance#getAtomicReference(String)}. It works on top of
- * Hazelcast's async replication algorithm and does not guarantee
- * linearizability during failures. It is possible for an
- * {@link IAtomicReference} instance to exist in each of the partitioned
- * clusters or to not exist at all. Under these circumstances, the values held
- * in the {@link IAtomicReference} instance may diverge. Once the network
- * partition heals, Hazelcast will use the configured split-brain merge policy
- * to resolve conflicting values.
  * <p>
- * This {@link IAtomicReference} impl also supports split brain protection
- * {@link SplitBrainProtectionConfig} in cluster versions 3.10 and higher.
- * However, Hazelcast split brain protections do not guarantee strong consistency
- * under failure scenarios.
- * <p>
- * The second impl is a new one introduced with the {@link CPSubsystem} in
- * version 3.12. It is accessed via
- * {@link CPSubsystem#getAtomicReference(String)}. It has a major difference to
- * the old implementation, that is, it works on top of the Raft consensus
- * algorithm. It offers linearizability during crash failures and network
+ * IAtomicReference is accessed via {@link CPSubsystem#getAtomicReference(String)}.
+ * It works on top of the Raft consensus algorithm.
+ * It offers linearizability during crash failures and network
  * partitions. It is CP with respect to the CAP principle. If a network
  * partition occurs, it remains available on at most one side of the partition.
  * <p>
- * The CP IAtomicReference impl does not offer exactly-once / effectively-once
+ * IAtomicReference impl does not offer exactly-once / effectively-once
  * execution semantics. It goes with at-least-once execution semantics
  * by default and can cause an API call to be committed multiple times
  * in case of CP member failures. It can be tuned to offer at-most-once

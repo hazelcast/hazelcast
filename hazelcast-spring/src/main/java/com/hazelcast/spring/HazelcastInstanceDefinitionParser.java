@@ -53,7 +53,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  */
 public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
-    static final String CP_SUBSYSTEM_SUFFX = "@cp-subsystem";
+    static final String CP_SUBSYSTEM_SUFFIX = "@cp-subsystem";
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -100,7 +100,7 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
             cpBeanDefBuilder.setFactoryMethodOnBean("getCPSubsystem", instanceBeanRef);
 
             BeanDefinitionHolder holder =
-                    new BeanDefinitionHolder(cpBeanDefBuilder.getBeanDefinition(), instanceBeanRef + CP_SUBSYSTEM_SUFFX);
+                    new BeanDefinitionHolder(cpBeanDefBuilder.getBeanDefinition(), instanceBeanRef + CP_SUBSYSTEM_SUFFIX);
             registerBeanDefinition(holder, parserContext.getRegistry());
         }
     }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.AttributeConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith;
 public class AttributeConfigReadOnlyTest {
 
     private AttributeConfig getReadOnlyConfig() {
-        return new AttributeConfig().getAsReadOnly();
+        return new AttributeConfigReadOnly(new AttributeConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

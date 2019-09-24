@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MemberAttributeConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +31,7 @@ import java.util.HashMap;
 public class MemberAttributeConfigTest {
 
     /**
-     * Test method for {@link com.hazelcast.config.MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
+     * Test method for {@link MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
      */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMemberAttributeConfigSetAttributes() {

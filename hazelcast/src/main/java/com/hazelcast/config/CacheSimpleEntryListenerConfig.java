@@ -32,8 +32,6 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     private boolean oldValueRequired;
     private boolean synchronous;
 
-    private CacheSimpleEntryListenerConfigReadOnly readOnly;
-
     public CacheSimpleEntryListenerConfig(CacheSimpleEntryListenerConfig listenerConfig) {
         this.cacheEntryEventFilterFactory = listenerConfig.cacheEntryEventFilterFactory;
         this.cacheEntryListenerFactory = listenerConfig.cacheEntryListenerFactory;
@@ -42,19 +40,6 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     }
 
     public CacheSimpleEntryListenerConfig() {
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public CacheSimpleEntryListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CacheSimpleEntryListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     public String getCacheEntryListenerFactory() {

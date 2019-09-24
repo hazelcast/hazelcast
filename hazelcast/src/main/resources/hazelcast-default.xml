@@ -261,12 +261,6 @@
         <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </set>
 
-    <semaphore name="default">
-        <initial-permits>0</initial-permits>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-    </semaphore>
-
     <reliable-topic name="default">
         <read-batch-size>10</read-batch-size>
         <topic-overload-policy>BLOCK</topic-overload-policy>
@@ -293,10 +287,6 @@
     <atomic-long name="default">
         <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </atomic-long>
-
-    <atomic-reference name="default">
-        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
-    </atomic-reference>
 
     <serialization>
         <portable-version>0</portable-version>

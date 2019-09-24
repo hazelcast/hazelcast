@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically decrements the current value by one.
  */
-@Generated({"d5a337d4a70e444657823e019905e5d9"})
+@Generated("40cca29d848ba9e720fc615d8165779d")
 public final class AtomicLongDecrementAndGetCodec {
     //hex: 0x0A0700
     public static final int REQUEST_MESSAGE_TYPE = 657152;

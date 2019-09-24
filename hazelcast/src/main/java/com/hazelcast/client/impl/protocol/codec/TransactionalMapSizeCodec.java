@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of entries in this map.
  */
-@Generated({"8e03c5d88f5d2ab1171d02fce50f84cb"})
+@Generated("da13b92921d0f54436c67d5c70f32703")
 public final class TransactionalMapSizeCodec {
     //hex: 0x100400
     public static final int REQUEST_MESSAGE_TYPE = 1049600;

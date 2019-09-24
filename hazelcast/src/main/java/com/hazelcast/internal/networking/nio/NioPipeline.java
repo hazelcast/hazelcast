@@ -24,7 +24,7 @@ import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
-import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -52,7 +52,10 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     // needs to be volatile because it can accessed concurrently (only the owner will modify). Owner can be null if the
     // pipeline is being migrated.
     protected volatile NioThread owner;
-    protected SelectionKey selectionKey;
+
+    // in case of outbound pipeline, this selectionKey is only changed when the pipeline is scheduled
+    // (so a single thread has claimed possession of the pipeline)
+    protected volatile SelectionKey selectionKey;
     private final ChannelErrorHandler errorHandler;
     private final int initialOps;
     private final IOBalancer ioBalancer;
@@ -112,42 +115,29 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     }
 
     void start() {
-        ownerAddTaskAndWakeup(new NioPipelineTask(NioPipeline.this) {
-            @Override
-            protected void run0() {
-                try {
-                    getSelectionKey();
-
-                    // we need to call process so that the pipeline gets unscheduled.
-                    if (NioPipeline.this instanceof NioOutboundPipeline) {
-                        NioOutboundPipeline out = (NioOutboundPipeline) NioPipeline.this;
-                        out.process();
-                    }
-                } catch (Throwable t) {
-                    onError(t);
-                }
+        owner.addTaskAndWakeup(() -> {
+            try {
+                initSelectionKey();
+                process();
+            } catch (Throwable t) {
+                onError(t);
             }
         });
     }
 
-    private SelectionKey getSelectionKey() throws IOException {
-        if (selectionKey == null) {
-            selectionKey = socketChannel.register(owner.getSelector(), initialOps, this);
-        }
-        return selectionKey;
+    final void initSelectionKey() throws ClosedChannelException {
+        initSelectionKey(owner.getSelector(), initialOps);
     }
 
-    final void setSelectionKey(SelectionKey selectionKey) {
-        this.selectionKey = selectionKey;
+    final void initSelectionKey(Selector selector, int ops) throws ClosedChannelException {
+        selectionKey = socketChannel.register(selector, ops, NioPipeline.this);
     }
 
-    final void registerOp(int operation) throws IOException {
-        SelectionKey selectionKey = getSelectionKey();
+    final void registerOp(int operation) {
         selectionKey.interestOps(selectionKey.interestOps() | operation);
     }
 
-    final void unregisterOp(int operation) throws IOException {
-        SelectionKey selectionKey = getSelectionKey();
+    final void unregisterOp(int operation) {
         int interestOps = selectionKey.interestOps();
         if ((interestOps & operation) != 0) {
             selectionKey.interestOps(interestOps & ~operation);
@@ -263,6 +253,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
             currentThread().interrupt();
         }
 
+        SelectionKey selectionKey = this.selectionKey;
         if (selectionKey != null) {
             selectionKey.cancel();
         }
@@ -323,9 +314,8 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
      * <p>
      * This method needs to run on a thread that is executing the {@link #process()}  method.
      *
-     * @throws IOException
      */
-    void startMigration() throws IOException {
+    void startMigration() {
         assert newOwner != null : "newOwner can't be null";
         assert owner != newOwner : "newOwner can't be the same as the existing owner";
         publishMetrics();
@@ -370,8 +360,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
                     return;
                 }
 
-                selectionKey = getSelectionKey();
-                registerOp(initialOps);
+                initSelectionKey();
 
                 // and now we set the newOwner to null since we are finished with the migration
                 NioPipeline.this.newOwner = null;

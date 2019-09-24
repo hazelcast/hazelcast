@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
@@ -68,7 +68,7 @@ public class UnsafeSemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
         cpSubsystemConfig.setSessionTimeToLiveSeconds(10);
         cpSubsystemConfig.setSessionHeartbeatIntervalSeconds(1);
 
-        CPSemaphoreConfig semaphoreConfig = new CPSemaphoreConfig(objectName, false);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, false);
         cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
         return config;
     }

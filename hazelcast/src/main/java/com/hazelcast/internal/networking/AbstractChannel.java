@@ -116,6 +116,10 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public void connect(InetSocketAddress address, int timeoutMillis) throws IOException {
         try {
+            if (!clientMode) {
+                throw new IllegalStateException("Can't call connect on a Channel that isn't in clientMode");
+            }
+
             checkNotNull(address, "address");
             checkNotNegative(timeoutMillis, "timeoutMillis can't be negative");
 
@@ -135,8 +139,6 @@ public abstract class AbstractChannel implements Channel {
                 throw newEx;
             }
 
-            onConnect();
-
             if (logger.isFinestEnabled()) {
                 logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
             }
@@ -147,13 +149,6 @@ public abstract class AbstractChannel implements Channel {
             IOUtil.closeResource(this);
             throw e;
         }
-    }
-
-    /**
-     * Template method that can be implemented when the {@link #connect(InetSocketAddress, int)}
-     * has completed.
-     */
-    protected void onConnect() {
     }
 
     @Override

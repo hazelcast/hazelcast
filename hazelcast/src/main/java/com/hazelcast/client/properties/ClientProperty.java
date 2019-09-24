@@ -130,19 +130,17 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.discovery.public.ip.enabled", false);
 
     /**
-     * Controls the number of socket input threads. Defaults to -1, so the system will determine.
+     * Controls the number of IO input threads. Defaults to -1, so the system will decide.
      *
-     * If SSL is disabled, system will default to 1.
-     * If SSL is enabled, system will default to 3.
+     * If client is a smart client, it will default to 3 otherwise it will default to 1.
      */
     public static final HazelcastProperty IO_INPUT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.client.io.input.thread.count", -1);
 
     /**
-     * Controls the number of socket output threads. Defaults to -1, so the system will determine.
+     * Controls the number of IO output threads. Defaults to -1, so the system will decide.
      *
-     * If SSL is disabled, system will default to 1.
-     * If SSL is enabled, system will default to 3.
+     * If client is a smart client, it will default to 3 otherwise it will default to 1.
      */
     public static final HazelcastProperty IO_OUTPUT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.client.io.output.thread.count", -1);

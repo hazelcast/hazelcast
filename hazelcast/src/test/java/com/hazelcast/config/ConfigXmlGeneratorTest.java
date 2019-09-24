@@ -21,16 +21,15 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.Duration
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfigChecker;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
-import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -624,24 +623,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testSemaphore() {
-        SemaphoreConfig expectedConfig = new SemaphoreConfig()
-                .setName("testSemaphore")
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setInitialPermits(3)
-                .setBackupCount(1)
-                .setAsyncBackupCount(2);
-
-        Config config = new Config()
-                .addSemaphoreConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        SemaphoreConfig actualConfig = xmlConfig.getSemaphoreConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testExecutor() {
         ExecutorConfig expectedConfig = new ExecutorConfig()
                 .setName("testExecutor")
@@ -734,29 +715,6 @@ public class ConfigXmlGeneratorTest {
         MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
         assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
         assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void testAtomicReference() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(PassThroughMergePolicy.class.getSimpleName())
-                .setBatchSize(4321);
-
-        AtomicReferenceConfig expectedConfig = new AtomicReferenceConfig("testAtomicReferenceConfig")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-        Config config = new Config()
-                .addAtomicReferenceConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        AtomicReferenceConfig actualConfig = xmlConfig.getAtomicReferenceConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-
-        MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
-        assertEquals(PassThroughMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
-        assertEquals(4321, xmlMergePolicyConfig.getBatchSize());
     }
 
     @Test
@@ -1331,8 +1289,8 @@ public class ConfigXmlGeneratorTest {
                 .setAppendRequestBackoffTimeoutInMillis(50);
 
         config.getCPSubsystemConfig()
-                .addSemaphoreConfig(new CPSemaphoreConfig("sem1", true))
-                .addSemaphoreConfig(new CPSemaphoreConfig("sem2", false));
+                .addSemaphoreConfig(new SemaphoreConfig("sem1", true))
+                .addSemaphoreConfig(new SemaphoreConfig("sem2", false));
 
         config.getCPSubsystemConfig()
                 .addLockConfig(new FencedLockConfig("lock1", 1))

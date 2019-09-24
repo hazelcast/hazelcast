@@ -48,8 +48,6 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
         this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
-    abstract T getAsReadOnly();
-
     /**
      * Gets the name of this data structure.
      *

@@ -16,22 +16,20 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.collection.IList;
-import com.hazelcast.map.IMap;
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,24 +56,6 @@ public class MBeanDestroyTest extends HazelcastTestSupport {
 
 
         destroyObjectAndAssert(atomicLong, "IAtomicLong");
-    }
-
-    @Test
-    public void testAtomicReference() throws Exception {
-        IAtomicReference<String> atomicReference = holder.getHz().getAtomicReference("atomicreference");
-        atomicReference.set(null);
-        holder.assertMBeanExistEventually("IAtomicReference", atomicReference.getName());
-
-        destroyObjectAndAssert(atomicReference, "IAtomicReference");
-    }
-
-    @Test
-    public void testSemaphore() throws Exception {
-        ISemaphore semaphore = holder.getHz().getSemaphore("semaphore");
-        semaphore.availablePermits();
-        holder.assertMBeanExistEventually("ISemaphore", semaphore.getName());
-
-        destroyObjectAndAssert(semaphore, "ISemaphore");
     }
 
     @Test

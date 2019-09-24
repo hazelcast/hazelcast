@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated({"7dfdf94ddacb3b116ac9a5cbce809e2c"})
+@Generated("8809f845b4f70befc3f7f86bd1bf3c1f")
 public final class CacheFetchNearCacheInvalidationMetadataCodec {
     //hex: 0x151F00
     public static final int REQUEST_MESSAGE_TYPE = 1384192;

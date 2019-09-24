@@ -45,7 +45,6 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
     private boolean statisticsEnabled = true;
     private boolean multiThreadingEnabled;
     private List<ListenerConfig> listenerConfigs;
-    private transient TopicConfigReadOnly readOnly;
 
     /**
      * Creates a TopicConfig.
@@ -73,19 +72,6 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
         this.globalOrderingEnabled = config.globalOrderingEnabled;
         this.multiThreadingEnabled = config.multiThreadingEnabled;
         this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public TopicConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new TopicConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

@@ -111,13 +111,6 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSemaphore() {
-        HazelcastInstance instance = createHazelcastInstance();
-        DistributedObject object = instance.getSemaphore("test");
-        test(instance, object);
-    }
-
-    @Test
     public void testIdGenerator() {
         HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getIdGenerator("test");

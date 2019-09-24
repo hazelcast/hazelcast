@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -140,11 +140,9 @@ public class ConfigXmlGenerator {
         collectionXmlGenerator(gen, "list", config.getListConfigs().values());
         collectionXmlGenerator(gen, "set", config.getSetConfigs().values());
         topicXmlGenerator(gen, config);
-        semaphoreXmlGenerator(gen, config);
         lockXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
         atomicLongXmlGenerator(gen, config);
-        atomicReferenceXmlGenerator(gen, config);
         executorXmlGenerator(gen, config);
         durableExecutorXmlGenerator(gen, config);
         scheduledExecutorXmlGenerator(gen, config);
@@ -490,17 +488,6 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void semaphoreXmlGenerator(XmlGenerator gen, Config config) {
-        for (SemaphoreConfig sc : config.getSemaphoreConfigs()) {
-            gen.open("semaphore", "name", sc.getName())
-                    .node("initial-permits", sc.getInitialPermits())
-                    .node("backup-count", sc.getBackupCount())
-                    .node("async-backup-count", sc.getAsyncBackupCount())
-                    .node("split-brain-protection-ref", sc.getSplitBrainProtectionName())
-                    .close();
-        }
-    }
-
     private static void topicXmlGenerator(XmlGenerator gen, Config config) {
         for (TopicConfig t : config.getTopicConfigs().values()) {
             gen.open("topic", "name", t.getName())
@@ -619,17 +606,6 @@ public class ConfigXmlGenerator {
             gen.open("atomic-long", "name", atomicLongConfig.getName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .node("split-brain-protection-ref", atomicLongConfig.getSplitBrainProtectionName())
-                    .close();
-        }
-    }
-
-    private static void atomicReferenceXmlGenerator(XmlGenerator gen, Config config) {
-        Collection<AtomicReferenceConfig> configs = config.getAtomicReferenceConfigs().values();
-        for (AtomicReferenceConfig atomicReferenceConfig : configs) {
-            MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
-            gen.open("atomic-reference", "name", atomicReferenceConfig.getName())
-                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
-                    .node("split-brain-protection-ref", atomicReferenceConfig.getSplitBrainProtectionName())
                     .close();
         }
     }
@@ -1449,8 +1425,8 @@ public class ConfigXmlGenerator {
 
         gen.open("semaphores");
 
-        for (CPSemaphoreConfig semaphoreConfig : cpSubsystemConfig.getSemaphoreConfigs().values()) {
-            gen.open("cp-semaphore")
+        for (SemaphoreConfig semaphoreConfig : cpSubsystemConfig.getSemaphoreConfigs().values()) {
+            gen.open("semaphore")
                     .node("name", semaphoreConfig.getName())
                     .node("jdk-compatible", semaphoreConfig.isJDKCompatible())
                     .close();

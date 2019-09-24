@@ -252,6 +252,11 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
     }
 
     @Override
+    protected void onWaitKeyExpire(LockInvocationKey key) {
+        ownerInvocationRefUids.put(BiTuple.of(key.endpoint(), key.invocationUid()), NOT_LOCKED);
+    }
+
+    @Override
     public int getFactoryId() {
         return RaftLockDataSerializerHook.F_ID;
     }

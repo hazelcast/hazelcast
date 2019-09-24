@@ -216,16 +216,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public CacheConfigReadOnly<K, V> getAsReadOnly() {
-        return new CacheConfigReadOnly<>(this);
-    }
-
-    /**
      * Gets the name of this {@link com.hazelcast.cache.ICache}.
      *
      * @return the name of this {@link com.hazelcast.cache.ICache}

@@ -17,10 +17,10 @@
 package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPSemaphoreGetSemaphoreTypeCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreGetSemaphoreTypeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 
@@ -29,7 +29,7 @@ import java.security.Permission;
 /**
  * Client message task for querying semaphore JDK compatibility
  */
-public class GetSemaphoreTypeMessageTask extends AbstractMessageTask<CPSemaphoreGetSemaphoreTypeCodec.RequestParameters> {
+public class GetSemaphoreTypeMessageTask extends AbstractMessageTask<SemaphoreGetSemaphoreTypeCodec.RequestParameters> {
 
     public GetSemaphoreTypeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -37,24 +37,24 @@ public class GetSemaphoreTypeMessageTask extends AbstractMessageTask<CPSemaphore
 
     @Override
     protected void processMessage() {
-        CPSemaphoreConfig config = nodeEngine.getConfig().getCPSubsystemConfig().findSemaphoreConfig(parameters.proxyName);
+        SemaphoreConfig config = nodeEngine.getConfig().getCPSubsystemConfig().findSemaphoreConfig(parameters.proxyName);
         boolean jdkCompatible = (config != null && config.isJDKCompatible());
         sendResponse(jdkCompatible);
     }
 
     @Override
-    protected CPSemaphoreGetSemaphoreTypeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPSemaphoreGetSemaphoreTypeCodec.decodeRequest(clientMessage);
+    protected SemaphoreGetSemaphoreTypeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreGetSemaphoreTypeCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPSemaphoreGetSemaphoreTypeCodec.encodeResponse((Boolean) response);
+        return SemaphoreGetSemaphoreTypeCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftSemaphoreService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override

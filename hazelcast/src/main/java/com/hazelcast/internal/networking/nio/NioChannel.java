@@ -85,13 +85,6 @@ public final class NioChannel extends AbstractChannel {
     }
 
     @Override
-    protected void onConnect() {
-        String metricsId = localSocketAddress() + "->" + remoteSocketAddress();
-        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
-        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
-    }
-
-    @Override
     public long lastReadTimeMillis() {
         return inboundPipeline.lastReadTimeMillis();
     }
@@ -103,6 +96,10 @@ public final class NioChannel extends AbstractChannel {
 
     @Override
     public void start() {
+        String metricsId = localSocketAddress() + "->" + remoteSocketAddress();
+        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
+        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
+
         try {
             // before starting the channel, the socketChannel need to be put in
             // non blocking mode since that is mandatory for the NioChannel.

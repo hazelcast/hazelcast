@@ -17,11 +17,11 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.config.yaml.ElementAdapter;
+import com.hazelcast.internal.config.yaml.ElementAdapter;
 import com.hazelcast.internal.yaml.MutableYamlNode;
 import org.w3c.dom.Node;
 
-import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedMutableYamlNode;
+import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedMutableYamlNode;
 
 class YamlDomVariableReplacer extends AbstractDomVariableReplacer {
 

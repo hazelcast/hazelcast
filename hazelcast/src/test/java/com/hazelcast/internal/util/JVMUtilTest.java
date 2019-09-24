@@ -20,6 +20,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,6 +45,11 @@ public class JVMUtilTest extends HazelcastTestSupport {
     @Test
     public void testIsCompressedOops() {
         JVMUtil.isCompressedOops();
+    }
+
+    @Test
+    public void testUsedMemory() {
+        Assert.assertTrue(JVMUtil.usedMemory(Runtime.getRuntime()) > 0);
     }
 
     @Test

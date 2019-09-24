@@ -20,7 +20,7 @@ import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.operation.ClearExpiredOperation;
+import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
 import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -141,7 +141,7 @@ public class MapClearExpiredRecordsTask
     @Override
     protected Operation newPrimaryExpiryOp(int expirationPercentage, PartitionContainer container) {
         int partitionId = container.getPartitionId();
-        return new ClearExpiredOperation(expirationPercentage)
+        return new MapClearExpiredOperation(expirationPercentage)
                 .setNodeEngine(nodeEngine)
                 .setCallerUuid(nodeEngine.getLocalMember().getUuid())
                 .setPartitionId(partitionId)

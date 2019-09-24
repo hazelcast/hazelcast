@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -486,26 +486,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readSemaphoreConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  semaphore:\n"
-                + "    default:\n"
-                + "      initial-permits: 1\n"
-                + "    custom:\n"
-                + "      initial-permits: 10\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule";
-
-        Config config = buildConfig(yaml);
-        SemaphoreConfig defaultConfig = config.getSemaphoreConfig("default");
-        SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
-        assertEquals(1, defaultConfig.getInitialPermits());
-        assertEquals(10, customConfig.getInitialPermits());
-        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
     public void readQueueConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -797,33 +777,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         AtomicLongConfig defaultAtomicLongConfig = config.getAtomicLongConfig("default");
         assertEquals("customSplitBrainProtectionRule2", defaultAtomicLongConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
-    public void readAtomicReference() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  atomic-reference:\n"
-                + "    custom:\n"
-                + "      merge-policy:\n"
-                + "        class-name: CustomMergePolicy\n"
-                + "        batch-size: 23\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
-                + "    default:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule2\n";
-
-        Config config = buildConfig(yaml);
-        AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
-        assertEquals("custom", atomicReferenceConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", atomicReferenceConfig.getSplitBrainProtectionName());
-
-        MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(23, mergePolicyConfig.getBatchSize());
-
-        AtomicReferenceConfig defaultAtomicReferenceConfig = config.getAtomicReferenceConfig("default");
-        assertEquals("customSplitBrainProtectionRule2", defaultAtomicReferenceConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -3395,8 +3348,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(250, raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot());
         assertEquals(75, raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends());
         assertEquals(50, raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis());
-        CPSemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
-        CPSemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
+        SemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
+        SemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
         assertNotNull(semaphoreConfig1);
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());

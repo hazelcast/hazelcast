@@ -17,7 +17,6 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ConfigPatternMatcher;
@@ -37,7 +36,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
@@ -106,8 +104,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
     private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
     private final ConcurrentMap<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
-    private final ConcurrentMap<String, AtomicReferenceConfig> atomicReferenceConfigs
-            = new ConcurrentHashMap<String, AtomicReferenceConfig>();
     private final ConcurrentMap<String, LockConfig> lockConfigs = new ConcurrentHashMap<String, LockConfig>();
     private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
     private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
@@ -119,7 +115,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, DurableExecutorConfig>();
     private final ConcurrentMap<String, ScheduledExecutorConfig> scheduledExecutorConfigs =
             new ConcurrentHashMap<String, ScheduledExecutorConfig>();
-    private final ConcurrentMap<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
     private final ConcurrentMap<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
     private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs =
             new ConcurrentHashMap<String, ReliableTopicConfig>();
@@ -141,13 +136,11 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             listConfigs,
             setConfigs,
             atomicLongConfigs,
-            atomicReferenceConfigs,
             replicatedMapConfigs,
             topicConfigs,
             executorConfigs,
             durableExecutorConfigs,
             scheduledExecutorConfigs,
-            semaphoreConfigs,
             queueConfigs,
             reliableTopicConfigs,
             cacheSimpleConfigs,
@@ -293,9 +286,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof AtomicLongConfig) {
             AtomicLongConfig atomicLongConfig = (AtomicLongConfig) newConfig;
             currentConfig = atomicLongConfigs.putIfAbsent(atomicLongConfig.getName(), atomicLongConfig);
-        } else if (newConfig instanceof AtomicReferenceConfig) {
-            AtomicReferenceConfig atomicReferenceConfig = (AtomicReferenceConfig) newConfig;
-            currentConfig = atomicReferenceConfigs.putIfAbsent(atomicReferenceConfig.getName(), atomicReferenceConfig);
         } else if (newConfig instanceof ListConfig) {
             ListConfig listConfig = (ListConfig) newConfig;
             currentConfig = listConfigs.putIfAbsent(listConfig.getName(), listConfig);
@@ -329,9 +319,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             if (currentConfig == null) {
                 listener.onConfigRegistered(cacheSimpleConfig);
             }
-        } else if (newConfig instanceof SemaphoreConfig) {
-            SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
-            currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
         } else if (newConfig instanceof FlakeIdGeneratorConfig) {
             FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
             currentConfig = flakeIdGeneratorConfigs.putIfAbsent(config.getName(), config);
@@ -451,16 +438,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
-    public SemaphoreConfig findSemaphoreConfig(String name) {
-        return lookupByPattern(configPatternMatcher, semaphoreConfigs, name);
-    }
-
-    @Override
-    public ConcurrentMap<String, SemaphoreConfig> getSemaphoreConfigs() {
-        return semaphoreConfigs;
-    }
-
-    @Override
     public RingbufferConfig findRingbufferConfig(String name) {
         return lookupByPattern(configPatternMatcher, ringbufferConfigs, name);
     }
@@ -478,16 +455,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
         return atomicLongConfigs;
-    }
-
-    @Override
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
-        return lookupByPattern(configPatternMatcher, atomicReferenceConfigs, name);
-    }
-
-    @Override
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
-        return atomicReferenceConfigs;
     }
 
     @Override
@@ -621,7 +588,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         configToVersion.put(ExecutorConfig.class, V3_9);
         configToVersion.put(DurableExecutorConfig.class, V3_9);
         configToVersion.put(ScheduledExecutorConfig.class, V3_9);
-        configToVersion.put(SemaphoreConfig.class, V3_9);
         configToVersion.put(QueueConfig.class, V3_9);
         configToVersion.put(ReliableTopicConfig.class, V3_9);
         configToVersion.put(CacheSimpleConfig.class, V3_9);
@@ -629,7 +595,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
         // Since 3.10
         configToVersion.put(AtomicLongConfig.class, V3_10);
-        configToVersion.put(AtomicReferenceConfig.class, V3_10);
         configToVersion.put(FlakeIdGeneratorConfig.class, V3_10);
         configToVersion.put(PNCounterConfig.class, V3_10);
 

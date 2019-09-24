@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -60,7 +61,7 @@ public class PartitionContainer {
     private final ConstructorFunction<String, RecordStore> recordStoreConstructorForHotRestart
             = this::createRecordStore;
     /**
-     * Flag to check if there is a {@link com.hazelcast.map.impl.operation.ClearExpiredOperation}
+     * Flag to check if there is a {@link MapClearExpiredOperation}
      * running on this partition at this moment or not.
      */
     private volatile boolean hasRunningCleanup;

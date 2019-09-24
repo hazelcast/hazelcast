@@ -38,7 +38,6 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
     private QueueStoreFactory factoryImplementation;
-    private transient QueueStoreConfigReadOnly readOnly;
 
     public QueueStoreConfig() {
     }
@@ -59,19 +58,6 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
         this.storeImplementation = storeImplementation;
         return this;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public QueueStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new QueueStoreConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     public boolean isEnabled() {

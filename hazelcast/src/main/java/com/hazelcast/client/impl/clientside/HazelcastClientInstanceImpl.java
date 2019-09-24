@@ -19,12 +19,17 @@ package com.hazelcast.client.impl.clientside;
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
+import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientExtension;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.cp.internal.CPSubsystemImpl;
+import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
@@ -32,15 +37,11 @@ import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.impl.connection.nio.ClusterConnectorServiceImpl;
 import com.hazelcast.client.impl.connection.nio.DefaultClientConnectionStrategy;
-import com.hazelcast.client.cp.internal.CPSubsystemImpl;
-import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
-import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
-import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
-import com.hazelcast.client.impl.statistics.Statistics;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.proxy.PartitionServiceProxy;
+import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
@@ -61,41 +62,31 @@ import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.impl.spi.impl.listener.NonSmartClientListenerService;
 import com.hazelcast.client.impl.spi.impl.listener.SmartClientListenerService;
+import com.hazelcast.client.impl.statistics.Statistics;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.client.Client;
-import com.hazelcast.client.ClientService;
-import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.collection.IList;
-import com.hazelcast.cp.lock.ILock;
-import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
+import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
+import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -121,13 +112,17 @@ import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -136,6 +131,8 @@ import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -144,7 +141,6 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.internal.util.ServiceLoader;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -630,18 +626,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
-        checkNotNull(name, "Retrieving an atomic-reference instance with a null name is not allowed!");
-        return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public ISemaphore getSemaphore(String name) {
-        checkNotNull(name, "Retrieving a semaphore instance with a null name is not allowed!");
-        return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
-    }
-
-    @Override
     public IScheduledExecutorService getScheduledExecutorService(String name) {
         checkNotNull(name, "Retrieving a scheduled executor instance with a null name is not allowed!");
         return getDistributedObject(DistributedScheduledExecutorService.SERVICE_NAME, name);
@@ -789,10 +773,20 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         getLifecycleService().shutdown();
     }
 
-    public void doShutdown(boolean isGraceful) {
-        if (isGraceful) {
-            proxySessionManager.shutdown();
-        }
+    /**
+     * Called during graceful shutdown of client to safely clean up resources on server side.
+     * Shutdown process is blocked until this method returns.
+     * <p>
+     * Current list of cleanups:
+     * <ul>
+     * <li>Close of CP sessions</li>
+     * </ul>
+     */
+    void onGracefulShutdown() {
+        proxySessionManager.shutdownAndAwait();
+    }
+
+    public void doShutdown() {
         proxyManager.destroy();
         connectionManager.shutdown();
         clientConnectionStrategy.shutdown();

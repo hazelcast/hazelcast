@@ -19,9 +19,9 @@ package com.hazelcast.cp.internal.datastructures.semaphore.operation;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphore;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.Semaphore;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 
 import java.util.UUID;
 
@@ -30,7 +30,7 @@ import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_S
 /**
  * Operation for {@link ISemaphore#drainPermits()}}
  *
- * @see RaftSemaphore#drain(long, long, UUID)
+ * @see Semaphore#drain(long, long, UUID)
  */
 public class DrainPermitsOp extends AbstractSemaphoreOp implements IndeterminateOperationStateAware {
 
@@ -43,7 +43,7 @@ public class DrainPermitsOp extends AbstractSemaphoreOp implements Indeterminate
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftSemaphoreService service = getService();
+        SemaphoreService service = getService();
         return service.drainPermits(groupId, name, commitIndex, getSemaphoreEndpoint(), invocationUid);
     }
 
@@ -54,6 +54,6 @@ public class DrainPermitsOp extends AbstractSemaphoreOp implements Indeterminate
 
     @Override
     public int getClassId() {
-        return RaftSemaphoreDataSerializerHook.DRAIN_PERMITS_OP;
+        return SemaphoreDataSerializerHook.DRAIN_PERMITS_OP;
     }
 }

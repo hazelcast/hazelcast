@@ -39,10 +39,10 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.append;
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
@@ -118,6 +118,7 @@ public final class NioOutboundPipeline
     private long processCountLastPublish;
     private final ConcurrencyDetection concurrencyDetection;
     private final boolean writeThroughEnabled;
+    private final boolean selectionKeyWakeupEnabled;
 
     NioOutboundPipeline(NioChannel channel,
                         NioThread owner,
@@ -125,10 +126,12 @@ public final class NioOutboundPipeline
                         ILogger logger,
                         IOBalancer balancer,
                         ConcurrencyDetection concurrencyDetection,
-                        boolean writeThroughEnabled) {
+                        boolean writeThroughEnabled,
+                        boolean selectionKeyWakeupEnabled) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
         this.concurrencyDetection = concurrencyDetection;
         this.writeThroughEnabled = writeThroughEnabled;
+        this.selectionKeyWakeupEnabled = selectionKeyWakeupEnabled;
     }
 
     @Override
@@ -198,18 +201,7 @@ public final class NioOutboundPipeline
                     continue;
                 }
 
-                // we manage to schedule the pipeline, meaning we are owner.
-                if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
-                    // we are allowed to do a write through, so lets process the request on the calling thread
-                    try {
-                        process();
-                    } catch (Throwable t) {
-                        onError(t);
-                    }
-                } else {
-                    // no write through, let the io thread deal with it.
-                    ownerAddTaskAndWakeup(this);
-                }
+                executePipeline();
                 return;
             } else if (state == State.SCHEDULED || state == State.RESCHEDULE) {
                 // already scheduled, so we are done
@@ -222,6 +214,25 @@ public final class NioOutboundPipeline
                 return;
             } else {
                 throw new IllegalStateException("Unexpected state:" + state);
+            }
+        }
+    }
+
+    // executes the pipeline. Either on the calling thread or on th owning NIO thread.
+    private void executePipeline() {
+         if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
+            // we are allowed to do a write through, so lets process the request on the calling thread
+            try {
+                process();
+            } catch (Throwable t) {
+                onError(t);
+            }
+        } else {
+            if (selectionKeyWakeupEnabled) {
+                registerOp(OP_WRITE);
+                selectionKey.selector().wakeup();
+            } else {
+                owner.addTaskAndWakeup(this);
             }
         }
     }

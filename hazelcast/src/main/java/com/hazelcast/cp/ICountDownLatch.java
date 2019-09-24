@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * {@link java.util.concurrent.CountDownLatch java.util.concurrent.CountDownLatch}:
  * <ol>
  * <li>
- * the ICountDownLatch count can be reset using {@link #trySetCount(int)} after
+ * ICountDownLatch count can be reset using {@link #trySetCount(int)} after
  * a countdown has finished but not during an active count. This allows
  * the same latch instance to be reused.
  * </li>

@@ -62,8 +62,6 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
-    private transient MultiMapConfigReadOnly readOnly;
-
     public MultiMapConfig() {
     }
 
@@ -451,18 +449,5 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MultiMapConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MultiMapConfigReadOnly(this);
-        }
-        return readOnly;
     }
 }

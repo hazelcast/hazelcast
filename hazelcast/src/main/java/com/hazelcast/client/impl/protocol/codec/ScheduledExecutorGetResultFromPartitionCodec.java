@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the result of the task ({@link java.util.concurrent.Callable})
  * The call will blocking until the result is ready.
  */
-@Generated({"2222e1c7ff72ca598e7b70c7090ad6f0"})
+@Generated("942a9502318bed08e01587a78ef3479e")
 public final class ScheduledExecutorGetResultFromPartitionCodec {
     //hex: 0x1D0F00
     public static final int REQUEST_MESSAGE_TYPE = 1904384;

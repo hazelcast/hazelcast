@@ -27,10 +27,10 @@ import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
 
@@ -56,7 +56,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     @Override
     public <E> IAtomicReference<E> getAtomicReference(String name) {
-        return proxyFactory.createProxy(RaftAtomicRefService.SERVICE_NAME, name);
+        return proxyFactory.createProxy(AtomicRefService.SERVICE_NAME, name);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     @Override
     public ISemaphore getSemaphore(String name) {
-        return proxyFactory.createProxy(RaftSemaphoreService.SERVICE_NAME, name);
+        return proxyFactory.createProxy(SemaphoreService.SERVICE_NAME, name);
     }
 
     @Override

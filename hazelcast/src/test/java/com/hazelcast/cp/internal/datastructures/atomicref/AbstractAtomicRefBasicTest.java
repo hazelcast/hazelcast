@@ -22,7 +22,7 @@ import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
-import com.hazelcast.cp.internal.datastructures.atomicref.proxy.RaftAtomicRefProxy;
+import com.hazelcast.cp.internal.datastructures.atomicref.proxy.AtomicRefProxy;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import org.junit.Before;
 import org.junit.Test;
@@ -213,7 +213,7 @@ public abstract class AbstractAtomicRefBasicTest extends HazelcastRaftTestSuppor
     }
 
     protected CPGroupId getGroupId(IAtomicReference ref) {
-        return ((RaftAtomicRefProxy) ref).getGroupId();
+        return ((AtomicRefProxy) ref).getGroupId();
     }
 
     public static class AppendStringFunction implements IFunction<String, String> {

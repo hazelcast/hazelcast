@@ -17,7 +17,6 @@
 package com.hazelcast.internal.dynamicconfig.search;
 
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -35,7 +34,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
@@ -221,23 +219,6 @@ public final class ConfigSearch {
                 return staticConfig.getAtomicLongConfigs();
             }
         });
-        CONFIG_SUPPLIERS.put(AtomicReferenceConfig.class, new ConfigSupplier<AtomicReferenceConfig>() {
-            @Override
-            public AtomicReferenceConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
-                                                          @Nonnull String name) {
-                return configurationService.findAtomicReferenceConfig(name);
-            }
-
-            @Override
-            public AtomicReferenceConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getAtomicReferenceConfig(name);
-            }
-
-            @Override
-            public Map<String, AtomicReferenceConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getAtomicReferenceConfigs();
-            }
-        });
         CONFIG_SUPPLIERS.put(TopicConfig.class, new ConfigSupplier<TopicConfig>() {
             @Override
             public TopicConfig getDynamicConfig(@Nonnull ConfigurationService configurationService, @Nonnull String name) {
@@ -336,22 +317,6 @@ public final class ConfigSearch {
             @Override
             public Map<String, CardinalityEstimatorConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getCardinalityEstimatorConfigs();
-            }
-        });
-        CONFIG_SUPPLIERS.put(SemaphoreConfig.class, new ConfigSupplier<SemaphoreConfig>() {
-            @Override
-            public SemaphoreConfig getDynamicConfig(@Nonnull ConfigurationService configurationService, @Nonnull String name) {
-                return configurationService.findSemaphoreConfig(name);
-            }
-
-            @Override
-            public SemaphoreConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getSemaphoreConfig(name);
-            }
-
-            @Override
-            public Map<String, SemaphoreConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getSemaphoreConfigsAsMap();
             }
         });
         CONFIG_SUPPLIERS.put(FlakeIdGeneratorConfig.class, new ConfigSupplier<FlakeIdGeneratorConfig>() {

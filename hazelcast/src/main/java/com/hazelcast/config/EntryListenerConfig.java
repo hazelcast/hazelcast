@@ -47,8 +47,6 @@ public class EntryListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;
 
-    private EntryListenerConfigReadOnly readOnly;
-
     public EntryListenerConfig() {
     }
 
@@ -75,20 +73,6 @@ public class EntryListenerConfig extends ListenerConfig {
         local = config.isLocal();
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    @Override
-    public EntryListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new EntryListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override

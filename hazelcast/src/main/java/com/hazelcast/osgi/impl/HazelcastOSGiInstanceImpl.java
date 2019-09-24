@@ -34,12 +34,11 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -56,7 +55,6 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
@@ -191,16 +189,6 @@ class HazelcastOSGiInstanceImpl
     @Override
     public IAtomicLong getAtomicLong(String name) {
         return delegatedInstance.getAtomicLong(name);
-    }
-
-    @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
-        return delegatedInstance.getAtomicReference(name);
-    }
-
-    @Override
-    public ISemaphore getSemaphore(String name) {
-        return delegatedInstance.getSemaphore(name);
     }
 
     @Override

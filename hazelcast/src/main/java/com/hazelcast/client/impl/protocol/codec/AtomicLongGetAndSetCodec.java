@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value and returns the old value.
  */
-@Generated({"c4dbb0f4b32b00a02f6fc22e791e813c"})
+@Generated("56a737fdc3c18d991d8b9e34ee503e52")
 public final class AtomicLongGetAndSetCodec {
     //hex: 0x0A0A00
     public static final int REQUEST_MESSAGE_TYPE = 657920;

@@ -52,12 +52,12 @@ public class SemaphoreEndpoint implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return RaftSemaphoreDataSerializerHook.F_ID;
+        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftSemaphoreDataSerializerHook.SEMAPHORE_ENDPOINT;
+        return SemaphoreDataSerializerHook.SEMAPHORE_ENDPOINT;
     }
 
     @Override

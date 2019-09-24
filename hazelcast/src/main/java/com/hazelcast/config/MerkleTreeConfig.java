@@ -92,15 +92,6 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns an immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    MerkleTreeConfig getAsReadOnly() {
-        return new MerkleTreeConfigReadOnly(this);
-    }
-
-    /**
      * Returns the depth of the merkle tree.
      * The default depth is {@value DEFAULT_DEPTH}.
      */
@@ -191,22 +182,5 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
         int result = (enabled ? 1 : 0);
         result = 31 * result + depth;
         return result;
-    }
-
-    // not private for testing
-    static class MerkleTreeConfigReadOnly extends MerkleTreeConfig {
-        MerkleTreeConfigReadOnly(MerkleTreeConfig config) {
-            super(config);
-        }
-
-        @Override
-        public MerkleTreeConfig setDepth(int depth) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public MerkleTreeConfig setEnabled(boolean enabled) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
     }
 }

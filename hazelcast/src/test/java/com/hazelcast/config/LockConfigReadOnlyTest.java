@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.LockConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith;
 public class LockConfigReadOnlyTest {
 
     private LockConfig getReadOnlyConfig() {
-        return new LockConfig().getAsReadOnly();
+        return new LockConfigReadOnly(new LockConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

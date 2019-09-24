@@ -21,8 +21,6 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -59,22 +57,6 @@ public class MBeanTest extends HazelcastTestSupport {
         atomicLong.incrementAndGet();
 
         holder.assertMBeanExistEventually("IAtomicLong", atomicLong.getName());
-    }
-
-    @Test
-    public void testAtomicReference() throws Exception {
-        IAtomicReference<String> atomicReference = holder.getHz().getAtomicReference("atomicreference");
-        atomicReference.set(null);
-
-        holder.assertMBeanExistEventually("IAtomicReference", atomicReference.getName());
-    }
-
-    @Test
-    public void testSemaphore() throws Exception {
-        ISemaphore semaphore = holder.getHz().getSemaphore("semaphore");
-        semaphore.availablePermits();
-
-        holder.assertMBeanExistEventually("ISemaphore", semaphore.getName());
     }
 
     @Test

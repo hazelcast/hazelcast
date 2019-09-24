@@ -17,7 +17,7 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.yaml.ElementAdapter;
+import com.hazelcast.internal.config.yaml.ElementAdapter;
 import org.w3c.dom.Node;
 
 import java.io.IOException;

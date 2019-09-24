@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MaxSizeConfigReadOnly;
+import com.hazelcast.internal.config.MaxSizeConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -85,7 +85,6 @@ public class MapMaxSizeConfigTest extends HazelcastTestSupport {
     public void testEquals() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MaxSizeConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(MaxSizeConfigReadOnly.class,
                         new MaxSizeConfigReadOnly(new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_PARTITION)),

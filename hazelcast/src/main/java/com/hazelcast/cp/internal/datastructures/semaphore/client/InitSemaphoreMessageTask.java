@@ -17,11 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPSemaphoreInitCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.InitSemaphoreOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
@@ -33,7 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link InitSemaphoreOp}
  */
-public class InitSemaphoreMessageTask extends AbstractMessageTask<CPSemaphoreInitCodec.RequestParameters>
+public class InitSemaphoreMessageTask extends AbstractMessageTask<SemaphoreInitCodec.RequestParameters>
         implements ExecutionCallback<Boolean> {
 
     public InitSemaphoreMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -49,18 +49,18 @@ public class InitSemaphoreMessageTask extends AbstractMessageTask<CPSemaphoreIni
     }
 
     @Override
-    protected CPSemaphoreInitCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPSemaphoreInitCodec.decodeRequest(clientMessage);
+    protected SemaphoreInitCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreInitCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPSemaphoreInitCodec.encodeResponse((Boolean) response);
+        return SemaphoreInitCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftSemaphoreService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override

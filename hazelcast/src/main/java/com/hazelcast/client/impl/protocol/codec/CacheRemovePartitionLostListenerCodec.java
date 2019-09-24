@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified cache partition lost listener. Returns silently if there is no such listener added before
  */
-@Generated({"2471acd6f1b17ee2922eee25696e651a"})
+@Generated("5f4249654d8d291f5957c582e7962300")
 public final class CacheRemovePartitionLostListenerCodec {
     //hex: 0x151B00
     public static final int REQUEST_MESSAGE_TYPE = 1383168;

@@ -116,8 +116,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
 
-    private transient MapConfigReadOnly readOnly;
-
     public MapConfig() {
     }
 
@@ -155,19 +153,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MapConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

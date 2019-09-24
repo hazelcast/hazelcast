@@ -129,8 +129,6 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
 
     private List<MapIndexConfig> indexConfigs;
 
-    private transient QueryCacheConfigReadOnly readOnly;
-
     public QueryCacheConfig() {
     }
 
@@ -151,19 +149,6 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         this.evictionConfig = other.evictionConfig;
         this.entryListenerConfigs = other.entryListenerConfigs;
         this.indexConfigs = other.indexConfigs;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public QueryCacheConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new QueryCacheConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

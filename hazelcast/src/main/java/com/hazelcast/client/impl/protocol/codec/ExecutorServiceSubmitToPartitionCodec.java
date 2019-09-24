@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated({"4a1a470947a8c9e434fa653121e34a93"})
+@Generated("e0ecf1da7e1283bfb20f51ef348e7d45")
 public final class ExecutorServiceSubmitToPartitionCodec {
     //hex: 0x090500
     public static final int REQUEST_MESSAGE_TYPE = 591104;

@@ -250,12 +250,6 @@ hazelcast:
         batch-size: 100
         class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
 
-  semaphore:
-    default:
-      initial-permits: 0
-      backup-count: 1
-      async-backup-count: 0
-
   reliable-topic:
     default:
       read-batch-size: 10
@@ -282,12 +276,6 @@ hazelcast:
       statistics-enabled: true
 
   atomic-long:
-    default:
-      merge-policy:
-        batch-size: 100
-        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
-
-  atomic-reference:
     default:
       merge-policy:
         batch-size: 100

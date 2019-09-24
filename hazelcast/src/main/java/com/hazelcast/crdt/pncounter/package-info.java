@@ -16,7 +16,7 @@
 
 /**
  * This package contains the PN (Positive-Negative) CRDT counter
- * implementation.
+ * interface.
  *
  * @since 3.10
  */

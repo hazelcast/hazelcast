@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated({"5eed5d54997a703acfddf318877acc64"})
+@Generated("48eafe7821df0a605ab171c47af1d1be")
 public final class ScheduledExecutorGetStatsFromAddressCodec {
     //hex: 0x1D0600
     public static final int REQUEST_MESSAGE_TYPE = 1902080;

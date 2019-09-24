@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * dormant until one of two things happens: the lock is acquired by the current thread, or the specified waiting
  * time elapses.
  */
-@Generated({"8e3041dd9e6c00216ddba49134c6554c"})
+@Generated("d47e50c1b4736b9a8bd3dc249ec47aba")
 public final class LockTryLockCodec {
     //hex: 0x070800
     public static final int REQUEST_MESSAGE_TYPE = 460800;

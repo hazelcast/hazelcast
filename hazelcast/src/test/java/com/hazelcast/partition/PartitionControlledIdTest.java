@@ -16,6 +16,10 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -23,30 +27,24 @@ import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongServ
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.InternalLockNamespace;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStore;
-import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.collection.IList;
-import com.hazelcast.cp.lock.ILock;
-import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -130,20 +128,6 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         LockStore lockStore = lockService.getLockStore(partition.getPartitionId(), new InternalLockNamespace(lock.getName()));
         Data key = node.getSerializationService().toData(lock.getName(), StringPartitioningStrategy.INSTANCE);
         assertTrue(lockStore.isLocked(key));
-    }
-
-    @Test
-    public void testSemaphore() {
-        String partitionKey = "hazelcast";
-        HazelcastInstance hz = getHazelcastInstance(partitionKey);
-
-        ISemaphore semaphore = hz.getSemaphore("semaphore@" + partitionKey);
-        semaphore.release();
-        assertEquals("semaphore@" + partitionKey, semaphore.getName());
-        assertEquals(partitionKey, semaphore.getPartitionKey());
-
-        SemaphoreService service = getNodeEngine(hz).getService(SemaphoreService.SERVICE_NAME);
-        assertTrue(service.containsSemaphore(semaphore.getName()));
     }
 
     @Test
@@ -238,21 +222,21 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         HazelcastInstance instance = instances[0];
         IExecutorService executorServices = instance.getExecutorService("executor");
         String partitionKey = "hazelcast";
-        ISemaphore semaphore = instance.getSemaphore("foobar@" + partitionKey);
-        semaphore.release();
-        ContainsSemaphoreTask task = new ContainsSemaphoreTask(semaphore.getName());
-        Future<Boolean> future = executorServices.submitToKeyOwner(task, semaphore.getPartitionKey());
+        IList<Object> list = instance.getList("foobar@" + partitionKey);
+        list.add("value");
+        ContainsListTask task = new ContainsListTask(list.getName());
+        Future<Boolean> future = executorServices.submitToKeyOwner(task, list.getPartitionKey());
         assertTrue(future.get());
     }
 
-    private static class ContainsSemaphoreTask implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
+    private static class ContainsListTask implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
 
-        private final String semaphoreName;
+        private final String name;
 
         private transient HazelcastInstance hz;
 
-        private ContainsSemaphoreTask(String semaphoreName) {
-            this.semaphoreName = semaphoreName;
+        private ContainsListTask(String name) {
+            this.name = name;
         }
 
         @Override
@@ -263,8 +247,8 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         @Override
         public Boolean call() {
             NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
-            SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
-            return service.containsSemaphore(semaphoreName);
+            ListService service = nodeEngine.getService(ListService.SERVICE_NAME);
+            return service.getContainerMap().containsKey(name);
         }
     }
 
@@ -278,10 +262,10 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         map.put(mapKey, "foobar");
 
-        ISemaphore semaphore = instance.getSemaphore("s@" + partitionKey);
-        semaphore.release();
+        IList<Object> list = instance.getList("s@" + partitionKey);
+        list.add("value");
 
-        ContainsSemaphoreAndMapEntryTask task = new ContainsSemaphoreAndMapEntryTask(semaphore.getName(), mapKey);
+        ContainsListAndMapEntryTask task = new ContainsListAndMapEntryTask(list.getName(), mapKey);
         Map<Member, Future<Boolean>> futures = executorServices.submitToAllMembers(task);
 
         int count = 0;
@@ -292,15 +276,15 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertEquals(1, count);
     }
 
-    private static class ContainsSemaphoreAndMapEntryTask implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
+    private static class ContainsListAndMapEntryTask implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
 
-        private final String semaphoreName;
+        private final String name;
         private final String mapKey;
 
         private transient HazelcastInstance hz;
 
-        private ContainsSemaphoreAndMapEntryTask(String semaphoreName, String mapKey) {
-            this.semaphoreName = semaphoreName;
+        private ContainsListAndMapEntryTask(String name, String mapKey) {
+            this.name = name;
             this.mapKey = mapKey;
         }
 
@@ -312,10 +296,10 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         @Override
         public Boolean call() {
             NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
-            SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
+            ListService service = nodeEngine.getService(ListService.SERVICE_NAME);
 
             IMap map = hz.getMap("map");
-            return map.localKeySet().contains(mapKey) && service.containsSemaphore(semaphoreName);
+            return map.localKeySet().contains(mapKey) && service.getContainerMap().containsKey(name);
         }
     }
 }

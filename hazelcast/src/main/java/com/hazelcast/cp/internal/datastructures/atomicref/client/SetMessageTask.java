@@ -17,11 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.atomicref.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicRefSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicRefSetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.SetOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
@@ -33,7 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link SetOp}
  */
-public class SetMessageTask extends AbstractMessageTask<CPAtomicRefSetCodec.RequestParameters>
+public class SetMessageTask extends AbstractMessageTask<AtomicRefSetCodec.RequestParameters>
         implements ExecutionCallback<Object> {
 
     public SetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -49,18 +49,18 @@ public class SetMessageTask extends AbstractMessageTask<CPAtomicRefSetCodec.Requ
     }
 
     @Override
-    protected CPAtomicRefSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicRefSetCodec.decodeRequest(clientMessage);
+    protected AtomicRefSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicRefSetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicRefSetCodec.encodeResponse(serializationService.toData(response));
+        return AtomicRefSetCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override
     public String getServiceName() {
-        return RaftAtomicRefService.SERVICE_NAME;
+        return AtomicRefService.SERVICE_NAME;
     }
 
     @Override

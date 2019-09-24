@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.atomicref.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicRefApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicRefApplyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -25,7 +25,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType;
 import com.hazelcast.instance.impl.Node;
@@ -40,7 +40,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link ApplyOp}
  */
-public class ApplyMessageTask extends AbstractMessageTask<CPAtomicRefApplyCodec.RequestParameters>
+public class ApplyMessageTask extends AbstractMessageTask<AtomicRefApplyCodec.RequestParameters>
         implements ExecutionCallback<Object> {
 
     public ApplyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -60,18 +60,18 @@ public class ApplyMessageTask extends AbstractMessageTask<CPAtomicRefApplyCodec.
     }
 
     @Override
-    protected CPAtomicRefApplyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicRefApplyCodec.decodeRequest(clientMessage);
+    protected AtomicRefApplyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicRefApplyCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicRefApplyCodec.encodeResponse(serializationService.toData(response));
+        return AtomicRefApplyCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override
     public String getServiceName() {
-        return RaftAtomicRefService.SERVICE_NAME;
+        return AtomicRefService.SERVICE_NAME;
     }
 
     @Override

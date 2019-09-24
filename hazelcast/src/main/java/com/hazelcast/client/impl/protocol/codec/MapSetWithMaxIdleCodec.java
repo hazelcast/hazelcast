@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import javax.annotation.Generated;
 import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * 
  * Similar to the put operation except that set doesn't return the old value, which is more efficient.
  */
-@Generated({"ee816284f7cb1b17726f4f54fdf9a9c7"})
+@Generated("d0c7c704b9ef48e25cdaa21f6e62e9cb")
 public final class MapSetWithMaxIdleCodec {
     //hex: 0x014D00
     public static final int REQUEST_MESSAGE_TYPE = 85248;
