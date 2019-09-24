@@ -132,7 +132,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     public IAtomicLong getAtomicNumber() {
-        atomicNumber = hazelcast.getAtomicLong(namespace);
+        atomicNumber = hazelcast.getCPSubsystem().getAtomicLong(namespace);
         return atomicNumber;
     }
 

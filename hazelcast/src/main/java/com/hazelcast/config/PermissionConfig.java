@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import static java.util.Collections.newSetFromMap;
-
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Collections.newSetFromMap;
 
 /**
  * Contains the configuration for a permission.
@@ -81,10 +81,6 @@ public class PermissionConfig {
          * Set
          */
         SET("set-permission"),
-        /**
-         * ID generator
-         */
-        ID_GENERATOR("id-generator-permission"),
         /**
          * Flake ID generator
          */

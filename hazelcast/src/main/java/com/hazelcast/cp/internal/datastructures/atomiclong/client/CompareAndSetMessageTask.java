@@ -17,11 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicLongCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.CompareAndSetOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -33,7 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link CompareAndSetOp}
  */
-public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicLongCompareAndSetCodec.RequestParameters>
+public class CompareAndSetMessageTask extends AbstractMessageTask<AtomicLongCompareAndSetCodec.RequestParameters>
         implements ExecutionCallback<Boolean> {
 
     public CompareAndSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -50,7 +50,7 @@ public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicLongCo
 
     @Override
     public String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override
@@ -74,13 +74,13 @@ public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicLongCo
     }
 
     @Override
-    protected CPAtomicLongCompareAndSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicLongCompareAndSetCodec.decodeRequest(clientMessage);
+    protected AtomicLongCompareAndSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicLongCompareAndSetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicLongCompareAndSetCodec.encodeResponse((Boolean) response);
+        return AtomicLongCompareAndSetCodec.encodeResponse((Boolean) response);
     }
 
     @Override

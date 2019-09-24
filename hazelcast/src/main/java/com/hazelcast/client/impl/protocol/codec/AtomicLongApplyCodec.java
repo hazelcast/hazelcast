@@ -33,9 +33,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Applies a function on the value, the actual stored value will not change.
+ * Applies a function on the value, the actual stored value will not change
  */
-@Generated("25c480a253d7575b1ca9e16659a572c7")
+@Generated("659510e0e1dfa1fdc64be96b15b51f89")
 public final class AtomicLongApplyCodec {
     //hex: 0x0A0100
     public static final int REQUEST_MESSAGE_TYPE = 655616;
@@ -51,17 +51,23 @@ public final class AtomicLongApplyCodec {
     public static class RequestParameters {
 
         /**
-         * The name of this IAtomicLong instance.
+         * CP group id of this IAtomicLong instance.
+         */
+        public com.hazelcast.cp.internal.RaftGroupId groupId;
+
+        /**
+         * Name of this IAtomicLong instance.
          */
         public java.lang.String name;
 
         /**
-         * The function applied to the value, the value is not changed.
+         * The function applied to the value and the value is not
+         * changed.
          */
         public com.hazelcast.nio.serialization.Data function;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data function) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.nio.serialization.Data function) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -69,6 +75,7 @@ public final class AtomicLongApplyCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
+        RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, function);
         return clientMessage;
@@ -79,6 +86,7 @@ public final class AtomicLongApplyCodec {
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
+        request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
         request.function = DataCodec.decode(iterator);
         return request;

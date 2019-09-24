@@ -49,7 +49,6 @@ import java.util.function.Function;
 
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.config.ConfigSections.ADVANCED_NETWORK;
-import static com.hazelcast.config.ConfigSections.ATOMIC_LONG;
 import static com.hazelcast.config.ConfigSections.CACHE;
 import static com.hazelcast.config.ConfigSections.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.ConfigSections.CP_SUBSYSTEM;
@@ -190,8 +189,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleLock(node);
         } else if (RINGBUFFER.isEqual(nodeName)) {
             handleRingbuffer(node);
-        } else if (ATOMIC_LONG.isEqual(nodeName)) {
-            handleAtomicLong(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -2392,27 +2389,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addRingBufferConfig(rbConfig);
     }
 
-    protected void handleAtomicLong(Node node) {
-        Node attName = node.getAttributes().getNamedItem("name");
-        String name = getTextContent(attName);
-        AtomicLongConfig atomicLongConfig = new AtomicLongConfig(name);
-        handleAtomicLongNode(node, atomicLongConfig);
-    }
-
-    void handleAtomicLongNode(Node node, AtomicLongConfig atomicLongConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("merge-policy".equals(nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
-                atomicLongConfig.setMergePolicyConfig(mergePolicyConfig);
-            } else if ("split-brain-protection-ref".equals(nodeName)) {
-                atomicLongConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addAtomicLongConfig(atomicLongConfig);
-    }
-
     protected void handleListeners(Node node) {
         for (Node child : childElements(node)) {
             if ("listener".equals(cleanNodeName(child))) {
@@ -2659,8 +2635,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 type = PermissionConfig.PermissionType.COUNTDOWN_LATCH;
             } else if ("semaphore-permission".equals(nodeName)) {
                 type = PermissionConfig.PermissionType.SEMAPHORE;
-            } else if ("id-generator-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ID_GENERATOR;
             } else if ("flake-id-generator-permission".equals(nodeName)) {
                 type = PermissionConfig.PermissionType.FLAKE_ID_GENERATOR;
             } else if ("executor-service-permission".equals(nodeName)) {

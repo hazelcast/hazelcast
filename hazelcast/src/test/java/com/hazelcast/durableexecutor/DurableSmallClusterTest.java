@@ -74,7 +74,7 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
             assertEquals(Integer.valueOf(rand), future.get());
         }
 
-        IAtomicLong count = instances[0].getAtomicLong("count");
+        IAtomicLong count = instances[0].getCPSubsystem().getAtomicLong("count");
         assertEquals(instances.length, count.get());
     }
 
@@ -92,7 +92,7 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
         }
 
         assertOpenEventually(callback.getResponseLatch());
-        assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
+        assertEquals(0, instances[0].getCPSubsystem().getAtomicLong("testSubmitToKeyOwnerRunnable").get());
         assertEquals(instances.length, callback.getNullResponseCount());
     }
 

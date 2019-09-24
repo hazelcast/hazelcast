@@ -25,7 +25,7 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
@@ -63,7 +63,7 @@ public class CPSubsystemImpl implements CPSubsystem {
     @Override
     public IAtomicLong getAtomicLong(String name) {
         checkNotNull(name, "Retrieving an atomic long instance with a null name is not allowed!");
-        return createProxy(RaftAtomicLongService.SERVICE_NAME, name);
+        return createProxy(AtomicLongService.SERVICE_NAME, name);
     }
 
     @Override

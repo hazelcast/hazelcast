@@ -283,7 +283,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void run() {
             if (!instance.getCluster().getLocalMember().getUuid().equals(uuid)) {
-                instance.getAtomicLong(name).incrementAndGet();
+                instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
             }
         }
     }
@@ -402,7 +402,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public void run() {
-            instance.getAtomicLong(name).incrementAndGet();
+            instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
         }
     }
 
@@ -422,12 +422,12 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
 
         public void run() {
-            instance.getAtomicLong(name).incrementAndGet();
+            instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
         }
 
         @Override
         public Long call() throws Exception {
-            return instance.getAtomicLong(name).incrementAndGet();
+            return instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
         }
     }
 

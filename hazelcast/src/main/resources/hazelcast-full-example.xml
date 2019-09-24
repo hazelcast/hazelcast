@@ -1962,22 +1962,6 @@
     </flake-id-generator>
 
     <!--
-        ===== HAZELCAST ATOMIC LONG CONFIGURATION =====
-
-        Configuration element's name is <atomic-long>. It has the required attribute "name" with which you
-        can specify the name of your IAtomicLong. This attribute's default value is "default".
-        It has the following sub-elements:
-        * <split-brain-protection-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the
-        <split-brain-protection> element. You should set the <split-brain-protection-ref>'s value
-        as the <split-brain-protection>'s name.
-    -->
-    <atomic-long name="default">
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-    </atomic-long>
-
-    <!--
         ===== HAZELCAST LISTENER CONFIGURATIONS =====
 
         Configuration used to register the listeners that you created by implementing Hazelcast's
@@ -2256,11 +2240,6 @@
                     <action>all</action>
                 </actions>
             </set-permission>
-            <id-generator-permission name="*">
-                <actions>
-                    <action>all</action>
-                </actions>
-            </id-generator-permission>
             <flake-id-generator-permission name="*">
                 <actions>
                     <action>all</action>

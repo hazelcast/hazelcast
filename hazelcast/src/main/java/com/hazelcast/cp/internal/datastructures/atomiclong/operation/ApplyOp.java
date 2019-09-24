@@ -21,8 +21,8 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLong;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLong;
 
 import java.io.IOException;
 
@@ -45,12 +45,12 @@ public class ApplyOp<R> extends AbstractAtomicLongOp {
 
     @Override
     public int getClassId() {
-        return RaftAtomicLongDataSerializerHook.APPLY_OP;
+        return AtomicLongDataSerializerHook.APPLY_OP;
     }
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftAtomicLong atomic = getAtomicLong(groupId);
+        AtomicLong atomic = getAtomicLong(groupId);
         long val = atomic.getAndAdd(0);
         return function.apply(val);
     }

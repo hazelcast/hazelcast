@@ -17,11 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndAddOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -35,7 +35,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link GetAndAddOp}
  */
-public class GetMessageTask extends AbstractMessageTask<CPAtomicLongGetCodec.RequestParameters>
+public class GetMessageTask extends AbstractMessageTask<AtomicLongGetCodec.RequestParameters>
         implements ExecutionCallback<Long> {
 
     public GetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -51,18 +51,18 @@ public class GetMessageTask extends AbstractMessageTask<CPAtomicLongGetCodec.Req
     }
 
     @Override
-    protected CPAtomicLongGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicLongGetCodec.decodeRequest(clientMessage);
+    protected AtomicLongGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicLongGetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicLongGetCodec.encodeResponse((Long) response);
+        return AtomicLongGetCodec.encodeResponse((Long) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override

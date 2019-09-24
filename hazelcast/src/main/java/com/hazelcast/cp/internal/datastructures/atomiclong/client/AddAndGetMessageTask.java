@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicLongAddAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -25,7 +25,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AddAndGetOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -39,7 +39,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link AddAndGetOp}
  */
-public class AddAndGetMessageTask extends AbstractMessageTask<CPAtomicLongAddAndGetCodec.RequestParameters>
+public class AddAndGetMessageTask extends AbstractMessageTask<AtomicLongAddAndGetCodec.RequestParameters>
         implements ExecutionCallback<Long> {
 
     public AddAndGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -60,7 +60,7 @@ public class AddAndGetMessageTask extends AbstractMessageTask<CPAtomicLongAddAnd
 
     @Override
     public String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override
@@ -84,13 +84,13 @@ public class AddAndGetMessageTask extends AbstractMessageTask<CPAtomicLongAddAnd
     }
 
     @Override
-    protected CPAtomicLongAddAndGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicLongAddAndGetCodec.decodeRequest(clientMessage);
+    protected AtomicLongAddAndGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicLongAddAndGetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicLongAddAndGetCodec.encodeResponse((Long) response);
+        return AtomicLongAddAndGetCodec.encodeResponse((Long) response);
     }
 
     @Override

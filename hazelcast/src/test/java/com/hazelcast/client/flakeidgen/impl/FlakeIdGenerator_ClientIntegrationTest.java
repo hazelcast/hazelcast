@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -88,14 +87,5 @@ public class FlakeIdGenerator_ClientIntegrationTest {
         // this ID should be from a new batch, because the validity elapsed
         long id3 = generator.newId();
         assertTrue(id1 + FlakeIdGeneratorProxy.INCREMENT * myBatchSize < id3);
-    }
-
-    @Test
-    public void test_init() {
-        before(null);
-        final FlakeIdGenerator gen = instance.getFlakeIdGenerator("gen");
-        long currentId = gen.newId();
-        assertTrue(gen.init(currentId / 2));
-        assertFalse(gen.init(currentId * 2));
     }
 }

@@ -35,12 +35,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current value.
  */
-@Generated("159e93a31fc5ccc4ee5accf0f5e61bcd")
+@Generated("2ef5b4f560444ae15afe6290a2a7081e")
 public final class AtomicLongGetCodec {
-    //hex: 0x0A0800
-    public static final int REQUEST_MESSAGE_TYPE = 657408;
-    //hex: 0x0A0801
-    public static final int RESPONSE_MESSAGE_TYPE = 657409;
+    //hex: 0x0A0500
+    public static final int REQUEST_MESSAGE_TYPE = 656640;
+    //hex: 0x0A0501
+    public static final int RESPONSE_MESSAGE_TYPE = 656641;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -52,19 +52,25 @@ public final class AtomicLongGetCodec {
     public static class RequestParameters {
 
         /**
-         * The name of this IAtomicLong instance.
+         * CP group id of this IAtomicLong instance.
+         */
+        public com.hazelcast.cp.internal.RaftGroupId groupId;
+
+        /**
+         * Name of this IAtomicLong instance.
          */
         public java.lang.String name;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(false);
+        clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("AtomicLong.Get");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
+        RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
@@ -74,6 +80,7 @@ public final class AtomicLongGetCodec {
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
+        request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
         return request;
     }
@@ -82,7 +89,7 @@ public final class AtomicLongGetCodec {
     public static class ResponseParameters {
 
         /**
-         * the current value
+         * The current value
          */
         public long response;
     }

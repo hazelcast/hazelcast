@@ -88,8 +88,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 type = PermissionConfig.PermissionType.COUNTDOWN_LATCH;
             } else if ("semaphore".equals(nodeName)) {
                 type = PermissionConfig.PermissionType.SEMAPHORE;
-            } else if ("id-generator".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ID_GENERATOR;
             } else if ("flake-id-generator".equals(nodeName)) {
                 type = PermissionConfig.PermissionType.FLAKE_ID_GENERATOR;
             } else if ("executor-service".equals(nodeName)) {
@@ -285,15 +283,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             RingbufferConfig ringBufferConfig = new RingbufferConfig();
             ringBufferConfig.setName(rbNode.getNodeName());
             handleRingBufferNode(rbNode, ringBufferConfig);
-        }
-    }
-
-    @Override
-    protected void handleAtomicLong(Node node) {
-        for (Node atomicLongNode : childElements(node)) {
-            AtomicLongConfig atomicLongConfig = new AtomicLongConfig();
-            atomicLongConfig.setName(atomicLongNode.getNodeName());
-            handleAtomicLongNode(atomicLongNode, atomicLongConfig);
         }
     }
 

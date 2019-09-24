@@ -1,0 +1,212 @@
+id: 255
+name: LongRegister
+methods:
+  - id: 1
+    name: addAndGet
+    since: 2.0
+    doc: |
+      Atomically adds the given value to the current value.
+    request:
+      retryable: false
+      acquiresResource: false
+      partitionIdentifier: name
+      params:
+        - name: name
+          type: String
+          nullable: false
+          since: 2.0
+          doc: |
+            The name of this IAtomicLong instance.
+        - name: delta
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            the value to add to the current value
+    response:
+      params:
+        - name: response
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            the updated value, the given value added to the current value
+  - id: 3
+    name: decrementAndGet
+    since: 2.0
+    doc: |
+      Atomically decrements the current value by one.
+    request:
+      retryable: false
+      acquiresResource: false
+      partitionIdentifier: name
+      params:
+        - name: name
+          type: String
+          nullable: false
+          since: 2.0
+          doc: |
+            The name of this IAtomicLong instance.
+    response:
+      params:
+        - name: response
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            the updated value, the current value decremented by one
+  - id: 4
+    name: get
+    since: 2.0
+    doc: |
+      Gets the current value.
+    request:
+      retryable: false
+      acquiresResource: false
+      partitionIdentifier: name
+      params:
+        - name: name
+          type: String
+          nullable: false
+          since: 2.0
+          doc: |
+            The name of this IAtomicLong instance.
+    response:
+      params:
+        - name: response
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            the current value
+  - id: 5
+    name: getAndAdd
+    since: 2.0
+    doc: |
+      Atomically adds the given value to the current value.
+    request:
+      retryable: false
+      acquiresResource: false
+      partitionIdentifier: name
+      params:
+        - name: name
+          type: String
+          nullable: false
+          since: 2.0
+          doc: |
+            The name of this IAtomicLong instance.
+        - name: delta
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            the value to add to the current value
+    response:
+      params:
+        - name: response
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            the old value before the add
+  - id: 6
+    name: getAndSet
+    since: 2.0
+    doc: |
+      Atomically sets the given value and returns the old value.
+    request:
+      retryable: false
+      acquiresResource: false
+      partitionIdentifier: name
+      params:
+        - name: name
+          type: String
+          nullable: false
+          since: 2.0
+          doc: |
+            The name of this IAtomicLong instance.
+        - name: newValue
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            the new value
+    response:
+      params:
+        - name: response
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            the old value
+  - id: 7
+    name: incrementAndGet
+    since: 2.0
+    doc: |
+      Atomically increments the current value by one.
+    request:
+      retryable: false
+      acquiresResource: false
+      partitionIdentifier: name
+      params:
+        - name: name
+          type: String
+          nullable: false
+          since: 2.0
+          doc: |
+            The name of this IAtomicLong instance.
+    response:
+      params:
+        - name: response
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            The updated value, the current value incremented by one
+  - id: 8
+    name: getAndIncrement
+    since: 2.0
+    doc: |
+      Atomically increments the current value by one.
+    request:
+      retryable: false
+      acquiresResource: false
+      partitionIdentifier: name
+      params:
+        - name: name
+          type: String
+          nullable: false
+          since: 2.0
+          doc: |
+            The name of this IAtomicLong instance.
+    response:
+      params:
+        - name: response
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            the old value
+  - id: 9
+    name: set
+    since: 2.0
+    doc: |
+      Atomically sets the given value.
+    request:
+      retryable: false
+      acquiresResource: false
+      partitionIdentifier: name
+      params:
+        - name: name
+          type: String
+          nullable: false
+          since: 2.0
+          doc: |
+            The name of this IAtomicLong instance.
+        - name: newValue
+          type: long
+          nullable: false
+          since: 2.0
+          doc: |
+            The new value
+    response: {}

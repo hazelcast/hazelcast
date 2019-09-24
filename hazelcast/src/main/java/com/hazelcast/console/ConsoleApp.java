@@ -127,7 +127,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     public IAtomicLong getAtomicNumber() {
-        atomicNumber = hazelcast.getAtomicLong(namespace);
+        atomicNumber = hazelcast.getCPSubsystem().getAtomicLong(namespace);
         return atomicNumber;
     }
 

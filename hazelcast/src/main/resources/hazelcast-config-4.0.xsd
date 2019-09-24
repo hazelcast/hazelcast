@@ -56,7 +56,6 @@
                 <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="lock" type="lock" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="atomic-long" type="atomic-long" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
@@ -1237,29 +1236,6 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the ringbuffer. Required.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string"/>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
-    <xs:complexType name="atomic-long">
-        <xs:all>
-            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                        You should set the split-brain-protection-ref's value as the split brain protection's name.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="name" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of the IAtomicLong. Required.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
@@ -2726,7 +2702,6 @@
             <xs:element name="countdown-latch-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="semaphore-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="id-generator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="flake-id-generator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>

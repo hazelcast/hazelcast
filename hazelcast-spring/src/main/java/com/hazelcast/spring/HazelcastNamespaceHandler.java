@@ -40,7 +40,6 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
     private static final String SCHEDULED_EXECUTOR_SERVICE = "scheduledExecutorService";
     private static final String RINGBUFFER = "ringbuffer";
     private static final String CARDINALITY_ESTIMATOR = "cardinalityEstimator";
-    private static final String ID_GENERATOR = "idGenerator";
     private static final String FLAKE_ID_GENERATOR = "flakeIdGenerator";
     private static final String ATOMIC_LONG = "atomicLong";
     private static final String ATOMIC_REFERENCE = "atomicReference";
@@ -53,6 +52,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
     static {
         CP_TYPES.add(SEMAPHORE);
         CP_TYPES.add(COUNT_DOWN_LATCH);
+        CP_TYPES.add(ATOMIC_LONG);
         CP_TYPES.add(ATOMIC_REFERENCE);
     }
 
@@ -68,7 +68,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         String[] types =
                 {MAP, MULTI_MAP, REPLICATED_MAP, QUEUE, TOPIC, SET, LIST, EXECUTOR_SERVICE,
                  DURABLE_EXECUTOR_SERVICE, SCHEDULED_EXECUTOR_SERVICE, RINGBUFFER, CARDINALITY_ESTIMATOR,
-                 ID_GENERATOR, FLAKE_ID_GENERATOR, ATOMIC_LONG, ATOMIC_REFERENCE, COUNT_DOWN_LATCH, SEMAPHORE,
+                 FLAKE_ID_GENERATOR, ATOMIC_LONG, ATOMIC_REFERENCE, COUNT_DOWN_LATCH, SEMAPHORE,
                  LOCK, RELIABLE_TOPIC, PNCOUNTER};
         for (String type : types) {
             registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));

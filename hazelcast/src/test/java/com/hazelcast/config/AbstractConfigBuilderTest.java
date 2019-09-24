@@ -122,9 +122,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void readRingbuffer();
 
     @Test
-    public abstract void readAtomicLong();
-
-    @Test
     public abstract void testCaseInsensitivityOfSettings();
 
     @Test

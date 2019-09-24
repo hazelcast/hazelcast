@@ -350,7 +350,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         startedLatch.trySetCount(1);
         finishedLatch.trySetCount(1);
 
-        IAtomicLong runEntryCounter = instances[1].getAtomicLong("runEntryCounterName");
+        IAtomicLong runEntryCounter = instances[1].getCPSubsystem().getAtomicLong("runEntryCounterName");
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         executorService.scheduleOnKeyOwner(new ICountdownLatchMapIncrementCallableTask("map",

@@ -23,7 +23,7 @@ import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
-import com.hazelcast.cp.internal.datastructures.atomiclong.proxy.RaftAtomicLongProxy;
+import com.hazelcast.cp.internal.datastructures.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import org.junit.Before;
 import org.junit.Test;
@@ -215,7 +215,7 @@ public abstract class AbstractAtomicLongBasicTest extends HazelcastRaftTestSuppo
     }
 
     protected CPGroupId getGroupId(IAtomicLong atomicLong) {
-        return ((RaftAtomicLongProxy) atomicLong).getGroupId();
+        return ((AtomicLongProxy) atomicLong).getGroupId();
     }
 
     public static class MultiplyByTwo implements IFunction<Long, Long> {

@@ -17,11 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndSetOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -33,7 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link GetAndSetOp}
  */
-public class GetAndSetMessageTask extends AbstractMessageTask<CPAtomicLongGetAndSetCodec.RequestParameters>
+public class GetAndSetMessageTask extends AbstractMessageTask<AtomicLongGetAndSetCodec.RequestParameters>
         implements ExecutionCallback<Long> {
 
     public GetAndSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -49,18 +49,18 @@ public class GetAndSetMessageTask extends AbstractMessageTask<CPAtomicLongGetAnd
     }
 
     @Override
-    protected CPAtomicLongGetAndSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicLongGetAndSetCodec.decodeRequest(clientMessage);
+    protected AtomicLongGetAndSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicLongGetAndSetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicLongGetAndSetCodec.encodeResponse((Long) response);
+        return AtomicLongGetAndSetCodec.encodeResponse((Long) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override

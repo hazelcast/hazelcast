@@ -34,30 +34,26 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.internal.CPSubsystemImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.HazelcastInstanceCacheManager;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.jmx.ManagementService;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.partition.PartitionService;
@@ -260,21 +256,9 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     }
 
     @Override
-    public IdGenerator getIdGenerator(String name) {
-        checkNotNull(name, "Retrieving an ID-generator instance with a null name is not allowed!");
-        return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
-    }
-
-    @Override
     public FlakeIdGenerator getFlakeIdGenerator(String name) {
         checkNotNull(name, "Retrieving a Flake ID-generator instance with a null name is not allowed!");
         return getDistributedObject(FlakeIdGeneratorService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public IAtomicLong getAtomicLong(String name) {
-        checkNotNull(name, "Retrieving an atomic-long instance with a null name is not allowed!");
-        return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
     @Override

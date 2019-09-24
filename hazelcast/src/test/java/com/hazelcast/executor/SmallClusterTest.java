@@ -88,7 +88,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
             assertEquals(Integer.valueOf(rand), future.get());
         }
 
-        IAtomicLong count = instances[0].getAtomicLong("count");
+        IAtomicLong count = instances[0].getCPSubsystem().getAtomicLong("count");
         assertEquals(instances.length, count.get());
     }
 
@@ -106,7 +106,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
         }
 
         assertOpenEventually(callback.getResponseLatch());
-        assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
+        assertEquals(0, instances[0].getCPSubsystem().getAtomicLong("testSubmitToKeyOwnerRunnable").get());
         assertEquals(instances.length, callback.getNullResponseCount());
     }
 
@@ -123,7 +123,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
         }
 
         assertOpenEventually(callback.getResponseLatch());
-        assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
+        assertEquals(0, instances[0].getCPSubsystem().getAtomicLong("testSubmitToMemberRunnable").get());
         assertEquals(instances.length, callback.getNullResponseCount());
     }
 
@@ -145,7 +145,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
         }
         assertOpenEventually(callback.getLatch());
 
-        IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong("testSubmitToMembersRunnable");
         assertEquals(sum, result.get());
         assertEquals(sum, callback.getCount());
     }
@@ -160,7 +160,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
         }
         assertOpenEventually(callback.getLatch());
 
-        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong("testSubmitToAllMembersRunnable");
         assertEquals(instances.length * instances.length, result.get());
         assertEquals(instances.length * instances.length, callback.getCount());
     }
@@ -344,7 +344,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
         }
         assertOpenEventually(callback.getLatch());
 
-        IAtomicLong result = instances[0].getAtomicLong(name);
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong(name);
         assertEquals(sum, result.get());
         assertEquals(sum, callback.getCount());
     }
@@ -359,7 +359,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
         }
         assertOpenEventually(callback.getLatch());
 
-        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong("testSubmitToAllMembersCallable");
         assertEquals(instances.length * instances.length, result.get());
         assertEquals(instances.length * instances.length, callback.getCount());
     }
