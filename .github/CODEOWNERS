@@ -4,4 +4,4 @@
 # the repo . @hazelcast/clients team will be requested for
 # review when someone opens a pull request.
 
-# **/client/**       @hazelcast/clients
+**/client/**       @hazelcast/clients
