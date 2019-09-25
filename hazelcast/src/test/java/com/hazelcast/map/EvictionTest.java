@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
