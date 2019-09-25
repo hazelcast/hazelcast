@@ -33,9 +33,9 @@ public class MetricsDataSerializerHookTest {
     @Test
     public void testExistingTypes() {
         MetricsDataSerializerHook hook = new MetricsDataSerializerHook();
-        IdentifiedDataSerializable rbSlice = hook.createFactory()
-                                                 .create(MetricsDataSerializerHook.RINGBUFFER_SLICE);
-        assertTrue(rbSlice instanceof ConcurrentArrayRingbuffer.RingbufferSlice);
+        IdentifiedDataSerializable readMetricsOperation = hook.createFactory()
+                                                              .create(MetricsDataSerializerHook.READ_METRICS);
+        assertTrue(readMetricsOperation instanceof ReadMetricsOperation);
     }
 
     @Test(expected = IllegalArgumentException.class)

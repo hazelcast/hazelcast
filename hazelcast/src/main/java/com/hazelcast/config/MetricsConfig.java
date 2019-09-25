@@ -44,7 +44,7 @@ public class MetricsConfig {
     private int retentionSeconds = DEFAULT_METRICS_RETENTION_SECONDS;
     private boolean metricsForDataStructuresEnabled;
     private int intervalSeconds = DEFAULT_METRICS_COLLECTION_SECONDS;
-    private ProbeLevel minimumLevel = ProbeLevel.MANDATORY;
+    private ProbeLevel minimumLevel = ProbeLevel.INFO;
 
     public MetricsConfig() {
     }

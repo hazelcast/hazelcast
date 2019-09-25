@@ -30,8 +30,6 @@ public final class MetricsDataSerializerHook implements DataSerializerHook {
 
     static final int READ_METRICS = 1;
 
-    static final int RINGBUFFER_SLICE = 2;
-
     @Override
     public int getFactoryId() {
         return FACTORY_ID;
@@ -48,8 +46,6 @@ public final class MetricsDataSerializerHook implements DataSerializerHook {
             switch (typeId) {
                 case READ_METRICS:
                     return new ReadMetricsOperation();
-                case RINGBUFFER_SLICE:
-                    return new ConcurrentArrayRingbuffer.RingbufferSlice<>();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

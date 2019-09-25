@@ -4540,7 +4540,7 @@
             <xs:element name="collection-interval-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
             <xs:element name="retention-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
             <xs:element name="metrics-for-data-structures" type="xs:boolean" default="false" minOccurs="0"/>
-            <xs:element name="minimum-level" type="metric-minimum-level" default="MANDATORY" minOccurs="0"/>
+            <xs:element name="minimum-level" type="metric-minimum-level" default="INFO" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>

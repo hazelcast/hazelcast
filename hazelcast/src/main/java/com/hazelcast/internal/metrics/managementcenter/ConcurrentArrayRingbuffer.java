@@ -16,11 +16,6 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -123,15 +118,11 @@ public class ConcurrentArrayRingbuffer<E> {
         return (int) (sequence % ringItems.length);
     }
 
-    public static final class RingbufferSlice<E> implements IdentifiedDataSerializable {
+    public static final class RingbufferSlice<E> {
         // we use Object[] (instead of E[]) because we have only serializer for Object[], not for
         // subtypes.
         private Object[] elements;
         private long nextSequence;
-
-        // for deserialization
-        public RingbufferSlice() {
-        }
 
         private RingbufferSlice(E[] elements, long nextSequence) {
             this.elements = elements;
@@ -157,28 +148,6 @@ public class ConcurrentArrayRingbuffer<E> {
          */
         public long nextSequence() {
             return nextSequence;
-        }
-
-        @Override
-        public int getFactoryId() {
-            return MetricsDataSerializerHook.FACTORY_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return MetricsDataSerializerHook.RINGBUFFER_SLICE;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(elements);
-            out.writeLong(nextSequence);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            elements = in.readObject();
-            nextSequence = in.readLong();
         }
     }
 }

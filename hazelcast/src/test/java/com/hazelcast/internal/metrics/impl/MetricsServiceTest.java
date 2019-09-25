@@ -215,7 +215,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNoCollectionIfMetricsEnabledAndMcJmxDisabledButCustomPublisherRegistered() {
+    public void testMetricsCollectedIfMetricsEnabledAndMcJmxDisabledButCustomPublisherRegistered() {
         config.getMetricsConfig()
               .setEnabled(true)
               .setMcEnabled(false)
@@ -226,9 +226,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         metricsService.init(nodeEngineMock, new Properties());
         metricsService.registerPublisher(nodeEngine -> publisherMock);
 
-        //        metricsService.collectMetrics();
-
-        HazelcastTestSupport.assertTrueEventually(() -> {
+        assertTrueEventually(() -> {
             verify(publisherMock, atLeastOnce()).publishDouble(anyString(), anyDouble());
             verify(publisherMock, atLeastOnce()).publishLong(anyString(), anyLong());
         });
