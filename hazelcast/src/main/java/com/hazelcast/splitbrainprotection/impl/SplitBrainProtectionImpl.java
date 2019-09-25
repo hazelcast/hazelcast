@@ -50,8 +50,8 @@ public class SplitBrainProtectionImpl implements SplitBrainProtection {
 
     private enum SplitBrainProtectionState {
         INITIAL,
-        MIN_CLUSTER_SIZE_SATISFIED,
-        MIN_CLUSTER_SIZE_NOT_SATISFIED
+        HAS_MIN_CLUSTER_SIZE,
+        NO_MIN_CLUSTER_SIZE
     }
 
     private final NodeEngineImpl nodeEngine;
@@ -91,11 +91,11 @@ public class SplitBrainProtectionImpl implements SplitBrainProtection {
      */
     void update(Collection<Member> members) {
         SplitBrainProtectionState previousSplitBrainProtectionState = splitBrainProtectionState;
-        SplitBrainProtectionState newSplitBrainProtectionState = SplitBrainProtectionState.MIN_CLUSTER_SIZE_NOT_SATISFIED;
+        SplitBrainProtectionState newSplitBrainProtectionState = SplitBrainProtectionState.NO_MIN_CLUSTER_SIZE;
         try {
             boolean present = splitBrainProtectionFunction.apply(members);
-            newSplitBrainProtectionState = present ? SplitBrainProtectionState.MIN_CLUSTER_SIZE_SATISFIED
-                    : SplitBrainProtectionState.MIN_CLUSTER_SIZE_NOT_SATISFIED;
+            newSplitBrainProtectionState = present ? SplitBrainProtectionState.HAS_MIN_CLUSTER_SIZE
+                    : SplitBrainProtectionState.NO_MIN_CLUSTER_SIZE;
         } catch (Exception e) {
             ILogger logger = nodeEngine.getLogger(SplitBrainProtectionService.class);
             logger.severe("Split brain protection function of split brain protection: "
@@ -105,7 +105,7 @@ public class SplitBrainProtectionImpl implements SplitBrainProtection {
 
         splitBrainProtectionState = newSplitBrainProtectionState;
         if (previousSplitBrainProtectionState != newSplitBrainProtectionState) {
-            createAndPublishEvent(members, newSplitBrainProtectionState == SplitBrainProtectionState.MIN_CLUSTER_SIZE_SATISFIED);
+            createAndPublishEvent(members, newSplitBrainProtectionState == SplitBrainProtectionState.HAS_MIN_CLUSTER_SIZE);
         }
     }
 
@@ -163,7 +163,7 @@ public class SplitBrainProtectionImpl implements SplitBrainProtection {
 
     @Override
     public boolean hasMinimumSize() {
-        return splitBrainProtectionState == SplitBrainProtectionState.MIN_CLUSTER_SIZE_SATISFIED;
+        return splitBrainProtectionState == SplitBrainProtectionState.HAS_MIN_CLUSTER_SIZE;
     }
 
     /**
