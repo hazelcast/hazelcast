@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -296,7 +297,7 @@ public class EventServiceImpl implements EventService, MetricsProvider {
             throw new IllegalArgumentException("Null filter is not allowed!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
-        String id = UuidUtil.newUnsecureUuidString();
+        UUID id = UuidUtil.newUnsecureUUID();
         Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly);
         if (!segment.addRegistration(topic, reg)) {
             return null;
@@ -329,7 +330,7 @@ public class EventServiceImpl implements EventService, MetricsProvider {
         if (segment == null) {
             return false;
         }
-        Registration reg = segment.removeRegistration(topic, String.valueOf(id));
+        Registration reg = segment.removeRegistration(topic, (UUID) id);
         if (reg != null && !reg.isLocalOnly()) {
             Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
             invokeOnAllMembers(supplier);

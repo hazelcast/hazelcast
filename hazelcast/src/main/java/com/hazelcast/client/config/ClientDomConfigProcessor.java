@@ -46,7 +46,7 @@ import java.util.Map;
 import static com.hazelcast.client.config.ClientConfigSections.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientConfigSections.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientConfigSections.FLAKE_ID_GENERATOR;
-import static com.hazelcast.client.config.ClientConfigSections.GROUP;
+import static com.hazelcast.client.config.ClientConfigSections.CLUSTER;
 import static com.hazelcast.client.config.ClientConfigSections.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientConfigSections.LABELS;
 import static com.hazelcast.client.config.ClientConfigSections.LISTENERS;
@@ -113,8 +113,8 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSerialization(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
             fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
-        } else if (GROUP.isEqual(nodeName)) {
-            handleGroup(node);
+        } else if (CLUSTER.isEqual(nodeName)) {
+            handleCluster(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (NETWORK.isEqual(nodeName)) {
@@ -568,14 +568,14 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleGroup(Node node) {
+    private void handleCluster(Node node) {
         for (Node n : childElements(node)) {
             String value = getTextContent(n).trim();
             String nodeName = cleanNodeName(n);
             if ("name".equals(nodeName)) {
-                clientConfig.getGroupConfig().setName(value);
+                clientConfig.setClusterName(value);
             } else if ("password".equals(nodeName)) {
-                clientConfig.getGroupConfig().setPassword(value);
+                clientConfig.setClusterPassword(value);
             }
         }
     }

@@ -28,28 +28,27 @@ import java.util.Map;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 
-public final class MapStringLongCodec {
+public final class MapLongByteArrayCodec {
 
-    private MapStringLongCodec() {
+    private MapLongByteArrayCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, Collection<Map.Entry<String, Long>> collection) {
+    public static void encode(ClientMessage clientMessage, Collection<Map.Entry<Long, byte[]>> collection) {
         List<Long> valueList = new ArrayList<>(collection.size());
         clientMessage.add(BEGIN_FRAME);
-        for (Map.Entry<String, Long> entry : collection) {
-            StringCodec.encode(clientMessage, entry.getKey());
-            valueList.add(entry.getValue());
+        for (Map.Entry<Long, byte[]> entry : collection) {
+            valueList.add(entry.getKey());
+            ByteArrayCodec.encode(clientMessage, entry.getValue());
         }
         clientMessage.add(END_FRAME);
-
         ListLongCodec.encode(clientMessage, valueList);
     }
 
-    public static List<Map.Entry<String, Long>> decode(ListIterator<ClientMessage.Frame> iterator) {
-        List<String> listK = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
-        List<Long> listV = ListLongCodec.decode(iterator);
+    public static List<Map.Entry<Long, byte[]>> decode(ListIterator<ClientMessage.Frame> iterator) {
+        List<byte[]> listV = ListMultiFrameCodec.decode(iterator, ByteArrayCodec::decode);
+        List<Long> listK = ListLongCodec.decode(iterator);
 
-        List<Map.Entry<String, Long>> result = new ArrayList<>(listK.size());
+        List<Map.Entry<Long, byte[]>> result = new ArrayList<>(listK.size());
         for (int i = 0; i < listK.size(); i++) {
             result.add(new AbstractMap.SimpleEntry<>(listK.get(i), listV.get(i)));
         }

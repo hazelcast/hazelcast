@@ -39,7 +39,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -59,12 +59,12 @@ public class MemberSelectingIteratorTest extends HazelcastTestSupport {
             throws Exception {
         MemberVersion version = new MemberVersion(BuildInfoProvider.getBuildInfo().getVersion());
         thisMember = new MemberImpl.Builder(new Address("localhost", 5701)).version(version).localMember(true)
-                .uuid(newUnsecureUuidString()).liteMember(true).build();
-        matchingMember = new MemberImpl.Builder(new Address("localhost", 5702)).version(version).uuid(newUnsecureUuidString())
+                .uuid(newUnsecureUUID()).liteMember(true).build();
+        matchingMember = new MemberImpl.Builder(new Address("localhost", 5702)).version(version).uuid(newUnsecureUUID())
                 .liteMember(true).build();
-        matchingMember2 = new MemberImpl.Builder(new Address("localhost", 5703)).version(version).uuid(newUnsecureUuidString())
+        matchingMember2 = new MemberImpl.Builder(new Address("localhost", 5703)).version(version).uuid(newUnsecureUUID())
                 .liteMember(true).build();
-        nonMatchingMember = new MemberImpl.Builder(new Address("localhost", 5704)).version(version).uuid(newUnsecureUuidString())
+        nonMatchingMember = new MemberImpl.Builder(new Address("localhost", 5704)).version(version).uuid(newUnsecureUUID())
                 .build();
     }
 

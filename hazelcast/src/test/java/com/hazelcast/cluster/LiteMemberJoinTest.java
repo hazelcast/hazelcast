@@ -208,8 +208,8 @@ public class LiteMemberJoinTest {
             @Override
             public Config create(String name, String pw, boolean liteMember) {
                 Config config = new Config();
-                config.getGroupConfig().setName(name);
-                config.getGroupConfig().setPassword(pw);
+                config.setClusterName(name);
+                config.setClusterPassword(pw);
 
                 config.setLiteMember(liteMember);
 
@@ -228,8 +228,8 @@ public class LiteMemberJoinTest {
             @Override
             public Config create(String name, String pw, boolean liteMember) {
                 Config config = new Config();
-                config.getGroupConfig().setName(name);
-                config.getGroupConfig().setPassword(pw);
+                config.setClusterName(name);
+                config.setClusterPassword(pw);
 
                 config.setLiteMember(liteMember);
 

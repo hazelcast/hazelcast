@@ -9,7 +9,7 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo "  -s, --session-id  : CP Session ID. Must be provided for 'force-close-session'."
     echo "  -a, --address     : Defines which ip address hazelcast is running. Default value is '127.0.0.1'."
     echo "  -p, --port        : Defines which port hazelcast is running. Default value is '5701'."
-    echo "  -g, --groupname   : Defines groupname of the cluster. Default value is 'dev'."
+    echo "  -c, --clustername : Defines clustername of the cluster. Default value is 'dev'."
     echo "  -P, --password    : Defines password of the cluster. Default value is 'dev-pass'."
     echo "  -d, --debug       : Prints curl error output."
     echo "HTTPs related (TLS enabled):"
@@ -80,8 +80,8 @@ case "$key" in
     PORT="$2"
     shift # past argument
     ;;
-    -g|--groupname)
-    GROUPNAME="$2"
+    -c|--clustername)
+    CLUSTERNAME="$2"
     shift # past argument
     ;;
     -P|--password)
@@ -127,9 +127,9 @@ if [[ -z "$PORT" ]]; then
     PORT="5701"
 fi
 
-if [[ -z "$GROUPNAME" ]]; then
-    echo "No groupname is defined, running script with default groupname: 'dev'."
-    GROUPNAME="dev"
+if [[ -z "CLUSTERNAME" ]]; then
+    echo "No clustername is defined, running script with default clustername: 'dev'."
+    CLUSTERNAME="dev"
 fi
 
 if [[ -z "$PASSWORD" ]]; then
@@ -251,7 +251,7 @@ if [[ "$OPERATION" = "force-destroy-group" ]]; then
     fi
 
     echo "Force-destroying CP group: ${CP_GROUP_NAME} on ${ADDRESS}:${PORT}."
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/groups/${CP_GROUP_NAME}/remove")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/groups/${CP_GROUP_NAME}/remove")
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
 
@@ -274,7 +274,7 @@ fi
 
 if [[ "$OPERATION" = "promote-member" ]]; then
     echo "Promoting to CP member on ${ADDRESS}:${PORT}."
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/members")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/members")
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
 
@@ -298,7 +298,7 @@ if [[ "$OPERATION" = "remove-member" ]]; then
     fi
 
     echo "Removing CP member: ${CP_MEMBER_UID} on ${ADDRESS}:${PORT}."
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/members/${CP_MEMBER_UID}/remove")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/members/${CP_MEMBER_UID}/remove")
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
 
@@ -331,7 +331,7 @@ if [[ "$OPERATION" = "force-close-session" ]]; then
     fi
 
     echo "Closing CP session: ${CP_SESSION_ID} in CP group: ${CP_GROUP_NAME} ${ADDRESS}:${PORT}."
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/groups/${CP_GROUP_NAME}/sessions/${CP_SESSION_ID}/remove")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/groups/${CP_GROUP_NAME}/sessions/${CP_SESSION_ID}/remove")
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
 
@@ -354,7 +354,7 @@ fi
 
 if [[ "$OPERATION" = "restart" ]]; then
     echo "Restarting the CP subsystem on ${ADDRESS}:${PORT}."
-    response=$(${CURL_CMD} --data "${GROUPNAME}&${PASSWORD}" "${URL_BASE}/restart")
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/restart")
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
 

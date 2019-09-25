@@ -27,7 +27,6 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -98,8 +97,8 @@ public final class ClientConfigXmlGenerator {
                 "xsi:schemaLocation", "http://www.hazelcast.com/schema/client-config "
                         + "http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd");
 
-        //GroupConfig
-        group(gen, clientConfig.getGroupConfig());
+        //Config
+        cluster(gen, clientConfig);
         //InstanceName
         gen.node("instance-name", clientConfig.getInstanceName());
         //attributes
@@ -195,10 +194,10 @@ public final class ClientConfigXmlGenerator {
         }
     }
 
-    private static void group(XmlGenerator gen, GroupConfig group) {
-        gen.open("group")
-                .node("name", group.getName())
-                .node("password", group.getPassword())
+    private static void cluster(XmlGenerator gen, ClientConfig cluster) {
+        gen.open("cluster")
+                .node("name", cluster.getClusterName())
+                .node("password", cluster.getClusterPassword())
                 .close();
     }
 

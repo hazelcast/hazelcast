@@ -55,6 +55,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
@@ -74,7 +75,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Nonnull
     @Override
-    public String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
+    public UUID addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
@@ -88,12 +89,12 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return QueueAddListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return QueueRemoveListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -116,7 +117,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         }
 
         @Override
-        public void handleItemEvent(Data dataItem, String uuid, int eventType) {
+        public void handleItemEvent(Data dataItem, UUID uuid, int eventType) {
             Member member = getContext().getClusterService().getMember(uuid);
             ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
                     dataItem, member, getSerializationService());
@@ -137,7 +138,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     @Override
-    public boolean removeItemListener(@Nonnull String registrationId) {
+    public boolean removeItemListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Null registrationId is not allowed!");
         return deregisterListener(registrationId);
     }

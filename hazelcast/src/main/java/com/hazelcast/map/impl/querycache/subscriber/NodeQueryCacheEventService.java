@@ -43,6 +43,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
@@ -80,22 +81,22 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     @Override
-    public String addListener(String mapName, String cacheId, MapListener listener) {
+    public UUID addListener(String mapName, String cacheId, MapListener listener) {
         return addListener(mapName, cacheId, listener, null);
     }
 
     @Override
-    public String addPublisherListener(String mapName, String cacheId, ListenerAdapter listenerAdapter) {
+    public UUID addPublisherListener(String mapName, String cacheId, ListenerAdapter listenerAdapter) {
         return mapServiceContext.addListenerAdapter(listenerAdapter, TrueEventFilter.INSTANCE, cacheId);
     }
 
     @Override
-    public boolean removePublisherListener(String mapName, String cacheId, String listenerId) {
+    public boolean removePublisherListener(String mapName, String cacheId, UUID listenerId) {
         return mapServiceContext.removeEventListener(cacheId, listenerId);
     }
 
     @Override
-    public String addListener(String mapName, String cacheId, MapListener listener, EventFilter filter) {
+    public UUID addListener(String mapName, String cacheId, MapListener listener, EventFilter filter) {
         checkHasText(mapName, "mapName");
         checkHasText(cacheId, "cacheId");
         checkNotNull(listener, "listener cannot be null");
@@ -116,7 +117,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     @Override
-    public boolean removeListener(String mapName, String cacheId, String listenerId) {
+    public boolean removeListener(String mapName, String cacheId, UUID listenerId) {
         return eventService.deregisterListener(SERVICE_NAME, cacheId, listenerId);
     }
 

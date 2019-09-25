@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,10 +27,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 public class SimpleMemberImpl implements Member {
 
-    private String uuid;
+    private UUID uuid;
     private InetSocketAddress address;
     private boolean liteMember;
     private MemberVersion version;
@@ -38,11 +40,11 @@ public class SimpleMemberImpl implements Member {
     public SimpleMemberImpl() {
     }
 
-    public SimpleMemberImpl(MemberVersion version, String uuid, InetSocketAddress address) {
+    public SimpleMemberImpl(MemberVersion version, UUID uuid, InetSocketAddress address) {
         this(version, uuid, address, false);
     }
 
-    public SimpleMemberImpl(MemberVersion version, String uuid, InetSocketAddress address, boolean liteMember) {
+    public SimpleMemberImpl(MemberVersion version, UUID uuid, InetSocketAddress address, boolean liteMember) {
         this.version = version;
         this.uuid = uuid;
         this.address = address;
@@ -75,7 +77,7 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
@@ -110,7 +112,7 @@ public class SimpleMemberImpl implements Member {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(version);
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeObject(address);
         out.writeBoolean(liteMember);
     }
@@ -118,7 +120,7 @@ public class SimpleMemberImpl implements Member {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         version = in.readObject();
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
         address = in.readObject();
         liteMember = in.readBoolean();
     }

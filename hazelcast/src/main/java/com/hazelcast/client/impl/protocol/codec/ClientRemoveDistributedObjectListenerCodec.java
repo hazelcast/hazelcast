@@ -35,13 +35,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("cf5f64a1c49315238f23c56f5d8ab078")
+@Generated("de1583fa74f25791e7d0941d29646735")
 public final class ClientRemoveDistributedObjectListenerCodec {
     //hex: 0x000E00
     public static final int REQUEST_MESSAGE_TYPE = 3584;
     //hex: 0x000E01
     public static final int RESPONSE_MESSAGE_TYPE = 3585;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
@@ -54,27 +55,26 @@ public final class ClientRemoveDistributedObjectListenerCodec {
         /**
          * The id assigned during the registration.
          */
-        public java.lang.String registrationId;
+        public java.util.UUID registrationId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String registrationId) {
+    public static ClientMessage encodeRequest(java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.RemoveDistributedObjectListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET, registrationId);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, registrationId);
         return clientMessage;
     }
 
     public static ClientRemoveDistributedObjectListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        request.registrationId = StringCodec.decode(iterator);
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.registrationId = decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
         return request;
     }
 

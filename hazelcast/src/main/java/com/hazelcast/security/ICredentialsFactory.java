@@ -16,8 +16,6 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.config.GroupConfig;
-
 import java.util.Properties;
 
 /**
@@ -29,10 +27,11 @@ public interface ICredentialsFactory {
     /**
      * Configures {@link ICredentialsFactory}.
      *
-     * @param groupConfig Hazelcast {@link GroupConfig}
+     * @param clusterName the cluster's name
+     * @param clusterPassword the cluster's password
      * @param properties  properties that will be used to pass custom configurations by user
      */
-    void configure(GroupConfig groupConfig, Properties properties);
+    void configure(String clusterName, String clusterPassword, Properties properties);
 
     /**
      * Creates new {@link Credentials} object.

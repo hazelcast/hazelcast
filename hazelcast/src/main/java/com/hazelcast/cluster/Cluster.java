@@ -26,6 +26,7 @@ import com.hazelcast.version.Version;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Hazelcast cluster interface. It provides access to the members in the cluster and one can register for changes in the
@@ -39,7 +40,7 @@ public interface Cluster {
      * Adds MembershipListener to listen for membership updates.
      * <p>
      * The addMembershipListener method returns a register ID. This ID is needed to remove the MembershipListener using the
-     * {@link #removeMembershipListener(String)} method.
+     * {@link #removeMembershipListener(UUID)} method.
      * <p>
      * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
      * the {@link InitialMembershipEvent}.
@@ -49,9 +50,9 @@ public interface Cluster {
      * @param listener membership listener
      * @return the registration ID
      * @throws java.lang.NullPointerException if listener is null
-     * @see #removeMembershipListener(String)
+     * @see #removeMembershipListener(UUID)
      */
-    String addMembershipListener(@Nonnull MembershipListener listener);
+    UUID addMembershipListener(@Nonnull MembershipListener listener);
 
     /**
      * Removes the specified MembershipListener.
@@ -65,7 +66,7 @@ public interface Cluster {
      * @throws java.lang.NullPointerException if the registration ID is null
      * @see #addMembershipListener(MembershipListener)
      */
-    boolean removeMembershipListener(@Nonnull String registrationId);
+    boolean removeMembershipListener(@Nonnull UUID registrationId);
 
     /**
      * Set of the current members in the cluster. The returned set is an immutable set; it can't be modified.

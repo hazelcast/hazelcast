@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -24,18 +25,19 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
 public final class HeartbeatOp extends AbstractClusterOperation {
 
     private MembersViewMetadata senderMembersViewMetadata;
-    private String targetUuid;
+    private UUID targetUuid;
     private long timestamp;
 
     public HeartbeatOp() {
     }
 
-    public HeartbeatOp(MembersViewMetadata senderMembersViewMetadata, String targetUuid, long timestamp) {
+    public HeartbeatOp(MembersViewMetadata senderMembersViewMetadata, UUID targetUuid, long timestamp) {
         this.senderMembersViewMetadata = senderMembersViewMetadata;
         this.targetUuid = targetUuid;
         this.timestamp = timestamp;
@@ -57,7 +59,7 @@ public final class HeartbeatOp extends AbstractClusterOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(senderMembersViewMetadata);
-        out.writeUTF(targetUuid);
+        UUIDSerializationUtil.writeUUID(out, targetUuid);
         out.writeLong(timestamp);
     }
 
@@ -65,7 +67,7 @@ public final class HeartbeatOp extends AbstractClusterOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         senderMembersViewMetadata = in.readObject();
-        targetUuid = in.readUTF();
+        targetUuid = UUIDSerializationUtil.readUUID(in);
         timestamp = in.readLong();
     }
 

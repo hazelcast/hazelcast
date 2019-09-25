@@ -35,13 +35,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("36179c6b25bfae856ddc117bb841b2b0")
+@Generated("9af8163845923f8acec79211455ba608")
 public final class XATransactionRollbackCodec {
     //hex: 0x160700
     public static final int REQUEST_MESSAGE_TYPE = 1443584;
     //hex: 0x160701
     public static final int RESPONSE_MESSAGE_TYPE = 1443585;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_TRANSACTION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TRANSACTION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private XATransactionRollbackCodec() {
@@ -53,27 +54,26 @@ public final class XATransactionRollbackCodec {
         /**
          * The id of the transaction to rollback.
          */
-        public java.lang.String transactionId;
+        public java.util.UUID transactionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String transactionId) {
+    public static ClientMessage encodeRequest(java.util.UUID transactionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("XATransaction.Rollback");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_TRANSACTION_ID_FIELD_OFFSET, transactionId);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, transactionId);
         return clientMessage;
     }
 
     public static XATransactionRollbackCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        request.transactionId = StringCodec.decode(iterator);
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.transactionId = decodeUUID(initialFrame.content, REQUEST_TRANSACTION_ID_FIELD_OFFSET);
         return request;
     }
 

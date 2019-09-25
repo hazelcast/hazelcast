@@ -79,7 +79,7 @@ public class HazelcastTest extends HazelcastTestSupport {
     @Test
     public void getOrCreateHazelcastInstance_noneExisting() {
         Config config = new Config(randomString());
-        config.getGroupConfig().setName(randomString());
+        config.setClusterName(randomString());
 
         HazelcastInstance hz = Hazelcast.getOrCreateHazelcastInstance(config);
 
@@ -92,7 +92,7 @@ public class HazelcastTest extends HazelcastTestSupport {
     @Test
     public void getOrCreateHazelcastInstance_existing() {
         Config config = new Config(randomString());
-        config.getGroupConfig().setName(randomString());
+        config.setClusterName(randomString());
 
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
 

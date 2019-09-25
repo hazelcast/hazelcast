@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Client implementation of the {@link Cluster}.
@@ -43,12 +44,12 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
-    public String addMembershipListener(@Nonnull MembershipListener listener) {
+    public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         return clusterService.addMembershipListener(listener);
     }
 
     @Override
-    public boolean removeMembershipListener(@Nonnull String registrationId) {
+    public boolean removeMembershipListener(@Nonnull UUID registrationId) {
         return clusterService.removeMembershipListener(registrationId);
     }
 

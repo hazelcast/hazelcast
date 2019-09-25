@@ -28,6 +28,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.security.Permission;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class TransactionCreateMessageTask
@@ -65,7 +66,7 @@ public class TransactionCreateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TransactionCreateCodec.encodeResponse((String) response);
+        return TransactionCreateCodec.encodeResponse((UUID) response);
     }
 
     @Override

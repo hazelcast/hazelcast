@@ -32,7 +32,7 @@
         <hz:config>
             <hz:spring-aware/>
             <hz:instance-name>named-spring-hz-instance</hz:instance-name>
-            <hz:group name="dev" password="dev-pass"/>
+            <hz:cluster name="dev" password="dev-pass"/>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="true"/>

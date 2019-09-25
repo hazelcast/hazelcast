@@ -30,6 +30,7 @@ import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 
 import java.util.EventListener;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -51,8 +52,8 @@ public final class LifecycleServiceImpl implements LifecycleService {
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
     private final HazelcastClientInstanceImpl client;
-    private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
-            = new ConcurrentHashMap<String, LifecycleListener>();
+    private final ConcurrentMap<UUID, LifecycleListener> lifecycleListeners
+            = new ConcurrentHashMap<UUID, LifecycleListener>();
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final BuildInfo buildInfo;
     private final ExecutorService executor;
@@ -89,14 +90,14 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     @Override
-    public String addLifecycleListener(LifecycleListener lifecycleListener) {
-        final String id = UuidUtil.newUnsecureUuidString();
+    public UUID addLifecycleListener(LifecycleListener lifecycleListener) {
+        final UUID id = UuidUtil.newUnsecureUUID();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }
 
     @Override
-    public boolean removeLifecycleListener(String registrationId) {
+    public boolean removeLifecycleListener(UUID registrationId) {
         return lifecycleListeners.remove(registrationId) != null;
     }
 

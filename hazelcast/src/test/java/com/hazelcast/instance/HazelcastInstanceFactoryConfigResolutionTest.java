@@ -314,6 +314,6 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
         Config config = instance.getConfig();
 
-        assertEquals("dev", config.getGroupConfig().getName());
+        assertEquals("dev", config.getClusterName());
     }
 }

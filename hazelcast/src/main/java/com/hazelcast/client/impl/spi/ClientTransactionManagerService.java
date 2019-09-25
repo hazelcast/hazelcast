@@ -44,5 +44,5 @@ public interface ClientTransactionManagerService {
      */
     TransactionContext newXATransactionContext(Xid xid, int timeoutInSeconds);
 
-    String getGroupName();
+    String getClusterName();
 }

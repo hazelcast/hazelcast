@@ -66,7 +66,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
         }
         String uuid = UUID.randomUUID().toString();
         staticHazelcastConfig.setInstanceName(uuid);
-        staticHazelcastConfig.setGroupConfig(staticHazelcastConfig.getGroupConfig().setName(uuid));
+        staticHazelcastConfig.setClusterName(uuid);
         testCase.addStaticConfig(staticHazelcastConfig);
 
         hazelcastInstance = createHazelcastInstance(staticHazelcastConfig);

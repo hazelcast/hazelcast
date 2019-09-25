@@ -38,7 +38,6 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
@@ -262,8 +261,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleNetwork(node);
                     } else if ("advanced-network".equals(nodeName)) {
                         handleAdvancedNetwork(node);
-                    } else if ("group".equals(nodeName)) {
-                        handleGroup(node);
+                    } else if ("cluster".equals(nodeName)) {
+                        handleClusterAttributes(node);
                     } else if ("properties".equals(nodeName)) {
                         handleProperties(node);
                     } else if ("executor-service".equals(nodeName)) {
@@ -803,10 +802,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             getIntegerValue("socketLingerSeconds", textContent));
                 }
             }
-        }
-
-        public void handleGroup(Node node) {
-            createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
         }
 
         public void handleProperties(Node node) {

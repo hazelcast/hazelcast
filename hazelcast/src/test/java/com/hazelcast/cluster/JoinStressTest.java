@@ -190,7 +190,7 @@ public class JoinStressTest extends HazelcastTestSupport {
 
                     Config config = createConfig();
                     String name = "group-" + (int) (Math.random() * groupCount);
-                    config.getGroupConfig().setName(name);
+                    config.setClusterName(name);
 
                     groups.get(name).incrementAndGet();
 
@@ -214,13 +214,13 @@ public class JoinStressTest extends HazelcastTestSupport {
             logEvaluatedMember(hz);
 
             final int clusterSize = hz.getCluster().getMembers().size();
-            final String groupName = hz.getConfig().getGroupConfig().getName();
-            final int shouldBeClusterSize = groups.get(groupName).get();
+            final String clusterName = hz.getConfig().getClusterName();
+            final int shouldBeClusterSize = groups.get(clusterName).get();
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run()
                         throws Exception {
-                    assertEquals(groupName + ": ", shouldBeClusterSize, clusterSize);
+                    assertEquals(clusterName + ": ", shouldBeClusterSize, clusterSize);
                 }
             });
         }

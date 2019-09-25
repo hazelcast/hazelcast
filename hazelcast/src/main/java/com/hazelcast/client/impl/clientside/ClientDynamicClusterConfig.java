@@ -54,7 +54,6 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -62,6 +61,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -87,6 +87,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -121,7 +122,7 @@ public class ClientDynamicClusterConfig extends Config {
                 adaptListenerConfigs(mapConfig.getPartitionLostListenerConfigs());
         List<QueryCacheConfigHolder> queryCacheConfigHolders = null;
         if (mapConfig.getQueryCacheConfigs() != null && !mapConfig.getQueryCacheConfigs().isEmpty()) {
-            queryCacheConfigHolders = new ArrayList<QueryCacheConfigHolder>(mapConfig.getQueryCacheConfigs().size());
+            queryCacheConfigHolders = new ArrayList<>(mapConfig.getQueryCacheConfigs().size());
             for (QueryCacheConfig config : mapConfig.getQueryCacheConfigs()) {
                 queryCacheConfigHolders.add(QueryCacheConfigHolder.of(config, serializationService));
             }
@@ -437,12 +438,22 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public GroupConfig getGroupConfig() {
-        return instance.getClientConfig().getGroupConfig();
+    public String getClusterName() {
+        return instance.getClientConfig().getClusterName();
     }
 
     @Override
-    public Config setGroupConfig(GroupConfig groupConfig) {
+    public Config setClusterName(String clusterName) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public String getClusterPassword() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setClusterPassword(final String password) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -1041,6 +1052,19 @@ public class ClientDynamicClusterConfig extends Config {
     public Config setCPSubsystemConfig(CPSubsystemConfig cpSubsystemConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
+
+    @Override
+    @Nonnull
+    public Config setMetricsConfig(MetricsConfig metricsConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    @Nonnull
+    public MetricsConfig getMetricsConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
 
     @Override
     public String toString() {

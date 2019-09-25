@@ -57,6 +57,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.UUID;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -233,7 +234,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Nonnull
     @Override
-    public String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
+    public UUID addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
@@ -247,12 +248,12 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ListAddListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ListRemoveListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -264,7 +265,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public boolean removeItemListener(@Nonnull String registrationId) {
+    public boolean removeItemListener(@Nonnull UUID registrationId) {
         return deregisterListener(registrationId);
     }
 
@@ -333,7 +334,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         }
 
         @Override
-        public void handleItemEvent(Data dataItem, String uuid, int eventType) {
+        public void handleItemEvent(Data dataItem, UUID uuid, int eventType) {
             Member member = getContext().getClusterService().getMember(uuid);
             ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
                     dataItem, member, getSerializationService());

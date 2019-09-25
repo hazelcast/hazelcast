@@ -72,7 +72,7 @@ hazelcast:
   # Cluster groups allow you to create separate sub-clusters with different names.
   # They are also referenced in the WAN Replication configuration.
   # The group password is only used when the security is enabled (Enterprise edition feature).
-  group:
+  cluster:
     name: dev
     password: dev-pass
   #
@@ -141,16 +141,16 @@ hazelcast:
   #     WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication.
   #     Waits until a batch size is reached or a delay time is passed.
   #     Please see the batch-size and batch-max-delay-millis configuration descriptions below.
-  #     * "group-name":
-  #         Sets the group name used as an endpoint group name for authentication
+  #     * "cluster-name":
+  #         Sets the cluster name used as an endpoint cluster name for authentication
   #         on the target endpoint.
-  #         If there is no separate publisher ID property defined, this group name
+  #         If there is no separate publisher ID property defined, this cluster name
   #         will also be used as a WAN publisher ID. This ID is then used for
   #         identifying the publisher in a WanReplicationConfig.
   #     * "publisher-id":
   #         Sets the publisher ID used for identifying the publisher in a
   #         WanReplicationConfig.
-  #         If there is no publisher ID defined (it is empty), the group name will
+  #         If there is no publisher ID defined (it is empty), the cluster name will
   #         be used as a publisher ID.
   #     * "batch-size":
   #         Changes the maximum size of events that are sent to the target cluster
@@ -343,7 +343,7 @@ hazelcast:
     my-wan-cluster-batch:
       batch-publisher:
         nycPublisherId:
-          group-name: nyc
+          cluster-name: nyc
           batch-size: 1000
           batch-max-delay-millis: 2000
           response-timeout-millis: 60000
@@ -654,7 +654,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        group-name: GROUP-NAME
+        cluster-name: CLUSTER-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -2835,7 +2835,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        group-name: GROUP-NAME
+        cluster-name: CLUSTER-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -3144,3 +3144,12 @@ hazelcast:
         lock-acquire-limit: 1
       lock2:
         lock-acquire-limit: 2
+
+  metrics:
+    enabled: false
+    mc-enabled: false
+    jmx-enabled: false
+    collection-interval-seconds: 10
+    retention-seconds: 30
+    metrics-for-data-structures: true
+    minimum-level: DEBUG

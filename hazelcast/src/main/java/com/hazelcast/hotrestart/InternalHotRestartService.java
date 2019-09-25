@@ -21,6 +21,7 @@ import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.nio.Address;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -58,14 +59,14 @@ public interface InternalHotRestartService {
      * @param memberUuid    UUID of the member to check
      * @return true if the member has been excluded on cluster start.
      */
-    boolean isMemberExcluded(Address memberAddress, String memberUuid);
+    boolean isMemberExcluded(Address memberAddress, UUID memberUuid);
 
     /**
      * Returns UUIDs of the members that have been excluded during the cluster start.
      *
      * @return UUIDs of the members that have been excluded during the cluster start
      */
-    Set<String> getExcludedMemberUuids();
+    Set<UUID> getExcludedMemberUuids();
 
     /**
      * Notifies the excluded member and triggers the member force start process.
@@ -80,7 +81,7 @@ public interface InternalHotRestartService {
      * @param sender              the member that has sent the excluded members set
      * @param excludedMemberUuids UUIDs of the members that have been excluded during the cluster start
      */
-    void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids);
+    void handleExcludedMemberUuids(Address sender, Set<UUID> excludedMemberUuids);
 
     /**
      * Returns latest Hot Restart status as Management Center DTO. An empty status object will

@@ -31,7 +31,7 @@
                     <xs:choice minOccurs="0" maxOccurs="unbounded">
                         <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="cluster" type="cluster" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
@@ -1536,7 +1536,7 @@
             <xs:extension base="hazelcast-bean">
                 <xs:choice minOccurs="0" maxOccurs="unbounded">
                     <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                    <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="cluster" type="cluster" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="labels" type="labels" minOccurs="0" maxOccurs="1"/>
@@ -2139,7 +2139,7 @@
         <xs:restriction base="xs:string"/>
     </xs:simpleType>
 
-    <xs:complexType name="group">
+    <xs:complexType name="cluster">
         <xs:attribute name="name" type="xs:string"/>
         <xs:attribute name="password" type="xs:string"/>
     </xs:complexType>
@@ -2410,12 +2410,12 @@
 
     <xs:complexType name="wan-batch-publisher" mixed="true">
         <xs:all>
-            <xs:element name="group-name" type="xs:string" minOccurs="1" maxOccurs="1">
+            <xs:element name="cluster-name" type="xs:string" minOccurs="1" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets the group name used as an endpoint group name for authentication
+                        Sets the cluster name used as an endpoint cluster name for authentication
                         on the target endpoint.
-                        If there is no separate publisher ID property defined, this group name
+                        If there is no separate publisher ID property defined, this cluster name
                         will also be used as a WAN publisher ID. This ID is then used for
                         identifying the publisher in a WanReplicationConfig.
                     </xs:documentation>
@@ -2606,7 +2606,7 @@
                     <xs:documentation>
                         Sets the publisher ID used for identifying the publisher in a
                         WanReplicationConfig.
-                        If there is no publisher ID defined (it is empty), the group name will
+                        If there is no publisher ID defined (it is empty), the cluster name will
                         be used as a publisher ID.
                     </xs:documentation>
                 </xs:annotation>
@@ -2645,7 +2645,7 @@
                     <xs:documentation>
                         Sets the publisher ID used for identifying the publisher in a
                         WanReplicationConfig.
-                        If there is no publisher ID defined (it is empty), the group name will
+                        If there is no publisher ID defined (it is empty), the cluster name will
                         be used as a publisher ID.
                     </xs:documentation>
                 </xs:annotation>

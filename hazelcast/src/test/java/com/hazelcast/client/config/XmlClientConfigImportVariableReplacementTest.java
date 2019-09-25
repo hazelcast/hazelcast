@@ -18,7 +18,6 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.internal.nio.IOUtil;
@@ -239,14 +238,14 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "        </replacer>\n"
                 + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
                 + "    </config-replacers>\n"
-                + "    <group>\n"
+                + "    <cluster>\n"
                 + "        <name>${java.version} $ID{dev}</name>\n"
                 + "        <password>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</password>\n"
-                + "    </group>\n"
+                + "    </cluster>\n"
                 + HAZELCAST_CLIENT_END_TAG;
-        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
-        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getName());
-        assertEquals("My very secret secret", groupConfig.getPassword());
+        ClientConfig config = buildConfig(xml, System.getProperties());
+        assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
+        assertEquals("My very secret secret", config.getClusterPassword());
     }
 
     @Override
@@ -256,9 +255,9 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "    <config-replacers>\n"
                 + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'/>\n"
                 + "    </config-replacers>\n"
-                + "    <group>\n"
+                + "    <cluster>\n"
                 + "        <name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</name>\n"
-                + "    </group>\n"
+                + "    </cluster>\n"
                 + HAZELCAST_CLIENT_END_TAG;
         buildConfig(xml, System.getProperties());
     }
@@ -277,12 +276,12 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "            </properties>\n"
                 + "        </replacer>\n"
                 + "    </config-replacers>\n"
-                + "    <group>\n"
+                + "    <cluster>\n"
                 + "        <name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</name>\n"
-                + "    </group>\n"
+                + "    </cluster>\n"
                 + HAZELCAST_CLIENT_END_TAG;
-        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
-        assertEquals("a property  another property <test/> $T{p5}", groupConfig.getName());
+        ClientConfig config = buildConfig(xml, System.getProperties());
+        assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
     }
 
 
@@ -296,25 +295,24 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Test
     public void testNoConfigReplacersMissingProperties() {
         String xml = HAZELCAST_CLIENT_START_TAG
-                + "    <group>\n"
+                + "    <cluster>\n"
                 + "        <name>${noSuchPropertyAvailable}</name>\n"
-                + "    </group>\n"
+                + "    </cluster>\n"
                 + HAZELCAST_CLIENT_END_TAG;
-        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
-        assertEquals("${noSuchPropertyAvailable}", groupConfig.getName());
+        ClientConfig config = buildConfig(xml, System.getProperties());
+        assertEquals("${noSuchPropertyAvailable}", config.getClusterName());
     }
 
     @Override
     @Test
-    public void testImportGroupConfigFromClassPath() {
+    public void testImportClusterConfigFromClassPath() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"classpath:hazelcast-client-c1.xml\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;
 
         ClientConfig config = buildConfig(xml);
-        GroupConfig groupConfig = config.getGroupConfig();
-        assertEquals("cluster1", groupConfig.getName());
-        assertEquals("cluster1pass", groupConfig.getPassword());
+        assertEquals("cluster1", config.getClusterName());
+        assertEquals("cluster1pass", config.getClusterPassword());
     }
 
     @Override

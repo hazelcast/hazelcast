@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -44,8 +45,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class ExpirationManager implements LifecycleListener, PartitionLostListener {
 
     private final int taskPeriodSeconds;
-    private final String lifecycleListenerId;
-    private final String partitionLostListenerId;
+    private final UUID lifecycleListenerId;
+    private final UUID partitionLostListenerId;
     private final NodeEngine nodeEngine;
     private final ClearExpiredRecordsTask task;
     private final TaskScheduler globalTaskScheduler;

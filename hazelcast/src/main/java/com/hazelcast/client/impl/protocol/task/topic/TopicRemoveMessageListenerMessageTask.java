@@ -26,6 +26,7 @@ import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class TopicRemoveMessageListenerMessageTask
         extends AbstractRemoveListenerMessageTask<TopicRemoveMessageListenerCodec.RequestParameters> {
@@ -41,7 +42,7 @@ public class TopicRemoveMessageListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

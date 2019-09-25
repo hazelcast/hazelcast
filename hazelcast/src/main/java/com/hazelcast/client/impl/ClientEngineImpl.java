@@ -78,6 +78,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -109,13 +110,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private static final int BLOCKING_THREADS_PER_CORE = 20;
     private static final int THREADS_PER_CORE = 1;
     private static final int QUERY_THREADS_PER_CORE = 1;
-    private static final ConstructorFunction<String, AtomicLong> LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC =
-            new ConstructorFunction<String, AtomicLong>() {
-                @Override
-                public AtomicLong createNew(String arg) {
-                    return new AtomicLong();
-                }
-            };
+    private static final ConstructorFunction<UUID, AtomicLong> LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC =
+            arg -> new AtomicLong();
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
@@ -124,10 +120,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private final Executor queryExecutor;
 
     // client UUID -> member UUID
-    private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
+    private final ConcurrentMap<UUID, UUID> ownershipMappings = new ConcurrentHashMap<>();
     // client UUID -> last authentication correlation ID
-    private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds
-            = new ConcurrentHashMap<String, AtomicLong>();
+    private final ConcurrentMap<UUID, AtomicLong> lastAuthenticationCorrelationIds
+            = new ConcurrentHashMap<>();
 
     // client Address -> member Address, only used when advanced network config is enabled
     private final Map<Address, Address> clientMemberAddressMap = new ConcurrentHashMap<Address, Address>();
@@ -307,7 +303,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     @Override
-    public String getThisUuid() {
+    public UUID getThisUuid() {
         return node.getThisUuid();
     }
 
@@ -407,7 +403,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             }
         }
 
-        final String deadMemberUuid = event.getMember().getUuid();
+        final UUID deadMemberUuid = event.getMember().getUuid();
         try {
             nodeEngine.getExecutionService().schedule(new DestroyEndpointTask(deadMemberUuid),
                     endpointRemoveDelaySeconds, TimeUnit.SECONDS);
@@ -470,23 +466,23 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         ownershipMappings.clear();
     }
 
-    public boolean trySetLastAuthenticationCorrelationId(String clientUuid, long newCorrelationId) {
+    public boolean trySetLastAuthenticationCorrelationId(UUID clientUuid, long newCorrelationId) {
         AtomicLong lastCorrelationId = ConcurrencyUtil.getOrPutIfAbsent(lastAuthenticationCorrelationIds,
                 clientUuid,
                 LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC);
         return ConcurrencyUtil.setIfEqualOrGreaterThan(lastCorrelationId, newCorrelationId);
     }
 
-    public String addOwnershipMapping(String clientUuid, String ownerUuid) {
+    public UUID addOwnershipMapping(UUID clientUuid, UUID ownerUuid) {
         return ownershipMappings.put(clientUuid, ownerUuid);
     }
 
-    public boolean removeOwnershipMapping(String clientUuid, String memberUuid) {
+    public boolean removeOwnershipMapping(UUID clientUuid, UUID memberUuid) {
         lastAuthenticationCorrelationIds.remove(clientUuid);
         return ownershipMappings.remove(clientUuid, memberUuid);
     }
 
-    public String getOwnerUuid(String clientUuid) {
+    public UUID getOwnerUuid(UUID clientUuid) {
         return ownershipMappings.get(clientUuid);
     }
 
@@ -532,9 +528,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                 return;
             }
 
-            String localMemberUuid = node.getThisUuid();
-            final String clientUuid = endpoint.getUuid();
-            String ownerUuid = ownershipMappings.get(clientUuid);
+            UUID localMemberUuid = node.getThisUuid();
+            final UUID clientUuid = endpoint.getUuid();
+            UUID ownerUuid = ownershipMappings.get(clientUuid);
             if (localMemberUuid.equals(ownerUuid)) {
                 final long authenticationCorrelationId = endpoint.getAuthenticationCorrelationId();
                 try {
@@ -552,12 +548,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             }
         }
 
-        private void callDisconnectionOperation(String clientUuid, long authenticationCorrelationId) {
+        private void callDisconnectionOperation(UUID clientUuid, long authenticationCorrelationId) {
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             OperationService operationService = nodeEngine.getOperationService();
-            String memberUuid = getThisUuid();
+            UUID memberUuid = getThisUuid();
 
-            String ownerMember = ownershipMappings.get(clientUuid);
+            UUID ownerMember = ownershipMappings.get(clientUuid);
             if (!memberUuid.equals(ownerMember)) {
                 // do nothing if the owner already changed (double checked locking)
                 return;
@@ -577,9 +573,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     private class DestroyEndpointTask implements Runnable {
-        private final String deadMemberUuid;
+        private final UUID deadMemberUuid;
 
-        DestroyEndpointTask(String deadMemberUuid) {
+        DestroyEndpointTask(UUID deadMemberUuid) {
             this.deadMemberUuid = deadMemberUuid;
         }
 
@@ -587,9 +583,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         public void run() {
             OperationServiceImpl service = nodeEngine.getOperationService();
             Address thisAddr = node.getThisAddress();
-            for (Map.Entry<String, String> entry : ownershipMappings.entrySet()) {
-                String clientUuid = entry.getKey();
-                String memberUuid = entry.getValue();
+            for (Map.Entry<UUID, UUID> entry : ownershipMappings.entrySet()) {
+                UUID clientUuid = entry.getKey();
+                UUID memberUuid = entry.getValue();
                 if (deadMemberUuid.equals(memberUuid)) {
                     ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid, memberUuid);
                     service.createInvocationBuilder(ClientEngineImpl.SERVICE_NAME, op, thisAddr).invoke();
@@ -601,11 +597,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     @Override
     public Operation getPreJoinOperation() {
         Set<Member> members = nodeEngine.getClusterService().getMembers();
-        HashSet<String> liveMemberUUIDs = new HashSet<String>();
+        HashSet<UUID> liveMemberUUIDs = new HashSet<>();
         for (Member member : members) {
             liveMemberUUIDs.add(member.getUuid());
         }
-        Map<String, String> liveMappings = new HashMap<String, String>(ownershipMappings);
+        Map<UUID, UUID> liveMappings = new HashMap<>(ownershipMappings);
         liveMappings.values().retainAll(liveMemberUUIDs);
         return liveMappings.isEmpty() ? null : new OnJoinClientOperation(liveMappings);
     }
@@ -683,9 +679,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     @Override
-    public Map<String, String> getClientStatistics() {
+    public Map<UUID, String> getClientStatistics() {
         Collection<ClientEndpoint> clientEndpoints = endpointManager.getEndpoints();
-        Map<String, String> statsMap = new HashMap<String, String>(clientEndpoints.size());
+        Map<UUID, String> statsMap = new HashMap<>(clientEndpoints.size());
         for (ClientEndpoint e : clientEndpoints) {
             String statistics = e.getClientStatistics();
             if (null != statistics) {

@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -75,14 +76,14 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     }
 
     @Override
-    public boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
+    public boolean lock(Data key, UUID caller, long threadId, long referenceId, long leaseTime) {
         leaseTime = getLeaseTime(leaseTime);
         LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, referenceId, leaseTime, false, false, false);
     }
 
     @Override
-    public boolean localLock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
+    public boolean localLock(Data key, UUID caller, long threadId, long referenceId, long leaseTime) {
         // local locks can observe max lease time since they are used internally for EntryProcessor write Offloading
         LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, referenceId, leaseTime, false, false, true);
@@ -101,13 +102,13 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime, boolean blockReads) {
+    public boolean txnLock(Data key, UUID caller, long threadId, long referenceId, long leaseTime, boolean blockReads) {
         LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, referenceId, leaseTime, true, blockReads, false);
     }
 
     @Override
-    public boolean extendLeaseTime(Data key, String caller, long threadId, long leaseTime) {
+    public boolean extendLeaseTime(Data key, UUID caller, long threadId, long leaseTime) {
         LockResourceImpl lock = locks.get(key);
         return lock != null && lock.extendLeaseTime(caller, threadId, leaseTime);
     }
@@ -123,7 +124,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     }
 
     @Override
-    public boolean isLockedBy(Data key, String caller, long threadId) {
+    public boolean isLockedBy(Data key, UUID caller, long threadId) {
         LockResource lock = locks.get(key);
         return lock != null && lock.isLockedBy(caller, threadId);
     }
@@ -154,7 +155,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     }
 
     @Override
-    public boolean canAcquireLock(Data key, String caller, long threadId) {
+    public boolean canAcquireLock(Data key, UUID caller, long threadId) {
         LockResourceImpl lock = locks.get(key);
         return lock == null || lock.canAcquireLock(caller, threadId);
     }
@@ -166,7 +167,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     }
 
     @Override
-    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
+    public boolean unlock(Data key, UUID caller, long threadId, long referenceId) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
             return false;
@@ -199,7 +200,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         }
     }
 
-    void cleanWaitersAndSignalsFor(Data key, String uuid) {
+    void cleanWaitersAndSignalsFor(Data key, UUID uuid) {
         LockResourceImpl lockResource = locks.get(key);
         if (lockResource != null) {
             lockResource.cleanWaitersAndSignalsFor(uuid);
@@ -281,12 +282,12 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         return backupCount + asyncBackupCount;
     }
 
-    public void addAwait(Data key, String conditionId, String caller, long threadId) {
+    public void addAwait(Data key, String conditionId, UUID caller, long threadId) {
         LockResourceImpl lock = getLock(key);
         lock.addAwait(conditionId, caller, threadId);
     }
 
-    public void removeAwait(Data key, String conditionId, String caller, long threadId) {
+    public void removeAwait(Data key, String conditionId, UUID caller, long threadId) {
         LockResourceImpl lock = getLock(key);
         lock.removeAwait(conditionId, caller, threadId);
     }

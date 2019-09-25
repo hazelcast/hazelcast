@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -82,7 +83,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     public void destroyDistributedObject(String objectName) {
     }
 
-    public TransactionContext newXATransactionContext(Xid xid, String ownerUuid, int timeout, boolean originatedFromClient) {
+    public TransactionContext newXATransactionContext(Xid xid, UUID ownerUuid, int timeout, boolean originatedFromClient) {
         return new XATransactionContextImpl(nodeEngine, xid, ownerUuid, timeout, originatedFromClient);
     }
 

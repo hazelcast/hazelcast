@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
@@ -120,7 +121,7 @@ public class Issue7317Test extends HazelcastTestSupport {
             rTopic.publish(message);
         }
         ReliableMessageListener<String> listener = new Issue7317MessageListener(messages, cdl);
-        String reg = rTopic.addMessageListener(listener);
+        UUID reg = rTopic.addMessageListener(listener);
         assertOpenEventually(cdl);
         rTopic.removeMessageListener(reg);
 

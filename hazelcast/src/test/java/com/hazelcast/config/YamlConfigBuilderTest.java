@@ -59,6 +59,7 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1340,7 +1341,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    " + configName + ":\n"
                 + "      batch-publisher:\n"
                 + "        publisherId:\n"
-                + "          group-name: nyc\n"
+                + "          cluster-name: nyc\n"
                 + "          batch-size: 1000\n"
                 + "          batch-max-delay-millis: 2000\n"
                 + "          response-timeout-millis: 60000\n"
@@ -1386,7 +1387,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(batchPublishers);
         assertEquals(1, batchPublishers.size());
         WanBatchReplicationPublisherConfig publisherConfig = batchPublishers.get(0);
-        assertEquals("nyc", publisherConfig.getGroupName());
+        assertEquals("nyc", publisherConfig.getClusterName());
         assertEquals("publisherId", publisherConfig.getPublisherId());
         assertEquals(1000, publisherConfig.getBatchSize());
         assertEquals(2000, publisherConfig.getBatchMaxDelayMillis());
@@ -1616,7 +1617,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    my-wan-cluster:\n"
                 + "      batch-publisher:\n"
                 + "        istanbulPublisherId:\n"
-                + "          group-name: istanbul\n"
+                + "          cluster-name: istanbul\n"
                 + "          batch-size: 100\n"
                 + "          batch-max-delay-millis: 200\n"
                 + "          response-timeout-millis: 300\n"
@@ -1677,7 +1678,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         List<WanBatchReplicationPublisherConfig> publisherConfigs = wanConfig.getBatchPublisherConfigs();
         assertEquals(2, publisherConfigs.size());
         WanBatchReplicationPublisherConfig pc1 = publisherConfigs.get(0);
-        assertEquals("istanbul", pc1.getGroupName());
+        assertEquals("istanbul", pc1.getClusterName());
         assertEquals("istanbulPublisherId", pc1.getPublisherId());
         assertEquals(100, pc1.getBatchSize());
         assertEquals(200, pc1.getBatchMaxDelayMillis());
@@ -1706,7 +1707,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertDiscoveryConfig(pc1.getDiscoveryConfig());
 
         WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
-        assertEquals("ankara", pc2.getGroupName());
+        assertEquals("ankara", pc2.getClusterName());
         assertNull(pc2.getPublisherId());
         assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
@@ -3390,4 +3391,70 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("/mnt/optane", yamlConfig.getNativeMemoryConfig().getPersistentMemoryDirectory());
     }
 
+    @Override
+    @Test
+    public void testMetricsConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  metrics:\n"
+                + "    enabled: false\n"
+                + "    mc-enabled: false\n"
+                + "    jmx-enabled: false\n"
+                + "    collection-interval-seconds: 10\n"
+                + "    retention-seconds: 11\n"
+                + "    metrics-for-data-structures: true\n"
+                + "    minimum-level: DEBUG";
+        Config config = new InMemoryYamlConfig(yaml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.isMcEnabled());
+        assertFalse(metricsConfig.isJmxEnabled());
+        assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
+        assertEquals(11, metricsConfig.getRetentionSeconds());
+        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
+        assertEquals(DEBUG, metricsConfig.getMinimumLevel());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigMasterSwitchDisabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  metrics:\n"
+                + "    enabled: false";
+        Config config = new InMemoryYamlConfig(yaml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertTrue(metricsConfig.isMcEnabled());
+        assertTrue(metricsConfig.isJmxEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigMcDisabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  metrics:\n"
+                + "    mc-enabled: false";
+        Config config = new InMemoryYamlConfig(yaml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertTrue(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.isMcEnabled());
+        assertTrue(metricsConfig.isJmxEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigJmxDisabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  metrics:\n"
+                + "    jmx-enabled: false";
+        Config config = new InMemoryYamlConfig(yaml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertTrue(metricsConfig.isEnabled());
+        assertTrue(metricsConfig.isMcEnabled());
+        assertFalse(metricsConfig.isJmxEnabled());
+
+    }
 }

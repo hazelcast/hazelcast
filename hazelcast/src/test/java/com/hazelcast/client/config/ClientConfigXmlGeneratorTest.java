@@ -24,7 +24,6 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
@@ -82,13 +81,12 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void escape() {
         String toEscape = "<>&\"'";
         //escape xml value
-        GroupConfig groupConfig = new GroupConfig(toEscape, "pass");
         //escape xml attribute
         NearCacheConfig nearCacheConfig = new NearCacheConfig(toEscape);
-        clientConfig.setGroupConfig(groupConfig).addNearCacheConfig(nearCacheConfig);
+        clientConfig.setClusterName(toEscape).setClusterPassword("pass").addNearCacheConfig(nearCacheConfig);
 
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(groupConfig.getName(), actual.getGroupConfig().getName());
+        assertEquals(clientConfig.getClusterName(), actual.getClusterName());
         assertEquals(toEscape, actual.getNearCacheConfig(toEscape).getName());
     }
 
@@ -110,14 +108,13 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void group() {
+    public void cluster() {
         String name = randomString();
         String pass = randomString();
-        GroupConfig expected = new GroupConfig(name, pass);
-        clientConfig.setGroupConfig(expected);
+        clientConfig.setClusterName(name).setClusterPassword(pass);
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(name, actual.getGroupConfig().getName());
-        assertEquals(pass, actual.getGroupConfig().getPassword());
+        assertEquals(name, actual.getClusterName());
+        assertEquals(pass, actual.getClusterPassword());
     }
 
     @Test

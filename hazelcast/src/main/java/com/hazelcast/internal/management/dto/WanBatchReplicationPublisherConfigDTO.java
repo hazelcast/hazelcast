@@ -57,7 +57,7 @@ public class WanBatchReplicationPublisherConfigDTO implements JsonSerializable {
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
 
-        root.add("groupName", config.getGroupName());
+        root.add("clusterName", config.getClusterName());
 
         if (config.getPublisherId() != null) {
             root.add("publisherId", config.getPublisherId());
@@ -119,7 +119,7 @@ public class WanBatchReplicationPublisherConfigDTO implements JsonSerializable {
     public void fromJson(JsonObject json) {
         config = new WanBatchReplicationPublisherConfig();
 
-        consumeIfExists(json, "groupName", v -> config.setGroupName(v.asString()));
+        consumeIfExists(json, "clusterName", v -> config.setClusterName(v.asString()));
         consumeIfExists(json, "publisherId", v -> config.setPublisherId(v.asString()));
         consumeIfExists(json, "batchSize", v -> config.setBatchSize(v.asInt()));
         consumeIfExists(json, "batchMaxDelayMillis", v -> config.setBatchMaxDelayMillis(v.asInt()));

@@ -43,6 +43,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -86,7 +87,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
         ClientService clientService = instance.getClientService();
         ClientListener clientListener = mock(ClientListener.class);
-        String id = clientService.addClientListener(clientListener);
+        UUID id = clientService.addClientListener(clientListener);
 
         // first time remove
         assertTrue(clientService.removeClientListener(id));
@@ -101,14 +102,14 @@ public class ClientServiceTest extends ClientTestSupport {
 
         ClientService clientService = instance.getClientService();
 
-        assertFalse(clientService.removeClientListener("foobar"));
+        assertFalse(clientService.removeClientListener(UUID.randomUUID()));
     }
 
     @Test(timeout = 120000)
     public void testNumberOfClients_afterUnAuthenticatedClient() {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("wrongName");
+        clientConfig.setClusterName("wrongName");
 
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
@@ -124,7 +125,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("wrongName");
+        clientConfig.setClusterName("wrongName");
 
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
@@ -143,7 +144,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("wrongName");
+        clientConfig.setClusterName("wrongName");
 
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
@@ -172,10 +173,10 @@ public class ClientServiceTest extends ClientTestSupport {
         final Collection<Client> connectedClients = clientService.getConnectedClients();
         assertEquals(2, connectedClients.size());
 
-        final String uuid1 = client1.getLocalEndpoint().getUuid();
-        final String uuid2 = client2.getLocalEndpoint().getUuid();
+        final UUID uuid1 = client1.getLocalEndpoint().getUuid();
+        final UUID uuid2 = client2.getLocalEndpoint().getUuid();
         for (Client connectedClient : connectedClients) {
-            final String uuid = connectedClient.getUuid();
+            final UUID uuid = connectedClient.getUuid();
             assertTrue(uuid.equals(uuid1) || uuid.equals(uuid2));
         }
 
@@ -201,7 +202,7 @@ public class ClientServiceTest extends ClientTestSupport {
                 latchRemove.countDown();
             }
         };
-        final String id = clientService.addClientListener(clientListener);
+        final UUID id = clientService.addClientListener(clientListener);
 
         final HazelcastInstance client1 = hazelcastFactory.newHazelcastClient();
         final HazelcastInstance client2 = hazelcastFactory.newHazelcastClient();
@@ -214,7 +215,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
         assertTrue(clientService.removeClientListener(id));
 
-        assertFalse(clientService.removeClientListener("foo"));
+        assertFalse(clientService.removeClientListener(UUID.randomUUID()));
 
         assertEquals(0, clientService.getConnectedClients().size());
 

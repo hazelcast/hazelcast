@@ -49,7 +49,7 @@ public class Pre38MapAddNearCacheEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
-                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+                                        Data meringValueData, int type, UUID uuid, int numberOfAffectedEntries) {
         throw new UnsupportedOperationException();
     }
 
@@ -70,12 +70,12 @@ public class Pre38MapAddNearCacheEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddNearCacheEntryListenerCodec.encodeResponse((String) response);
+        return MapAddNearCacheEntryListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override
     protected Object newMapListener() {
-        String uuid = nodeEngine.getLocalMember().getUuid();
+        UUID uuid = nodeEngine.getLocalMember().getUuid();
         long correlationId = clientMessage.getCorrelationId();
         return new Pre38NearCacheInvalidationListener(endpoint, uuid, correlationId);
     }
@@ -91,19 +91,19 @@ public class Pre38MapAddNearCacheEntryListenerMessageTask
      */
     private final class Pre38NearCacheInvalidationListener extends AbstractMapClientNearCacheInvalidationListener {
 
-        Pre38NearCacheInvalidationListener(ClientEndpoint endpoint, String localMemberUuid, long correlationId) {
+        Pre38NearCacheInvalidationListener(ClientEndpoint endpoint, UUID localMemberUuid, long correlationId) {
             super(endpoint, localMemberUuid, correlationId);
         }
 
         @Override
-        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids,
+        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<UUID> sourceUuids,
                                                         List<UUID> partitionUuids, List<Long> sequences) {
             return MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent(keys, sourceUuids,
                     partitionUuids, sequences);
         }
 
         @Override
-        protected ClientMessage encodeSingleInvalidation(String name, Data key, String sourceUuid,
+        protected ClientMessage encodeSingleInvalidation(String name, Data key, UUID sourceUuid,
                                                          UUID partitionUuid, long sequence) {
             return MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent(key, sourceUuid, partitionUuid, sequence);
         }

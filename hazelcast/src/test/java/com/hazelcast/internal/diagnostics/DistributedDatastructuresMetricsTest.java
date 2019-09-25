@@ -16,24 +16,23 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.map.IMap;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.map.IMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,10 +62,11 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config()
-                .setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name())
-                .setProperty(Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES.getName(), "true");
+        Config config = new Config();
         config.addMapConfig(new MapConfig(NEAR_CACHE_MAP_NAME).setNearCacheConfig(new NearCacheConfig("nearCache")));
+        config.getMetricsConfig()
+              .setMetricsForDataStructuresEnabled(true)
+              .setMinimumLevel(ProbeLevel.INFO);
 
         hz = createHazelcastInstance(config);
 
@@ -159,13 +159,10 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
 
     private void assertHasStatsEventually(final String prefix) {
         final MetricsRegistry registry = getNode(hz).nodeEngine.getMetricsRegistry();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
-                registry.render(renderer);
-                assertTrue(!renderer.probes.isEmpty());
-            }
+        assertTrueEventually(() -> {
+            final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
+            registry.render(renderer);
+            assertTrue(!renderer.probes.isEmpty());
         });
     }
 
@@ -177,7 +174,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     }
 
     static class StringProbeRenderer implements ProbeRenderer {
-        final HashMap<String, Object> probes = new HashMap<String, Object>();
+        final HashMap<String, Object> probes = new HashMap<>();
         private final String prefix;
 
         StringProbeRenderer(String prefix) {

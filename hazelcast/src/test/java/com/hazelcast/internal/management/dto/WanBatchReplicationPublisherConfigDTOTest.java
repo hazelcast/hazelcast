@@ -55,7 +55,7 @@ public class WanBatchReplicationPublisherConfigDTOTest {
         properties.put("key2", "value2");
 
         WanBatchReplicationPublisherConfig expected = new WanBatchReplicationPublisherConfig()
-                .setGroupName("myGroupName")
+                .setClusterName("myClusterName")
                 .setPublisherId("myPublisherId")
                 .setSnapshotEnabled(true)
                 .setInitialPublisherState(WanPublisherState.STOPPED)

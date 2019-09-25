@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.util;
+package com.hazelcast.internal.util;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -22,22 +22,29 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * Util methods for UUID serialization / deserialization operations
+ * Util methods for UUID serialization / deserialization operations.
  */
 public final class UUIDSerializationUtil {
-
     private UUIDSerializationUtil() {
     }
 
-    public static void writeUUID(DataOutput out, UUID uid) throws IOException {
-        out.writeLong(uid.getLeastSignificantBits());
-        out.writeLong(uid.getMostSignificantBits());
+    public static void writeUUID(DataOutput out, UUID uuid) throws IOException {
+        boolean isNull = uuid == null;
+        out.writeBoolean(isNull);
+        if (isNull) {
+            return;
+        }
+        out.writeLong(uuid.getMostSignificantBits());
+        out.writeLong(uuid.getLeastSignificantBits());
     }
 
     public static UUID readUUID(DataInput in) throws IOException {
-        long least = in.readLong();
+        boolean isNull = in.readBoolean();
+        if (isNull) {
+            return null;
+        }
         long most = in.readLong();
-
+        long least = in.readLong();
         return new UUID(most, least);
     }
 }

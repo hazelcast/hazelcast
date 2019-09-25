@@ -21,6 +21,7 @@ import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -70,12 +72,12 @@ public class ListenerTests extends ClientTestSupport {
 
         EntryAdapter listener = new EntryAdapter();
 
-        LinkedList<String> registrationIds = new LinkedList<String>();
+        LinkedList<UUID> registrationIds = new LinkedList<UUID>();
         while (client.getCluster().getMembers().size() == nodeCount) {
             registrationIds.add(map.addEntryListener(listener, false));
         }
 
-        for (String registrationId : registrationIds) {
+        for (UUID registrationId : registrationIds) {
             assertTrue(map.removeEntryListener(registrationId));
         }
         executorService.shutdown();
@@ -102,14 +104,14 @@ public class ListenerTests extends ClientTestSupport {
 
         EntryAdapter listener = new EntryAdapter();
 
-        LinkedList<String> registrationIds = new LinkedList<String>();
+        LinkedList<UUID> registrationIds = new LinkedList<UUID>();
 
         HazelcastClientInstanceImpl clientInstance = getHazelcastClientInstanceImpl(client);
         while (clientInstance.getConnectionManager().getActiveConnections().size() < nodeCount) {
             registrationIds.add(map.addEntryListener(listener, false));
         }
 
-        for (String registrationId : registrationIds) {
+        for (UUID registrationId : registrationIds) {
             assertTrue(map.removeEntryListener(registrationId));
         }
         executorService.shutdown();
@@ -122,6 +124,6 @@ public class ListenerTests extends ClientTestSupport {
         HazelcastInstance client = factory.newHazelcastClient();
         IMap<Object, Object> map = client.getMap("test");
         client.shutdown();
-        assertTrue(map.removeEntryListener("test"));
+        assertTrue(map.removeEntryListener(UuidUtil.newUnsecureUUID()));
     }
 }

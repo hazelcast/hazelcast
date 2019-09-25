@@ -41,6 +41,7 @@ import com.hazelcast.transaction.impl.TransactionImpl.SuspendedTransactionImpl;
 import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 
@@ -52,14 +53,14 @@ final class TransactionContextImpl implements TransactionContext {
             = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
     TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
-                           TransactionOptions options, String ownerUuid, boolean originatedFromClient) {
+                           TransactionOptions options, UUID ownerUuid, boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
         this.transaction = new TransactionWrapper(
                 new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid, originatedFromClient));
     }
 
     @Override
-    public String getTxnId() {
+    public UUID getTxnId() {
         return transaction.getTxnId();
     }
 

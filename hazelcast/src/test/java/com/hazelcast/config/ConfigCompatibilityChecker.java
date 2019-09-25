@@ -69,10 +69,10 @@ public class ConfigCompatibilityChecker {
         if (c1 == null || c2 == null) {
             throw new IllegalArgumentException("One of the two configs is null");
         }
-        if (!nullSafeEqual(c1.getGroupConfig().getName(), c2.getGroupConfig().getName())) {
+        if (!nullSafeEqual(c1.getClusterName(), c2.getClusterName())) {
             return false;
         }
-        if (!nullSafeEqual(c1.getGroupConfig().getPassword(), c2.getGroupConfig().getPassword())) {
+        if (!nullSafeEqual(c1.getClusterPassword(), c2.getClusterPassword())) {
             throw new HazelcastException("Incompatible group password");
         }
 
@@ -636,6 +636,32 @@ public class ConfigCompatibilityChecker {
         @Override
         CPSubsystemConfig getDefault(Config c) {
             return c.getCPSubsystemConfig();
+        }
+    }
+
+    public static class MetricsConfigChecker extends ConfigChecker<MetricsConfig> {
+
+        @Override
+        boolean check(MetricsConfig c1, MetricsConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+
+            return c1.isEnabled() == c2.isEnabled()
+                    && c1.isMcEnabled() == c2.isMcEnabled()
+                    && c1.isJmxEnabled() == c2.isJmxEnabled()
+                    && c1.getCollectionIntervalSeconds() == c2.getCollectionIntervalSeconds()
+                    && c1.getRetentionSeconds() == c2.getRetentionSeconds()
+                    && c1.isMetricsForDataStructuresEnabled() == c2.isMetricsForDataStructuresEnabled()
+                    && c1.getMinimumLevel() == c2.getMinimumLevel();
+        }
+
+        @Override
+        MetricsConfig getDefault(Config c) {
+            return c.getMetricsConfig();
         }
     }
 
@@ -1236,7 +1262,7 @@ public class ConfigCompatibilityChecker {
         @Override
         public boolean check(WanBatchReplicationPublisherConfig c1, WanBatchReplicationPublisherConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getGroupName(), c2.getGroupName())
+                    && nullSafeEqual(c1.getClusterName(), c2.getClusterName())
                     && nullSafeEqual(c1.getPublisherId(), c2.getPublisherId())
                     && c1.isSnapshotEnabled() == c2.isSnapshotEnabled()
                     && c1.getInitialPublisherState() == c2.getInitialPublisherState()

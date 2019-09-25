@@ -19,14 +19,15 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.UUID;
 import java.util.function.Supplier;
 
 public class ReAuthenticationOperationSupplier implements Supplier<Operation> {
 
-    private final String uuid;
+    private final UUID uuid;
     private final long authCorrelationId;
 
-    public ReAuthenticationOperationSupplier(String uuid, long authCorrelationId) {
+    public ReAuthenticationOperationSupplier(UUID uuid, long authCorrelationId) {
         this.uuid = uuid;
         this.authCorrelationId = authCorrelationId;
     }

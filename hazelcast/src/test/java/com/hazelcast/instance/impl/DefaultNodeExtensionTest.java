@@ -43,7 +43,7 @@ import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -99,7 +99,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
 
     @Test
     public void test_joinRequestAllowed_whenSameVersion() {
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nodeVersion, joinAddress, newUnsecureUuidString(),
+        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nodeVersion, joinAddress, newUnsecureUUID(),
                 false, null, null, null, null, null);
 
         nodeExtension.validateJoinRequest(joinRequest);
@@ -110,7 +110,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         MemberVersion nextPatchVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor(),
                 nodeVersion.getPatch() + 1);
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextPatchVersion, joinAddress,
-                newUnsecureUuidString(), false, null, null, null, null, null);
+                newUnsecureUUID(), false, null, null, null, null, null);
 
         nodeExtension.validateJoinRequest(joinRequest);
     }
@@ -120,7 +120,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         MemberVersion nextMinorVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor() + 1,
                 nodeVersion.getPatch());
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextMinorVersion, joinAddress,
-                newUnsecureUuidString(), false, null, null, null, null, null);
+                newUnsecureUUID(), false, null, null, null, null, null);
 
         expected.expect(VersionMismatchException.class);
         expected.expectMessage(containsString("Rolling Member Upgrades are only supported in Hazelcast Enterprise"));
@@ -133,7 +133,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         MemberVersion nextMinorVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor() - 1,
                 nodeVersion.getPatch());
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextMinorVersion, joinAddress,
-                newUnsecureUuidString(), false, null, null, null, null, null);
+                newUnsecureUUID(), false, null, null, null, null, null);
 
         expected.expect(VersionMismatchException.class);
         expected.expectMessage(containsString("Rolling Member Upgrades are only supported for the next minor version"));
@@ -146,7 +146,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         MemberVersion nextMajorVersion = MemberVersion.of(nodeVersion.getMajor() + 1, nodeVersion.getMinor(),
                 nodeVersion.getPatch());
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextMajorVersion, joinAddress,
-                newUnsecureUuidString(), false, null, null, null, null, null);
+                newUnsecureUUID(), false, null, null, null, null, null);
 
         expected.expect(VersionMismatchException.class);
         expected.expectMessage(containsString("Rolling Member Upgrades are only supported for the same major version"));
@@ -159,7 +159,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         MemberVersion prevMajorVersion = MemberVersion.of(nodeVersion.getMajor() - 1, nodeVersion.getMinor(),
                 nodeVersion.getPatch());
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, prevMajorVersion, joinAddress,
-                newUnsecureUuidString(), false, null, null, null, null, null);
+                newUnsecureUUID(), false, null, null, null, null, null);
 
         expected.expect(VersionMismatchException.class);
         expected.expectMessage(containsString("Rolling Member Upgrades are only supported for the same major version"));
@@ -170,12 +170,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_clusterVersionListener_invokedOnRegistration() {
         final CountDownLatch latch = new CountDownLatch(1);
-        ClusterVersionListener listener = new ClusterVersionListener() {
-            @Override
-            public void onClusterVersionChange(Version newVersion) {
-                latch.countDown();
-            }
-        };
+        ClusterVersionListener listener = newVersion -> latch.countDown();
         assertTrue(nodeExtension.registerListener(listener));
         assertOpenEventually(latch);
     }
@@ -196,14 +191,11 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     public void test_clusterVersionListener_invokedWithNodeCodebaseVersion_whenClusterVersionIsNull() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicBoolean failed = new AtomicBoolean(false);
-        ClusterVersionListener listener = new ClusterVersionListener() {
-            @Override
-            public void onClusterVersionChange(Version newVersion) {
-                if (!newVersion.equals(nodeVersion.asVersion())) {
-                    failed.set(true);
-                }
-                latch.countDown();
+        ClusterVersionListener listener = newVersion -> {
+            if (!newVersion.equals(nodeVersion.asVersion())) {
+                failed.set(true);
             }
+            latch.countDown();
         };
         makeClusterVersionUnknownAndVerifyListener(latch, failed, listener);
     }
@@ -214,14 +206,11 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         System.setProperty(GroupProperty.INIT_CLUSTER_VERSION.getName(), "2.1.7");
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicBoolean failed = new AtomicBoolean(false);
-        ClusterVersionListener listener = new ClusterVersionListener() {
-            @Override
-            public void onClusterVersionChange(Version newVersion) {
-                if (!newVersion.equals(Version.of("2.1.7"))) {
-                    failed.set(true);
-                }
-                latch.countDown();
+        ClusterVersionListener listener = newVersion -> {
+            if (!newVersion.equals(Version.of("2.1.7"))) {
+                failed.set(true);
             }
+            latch.countDown();
         };
         makeClusterVersionUnknownAndVerifyListener(latch, failed, listener);
         System.clearProperty(GroupProperty.INIT_CLUSTER_VERSION.getName());

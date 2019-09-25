@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static org.hamcrest.Matchers.hasItem;
@@ -57,7 +58,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         Future<HazelcastInstance> future = spawn(() -> factory.newHazelcastInstance(newConfigWithDummyService()));
 
         EventService eventService = getEventService(hz2);
-        Set<String> registrationIds = new HashSet<String>();
+        Set<UUID> registrationIds = new HashSet<UUID>();
         Object listener = new Object();
         while (getClusterService(hz2).getSize() < 3) {
             EventRegistration registration = eventService.registerListener(serviceName, topic, listener);
@@ -82,7 +83,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(newConfigWithDummyService());
 
         EventService eventService = getEventService(hz2);
-        Set<String> registrationIds = new HashSet<String>();
+        Set<UUID> registrationIds = new HashSet<UUID>();
         Object listener = new Object();
         for (int i = 0; i < 500; i++) {
             EventRegistration registration = eventService.registerListener(serviceName, topic, listener);
@@ -91,7 +92,7 @@ public class EventServiceTest extends HazelcastTestSupport {
 
         Future<HazelcastInstance> future = spawn(() -> factory.newHazelcastInstance(newConfigWithDummyService()));
 
-        for (String registrationId : registrationIds) {
+        for (UUID registrationId : registrationIds) {
             eventService.deregisterListener(serviceName, topic, registrationId);
         }
 

@@ -38,6 +38,7 @@ import com.hazelcast.internal.services.NotifiableEventListener;
 
 import java.security.Permission;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 /**
@@ -58,7 +59,7 @@ public class CacheAddEntryListenerMessageTask
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEntryListener cacheEntryListener = new CacheEntryListener(endpoint, this);
 
-        final String registrationId =
+        final UUID registrationId =
                 service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener, parameters.localOnly);
         endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
             @Override
@@ -146,7 +147,7 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddEntryListenerCodec.encodeResponse((String) response);
+        return CacheAddEntryListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

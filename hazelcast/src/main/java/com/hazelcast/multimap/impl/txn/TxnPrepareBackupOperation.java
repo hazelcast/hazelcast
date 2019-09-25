@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.txn;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
@@ -26,17 +27,18 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static com.hazelcast.multimap.impl.txn.TxnPrepareOperation.LOCK_EXTENSION_TIME_IN_MILLIS;
 
 public class TxnPrepareBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
-    private String caller;
+    private UUID caller;
 
     public TxnPrepareBackupOperation() {
     }
 
-    public TxnPrepareBackupOperation(String name, Data dataKey, long threadId, String caller) {
+    public TxnPrepareBackupOperation(String name, Data dataKey, long threadId, UUID caller) {
         super(name, dataKey, threadId);
         this.caller = caller;
     }
@@ -54,13 +56,13 @@ public class TxnPrepareBackupOperation extends AbstractKeyBasedMultiMapOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(caller);
+        UUIDSerializationUtil.writeUUID(out, caller);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        caller = in.readUTF();
+        caller = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

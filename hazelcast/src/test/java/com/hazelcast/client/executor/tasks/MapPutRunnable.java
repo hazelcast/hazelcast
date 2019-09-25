@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInstanceAware {
 
@@ -44,7 +45,7 @@ public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInst
     public void run() {
         Member member = instance.getCluster().getLocalMember();
 
-        IMap<String, String> map = instance.getMap(mapName);
+        IMap<UUID, String> map = instance.getMap(mapName);
         map.put(member.getUuid(), member.getUuid() + "value");
     }
 

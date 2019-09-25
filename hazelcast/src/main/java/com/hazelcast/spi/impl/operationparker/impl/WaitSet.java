@@ -34,6 +34,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -173,7 +174,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         }
     }
 
-    public void invalidateAll(String callerUuid) {
+    public void invalidateAll(UUID callerUuid) {
         for (WaitSetEntry entry : queue) {
             if (!entry.isValid()) {
                 continue;
@@ -185,7 +186,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         }
     }
 
-    public void cancelAll(String callerUuid, Throwable cause) {
+    public void cancelAll(UUID callerUuid, Throwable cause) {
         for (WaitSetEntry entry : queue) {
             if (!entry.isValid()) {
                 continue;

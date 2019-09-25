@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
+import com.hazelcast.config.ConfigCompatibilityChecker.MetricsConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfigChecker;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
@@ -51,6 +52,7 @@ import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.T
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -90,7 +92,7 @@ public class ConfigXmlGeneratorTest {
         assertEquals(secPassword, MASK_FOR_SENSITIVE_DATA);
         assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(newConfigViaXMLGenerator.getClusterPassword(), MASK_FOR_SENSITIVE_DATA);
     }
 
     @Test
@@ -100,7 +102,7 @@ public class ConfigXmlGeneratorTest {
         String licenseKey = "HazelcastLicenseKey";
 
         Config cfg = new Config();
-        cfg.getGroupConfig().setPassword(password);
+        cfg.setClusterPassword(password);
 
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", password)
@@ -125,7 +127,7 @@ public class ConfigXmlGeneratorTest {
         assertEquals(secPassword, password);
         assertEquals(theSalt, salt);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), licenseKey);
-        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), password);
+        assertEquals(newConfigViaXMLGenerator.getClusterPassword(), password);
     }
 
     @Test
@@ -1052,7 +1054,7 @@ public class ConfigXmlGeneratorTest {
                 .setName("testName")
                 .setWanConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
         WanBatchReplicationPublisherConfig batchPublisher = new WanBatchReplicationPublisherConfig()
-                .setGroupName("dummyGroup")
+                .setClusterName("dummyGroup")
                 .setPublisherId("dummyPublisherId")
                 .setSnapshotEnabled(false)
                 .setInitialPublisherState(WanPublisherState.STOPPED)
@@ -1298,6 +1300,24 @@ public class ConfigXmlGeneratorTest {
         CPSubsystemConfig generatedConfig = getNewConfigViaXMLGenerator(config).getCPSubsystemConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getCPSubsystemConfig(),
                 new CPSubsystemConfigChecker().check(config.getCPSubsystemConfig(), generatedConfig));
+    }
+
+    @Test
+    public void testMetricsConfig() {
+        Config config = new Config();
+
+        config.getMetricsConfig()
+              .setEnabled(false)
+              .setMcEnabled(false)
+              .setJmxEnabled(false)
+              .setCollectionIntervalSeconds(10)
+              .setRetentionSeconds(11)
+              .setMetricsForDataStructuresEnabled(true)
+              .setMinimumLevel(DEBUG);
+
+        MetricsConfig generatedConfig = getNewConfigViaXMLGenerator(config).getMetricsConfig();
+        assertTrue(generatedConfig + " should be compatible with " + config.getMetricsConfig(),
+                new MetricsConfigChecker().check(config.getMetricsConfig(), generatedConfig));
     }
 
     @Test

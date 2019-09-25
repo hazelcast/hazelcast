@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -48,7 +49,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     @Probe(name = "count", level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
-            new ConcurrentHashMap<Connection, ClientEndpoint>();
+            new ConcurrentHashMap<>();
 
     @Probe(name = "totalRegistrations", level = MANDATORY)
     private final MwCounter totalRegistrations = newMwCounter();
@@ -61,7 +62,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public Set<ClientEndpoint> getEndpoints(String clientUuid) {
+    public Set<ClientEndpoint> getEndpoints(UUID clientUuid) {
         checkNotNull(clientUuid, "clientUuid can't be null");
 
         Set<ClientEndpoint> endpointSet = createHashSet(endpoints.size());
@@ -123,7 +124,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     private void sendClientEvent(ClientEvent event) {
         final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        String uuid = event.getUuid();
+        UUID uuid = event.getUuid();
         eventService.publishEvent(SERVICE_NAME, regs, event, uuid.hashCode());
     }
 

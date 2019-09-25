@@ -16,6 +16,7 @@
 
 package com.hazelcast.transaction.impl.xa;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -26,11 +27,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 public class XATransactionDTO implements IdentifiedDataSerializable {
-    private String txnId;
+    private UUID txnId;
     private SerializableXID xid;
-    private String ownerUuid;
+    private UUID ownerUuid;
     private long timeoutMilis;
     private long startTime;
     private Collection<TransactionLogRecord> records;
@@ -47,7 +49,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         records = xaTransaction.getTransactionRecords();
     }
 
-    public XATransactionDTO(String txnId, SerializableXID xid, String ownerUuid, long timeoutMilis,
+    public XATransactionDTO(UUID txnId, SerializableXID xid, UUID ownerUuid, long timeoutMilis,
                             long startTime, List<TransactionLogRecord> records) {
         this.txnId = txnId;
         this.xid = xid;
@@ -57,7 +59,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         this.records = records;
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 
@@ -65,7 +67,7 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
         return xid;
     }
 
-    public String getOwnerUuid() {
+    public UUID getOwnerUuid() {
         return ownerUuid;
     }
 
@@ -83,9 +85,9 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeObject(xid);
-        out.writeUTF(ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
         out.writeLong(timeoutMilis);
         out.writeLong(startTime);
         int len = records.size();
@@ -99,9 +101,9 @@ public class XATransactionDTO implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        txnId = in.readUTF();
+        txnId = UUIDSerializationUtil.readUUID(in);
         xid = in.readObject();
-        ownerUuid = in.readUTF();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
         timeoutMilis = in.readLong();
         startTime = in.readLong();
         int size = in.readInt();

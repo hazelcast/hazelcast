@@ -27,6 +27,7 @@ import com.hazelcast.topic.impl.reliable.MessageRunner;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 import com.hazelcast.version.MemberVersion;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
@@ -39,10 +40,10 @@ import static com.hazelcast.internal.util.ExceptionUtil.peel;
  */
 public class ClientReliableMessageRunner<E> extends MessageRunner<E> {
 
-    ClientReliableMessageRunner(String id, ReliableMessageListener<E> listener,
+    ClientReliableMessageRunner(UUID id, ReliableMessageListener<E> listener,
                                 Ringbuffer<ReliableTopicMessage> ringbuffer, String topicName,
                                 int batchSze, SerializationService serializationService,
-                                Executor executor, ConcurrentMap<String, MessageRunner<E>> runnersMap,
+                                Executor executor, ConcurrentMap<UUID, MessageRunner<E>> runnersMap,
                                 ILogger logger) {
         super(id, listener, ringbuffer, topicName, batchSze, serializationService, executor, runnersMap, logger);
     }

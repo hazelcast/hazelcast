@@ -26,7 +26,6 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -35,6 +34,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -190,13 +190,23 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public GroupConfig getGroupConfig() {
-        return staticConfig.getGroupConfig();
+    public String getClusterName() {
+        return staticConfig.getClusterName();
     }
 
     @Override
-    public Config setGroupConfig(GroupConfig groupConfig) {
-        return staticConfig.setGroupConfig(groupConfig);
+    public Config setClusterName(String clusterName) {
+        return staticConfig.setClusterName(clusterName);
+    }
+
+    @Override
+    public String getClusterPassword() {
+        return staticConfig.getClusterPassword();
+    }
+
+    @Override
+    public Config setClusterPassword(final String password) {
+        return staticConfig.setClusterPassword(password);
     }
 
     @Override
@@ -1150,6 +1160,18 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setCPSubsystemConfig(CPSubsystemConfig cpSubsystemConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public MetricsConfig getMetricsConfig() {
+        return staticConfig.getMetricsConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

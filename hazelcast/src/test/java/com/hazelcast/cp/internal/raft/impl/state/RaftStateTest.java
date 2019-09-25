@@ -33,11 +33,11 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.UUID;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.majority;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newRaftMember;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -212,7 +212,7 @@ public class RaftStateTest {
         }
 
         assertFalse(state.isKnownMember(newRaftMember(1234)));
-        assertFalse(state.isKnownMember(new TestRaftMember(randomString(), localMember.getPort())));
+        assertFalse(state.isKnownMember(new TestRaftMember(UUID.randomUUID(), localMember.getPort())));
         assertFalse(state.isKnownMember(new TestRaftMember(localMember.getUuid(), 1234)));
     }
 

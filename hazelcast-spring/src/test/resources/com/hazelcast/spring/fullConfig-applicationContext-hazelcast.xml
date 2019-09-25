@@ -38,9 +38,9 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:instance-name>test-instance</hz:instance-name>
-            <hz:group
-                    name="${cluster.group.name}"
-                    password="${cluster.group.password}"/>
+            <hz:cluster
+                    name="${cluster.name}"
+                    password="${cluster.password}"/>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
             <hz:management-center enabled="true" update-interval="2" scripting-enabled="false">
                 <hz:url>myserver:80</hz:url>
@@ -59,7 +59,7 @@
             </hz:properties>
             <hz:wan-replication name="testWan">
                 <hz:batch-publisher>
-                    <hz:group-name>tokyo</hz:group-name>
+                    <hz:cluster-name>tokyo</hz:cluster-name>
                     <hz:publisher-id>tokyoPublisherId</hz:publisher-id>
                     <hz:queue-full-behavior>THROW_EXCEPTION</hz:queue-full-behavior>
                     <hz:queue-capacity>1000</hz:queue-capacity>
@@ -93,7 +93,7 @@
                               tenant-id="TENANT_ID"
                               subscription-id="SUB_ID"
                               cluster-id="HZLCAST001"
-                              group-name="GROUP-NAME"/>
+                              cluster-name="CLUSTER-NAME"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
                                    service-name="MY-SERVICE-NAME"
@@ -120,7 +120,7 @@
                     </hz:discovery-strategies>
                 </hz:batch-publisher>
                 <hz:batch-publisher>
-                    <hz:group-name>ankara</hz:group-name>
+                    <hz:cluster-name>ankara</hz:cluster-name>
                     <hz:queue-capacity>${wan.queue.capacity}</hz:queue-capacity>
                 </hz:batch-publisher>
                 <hz:custom-publisher class-name="com.hazelcast.wan.custom.CustomPublisher">
@@ -138,7 +138,7 @@
             </hz:wan-replication>
             <hz:wan-replication name="testWan2">
                 <hz:batch-publisher>
-                    <hz:group-name>tokyo</hz:group-name>
+                    <hz:cluster-name>tokyo</hz:cluster-name>
                     <hz:wan-sync>
                         <hz:consistency-check-strategy>MERKLE_TREES</hz:consistency-check-strategy>
                     </hz:wan-sync>
@@ -183,7 +183,7 @@
                               tenant-id="TENANT_ID"
                               subscription-id="SUB_ID"
                               cluster-id="HZLCAST001"
-                              group-name="GROUP-NAME"/>
+                              cluster-name="CLUSTER-NAME"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
                                    service-name="MY-SERVICE-NAME"
@@ -761,7 +761,7 @@
             </hz:security>
 
             <hz:member-attributes>
-                <hz:attribute name="cluster.group.name">spring-group</hz:attribute>
+                <hz:attribute name="cluster.name">spring-cluster</hz:attribute>
             </hz:member-attributes>
 
             <hz:services>

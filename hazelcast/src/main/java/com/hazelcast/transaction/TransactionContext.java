@@ -17,6 +17,7 @@
 package com.hazelcast.transaction;
 
 import javax.transaction.xa.XAResource;
+import java.util.UUID;
 
 /**
  * Provides a context to perform transactional operations: beginning/committing transactions, but also retrieving
@@ -62,7 +63,7 @@ public interface TransactionContext extends TransactionalTaskContext {
      *
      * @return the transaction ID
      */
-    String getTxnId();
+    UUID getTxnId();
 
     /**
      * Gets xaResource which will participate in XATransaction.

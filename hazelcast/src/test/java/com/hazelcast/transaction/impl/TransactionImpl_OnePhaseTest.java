@@ -34,6 +34,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static org.junit.Assert.assertEquals;
@@ -74,7 +76,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
 
     @Test
     public void requiresPrepare() throws Exception {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UUID.randomUUID());
         tx.begin();
 
         assertFalse(tx.requiresPrepare());
@@ -84,7 +86,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionNotActiveException.class)
     public void prepare_whenNotActive() throws Exception {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UUID.randomUUID());
         tx.begin();
         tx.rollback();
 
@@ -95,7 +97,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
     public void commit_whenNotActive() {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UUID.randomUUID());
         tx.begin();
         tx.rollback();
 
@@ -104,7 +106,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionException.class)
     public void commit_ThrowsExceptionDuringCommit() throws Exception {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UUID.randomUUID());
         tx.begin();
         tx.add(new MockTransactionLogRecord().failCommit());
         tx.commit();
@@ -114,7 +116,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
 
     @Test
     public void rollback_whenEmpty() throws Exception {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UUID.randomUUID());
         tx.begin();
         tx.rollback();
 
@@ -123,7 +125,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
     public void rollback_whenNotActive() throws Exception {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UUID.randomUUID());
         tx.begin();
         tx.rollback();
 
@@ -132,7 +134,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
 
     @Test
     public void rollback_whenRollingBackCommitFailedTransaction() {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UUID.randomUUID());
         tx.begin();
         tx.add(new MockTransactionLogRecord().failCommit());
         try {

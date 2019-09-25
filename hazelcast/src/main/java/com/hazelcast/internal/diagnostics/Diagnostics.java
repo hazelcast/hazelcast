@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -43,28 +42,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 @SuppressWarnings("WeakerAccess")
 public class Diagnostics {
-
-    /**
-     * The minimum level for probes is MANDATORY, but it can be changed to INFO
-     * or DEBUG. A lower level will increase memory usage (probably just a few
-     * 100KB) and provides much greater detail on what is going on inside a
-     * HazelcastInstance.
-     * <p>
-     * By default only mandatory probes are being tracked
-     */
-    public static final HazelcastProperty METRICS_LEVEL
-            = new HazelcastProperty("hazelcast.diagnostics.metric.level", ProbeLevel.MANDATORY.name());
-
-    /**
-     * If metrics should be tracked on distributed data structures like IMap,
-     * IQueue etc.
-     * <p>
-     * By default, these data structures are not tracked, but in a future release
-     * this will probably be changed to {@code true}.
-     */
-    public static final HazelcastProperty METRICS_DISTRIBUTED_DATASTRUCTURES
-            = new HazelcastProperty("hazelcast.diagnostics.metric.distributed.datastructures", false);
-
 
     /**
      * Use the {@link Diagnostics} to see internal performance metrics and cluster
@@ -127,7 +104,7 @@ public class Diagnostics {
     public static final HazelcastProperty FILENAME_PREFIX
             = new HazelcastProperty("hazelcast.diagnostics.filename.prefix");
 
-    final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<DiagnosticsPlugin[]>(
+    final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<>(
             new DiagnosticsPlugin[0]
     );
     final String baseFileName;
@@ -139,8 +116,7 @@ public class Diagnostics {
 
     DiagnosticsLogFile diagnosticsLogFile;
 
-    private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap
-            = new ConcurrentHashMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin>();
+    private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap = new ConcurrentHashMap<>();
     private final boolean enabled;
 
     private ScheduledExecutorService scheduler;

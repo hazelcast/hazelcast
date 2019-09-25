@@ -40,6 +40,7 @@ import com.hazelcast.wan.impl.CallerProvenance;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Defines a record-store.
@@ -286,23 +287,23 @@ public interface RecordStore<R extends Record> {
 
     int size();
 
-    boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl, boolean blockReads);
+    boolean txnLock(Data key, UUID caller, long threadId, long referenceId, long ttl, boolean blockReads);
 
-    boolean extendLock(Data key, String caller, long threadId, long ttl);
+    boolean extendLock(Data key, UUID caller, long threadId, long ttl);
 
-    boolean localLock(Data key, String caller, long threadId, long referenceId, long ttl);
+    boolean localLock(Data key, UUID caller, long threadId, long referenceId, long ttl);
 
-    boolean lock(Data key, String caller, long threadId, long referenceId, long ttl);
+    boolean lock(Data key, UUID caller, long threadId, long referenceId, long ttl);
 
-    boolean isLockedBy(Data key, String caller, long threadId);
+    boolean isLockedBy(Data key, UUID caller, long threadId);
 
-    boolean unlock(Data key, String caller, long threadId, long referenceId);
+    boolean unlock(Data key, UUID caller, long threadId, long referenceId);
 
     boolean isLocked(Data key);
 
     boolean isTransactionallyLocked(Data key);
 
-    boolean canAcquireLock(Data key, String caller, long threadId);
+    boolean canAcquireLock(Data key, UUID caller, long threadId);
 
     String getLockOwnerInfo(Data key);
 

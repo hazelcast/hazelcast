@@ -35,13 +35,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("3dea2658f5310bf0a68937dfb7320c1e")
+@Generated("34f33e0ac5588bc1432b51f114cd2885")
 public final class ExecutorServiceSubmitToAddressCodec {
     //hex: 0x090600
     public static final int REQUEST_MESSAGE_TYPE = 591360;
     //hex: 0x090601
     public static final int RESPONSE_MESSAGE_TYPE = 591361;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private ExecutorServiceSubmitToAddressCodec() {
@@ -58,7 +59,7 @@ public final class ExecutorServiceSubmitToAddressCodec {
         /**
          * Unique id for the execution.
          */
-        public java.lang.String uuid;
+        public java.util.UUID uuid;
 
         /**
          * The callable object to be executed.
@@ -71,16 +72,16 @@ public final class ExecutorServiceSubmitToAddressCodec {
         public com.hazelcast.nio.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String uuid, com.hazelcast.nio.serialization.Data callable, com.hazelcast.nio.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.nio.serialization.Data callable, com.hazelcast.nio.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ExecutorService.SubmitToAddress");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        StringCodec.encode(clientMessage, uuid);
         DataCodec.encode(clientMessage, callable);
         AddressCodec.encode(clientMessage, address);
         return clientMessage;
@@ -89,10 +90,9 @@ public final class ExecutorServiceSubmitToAddressCodec {
     public static ExecutorServiceSubmitToAddressCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.uuid = StringCodec.decode(iterator);
         request.callable = DataCodec.decode(iterator);
         request.address = AddressCodec.decode(iterator);
         return request;

@@ -62,6 +62,7 @@ import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -120,10 +121,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         file.deleteOnExit();
 
         String xml = HAZELCAST_START_TAG
-                + "    <group>\n"
+                + "    <cluster>\n"
                 + "        <name>foobar</name>\n"
                 + "        <password>dev-pass</password>\n"
-                + "    </group>\n"
+                + "    </cluster>\n"
                 + HAZELCAST_END_TAG;
         Writer writer = new PrintWriter(file, "UTF-8");
         writer.write(xml);
@@ -262,10 +263,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void readAwsConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <group>\n"
+                + "   <cluster>\n"
                 + "        <name>dev</name>\n"
                 + "        <password>dev-pass</password>\n"
-                + "    </group>\n"
+                + "    </cluster>\n"
                 + "    <network>\n"
                 + "        <port auto-increment=\"true\">5701</port>\n"
                 + "        <join>\n"
@@ -404,10 +405,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void readDiscoveryConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <group>\n"
+                + "   <cluster>\n"
                 + "        <name>dev</name>\n"
                 + "        <password>dev-pass</password>\n"
-                + "    </group>\n"
+                + "    </cluster>\n"
                 + "    <network>\n"
                 + "        <port auto-increment=\"true\">5701</port>\n"
                 + "        <join>\n"
@@ -1322,7 +1323,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
                 + "        <batch-publisher>\n"
-                + "                <group-name>nyc</group-name>\n"
+                + "                <cluster-name>nyc</cluster-name>\n"
                 + "                <publisher-id>publisherId</publisher-id>\n"
                 + "                <batch-size>100</batch-size>\n"
                 + "                <batch-max-delay-millis>200</batch-max-delay-millis>\n"
@@ -1382,7 +1383,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, publishers.size());
         WanBatchReplicationPublisherConfig pc = publishers.get(0);
 
-        assertEquals("nyc", pc.getGroupName());
+        assertEquals("nyc", pc.getClusterName());
         assertEquals("publisherId", pc.getPublisherId());
         assertEquals(100, pc.getBatchSize());
         assertEquals(200, pc.getBatchMaxDelayMillis());
@@ -1444,7 +1445,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
                 + "        <batch-publisher>\n"
-                + "                <group-name>nyc</group-name>\n"
+                + "                <cluster-name>nyc</cluster-name>\n"
                 + "                <wan-sync>\n"
                 + "                    <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
                 + "                </wan-sync>\n"
@@ -1618,7 +1619,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <wan-replication name=\"my-wan-cluster\">\n"
                 + "        <batch-publisher>\n"
-                + "                <group-name>istanbul</group-name>\n"
+                + "                <cluster-name>istanbul</cluster-name>\n"
                 + "                <publisher-id>istanbulPublisherId</publisher-id>\n"
                 + "                <batch-size>100</batch-size>\n"
                 + "                <batch-max-delay-millis>200</batch-max-delay-millis>\n"
@@ -1664,7 +1665,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <endpoint>nyc-endpoint</endpoint>\n"
                 + "        </batch-publisher>"
                 + "        <batch-publisher>\n"
-                + "                <group-name>ankara</group-name>\n"
+                + "                <cluster-name>ankara</cluster-name>\n"
                 + "                <initial-publisher-state>STOPPED</initial-publisher-state>\n"
                 + "                <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n"
                 + "        </batch-publisher>\n"
@@ -1692,7 +1693,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         List<WanBatchReplicationPublisherConfig> publisherConfigs = wanConfig.getBatchPublisherConfigs();
         assertEquals(2, publisherConfigs.size());
         WanBatchReplicationPublisherConfig pc1 = publisherConfigs.get(0);
-        assertEquals("istanbul", pc1.getGroupName());
+        assertEquals("istanbul", pc1.getClusterName());
         assertEquals("istanbulPublisherId", pc1.getPublisherId());
         assertEquals(100, pc1.getBatchSize());
         assertEquals(200, pc1.getBatchMaxDelayMillis());
@@ -1722,7 +1723,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertDiscoveryConfig(pc1.getDiscoveryConfig());
 
         WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
-        assertEquals("ankara", pc2.getGroupName());
+        assertEquals("ankara", pc2.getClusterName());
         assertEquals("", pc2.getPublisherId());
         assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
@@ -3350,5 +3351,66 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         return buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<metrics enabled=\"false\" mc-enabled=\"false\" jmx-enabled=\"false\">\n"
+                + "  <collection-interval-seconds>10</collection-interval-seconds>\n"
+                + "  <retention-seconds>11</retention-seconds>\n"
+                + "  <metrics-for-data-structures>true</metrics-for-data-structures>\n"
+                + "  <minimum-level>DEBUG</minimum-level>\n"
+                + "</metrics>"
+                + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.isMcEnabled());
+        assertFalse(metricsConfig.isJmxEnabled());
+        assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
+        assertEquals(11, metricsConfig.getRetentionSeconds());
+        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
+        assertEquals(DEBUG, metricsConfig.getMinimumLevel());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigMasterSwitchDisabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<metrics enabled=\"false\"/>"
+                + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertTrue(metricsConfig.isMcEnabled());
+        assertTrue(metricsConfig.isJmxEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigMcDisabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<metrics mc-enabled=\"false\"/>"
+                + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertTrue(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.isMcEnabled());
+        assertTrue(metricsConfig.isJmxEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigJmxDisabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<metrics jmx-enabled=\"false\"/>"
+                + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertTrue(metricsConfig.isEnabled());
+        assertTrue(metricsConfig.isMcEnabled());
+        assertFalse(metricsConfig.isJmxEnabled());
     }
 }

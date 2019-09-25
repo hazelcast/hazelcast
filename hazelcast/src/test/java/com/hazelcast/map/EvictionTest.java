@@ -347,12 +347,9 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue455ZeroTTLShouldPreventEviction() {
-        GroupConfig groupConfig = new GroupConfig()
-                .setName("testIssue455ZeroTTLShouldPreventEviction");
         MapConfig mapConfig = newMapConfig("testIssue455ZeroTTLShouldPreventEviction")
                 .setNearCacheConfig(new NearCacheConfig());
-        Config config = getConfig()
-                .setGroupConfig(groupConfig)
+        Config config = getConfig().setClusterName("testIssue455ZeroTTLShouldPreventEviction")
                 .addMapConfig(mapConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
@@ -366,12 +363,9 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue585ZeroTTLShouldPreventEvictionWithSet() {
-        GroupConfig groupConfig = new GroupConfig()
-                .setName("testIssue585ZeroTTLShouldPreventEvictionWithSet");
         MapConfig mapConfig = newMapConfig("testIssue585ZeroTTLShouldPreventEvictionWithSet")
                 .setNearCacheConfig(new NearCacheConfig());
-        Config config = getConfig()
-                .setGroupConfig(groupConfig)
+        Config config = getConfig().setClusterName("testIssue585ZeroTTLShouldPreventEvictionWithSet")
                 .addMapConfig(mapConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);

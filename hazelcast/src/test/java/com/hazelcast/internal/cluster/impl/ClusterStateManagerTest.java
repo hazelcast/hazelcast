@@ -40,6 +40,7 @@ import org.mockito.Matchers;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
@@ -60,8 +61,8 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterStateManagerTest {
 
-    private static final String TXN = "txn";
-    private static final String ANOTHER_TXN = "another-txn";
+    private static final UUID TXN = UUID.randomUUID();
+    private static final UUID ANOTHER_TXN = UUID.randomUUID();
     private static final MemberVersion CURRENT_NODE_VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
     private static final Version CURRENT_CLUSTER_VERSION = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
     private static final int MEMBERLIST_VERSION = 1;

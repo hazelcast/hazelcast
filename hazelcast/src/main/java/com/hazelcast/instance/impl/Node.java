@@ -29,7 +29,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -105,6 +104,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -210,7 +210,7 @@ public class Node {
         this.version = MemberVersion.of(buildInfo.getVersion());
 
         String loggingType = properties.getString(LOGGING_TYPE);
-        loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
+        loggingService = new LoggingServiceImpl(config.getClusterName(), loggingType, buildInfo);
 
         checkAdvancedNetworkConfig(config);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
@@ -232,7 +232,7 @@ public class Node {
             MemberImpl localMember = new MemberImpl.Builder(addressPicker.getPublicAddressMap())
                     .version(version)
                     .localMember(true)
-                    .uuid(nodeExtension.createMemberUuid(address))
+                    .uuid(nodeExtension.createMemberUuid())
                     .attributes(memberAttributes)
                     .liteMember(liteMember)
                     .instance(hazelcastInstance)
@@ -766,7 +766,7 @@ public class Node {
     public JoinRequest createJoinRequest(boolean withCredentials) {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
-        final Set<String> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
+        final Set<UUID> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
 
         MemberImpl localMember = getLocalMember();
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
@@ -865,7 +865,7 @@ public class Node {
         }
     }
 
-    public String getThisUuid() {
+    public UUID getThisUuid() {
         return clusterService.getThisUuid();
     }
 
@@ -918,12 +918,12 @@ public class Node {
     }
 
     private void logGroupPasswordInfo() {
-        String password = config.getGroupConfig().getPassword();
+        String password = config.getClusterPassword();
         if (!(config.getSecurityConfig().isEnabled()
                 || isNullOrEmpty(password)
-                || GroupConfig.DEFAULT_GROUP_PASSWORD.equals(password))) {
+                || Config.DEFAULT_CLUSTER_PASSWORD.equals(password))) {
             logger.info("A non-empty group password is configured for the Hazelcast member."
-                    + " Since version 3.8.2, members with the same group name,"
+                    + " Since version 3.8.2, members with the same cluster name,"
                     + " but with different group passwords (that do not use authentication) form a cluster."
                     + " The group password configuration will be removed completely in a future release.");
         }

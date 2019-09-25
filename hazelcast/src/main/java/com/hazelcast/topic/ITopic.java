@@ -21,6 +21,7 @@ import com.hazelcast.monitor.LocalTopicStats;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 
 /**
  * Hazelcast provides distribution mechanism for publishing messages that are
@@ -74,7 +75,8 @@ public interface ITopic<E> extends DistributedObject {
      * @return returns the registration ID
      * @throws java.lang.NullPointerException if listener is {@code null}
      */
-    @Nonnull String addMessageListener(@Nonnull MessageListener<E> listener);
+    @Nonnull
+    UUID addMessageListener(@Nonnull MessageListener<E> listener);
 
     /**
      * Stops receiving messages for the given message listener.
@@ -84,7 +86,7 @@ public interface ITopic<E> extends DistributedObject {
      * @param registrationId ID of listener registration
      * @return {@code true} if registration is removed, {@code false} otherwise
      */
-    boolean removeMessageListener(@Nonnull String registrationId);
+    boolean removeMessageListener(@Nonnull UUID registrationId);
 
     /**
      * Returns statistics about this topic, like total number of publishes/receives.

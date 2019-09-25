@@ -35,9 +35,9 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:group
-                    name="${cluster.group.name}"
-                    password="${cluster.group.password}"/>
+            <hz:cluster
+                    name="${cluster.name}"
+                    password="${cluster.password}"/>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -108,7 +108,7 @@
                       tenant-id="TENANT_ID"
                       subscription-id="SUB_ID"
                       cluster-id="HZLCAST001"
-                      group-name="GROUP-NAME"/>
+                      cluster-name="CLUSTER-NAME"/>
             <hz:kubernetes enabled="false"
                            namespace="MY-KUBERNETES-NAMESPACE"
                            service-name="MY-SERVICE-NAME"
@@ -168,8 +168,8 @@
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
-        <property name="name" value="spring-group"/>
-        <property name="password" value="spring-group-pass"/>
+        <property name="name" value="spring-cluster"/>
+        <property name="password" value="spring-cluster-pass"/>
     </bean>
 
     <hz:map id="map" instance-ref="client" name="map"/>

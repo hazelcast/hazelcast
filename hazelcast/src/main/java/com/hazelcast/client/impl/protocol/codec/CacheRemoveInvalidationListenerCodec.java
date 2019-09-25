@@ -35,13 +35,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("2d4ec2b9b7b88f5d2a8ee190933ff6f5")
+@Generated("5d3de21c3c2fdb5f6044eb5a5c909efd")
 public final class CacheRemoveInvalidationListenerCodec {
     //hex: 0x151600
     public static final int REQUEST_MESSAGE_TYPE = 1381888;
     //hex: 0x151601
     public static final int RESPONSE_MESSAGE_TYPE = 1381889;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
@@ -59,29 +60,28 @@ public final class CacheRemoveInvalidationListenerCodec {
         /**
          * The id assigned during the registration for the listener which shall be removed.
          */
-        public java.lang.String registrationId;
+        public java.util.UUID registrationId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String registrationId) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.RemoveInvalidationListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET, registrationId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        StringCodec.encode(clientMessage, registrationId);
         return clientMessage;
     }
 
     public static CacheRemoveInvalidationListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.registrationId = decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.registrationId = StringCodec.decode(iterator);
         return request;
     }
 

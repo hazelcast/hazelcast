@@ -26,6 +26,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -262,7 +263,8 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return returns registration ID for the entry listener
      * @see #localKeySet()
      */
-    @Nonnull String addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
+    @Nonnull
+    UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
 
     /**
      * Adds an entry listener for this multimap.
@@ -275,7 +277,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *                     {@code false} otherwise
      * @return returns registration ID for the entry listener
      */
-    @Nonnull String addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue);
+    @Nonnull UUID addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener.
@@ -285,7 +287,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param registrationId registration ID of listener
      * @return true if registration is removed, false otherwise
      */
-    boolean removeEntryListener(@Nonnull String registrationId);
+    boolean removeEntryListener(@Nonnull UUID registrationId);
 
     /**
      * Adds the specified entry listener for the specified key.
@@ -303,7 +305,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      *                     {@code false} otherwise
      * @return returns registration ID
      */
-    @Nonnull String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    @Nonnull UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                             @Nonnull K key, boolean includeValue);
 
     /**

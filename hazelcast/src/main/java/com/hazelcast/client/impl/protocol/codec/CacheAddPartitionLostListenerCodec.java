@@ -35,11 +35,11 @@ import com.hazelcast.logging.Logger;
 
 /**
  * Adds a CachePartitionLostListener. The addPartitionLostListener returns a registration ID. This ID is needed to remove the
- * CachePartitionLostListener using the #removePartitionLostListener(String) method. There is no check for duplicate
+ * CachePartitionLostListener using the #removePartitionLostListener(UUID) method. There is no check for duplicate
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-@Generated("f8a3d8975a8fe3303cccea5e242a97e7")
+@Generated("80b99ffc98e2cc1159f8da2d0f84cbd8")
 public final class CacheAddPartitionLostListenerCodec {
     //hex: 0x151A00
     public static final int REQUEST_MESSAGE_TYPE = 1382912;
@@ -47,9 +47,11 @@ public final class CacheAddPartitionLostListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1382913;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET = EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     //hex: 0x151A02
     private static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 1382914;
 
@@ -99,36 +101,35 @@ public final class CacheAddPartitionLostListenerCodec {
         /**
          * returns the registration id for the CachePartitionLostListener.
          */
-        public java.lang.String response;
+        public java.util.UUID response;
     }
 
-    public static ClientMessage encodeResponse(java.lang.String response) {
+    public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        StringCodec.encode(clientMessage, response);
+        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 
     public static CacheAddPartitionLostListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        response.response = StringCodec.decode(iterator);
+        ClientMessage.Frame initialFrame = iterator.next();
+        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
         return response;
     }
 
-    public static ClientMessage encodeCachePartitionLostEvent(int partitionId, java.lang.String uuid) {
+    public static ClientMessage encodeCachePartitionLostEvent(int partitionId, java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET, partitionId);
+        encodeUUID(initialFrame.content, EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, uuid);
         return clientMessage;
     }
 
@@ -140,12 +141,12 @@ public final class CacheAddPartitionLostListenerCodec {
             if (messageType == EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int partitionId = decodeInt(initialFrame.content, EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET);
-                java.lang.String uuid = StringCodec.decode(iterator);
+                java.util.UUID uuid = decodeUUID(initialFrame.content, EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET);
                 handleCachePartitionLostEvent(partitionId, uuid);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handleCachePartitionLostEvent(int partitionId, java.lang.String uuid);
+        public abstract void handleCachePartitionLostEvent(int partitionId, java.util.UUID uuid);
     }
 }

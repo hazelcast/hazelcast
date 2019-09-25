@@ -18,6 +18,7 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -92,6 +93,13 @@ public final class MapUtil {
      */
     public static boolean isNullOrEmpty(Map map) {
         return map == null || map.isEmpty();
+    }
+
+    /**
+     * Returns a {@code Map.Entry} with the given key and value.
+     */
+    public static <K, V> Map.Entry<K, V> entry(K k, V v) {
+        return new SimpleImmutableEntry<>(k, v);
     }
 
 }

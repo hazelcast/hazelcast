@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCollectionConfig;
@@ -221,7 +222,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public @Nonnull
-    String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
+    UUID addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
         final EventService eventService = getNodeEngine().getEventService();
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
@@ -229,7 +230,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         return registration.getId();
     }
 
-    public boolean removeItemListener(@Nonnull String registrationId) {
+    public boolean removeItemListener(@Nonnull UUID registrationId) {
         EventService eventService = getNodeEngine().getEventService();
         return eventService.deregisterListener(getServiceName(), name, registrationId);
     }

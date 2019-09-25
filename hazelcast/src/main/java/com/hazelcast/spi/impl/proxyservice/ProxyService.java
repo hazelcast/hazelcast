@@ -21,6 +21,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.internal.services.CoreService;
 
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * A {@link CoreService} responsible for managing the DistributedObject proxies.
@@ -43,7 +44,7 @@ public interface ProxyService extends CoreService {
 
     Collection<DistributedObject> getAllDistributedObjects();
 
-    String addProxyListener(DistributedObjectListener distributedObjectListener);
+    UUID addProxyListener(DistributedObjectListener distributedObjectListener);
 
-    boolean removeProxyListener(String registrationId);
+    boolean removeProxyListener(UUID registrationId);
 }

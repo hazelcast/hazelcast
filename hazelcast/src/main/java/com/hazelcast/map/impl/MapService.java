@@ -56,6 +56,7 @@ import com.hazelcast.wan.WanReplicationEvent;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 
@@ -194,7 +195,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         transactionalService.rollbackTransaction(transactionId);
     }
 
@@ -213,7 +214,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void clientDisconnected(String clientUuid) {
+    public void clientDisconnected(UUID clientUuid) {
         clientAwareService.clientDisconnected(clientUuid);
     }
 

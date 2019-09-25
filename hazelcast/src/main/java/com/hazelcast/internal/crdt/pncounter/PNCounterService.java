@@ -68,7 +68,7 @@ public class PNCounterService implements
                         throw new MutationDisallowedException("Cannot create a new PN counter named " + name
                                 + " because this instance is shutting down!");
                     }
-                    return new PNCounterImpl(UuidUtil.newUnsecureUuidString(), name);
+                    return new PNCounterImpl(UuidUtil.newUnsecureUUID(), name);
                 }
             };
 

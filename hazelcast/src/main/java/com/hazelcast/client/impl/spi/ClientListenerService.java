@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.spi;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 
 /**
  * Client service to add/remove remote listeners.
@@ -29,8 +30,8 @@ import javax.annotation.Nonnull;
 public interface ClientListenerService {
 
     @Nonnull
-    String registerListener(ListenerMessageCodec listenerMessageCodec, EventHandler handler);
+    UUID registerListener(ListenerMessageCodec listenerMessageCodec, EventHandler handler);
 
-    boolean deregisterListener(@Nonnull String registrationId);
+    boolean deregisterListener(@Nonnull UUID registrationId);
 
 }

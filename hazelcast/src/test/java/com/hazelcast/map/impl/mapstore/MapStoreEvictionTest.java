@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -153,7 +152,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
     private Config newConfig(String mapName, boolean sizeLimited, MapStoreConfig.InitialLoadMode loadMode) {
         Config cfg = new Config();
-        cfg.setGroupConfig(new GroupConfig(getClass().getSimpleName()));
+        cfg.setClusterName(getClass().getSimpleName());
         cfg.setProperty("hazelcast.partition.count", "5");
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()

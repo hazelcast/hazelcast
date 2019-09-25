@@ -265,10 +265,10 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         return null;
     }
 
-    @ManagedAnnotation("groupName")
-    @ManagedDescription("Group Name")
-    public String getGroupName() {
-        return config.getGroupConfig().getName();
+    @ManagedAnnotation("clusterName")
+    @ManagedDescription("Cluster Name")
+    public String getClusterName() {
+        return config.getClusterName();
     }
 
     @ManagedAnnotation("port")

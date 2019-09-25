@@ -25,6 +25,8 @@ import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.internal.services.NotifiableEventListener;
 
+import java.util.UUID;
+
 abstract class AbstractCacheClientNearCacheInvalidationListener extends AbstractBaseNearCacheInvalidationListener
         implements CacheEventListener, NotifiableEventListener<CacheService> {
 
@@ -33,7 +35,7 @@ abstract class AbstractCacheClientNearCacheInvalidationListener extends Abstract
 
     AbstractCacheClientNearCacheInvalidationListener(ClientEndpoint endpoint,
                                                      CacheContext cacheContext,
-                                                     String localMemberUuid,
+                                                     UUID localMemberUuid,
                                                      long correlationId) {
         super(localMemberUuid, correlationId);
 

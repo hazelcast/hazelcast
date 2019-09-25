@@ -79,15 +79,15 @@
     </config-replacers>
 
     <!--
-        Specifies the name and password for a cluster group you create.
-        Cluster groups allow you to create separate sub-clusters with different names.
+        Specifies the name and password for a cluster you create.
+        Cluster configuration allow you to create separate sub-clusters with different names.
         They are also referenced in the WAN Replication configuration.
         The group password is only used when the security is enabled (Enterprise edition feature).
     -->
-    <group>
+    <cluster>
         <name>dev</name>
         <password>dev-pass</password>
-    </group>
+    </cluster>
     <!--
         ===== HAZELCAST LICENSE CONFIGURATION =====
 
@@ -151,16 +151,16 @@
             WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication.
             Waits until a batch size is reached or a delay time is passed.
             Please see the batch-size and batch-max-delay-millis configuration descriptions below.
-            * "<group-name>":
-                Sets the group name used as an endpoint group name for authentication
+            * "<cluster-name>":
+                Sets the cluster name used as an endpoint cluster name for authentication
                 on the target endpoint.
-                If there is no separate publisher ID property defined, this group name
+                If there is no separate publisher ID property defined, this cluster name
                 will also be used as a WAN publisher ID. This ID is then used for
                 identifying the publisher in a WanReplicationConfig.
             * "<publisher-id>":
                 Sets the publisher ID used for identifying the publisher in a
                 WanReplicationConfig.
-                If there is no publisher ID defined (it is empty), the group name will
+                If there is no publisher ID defined (it is empty), the cluster name will
                 be used as a publisher ID.
             * "<batch-size>":
                 Changes the maximum size of events that are sent to the target cluster
@@ -351,7 +351,7 @@
     -->
     <wan-replication name="my-wan-cluster-batch">
         <batch-publisher>
-            <group-name>nyc</group-name>
+            <cluster-name>nyc</cluster-name>
             <publisher-id>nycPublisherId</publisher-id>
             <batch-size>1000</batch-size>
             <batch-max-delay-millis>2000</batch-max-delay-millis>
@@ -377,7 +377,7 @@
             <!--                <iam-role>dummy</iam-role>-->
             <!--                <region>us-west-1</region>-->
             <!--                <host-header>ec2.amazonaws.com</host-header>-->
-            <!--                <security-group-name>hazelcast-sg</security-group-name>-->
+            <!--                <security-cluster-name>hazelcast-sg</security-cluster-name>-->
             <!--                <tag-key>type</tag-key>-->
             <!--                <tag-value>hz-nodes</tag-value>-->
             <!--            </aws>-->
@@ -679,7 +679,7 @@
                 <tenant-id>TENANT_ID</tenant-id>
                 <subscription-id>SUB_ID</subscription-id>
                 <cluster-id>HZLCAST001</cluster-id>
-                <group-name>GROUP-NAME</group-name>
+                <cluster-name>CLUSTER-NAME</cluster-name>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -2892,7 +2892,7 @@
                 <tenant-id>TENANT_ID</tenant-id>
                 <subscription-id>SUB_ID</subscription-id>
                 <cluster-id>HZLCAST001</cluster-id>
-                <group-name>GROUP-NAME</group-name>
+                <cluster-name>CLUSTER-NAME</cluster-name>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -3214,5 +3214,12 @@
             </fenced-lock>
         </locks>
     </cp-subsystem>
+
+    <metrics enabled="false" mc-enabled="false" jmx-enabled="false">
+        <collection-interval-seconds>10</collection-interval-seconds>
+        <retention-seconds>30</retention-seconds>
+        <metrics-for-data-structures>true</metrics-for-data-structures>
+        <minimum-level>DEBUG</minimum-level>
+    </metrics>
 
 </hazelcast>

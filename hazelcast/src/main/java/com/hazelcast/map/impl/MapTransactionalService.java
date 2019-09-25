@@ -21,6 +21,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.transaction.impl.Transaction;
 
+import java.util.UUID;
+
 /**
  * Defines transactional service behavior of map service.
  *
@@ -43,6 +45,6 @@ class MapTransactionalService implements TransactionalService {
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
     }
 }

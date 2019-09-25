@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -33,6 +34,7 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
@@ -44,7 +46,7 @@ public class TxnSetOperation extends BasePutOperation
 
     private long ttl;
     private long version;
-    private String ownerUuid;
+    private UUID ownerUuid;
 
     private transient boolean shouldBackup;
 
@@ -98,7 +100,7 @@ public class TxnSetOperation extends BasePutOperation
     }
 
     @Override
-    public void setOwnerUuid(String ownerUuid) {
+    public void setOwnerUuid(UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
     }
 
@@ -141,7 +143,7 @@ public class TxnSetOperation extends BasePutOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(version);
-        out.writeUTF(ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
         out.writeLong(ttl);
     }
 
@@ -149,7 +151,7 @@ public class TxnSetOperation extends BasePutOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         version = in.readLong();
-        ownerUuid = in.readUTF();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
         ttl = in.readLong();
     }
 

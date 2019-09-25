@@ -18,13 +18,13 @@ package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
@@ -68,8 +68,8 @@ public class StatisticsAwareMetricsSet {
     // it will register it.
     private final class Task implements Runnable {
         private final MetricsRegistry metricsRegistry;
-        private Set<LocalInstanceStats> previousStats = new HashSet<LocalInstanceStats>();
-        private Set<LocalInstanceStats> currentStats = new HashSet<LocalInstanceStats>();
+        private Set<LocalInstanceStats> previousStats = new HashSet<>();
+        private Set<LocalInstanceStats> currentStats = new HashSet<>();
 
         private Task(MetricsRegistry metricsRegistry) {
             this.metricsRegistry = metricsRegistry;

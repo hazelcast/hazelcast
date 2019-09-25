@@ -38,6 +38,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
@@ -66,7 +67,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     /**
      * ID of registered listener on publisher side.
      */
-    protected volatile String publisherListenerId;
+    protected volatile UUID publisherListenerId;
 
     AbstractInternalQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
                                IMap delegate, QueryCacheContext context) {
@@ -101,12 +102,12 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     @Override
-    public String getPublisherListenerId() {
+    public UUID getPublisherListenerId() {
         return publisherListenerId;
     }
 
     @Override
-    public void setPublisherListenerId(String publisherListenerId) {
+    public void setPublisherListenerId(UUID publisherListenerId) {
         this.publisherListenerId = requireNonNull(publisherListenerId, "publisherListenerId cannot be null");
     }
 

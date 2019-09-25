@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class PortableEntryEvent implements Portable {
 
@@ -33,13 +34,13 @@ public class PortableEntryEvent implements Portable {
     private Data oldValue;
     private Data mergingValue;
     private EntryEventType eventType;
-    private String uuid;
+    private UUID uuid;
     private int numberOfAffectedEntries = 1;
 
     public PortableEntryEvent() {
     }
 
-    public PortableEntryEvent(Data key, Data value, Data oldValue, Data mergingValue, EntryEventType eventType, String uuid) {
+    public PortableEntryEvent(Data key, Data value, Data oldValue, Data mergingValue, EntryEventType eventType, UUID uuid) {
         this.key = key;
         this.value = value;
         this.oldValue = oldValue;
@@ -48,7 +49,7 @@ public class PortableEntryEvent implements Portable {
         this.uuid = uuid;
     }
 
-    public PortableEntryEvent(EntryEventType eventType, String uuid, int numberOfAffectedEntries) {
+    public PortableEntryEvent(EntryEventType eventType, UUID uuid, int numberOfAffectedEntries) {
         this.eventType = eventType;
         this.uuid = uuid;
         this.numberOfAffectedEntries = numberOfAffectedEntries;
@@ -75,7 +76,7 @@ public class PortableEntryEvent implements Portable {
         return eventType;
     }
 
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
@@ -99,7 +100,8 @@ public class PortableEntryEvent implements Portable {
         // from node, it first creates the class then fills the class what comes from wire. Currently
         // it can not handle more than one type response.
         writer.writeInt("e", eventType.getType());
-        writer.writeUTF("u", uuid);
+        writer.writeLong("uHigh", uuid.getMostSignificantBits());
+        writer.writeLong("uLow", uuid.getLeastSignificantBits());
         writer.writeInt("n", numberOfAffectedEntries);
 
         ObjectDataOutput out = writer.getRawDataOutput();
@@ -112,7 +114,7 @@ public class PortableEntryEvent implements Portable {
     @Override
     public void readPortable(PortableReader reader) throws IOException {
         eventType = EntryEventType.getByType(reader.readInt("e"));
-        uuid = reader.readUTF("u");
+        uuid = new UUID(reader.readLong("uHigh"), reader.readLong("uLow"));
         numberOfAffectedEntries = reader.readInt("n");
 
         ObjectDataInput in = reader.getRawDataInput();

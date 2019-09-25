@@ -88,8 +88,8 @@ public class CachingProviderTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setInstanceName(instanceName);
         config.getNetworkConfig().getJoin().getMulticastConfig().setLoopbackModeEnabled(true);
-        config.getGroupConfig().setName("test-group1");
-        config.getGroupConfig().setPassword("test-pass1");
+        config.setClusterName("test-cluster1");
+        config.setClusterPassword("test-pass1");
         return instanceFactory.newHazelcastInstance(config);
     }
 

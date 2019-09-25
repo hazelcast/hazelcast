@@ -28,6 +28,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.StringUtil.timeToString;
@@ -60,7 +61,7 @@ public class SmartClientListenerService extends AbstractClientListenerService  {
 
     @Nonnull
     @Override
-    public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
+    public UUID registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
         trySyncConnectToAllMembers();
         return super.registerListener(codec, handler);
     }

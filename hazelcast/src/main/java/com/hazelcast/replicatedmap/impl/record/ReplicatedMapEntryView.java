@@ -143,7 +143,7 @@ public class ReplicatedMapEntryView<K, V>
     }
 
     @Override
-    public Long getMaxIdle() {
+    public long getMaxIdle() {
         return maxIdle;
     }
 
@@ -196,6 +196,7 @@ public class ReplicatedMapEntryView<K, V>
                 + ", lastAccessTime=" + lastAccessTime
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", ttl=" + ttl
+                + ", maxIdle=" + maxIdle
                 + '}';
     }
 }

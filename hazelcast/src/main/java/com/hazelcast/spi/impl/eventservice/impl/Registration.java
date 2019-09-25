@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,10 +26,11 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.internal.util.Preconditions;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class Registration implements EventRegistration {
 
-    private String id;
+    private UUID id;
     private String serviceName;
     private String topic;
     private EventFilter filter;
@@ -39,7 +41,7 @@ public class Registration implements EventRegistration {
     public Registration() {
     }
 
-    public Registration(String id, String serviceName, String topic,
+    public Registration(UUID id, String serviceName, String topic,
                         EventFilter filter, Address subscriber, Object listener, boolean localOnly) {
         this.id = Preconditions.checkNotNull(id, "Registration ID cannot be null!");
         this.filter = filter;
@@ -64,7 +66,7 @@ public class Registration implements EventRegistration {
     }
 
     @Override
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -103,7 +105,7 @@ public class Registration implements EventRegistration {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(id);
+        UUIDSerializationUtil.writeUUID(out, id);
         out.writeUTF(serviceName);
         out.writeUTF(topic);
         subscriber.writeData(out);
@@ -112,7 +114,7 @@ public class Registration implements EventRegistration {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        id = in.readUTF();
+        id = UUIDSerializationUtil.readUUID(in);
         serviceName = in.readUTF();
         topic = in.readUTF();
         subscriber = new Address();

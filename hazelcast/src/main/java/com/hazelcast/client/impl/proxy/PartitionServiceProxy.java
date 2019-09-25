@@ -33,6 +33,7 @@ import com.hazelcast.partition.PartitionService;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -66,17 +67,17 @@ public final class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public String addMigrationListener(MigrationListener migrationListener) {
+    public UUID addMigrationListener(MigrationListener migrationListener) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean removeMigrationListener(String registrationId) {
+    public boolean removeMigrationListener(UUID registrationId) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
+    public UUID addPartitionLostListener(PartitionLostListener partitionLostListener) {
         EventHandler<ClientMessage> handler = new ClientPartitionLostEventHandler(partitionLostListener);
         return listenerService.registerListener(createPartitionLostListenerCodec(), handler);
     }
@@ -89,12 +90,12 @@ public final class PartitionServiceProxy implements PartitionService {
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ClientAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ClientRemovePartitionLostListenerCodec.encodeRequest(realRegistrationId);
             }
 
@@ -106,7 +107,7 @@ public final class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public boolean removePartitionLostListener(String registrationId) {
+    public boolean removePartitionLostListener(UUID registrationId) {
         return listenerService.deregisterListener(registrationId);
     }
 

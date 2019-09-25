@@ -102,7 +102,7 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
         configureNeedsReplicaStateCheckResponse();
 
         Address address = new Address("127.0.0.1", 5701);
-        InternalPartition partition = new DummyInternalPartition(new PartitionReplica[]{new PartitionReplica(address, UuidUtil.newUnsecureUuidString())}, 1);
+        InternalPartition partition = new DummyInternalPartition(new PartitionReplica[]{new PartitionReplica(address, UuidUtil.newUnsecureUUID())}, 1);
         partitions.add(partition);
 
         assertEquals(REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());

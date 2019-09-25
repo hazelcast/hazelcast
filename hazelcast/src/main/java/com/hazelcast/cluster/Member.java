@@ -23,6 +23,7 @@ import com.hazelcast.version.MemberVersion;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Cluster member interface.
@@ -82,7 +83,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @return the UUID of this member.
      */
-    String getUuid();
+    UUID getUuid();
 
     /**
      * Returns configured attributes for this member.<br/>

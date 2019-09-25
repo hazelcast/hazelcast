@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
@@ -26,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
@@ -37,20 +39,20 @@ import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCE
  */
 public class FetchMembersViewOp extends AbstractClusterOperation implements JoinOperation {
 
-    private String targetUuid;
+    private UUID targetUuid;
     private MembersView membersView;
 
     public FetchMembersViewOp() {
     }
 
-    public FetchMembersViewOp(String targetUuid) {
+    public FetchMembersViewOp(UUID targetUuid) {
         this.targetUuid = targetUuid;
     }
 
     @Override
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
-        String thisUuid = service.getLocalMember().getUuid();
+        UUID thisUuid = service.getLocalMember().getUuid();
         if (!targetUuid.equals(thisUuid)) {
             throw new IllegalStateException("Rejecting mastership claim, since target UUID[" + targetUuid
                     + "] is not matching local member UUID[" + thisUuid + "].");
@@ -84,11 +86,11 @@ public class FetchMembersViewOp extends AbstractClusterOperation implements Join
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(targetUuid);
+        UUIDSerializationUtil.writeUUID(out, targetUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        targetUuid = in.readUTF();
+        targetUuid = UUIDSerializationUtil.readUUID(in);
     }
 }

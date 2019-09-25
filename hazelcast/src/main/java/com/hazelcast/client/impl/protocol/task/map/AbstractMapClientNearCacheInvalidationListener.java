@@ -22,6 +22,8 @@ import com.hazelcast.internal.nearcache.impl.invalidation.AbstractBaseNearCacheI
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 
+import java.util.UUID;
+
 /**
  * Invalidation listener abstraction helps to handle some different behaviour between clients in a backward compatible way.
  */
@@ -31,7 +33,7 @@ abstract class AbstractMapClientNearCacheInvalidationListener
     private final ClientEndpoint endpoint;
 
     AbstractMapClientNearCacheInvalidationListener(ClientEndpoint endpoint,
-                                                   String localMemberUuid, long correlationId) {
+                                                   UUID localMemberUuid, long correlationId) {
         super(localMemberUuid, correlationId);
         this.endpoint = endpoint;
     }

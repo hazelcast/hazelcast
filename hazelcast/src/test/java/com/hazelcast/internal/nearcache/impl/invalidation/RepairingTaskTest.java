@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MIN_RECONCILIATION_INTERVAL_SECONDS;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
@@ -96,7 +98,7 @@ public class RepairingTaskTest extends HazelcastTestSupport {
         ExecutionService executionService = mock(ExecutionService.class);
         SerializationService serializationService = mock(SerializationService.class);
         MinimalPartitionService minimalPartitionService = mock(MinimalPartitionService.class);
-        String uuid = UuidUtil.newUnsecureUUID().toString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         ILogger logger = Logger.getLogger(RepairingTask.class);
 
         return new RepairingTask(hazelcastProperties, invalidationMetaDataFetcher, executionService.getGlobalTaskScheduler(),

@@ -20,6 +20,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * A manager for {@link com.hazelcast.client.impl.ClientEndpoint}s.
@@ -51,7 +52,7 @@ public interface ClientEndpointManager {
      * @return a set of all the endpoints for the client. If no endpoints are found, an empty set is returned.
      * @throws java.lang.NullPointerException if clientUuid is null.
      */
-    Set<ClientEndpoint> getEndpoints(String clientUuid);
+    Set<ClientEndpoint> getEndpoints(UUID clientUuid);
 
     /**
      * Returns the current number of endpoints.

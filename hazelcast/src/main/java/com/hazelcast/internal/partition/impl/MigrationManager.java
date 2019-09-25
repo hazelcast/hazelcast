@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -378,7 +379,7 @@ public class MigrationManager {
                 logger.finest("Sending migration commit operation to " + destination + " for " + migration);
             }
             migration.setStatus(MigrationStatus.SUCCESS);
-            String destinationUuid = member.getUuid();
+            UUID destinationUuid = member.getUuid();
 
             MigrationCommitOperation operation = new MigrationCommitOperation(migration, destinationUuid);
             Future<Boolean> future = nodeEngine.getOperationService()
@@ -1384,7 +1385,7 @@ public class MigrationManager {
                     logger.finest("Sending promotion commit operation to " + destination + " for " + migrations);
                 }
                 PartitionRuntimeState partitionState = partitionService.createPromotionCommitPartitionState(migrations);
-                String destinationUuid = member.getUuid();
+                UUID destinationUuid = member.getUuid();
                 PromotionCommitOperation op = new PromotionCommitOperation(partitionState, migrations, destinationUuid);
                 Future<Boolean> future = nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, op, destination.address())

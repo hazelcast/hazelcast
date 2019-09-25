@@ -57,7 +57,7 @@ public class PartitionedCluster {
         config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "9999");
         config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
         config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
-        config.getGroupConfig().setName(generateRandomString(10));
+        config.setClusterName(generateRandomString(10));
         config.addSplitBrainProtectionConfig(createSuccessfulTestSplitBrainProtection());
         return config;
     }
@@ -145,7 +145,7 @@ public class PartitionedCluster {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).isMinimumClusterSizeSatisfied());
+                assertTrue(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).hasMinimumSize());
             }
         });
     }
@@ -154,7 +154,7 @@ public class PartitionedCluster {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertFalse(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).isMinimumClusterSizeSatisfied());
+                assertFalse(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).hasMinimumSize());
             }
         });
     }

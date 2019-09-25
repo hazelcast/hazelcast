@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.StubAuthenticationException;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,6 +33,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
@@ -39,13 +41,13 @@ public class ClientReAuthOperation
         extends AbstractClientOperation
         implements UrgentSystemOperation, AllowedDuringPassiveState {
 
-    private String clientUuid;
+    private UUID clientUuid;
     private long authCorrelationId;
 
     public ClientReAuthOperation() {
     }
 
-    public ClientReAuthOperation(String clientUuid, long authCorrelationId) {
+    public ClientReAuthOperation(UUID clientUuid, long authCorrelationId) {
         this.clientUuid = clientUuid;
         this.authCorrelationId = authCorrelationId;
     }
@@ -61,7 +63,7 @@ public class ClientReAuthOperation
     private boolean doRun() throws Exception {
         ILogger logger = getLogger();
         ClientEngineImpl engine = getService();
-        String memberUuid = getCallerUuid();
+        UUID memberUuid = getCallerUuid();
         if (!engine.trySetLastAuthenticationCorrelationId(clientUuid, authCorrelationId)) {
             String message = "Server already processed a newer authentication from client with UUID " + clientUuid
                     + ". Not applying requested ownership change to " + memberUuid;
@@ -73,7 +75,7 @@ public class ClientReAuthOperation
             ClientPrincipal principal = new ClientPrincipal(clientUuid, memberUuid);
             endpoint.authenticated(principal);
         }
-        String previousMemberUuid = engine.addOwnershipMapping(clientUuid, memberUuid);
+        UUID previousMemberUuid = engine.addOwnershipMapping(clientUuid, memberUuid);
         if (logger.isFineEnabled()) {
             logger.fine("Client authenticated " + clientUuid + ", owner " + memberUuid);
         }
@@ -112,14 +114,14 @@ public class ClientReAuthOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(clientUuid);
+        UUIDSerializationUtil.writeUUID(out, clientUuid);
         out.writeLong(authCorrelationId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        clientUuid = in.readUTF();
+        clientUuid = UUIDSerializationUtil.readUUID(in);
         authCorrelationId = in.readLong();
     }
 

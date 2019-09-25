@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -47,8 +49,8 @@ public class ReplicaSyncInfoTest {
     public void setUp() throws Exception {
         int partitionId = 23;
         int replicaIndex = 42;
-        PartitionReplica target = new PartitionReplica(new Address("127.0.0.1", 5701), "5701");
-        PartitionReplica otherTarget = new PartitionReplica(new Address("127.0.0.1", 5702), "5702");
+        PartitionReplica target = new PartitionReplica(new Address("127.0.0.1", 5701), new UUID(57, 1));
+        PartitionReplica otherTarget = new PartitionReplica(new Address("127.0.0.1", 5702), new UUID(57, 2));
 
         replicaSyncInfo = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
         replicaSyncInfoSameAttributes

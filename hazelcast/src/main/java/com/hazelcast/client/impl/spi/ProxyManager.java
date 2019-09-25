@@ -95,6 +95,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -126,12 +127,12 @@ public final class ProxyManager {
         }
 
         @Override
-        public String decodeAddResponse(ClientMessage clientMessage) {
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
             return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
         }
 
         @Override
-        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
             return ClientRemoveDistributedObjectListenerCodec.encodeRequest(realRegistrationId);
         }
 
@@ -447,7 +448,7 @@ public final class ProxyManager {
         proxies.clear();
     }
 
-    public String addDistributedObjectListener(final DistributedObjectListener listener) {
+    public UUID addDistributedObjectListener(final DistributedObjectListener listener) {
         final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
     }
@@ -509,7 +510,7 @@ public final class ProxyManager {
         }
     }
 
-    public boolean removeDistributedObjectListener(String id) {
+    public boolean removeDistributedObjectListener(UUID id) {
         return client.getListenerService().deregisterListener(id);
     }
 

@@ -249,7 +249,7 @@ public class RestTest {
         Set<PermissionConfig> permissionConfigs = new HashSet<PermissionConfig>();
         permissionConfigs.add(new PermissionConfig(PermissionConfig.PermissionType.MAP, "test", "*"));
         UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest(permissionConfigs);
-        String result = communicator.updatePermissions(config.getGroupConfig().getName(),
+        String result = communicator.updatePermissions(config.getClusterName(),
                 "", request.toJson().toString());
         assertEquals("{\"status\":\"forbidden\"}", result);
     }

@@ -25,6 +25,7 @@ import com.hazelcast.query.impl.IndexUtils;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * A concurrent, queryable data structure which is used to cache results of
@@ -168,32 +169,32 @@ public interface QueryCache<K, V> {
     /**
      * @see IMap#addEntryListener(MapListener, boolean)
      */
-    String addEntryListener(MapListener listener, boolean includeValue);
+    UUID addEntryListener(MapListener listener, boolean includeValue);
 
     /**
      * @see IMap#addEntryListener(MapListener, Object, boolean)
      */
-    String addEntryListener(MapListener listener, K key, boolean includeValue);
+    UUID addEntryListener(MapListener listener, K key, boolean includeValue);
 
     /**
      * @see IMap#addEntryListener(MapListener, Predicate, boolean)
      */
-    String addEntryListener(MapListener listener,
+    UUID addEntryListener(MapListener listener,
                             Predicate<K, V> predicate,
                             boolean includeValue);
 
     /**
      * @see IMap#addEntryListener(MapListener, Predicate, Object, boolean)
      */
-    String addEntryListener(MapListener listener,
+    UUID addEntryListener(MapListener listener,
                             Predicate<K, V> predicate,
                             K key,
                             boolean includeValue);
 
     /**
-     * @see IMap#removeEntryListener(String)
+     * @see IMap#removeEntryListener(UUID)
      */
-    boolean removeEntryListener(String id);
+    boolean removeEntryListener(UUID id);
 
     /**
      * Returns the name of this {@code QueryCache}. The returned value will never be null.

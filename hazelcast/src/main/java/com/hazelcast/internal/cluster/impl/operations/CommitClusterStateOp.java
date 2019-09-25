@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateChange;
@@ -33,6 +34,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static java.lang.String.format;
 
@@ -41,13 +43,13 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
 
     private ClusterStateChange stateChange;
     private Address initiator;
-    private String txnId;
+    private UUID txnId;
     private boolean isTransient;
 
     public CommitClusterStateOp() {
     }
 
-    public CommitClusterStateOp(ClusterStateChange stateChange, Address initiator, String txnId, boolean isTransient) {
+    public CommitClusterStateOp(ClusterStateChange stateChange, Address initiator, UUID txnId, boolean isTransient) {
         this.stateChange = stateChange;
         this.initiator = initiator;
         this.txnId = txnId;
@@ -103,7 +105,7 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
         super.writeInternal(out);
         out.writeObject(stateChange);
         out.writeObject(initiator);
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeBoolean(isTransient);
     }
 
@@ -112,7 +114,7 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
         super.readInternal(in);
         stateChange = in.readObject();
         initiator = in.readObject();
-        txnId = in.readUTF();
+        txnId = UUIDSerializationUtil.readUUID(in);
         isTransient = in.readBoolean();
     }
 

@@ -25,6 +25,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * This {@link com.hazelcast.cache.ICache} interface is the {@link javax.cache.Cache} extension offered by
@@ -923,7 +924,7 @@ public interface ICache<K, V>
      * <p>
      * The addPartitionLostListener returns a registration ID. This ID is needed to remove the
      * CachePartitionLostListener using the
-     * {@link #removePartitionLostListener(String)} method.
+     * {@link #removePartitionLostListener(UUID)} method.
      * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
      * IMPORTANT: Please @see com.hazelcast.partition.PartitionLostListener for weaknesses.
@@ -933,9 +934,9 @@ public interface ICache<K, V>
      * @param listener the added CachePartitionLostListener.
      * @return returns the registration ID for the CachePartitionLostListener.
      * @throws java.lang.NullPointerException if listener is null.
-     * @see #removePartitionLostListener(String)
+     * @see #removePartitionLostListener(UUID)
      */
-    String addPartitionLostListener(CachePartitionLostListener listener);
+    UUID addPartitionLostListener(CachePartitionLostListener listener);
 
     /**
      * Removes the specified cache partition lost listener.
@@ -945,7 +946,7 @@ public interface ICache<K, V>
      * @return true if registration is removed, false otherwise.
      * @throws java.lang.NullPointerException if the given ID is null.
      */
-    boolean removePartitionLostListener(String id);
+    boolean removePartitionLostListener(UUID id);
 
     /**
      * <p>

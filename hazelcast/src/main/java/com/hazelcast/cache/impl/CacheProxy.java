@@ -55,6 +55,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -280,7 +281,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration,
                 getNodeEngine().getSerializationService());
-        String regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener, false);
+        UUID regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -296,7 +297,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
 
-        String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
+        UUID regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId != null) {
             if (getService().deregisterListener(getDistributedObjectName(), regId)) {
                 removeListenerLocally(cacheEntryListenerConfiguration);
@@ -325,7 +326,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     }
 
     @Override
-    public String addPartitionLostListener(CachePartitionLostListener listener) {
+    public UUID addPartitionLostListener(CachePartitionLostListener listener) {
         checkNotNull(listener, "CachePartitionLostListener can't be null");
 
         EventFilter filter = new CachePartitionLostEventFilter();
@@ -338,7 +339,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     }
 
     @Override
-    public boolean removePartitionLostListener(String id) {
+    public boolean removePartitionLostListener(UUID id) {
         checkNotNull(id, "Listener ID should not be null!");
         return getService().getNodeEngine().getEventService()
                 .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);

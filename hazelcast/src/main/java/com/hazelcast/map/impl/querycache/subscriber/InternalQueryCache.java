@@ -22,6 +22,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.impl.getters.Extractors;
 
+import java.util.UUID;
+
 /**
  * Internal interface which adds some internally
  * used methods to {@code QueryCache} interface.
@@ -54,9 +56,9 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
 
     void clear();
 
-    String getPublisherListenerId();
+    UUID getPublisherListenerId();
 
-    void setPublisherListenerId(String publisherListenerId);
+    void setPublisherListenerId(UUID publisherListenerId);
 
     /**
      * @return internally used ID for this query cache

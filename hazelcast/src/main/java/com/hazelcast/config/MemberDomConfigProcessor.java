@@ -23,6 +23,7 @@ import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -57,7 +58,7 @@ import static com.hazelcast.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.FLAKE_ID_GENERATOR;
-import static com.hazelcast.config.ConfigSections.GROUP;
+import static com.hazelcast.config.ConfigSections.CLUSTER;
 import static com.hazelcast.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.ConfigSections.IMPORT;
 import static com.hazelcast.config.ConfigSections.INSTANCE_NAME;
@@ -69,6 +70,7 @@ import static com.hazelcast.config.ConfigSections.LOCK;
 import static com.hazelcast.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.config.ConfigSections.MAP;
 import static com.hazelcast.config.ConfigSections.MEMBER_ATTRIBUTES;
+import static com.hazelcast.config.ConfigSections.METRICS;
 import static com.hazelcast.config.ConfigSections.MULTIMAP;
 import static com.hazelcast.config.ConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.config.ConfigSections.NETWORK;
@@ -151,8 +153,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleNetwork(node);
         } else if (IMPORT.isEqual(nodeName)) {
             throw new HazelcastException("Non-expanded <import> element found");
-        } else if (GROUP.isEqual(nodeName)) {
-            handleGroup(node);
+        } else if (CLUSTER.isEqual(nodeName)) {
+            handleCluster(node);
         } else if (PROPERTIES.isEqual(nodeName)) {
             fillProperties(node, config.getProperties());
         } else if (WAN_REPLICATION.isEqual(nodeName)) {
@@ -225,6 +227,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleAdvancedNetwork(node);
         } else if (CP_SUBSYSTEM.isEqual(nodeName)) {
             handleCPSubsystem(node);
+        } else if (METRICS.isEqual(nodeName)) {
+            handleMetrics(node);
         } else {
             return true;
         }
@@ -537,8 +541,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                                      WanBatchReplicationPublisherConfig config) {
         for (Node targetChild : childElements(nodeTarget)) {
             String targetChildName = cleanNodeName(targetChild);
-            if ("group-name".equals(targetChildName)) {
-                config.setGroupName(getTextContent(targetChild));
+            if ("cluster-name".equals(targetChildName)) {
+                config.setClusterName(getTextContent(targetChild));
             } else if ("publisher-id".equals(targetChildName)) {
                 config.setPublisherId(getTextContent(targetChild));
             } else if ("target-endpoints".equals(targetChildName)) {
@@ -936,14 +940,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addFlakeIdGeneratorConfig(generatorConfig);
     }
 
-    private void handleGroup(Node node) {
+    private void handleCluster(Node node) {
         for (Node n : childElements(node)) {
             String value = getTextContent(n).trim();
             String nodeName = cleanNodeName(n);
             if ("name".equals(nodeName)) {
-                config.getGroupConfig().setName(value);
+                config.setClusterName(value);
             } else if ("password".equals(nodeName)) {
-                config.getGroupConfig().setPassword(value);
+                config.setClusterPassword(value);
             }
         }
     }
@@ -2866,6 +2870,39 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 }
             }
             cpSubsystemConfig.addLockConfig(lockConfig);
+        }
+    }
+
+    private void handleMetrics(Node node) {
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                metricsConfig.setEnabled(enabled);
+            } else if ("mc-enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "mc-enabled"));
+                metricsConfig.setMcEnabled(enabled);
+            } else if ("jmx-enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "jmx-enabled"));
+                metricsConfig.setJmxEnabled(enabled);
+            }
+        }
+
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("collection-interval-seconds".equals(nodeName)) {
+                metricsConfig.setCollectionIntervalSeconds(Integer.parseInt(value));
+            } else if ("retention-seconds".equals(nodeName)) {
+                metricsConfig.setRetentionSeconds(Integer.parseInt(value));
+            } else if ("metrics-for-data-structures".equals(nodeName)) {
+                metricsConfig.setMetricsForDataStructuresEnabled(Boolean.parseBoolean(value));
+            } else if ("minimum-level".equals(nodeName)) {
+                metricsConfig.setMinimumLevel(ProbeLevel.valueOf(value));
+            }
         }
     }
 }

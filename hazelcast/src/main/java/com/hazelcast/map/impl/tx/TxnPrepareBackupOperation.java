@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,6 +26,7 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to prepare transaction by locking the key on key backup owner.
@@ -32,9 +34,9 @@ import java.io.IOException;
 public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     private static final long LOCK_TTL_MILLIS = 10000L;
-    private String lockOwner;
+    private UUID lockOwner;
 
-    protected TxnPrepareBackupOperation(String name, Data dataKey, String lockOwner, long lockThreadId) {
+    protected TxnPrepareBackupOperation(String name, Data dataKey, UUID lockOwner, long lockThreadId) {
         super(name, dataKey);
         this.lockOwner = lockOwner;
         this.threadId = lockThreadId;
@@ -59,13 +61,13 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(lockOwner);
+        UUIDSerializationUtil.writeUUID(out, lockOwner);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        lockOwner = in.readUTF();
+        lockOwner = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

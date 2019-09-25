@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -23,6 +24,7 @@ import com.hazelcast.internal.util.SetUtil;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.UUID;
 
 final class WaitersInfo implements IdentifiedDataSerializable {
 
@@ -38,12 +40,12 @@ final class WaitersInfo implements IdentifiedDataSerializable {
         this.conditionId = conditionId;
     }
 
-    public void addWaiter(String caller, long threadId) {
+    public void addWaiter(UUID caller, long threadId) {
         ConditionWaiter waiter = new ConditionWaiter(caller, threadId);
         waiters.add(waiter);
     }
 
-    public void removeWaiter(String caller, long threadId) {
+    public void removeWaiter(UUID caller, long threadId) {
         ConditionWaiter waiter = new ConditionWaiter(caller, threadId);
         waiters.remove(waiter);
     }
@@ -77,7 +79,7 @@ final class WaitersInfo implements IdentifiedDataSerializable {
         out.writeInt(len);
         if (len > 0) {
             for (ConditionWaiter w : waiters) {
-                out.writeUTF(w.caller);
+                UUIDSerializationUtil.writeUUID(out, w.caller);
                 out.writeLong(w.threadId);
             }
         }
@@ -89,17 +91,17 @@ final class WaitersInfo implements IdentifiedDataSerializable {
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                ConditionWaiter waiter = new ConditionWaiter(in.readUTF(), in.readLong());
+                ConditionWaiter waiter = new ConditionWaiter(UUIDSerializationUtil.readUUID(in), in.readLong());
                 waiters.add(waiter);
             }
         }
     }
 
     public static class ConditionWaiter {
-        private final String caller;
+        private final UUID caller;
         private final long threadId;
 
-        ConditionWaiter(String caller, long threadId) {
+        ConditionWaiter(UUID caller, long threadId) {
             this.caller = caller;
             this.threadId = threadId;
         }
@@ -108,7 +110,7 @@ final class WaitersInfo implements IdentifiedDataSerializable {
             return threadId;
         }
 
-        public String getCaller() {
+        public UUID getCaller() {
             return caller;
         }
 

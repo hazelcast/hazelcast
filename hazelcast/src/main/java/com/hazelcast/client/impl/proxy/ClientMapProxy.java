@@ -156,6 +156,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -784,31 +785,31 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull MapListener listener) {
+    public UUID addLocalEntryListener(@Nonnull MapListener listener) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
+    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull MapListener listener,
+    public UUID addLocalEntryListener(@Nonnull MapListener listener,
                                         @Nonnull Predicate<K, V> predicate,
                                         boolean includeValue) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
+    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                         @Nonnull Predicate<K, V> predicate,
                                         boolean includeValue) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull MapListener listener,
+    public UUID addLocalEntryListener(@Nonnull MapListener listener,
                                         @Nonnull Predicate<K, V> predicate,
                                         @Nullable K key,
                                         boolean includeValue) {
@@ -816,7 +817,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
+    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                         @Nonnull Predicate<K, V> predicate,
                                         @Nullable K key,
                                         boolean includeValue) {
@@ -843,21 +844,21 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull MapListener listener, boolean includeValue) {
+    public UUID addEntryListener(@Nonnull MapListener listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, includeValue);
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, includeValue);
     }
 
-    private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor, boolean includeValue) {
+    private UUID addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor, boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         EventHandler<ClientMessage> handler = new ClientMapEventHandler(listenerAdaptor);
         return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), handler);
@@ -871,12 +872,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return MapAddEntryListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -888,13 +889,13 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public boolean removeEntryListener(@Nonnull String registrationId) {
+    public boolean removeEntryListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Listener ID should not be null!");
         return deregisterListener(registrationId);
     }
 
     @Override
-    public String addPartitionLostListener(@Nonnull MapPartitionLostListener listener) {
+    public UUID addPartitionLostListener(@Nonnull MapPartitionLostListener listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> handler = new ClientMapPartitionLostEventHandler(listener);
         return registerListener(createMapPartitionListenerCodec(), handler);
@@ -908,12 +909,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return MapAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return MapRemovePartitionLostListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -925,13 +926,13 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public boolean removePartitionLostListener(@Nonnull String registrationId) {
+    public boolean removePartitionLostListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Listener ID should not be null!");
         return deregisterListener(registrationId);
     }
 
     @Override
-    public String addEntryListener(@Nonnull MapListener listener, @Nonnull K key, boolean includeValue) {
+    public UUID addEntryListener(@Nonnull MapListener listener, @Nonnull K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
@@ -939,7 +940,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull K key,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -948,7 +949,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return addEntryListenerInternal(listenerAdaptor, key, includeValue);
     }
 
-    private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor, K key, boolean includeValue) {
+    private UUID addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor, K key, boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         Data keyData = toData(key);
         EventHandler<ClientMessage> handler = new ClientMapToKeyEventHandler(listenerAdaptor);
@@ -964,12 +965,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return MapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -981,7 +982,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull MapListener listener,
+    public UUID addEntryListener(@Nonnull MapListener listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    @Nullable K key,
                                    boolean includeValue) {
@@ -994,7 +995,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    @Nullable K key,
                                    boolean includeValue) {
@@ -1006,7 +1007,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 : addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
     }
 
-    private String addEntryListenerInternal(@Nonnull ListenerAdapter<IMapEvent> listenerAdaptor,
+    private UUID addEntryListenerInternal(@Nonnull ListenerAdapter<IMapEvent> listenerAdaptor,
                                             @Nonnull Predicate<K, V> predicate,
                                             @Nullable K key,
                                             boolean includeValue) {
@@ -1029,12 +1030,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return MapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -1046,7 +1047,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull MapListener listener,
+    public UUID addEntryListener(@Nonnull MapListener listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -1056,7 +1057,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -1065,7 +1066,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
     }
 
-    private String addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdapter,
+    private UUID addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdapter,
                                             Predicate<K, V> predicate,
                                             boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdapter);
@@ -1084,12 +1085,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return MapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -1953,7 +1954,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             handler = new MapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMapToKeyWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -1974,7 +1975,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             handler = new MapAddEntryListenerWithPredicateCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMapWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -1996,7 +1997,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             handler = new MapAddEntryListenerToKeyCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMapToKeyEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -2018,7 +2019,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             handler = new MapAddEntryListenerCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ClientMapEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -2040,7 +2041,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                     int eventType, String uuid, int numberOfAffectedEntries) {
+                                     int eventType, UUID uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             listenerAdapter.onEvent(createIMapEvent(key, value, oldValue,
                     mergingValue, eventType, numberOfAffectedEntries, member));
@@ -2105,7 +2106,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         @Override
-        public void handleMapPartitionLostEvent(int partitionId, String uuid) {
+        public void handleMapPartitionLostEvent(int partitionId, UUID uuid) {
             Member member = getContext().getClusterService().getMember(uuid);
             listener.partitionLost(new MapPartitionLostEvent(name, member, -1, partitionId));
         }

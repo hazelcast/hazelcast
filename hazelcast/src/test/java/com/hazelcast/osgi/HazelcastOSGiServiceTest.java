@@ -17,7 +17,6 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.osgi.impl.HazelcastInternalOSGiService;
@@ -317,69 +316,68 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void groupNameIsSetToDefaultGroupNameOfBundleWhenGroupingIsNotDisabled() {
+    public void clusterNameIsSetToDefaultClusterNameOfBundleWhenGroupingIsNotDisabled() {
         HazelcastInternalOSGiService service = getService();
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance();
-        assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                osgiInstance.getConfig().getGroupConfig().getName());
+        assertEquals(HazelcastInternalOSGiService.DEFAULT_CLUSTER_NAME,
+                osgiInstance.getConfig().getClusterName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-        assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                instance.getConfig().getGroupConfig().getName());
+        assertEquals(HazelcastInternalOSGiService.DEFAULT_CLUSTER_NAME,
+                instance.getConfig().getClusterName());
     }
 
     @Test
-    public void groupNameIsSetToDefaultGroupNameOfBundleWhenConfigIsGivenWithoutSpecifiedGroupConfigAndGroupingIsNotDisabled() {
+    public void clusterNameIsSetToDefaultClusterNameOfBundleWhenConfigIsGivenWithoutSpecifiedClusterConfigAndGroupingIsNotDisabled() {
         Config config = new Config();
 
         HazelcastInternalOSGiService service = getService();
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
-        assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                osgiInstance.getConfig().getGroupConfig().getName());
+        assertEquals(HazelcastInternalOSGiService.DEFAULT_CLUSTER_NAME,
+                osgiInstance.getConfig().getClusterName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-        assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                instance.getConfig().getGroupConfig().getName());
+        assertEquals(HazelcastInternalOSGiService.DEFAULT_CLUSTER_NAME,
+                instance.getConfig().getClusterName());
     }
 
     @Test
-    public void groupNameIsSetToDefaultGroupNameOfBundleWhenConfigIsGivenWithNullGroupConfigAndGroupingIsNotDisabled() {
+    public void clusterNameIsSetToDefaultClusterNameOfBundleWhenConfigIsGivenWithNullGroupConfigAndGroupingIsNotDisabled() {
         Config config = new Config();
-        config.setGroupConfig(null);
 
         HazelcastInternalOSGiService service = getService();
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
-        assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                osgiInstance.getConfig().getGroupConfig().getName());
+        assertEquals(HazelcastInternalOSGiService.DEFAULT_CLUSTER_NAME,
+                osgiInstance.getConfig().getClusterName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-        assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                instance.getConfig().getGroupConfig().getName());
+        assertEquals(HazelcastInternalOSGiService.DEFAULT_CLUSTER_NAME,
+                instance.getConfig().getClusterName());
     }
 
     @Test
-    public void groupNameIsSetToSpecifiedGroupNameWhenGroupingIsNotDisabled() {
+    public void clusterNameIsSetToSpecifiedClusterNameWhenGroupingIsNotDisabled() {
         final String GROUP_NAME = "my-osgi-group";
 
         HazelcastInternalOSGiService service = getService();
 
         Config config = new Config();
-        config.getGroupConfig().setName(GROUP_NAME);
+        config.setClusterName(GROUP_NAME);
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
         assertEquals(GROUP_NAME,
-                osgiInstance.getConfig().getGroupConfig().getName());
+                osgiInstance.getConfig().getClusterName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
         assertEquals(GROUP_NAME,
-                instance.getConfig().getGroupConfig().getName());
+                instance.getConfig().getClusterName());
     }
 
     @Test
-    public void groupNameIsSetToDefaultGroupNameWhenGroupingIsDisabled() throws BundleException {
+    public void clusterNameIsSetToDefaultClusterNameWhenGroupingIsDisabled() throws BundleException {
         String propValue = System.getProperty(HazelcastOSGiService.HAZELCAST_OSGI_GROUPING_DISABLED);
         TestBundle testBundle = null;
         try {
@@ -394,10 +392,10 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
             assertNotNull(service);
 
             HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance();
-            assertEquals(GroupConfig.DEFAULT_GROUP_NAME, osgiInstance.getConfig().getGroupConfig().getName());
+            assertEquals(Config.DEFAULT_CLUSTER_NAME, osgiInstance.getConfig().getClusterName());
 
             HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-            assertEquals(GroupConfig.DEFAULT_GROUP_NAME, instance.getConfig().getGroupConfig().getName());
+            assertEquals(Config.DEFAULT_CLUSTER_NAME, instance.getConfig().getClusterName());
         } finally {
             if (propValue != null) {
                 System.setProperty(HazelcastOSGiService.HAZELCAST_OSGI_GROUPING_DISABLED, propValue);
@@ -409,8 +407,8 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void groupNameIsSetToSpecifiedGroupNameWhenGroupingIsDisabled() throws BundleException {
-        final String GROUP_NAME = "my-osgi-group";
+    public void clusterNameIsSetToSpecifiedClusterNameWhenGroupingIsDisabled() throws BundleException {
+        final String CLUSTER_NAME = "my-osgi-cluster";
 
         String propValue = System.getProperty(HazelcastOSGiService.HAZELCAST_OSGI_GROUPING_DISABLED);
         TestBundle testBundle = null;
@@ -426,13 +424,13 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
             assertNotNull(service);
 
             Config config = new Config();
-            config.getGroupConfig().setName(GROUP_NAME);
+            config.setClusterName(CLUSTER_NAME);
 
             HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
-            assertEquals(GROUP_NAME, osgiInstance.getConfig().getGroupConfig().getName());
+            assertEquals(CLUSTER_NAME, osgiInstance.getConfig().getClusterName());
 
             HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-            assertEquals(GROUP_NAME, instance.getConfig().getGroupConfig().getName());
+            assertEquals(CLUSTER_NAME, instance.getConfig().getClusterName());
         } finally {
             if (propValue != null) {
                 System.setProperty(HazelcastOSGiService.HAZELCAST_OSGI_GROUPING_DISABLED, propValue);

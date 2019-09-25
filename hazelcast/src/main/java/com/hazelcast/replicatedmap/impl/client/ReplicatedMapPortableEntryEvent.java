@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Class to redirect entry listener events on the members to the listening client
@@ -35,17 +36,17 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
     private Data value;
     private Data oldValue;
     private EntryEventType eventType;
-    private String uuid;
+    private UUID uuid;
     private int numberOfAffectedEntries;
 
     ReplicatedMapPortableEntryEvent() {
     }
 
-    ReplicatedMapPortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid) {
+    ReplicatedMapPortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, UUID uuid) {
         this(key, value, oldValue, eventType, uuid, 0);
     }
 
-    ReplicatedMapPortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid,
+    ReplicatedMapPortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, UUID uuid,
                                     int numberOfAffectedEntries) {
         this.key = key;
         this.value = value;
@@ -71,7 +72,7 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
         return eventType;
     }
 
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
@@ -81,7 +82,8 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("e", eventType.getType());
-        writer.writeUTF("u", uuid);
+        writer.writeLong("uHigh", uuid.getMostSignificantBits());
+        writer.writeLong("uLow", uuid.getLeastSignificantBits());
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
         out.writeData(value);
@@ -91,7 +93,7 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
 
     public void readPortable(PortableReader reader) throws IOException {
         eventType = EntryEventType.getByType(reader.readInt("e"));
-        uuid = reader.readUTF("u");
+        uuid = new UUID(reader.readLong("uHigh"), reader.readLong("uLow"));
         ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
         value = in.readData();

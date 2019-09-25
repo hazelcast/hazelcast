@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.metrics.jmx;
+
+import com.hazelcast.internal.util.BiTuple;
+
+import javax.annotation.Nonnull;
+import javax.management.Attribute;
+import javax.management.AttributeList;
+import javax.management.AttributeNotFoundException;
+import javax.management.DynamicMBean;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanInfo;
+import java.util.Arrays;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.internal.util.BiTuple.of;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static java.util.stream.Collectors.toCollection;
+
+public class MetricsMBean implements DynamicMBean {
+
+    // we add attributes here while they might be read in parallel by JMX client
+    private final ConcurrentMap<String, BiTuple<String, AtomicReference<Number>>> metrics = new ConcurrentHashMap<>();
+
+    /**
+     * Adds a metric if necessary and sets its value.
+     */
+    void setMetricValue(String name, String unit, Number value) {
+        metrics.computeIfAbsent(name, k -> of(unit, new AtomicReference<>()))
+                .element2.lazySet(value);
+    }
+
+    void removeMetric(String name) {
+        metrics.remove(name);
+    }
+
+    @Override
+    public Object getAttribute(String attributeName) throws AttributeNotFoundException {
+        BiTuple<String, AtomicReference<Number>> attribute = metrics.get(attributeName);
+        if (attribute == null) {
+            throw new AttributeNotFoundException(attributeName);
+        }
+        return attribute.element2.get();
+    }
+
+    @Override
+    public void setAttribute(Attribute attribute) {
+        throw new UnsupportedOperationException("setting attributes is not supported");
+    }
+
+    @Override
+    public AttributeList getAttributes(String[] attributes) {
+        return Arrays.stream(attributes)
+                     .filter(metrics::containsKey)
+                     .map(a -> uncheckCall(() -> new Attribute(a, getAttribute(a))))
+                     .collect(toCollection(AttributeList::new));
+    }
+
+    @Override
+    public AttributeList setAttributes(AttributeList attributes) {
+        throw new UnsupportedOperationException("setting attributes is not supported");
+    }
+
+    @Override
+    public Object invoke(String actionName, Object[] params, String[] signature) {
+        throw new UnsupportedOperationException("invoking is not supported");
+    }
+
+    @Override
+    public MBeanInfo getMBeanInfo() {
+        MBeanAttributeInfo[] array = new MBeanAttributeInfo[metrics.size()];
+        int i = 0;
+        for (Entry<String, BiTuple<String, AtomicReference<Number>>> entry : metrics.entrySet()) {
+            array[i++] = new MBeanAttributeInfo(entry.getKey(), "", "Unit: " + entry.getValue().element1,
+                    true, false, false);
+        }
+
+        return new MBeanInfo("Metric", "", array, null, null, null, null);
+    }
+
+    int numAttributes() {
+        return metrics.size();
+    }
+
+    private static <T> T uncheckCall(@Nonnull Callable<T> callable) {
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
+    }
+
+}

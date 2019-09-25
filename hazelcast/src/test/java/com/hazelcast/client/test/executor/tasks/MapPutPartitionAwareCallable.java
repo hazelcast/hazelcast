@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 /**
@@ -58,7 +59,7 @@ public class MapPutPartitionAwareCallable<T, P>
             throws Exception {
         Member member = instance.getCluster().getLocalMember();
 
-        IMap<String, String> map = instance.getMap(mapName);
+        IMap<UUID, String> map = instance.getMap(mapName);
         map.put(member.getUuid(), member.getUuid() + "value");
 
         return (T) member.getUuid();

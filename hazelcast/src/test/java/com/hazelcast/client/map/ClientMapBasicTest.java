@@ -1077,7 +1077,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
         assertEquals(key, view.getKey());
         assertEquals(value, view.getValue());
-        assertEquals((Long) Long.MAX_VALUE, view.getMaxIdle());
+        assertEquals(Long.MAX_VALUE, view.getMaxIdle());
         assertEquals(Long.MAX_VALUE, view.getTtl());
     }
 
@@ -1095,7 +1095,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
         assertEquals(key, view.getKey());
         assertEquals(value, view.getValue());
-        assertEquals((Long) MINUTES.toMillis(maxIdleMins), view.getMaxIdle());
+        assertEquals(MINUTES.toMillis(maxIdleMins), view.getMaxIdle());
         assertEquals(MINUTES.toMillis(ttlMins), view.getTtl());
     }
 
@@ -1112,7 +1112,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
         assertEquals(key, view.getKey());
         assertEquals(value, view.getValue());
-        assertEquals((Long) Long.MAX_VALUE, view.getMaxIdle());
+        assertEquals(Long.MAX_VALUE, view.getMaxIdle());
         assertEquals(MINUTES.toMillis(ttlMins), view.getTtl());
     }
 
@@ -1129,7 +1129,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
         assertEquals(key, view.getKey());
         assertEquals(value, view.getValue());
-        assertEquals(Long.valueOf(11000), view.getMaxIdle());
+        assertEquals(11000L, view.getMaxIdle());
         assertEquals(MINUTES.toMillis(ttlMins), view.getTtl());
     }
 

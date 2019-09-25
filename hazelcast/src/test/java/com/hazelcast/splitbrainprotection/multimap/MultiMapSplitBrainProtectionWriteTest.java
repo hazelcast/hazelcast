@@ -222,12 +222,12 @@ public class MultiMapSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
 
     @Test
     public void removeEntryListenerWithKey_successful_whenSplitBrainProtectionSize_met() {
-        map(0).removeEntryListener("id123");
+        map(0).removeEntryListener(UuidUtil.newUnsecureUUID());
     }
 
     @Test
     public void removeEntryListenerWithKey_successful_whenSplitBrainProtectionSize_notMet() {
-        map(3).removeEntryListener("id123");
+        map(3).removeEntryListener(UuidUtil.newUnsecureUUID());
     }
 
     protected MultiMap map(int index) {

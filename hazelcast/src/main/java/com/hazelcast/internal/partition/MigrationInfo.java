@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,6 +27,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MigrationInfo implements IdentifiedDataSerializable {
@@ -65,7 +67,7 @@ public class MigrationInfo implements IdentifiedDataSerializable {
 
     }
 
-    private String uuid;
+    private UUID uuid;
     private int partitionId;
 
     private PartitionReplica source;
@@ -88,7 +90,7 @@ public class MigrationInfo implements IdentifiedDataSerializable {
     public MigrationInfo(int partitionId, PartitionReplica source, PartitionReplica destination,
             int sourceCurrentReplicaIndex, int sourceNewReplicaIndex,
             int destinationCurrentReplicaIndex, int destinationNewReplicaIndex) {
-        this.uuid = UuidUtil.newUnsecureUuidString();
+        this.uuid = UuidUtil.newUnsecureUUID();
         this.partitionId = partitionId;
         this.source = source;
         this.destination = destination;
@@ -204,7 +206,7 @@ public class MigrationInfo implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeInt(partitionId);
         out.writeByte(sourceCurrentReplicaIndex);
         out.writeByte(sourceNewReplicaIndex);
@@ -220,7 +222,7 @@ public class MigrationInfo implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
         partitionId = in.readInt();
         sourceCurrentReplicaIndex = in.readByte();
         sourceNewReplicaIndex = in.readByte();

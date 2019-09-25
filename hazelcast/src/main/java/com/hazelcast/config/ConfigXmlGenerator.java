@@ -120,9 +120,9 @@ public class ConfigXmlGenerator {
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd\">");
-        gen.open("group")
-                .node("name", config.getGroupConfig().getName())
-                .node("password", getOrMaskValue(config.getGroupConfig().getPassword()))
+        gen.open("cluster")
+                .node("name", config.getClusterName())
+                .node("password", getOrMaskValue(config.getClusterPassword()))
                 .close()
                 .node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName());
@@ -161,6 +161,7 @@ public class ConfigXmlGenerator {
         pnCounterXmlGenerator(gen, config);
         splitBrainProtectionXmlGenerator(gen, config);
         cpSubsystemConfig(gen, config);
+        metricsConfig(gen, config);
         userCodeDeploymentConfig(gen, config);
 
         xml.append("</hazelcast>");
@@ -644,7 +645,7 @@ public class ConfigXmlGenerator {
     private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchReplicationPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("batch-publisher");
-        gen.node("group-name", c.getGroupName())
+        gen.node("cluster-name", c.getClusterName())
            .node("batch-size", c.getBatchSize())
            .node("batch-max-delay-millis", c.getBatchMaxDelayMillis())
            .node("response-timeout-millis", c.getResponseTimeoutMillis())
@@ -1433,6 +1434,19 @@ public class ConfigXmlGenerator {
         }
 
         gen.close().close();
+    }
+
+    private static void metricsConfig(XmlGenerator gen, Config config) {
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        gen.open("metrics",
+                "enabled", metricsConfig.isEnabled(),
+                "mc-enabled", metricsConfig.isMcEnabled(),
+                "jmx-enabled", metricsConfig.isJmxEnabled())
+           .node("collection-interval-seconds", metricsConfig.getCollectionIntervalSeconds())
+           .node("retention-seconds", metricsConfig.getRetentionSeconds())
+           .node("metrics-for-data-structures", metricsConfig.isMetricsForDataStructuresEnabled())
+           .node("minimum-level", metricsConfig.getMinimumLevel())
+           .close();
     }
 
     private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {

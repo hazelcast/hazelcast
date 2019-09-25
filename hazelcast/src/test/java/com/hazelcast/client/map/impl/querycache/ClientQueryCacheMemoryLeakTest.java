@@ -61,6 +61,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -316,7 +317,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         MapListenerRegistry mapListenerRegistry = publisherContext.getMapListenerRegistry();
         QueryCacheListenerRegistry registry = mapListenerRegistry.getOrNull(mapName);
         if (registry != null) {
-            Map<String, String> registeredListeners = registry.getAll();
+            Map<String, UUID> registeredListeners = registry.getAll();
             assertTrue(registeredListeners.isEmpty());
         }
     }

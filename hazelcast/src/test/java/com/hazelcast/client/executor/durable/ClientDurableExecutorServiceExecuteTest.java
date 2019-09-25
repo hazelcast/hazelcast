@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,6 +30,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.UUID;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
@@ -85,18 +86,14 @@ public class ClientDurableExecutorServiceExecuteTest {
         String mapName = randomString();
 
         Member member = server.getCluster().getLocalMember();
-        final String targetUuid = member.getUuid();
+        final UUID targetUuid = member.getUuid();
         String key = generateKeyOwnedBy(server);
 
         service.executeOnKeyOwner(new MapPutRunnable(mapName), key);
 
         final IMap map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                assertTrue(map.containsKey(targetUuid));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(map.containsKey(targetUuid)));
     }
 
     @Test(expected = NullPointerException.class)

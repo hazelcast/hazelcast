@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 /**
  * Task responsible for processing client messages for updating the
@@ -57,7 +58,7 @@ public class PNCounterAddMessageTask extends AbstractAddressMessageTask<RequestP
     protected Operation prepareOperation() {
         final VectorClock vectorClock = new VectorClock();
         if (parameters.replicaTimestamps != null) {
-            for (Entry<String, Long> timestamp : parameters.replicaTimestamps) {
+            for (Entry<UUID, Long> timestamp : parameters.replicaTimestamps) {
                 vectorClock.setReplicaTimestamp(timestamp.getKey(), timestamp.getValue());
             }
         }

@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -94,7 +95,7 @@ public class DistributedScheduledExecutorService
     private NodeEngine nodeEngine;
     private ScheduledExecutorPartition[] partitions;
     private ScheduledExecutorMemberBin memberBin;
-    private String partitionLostRegistration;
+    private UUID partitionLostRegistration;
 
     public DistributedScheduledExecutorService() {
     }

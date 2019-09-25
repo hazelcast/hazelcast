@@ -25,6 +25,7 @@ import com.hazelcast.transaction.TransactionContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 /**
@@ -49,7 +50,7 @@ public interface ClientEndpoint extends Client {
      * @param topic   topic name of listener(mostly distributed object name)
      * @param id      registration ID of remove action
      */
-    void addListenerDestroyAction(String service, String topic, String id);
+    void addListenerDestroyAction(String service, String topic, UUID id);
 
     /**
      * Adds a remove callable to be called when endpoint is destroyed
@@ -58,21 +59,21 @@ public interface ClientEndpoint extends Client {
      * @param registrationId registration ID of destroy action
      * @param removeAction   callable that will be called when endpoint is destroyed
      */
-    void addDestroyAction(String registrationId, Callable<Boolean> removeAction);
+    void addDestroyAction(UUID registrationId, Callable<Boolean> removeAction);
 
     /**
      * @param id registration ID of destroy action
      * @return true if remove is successful
      */
-    boolean removeDestroyAction(String id);
+    boolean removeDestroyAction(UUID id);
 
     Credentials getCredentials();
 
     void setTransactionContext(TransactionContext context);
 
-    TransactionContext getTransactionContext(String txnId);
+    TransactionContext getTransactionContext(UUID txnId);
 
-    void removeTransactionContext(String txnId);
+    void removeTransactionContext(UUID txnId);
 
     /**
      * Indicates whether this endpoint is the owner connection for that client.

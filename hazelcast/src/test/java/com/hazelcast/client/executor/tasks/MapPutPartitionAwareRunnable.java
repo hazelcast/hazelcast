@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * this task should execute on a node owning the given partitionKey argument,
@@ -51,7 +52,7 @@ public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializab
     public void run() {
         Member member = instance.getCluster().getLocalMember();
 
-        IMap<String, String> map = instance.getMap(mapName);
+        IMap<UUID, String> map = instance.getMap(mapName);
         map.put(member.getUuid(), member.getUuid() + "value");
     }
 

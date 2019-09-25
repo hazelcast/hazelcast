@@ -48,6 +48,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -210,13 +211,13 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
     }
 
     public @Nonnull
-    String addItemListener(@Nonnull ItemListener<E> listener,
+    UUID addItemListener(@Nonnull ItemListener<E> listener,
                            boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
         return getService().addItemListener(name, listener, includeValue, false);
     }
 
-    public boolean removeItemListener(@Nonnull String registrationId) {
+    public boolean removeItemListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Null registrationId is not allowed!");
         return getService().removeItemListener(name, registrationId);
     }

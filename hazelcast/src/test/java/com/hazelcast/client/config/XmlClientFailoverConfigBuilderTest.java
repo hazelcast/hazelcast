@@ -47,10 +47,10 @@ public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverCo
     @Test(expected = InvalidConfigurationException.class)
     public void testInvalidRootElement() {
         String xml = "<hazelcast>"
-                + "<group>"
+                + "<cluster>"
                 + "<name>dev</name>"
                 + "<password>clusterpass</password>"
-                + "</group>"
+                + "</cluster>"
                 + "</hazelcast>";
         buildConfig(xml);
     }

@@ -22,9 +22,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class GroupMismatchOp extends AbstractClusterOperation {
+public class ClusterMismatchOp extends AbstractClusterOperation {
 
-    public GroupMismatchOp() {
+    public ClusterMismatchOp() {
     }
 
     @Override
@@ -33,7 +33,7 @@ public class GroupMismatchOp extends AbstractClusterOperation {
         Connection connection = getConnection();
 
         String message = "Node could not join cluster at node: " + connection.getEndPoint()
-                + " Cause: the target cluster has a different group-name";
+                + " Cause: the target cluster has a different cluster-name";
 
         connection.close(message, null);
 
@@ -46,7 +46,7 @@ public class GroupMismatchOp extends AbstractClusterOperation {
 
     @Override
     public int getClassId() {
-        return ClusterDataSerializerHook.GROUP_MISMATCH;
+        return ClusterDataSerializerHook.CLUSTER_MISMATCH;
     }
 }
 

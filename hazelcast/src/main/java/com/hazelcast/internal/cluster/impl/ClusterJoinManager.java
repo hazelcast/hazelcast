@@ -28,7 +28,7 @@ import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
-import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOp;
+import com.hazelcast.internal.cluster.impl.operations.ClusterMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinRequestOp;
 import com.hazelcast.internal.cluster.impl.operations.MasterResponseOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
@@ -56,6 +56,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -95,7 +96,7 @@ public class ClusterJoinManager {
     private final ClusterStateManager clusterStateManager;
 
     private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<>();
-    private final Map<String, Long> recentlyJoinedMemberUuids = new HashMap<>();
+    private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
     private final long staleJoinPreventionDuration;
@@ -195,7 +196,7 @@ public class ClusterJoinManager {
 
             logger.warning(format("Received an invalid join request from %s, cause: clusters part of different cluster-groups",
                     address));
-            nodeEngine.getOperationService().send(new GroupMismatchOp(), address);
+            nodeEngine.getOperationService().send(new ClusterMismatchOp(), address);
         } catch (ConfigMismatchException e) {
             logger.warning(format("Received an invalid join request from %s, cause: %s", address, e.getMessage()));
             OperationService operationService = nodeEngine.getOperationService();
@@ -275,7 +276,7 @@ public class ClusterJoinManager {
 
         final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
         Address target = joinRequest.getAddress();
-        String targetUuid = joinRequest.getUuid();
+        UUID targetUuid = joinRequest.getUuid();
 
         if (hotRestartService.isMemberExcluded(target, targetUuid)) {
             logger.fine("cannot join " + target + " because it is excluded in cluster start.");
@@ -292,7 +293,7 @@ public class ClusterJoinManager {
         return checkClusterStateBeforeJoin(target, targetUuid);
     }
 
-    private boolean checkClusterStateBeforeJoin(Address target, String uuid) {
+    private boolean checkClusterStateBeforeJoin(Address target, UUID uuid) {
         ClusterState state = clusterStateManager.getState();
         if (state == ClusterState.IN_TRANSITION) {
             logger.warning("Cluster state is in transition process. Join is not allowed until "
@@ -336,7 +337,7 @@ public class ClusterJoinManager {
         }
     }
 
-    private boolean checkRecentlyJoinedMemberUuidBeforeJoin(Address target, String uuid) {
+    private boolean checkRecentlyJoinedMemberUuidBeforeJoin(Address target, UUID uuid) {
         cleanupRecentlyJoinedMemberUuids();
         boolean recentlyJoined = recentlyJoinedMemberUuids.containsKey(uuid);
         if (recentlyJoined) {
@@ -472,7 +473,7 @@ public class ClusterJoinManager {
             }
 
             clusterService.getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
-            clusterService.setClusterId(UuidUtil.createClusterUuid());
+            clusterService.setClusterId(UuidUtil.newUnsecureUUID());
             clusterService.getMembershipManager().setLocalMemberListJoinVersion(SINGLETON_MEMBER_LIST_VERSION);
             clusterService.setJoined(true);
 
@@ -712,7 +713,7 @@ public class ClusterJoinManager {
 
                 // member list must be updated on master before preparation of pre-/post-join ops so other operations which have
                 // to be executed on stable cluster can detect the member list version change and retry in case of topology change
-                String thisUuid = clusterService.getThisUuid();
+                UUID thisUuid = clusterService.getThisUuid();
                 if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), thisUuid, thisUuid)) {
                     return;
                 }
