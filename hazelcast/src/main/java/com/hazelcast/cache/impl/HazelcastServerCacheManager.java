@@ -23,7 +23,6 @@ import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceCacheManager;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.spi.impl.InternalCompletableFuture;

@@ -14,12 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.logging;
+package com.hazelcast.logging.impl;
 
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.logging.AbstractLogger;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LogEvent;
+import com.hazelcast.logging.LogListener;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggerFactory;
+import com.hazelcast.logging.LoggingService;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

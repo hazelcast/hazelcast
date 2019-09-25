@@ -18,6 +18,8 @@ package com.hazelcast.cluster.memberselector;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.cluster.memberselector.impl.AndMemberSelector;
+import com.hazelcast.cluster.memberselector.impl.OrMemberSelector;
 
 /**
  * A utility class to get {@link MemberSelector} instances.

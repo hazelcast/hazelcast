@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl;
 
 /**
  * Keeps generic metadata for a key value pair. The type of kept metadata

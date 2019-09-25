@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.journal;
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;

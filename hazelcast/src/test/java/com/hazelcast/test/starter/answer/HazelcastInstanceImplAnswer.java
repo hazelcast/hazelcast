@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.answer;
 
-import com.hazelcast.instance.HazelcastInstanceCacheManager;
+import com.hazelcast.cache.impl.HazelcastInstanceCacheManager;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import org.mockito.invocation.InvocationOnMock;
