@@ -23,17 +23,19 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.Util.entry;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -42,6 +44,7 @@ public class StatefulMappingStressTest extends JetTestSupport {
 
     private static final Random RANDOM = new Random();
     private static final long TTL = SECONDS.toMillis(2);
+    private static final String MAP_SINK_NAME = StatefulMappingStressTest.class.getSimpleName() + "_sink";
 
     private JetInstance instance;
 
@@ -52,42 +55,32 @@ public class StatefulMappingStressTest extends JetTestSupport {
 
     @Test
     public void mapStateful_stressTest() {
-        AtomicLong functionCallCount = new AtomicLong();
-        AtomicLong evictionCallCount = new AtomicLong();
-        stressTest(functionCallCount, evictionCallCount,
+        stressTest(
                 streamStageWithKey -> streamStageWithKey.mapStateful(TTL,
                         Object::new,
                         (state, key, input) -> {
-                            functionCallCount.incrementAndGet();
-                            return null;
+                            return entry(0, 1);
                         },
                         (state, key, wm) -> {
-                            evictionCallCount.incrementAndGet();
-                            return null;
+                            return entry(1, 1);
                         }));
     }
 
     @Test
     public void flatMapStateful_stressTest() {
-        AtomicLong functionCallCount = new AtomicLong();
-        AtomicLong evictionCallCount = new AtomicLong();
-        stressTest(functionCallCount, evictionCallCount,
+        stressTest(
                 streamStageWithKey -> streamStageWithKey.flatMapStateful(TTL,
                         Object::new,
                         (state, key, input) -> {
-                            functionCallCount.incrementAndGet();
-                            return Traversers.empty();
+                            return Traversers.singleton(entry(0, 1));
                         },
                         (state, key, wm) -> {
-                            evictionCallCount.incrementAndGet();
-                            return Traversers.empty();
+                            return Traversers.singleton(entry(1, 1));
                         }));
     }
 
     private void stressTest(
-            AtomicLong functionCallCount,
-            AtomicLong evictionCallCount,
-            Function<StreamStageWithKey<Integer, Integer>, StreamStage<Object>> statefulFn
+            Function<StreamStageWithKey<Integer, Integer>, StreamStage<Map.Entry<Integer, Integer>>> statefulFn
     ) {
         int emitItemsCount = 2_000_000;
         Pipeline p = Pipeline.create();
@@ -96,13 +89,18 @@ public class StatefulMappingStressTest extends JetTestSupport {
                 .filter(f -> f.sequence() < emitItemsCount)
                 .map(t -> RANDOM.nextInt(100_000))
                 .groupingKey(k -> k % 100_000);
-        StreamStage<Object> statefulStage = statefulFn.apply(streamStageWithKey);
-        statefulStage.drainTo(Sinks.logger());
+        StreamStage<Map.Entry<Integer, Integer>> statefulStage = statefulFn.apply(streamStageWithKey);
+        statefulStage.drainTo(Sinks.mapWithMerging(MAP_SINK_NAME, (oldValue, newValue) -> oldValue + newValue));
 
         instance.newJob(p);
+
+        Map<Integer, Integer> map = instance.getMap(MAP_SINK_NAME);
+
         assertTrueEventually(() -> {
-            assertEquals(emitItemsCount, functionCallCount.get());
-            assertTrue(evictionCallCount.get() > 0);
+            assertNotNull(map.get(0));
+            assertNotNull(map.get(1));
+            assertEquals(emitItemsCount, map.get(0).intValue());
+            assertTrue(map.get(1) > 0);
         });
     }
 }
