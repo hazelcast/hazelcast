@@ -1,5 +1,20 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.2 - VISA2 ====
+
+1. Fixes
+
+* Fixed an issue where Management Center was not able to see the 3.12.2 members
+(members with CP subsystem enabled) after performing a rolling upgrade from Hazelcast IMDG 3.11.4 to
+3.12.2. 'ManagementCenterService' was shutting down and throwing an exception
+when a CP-subsystem-enabled member was trying to report to Management Center for the first time. [#15609]
+* Fixed an issue where CP subsystem restarts were not being canceled
+or waited the running/scheduled discovery tasks. Otherwise, two different
+discovery tasks could overlap and run concurrently or one of the discovery
+tasks could run in a corrupted state. [#15568]
+* Improved the client graceful shutdown mechanism so that
+its tasks are executed before marking a client as inactive. [#15565]
+
 ==== 3.12.2 - VISA ====
 
 1. Enhancements
