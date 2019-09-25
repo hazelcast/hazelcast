@@ -1,5 +1,19 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
+Release 3.12.2
+
+- Enabled the REST endpoints for the `cluster.sh`, `cp-subsystem.sh` and `healthcheck.sh` scripts to use HTTPS.
+- Introduced CP Subsystem Persistence.
+- Improved the CP Subsystem chapter's whole content in Hazelcast IMDG Reference Manual.
+- Fixed an issue where Management Center was not able to see the 3.12.2 members (members with CP subsystem enabled).
+- Improved the client graceful shutdown mechanism so that the tasks are executed before marking a client as inactive.
+
+Release 3.12.1
+
+- Added support for updating the licenses of all the running members of a Hazelcast IMDG cluster using the REST API.
+- Introduced complete example configurations (XML and YAML) for Hazelcast Java client and client failover.
+- Updated Hazelcast JCache implementation to support JCache 1.1.1.
+
 Release 3.12
 
 - Support for JDK 6 and 7 has been dropped. The minimum Java version that Hazelcast supports now is Java 8.
