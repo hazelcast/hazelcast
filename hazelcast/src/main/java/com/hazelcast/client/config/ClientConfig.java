@@ -31,6 +31,7 @@ import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 
@@ -49,9 +50,9 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.config.Config.DEFAULT_CLUSTER_NAME;
 import static com.hazelcast.config.Config.DEFAULT_CLUSTER_PASSWORD;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
 
 /**
  * Main configuration to setup a Hazelcast Client
