@@ -114,7 +114,7 @@ public class MapReplicationUpdate implements InternalWanReplicationEvent, Identi
 
     @Nonnull
     @Override
-    public Set<String> getGroupNames() {
+    public Set<String> getClusterNames() {
         // called only in EE
         return Collections.emptySet();
     }

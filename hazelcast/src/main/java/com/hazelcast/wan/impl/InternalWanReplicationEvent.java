@@ -34,11 +34,11 @@ public interface InternalWanReplicationEvent extends WanReplicationEvent {
     Data getKey();
 
     /**
-     * Returns the set of cluster group names on which this event has already
+     * Returns the set of cluster names on which this event has already
      * been processed.
      */
     @Nonnull
-    Set<String> getGroupNames();
+    Set<String> getClusterNames();
 
     /**
      * Returns the backup count (sync and async) for this WAN event.
