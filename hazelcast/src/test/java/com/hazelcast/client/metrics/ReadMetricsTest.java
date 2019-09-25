@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.managementcenter.Metric;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.Address;
@@ -38,11 +39,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.StreamSupport;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.decompressingIterator;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -77,9 +79,15 @@ public class ReadMetricsTest extends HazelcastTestSupport {
             nextSequence.set(result.nextSequence());
             // call should not return empty result - it should wait until a result is available
             assertFalse("empty result", result.collections().isEmpty());
-            assertTrue(StreamSupport.stream(result.collections().get(0).spliterator(), false)
-                                    .anyMatch(m -> m.key().equals("[metric=operation.queueSize]"))
-            );
+
+            boolean operationMetricFound = false;
+            byte[] blob = result.collections().get(0).getValue();
+            Iterator<Metric> metricIterator = decompressingIterator(blob);
+            while (metricIterator.hasNext()) {
+                Metric metric = metricIterator.next();
+                operationMetricFound |= metric.key().equals("[metric=operation.queueSize]");
+            }
+            assertTrue(operationMetricFound);
         });
     }
 

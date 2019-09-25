@@ -24,6 +24,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
+import com.hazelcast.internal.metrics.managementcenter.Metric;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
@@ -46,11 +47,13 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.decompressingIterator;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -284,13 +287,17 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         MetricsResultSet metricsResultSet = new MetricsResultSet(ringbufferSlice.nextSequence(), ringbufferSlice.elements());
 
-        metricsResultSet.collections().forEach(coll -> coll.forEach(metric -> {
-            if (metric.key().contains("test.longValue")) {
-                metricConsumer.consumeLong(metric.value());
-            } else if (metric.key().contains("test.doubleValue")) {
-                metricConsumer.consumeDouble(metric.value() / 10_000D);
-            }
-        }));
+        metricsResultSet.collections().forEach(entry -> {
+            Iterator<Metric> metricIterator = decompressingIterator(entry.getValue());
+            metricIterator.forEachRemaining(metric -> {
+                if (metric.key().contains("test.longValue")) {
+                    metricConsumer.consumeLong(metric.value());
+                } else if (metric.key().contains("test.doubleValue")) {
+                    metricConsumer.consumeDouble(metric.value() / 10_000D);
+                }
+            });
+        });
+
     }
 
     private static class TestProbeSource {

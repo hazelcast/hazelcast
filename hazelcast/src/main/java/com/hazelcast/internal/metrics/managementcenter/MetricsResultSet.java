@@ -16,25 +16,17 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
-import javax.annotation.Nonnull;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.decompressingIterator;
 
 public class MetricsResultSet {
 
     private final long nextSequence;
-    private final List<MetricsCollection> collections;
+    private final List<Map.Entry<Long, byte[]>> collections;
 
-    public MetricsResultSet(long nextSequence, List<Map.Entry<java.lang.Long, byte[]>> collections) {
-        //        this.nextSequence = slice.nextSequence();
+    public MetricsResultSet(long nextSequence, List<Map.Entry<Long, byte[]>> collections) {
         this.nextSequence = nextSequence;
-        this.collections = collections.stream()
-                                      .map(e -> new MetricsCollection(e.getKey(), e.getValue()))
-                                      .collect(Collectors.toList());
+        this.collections = collections;
     }
 
     /**
@@ -44,36 +36,8 @@ public class MetricsResultSet {
         return nextSequence;
     }
 
-    public List<MetricsCollection> collections() {
+    public List<Map.Entry<Long, byte[]>> collections() {
         return collections;
-    }
-
-    /**
-     * Deserializing iterator for reading metrics
-     */
-    public static final class MetricsCollection implements Iterable<Metric> {
-
-        private final long timestamp;
-        private final byte[] bytes;
-
-        private MetricsCollection(long timestamp, byte[] bytes) {
-            this.timestamp = timestamp;
-            this.bytes = bytes;
-        }
-
-        public long timestamp() {
-            return timestamp;
-        }
-
-        public int sizeInBytes() {
-            return bytes.length;
-        }
-
-        @Nonnull
-        @Override
-        public Iterator<Metric> iterator() {
-            return decompressingIterator(bytes);
-        }
     }
 }
 

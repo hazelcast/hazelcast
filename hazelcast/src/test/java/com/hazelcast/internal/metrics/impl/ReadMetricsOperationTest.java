@@ -34,9 +34,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.decompressingIterator;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -70,8 +73,11 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
             nextSequence.set(metricsResultSet.nextSequence());
 
             boolean mapMetric = false;
-            for (MetricsResultSet.MetricsCollection coll : metricsResultSet.collections()) {
-                for (Metric metric : coll) {
+            List<Map.Entry<Long, byte[]>> collections = metricsResultSet.collections();
+            for (Map.Entry<Long, byte[]> entry : collections) {
+                Iterator<Metric> metricIterator = decompressingIterator(entry.getValue());
+                while (metricIterator.hasNext()) {
+                    Metric metric = metricIterator.next();
                     mapMetric |= metric.key().contains("map[");
                 }
             }
