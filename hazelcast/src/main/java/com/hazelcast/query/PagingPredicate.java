@@ -20,9 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
+import com.hazelcast.query.impl.predicates.Visitor;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
 
@@ -75,7 +77,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  * @param <V>
  */
 @BinaryInterface
-public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, IdentifiedDataSerializable {
+public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, VisitablePredicate, IdentifiedDataSerializable {
 
     private static final Map.Entry<Integer, Map.Entry> NULL_ANCHOR = new SimpleImmutableEntry(-1, null);
 
@@ -152,6 +154,32 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
         this(pageSize);
         setInnerPredicate(predicate);
         this.comparator = comparator;
+    }
+
+    /**
+     * Creates a shallow copy of the given original paging predicate while
+     * replacing its inner predicate with the given predicate.
+     *
+     * @param originalPagingPredicate the original paging predicate to copy.
+     * @param predicateReplacement    the inner predicate replacement.
+     */
+    @SuppressWarnings("unchecked")
+    private PagingPredicate(PagingPredicate originalPagingPredicate, Predicate predicateReplacement) {
+        this.anchorList = originalPagingPredicate.anchorList;
+        this.comparator = originalPagingPredicate.comparator;
+        this.pageSize = originalPagingPredicate.pageSize;
+        this.page = originalPagingPredicate.page;
+        this.iterationType = originalPagingPredicate.iterationType;
+        setInnerPredicate(predicateReplacement);
+    }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        if (predicate instanceof VisitablePredicate) {
+            Predicate transformed = ((VisitablePredicate) predicate).accept(visitor, indexes);
+            return transformed == predicate ? this : new PagingPredicate(this, transformed);
+        }
+        return this;
     }
 
     /**
