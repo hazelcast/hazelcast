@@ -112,14 +112,14 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         check("__key = '10' and age >= 110", 1, 2, 3, 0);
         check("age >= 110 and __key = 10", 1, 2, 4, 0);
 
-        check("name = '010' and age >= 110 and __key = 10", 1, 3, 5, 0);
-        check("name <= '010' and age >= 110 and __key = 10", 1, 4, 6, 0);
-        check("age >= 110 and __key = 10 and unindexedAge <= 110", 1, 4, 7, 0);
+        check("name = '010' and age >= 110 and __key = 10", 1, 2, 5, 0);
+        check("name <= '010' and age >= 110 and __key = 10", 1, 2, 6, 0);
+        check("age >= 110 and __key = 10 and unindexedAge <= 110", 1, 2, 7, 0);
 
         map.put(101, new Person(10));
-        check("name = '010' and age = 110", 2, 5, 7, 0);
+        check("name = '010' and age = 110", 2, 3, 7, 0);
         map.removeAll(Predicates.sql("name = '010' and age = 110"));
-        check("name = '010' and age = 110", 0, 7, 7, 0);
+        check("name = '010' and age = 110", 0, 5, 7, 0);
     }
 
     @SuppressWarnings("unchecked")
@@ -127,51 +127,51 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
     public void testFirstComponentQuerying() {
         check(null, 0, 0, 0, 0);
 
-        check("name < '050'", 50, 1, 0, 0);
-        check("__key < 10", 12, 1, 1, 0);
-        check("__key < 50 and __key >= 10", 40, 1, 2, 0);
-        check("__key between 10 and 49", 40, 1, 3, 0);
+        check("name < '050'", 50, 0, 0, 0);
+        check("__key < 10", 12, 0, 1, 0);
+        check("__key < 50 and __key >= 10", 40, 0, 2, 0);
+        check("__key between 10 and 49", 40, 0, 3, 0);
 
-        check("__key = -1", 1, 1, 4, 0);
-        check("__key >= 100", 2, 1, 5, 0);
-        check("__key > 99", 2, 1, 6, 0);
-        check("__key > 100", 1, 1, 7, 0);
-        check("__key < 0", 2, 1, 8, 0);
-        check("__key <= -1", 2, 1, 9, 0);
-        check("__key < -1", 1, 1, 10, 0);
-        check("__key > 101", 0, 1, 11, 0);
-        check("__key > 100", 1, 1, 12, 0);
-        check("__key >= 101", 1, 1, 13, 0);
-        check("__key <= 0", 3, 1, 14, 0);
+        check("__key = -1", 1, 0, 4, 0);
+        check("__key >= 100", 2, 0, 5, 0);
+        check("__key > 99", 2, 0, 6, 0);
+        check("__key > 100", 1, 0, 7, 0);
+        check("__key < 0", 2, 0, 8, 0);
+        check("__key <= -1", 2, 0, 9, 0);
+        check("__key < -1", 1, 0, 10, 0);
+        check("__key > 101", 0, 0, 11, 0);
+        check("__key > 100", 1, 0, 12, 0);
+        check("__key >= 101", 1, 0, 13, 0);
+        check("__key <= 0", 3, 0, 14, 0);
 
-        check("__key >= 50 and height >= 50", 50, 1, 15, 1);
+        check("__key >= 50 and height >= 50", 50, 0, 15, 1);
 
-        check("__key in (-1)", 1, 1, 16, 1);
-        check("__key in (-2, 50, 101)", 3, 1, 17, 1);
-        check("__key in (-2, 50, -2)", 2, 1, 18, 1);
-        check("__key in (50, 50)", 1, 1, 19, 1);
+        check("__key in (-1)", 1, 0, 16, 1);
+        check("__key in (-2, 50, 101)", 3, 0, 17, 1);
+        check("__key in (-2, 50, -2)", 2, 0, 18, 1);
+        check("__key in (50, 50)", 1, 0, 19, 1);
 
         map.put(101, new Person(102));
-        check("__key >= 50 and height >= 50", 51, 1, 20, 2);
+        check("__key >= 50 and height >= 50", 51, 0, 20, 2);
         map.removeAll(Predicates.equal("__key", 101));
-        check("__key >= 50 and height >= 50", 50, 1, 22, 3);
+        check("__key >= 50 and height >= 50", 50, 0, 22, 3);
     }
 
     @Test
     public void testNonCompositeQueries() {
         check(null, 0, 0, 0, 0);
 
-        check("name = '010' and age >= 110", 1, 1, 0, 0);
-        check("age >= 110 and name = '010'", 1, 2, 0, 0);
+        check("name = '010' and age >= 110", 1, 0, 0, 0);
+        check("age >= 110 and name = '010'", 1, 0, 0, 0);
 
-        check("name > '009' and age > 109", 90, 3, 0, 0);
-        check("age >= 109 and this.name > '009'", 90, 4, 0, 0);
+        check("name > '009' and age > 109", 90, 0, 0, 0);
+        check("age >= 109 and this.name > '009'", 90, 0, 0, 0);
 
-        check("age > 99", 100, 4, 0, 0);
-        check("name = '050'", 1, 5, 0, 0);
-        check("name = null", 4, 6, 0, 0);
+        check("age > 99", 100, 0, 0, 0);
+        check("name = '050'", 1, 0, 0, 0);
+        check("name = null", 4, 0, 0, 0);
 
-        check("height != null", 100, 6, 0, 0);
+        check("height != null", 100, 0, 0, 0);
     }
 
     @SuppressWarnings("unchecked")
@@ -225,7 +225,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
 
         assert indexes.size() == queryCounts.length;
         for (int i = 0; i < queryCounts.length; ++i) {
-            assertEquals("Position: " + i, queryCounts[i], map.getLocalMapStats().getIndexStats().get(indexes.get(i)).getQueryCount());
+            assertEquals(queryCounts[i], map.getLocalMapStats().getIndexStats().get(indexes.get(i)).getQueryCount());
         }
     }
 
