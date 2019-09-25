@@ -72,7 +72,7 @@ import static org.springframework.util.Assert.isTrue;
  * <li>{@link HazelcastTypeBeanDefinitionParser}</li>
  * </ul>
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
 public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     /**
