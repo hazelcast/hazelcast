@@ -17,7 +17,9 @@
 package com.hazelcast.client.impl.protocol.codec.holder;
 
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -56,6 +58,7 @@ public class CacheConfigHolder {
     private List<Data> listenerConfigurations;
     private MergePolicyConfig mergePolicyConfig;
     private boolean disablePerEntryInvalidationEvents;
+    private List<ListenerConfigHolder> cachePartitionLostListenerConfigs;
 
     public CacheConfigHolder(String name, String managerPrefix, String uriString, int backupCount, int asyncBackupCount,
                              String inMemoryFormat, EvictionConfigHolder evictionConfigHolder,
@@ -65,7 +68,8 @@ public class CacheConfigHolder {
                              boolean isStatisticsEnabled, HotRestartConfig hotRestartConfig,
                              EventJournalConfig eventJournalConfig, String splitBrainProtectionName,
                              List<Data> listenerConfigurations, MergePolicyConfig mergePolicyConfig,
-                             boolean disablePerEntryInvalidationEvents) {
+                             boolean disablePerEntryInvalidationEvents,
+                             List<ListenerConfigHolder> cachePartitionLostListenerConfigs) {
         this.name = name;
         this.managerPrefix = managerPrefix;
         this.uriString = uriString;
@@ -90,6 +94,7 @@ public class CacheConfigHolder {
         this.listenerConfigurations = listenerConfigurations;
         this.mergePolicyConfig = mergePolicyConfig;
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
+        this.cachePartitionLostListenerConfigs = cachePartitionLostListenerConfigs;
     }
 
     public String getName() {
@@ -188,6 +193,10 @@ public class CacheConfigHolder {
         return disablePerEntryInvalidationEvents;
     }
 
+    public List<ListenerConfigHolder> getCachePartitionLostListenerConfigs() {
+        return cachePartitionLostListenerConfigs;
+    }
+
     public <K, V> CacheConfig<K, V> asCacheConfig(SerializationService serializationService) {
         CacheConfig<K, V> config = new CacheConfig();
         config.setName(name);
@@ -221,6 +230,13 @@ public class CacheConfigHolder {
         config.setMergePolicyConfig(mergePolicyConfig);
         config.setDisablePerEntryInvalidationEvents(disablePerEntryInvalidationEvents);
 
+        if (cachePartitionLostListenerConfigs != null) {
+            List<CachePartitionLostListenerConfig> partitionLostListenerConfigs = new ArrayList<>(
+                    cachePartitionLostListenerConfigs.size());
+            cachePartitionLostListenerConfigs.forEach(listenerConfigHolder -> partitionLostListenerConfigs
+                    .add(listenerConfigHolder.asListenerConfig(serializationService)));
+        }
+
         return config;
     }
 
@@ -237,6 +253,15 @@ public class CacheConfigHolder {
             entryListenerConfigurations.forEach(listenerConfig -> configDatas.add(serializationService.toData(listenerConfig)));
         }
 
+        List<ListenerConfigHolder> cachePartitionLostListenerConfigs = null;
+        List<CachePartitionLostListenerConfig> partitionLostListenerConfigs = config.getPartitionLostListenerConfigs();
+        if (partitionLostListenerConfigs != null) {
+            cachePartitionLostListenerConfigs = new ArrayList<>(partitionLostListenerConfigs.size());
+            final List<ListenerConfigHolder> configs = cachePartitionLostListenerConfigs;
+            partitionLostListenerConfigs
+                    .forEach(listenerConfig -> configs.add(ListenerConfigHolder.of(listenerConfig, serializationService)));
+        }
+
         return new CacheConfigHolder(config.getName(), config.getManagerPrefix(), config.getUriString(), config.getBackupCount(),
                 config.getAsyncBackupCount(), config.getInMemoryFormat().name(),
                 EvictionConfigHolder.of(config.getEvictionConfig(), serializationService), config.getWanReplicationRef(),
@@ -245,7 +270,7 @@ public class CacheConfigHolder {
                 serializationService.toData(config.getExpiryPolicyFactory()), config.isReadThrough(), config.isWriteThrough(),
                 config.isStoreByValue(), config.isManagementEnabled(), config.isStatisticsEnabled(), config.getHotRestartConfig(),
                 config.getEventJournalConfig(), config.getSplitBrainProtectionName(), listenerConfigurations,
-                config.getMergePolicyConfig(), config.isDisablePerEntryInvalidationEvents());
+                config.getMergePolicyConfig(), config.isDisablePerEntryInvalidationEvents(), cachePartitionLostListenerConfigs);
     }
 
 }
