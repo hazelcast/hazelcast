@@ -21,6 +21,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -71,6 +72,8 @@ class MockNetworkingService
 
     private final EndpointManager mockEndpointMgr;
     private final AggregateEndpointManager mockAggrEndpointManager;
+    private final AdvancedNetworkStats inboundNetworkStats = new AdvancedNetworkStats();
+    private final AdvancedNetworkStats outboundNetworkStats = new AdvancedNetworkStats();
 
     MockNetworkingService(IOService ioService, Node node, TestNodeRegistry testNodeRegistry) {
         this.ioService = ioService;

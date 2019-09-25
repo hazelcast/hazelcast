@@ -18,9 +18,10 @@ package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
@@ -41,6 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -48,6 +50,7 @@ import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.singleton;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class TcpIpNetworkingService
         implements NetworkingService<TcpIpConnection> {
@@ -60,6 +63,7 @@ public class TcpIpNetworkingService
 
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
+    private final AtomicBoolean metricsRegistryScheduled = new AtomicBoolean(false);
     private final ServerSocketRegistry registry;
 
     private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers =
@@ -175,6 +179,15 @@ public class TcpIpNetworkingService
 
         networking.restart();
         startAcceptor();
+
+        if (unifiedEndpointManager == null) {
+            if (metricsRegistryScheduled.compareAndSet(false, true)) {
+                // TODO use returned future
+                metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
+            }
+            aggregateEndpointManager.getInboundNetworkStats().registerMetrics(metricsRegistry, "tcp.bytesReceived");
+            aggregateEndpointManager.getOutboundNetworkStats().registerMetrics(metricsRegistry, "tcp.bytesSend");
+        }
     }
 
     @Override
@@ -184,6 +197,11 @@ public class TcpIpNetworkingService
         }
         live = false;
         logger.finest("Stopping Networking Service");
+
+        if (unifiedEndpointManager == null) {
+            metricsRegistry.deregister(aggregateEndpointManager.getInboundNetworkStats());
+            metricsRegistry.deregister(aggregateEndpointManager.getOutboundNetworkStats());
+        }
 
         shutdownAcceptor();
         if (unifiedEndpointManager != null) {
@@ -278,6 +296,29 @@ public class TcpIpNetworkingService
             logger.finest("Closing server socket channel: " + registry);
         }
         registry.destroy();
+    }
+
+    private class RefreshNetworkStatsTask implements Runnable {
+
+        @Override
+        public void run() {
+            for (ProtocolType type : ProtocolType.valuesAsSet()) {
+                long bytesReceived = 0;
+                long bytesSent = 0;
+
+                for (EndpointManager endpointManager : endpointManagers.values()) {
+                    TcpIpEndpointManager tcpIpEndpointManager = (TcpIpEndpointManager) endpointManager;
+                    if (type == tcpIpEndpointManager.getEndpointQualifier().getType()) {
+                        bytesReceived += tcpIpEndpointManager.calculateBytesReceived();
+                        bytesSent += tcpIpEndpointManager.calculateBytesSent();
+                    }
+                }
+
+                aggregateEndpointManager.getInboundNetworkStats().setBytesTransceivedForProtocol(type, bytesReceived);
+                aggregateEndpointManager.getOutboundNetworkStats().setBytesTransceivedForProtocol(type, bytesSent);
+            }
+        }
+
     }
 
 }

@@ -22,6 +22,7 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
@@ -87,6 +88,8 @@ public class MemberStateImpl implements MemberState {
     private HotRestartState hotRestartState = new HotRestartStateImpl();
     private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
     private WanSyncState wanSyncState = new WanSyncStateImpl();
+    private AdvancedNetworkStatsDTO inboundNetworkStats = new AdvancedNetworkStatsDTO();
+    private AdvancedNetworkStatsDTO outboundNetworkStats = new AdvancedNetworkStatsDTO();
 
     public MemberStateImpl() {
     }
@@ -327,6 +330,22 @@ public class MemberStateImpl implements MemberState {
         this.clientStats = clientStats;
     }
 
+    public AdvancedNetworkStatsDTO getInboundNetworkStats() {
+        return inboundNetworkStats;
+    }
+
+    public void setInboundNetworkStats(AdvancedNetworkStatsDTO inboundNetworkStats) {
+        this.inboundNetworkStats = inboundNetworkStats;
+    }
+
+    public AdvancedNetworkStatsDTO getOutboundNetworkStats() {
+        return outboundNetworkStats;
+    }
+
+    public void setOutboundNetworkStats(AdvancedNetworkStatsDTO outboundNetworkStats) {
+        this.outboundNetworkStats = outboundNetworkStats;
+    }
+
     @Override
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
@@ -392,6 +411,8 @@ public class MemberStateImpl implements MemberState {
             clientStatsObject.add(entry.getKey().toString(), entry.getValue());
         }
         root.add("clientStats", clientStatsObject);
+        root.add("inboundNetworkStats", inboundNetworkStats.toJson());
+        root.add("outboundNetworkStats", outboundNetworkStats.toJson());
         return root;
     }
 
@@ -536,6 +557,16 @@ public class MemberStateImpl implements MemberState {
         for (JsonObject.Member next : getObject(json, "clientStats")) {
             clientStats.put(UUID.fromString(next.getName()), next.getValue().asString());
         }
+        JsonObject jsonInboundNetworkStats = getObject(json, "inboundNetworkStats", null);
+        if (jsonInboundNetworkStats != null) {
+            inboundNetworkStats = new AdvancedNetworkStatsDTO();
+            inboundNetworkStats.fromJson(jsonInboundNetworkStats);
+        }
+        JsonObject jsonOutboundNetworkStats = getObject(json, "outboundNetworkStats", null);
+        if (jsonOutboundNetworkStats != null) {
+            outboundNetworkStats = new AdvancedNetworkStatsDTO();
+            outboundNetworkStats.fromJson(jsonOutboundNetworkStats);
+        }
     }
 
     @Override
@@ -564,6 +595,8 @@ public class MemberStateImpl implements MemberState {
                 + ", wanSyncState=" + wanSyncState
                 + ", flakeIdStats=" + flakeIdGeneratorStats
                 + ", clientStats=" + clientStats
+                + ", inboundNetworkStats=" + inboundNetworkStats
+                + ", outboundNetworkStats=" + outboundNetworkStats
                 + '}';
     }
 }

@@ -21,12 +21,14 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
+import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.WanSyncState;
@@ -106,6 +108,11 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         Map<UUID, String> clientStats = new HashMap<>();
         clientStats.put(clientUuid, "someStats");
 
+        AdvancedNetworkStats inboundNetworkStats = new AdvancedNetworkStats();
+        inboundNetworkStats.setBytesTransceivedForProtocol(ProtocolType.MEMBER, 42);
+        AdvancedNetworkStats outboundNetworkStats = new AdvancedNetworkStats();
+        outboundNetworkStats.setBytesTransceivedForProtocol(ProtocolType.MEMBER, 24);
+
         Map<EndpointQualifier, Address> endpoints = new HashMap<>();
         endpoints.put(EndpointQualifier.MEMBER, new Address("127.0.0.1", 5701));
         endpoints.put(EndpointQualifier.resolve(ProtocolType.WAN, "MyWAN"), new Address("127.0.0.1", 5901));
@@ -138,6 +145,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setHotRestartState(hotRestartState);
         memberState.setWanSyncState(wanSyncState);
         memberState.setClientStats(clientStats);
+        memberState.setInboundNetworkStats(new AdvancedNetworkStatsDTO(inboundNetworkStats));
+        memberState.setOutboundNetworkStats(new AdvancedNetworkStatsDTO(outboundNetworkStats));
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
@@ -203,5 +212,12 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         Map<UUID, String> deserializedClientStats = deserialized.getClientStats();
         assertEquals("someStats", deserializedClientStats.get(clientUuid));
+
+        assertNotNull(deserialized.getInboundNetworkStats());
+        assertEquals(42, deserialized.getInboundNetworkStats().getAdvancedNetworkStats()
+                                     .getBytesTransceivedForProtocol(ProtocolType.MEMBER));
+        assertNotNull(deserialized.getOutboundNetworkStats());
+        assertEquals(24, deserialized.getOutboundNetworkStats().getAdvancedNetworkStats()
+                                     .getBytesTransceivedForProtocol(ProtocolType.MEMBER));
     }
 }

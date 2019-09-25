@@ -94,7 +94,7 @@ public interface NetworkingService<T extends Connection> {
 
     /**
      * Shutdowns the service completely.
-     * Endpoints and the networking endine will not be operational anymore and cannot be restarted.
+     * Endpoints and the networking engine will not be operational anymore and cannot be restarted.
      * <p>
      * This method has no effect if it is already shutdown.
      */
