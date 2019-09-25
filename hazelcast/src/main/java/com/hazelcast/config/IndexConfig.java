@@ -203,12 +203,14 @@ public class IndexConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeInt(type.getId());
         writeNullableList(attributes, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        type = IndexType.getById(in.readInt());
         attributes = readNullableList(in);
     }
 
@@ -228,6 +230,10 @@ public class IndexConfig implements IdentifiedDataSerializable {
             return false;
         }
 
+        if (type != null ? !type.equals(that.type) : that.type != null) {
+            return false;
+        }
+
         return getAttributes().equals(that.getAttributes());
     }
 
@@ -235,6 +241,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public int hashCode() {
         int result = (name != null ? name.hashCode() : 0);
 
+        result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + getAttributes().hashCode();
 
         return result;

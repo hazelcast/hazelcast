@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -42,6 +43,7 @@ public class IndexConfigTest {
         assertNull(config.getName());
     }
 
+    @Test
     public void testIndexEquality() {
         checkIndexQuality(new IndexConfig(), new IndexConfig(), true);
 
@@ -55,23 +57,28 @@ public class IndexConfigTest {
 
     private void checkIndexQuality(IndexConfig config1, IndexConfig config2, boolean expected) {
         assertEquals(expected, config1.equals(config2));
+        assertEquals(expected, config1.hashCode() == config2.hashCode());
 
         config1.addAttribute("col1");
         config2.addAttribute("col1");
         assertEquals(expected, config1.equals(config2));
+        assertEquals(expected, config1.hashCode() == config2.hashCode());
 
         config1.addAttribute("col2");
         config2.addAttribute("col2");
         assertEquals(expected, config1.equals(config2));
+        assertEquals(expected, config1.hashCode() == config2.hashCode());
 
         List<String> cols = new LinkedList<>();
         cols.add("col1");
         cols.add("col2");
         config2.setAttributes(cols);
         assertEquals(expected, config1.equals(config2));
+        assertEquals(expected, config1.hashCode() == config2.hashCode());
 
         config2.addAttribute("col3");
-        assertEquals(config1, config2);
+        assertNotEquals(config1, config2);
+        assertNotEquals(config1.hashCode(), config2.hashCode());
     }
 
     @Test(expected = NullPointerException.class)

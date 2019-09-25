@@ -30,11 +30,10 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.transaction.TransactionOptions;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,41 +47,37 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.startsWith;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexCreateTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "map";
 
-    @Parameterized.Parameters(name = "Executing: {0}")
+    @Parameterized.Parameters(name = "Executing: {0}, {1}")
     public static Collection<Object[]> parameters() {
-
-        TransactionOptions onePhaseOption = TransactionOptions.getDefault();
-        onePhaseOption.setTransactionType(ONE_PHASE);
-
-        TransactionOptions twoPhaseOption = TransactionOptions.getDefault();
-        twoPhaseOption.setTransactionType(TWO_PHASE);
-
         List<Object[]> res = new ArrayList<>();
 
-        res.add(new Object[] { new StaticMapMemberHandler() });
-        res.add(new Object[] { new DynamicMapMemberHandler() });
-        res.add(new Object[] { new DynamicIndexMemberHandler() });
-        res.add(new Object[] { new DynamicMapClientHandler() });
-        res.add(new Object[] { new DynamicIndexClientHandler() });
+        for (IndexType type : IndexType.values()) {
+            res.add(new Object[] { new StaticMapMemberHandler(), type });
+            res.add(new Object[] { new DynamicMapMemberHandler(), type });
+            res.add(new Object[] { new DynamicIndexMemberHandler(), type });
+            res.add(new Object[] { new DynamicMapClientHandler(), type });
+            res.add(new Object[] { new DynamicIndexClientHandler(), type });
+        }
 
         return res;
     }
 
-    @Parameterized.Parameter
+    @Parameterized.Parameter(0)
     public static Handler handler;
+
+    @Parameterized.Parameter(1)
+    public static IndexType type;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -193,7 +188,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
                 assertNotNull("Index not found: " + expectedName, index);
 
-                assertEquals(indexConfig.getType() == IndexType.SORTED, index.isOrdered());
+                assertEquals(type == IndexType.SORTED, index.isOrdered());
+                assertEquals(type, index.getConfig().getType());
                 assertEquals(indexConfig.getAttributes().size(), index.getComponents().length);
 
                 for (int i = 0; i < indexConfig.getAttributes().size(); i++) {
@@ -220,6 +216,8 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
     private static IndexConfig createConfig(String... attributes) {
         IndexConfig config = new IndexConfig();
+
+        config.setType(type);
 
         if (attributes != null) {
             for (String attribute : attributes) {
