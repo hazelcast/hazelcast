@@ -79,6 +79,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
@@ -170,12 +171,7 @@ public class TimedMemberStateFactory {
         memberState.setClients(serializableClientEndPoints);
 
         memberState.setUuid(node.getThisUuid());
-        if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
-            memberState.setCpMemberUuid(null);
-        } else {
-            CPMember localCPMember = instance.getCPSubsystem().getLocalCPMember();
-            memberState.setCpMemberUuid(localCPMember != null ? localCPMember.getUuid().toString() : null);
-        }
+        memberState.setCpMemberUuid(getLocalCPMemberUuidSafely());
 
         Address thisAddress = node.getThisAddress();
         memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
@@ -206,6 +202,20 @@ public class TimedMemberStateFactory {
         createWanSyncState(memberState);
 
         memberState.setClientStats(node.clientEngine.getClientStatistics());
+    }
+
+    private String getLocalCPMemberUuidSafely() {
+        if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
+            return null;
+        }
+        try {
+            CPMember localCPMember = instance.getCPSubsystem().getLocalCPMember();
+            return localCPMember != null ? localCPMember.getUuid().toString() : null;
+        } catch (UnsupportedOperationException e) {
+            // this exception means that RU is in progress
+            ignore(e);
+        }
+        return null;
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {
