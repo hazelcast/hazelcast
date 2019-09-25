@@ -275,7 +275,7 @@ public class HazelcastPropertiesTest {
     public void getEnum_default() {
         ProbeLevel level = config.getMetricsConfig().getMinimumLevel();
 
-        assertEquals(ProbeLevel.MANDATORY, level);
+        assertEquals(ProbeLevel.INFO, level);
     }
 
     @Test
