@@ -359,6 +359,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public ProbeBuilder newProbeBuilder() {
-        return new ProbeBuilderImpl(this);
+        return new ProbeBuilderImpl(this, null);
+    }
+
+    @Override
+    public ProbeBuilder newProbeBuilder(String namePrefix) {
+        return new ProbeBuilderImpl(this, namePrefix);
     }
 }
