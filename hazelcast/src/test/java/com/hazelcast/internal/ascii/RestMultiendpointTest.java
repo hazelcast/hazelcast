@@ -46,7 +46,7 @@ public class RestMultiendpointTest
     @Override
     public Config getConfig() {
         Config config = super.getConfig();
-        config.getGroupConfig().setName(randomString());
+        config.setClusterName(randomString());
         ServerSocketEndpointConfig memberEndpointConfig = new ServerSocketEndpointConfig();
         memberEndpointConfig.setName("MEMBER")
                       .setPort(6000)

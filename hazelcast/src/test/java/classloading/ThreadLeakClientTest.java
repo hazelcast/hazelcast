@@ -87,7 +87,7 @@ public class ThreadLeakClientTest {
     public void testThreadLeakWhenClientCanNotStartDueToAuthenticationError() {
         Hazelcast.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
-        config.getGroupConfig().setName("invalid cluster");
+        config.setClusterName("invalid cluster");
         Set<Thread> testStartThreads = getThreads();
         try {
             HazelcastClient.newHazelcastClient(config);

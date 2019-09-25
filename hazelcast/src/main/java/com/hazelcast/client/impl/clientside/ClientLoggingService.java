@@ -51,16 +51,16 @@ public class ClientLoggingService implements LoggingService {
     private final String clientName;
     private volatile String versionMessage;
 
-    public ClientLoggingService(String groupName, String loggingType, BuildInfo buildInfo, String clientName) {
+    public ClientLoggingService(String clusterName, String loggingType, BuildInfo buildInfo, String clientName) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.buildInfo = buildInfo;
         this.clientName = clientName;
-        updateGroupName(groupName);
+        updateClusterName(clusterName);
     }
 
-    public void updateGroupName(String groupName) {
+    public void updateClusterName(String clusterName) {
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        this.versionMessage = clientName + " [" + groupName + "]"
+        this.versionMessage = clientName + " [" + clusterName + "]"
                 + (jetBuildInfo != null ? " [" + jetBuildInfo.getVersion() + "]" : "")
                 + " [" + buildInfo.getVersion() + "] ";
     }

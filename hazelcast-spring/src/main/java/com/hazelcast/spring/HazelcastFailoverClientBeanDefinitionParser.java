@@ -33,7 +33,7 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ro
  * BeanDefinitionParser for Hazelcast Client Configuration.
  *     <hz:client-failover id="blueGreenClient" try-count="5">
  *         <hz:client>
- *             <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+ *             <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
  *             <hz:network>
  *                 <hz:member>127.0.0.1:5700</hz:member>
  *                 <hz:member>127.0.0.1:5701</hz:member>
@@ -41,7 +41,7 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ro
  *         </hz:client>
  *
  *         <hz:client>
- *             <hz:group name="alternativeClusterName" password="${cluster.group.password}"/>
+ *             <hz:cluster name="alternativeClusterName" password="${cluster.password}"/>
  *             <hz:network>
  *                 <hz:member>127.0.0.1:5702</hz:member>
  *                 <hz:member>127.0.0.1:5703</hz:member>

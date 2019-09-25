@@ -98,8 +98,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         nodeEngine.getMetricsRegistry().scanAndRegister(this, "transactions");
     }
 
-    public String getGroupName() {
-        return nodeEngine.getConfig().getGroupConfig().getName();
+    public String getClusterName() {
+        return nodeEngine.getConfig().getClusterName();
     }
 
     @Override

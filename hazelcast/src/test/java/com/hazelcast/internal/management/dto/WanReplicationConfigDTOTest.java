@@ -43,7 +43,7 @@ public class WanReplicationConfigDTOTest {
                 .setName("myName")
                 .setWanConsumerConfig(new WanConsumerConfig())
                 .addWanBatchReplicationPublisherConfig(new WanBatchReplicationPublisherConfig()
-                        .setGroupName("group1"))
+                        .setClusterName("group1"))
                 .addCustomPublisherConfig(new CustomWanPublisherConfig()
                         .setPublisherId("group2")
                         .setClassName("className"));

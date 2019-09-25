@@ -20,9 +20,9 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <group>
+    <cluster>
         <name>foobar-xml</name>
         <password>dev-pass</password>
-    </group>
+    </cluster>
 
 </hazelcast>

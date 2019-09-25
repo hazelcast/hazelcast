@@ -46,11 +46,11 @@ public class ClientOutBoundPortTest {
     @Test
     public void clientOutboundPortRangeTest() {
         Config config1 = new Config();
-        config1.getGroupConfig().setName("client-out-test");
+        config1.setClusterName("client-out-test");
         Hazelcast.newHazelcastInstance(config1);
 
         ClientConfig config2 = new ClientConfig();
-        config2.getGroupConfig().setName("client-out-test");
+        config2.setClusterName("client-out-test");
         config2.getNetworkConfig().setOutboundPortDefinitions(Arrays.asList("34700", "34703-34705"));
         HazelcastInstance client = HazelcastClient.newHazelcastClient(config2);
 

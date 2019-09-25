@@ -64,9 +64,8 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
 
         // with this config, the server will authenticate any credential of type CustomCredentials
         Config config = new Config();
-        config.getGroupConfig()
-                .setName(USERNAME)
-                .setPassword(PASSWORD);
+        config.setClusterName(USERNAME)
+                .setClusterPassword(PASSWORD);
         config.getSerializationConfig()
                 .addPortableFactory(1, factory);
         hazelcastFactory.newHazelcastInstance(config);

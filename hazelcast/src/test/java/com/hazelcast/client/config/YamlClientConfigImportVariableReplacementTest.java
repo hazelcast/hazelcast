@@ -17,7 +17,6 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.internal.nio.IOUtil;
@@ -276,12 +275,12 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "          secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1\n"
                 + "          secretKeyAlgorithm: DES\n"
                 + "      - class-name: " + AbstractConfigImportVariableReplacementTest.IdentityReplacer.class.getName() + "\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: ${java.version} $ID{dev}\n"
                 + "    password: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}";
-        GroupConfig groupConfig = buildConfig(yaml, System.getProperties()).getGroupConfig();
-        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getName());
-        assertEquals("My very secret secret", groupConfig.getPassword());
+        ClientConfig config = buildConfig(yaml, System.getProperties());
+        assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
+        assertEquals("My very secret secret", config.getClusterPassword());
     }
 
     @Override
@@ -311,10 +310,10 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "          p2: \"\"\n"
                 + "          p3: another property\n"
                 + "          p4: <test/>\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}";
-        GroupConfig groupConfig = buildConfig(yaml, System.getProperties()).getGroupConfig();
-        assertEquals("a property  another property <test/> $T{p5}", groupConfig.getName());
+        ClientConfig config = buildConfig(yaml, System.getProperties());
+        assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
     }
 
     @Override
@@ -322,25 +321,24 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     public void testNoConfigReplacersMissingProperties() {
         String yaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: ${noSuchPropertyAvailable}";
 
-        GroupConfig groupConfig = buildConfig(yaml, System.getProperties()).getGroupConfig();
-        assertEquals("${noSuchPropertyAvailable}", groupConfig.getName());
+        ClientConfig config = buildConfig(yaml, System.getProperties());
+        assertEquals("${noSuchPropertyAvailable}", config.getClusterName());
     }
 
     @Override
     @Test
-    public void testImportGroupConfigFromClassPath() {
+    public void testImportClusterConfigFromClassPath() {
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - classpath:hazelcast-client-c1.yaml";
 
         ClientConfig config = buildConfig(yaml);
-        GroupConfig groupConfig = config.getGroupConfig();
-        assertEquals("cluster1", groupConfig.getName());
-        assertEquals("cluster1pass", groupConfig.getPassword());
+        assertEquals("cluster1", config.getClusterName());
+        assertEquals("cluster1pass", config.getClusterPassword());
     }
 
     @Override
@@ -395,7 +393,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: name";
         writeStringToStreamAndClose(os, importedYaml);
 
@@ -403,11 +401,11 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: name";
 
         ClientConfig config = buildConfig(yaml, "config.location", file.getAbsolutePath());
-        assertEquals("name", config.getGroupConfig().getName());
+        assertEquals("name", config.getClusterName());
     }
 
     @Test

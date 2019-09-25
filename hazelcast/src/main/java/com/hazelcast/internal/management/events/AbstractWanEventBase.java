@@ -45,7 +45,7 @@ abstract class AbstractWanEventBase extends AbstractEventBase {
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.add("wanReplicationName", wanReplicationName);
-        json.add("targetGroupName", wanPublisherId);
+        json.add("targetClusterName", wanPublisherId);
         json.add("mapName", mapName);
         return json;
     }

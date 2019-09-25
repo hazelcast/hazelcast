@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring.security;
 
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -25,16 +24,18 @@ import java.util.Properties;
 
 public class DummyCredentialsFactory implements ICredentialsFactory {
 
-    private GroupConfig groupConfig;
+    private String clusterName;
+    private String clusterPassword;
 
     @Override
-    public void configure(GroupConfig groupConfig, Properties properties) {
-        this.groupConfig = groupConfig;
+    public void configure(String clusterName, String clusterPassword, Properties properties) {
+        this.clusterName = clusterName;
+        this.clusterPassword = clusterPassword;
     }
 
     @Override
     public Credentials newCredentials() {
-        return new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
+        return new UsernamePasswordCredentials(clusterName, clusterPassword);
     }
 
     @Override

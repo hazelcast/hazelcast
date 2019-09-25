@@ -54,7 +54,6 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -437,12 +436,22 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public GroupConfig getGroupConfig() {
-        return instance.getClientConfig().getGroupConfig();
+    public String getClusterName() {
+        return instance.getClientConfig().getClusterName();
     }
 
     @Override
-    public Config setGroupConfig(GroupConfig groupConfig) {
+    public Config setClusterName(String clusterName) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public String getClusterPassword() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setClusterPassword(final String password) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

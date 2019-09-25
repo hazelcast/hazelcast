@@ -235,9 +235,9 @@ public final class ConfigValidator {
                     EndpointQualifier qualifier = EndpointQualifier.resolve(WAN, wanPublisherConfig.getEndpoint());
                     if (endpointConfigs.get(qualifier) == null) {
                         throw new InvalidConfigurationException(
-                                format("WAN publisher config for group name '%s' requires an wan-endpoint "
+                                format("WAN publisher config for cluster name '%s' requires an wan-endpoint "
                                                 + "config with identifier '%s' but none was found",
-                                        wanPublisherConfig.getGroupName(), wanPublisherConfig.getEndpoint()));
+                                        wanPublisherConfig.getClusterName(), wanPublisherConfig.getEndpoint()));
                     }
                 }
             }

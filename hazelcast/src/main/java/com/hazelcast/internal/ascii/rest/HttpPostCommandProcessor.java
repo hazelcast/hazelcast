@@ -17,7 +17,7 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.CPSubsystem;
@@ -850,26 +850,26 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     /**
-     * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given group name is compared to
+     * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given cluster name is compared to
      * configuration. Otherwise member JAAS authentication (member login module stack) is used to authenticate the command.
      */
-    protected boolean authenticate(HttpPostCommand command, String groupName, String pass)
+    protected boolean authenticate(HttpPostCommand command, String clusterName, String pass)
             throws UnsupportedEncodingException {
-        String decodedName = URLDecoder.decode(groupName, "UTF-8");
+        String decodedName = URLDecoder.decode(clusterName, "UTF-8");
         SecurityContext securityContext = textCommandService.getNode().getNodeExtension().getSecurityContext();
         if (securityContext == null) {
-            final GroupConfig groupConfig = textCommandService.getNode().getConfig().getGroupConfig();
+            final Config config = textCommandService.getNode().getConfig();
             if (pass != null && !pass.isEmpty()) {
                 logger.fine("Password was provided but the Hazelcast Security is disabled.");
             }
-            return groupConfig.getName().equals(decodedName);
+            return config.getClusterName().equals(decodedName);
         }
         if (pass == null) {
             logger.fine("Empty password is not allowed when the Hazelcast Security is enabled.");
             return false;
         }
         String decodedPass = URLDecoder.decode(pass, "UTF-8");
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(groupName, decodedPass);
+        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(clusterName, decodedPass);
         try {
             LoginContext lc = securityContext.createMemberLoginContext(credentials, command.getConnection());
             lc.login();

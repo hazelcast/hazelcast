@@ -47,7 +47,7 @@
 
     <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
         <hz:config>
-            <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+            <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>
@@ -64,7 +64,7 @@
     </hz:hazelcast>
 
     <hz:client id="client" lazy-init="true" scope="prototype">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+        <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
                     connection-timeout="1000"

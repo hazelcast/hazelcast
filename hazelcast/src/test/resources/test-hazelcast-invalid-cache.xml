@@ -20,10 +20,10 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <group>
+    <cluster>
         <name>F4D03AC8-B5F7-4542-9BAD-0A94BA48E95D</name>
         <password>6E282022-3BAD-4F5F-8122-CCBE85BD057E</password>
-    </group>
+    </cluster>
     <network>
         <join>
             <multicast enabled="false"/>

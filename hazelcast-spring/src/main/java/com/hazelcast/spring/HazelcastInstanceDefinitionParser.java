@@ -35,7 +35,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  * <pre>{@code
  * <hz:hazelcast id="instance">
  *      <hz:config>
- *          <hz:group name="dev" password="password"/>
+ *          <hz:cluster name="dev" password="password"/>
  *          <hz:network port="5701" port-auto-increment="false">
  *              <hz:join>
  *                  <hz:multicast enabled="false" multicast-group="224.2.2.3" multicast-port="54327"/>

@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.ReAuthenticationOperationSupplier;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
@@ -146,10 +145,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
             return authenticate(clientEngine.getSecurityContext());
         } else if (credentials instanceof UsernamePasswordCredentials) {
             UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
-            return verifyGroupName(usernamePasswordCredentials);
+            return verifyClusterName(usernamePasswordCredentials);
         } else {
             logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster "
-                    + "group-name and group-password should be used for authentication!\n" + "Current credentials type is: "
+                    + "cluster-name and group-password should be used for authentication!\n" + "Current credentials type is: "
                     + credentials.getClass().getName());
             return CREDENTIALS_FAILED;
         }
@@ -172,10 +171,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         }
     }
 
-    private AuthenticationStatus verifyGroupName(UsernamePasswordCredentials credentials) {
-        GroupConfig groupConfig = nodeEngine.getConfig().getGroupConfig();
-        String nodeGroupName = groupConfig.getName();
-        boolean usernameMatch = nodeGroupName.equals(credentials.getName());
+    private AuthenticationStatus verifyClusterName(UsernamePasswordCredentials credentials) {
+        String nodeClusterName = nodeEngine.getConfig().getClusterName();
+        boolean usernameMatch = nodeClusterName.equals(credentials.getName());
         return usernameMatch ? AUTHENTICATED : CREDENTIALS_FAILED;
     }
 

@@ -35,7 +35,6 @@ import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -73,7 +72,7 @@ import static org.springframework.util.Assert.isTrue;
  * <b>Sample Spring XML for Hazelcast Client:</b>
  * <pre>{@code
  *   <hz:client id="client">
- *      <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+ *      <hz:cluster name="${cluster.name}" password="${cluster.password}" />
  *      <hz:network connection-attempt-limit="3"
  *          connection-attempt-period="3000"
  *          connection-timeout="1000"
@@ -147,8 +146,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             handleClientAttributes(rootNode);
             for (Node node : childElements(rootNode)) {
                 String nodeName = cleanNodeName(node);
-                if ("group".equals(nodeName)) {
-                    createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
+                if ("cluster".equals(nodeName)) {
+                    handleClusterAttributes(node);
                 } else if ("properties".equals(nodeName)) {
                     handleProperties(node, configBuilder);
                 } else if ("network".equals(nodeName)) {

@@ -69,10 +69,10 @@ public class ConfigCompatibilityChecker {
         if (c1 == null || c2 == null) {
             throw new IllegalArgumentException("One of the two configs is null");
         }
-        if (!nullSafeEqual(c1.getGroupConfig().getName(), c2.getGroupConfig().getName())) {
+        if (!nullSafeEqual(c1.getClusterName(), c2.getClusterName())) {
             return false;
         }
-        if (!nullSafeEqual(c1.getGroupConfig().getPassword(), c2.getGroupConfig().getPassword())) {
+        if (!nullSafeEqual(c1.getClusterPassword(), c2.getClusterPassword())) {
             throw new HazelcastException("Incompatible group password");
         }
 
@@ -1238,7 +1238,7 @@ public class ConfigCompatibilityChecker {
         @Override
         public boolean check(WanBatchReplicationPublisherConfig c1, WanBatchReplicationPublisherConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getGroupName(), c2.getGroupName())
+                    && nullSafeEqual(c1.getClusterName(), c2.getClusterName())
                     && nullSafeEqual(c1.getPublisherId(), c2.getPublisherId())
                     && c1.isSnapshotEnabled() == c2.isSnapshotEnabled()
                     && c1.getInitialPublisherState() == c2.getInitialPublisherState()

@@ -26,7 +26,6 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -190,13 +189,23 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public GroupConfig getGroupConfig() {
-        return staticConfig.getGroupConfig();
+    public String getClusterName() {
+        return staticConfig.getClusterName();
     }
 
     @Override
-    public Config setGroupConfig(GroupConfig groupConfig) {
-        return staticConfig.setGroupConfig(groupConfig);
+    public Config setClusterName(String clusterName) {
+        return staticConfig.setClusterName(clusterName);
+    }
+
+    @Override
+    public String getClusterPassword() {
+        return staticConfig.getClusterPassword();
+    }
+
+    @Override
+    public Config setClusterPassword(final String password) {
+        return staticConfig.setClusterPassword(password);
     }
 
     @Override

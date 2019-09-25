@@ -38,7 +38,7 @@ public class SplitBrainProtectionTestUtil {
         Address address = getNode(instance).address;
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
         clientConfig.getNetworkConfig().setSmartRouting(false);
-        clientConfig.getGroupConfig().setName(instance.getConfig().getGroupConfig().getName());
+        clientConfig.setClusterName(instance.getConfig().getClusterName());
         return clientConfig;
     }
 }

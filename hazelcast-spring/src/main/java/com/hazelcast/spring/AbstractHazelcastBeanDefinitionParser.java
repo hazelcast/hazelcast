@@ -362,6 +362,22 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     socketInterceptorConfigBuilder.getBeanDefinition());
         }
 
+        void handleClusterAttributes(Node node) {
+            NamedNodeMap attributes = node.getAttributes();
+            if (attributes != null) {
+                for (int a = 0; a < attributes.getLength(); a++) {
+                    Node att = attributes.item(a);
+                    String name = att.getNodeName();
+                    String value = att.getNodeValue();
+                    if ("name".equals(name)) {
+                        configBuilder.addPropertyValue("clusterName", value);
+                    } else if ("password".equals(name)) {
+                        configBuilder.addPropertyValue("clusterPassword", value);
+                    }
+                }
+            }
+        }
+
         protected void handleProperties(Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
             ManagedMap properties = parseProperties(node);
             beanDefinitionBuilder.addPropertyValue("properties", properties);

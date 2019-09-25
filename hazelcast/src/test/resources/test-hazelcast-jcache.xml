@@ -22,10 +22,10 @@
 
     <instance-name>test-hazelcast-jcache</instance-name>
 
-    <group>
-        <name>test-group1</name>
+    <cluster>
+        <name>test-cluster1</name>
         <password>test-pass1</password>
-    </group>
+    </cluster>
 
     <cache name="cache1">
         <key-type class-name="java.lang.Object"/>

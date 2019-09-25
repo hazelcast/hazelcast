@@ -1340,7 +1340,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    " + configName + ":\n"
                 + "      batch-publisher:\n"
                 + "        publisherId:\n"
-                + "          group-name: nyc\n"
+                + "          cluster-name: nyc\n"
                 + "          batch-size: 1000\n"
                 + "          batch-max-delay-millis: 2000\n"
                 + "          response-timeout-millis: 60000\n"
@@ -1386,7 +1386,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(batchPublishers);
         assertEquals(1, batchPublishers.size());
         WanBatchReplicationPublisherConfig publisherConfig = batchPublishers.get(0);
-        assertEquals("nyc", publisherConfig.getGroupName());
+        assertEquals("nyc", publisherConfig.getClusterName());
         assertEquals("publisherId", publisherConfig.getPublisherId());
         assertEquals(1000, publisherConfig.getBatchSize());
         assertEquals(2000, publisherConfig.getBatchMaxDelayMillis());
@@ -1616,7 +1616,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    my-wan-cluster:\n"
                 + "      batch-publisher:\n"
                 + "        istanbulPublisherId:\n"
-                + "          group-name: istanbul\n"
+                + "          cluster-name: istanbul\n"
                 + "          batch-size: 100\n"
                 + "          batch-max-delay-millis: 200\n"
                 + "          response-timeout-millis: 300\n"
@@ -1677,7 +1677,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         List<WanBatchReplicationPublisherConfig> publisherConfigs = wanConfig.getBatchPublisherConfigs();
         assertEquals(2, publisherConfigs.size());
         WanBatchReplicationPublisherConfig pc1 = publisherConfigs.get(0);
-        assertEquals("istanbul", pc1.getGroupName());
+        assertEquals("istanbul", pc1.getClusterName());
         assertEquals("istanbulPublisherId", pc1.getPublisherId());
         assertEquals(100, pc1.getBatchSize());
         assertEquals(200, pc1.getBatchMaxDelayMillis());
@@ -1706,7 +1706,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertDiscoveryConfig(pc1.getDiscoveryConfig());
 
         WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
-        assertEquals("ankara", pc2.getGroupName());
+        assertEquals("ankara", pc2.getClusterName());
         assertNull(pc2.getPublisherId());
         assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());

@@ -25,7 +25,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:group name="dev1" password="dev-pass"/>
+            <hz:cluster name="dev1" password="dev-pass"/>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="true"/>

@@ -20,10 +20,10 @@
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd">
 
-    <group>
+    <cluster>
         <name>foobar-xml</name>
         <password>dev-pass</password>
-    </group>
+    </cluster>
     <network>
         <ssl enabled="true">
             <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>

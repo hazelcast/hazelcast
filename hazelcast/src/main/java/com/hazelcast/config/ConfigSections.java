@@ -25,7 +25,7 @@ enum ConfigSections {
     INSTANCE_NAME("instance-name", false),
     IMPORT("import", true),
     CONFIG_REPLACERS("config-replacers", false),
-    GROUP("group", false),
+    CLUSTER("cluster", false),
     LICENSE_KEY("license-key", false),
     MANAGEMENT_CENTER("management-center", false),
     PROPERTIES("properties", false),

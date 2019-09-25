@@ -41,7 +41,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:javadocvariable"})
 public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConfig {
-    public static final String DEFAULT_GROUP_NAME = "dev";
+    public static final String DEFAULT_CLUSTER_NAME = "dev";
     public static final boolean DEFAULT_SNAPSHOT_ENABLED = false;
     public static final WanPublisherState DEFAULT_INITIAL_PUBLISHER_STATE = WanPublisherState.REPLICATING;
     public static final int DEFAULT_QUEUE_CAPACITY = 10000;
@@ -58,7 +58,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     public static final long DEFAULT_IDLE_MAX_PARK_NS = MILLISECONDS.toNanos(250);
     public static final String DEFAULT_TARGET_ENDPOINTS = "";
 
-    private String groupName = DEFAULT_GROUP_NAME;
+    private String clusterName = DEFAULT_CLUSTER_NAME;
     private boolean snapshotEnabled = DEFAULT_SNAPSHOT_ENABLED;
     private WanPublisherState initialPublisherState = DEFAULT_INITIAL_PUBLISHER_STATE;
     private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
@@ -132,33 +132,33 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     }
 
     /**
-     * Returns the group name used as a publisher group name for authentication
+     * Returns the cluster name used as a publisher cluster name for authentication
      * on the target endpoint.
-     * If there is no separate publisher ID property defined, this group name
+     * If there is no separate publisher ID property defined, this cluster name
      * will also be used as a WAN publisher ID. This ID is then used for
      * identifying the publisher in a {@link WanReplicationConfig}.
      *
-     * @return the WAN endpoint group name
+     * @return the WAN endpoint cluster name
      * @see #getPublisherId()
      */
     public @Nonnull
-    String getGroupName() {
-        return groupName;
+    String getClusterName() {
+        return clusterName;
     }
 
     /**
-     * Sets the group name used as an endpoint group password for authentication
+     * Sets the cluster name used as an endpoint group password for authentication
      * on the target endpoint.
-     * If there is no separate publisher ID property defined, this group name
+     * If there is no separate publisher ID property defined, this cluster name
      * will also be used as a WAN publisher ID. This ID is then used for
      * identifying the publisher in a {@link WanReplicationConfig}.
      *
-     * @param groupName the WAN endpoint group name
+     * @param clusterName the WAN endpoint cluster name
      * @return this config
      * @see #getPublisherId()
      */
-    public WanBatchReplicationPublisherConfig setGroupName(@Nonnull String groupName) {
-        this.groupName = checkNotNull(groupName, "Group name must not be null");
+    public WanBatchReplicationPublisherConfig setClusterName(@Nonnull String clusterName) {
+        this.clusterName = checkNotNull(clusterName, "Cluster name must not be null");
         return this;
     }
 
@@ -777,7 +777,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     @Override
     public String toString() {
         return "WanBatchReplicationPublisherConfig{"
-                + "groupName='" + groupName + '\''
+                + "clusterName='" + clusterName + '\''
                 + ", publisherId='" + publisherId + '\''
                 + ", queueCapacity=" + queueCapacity
                 + ", queueFullBehavior=" + queueFullBehavior
@@ -809,7 +809,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(groupName);
+        out.writeUTF(clusterName);
         out.writeBoolean(snapshotEnabled);
         out.writeByte(initialPublisherState.getId());
         out.writeInt(queueCapacity);
@@ -838,7 +838,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        groupName = in.readUTF();
+        clusterName = in.readUTF();
         snapshotEnabled = in.readBoolean();
         initialPublisherState = WanPublisherState.getByType(in.readByte());
         queueCapacity = in.readInt();

@@ -27,7 +27,7 @@ public class AuthenticationException extends HazelcastException {
      * Creates a AuthenticationException with a default message.
      */
     public AuthenticationException() {
-        super("Wrong group name or password.");
+        super("Wrong cluster name or password.");
     }
 
     /**

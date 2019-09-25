@@ -24,7 +24,6 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -321,9 +320,8 @@ class HazelcastOSGiInstanceImpl
         sb.append("HazelcastOSGiInstanceImpl");
         sb.append("{delegatedInstance='").append(delegatedInstance).append('\'');
         Config config = getConfig();
-        GroupConfig groupConfig = config.getGroupConfig();
-        if (groupConfig != null && !StringUtil.isNullOrEmpty(groupConfig.getName())) {
-            sb.append(", groupName=").append(groupConfig.getName());
+        if (!StringUtil.isNullOrEmpty(config.getClusterName())) {
+            sb.append(", clusterName=").append(config.getClusterName());
         }
         sb.append(", ownerServiceId=").append(ownerService.getId());
         sb.append('}');

@@ -244,7 +244,7 @@ class ClientDiscoveryServiceBuilder {
         validateSecurityConfig(securityConfig);
         ICredentialsFactory c = getCredentialsFromFactory(config);
         if (c == null) {
-            return new DefaultCredentialsFactory(securityConfig, config.getGroupConfig(), config.getClassLoader());
+            return new DefaultCredentialsFactory(securityConfig, config, config.getClassLoader());
         }
         return c;
     }
@@ -278,7 +278,7 @@ class ClientDiscoveryServiceBuilder {
         if (factory == null) {
             return null;
         }
-        factory.configure(config.getGroupConfig(), credentialsFactoryConfig.getProperties());
+        factory.configure(config.getClusterName(), config.getClusterPassword(), credentialsFactoryConfig.getProperties());
         return factory;
     }
 

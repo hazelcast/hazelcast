@@ -63,16 +63,16 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().setPort(5701);
-        config.getGroupConfig().setName("cluster1");
-        config.getGroupConfig().setPassword("cluster1pass");
+        config.setClusterName("cluster1");
+        config.setClusterPassword("cluster1pass");
         config.addCacheConfig(simpleConfig);
         Hazelcast.newHazelcastInstance(config);
 
         Config config2 = new Config();
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().setPort(5702);
-        config2.getGroupConfig().setName("cluster2");
-        config2.getGroupConfig().setPassword("cluster2pass");
+        config2.setClusterName("cluster2");
+        config2.setClusterPassword("cluster2pass");
         config.addCacheConfig(simpleConfig);
         Hazelcast.newHazelcastInstance(config2);
     }
@@ -129,8 +129,8 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         String instanceName = "ClientInstanceTest";
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("cluster1");
-        clientConfig.getGroupConfig().setPassword("cluster1pass");
+        clientConfig.setClusterName("cluster1");
+        clientConfig.setClusterPassword("cluster1pass");
         clientConfig.setInstanceName(instanceName);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
@@ -149,8 +149,8 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     @Test
     public void testGetPreConfiguredCache() {
         ClientConfig config = new ClientConfig();
-        config.getGroupConfig().setName("cluster1");
-        config.getGroupConfig().setPassword("cluster1pass");
+        config.setClusterName("cluster1");
+        config.setClusterPassword("cluster1pass");
 
         for (int i = 0; i < 4; i++) {
             HazelcastInstance client = HazelcastClient.newHazelcastClient(config);

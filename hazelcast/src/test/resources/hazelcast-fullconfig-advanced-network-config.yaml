@@ -82,7 +82,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        group-name: GROUP-NAME
+        cluster-name: CLUSTER-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE

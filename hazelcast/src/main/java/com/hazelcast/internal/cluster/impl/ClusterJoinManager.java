@@ -28,7 +28,7 @@ import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
-import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOp;
+import com.hazelcast.internal.cluster.impl.operations.ClusterMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinRequestOp;
 import com.hazelcast.internal.cluster.impl.operations.MasterResponseOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
@@ -196,7 +196,7 @@ public class ClusterJoinManager {
 
             logger.warning(format("Received an invalid join request from %s, cause: clusters part of different cluster-groups",
                     address));
-            nodeEngine.getOperationService().send(new GroupMismatchOp(), address);
+            nodeEngine.getOperationService().send(new ClusterMismatchOp(), address);
         } catch (ConfigMismatchException e) {
             logger.warning(format("Received an invalid join request from %s, cause: %s", address, e.getMessage()));
             OperationService operationService = nodeEngine.getOperationService();
