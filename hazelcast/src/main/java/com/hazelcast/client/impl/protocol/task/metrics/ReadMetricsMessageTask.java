@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.List;
 import java.util.Map;
 
 public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<MetricsReadMetricsCodec.RequestParameters> {
@@ -64,9 +65,12 @@ public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<Metric
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        ConcurrentArrayRingbuffer.RingbufferSlice<Map.Entry<Long, byte[]>> responsex
+        ConcurrentArrayRingbuffer.RingbufferSlice<Map.Entry<Long, byte[]>> ringbufferSlice
                 = (ConcurrentArrayRingbuffer.RingbufferSlice<Map.Entry<Long, byte[]>>) response;
-        return MetricsReadMetricsCodec.encodeResponse(responsex.elements(), responsex.nextSequence());
+
+        List<Map.Entry<Long, byte[]>> elements = ringbufferSlice.elements();
+        long nextSequence = ringbufferSlice.nextSequence();
+        return MetricsReadMetricsCodec.encodeResponse(elements, nextSequence);
     }
 
     @Override
