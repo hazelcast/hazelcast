@@ -20,13 +20,13 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.internal.util.executor.HazelcastManagedThread;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
@@ -187,7 +187,9 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation.thread[" + getName() + "]");
+        registry.newProbeBuilder("operation.thread")
+                .withTag("threadName", getName())
+                .scanAndRegister(this);
     }
 
     public final void shutdown() {
