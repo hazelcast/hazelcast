@@ -18,8 +18,8 @@ package com.hazelcast.nio;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -28,8 +28,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
-import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
  * Represents an address of a member in the cluster.
@@ -144,25 +142,14 @@ public final class Address implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(port);
         out.write(type);
-        if (host != null) {
-            byte[] address = stringToBytes(host);
-            out.writeInt(address.length);
-            out.write(address);
-        } else {
-            out.writeInt(0);
-        }
+        out.writeUTF(host);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         port = in.readInt();
         type = in.readByte();
-        int len = in.readInt();
-        if (len > 0) {
-            byte[] address = new byte[len];
-            in.readFully(address);
-            host = bytesToString(address);
-        }
+        host = in.readUTF();
     }
 
     @Override
