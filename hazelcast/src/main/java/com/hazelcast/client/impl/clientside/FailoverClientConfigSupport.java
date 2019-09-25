@@ -255,6 +255,9 @@ public final class FailoverClientConfigSupport {
         if (notEqual(mainConfig.getUserContext(), alternativeConfig.getUserContext())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "userContext");
         }
+        if (notEqual(mainConfig.getMetricsConfig(), alternativeConfig.getMetricsConfig())) {
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "metricsConfig");
+        }
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})

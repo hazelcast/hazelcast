@@ -43,7 +43,7 @@ public class FailoverConfigTest {
 
     @Test
     public void testAllClientConfigsAreHandledInMultipleClientConfigSupport() {
-        Set<String> allClientConfigMethods = new HashSet<String>();
+        Set<String> allClientConfigMethods = new HashSet<>();
         Collections.addAll(allClientConfigMethods, "setProperty", "getProperty", "getClassLoader", "getProperties",
                 "setProperties", "getLabels", "getClusterName", "getClusterPassword", "getSecurityConfig", "isSmartRouting", "setSmartRouting",
                 "getSocketInterceptorConfig", "setSocketInterceptorConfig", "getConnectionAttemptPeriod",
@@ -62,7 +62,7 @@ public class FailoverConfigTest {
                 "setQueryCacheConfigs", "getInstanceName", "setInstanceName", "getConnectionStrategyConfig",
                 "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
                 "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels",
-                "setUserContext", "getUserContext", "equals", "hashCode", "toString");
+                "setUserContext", "getUserContext", "setMetricsConfig", "getMetricsConfig", "equals", "hashCode", "toString");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             String methodName = method.getName();
@@ -75,7 +75,7 @@ public class FailoverConfigTest {
 
     @Test
     public void testAllClientNetworkConfigsAreHandledInMultipleClientConfigSupport() {
-        Set<String> allClientNetworkConfigMethods = new HashSet<String>();
+        Set<String> allClientNetworkConfigMethods = new HashSet<>();
         Collections.addAll(allClientNetworkConfigMethods, "isSmartRouting", "setSmartRouting", "getSocketInterceptorConfig",
                 "setSocketInterceptorConfig", "getConnectionAttemptPeriod", "setConnectionAttemptPeriod",
                 "getConnectionAttemptLimit", "setConnectionAttemptLimit", "getConnectionTimeout", "setConnectionTimeout",

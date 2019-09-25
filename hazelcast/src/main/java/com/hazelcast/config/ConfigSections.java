@@ -63,7 +63,8 @@ enum ConfigSections {
     CRDT_REPLICATION("crdt-replication", false),
     PN_COUNTER("pn-counter", true),
     ADVANCED_NETWORK("advanced-network", false),
-    CP_SUBSYSTEM("cp-subsystem", false);
+    CP_SUBSYSTEM("cp-subsystem", false),
+    METRICS("metrics", false);
 
     final String name;
     final boolean multipleOccurrence;

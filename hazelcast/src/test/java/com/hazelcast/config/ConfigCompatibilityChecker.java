@@ -639,6 +639,32 @@ public class ConfigCompatibilityChecker {
         }
     }
 
+    public static class MetricsConfigChecker extends ConfigChecker<MetricsConfig> {
+
+        @Override
+        boolean check(MetricsConfig c1, MetricsConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+
+            return c1.isEnabled() == c2.isEnabled()
+                    && c1.isMcEnabled() == c2.isMcEnabled()
+                    && c1.isJmxEnabled() == c2.isJmxEnabled()
+                    && c1.getCollectionIntervalSeconds() == c2.getCollectionIntervalSeconds()
+                    && c1.getRetentionSeconds() == c2.getRetentionSeconds()
+                    && c1.isMetricsForDataStructuresEnabled() == c2.isMetricsForDataStructuresEnabled()
+                    && c1.getMinimumLevel() == c2.getMinimumLevel();
+        }
+
+        @Override
+        MetricsConfig getDefault(Config c) {
+            return c.getMetricsConfig();
+        }
+    }
+
     private static class CacheSimpleConfigChecker extends ConfigChecker<CacheSimpleConfig> {
         @Override
         boolean check(CacheSimpleConfig c1, CacheSimpleConfig c2) {

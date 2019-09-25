@@ -160,6 +160,7 @@ public class ConfigXmlGenerator {
         pnCounterXmlGenerator(gen, config);
         splitBrainProtectionXmlGenerator(gen, config);
         cpSubsystemConfig(gen, config);
+        metricsConfig(gen, config);
         userCodeDeploymentConfig(gen, config);
 
         xml.append("</hazelcast>");
@@ -1442,6 +1443,19 @@ public class ConfigXmlGenerator {
         }
 
         gen.close().close();
+    }
+
+    private static void metricsConfig(XmlGenerator gen, Config config) {
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        gen.open("metrics",
+                "enabled", metricsConfig.isEnabled(),
+                "mc-enabled", metricsConfig.isMcEnabled(),
+                "jmx-enabled", metricsConfig.isJmxEnabled())
+           .node("collection-interval-seconds", metricsConfig.getCollectionIntervalSeconds())
+           .node("retention-seconds", metricsConfig.getRetentionSeconds())
+           .node("metrics-for-data-structures", metricsConfig.isMetricsForDataStructuresEnabled())
+           .node("minimum-level", metricsConfig.getMinimumLevel())
+           .close();
     }
 
     private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {

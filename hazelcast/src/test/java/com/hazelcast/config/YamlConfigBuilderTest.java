@@ -59,6 +59,7 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -3388,4 +3389,70 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("/mnt/optane", yamlConfig.getNativeMemoryConfig().getPersistentMemoryDirectory());
     }
 
+    @Override
+    @Test
+    public void testMetricsConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  metrics:\n"
+                + "    enabled: false\n"
+                + "    mc-enabled: false\n"
+                + "    jmx-enabled: false\n"
+                + "    collection-interval-seconds: 10\n"
+                + "    retention-seconds: 11\n"
+                + "    metrics-for-data-structures: true\n"
+                + "    minimum-level: DEBUG";
+        Config config = new InMemoryYamlConfig(yaml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.isMcEnabled());
+        assertFalse(metricsConfig.isJmxEnabled());
+        assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
+        assertEquals(11, metricsConfig.getRetentionSeconds());
+        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
+        assertEquals(DEBUG, metricsConfig.getMinimumLevel());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigMasterSwitchDisabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  metrics:\n"
+                + "    enabled: false";
+        Config config = new InMemoryYamlConfig(yaml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertTrue(metricsConfig.isMcEnabled());
+        assertTrue(metricsConfig.isJmxEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigMcDisabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  metrics:\n"
+                + "    mc-enabled: false";
+        Config config = new InMemoryYamlConfig(yaml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertTrue(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.isMcEnabled());
+        assertTrue(metricsConfig.isJmxEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigJmxDisabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  metrics:\n"
+                + "    jmx-enabled: false";
+        Config config = new InMemoryYamlConfig(yaml);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertTrue(metricsConfig.isEnabled());
+        assertTrue(metricsConfig.isMcEnabled());
+        assertFalse(metricsConfig.isJmxEnabled());
+
+    }
 }
