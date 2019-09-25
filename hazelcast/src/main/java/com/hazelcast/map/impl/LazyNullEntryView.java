@@ -92,7 +92,7 @@ class LazyNullEntryView<K, V> implements EntryView<K, V> {
     }
 
     @Override
-    public Long getMaxIdle() {
+    public long getMaxIdle() {
         return 0L;
     }
 }

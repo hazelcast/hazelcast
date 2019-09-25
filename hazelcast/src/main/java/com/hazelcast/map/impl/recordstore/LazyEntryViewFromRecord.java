@@ -107,7 +107,7 @@ public class LazyEntryViewFromRecord<R extends Record> extends SampleableConcurr
     }
 
     @Override
-    public Long getMaxIdle() {
+    public long getMaxIdle() {
         return record.getMaxIdle();
     }
 
