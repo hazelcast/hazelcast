@@ -102,7 +102,7 @@ public final class NioNetworking implements Networking {
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
 
-    // Currently this is a course grained aggregation of the bytes/send reveived.
+    // Currently this is a coarse grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
     @Probe

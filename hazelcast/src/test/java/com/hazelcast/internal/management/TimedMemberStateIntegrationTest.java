@@ -36,7 +36,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testServices() {
-        HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         hz.getMap("trial").put(1, 1);
@@ -53,7 +53,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testSSL_defaultConfig() {
-        HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
@@ -74,7 +74,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setEnabled(enabled);
 
-        Config config = getConfig();
+        Config config = smallInstanceConfig();
         config.getNetworkConfig().setSSLConfig(sslConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -100,7 +100,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
     }
 
     private void testScripting(Boolean enabled) {
-        Config config = getConfig();
+        Config config = smallInstanceConfig();
         if (enabled != null) {
             config.getManagementCenterConfig().setScriptingEnabled(enabled);
         }

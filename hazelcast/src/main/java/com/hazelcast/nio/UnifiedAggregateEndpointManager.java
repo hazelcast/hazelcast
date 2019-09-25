@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpEndpointManager;
 
@@ -57,4 +58,15 @@ public class UnifiedAggregateEndpointManager
     public void addConnectionListener(ConnectionListener listener) {
         unified.addConnectionListener(listener);
     }
+
+    @Override
+    public AdvancedNetworkStats getInboundNetworkStats() {
+        return null;
+    }
+
+    @Override
+    public AdvancedNetworkStats getOutboundNetworkStats() {
+        return null;
+    }
+
 }

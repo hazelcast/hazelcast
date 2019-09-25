@@ -37,6 +37,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -62,6 +63,7 @@ import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.monitor.impl.NodeStateImpl;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.AggregateEndpointManager;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -206,6 +208,10 @@ public class TimedMemberStateFactory {
         createWanSyncState(memberState);
 
         memberState.setClientStats(node.clientEngine.getClientStatistics());
+
+        AggregateEndpointManager aggregateEndpointManager = node.getNetworkingService().getAggregateEndpointManager();
+        memberState.setInboundNetworkStats(new AdvancedNetworkStatsDTO(aggregateEndpointManager.getInboundNetworkStats()));
+        memberState.setOutboundNetworkStats(new AdvancedNetworkStatsDTO(aggregateEndpointManager.getOutboundNetworkStats()));
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {

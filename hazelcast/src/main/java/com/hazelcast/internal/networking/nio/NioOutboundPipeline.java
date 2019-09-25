@@ -280,6 +280,10 @@ public final class NioOutboundPipeline
         priorityWriteQueue.clear();
     }
 
+    long bytesWritten() {
+        return bytesWritten.get();
+    }
+
     @Override
     protected void publishMetrics() {
         if (currentThread() != owner) {
