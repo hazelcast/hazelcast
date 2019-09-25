@@ -145,7 +145,7 @@ public class PartitionedCluster {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).isMinimumClusterSizeSatisfied());
+                assertTrue(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).hasMinimumSize());
             }
         });
     }
@@ -154,7 +154,7 @@ public class PartitionedCluster {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertFalse(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).isMinimumClusterSizeSatisfied());
+                assertFalse(instance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionId).hasMinimumSize());
             }
         });
     }

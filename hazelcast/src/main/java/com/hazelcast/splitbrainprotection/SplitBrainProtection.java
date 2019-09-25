@@ -25,6 +25,6 @@ public interface SplitBrainProtection {
      *
      * @return boolean whether the minimum cluster size property is satisfied
      */
-    boolean isMinimumClusterSizeSatisfied();
+    boolean hasMinimumSize();
 
 }
