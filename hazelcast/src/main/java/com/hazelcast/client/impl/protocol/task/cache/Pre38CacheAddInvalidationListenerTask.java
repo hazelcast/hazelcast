@@ -25,7 +25,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 
 import java.security.Permission;

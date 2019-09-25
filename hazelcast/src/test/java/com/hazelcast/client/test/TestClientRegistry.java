@@ -33,7 +33,7 @@ import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.mocknetwork.MockConnection;

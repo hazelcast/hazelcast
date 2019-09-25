@@ -36,7 +36,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
 
-import static com.hazelcast.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.test.TestStringUtils.fileAsText;
 
 @RunWith(HazelcastParallelClassRunner.class)

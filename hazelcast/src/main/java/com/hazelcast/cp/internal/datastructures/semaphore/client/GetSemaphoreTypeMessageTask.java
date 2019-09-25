@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 

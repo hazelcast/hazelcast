@@ -16,7 +16,7 @@
 
 package com.hazelcast.version;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.io.Serializable;
 import java.util.Comparator;

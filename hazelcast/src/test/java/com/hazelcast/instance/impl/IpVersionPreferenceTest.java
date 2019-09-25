@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;

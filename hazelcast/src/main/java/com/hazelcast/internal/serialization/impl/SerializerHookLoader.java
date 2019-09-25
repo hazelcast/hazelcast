@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;

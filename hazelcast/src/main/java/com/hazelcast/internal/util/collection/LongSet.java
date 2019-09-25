@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util.collection;
 
-import com.hazelcast.nio.Disposable;
+import com.hazelcast.internal.nio.Disposable;
 
 /** Set of primitive {@code long}s. */
 public interface LongSet extends Disposable {

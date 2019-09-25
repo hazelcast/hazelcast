@@ -24,8 +24,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 
 /**
  * A {@link Response} is a result of an {@link Operation} being executed.

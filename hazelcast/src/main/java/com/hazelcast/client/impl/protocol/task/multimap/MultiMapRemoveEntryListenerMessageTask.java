@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryListenerCodec
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 

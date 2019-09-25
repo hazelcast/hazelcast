@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerWithPredicate
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.eventservice.EventFilter;

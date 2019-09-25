@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.connection.nio;
 
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;

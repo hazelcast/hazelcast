@@ -19,7 +19,7 @@ package com.hazelcast.internal.util.hashslot;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.util.hashslot.impl.HashSlotArray16byteKeyNoValue;
 import com.hazelcast.internal.util.hashslot.impl.HashSlotArray8byteKeyNoValue;
-import com.hazelcast.nio.Disposable;
+import com.hazelcast.internal.nio.Disposable;
 
 /** <p>
  * A <i>Flyweight</i> object that manages the backbone array of an off-heap open-addressed hashtable.

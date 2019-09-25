@@ -44,7 +44,7 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;

@@ -22,7 +22,7 @@ import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 

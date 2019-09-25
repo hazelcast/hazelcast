@@ -29,7 +29,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;

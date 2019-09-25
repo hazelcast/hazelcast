@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 /**
  * Registry that holds all initiated ServerSocket when advanced-networking is in-use

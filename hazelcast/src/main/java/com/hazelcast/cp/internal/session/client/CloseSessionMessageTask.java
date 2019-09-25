@@ -23,7 +23,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 
 /**
  * Client message task for {@link CloseSessionOp}

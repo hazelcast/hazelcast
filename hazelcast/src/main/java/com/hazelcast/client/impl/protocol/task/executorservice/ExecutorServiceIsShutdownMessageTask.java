@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 

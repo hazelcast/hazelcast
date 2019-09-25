@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.util.HashUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

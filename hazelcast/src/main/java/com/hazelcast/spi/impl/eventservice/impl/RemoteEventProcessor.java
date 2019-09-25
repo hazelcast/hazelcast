@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 

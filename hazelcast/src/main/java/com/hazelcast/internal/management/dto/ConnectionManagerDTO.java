@@ -19,9 +19,9 @@ package com.hazelcast.internal.management.dto;
 import com.hazelcast.internal.jmx.NetworkingServiceMBean;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.nio.AggregateEndpointManager;
-import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.NetworkingService;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.NetworkingService;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.JsonUtil.getInt;

@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;

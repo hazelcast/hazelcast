@@ -40,7 +40,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.nio.ClassLoaderUtil.getOrCreate;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.getOrCreate;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;

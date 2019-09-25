@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.Collections;

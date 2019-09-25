@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 
 import java.util.Collections;

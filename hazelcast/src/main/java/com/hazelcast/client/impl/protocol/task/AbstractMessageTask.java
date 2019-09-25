@@ -31,7 +31,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;

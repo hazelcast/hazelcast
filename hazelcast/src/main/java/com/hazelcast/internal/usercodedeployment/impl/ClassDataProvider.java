@@ -18,7 +18,7 @@ package com.hazelcast.internal.usercodedeployment.impl;
 
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**

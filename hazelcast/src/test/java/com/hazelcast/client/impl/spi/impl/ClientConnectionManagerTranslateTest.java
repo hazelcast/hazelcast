@@ -33,7 +33,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;

@@ -18,8 +18,8 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 /**
  * This interface provides functionality to build a predicate.

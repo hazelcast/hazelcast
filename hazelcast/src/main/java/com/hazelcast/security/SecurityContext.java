@@ -17,7 +17,7 @@
 package com.hazelcast.security;
 
 import com.hazelcast.config.PermissionConfig;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;

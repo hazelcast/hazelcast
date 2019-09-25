@@ -22,14 +22,14 @@ import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSeri
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArraySerializer;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;

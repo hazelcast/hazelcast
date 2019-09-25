@@ -60,7 +60,7 @@ import static com.hazelcast.map.impl.MapKeyLoaderUtil.assignRole;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.toBatches;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.toPartition;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR;
 import static com.hazelcast.internal.util.IterableUtil.limit;
 import static com.hazelcast.internal.util.IterableUtil.map;

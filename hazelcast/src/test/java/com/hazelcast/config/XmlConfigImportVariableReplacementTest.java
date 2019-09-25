@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;

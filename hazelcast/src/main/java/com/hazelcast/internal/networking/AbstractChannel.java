@@ -18,7 +18,7 @@ package com.hazelcast.internal.networking;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

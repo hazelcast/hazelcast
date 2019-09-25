@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;

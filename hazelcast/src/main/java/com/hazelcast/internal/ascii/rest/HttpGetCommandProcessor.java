@@ -35,9 +35,9 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.AggregateEndpointManager;
-import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.NetworkingService;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collection;

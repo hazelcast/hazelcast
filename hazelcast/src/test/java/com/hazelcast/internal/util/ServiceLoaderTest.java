@@ -18,7 +18,7 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.PortableHook;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
@@ -45,7 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;

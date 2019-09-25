@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 
 import java.util.ListIterator;
 import java.util.Map;

@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

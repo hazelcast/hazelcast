@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;

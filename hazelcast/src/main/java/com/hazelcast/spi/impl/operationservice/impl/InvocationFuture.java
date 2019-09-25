@@ -21,7 +21,7 @@ import com.hazelcast.core.IndeterminateOperationState;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;

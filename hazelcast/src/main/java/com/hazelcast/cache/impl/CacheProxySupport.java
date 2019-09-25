@@ -29,7 +29,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.eventservice.EventFilter;

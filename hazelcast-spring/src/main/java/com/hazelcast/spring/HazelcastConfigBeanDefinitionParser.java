@@ -120,7 +120,7 @@ import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.internal.util.ExceptionUtil;
 import org.springframework.beans.factory.config.BeanDefinition;

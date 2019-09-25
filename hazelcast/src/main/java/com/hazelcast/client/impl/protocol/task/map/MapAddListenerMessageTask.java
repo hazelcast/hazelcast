@@ -30,7 +30,7 @@ import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.BatchIMapEvent;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.security.Permission;

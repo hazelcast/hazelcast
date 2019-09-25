@@ -23,7 +23,7 @@ import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.splitbrainprotection.HeartbeatAware;

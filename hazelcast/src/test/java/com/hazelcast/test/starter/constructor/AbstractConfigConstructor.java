@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.constructor;
 
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

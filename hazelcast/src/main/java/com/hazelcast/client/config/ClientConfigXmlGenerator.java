@@ -60,7 +60,7 @@ import java.util.Map;
 
 import static com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 /**
  * The ClientConfigXmlGenerator is responsible for transforming a

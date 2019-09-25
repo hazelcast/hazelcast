@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.eventservice;
 
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

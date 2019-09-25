@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DurableExecutorRetrieveAndDispos
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.durableexecutor.impl.operations.RetrieveAndDisposeResultOperation;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 

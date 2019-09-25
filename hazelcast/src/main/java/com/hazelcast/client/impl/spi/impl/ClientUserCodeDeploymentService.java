@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -40,8 +40,8 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public class ClientUserCodeDeploymentService {

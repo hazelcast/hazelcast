@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolde
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.PredicateConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 
 import java.util.List;
 import java.util.ListIterator;

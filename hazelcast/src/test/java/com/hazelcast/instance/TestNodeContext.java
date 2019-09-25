@@ -26,8 +26,8 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.NetworkingService;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanReplicationService;
 import org.mockito.ArgumentMatchers;

@@ -29,8 +29,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.test.compatibility.SamplingSerializationService.isTestClass;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static java.util.Collections.enumeration;

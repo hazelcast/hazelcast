@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**

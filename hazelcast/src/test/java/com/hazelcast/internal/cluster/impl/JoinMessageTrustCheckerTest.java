@@ -18,7 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

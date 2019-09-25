@@ -16,7 +16,7 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.StringUtil;
 
 /**

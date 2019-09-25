@@ -24,7 +24,7 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;

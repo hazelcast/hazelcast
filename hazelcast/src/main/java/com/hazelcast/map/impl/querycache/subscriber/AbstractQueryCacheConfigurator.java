@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.eventservice.EventFilter;

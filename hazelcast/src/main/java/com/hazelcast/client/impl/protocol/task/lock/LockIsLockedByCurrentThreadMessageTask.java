@@ -23,7 +23,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.lock.InternalLockNamespac
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.IsLockedOperation;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.permission.ActionConstants;

@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;

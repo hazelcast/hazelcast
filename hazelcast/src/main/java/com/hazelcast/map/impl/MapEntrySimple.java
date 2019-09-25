@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.util.AbstractMap;
 

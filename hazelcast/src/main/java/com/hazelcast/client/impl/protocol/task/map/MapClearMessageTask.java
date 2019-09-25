@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;

@@ -17,7 +17,7 @@
 package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;

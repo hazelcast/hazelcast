@@ -24,7 +24,7 @@ import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.InitSemaphoreOp;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SemaphorePermission;
 

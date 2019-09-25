@@ -48,7 +48,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
-import static com.hazelcast.nio.IOUtil.readFully;
+import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cluster;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertFalse;
@@ -44,7 +44,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
