@@ -29,6 +29,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Provides {@link com.hazelcast.config.InMemoryFormat InMemoryFormat} specific
@@ -104,7 +105,7 @@ public interface MapOperationProvider {
 
     MapOperation createTxnDeleteOperation(String name, Data dataKey, long version);
 
-    MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid,
+    MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, UUID ownerUuid,
                                               boolean shouldLoad, boolean blockReads);
 
     MapOperation createTxnSetOperation(String name, Data dataKey, Data value, long version, long ttl);

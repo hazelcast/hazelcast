@@ -70,6 +70,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -120,7 +121,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile Credentials lastCredentials;
     private volatile ClientPrincipal principal;
     private volatile int clusterPartitionCount = -1;
-    private volatile String clusterId;
+    private volatile UUID clusterId;
     private volatile Address ownerConnectionAddress;
     private volatile CandidateClusterContext currentClusterContext;
 
@@ -597,8 +598,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         private ClientMessage encodeAuthenticationRequest() {
             InternalSerializationService ss = client.getSerializationService();
             byte serializationVersion = ss.getVersion();
-            String uuid = null;
-            String ownerUuid = null;
+            UUID uuid = null;
+            UUID ownerUuid = null;
             ClientPrincipal principal = getPrincipal();
             if (principal != null) {
                 uuid = principal.getUuid();
@@ -608,7 +609,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             Credentials credentials = currentClusterContext.getCredentialsFactory().newCredentials();
             lastCredentials = credentials;
 
-            String resolvedClusterId = null;
+            UUID resolvedClusterId = null;
             if (failoverConfigProvided) {
                 resolvedClusterId = clusterId;
             }

@@ -426,7 +426,7 @@ public class TopicTest extends HazelcastTestSupport {
             };
 
             final String message = "message_" + messageListener.hashCode() + "_";
-            final String id = topic.addMessageListener(messageListener);
+            final UUID id = topic.addMessageListener(messageListener);
             topic.publish(message + "1");
             onMessageInvoked.await();
             assertTrue(topic.removeMessageListener(id));
@@ -494,7 +494,7 @@ public class TopicTest extends HazelcastTestSupport {
             }
         };
 
-        String messageListenerId = topic.addMessageListener(messageListener1);
+        UUID messageListenerId = topic.addMessageListener(messageListener1);
         topic.addMessageListener(messageListener2);
         topic.publish(message);
         assertOpenEventually(cp);

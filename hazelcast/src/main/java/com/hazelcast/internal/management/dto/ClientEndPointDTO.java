@@ -27,6 +27,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.internal.util.JsonUtil.getArray;
 import static com.hazelcast.internal.util.JsonUtil.getString;
@@ -36,7 +37,7 @@ import static com.hazelcast.internal.util.JsonUtil.getString;
  */
 public class ClientEndPointDTO implements JsonSerializable {
 
-    public String uuid;
+    public UUID uuid;
 
     /**
      * Client's socket address as "hostname:port"
@@ -76,7 +77,7 @@ public class ClientEndPointDTO implements JsonSerializable {
     @Override
     public JsonObject toJson() {
         final JsonObject root = Json.object();
-        root.add("uuid", uuid);
+        root.add("uuid", uuid.toString());
         root.add("address", address);
         root.add("clientType", clientType);
         root.add("name", name);
@@ -92,12 +93,12 @@ public class ClientEndPointDTO implements JsonSerializable {
 
     @Override
     public void fromJson(JsonObject json) {
-        uuid = getString(json, "uuid");
+        uuid = UUID.fromString(getString(json, "uuid"));
         address = getString(json, "address");
         clientType = getString(json, "clientType");
         name = getString(json, "name");
         JsonArray labelsArray = getArray(json, "labels");
-        labels = new HashSet<String>();
+        labels = new HashSet<>();
         for (JsonValue labelValue : labelsArray) {
             labels.add(labelValue.asString());
         }

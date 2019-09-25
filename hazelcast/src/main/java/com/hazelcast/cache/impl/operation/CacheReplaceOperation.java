@@ -28,8 +28,8 @@ import java.io.IOException;
 /**
  * Operator implementation for cache replace functionality.
  *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, String, int)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, java.util.UUID, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, java.util.UUID, int)
  */
 public class CacheReplaceOperation extends MutatingCacheOperation {
 

@@ -72,7 +72,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     private NearCacheManager nearCacheManager;
     private NearCache<Object, Object> nearCache;
-    private String nearCacheMembershipRegistrationId;
+    private UUID nearCacheMembershipRegistrationId;
 
     NearCachedClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
@@ -550,7 +550,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
     }
 
-    public String addNearCacheInvalidationListener(EventHandler eventHandler) {
+    public UUID addNearCacheInvalidationListener(EventHandler eventHandler) {
         return registerListener(createInvalidationListenerCodec(nameWithPrefix), eventHandler);
     }
 
@@ -568,7 +568,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             return;
         }
 
-        String registrationId = nearCacheMembershipRegistrationId;
+        UUID registrationId = nearCacheMembershipRegistrationId;
         if (registrationId != null) {
             getContext().getRepairingTask(getServiceName()).deregisterHandler(nameWithPrefix);
             getContext().getListenerService().deregisterListener(registrationId);
@@ -745,14 +745,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void handleCacheInvalidationEvent(String name, Data key, String sourceUuid,
+        public void handleCacheInvalidationEvent(String name, Data key, UUID sourceUuid,
                                                  UUID partitionUuid, long sequence) {
             repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
         }
 
         @Override
         public void handleCacheBatchInvalidationEvent(String name, Collection<Data> keys,
-                                                      Collection<String> sourceUuids,
+                                                      Collection<UUID> sourceUuids,
                                                       Collection<UUID> partitionUuids,
                                                       Collection<Long> sequences) {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);

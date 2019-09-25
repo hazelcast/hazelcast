@@ -21,6 +21,8 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.nio.Address;
 
+import java.util.UUID;
+
 /**
  * A CP member is a Hazelcast member that is internally elected to be part of
  * the {@link CPSubsystem}, hence maintain CP data structures. If
@@ -42,7 +44,7 @@ public interface CPMember extends Endpoint {
      *
      * @return the UUID of this CP Member
      */
-    String getUuid();
+    UUID getUuid();
 
     /**
      * Returns the address of this CP member.

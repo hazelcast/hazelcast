@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.logging.ILogger;
@@ -32,6 +33,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
@@ -77,7 +79,7 @@ public abstract class Operation implements DataSerializable {
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
     private long waitTimeout = -1;
-    private String callerUuid;
+    private UUID callerUuid;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -557,11 +559,11 @@ public abstract class Operation implements DataSerializable {
         return throwable instanceof RetryableException ? RETRY_INVOCATION : THROW_EXCEPTION;
     }
 
-    public String getCallerUuid() {
+    public UUID getCallerUuid() {
         return callerUuid;
     }
 
-    public Operation setCallerUuid(String callerUuid) {
+    public Operation setCallerUuid(UUID callerUuid) {
         this.callerUuid = callerUuid;
         setFlag(callerUuid != null, BITMASK_CALLER_UUID_SET);
         return this;
@@ -681,7 +683,7 @@ public abstract class Operation implements DataSerializable {
         }
 
         if (isFlagSet(BITMASK_CALLER_UUID_SET)) {
-            out.writeUTF(callerUuid);
+            UUIDSerializationUtil.writeUUID(out, callerUuid);
         }
 
         writeInternal(out);
@@ -723,7 +725,7 @@ public abstract class Operation implements DataSerializable {
         }
 
         if (isFlagSet(BITMASK_CALLER_UUID_SET)) {
-            callerUuid = in.readUTF();
+            callerUuid = UUIDSerializationUtil.readUUID(in);
         }
 
         readInternal(in);

@@ -71,7 +71,7 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
         NodeState state = nodeEngine.getNode().getState();
         writer.writeKeyValueEntry("nodeState", state == null ? "null" : state.toString());
 
-        writer.writeKeyValueEntry("clusterId", nodeEngine.getClusterService().getClusterId());
+        writer.writeKeyValueEntry("clusterId", nodeEngine.getClusterService().getClusterId().toString());
         writer.writeKeyValueEntry("clusterSize", nodeEngine.getClusterService().getSize());
         writer.writeKeyValueEntry("isMaster", nodeEngine.getClusterService().isMaster());
         Address masterAddress = nodeEngine.getClusterService().getMasterAddress();

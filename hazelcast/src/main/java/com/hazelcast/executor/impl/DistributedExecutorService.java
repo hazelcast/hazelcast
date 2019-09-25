@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,7 +66,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
-    private final ConcurrentMap<String, Processor> submittedTasks = new ConcurrentHashMap<>(100);
+    private final ConcurrentMap<UUID, Processor> submittedTasks = new ConcurrentHashMap<>(100);
     private final Set<String> shutdownExecutors
             = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<>();
@@ -106,7 +107,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         reset();
     }
 
-    public <T> void execute(String name, String uuid, T task, Operation op) {
+    public <T> void execute(String name, UUID uuid, T task, Operation op) {
         ExecutorConfig cfg = getOrFindExecutorConfig(name);
         if (cfg.isStatisticsEnabled()) {
             startPending(name);
@@ -135,7 +136,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         }
     }
 
-    public boolean cancel(String uuid, boolean interrupt) {
+    public boolean cancel(UUID uuid, boolean interrupt) {
         Processor processor = submittedTasks.remove(uuid);
         if (processor != null && processor.cancel(interrupt)) {
             if (processor.sendResponse(new CancellationException())) {
@@ -148,7 +149,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         return false;
     }
 
-    public String getName(String uuid) {
+    public String getName(UUID uuid) {
         Processor proc = submittedTasks.get(uuid);
         if (proc != null) {
             return proc.name;
@@ -243,13 +244,13 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         volatile Boolean responseFlag = Boolean.FALSE;
 
         private final String name;
-        private final String uuid;
+        private final UUID uuid;
         private final Operation op;
         private final String taskToString;
         private final long creationTime = Clock.currentTimeMillis();
         private final boolean statisticsEnabled;
 
-        private Processor(String name, String uuid, Callable callable, Operation op, boolean statisticsEnabled) {
+        private Processor(String name, UUID uuid, Callable callable, Operation op, boolean statisticsEnabled) {
             //noinspection unchecked
             super(callable);
             this.name = name;
@@ -259,7 +260,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             this.statisticsEnabled = statisticsEnabled;
         }
 
-        private Processor(String name, String uuid, Runnable runnable, Operation op, boolean statisticsEnabled) {
+        private Processor(String name, UUID uuid, Runnable runnable, Operation op, boolean statisticsEnabled) {
             //noinspection unchecked
             super(runnable, null);
             this.name = name;

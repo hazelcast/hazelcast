@@ -46,6 +46,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
@@ -72,7 +73,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     private NearCache<Object, Object> nearCache;
     private RepairingHandler repairingHandler;
 
-    private volatile String invalidationListenerId;
+    private volatile UUID invalidationListenerId;
 
     public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(name, mapService, nodeEngine, mapConfig);
@@ -626,9 +627,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return serializeKeys ? serializationService.toData(key, partitionStrategy) : key;
     }
 
-    public String addNearCacheInvalidationListener(InvalidationListener listener) {
+    public UUID addNearCacheInvalidationListener(InvalidationListener listener) {
         // local member UUID may change after a split-brain merge
-        String localMemberUuid = getNodeEngine().getClusterService().getLocalMember().getUuid();
+        UUID localMemberUuid = getNodeEngine().getClusterService().getLocalMember().getUuid();
         EventFilter eventFilter = new UuidFilter(localMemberUuid);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }

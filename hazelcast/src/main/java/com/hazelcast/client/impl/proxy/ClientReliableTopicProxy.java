@@ -38,6 +38,7 @@ import com.hazelcast.internal.util.UuidUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -63,7 +64,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private static final int INITIAL_BACKOFF_MS = 100;
 
     private final ILogger logger;
-    private final ConcurrentMap<String, MessageRunner<E>> runnersMap = new ConcurrentHashMap<String, MessageRunner<E>>();
+    private final ConcurrentMap<UUID, MessageRunner<E>> runnersMap = new ConcurrentHashMap<UUID, MessageRunner<E>>();
     private final Ringbuffer<ReliableTopicMessage> ringbuffer;
     private final SerializationService serializationService;
     private final ClientReliableTopicConfig config;
@@ -144,10 +145,10 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
 
     @Nonnull
     @Override
-    public String addMessageListener(@Nonnull MessageListener<E> listener) {
+    public UUID addMessageListener(@Nonnull MessageListener<E> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
-        String id = UuidUtil.newUnsecureUuidString();
+        UUID id = UuidUtil.newUnsecureUUID();
         ReliableMessageListener<E> reliableMessageListener = toReliableMessageListener(listener);
 
         MessageRunner<E> runner = new ClientReliableMessageRunner<E>(id, reliableMessageListener,
@@ -159,7 +160,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     //for testing
-    public boolean isListenerCancelled(String registrationID) {
+    public boolean isListenerCancelled(UUID registrationID) {
         checkNotNull(registrationID, "registrationId can't be null");
 
         MessageRunner runner = runnersMap.get(registrationID);
@@ -178,7 +179,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     @Override
-    public boolean removeMessageListener(@Nonnull String registrationId) {
+    public boolean removeMessageListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
 
         MessageRunner runner = runnersMap.get(registrationId);

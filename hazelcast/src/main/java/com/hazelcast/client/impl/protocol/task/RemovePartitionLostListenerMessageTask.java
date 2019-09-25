@@ -23,6 +23,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class RemovePartitionLostListenerMessageTask
         extends AbstractRemoveListenerMessageTask<ClientRemovePartitionLostListenerCodec.RequestParameters> {
@@ -38,7 +39,7 @@ public class RemovePartitionLostListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

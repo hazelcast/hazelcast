@@ -66,6 +66,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
@@ -93,7 +94,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private int targetPartitionId;
 
     private volatile NearCache<K, V> nearCache;
-    private volatile String invalidationListenerId;
+    private volatile UUID invalidationListenerId;
 
     public ClientReplicatedMapProxy(String serviceName, String objectName, ClientContext context) {
         super(serviceName, objectName, context);
@@ -265,13 +266,13 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public boolean removeEntryListener(@Nonnull String registrationId) {
+    public boolean removeEntryListener(@Nonnull UUID registrationId) {
         return deregisterListener(registrationId);
     }
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> handler = new ReplicatedMapEventHandler(listener);
         return registerListener(createEntryListenerCodec(), handler);
@@ -285,12 +286,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddEntryListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -303,7 +304,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         EventHandler<ClientMessage> handler = new ReplicatedMapToKeyEventHandler(listener);
@@ -320,12 +321,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -338,7 +339,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
@@ -355,12 +356,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -373,7 +374,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
@@ -397,12 +398,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -466,7 +467,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         return (Set) new ResultSet(entries, IterationType.ENTRY);
     }
 
-    public String addNearCacheInvalidationListener(EventHandler handler) {
+    public UUID addNearCacheInvalidationListener(EventHandler handler) {
         return registerListener(createNearCacheInvalidationListenerCodec(), handler);
     }
 
@@ -487,12 +488,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ReplicatedMapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -567,7 +568,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             handler = new ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ReplicatedMapToKeyWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -589,7 +590,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             handler = new ReplicatedMapAddEntryListenerWithPredicateCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ReplicatedMapWithPredicateEventHandler.this.handleEntryEvent(key, value, oldValue,
                             mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
@@ -611,7 +612,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             handler = new ReplicatedMapAddEntryListenerToKeyCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ReplicatedMapToKeyEventHandler.this.handleEntryEvent(key, value, oldValue, mergingValue,
                             eventType, uuid, numberOfAffectedEntries);
                 }
@@ -633,7 +634,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             handler = new ReplicatedMapAddEntryListenerCodec.AbstractEventHandler() {
                 @Override
                 public void handleEntryEvent(Data key, Data value, Data oldValue, Data mergingValue,
-                                             int eventType, String uuid, int numberOfAffectedEntries) {
+                                             int eventType, UUID uuid, int numberOfAffectedEntries) {
                     ReplicatedMapEventHandler.this.handleEntryEvent(key, value, oldValue, mergingValue,
                             eventType, uuid, numberOfAffectedEntries);
                 }
@@ -655,7 +656,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         public void handleEntryEvent(Data keyData, Data valueData, Data oldValueData, Data mergingValue,
-                                        int eventTypeId, String uuid, int numberOfAffectedEntries) {
+                                     int eventTypeId, UUID uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
             EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<>(member, eventTypeId, name, keyData, valueData,
@@ -711,7 +712,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
         @Override
         public void handleEntryEvent(Data dataKey, Data value, Data oldValue, Data mergingValue,
-                                        int eventType, String uuid, int numberOfAffectedEntries) {
+                                        int eventType, UUID uuid, int numberOfAffectedEntries) {
             EntryEventType entryEventType = EntryEventType.getByType(eventType);
             switch (entryEventType) {
                 case ADDED:

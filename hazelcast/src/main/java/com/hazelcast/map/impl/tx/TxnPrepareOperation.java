@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
@@ -28,6 +29,7 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to prepare transaction by locking the key on the key owner.
@@ -36,9 +38,9 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
 
     private static final long LOCK_TTL_MILLIS = 10000L;
 
-    private String ownerUuid;
+    private UUID ownerUuid;
 
-    protected TxnPrepareOperation(int partitionId, String name, Data dataKey, String ownerUuid) {
+    protected TxnPrepareOperation(int partitionId, String name, Data dataKey, UUID ownerUuid) {
         super(name, dataKey);
         setPartitionId(partitionId);
         this.ownerUuid = ownerUuid;
@@ -99,13 +101,13 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        ownerUuid = in.readUTF();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

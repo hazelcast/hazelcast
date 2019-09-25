@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -41,6 +42,7 @@ import com.hazelcast.internal.util.Preconditions;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
@@ -59,7 +61,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
     private Collection<MigrationInfo> promotions;
 
-    private String expectedMemberUuid;
+    private UUID expectedMemberUuid;
 
     private transient boolean success;
 
@@ -70,7 +72,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     }
 
     public PromotionCommitOperation(PartitionRuntimeState partitionState, Collection<MigrationInfo> promotions,
-            String expectedMemberUuid) {
+            UUID expectedMemberUuid) {
         Preconditions.checkNotNull(promotions);
         this.partitionState = partitionState;
         this.promotions = promotions;
@@ -249,7 +251,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        expectedMemberUuid = in.readUTF();
+        expectedMemberUuid = UUIDSerializationUtil.readUUID(in);
         partitionState = in.readObject();
         promotions = readCollection(in);
     }
@@ -257,7 +259,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(expectedMemberUuid);
+        UUIDSerializationUtil.writeUUID(out, expectedMemberUuid);
         out.writeObject(partitionState);
         writeCollection(promotions, out);
     }

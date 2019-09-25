@@ -34,6 +34,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -47,7 +49,7 @@ public class TransactionContextImpl_backupLogsTest extends HazelcastTestSupport 
 
     private TransactionManagerServiceImpl localTxManager;
     private TransactionManagerServiceImpl remoteTxManager;
-    private String ownerUuid;
+    private UUID ownerUuid;
     private HazelcastInstance localHz;
     private NodeEngineImpl localNodeEngine;
 
@@ -58,7 +60,7 @@ public class TransactionContextImpl_backupLogsTest extends HazelcastTestSupport 
         localNodeEngine = getNodeEngineImpl(localHz);
         localTxManager = getTransactionManagerService(cluster[0]);
         remoteTxManager = getTransactionManagerService(cluster[1]);
-        ownerUuid = UuidUtil.newUnsecureUuidString();
+        ownerUuid = UuidUtil.newUnsecureUUID();
     }
 
     private TransactionManagerServiceImpl getTransactionManagerService(HazelcastInstance hz) {

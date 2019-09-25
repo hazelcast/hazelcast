@@ -19,6 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,6 +37,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -71,8 +73,8 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
 
         final MembershipListener membershipListener = mock(MembershipListener.class);
 
-        String id1 = cluster.addMembershipListener(membershipListener);
-        String id2 = cluster.addMembershipListener(membershipListener);
+        UUID id1 = cluster.addMembershipListener(membershipListener);
+        UUID id2 = cluster.addMembershipListener(membershipListener);
 
         // first we check if the registration id's are different
         assertNotEquals(id1, id2);
@@ -102,7 +104,7 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         Cluster cluster = hz.getCluster();
 
-        boolean result = cluster.removeMembershipListener("notexist");
+        boolean result = cluster.removeMembershipListener(UuidUtil.newUnsecureUUID());
 
         assertFalse(result);
     }
@@ -115,7 +117,7 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
 
         MembershipListener membershipListener = mock(MembershipListener.class);
 
-        String id = cluster.addMembershipListener(membershipListener);
+        UUID id = cluster.addMembershipListener(membershipListener);
         boolean removed = cluster.removeMembershipListener(id);
 
         assertTrue(removed);

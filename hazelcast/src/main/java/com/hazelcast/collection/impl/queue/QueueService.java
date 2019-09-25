@@ -70,6 +70,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -273,7 +274,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         splitBrainProtectionConfigCache.remove(name);
     }
 
-    public String addItemListener(String name, ItemListener listener, boolean includeValue, boolean isLocal) {
+    public UUID addItemListener(String name, ItemListener listener, boolean includeValue, boolean isLocal) {
         EventService eventService = nodeEngine.getEventService();
         QueueEventFilter filter = new QueueEventFilter(includeValue);
         EventRegistration registration;
@@ -289,7 +290,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return registration.getId();
     }
 
-    public boolean removeItemListener(String name, String registrationId) {
+    public boolean removeItemListener(String name, UUID registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
@@ -352,7 +353,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         final Set<String> queueNames = containerMap.keySet();
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : queueNames) {

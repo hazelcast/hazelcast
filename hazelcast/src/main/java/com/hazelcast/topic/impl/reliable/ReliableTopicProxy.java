@@ -39,6 +39,7 @@ import com.hazelcast.internal.util.UuidUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -63,8 +64,8 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
 
     final Ringbuffer<ReliableTopicMessage> ringbuffer;
     final Executor executor;
-    final ConcurrentMap<String, MessageRunner<E>> runnersMap
-            = new ConcurrentHashMap<String, MessageRunner<E>>();
+    final ConcurrentMap<UUID, MessageRunner<E>> runnersMap
+            = new ConcurrentHashMap<UUID, MessageRunner<E>>();
 
     /**
      * Local statistics for this reliable topic, including
@@ -211,10 +212,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
 
     @Nonnull
     @Override
-    public String addMessageListener(@Nonnull MessageListener<E> listener) {
+    public UUID addMessageListener(@Nonnull MessageListener<E> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
-        String id = UuidUtil.newUnsecureUuidString();
+        UUID id = UuidUtil.newUnsecureUUID();
         ReliableMessageListener<E> reliableMessageListener;
         if (listener instanceof ReliableMessageListener) {
             reliableMessageListener = (ReliableMessageListener) listener;
@@ -231,7 +232,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public boolean removeMessageListener(@Nonnull String registrationId) {
+    public boolean removeMessageListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
 
         MessageRunner runner = runnersMap.get(registrationId);

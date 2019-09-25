@@ -21,6 +21,8 @@ import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.UUID;
+
 /**
  * Utility class to create {@link CacheEventContext} instances
  */
@@ -45,7 +47,7 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createCacheCompleteEvent(Data dataKey, long expirationTime,
-                                                             String origin, int completionId) {
+                                                             UUID origin, int completionId) {
         CacheEventContext cacheEventContext = new CacheEventContext();
         cacheEventContext.setEventType(CacheEventType.COMPLETED);
         cacheEventContext.setDataKey(dataKey);
@@ -56,7 +58,7 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createCacheExpiredEvent(Data dataKey, Data dataValue,
-                                                            long expirationTime, String origin, int completionId) {
+                                                            long expirationTime, UUID origin, int completionId) {
         CacheEventContext cacheEventContext =
                 createBaseEventContext(CacheEventType.EXPIRED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
@@ -64,7 +66,7 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createCacheCreatedEvent(Data dataKey, Data dataValue,
-                                                            long expirationTime, String origin, int completionId) {
+                                                            long expirationTime, UUID origin, int completionId) {
         CacheEventContext cacheEventContext =
                 createBaseEventContext(CacheEventType.CREATED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
@@ -75,7 +77,7 @@ public final class CacheEventContextUtil {
     public static CacheEventContext createCacheUpdatedEvent(Data dataKey, Data dataValue, Data dataOldValue,
                                                             long creationTime, long expirationTime,
                                                             long lastAccessTime, long accessHit,
-                                                            String origin, int completionId, Data expiryPolicy) {
+                                                            UUID origin, int completionId, Data expiryPolicy) {
         CacheEventContext cacheEventContext =
                 createBaseEventContext(CacheEventType.UPDATED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
@@ -97,7 +99,7 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createCacheRemovedEvent(Data dataKey, Data dataValue,
-                                                            long expirationTime, String origin, int completionId) {
+                                                            long expirationTime, UUID origin, int completionId) {
         CacheEventContext cacheEventContext =
                 createBaseEventContext(CacheEventType.REMOVED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
@@ -110,7 +112,7 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createBaseEventContext(CacheEventType eventType, Data dataKey, Data dataValue,
-                                                           long expirationTime, String origin, int completionId) {
+                                                           long expirationTime, UUID origin, int completionId) {
         CacheEventContext cacheEventContext = new CacheEventContext();
         cacheEventContext.setEventType(eventType);
         cacheEventContext.setDataKey(dataKey);

@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -103,14 +104,14 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
     @Nonnull
     @Override
-    public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
+    public UUID registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-        Future<String> future = registrationExecutor.submit(new Callable<String>() {
+        Future<UUID> future = registrationExecutor.submit(new Callable<UUID>() {
             @Override
-            public String call() {
-                String userRegistrationId = UuidUtil.newUnsecureUuidString();
+            public UUID call() {
+                UUID userRegistrationId = UuidUtil.newUnsecureUUID();
 
                 ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
                 registrations.put(registrationKey, new ConcurrentHashMap<Connection, ClientEventRegistration>());
@@ -137,7 +138,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
     }
 
     @Override
-    public boolean deregisterListener(@Nullable String userRegistrationId) {
+    public boolean deregisterListener(@Nullable UUID userRegistrationId) {
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
         checkNotNull(userRegistrationId, "Null userRegistrationId is not allowed!");
@@ -212,7 +213,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
             throw ExceptionUtil.rethrow(e, Exception.class);
         }
 
-        String serverRegistrationId = codec.decodeAddResponse(clientMessage);
+        UUID serverRegistrationId = codec.decodeAddResponse(clientMessage);
         handler.onListenerRegister();
         long correlationId = request.getCorrelationId();
         ClientEventRegistration registration
@@ -269,7 +270,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
     }
 
     //For Testing
-    public Collection<ClientEventRegistration> getActiveRegistrations(final String uuid) {
+    public Collection<ClientEventRegistration> getActiveRegistrations(final UUID uuid) {
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
@@ -324,7 +325,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         eventHandlerMap.remove(callId);
     }
 
-    private Boolean deregisterListenerInternal(@Nullable String userRegistrationId) {
+    private Boolean deregisterListenerInternal(@Nullable UUID userRegistrationId) {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
@@ -340,7 +341,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
             Connection subscriber = registration.getSubscriber();
             try {
                 ListenerMessageCodec listenerMessageCodec = registration.getCodec();
-                String serverRegistrationId = registration.getServerRegistrationId();
+                UUID serverRegistrationId = registration.getServerRegistrationId();
                 ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
                 new ClientInvocation(client, request, null, subscriber).invoke().get();
                 removeEventHandler(registration.getCallId());

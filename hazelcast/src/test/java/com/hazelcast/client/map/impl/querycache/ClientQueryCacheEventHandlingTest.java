@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
@@ -91,19 +92,19 @@ public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
 
     @Test
     public void testListenerRegistration() {
-        String addEntryListener = queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
+        UUID addEntryListener = queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
             }
         }, true);
 
-        String removeEntryListener = queryCache.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
+        UUID removeEntryListener = queryCache.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
             @Override
             public void entryRemoved(EntryEvent<Integer, Integer> event) {
             }
         }, true);
 
-        assertFalse(queryCache.removeEntryListener("notFound"));
+        assertFalse(queryCache.removeEntryListener(UUID.randomUUID()));
 
         assertTrue(queryCache.removeEntryListener(removeEntryListener));
         assertFalse(queryCache.removeEntryListener(removeEntryListener));

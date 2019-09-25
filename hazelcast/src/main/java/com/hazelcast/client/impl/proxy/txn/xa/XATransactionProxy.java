@@ -33,6 +33,7 @@ import com.hazelcast.internal.util.Clock;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -59,7 +60,7 @@ public class XATransactionProxy {
     private final ILogger logger;
 
     private Transaction.State state = NO_TXN;
-    private volatile String txnId;
+    private volatile UUID txnId;
     private long startTime;
 
     public XATransactionProxy(HazelcastClientInstanceImpl client, ClientConnection connection, Xid xid, int timeout) {
@@ -127,7 +128,7 @@ public class XATransactionProxy {
         state = ROLLED_BACK;
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 

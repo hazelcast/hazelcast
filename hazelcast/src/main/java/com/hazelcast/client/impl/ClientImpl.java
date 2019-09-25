@@ -21,18 +21,19 @@ import com.hazelcast.client.ClientType;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Default {@link Client} implementation.
  */
 public class ClientImpl implements Client {
 
-    private final String uuid;
+    private final UUID uuid;
     private final InetSocketAddress socketAddress;
     private final String name;
     private final Set<String> labels;
 
-    public ClientImpl(String uuid, InetSocketAddress socketAddress, String name, Set<String> labels) {
+    public ClientImpl(UUID uuid, InetSocketAddress socketAddress, String name, Set<String> labels) {
         this.uuid = uuid;
         this.socketAddress = socketAddress;
         this.name = name;
@@ -40,7 +41,7 @@ public class ClientImpl implements Client {
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 

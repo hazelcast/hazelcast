@@ -19,19 +19,21 @@ package com.hazelcast.client.impl.spi.impl.listener;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 
+import java.util.UUID;
+
 public class ClientRegistrationKey {
 
-    private final String userRegistrationId;
+    private final UUID userRegistrationId;
     private final EventHandler handler;
     private final ListenerMessageCodec codec;
 
-    public ClientRegistrationKey(String userRegistrationId, EventHandler handler, ListenerMessageCodec codec) {
+    public ClientRegistrationKey(UUID userRegistrationId, EventHandler handler, ListenerMessageCodec codec) {
         this.userRegistrationId = userRegistrationId;
         this.handler = handler;
         this.codec = codec;
     }
 
-    public ClientRegistrationKey(String userRegistrationId) {
+    public ClientRegistrationKey(UUID userRegistrationId) {
         this.userRegistrationId = userRegistrationId;
         this.handler = null;
         this.codec = null;
@@ -45,7 +47,7 @@ public class ClientRegistrationKey {
         return handler;
     }
 
-    public String getUserRegistrationId() {
+    public UUID getUserRegistrationId() {
         return userRegistrationId;
     }
 

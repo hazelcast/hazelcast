@@ -62,13 +62,13 @@ class ClientCacheInvalidationListener
     }
 
     @Override
-    public void handleCacheInvalidationEvent(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
+    public void handleCacheInvalidationEvent(String name, Data key, UUID sourceUuid, UUID partitionUuid, long sequence) {
         singleInvalidationEventsLog.add(name + ":" + sourceUuid + ":" + partitionUuid + ":" + sequence);
         invalidationCount.incrementAndGet();
     }
 
     @Override
-    public void handleCacheBatchInvalidationEvent(String name, Collection<Data> keys, Collection<String> sourceUuids,
+    public void handleCacheBatchInvalidationEvent(String name, Collection<Data> keys, Collection<UUID> sourceUuids,
                                                   Collection<UUID> partitionUuids, Collection<Long> sequences) {
         invalidationCount.addAndGet(keys.size());
     }

@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class MapRemovePartitionLostListenerMessageTask
         extends AbstractRemoveListenerMessageTask<MapRemovePartitionLostListenerCodec.RequestParameters> {
@@ -40,7 +41,7 @@ public class MapRemovePartitionLostListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

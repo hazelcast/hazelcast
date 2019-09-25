@@ -33,6 +33,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -209,7 +210,7 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
      * an empty map if the CRDTs have not yet been replicated to this member
      * @see CRDTReplicationAwareService
      */
-    Map<String, VectorClock> getReplicatedVectorClocks(String serviceName, String memberUUID) {
+    Map<String, VectorClock> getReplicatedVectorClocks(String serviceName, UUID memberUUID) {
         return replicationVectorClocks.getReplicatedVectorClock(serviceName, memberUUID);
     }
 
@@ -225,7 +226,7 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
      * @param vectorClocks the vector clocks to set
      * @see CRDTReplicationAwareService
      */
-    void setReplicatedVectorClocks(String serviceName, String memberUUID, Map<String, VectorClock> vectorClocks) {
+    void setReplicatedVectorClocks(String serviceName, UUID memberUUID, Map<String, VectorClock> vectorClocks) {
         replicationVectorClocks.setReplicatedVectorClocks(serviceName, memberUUID, vectorClocks);
     }
 

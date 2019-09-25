@@ -18,6 +18,8 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.nio.Address;
 
+import java.util.UUID;
+
 /**
  * Object that provides additional functionalities to a simple lock. The user can define a lock owner and a lock expiry
  * and as such use a local lock as a cluster-wide lock if used properly.
@@ -31,7 +33,7 @@ public class LockGuard {
     /**
      * The ID of the owner that acquired this lock
      */
-    private final String lockOwnerId;
+    private final UUID lockOwnerId;
     /**
      * Owner endpoint, required for logging only
      */
@@ -47,7 +49,7 @@ public class LockGuard {
         this.lockExpiryTime = 0L;
     }
 
-    public LockGuard(Address lockOwner, String lockOwnerId, long leaseTime) {
+    public LockGuard(Address lockOwner, UUID lockOwnerId, long leaseTime) {
         Preconditions.checkNotNull(lockOwner);
         Preconditions.checkNotNull(lockOwnerId);
         Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
@@ -73,13 +75,13 @@ public class LockGuard {
         return lockExpiryTime > 0L && Clock.currentTimeMillis() > lockExpiryTime;
     }
 
-    public boolean allowsLock(String ownerId) {
+    public boolean allowsLock(UUID ownerId) {
         Preconditions.checkNotNull(ownerId);
         boolean notLocked = isLeaseExpired() || !isLocked();
         return notLocked || allowsUnlock(ownerId);
     }
 
-    public boolean allowsUnlock(String ownerId) {
+    public boolean allowsUnlock(UUID ownerId) {
         Preconditions.checkNotNull(ownerId);
         return ownerId.equals(lockOwnerId);
     }
@@ -88,7 +90,7 @@ public class LockGuard {
         return lockOwner;
     }
 
-    public String getLockOwnerId() {
+    public UUID getLockOwnerId() {
         return lockOwnerId;
     }
 

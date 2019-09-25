@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -60,10 +61,10 @@ class ReplicatedVectorClocks {
      * map if the CRDTs have not yet been replicated to this member
      * @see CRDTReplicationAwareService
      */
-    public Map<String, VectorClock> getReplicatedVectorClock(String serviceName, String memberUUID) {
+    public Map<String, VectorClock> getReplicatedVectorClock(String serviceName, UUID memberUUID) {
         final ReplicatedVectorClockId id = new ReplicatedVectorClockId(serviceName, memberUUID);
         final Map<String, VectorClock> clocks = replicatedVectorClocks.get(id);
-        return clocks != null ? clocks : Collections.<String, VectorClock>emptyMap();
+        return clocks != null ? clocks : Collections.emptyMap();
     }
 
     /**
@@ -78,7 +79,7 @@ class ReplicatedVectorClocks {
      * @param vectorClocks the vector clock map to set
      * @see CRDTReplicationAwareService
      */
-    public void setReplicatedVectorClocks(String serviceName, String memberUUID, Map<String, VectorClock> vectorClocks) {
+    public void setReplicatedVectorClocks(String serviceName, UUID memberUUID, Map<String, VectorClock> vectorClocks) {
         replicatedVectorClocks.put(new ReplicatedVectorClockId(serviceName, memberUUID),
                 Collections.unmodifiableMap(vectorClocks));
     }
@@ -94,7 +95,7 @@ class ReplicatedVectorClocks {
      * @see CRDTReplicationAwareService
      */
     public Map<String, VectorClock> getLatestReplicatedVectorClock(String serviceName) {
-        final HashMap<String, VectorClock> latestVectorClocks = new HashMap<String, VectorClock>();
+        final HashMap<String, VectorClock> latestVectorClocks = new HashMap<>();
 
         for (Entry<ReplicatedVectorClockId, Map<String, VectorClock>> clockEntry : replicatedVectorClocks.entrySet()) {
             final ReplicatedVectorClockId id = clockEntry.getKey();
@@ -122,10 +123,10 @@ class ReplicatedVectorClocks {
      * @see CRDTReplicationAwareService
      */
     private static class ReplicatedVectorClockId {
-        final String memberUUID;
+        final UUID memberUUID;
         final String serviceName;
 
-        ReplicatedVectorClockId(String serviceName, String memberUUID) {
+        ReplicatedVectorClockId(String serviceName, UUID memberUUID) {
             this.serviceName = checkNotNull(serviceName, "Service name must not be null");
             this.memberUUID = checkNotNull(memberUUID, "Member UUID must not be null");
         }

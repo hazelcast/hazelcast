@@ -51,6 +51,7 @@ import com.hazelcast.internal.util.executor.TimeoutRunnable;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
@@ -167,13 +168,13 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     @Override
-    public String addPublisherListener(String mapName, String cacheId, ListenerAdapter adapter) {
+    public UUID addPublisherListener(String mapName, String cacheId, ListenerAdapter adapter) {
         EventHandler handler = new QueryCacheHandler(adapter);
         return listenerService.registerListener(createPublisherListenerCodec(cacheId), handler);
     }
 
     @Override
-    public boolean removePublisherListener(String mapName, String cacheId, String listenerId) {
+    public boolean removePublisherListener(String mapName, String cacheId, UUID listenerId) {
         return listenerService.deregisterListener(listenerId);
     }
 
@@ -185,12 +186,12 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return ContinuousQueryAddListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return MapRemoveEntryListenerCodec.encodeRequest(listenerName, realRegistrationId);
             }
 
@@ -203,12 +204,12 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     @Override
-    public String addListener(String mapName, String cacheId, MapListener listener) {
+    public UUID addListener(String mapName, String cacheId, MapListener listener) {
         return addListener(mapName, cacheId, listener, null);
     }
 
     @Override
-    public String addListener(String mapName, String cacheId, MapListener listener, EventFilter filter) {
+    public UUID addListener(String mapName, String cacheId, MapListener listener, EventFilter filter) {
         checkHasText(mapName, "mapName");
         checkHasText(cacheId, "cacheId");
         checkNotNull(listener, "listener cannot be null");
@@ -219,10 +220,10 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     @Override
-    public boolean removeListener(String mapName, String cacheId, String listenerId) {
+    public boolean removeListener(String mapName, String cacheId, UUID listenerId) {
         checkHasText(mapName, "mapName");
         checkHasText(cacheId, "cacheId");
-        checkHasText(listenerId, "listenerId");
+        checkNotNull(listenerId, "listenerId cannot be null");
 
         QueryCacheToListenerMapper queryCacheToListenerMapper = getOrPutIfAbsent(registrations, mapName, REGISTRY_CONSTRUCTOR);
         return queryCacheToListenerMapper.removeListener(cacheId, listenerId);

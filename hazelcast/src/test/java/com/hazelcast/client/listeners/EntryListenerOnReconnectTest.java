@@ -26,6 +26,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
@@ -38,7 +40,7 @@ public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTe
     }
 
     @Override
-    protected String addListener() {
+    protected UUID addListener() {
         iMap = client.getMap(randomString());
 
         final EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
@@ -55,7 +57,7 @@ public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTe
     }
 
     @Override
-    public boolean removeListener(String registrationId) {
+    public boolean removeListener(UUID registrationId) {
         return iMap.removeEntryListener(registrationId);
     }
 }

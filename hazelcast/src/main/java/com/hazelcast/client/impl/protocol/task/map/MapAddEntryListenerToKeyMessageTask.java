@@ -26,6 +26,8 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
+import java.util.UUID;
+
 public class MapAddEntryListenerToKeyMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerToKeyCodec.RequestParameters> {
 
@@ -40,12 +42,12 @@ public class MapAddEntryListenerToKeyMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddEntryListenerToKeyCodec.encodeResponse((String) response);
+        return MapAddEntryListenerToKeyCodec.encodeResponse((UUID) response);
     }
 
     @Override
     protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
-                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+                                        Data meringValueData, int type, UUID uuid, int numberOfAffectedEntries) {
         return MapAddEntryListenerToKeyCodec.encodeEntryEvent(keyData, newValueData,
                 oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
     }

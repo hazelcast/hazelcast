@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
@@ -73,7 +74,7 @@ public final class RepairingTask implements Runnable {
     final long reconciliationIntervalNanos;
 
     private final int partitionCount;
-    private final String localUuid;
+    private final UUID localUuid;
     private final ILogger logger;
     private final TaskScheduler scheduler;
     private final InvalidationMetaDataFetcher invalidationMetaDataFetcher;
@@ -87,7 +88,7 @@ public final class RepairingTask implements Runnable {
 
     public RepairingTask(HazelcastProperties properties, InvalidationMetaDataFetcher invalidationMetaDataFetcher,
                          TaskScheduler scheduler, SerializationService serializationService,
-                         MinimalPartitionService partitionService, String localUuid, ILogger logger) {
+                         MinimalPartitionService partitionService, UUID localUuid, ILogger logger) {
         this.reconciliationIntervalNanos = SECONDS.toNanos(getReconciliationIntervalSeconds(properties));
         this.maxToleratedMissCount = getMaxToleratedMissCount(properties);
         this.invalidationMetaDataFetcher = invalidationMetaDataFetcher;

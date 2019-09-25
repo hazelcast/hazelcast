@@ -282,7 +282,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void rollbackTransaction(String transactionId) {
+        public void rollbackTransaction(UUID transactionId) {
         }
 
         @Override

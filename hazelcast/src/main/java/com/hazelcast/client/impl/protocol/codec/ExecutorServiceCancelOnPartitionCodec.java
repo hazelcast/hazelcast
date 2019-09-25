@@ -35,13 +35,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("5026aa2556f02902f828d771020cc52b")
+@Generated("b134600aa61bdc92ad459ef99c260dbd")
 public final class ExecutorServiceCancelOnPartitionCodec {
     //hex: 0x090300
     public static final int REQUEST_MESSAGE_TYPE = 590592;
     //hex: 0x090301
     public static final int RESPONSE_MESSAGE_TYPE = 590593;
-    private static final int REQUEST_INTERRUPT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INTERRUPT_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INTERRUPT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -55,7 +56,7 @@ public final class ExecutorServiceCancelOnPartitionCodec {
         /**
          * Unique id for the execution.
          */
-        public java.lang.String uuid;
+        public java.util.UUID uuid;
 
         /**
          * If true, then the thread interrupt call can be used to cancel the thread, otherwise interrupt can not be used.
@@ -63,16 +64,16 @@ public final class ExecutorServiceCancelOnPartitionCodec {
         public boolean interrupt;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String uuid, boolean interrupt) {
+    public static ClientMessage encodeRequest(java.util.UUID uuid, boolean interrupt) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ExecutorService.CancelOnPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         encodeBoolean(initialFrame.content, REQUEST_INTERRUPT_FIELD_OFFSET, interrupt);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, uuid);
         return clientMessage;
     }
 
@@ -80,8 +81,8 @@ public final class ExecutorServiceCancelOnPartitionCodec {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
+        request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.interrupt = decodeBoolean(initialFrame.content, REQUEST_INTERRUPT_FIELD_OFFSET);
-        request.uuid = StringCodec.decode(iterator);
         return request;
     }
 

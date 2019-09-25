@@ -30,6 +30,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class MapAddPartitionLostListenerMessageTask
         extends AbstractCallableMessageTask<MapAddPartitionLostListenerCodec.RequestParameters> implements ListenerMessageTask {
@@ -57,7 +58,7 @@ public class MapAddPartitionLostListenerMessageTask
 
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
 
-        String registrationId;
+        UUID registrationId;
         if (parameters.localOnly) {
             registrationId = mapServiceContext.addLocalPartitionLostListener(listener, parameters.name);
         } else {
@@ -75,7 +76,7 @@ public class MapAddPartitionLostListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddPartitionLostListenerCodec.encodeResponse((String) response);
+        return MapAddPartitionLostListenerCodec.encodeResponse((UUID) response);
     }
 
 

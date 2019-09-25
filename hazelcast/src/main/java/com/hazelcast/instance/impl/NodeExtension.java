@@ -33,7 +33,6 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -44,6 +43,7 @@ import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
@@ -276,10 +276,9 @@ public interface NodeExtension {
 
     /**
      * Creates a UUID for local member
-     * @param address address of local member
      * @return new UUID
      */
-    String createMemberUuid(Address address);
+    UUID createMemberUuid();
 
     /**
      * Creates a TimedMemberStateFactory for a given Hazelcast instance

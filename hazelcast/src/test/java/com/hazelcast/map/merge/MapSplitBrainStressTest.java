@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
@@ -60,7 +61,7 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
     static final String MAP_NAME_PREFIX = MapSplitBrainStressTest.class.getSimpleName() + "-";
     static final ILogger LOGGER = Logger.getLogger(MapSplitBrainStressTest.class);
 
-    final Map<HazelcastInstance, String> listenerRegistry = new ConcurrentHashMap<HazelcastInstance, String>();
+    final Map<HazelcastInstance, UUID> listenerRegistry = new ConcurrentHashMap<HazelcastInstance, UUID>();
     final Map<Integer, String> mapNames = new ConcurrentHashMap<Integer, String>();
 
     MergeLifecycleListener mergeLifecycleListener;
@@ -113,7 +114,7 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         mergeLifecycleListener = new MergeLifecycleListener(secondBrain.length);
         for (HazelcastInstance instance : secondBrain) {
-            String listener = instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
+            UUID listener = instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
             listenerRegistry.put(instance, listener);
         }
 
@@ -125,7 +126,7 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
     protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         // wait until merge completes
         mergeLifecycleListener.await();
-        for (Map.Entry<HazelcastInstance, String> entry : listenerRegistry.entrySet()) {
+        for (Map.Entry<HazelcastInstance, UUID> entry : listenerRegistry.entrySet()) {
             entry.getKey().getLifecycleService().removeLifecycleListener(entry.getValue());
         }
 

@@ -29,6 +29,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -54,11 +55,11 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected final @Nonnull
-    String registerListener(ListenerMessageCodec codec, EventHandler handler) {
+    UUID registerListener(ListenerMessageCodec codec, EventHandler handler) {
         return getContext().getListenerService().registerListener(codec, handler);
     }
 
-    protected final boolean deregisterListener(@Nonnull String registrationId) {
+    protected final boolean deregisterListener(@Nonnull UUID registrationId) {
         return getContext().getListenerService().deregisterListener(registrationId);
     }
 

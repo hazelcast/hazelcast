@@ -21,20 +21,21 @@ import com.hazelcast.client.ClientType;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Event used for notification of client connection and disconnection
  */
 public class ClientEvent implements Client {
 
-    private final String uuid;
+    private final UUID uuid;
     private final ClientEventType eventType;
     private final InetSocketAddress address;
     private final ClientType clientType;
     private final String name;
     private final Set<String> labels;
 
-    public ClientEvent(String uuid, ClientEventType eventType, InetSocketAddress address, ClientType clientType, String name,
+    public ClientEvent(UUID uuid, ClientEventType eventType, InetSocketAddress address, ClientType clientType, String name,
                        Set<String> labels) {
         this.uuid = uuid;
         this.eventType = eventType;
@@ -45,7 +46,7 @@ public class ClientEvent implements Client {
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 

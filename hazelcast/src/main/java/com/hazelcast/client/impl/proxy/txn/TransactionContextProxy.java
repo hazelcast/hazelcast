@@ -40,6 +40,7 @@ import com.hazelcast.transaction.impl.TransactionalObjectKey;
 import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Provides a context to perform transactional operations: beginning/committing transactions, but also retrieving
@@ -69,7 +70,7 @@ public class TransactionContextProxy implements ClientTransactionContext {
     }
 
     @Override
-    public String getTxnId() {
+    public UUID getTxnId() {
         return transaction.getTxnId();
     }
 

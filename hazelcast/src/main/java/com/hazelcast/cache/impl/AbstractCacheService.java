@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -116,7 +117,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * Map from full prefixed cache name to set of {@link Closeable} resources
      */
     protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<>();
-    protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<UUID, Closeable> closeableListeners = new ConcurrentHashMap<>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
             new ConcurrentHashMap<>();
 
@@ -344,7 +345,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public void deleteCache(String cacheNameWithPrefix, String callerUuid, boolean destroy) {
+    public void deleteCache(String cacheNameWithPrefix, UUID callerUuid, boolean destroy) {
         CacheConfig config = deleteCacheConfig(cacheNameWithPrefix);
         if (config == null) {
             // Cache is already cleaned up
@@ -576,17 +577,17 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public String registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal) {
+    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal) {
         return registerListenerInternal(cacheNameWithPrefix, listener, null, isLocal);
     }
 
     @Override
-    public String registerListener(String cacheNameWithPrefix, CacheEventListener listener,
+    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener,
                                    EventFilter eventFilter, boolean isLocal) {
         return registerListenerInternal(cacheNameWithPrefix, listener, eventFilter, isLocal);
     }
 
-    protected String registerListenerInternal(String cacheNameWithPrefix, CacheEventListener listener,
+    protected UUID registerListenerInternal(String cacheNameWithPrefix, CacheEventListener listener,
                                               EventFilter eventFilter, boolean isLocal) {
         EventService eventService = getNodeEngine().getEventService();
         EventRegistration reg;
@@ -606,7 +607,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             }
         }
 
-        String id = reg.getId();
+        UUID id = reg.getId();
         if (listener instanceof Closeable) {
             closeableListeners.put(id, (Closeable) listener);
         } else if (listener instanceof CacheEntryListenerProvider) {
@@ -619,7 +620,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public boolean deregisterListener(String cacheNameWithPrefix, String registrationId) {
+    public boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId) {
         EventService eventService = getNodeEngine().getEventService();
         boolean result = eventService.deregisterListener(SERVICE_NAME, cacheNameWithPrefix, registrationId);
         Closeable listener = closeableListeners.remove(registrationId);
@@ -785,7 +786,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * @return the ID which is unique for current registration
      */
     @Override
-    public String addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly) {
+    public UUID addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
         if (localOnly) {
@@ -805,7 +806,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * @param sourceUuid          an ID that represents the source for invalidation event
      */
     @Override
-    public void sendInvalidationEvent(String cacheNameWithPrefix, Data key, String sourceUuid) {
+    public void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid) {
         cacheEventHandler.sendInvalidationEvent(cacheNameWithPrefix, key, sourceUuid);
     }
 

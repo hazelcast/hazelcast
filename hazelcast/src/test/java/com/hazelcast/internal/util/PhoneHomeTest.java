@@ -34,6 +34,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.util.Map;
+import java.util.UUID;
 
 import static java.lang.System.getenv;
 import static org.junit.Assert.assertEquals;
@@ -59,7 +60,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         assertEquals(parameters.get("version"), BuildInfoProvider.getBuildInfo().getVersion());
-        assertEquals(parameters.get("m"), node.getLocalMember().getUuid());
+        assertEquals(UUID.fromString(parameters.get("m")), node.getLocalMember().getUuid());
         assertEquals(parameters.get("e"), null);
         assertEquals(parameters.get("oem"), null);
         assertEquals(parameters.get("l"), null);

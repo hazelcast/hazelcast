@@ -19,6 +19,8 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 
+import java.util.UUID;
+
 /**
  * This wrapper helps to manage the suspended transaction within {@link TransactionContextImpl}.
  *
@@ -55,7 +57,7 @@ class TransactionWrapper implements Transaction {
     }
 
     @Override
-    public String getTxnId() {
+    public UUID getTxnId() {
         return transaction.getTxnId();
     }
 
@@ -85,7 +87,7 @@ class TransactionWrapper implements Transaction {
     }
 
     @Override
-    public String getOwnerUuid() {
+    public UUID getOwnerUuid() {
         return transaction.getOwnerUuid();
     }
 

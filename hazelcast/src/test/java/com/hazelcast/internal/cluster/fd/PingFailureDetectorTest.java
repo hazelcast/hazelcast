@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -123,7 +123,7 @@ public class PingFailureDetectorTest {
         MemberVersion memberVersion = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
         return new MemberImpl.Builder(newAddress(port))
                 .version(memberVersion)
-                .uuid(newUnsecureUuidString())
+                .uuid(newUnsecureUUID())
                 .build();
     }
 

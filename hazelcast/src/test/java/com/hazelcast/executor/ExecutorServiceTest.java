@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -579,7 +580,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             HazelcastInstance instance = instances[i];
             IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
 
-            String memberUuid = instance.getCluster().getLocalMember().getUuid();
+            UUID memberUuid = instance.getCluster().getLocalMember().getUuid();
             Future future = service.submitToMember(
                     new MemberUUIDCheckCallable(memberUuid), instance.getCluster().getLocalMember());
             futures.add(future);
@@ -599,7 +600,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             HazelcastInstance instance = instances[i];
             IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
 
-            String memberUuid = instance.getCluster().getLocalMember().getUuid();
+            UUID memberUuid = instance.getCluster().getLocalMember().getUuid();
             service.submitToMember(new MemberUUIDCheckCallable(memberUuid), instance.getCluster().getLocalMember(), callback);
         }
 

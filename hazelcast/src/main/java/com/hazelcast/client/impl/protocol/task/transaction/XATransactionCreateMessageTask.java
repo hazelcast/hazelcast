@@ -27,6 +27,7 @@ import com.hazelcast.transaction.impl.xa.TransactionAccessor;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class XATransactionCreateMessageTask
         extends AbstractCallableMessageTask<XATransactionCreateCodec.RequestParameters> {
@@ -38,7 +39,7 @@ public class XATransactionCreateMessageTask
     @Override
     protected Object call() throws Exception {
         XAService xaService = getService(getServiceName());
-        String ownerUuid = endpoint.getUuid();
+        UUID ownerUuid = endpoint.getUuid();
         TransactionContext context = xaService.newXATransactionContext(parameters.xid, ownerUuid, (int) parameters.timeout, true);
         TransactionAccessor.getTransaction(context).begin();
         endpoint.setTransactionContext(context);
@@ -52,7 +53,7 @@ public class XATransactionCreateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return XATransactionCreateCodec.encodeResponse((String) response);
+        return XATransactionCreateCodec.encodeResponse((UUID) response);
     }
 
     @Override

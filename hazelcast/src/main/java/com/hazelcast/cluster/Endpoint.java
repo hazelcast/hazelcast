@@ -19,6 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.client.Client;
 
 import java.net.SocketAddress;
+import java.util.UUID;
 
 /**
  * Endpoint represents a peer in the cluster.
@@ -34,7 +35,7 @@ public interface Endpoint {
      *
      * @return the UUID of this endpoint
      */
-    String getUuid();
+    UUID getUuid();
 
     /**
      * Returns the socket address for this endpoint.

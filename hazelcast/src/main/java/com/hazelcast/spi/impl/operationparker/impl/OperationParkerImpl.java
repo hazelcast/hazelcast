@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.DelayQueue;
@@ -137,7 +138,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-    public void onClientDisconnected(String clientUuid) {
+    public void onClientDisconnected(UUID clientUuid) {
         for (WaitSet waitSet : waitSetMap.values()) {
             waitSet.cancelAll(clientUuid, new TargetDisconnectedException("Client disconnected: " + clientUuid));
         }

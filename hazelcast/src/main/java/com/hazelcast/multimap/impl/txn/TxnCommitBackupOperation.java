@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.txn;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,18 +28,19 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 
 public class TxnCommitBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
     private List<Operation> opList;
-    private String caller;
+    private UUID caller;
 
     public TxnCommitBackupOperation() {
     }
 
-    public TxnCommitBackupOperation(String name, Data dataKey, List<Operation> opList, String caller, long threadId) {
+    public TxnCommitBackupOperation(String name, Data dataKey, List<Operation> opList, UUID caller, long threadId) {
         super(name, dataKey);
         this.opList = opList;
         this.caller = caller;
@@ -63,7 +65,7 @@ public class TxnCommitBackupOperation extends AbstractKeyBasedMultiMapOperation 
         for (Operation op : opList) {
             out.writeObject(op);
         }
-        out.writeUTF(caller);
+        UUIDSerializationUtil.writeUUID(out, caller);
     }
 
     @Override
@@ -74,7 +76,7 @@ public class TxnCommitBackupOperation extends AbstractKeyBasedMultiMapOperation 
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
         }
-        caller = in.readUTF();
+        caller = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.TRUE_FILTER;
@@ -120,7 +121,7 @@ public class CacheEventHandler {
         eventService.publishEvent(SERVICE_NAME, candidates, eventSet, orderKey);
     }
 
-    void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+    void sendInvalidationEvent(String name, Data key, UUID sourceUuid) {
         if (key == null) {
             invalidator.invalidateAllKeys(name, sourceUuid);
         } else {
@@ -132,7 +133,7 @@ public class CacheEventHandler {
         invalidator.resetPartitionMetaData(name, partitionId);
     }
 
-    public void destroy(String name, String sourceUuid) {
+    public void destroy(String name, UUID sourceUuid) {
         invalidator.destroy(name, sourceUuid);
     }
 

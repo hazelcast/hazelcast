@@ -156,7 +156,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
 
         PromoteLiteMemberOp op = new PromoteLiteMemberOp();
-        op.setCallerUuid(UuidUtil.newUnsecureUuidString());
+        op.setCallerUuid(UuidUtil.newUnsecureUUID());
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz1));

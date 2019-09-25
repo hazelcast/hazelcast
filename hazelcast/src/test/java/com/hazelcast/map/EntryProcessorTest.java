@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -239,7 +240,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         // the entry has been removed from the primary store but not the backup,
         // so let's kill the primary and execute the logging processor again
         HazelcastInstance newPrimary;
-        String aMemberUuid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+        UUID aMemberUuid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
         if (aMemberUuid.equals(instance1.getCluster().getLocalMember().getUuid())) {
             instance1.shutdown();
             newPrimary = instance2;
@@ -274,8 +275,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         // the entry has been removed from the primary store but not the backup,
         // so let's kill the primary and execute the logging processor again
         HazelcastInstance newPrimary;
-        String aMemberUiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
-        if (aMemberUiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+        UUID aMemberUuid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+        if (aMemberUuid.equals(instance1.getCluster().getLocalMember().getUuid())) {
             instance1.shutdown();
             newPrimary = instance2;
         } else {
@@ -306,8 +307,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             // now the entry has been removed from the primary store but not the backup,
             // so let's kill the primary and execute the logging processor again
             HazelcastInstance newPrimary;
-            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
-            if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+            UUID aMemberUuid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+            if (aMemberUuid.equals(instance1.getCluster().getLocalMember().getUuid())) {
                 instance1.shutdown();
                 newPrimary = instance2;
             } else {
@@ -474,8 +475,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             // now the entry has been removed from the primary store but not the backup,
             // so let's kill the primary and execute the logging processor again
             HazelcastInstance newPrimary;
-            String aMemberUiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
-            if (aMemberUiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+            UUID aMemberUuid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+            if (aMemberUuid.equals(instance1.getCluster().getLocalMember().getUuid())) {
                 instance1.shutdown();
                 newPrimary = instance2;
             } else {
@@ -942,8 +943,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        IMap<String, String> map1 = instance1.getMap(MAP_NAME);
-        IMap<String, String> map2 = instance2.getMap(MAP_NAME);
+        IMap<String, UUID> map1 = instance1.getMap(MAP_NAME);
+        IMap<String, UUID> map2 = instance2.getMap(MAP_NAME);
 
         String keyOnInstance1 = generateKeyNotOwnedBy(instance1);
         map1.executeOnKey(keyOnInstance1, new UuidSetterEntryProcessor());
@@ -1864,7 +1865,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     private static class UuidSetterEntryProcessor
-            implements EntryProcessor<String, String, String>, HazelcastInstanceAware {
+            implements EntryProcessor<String, UUID, UUID>, HazelcastInstanceAware {
 
         private transient HazelcastInstance hz;
 
@@ -1872,8 +1873,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public String process(Entry<String, String> entry) {
-            String uuid = hz.getCluster().getLocalMember().getUuid();
+        public UUID process(Entry<String, UUID> entry) {
+            UUID uuid = hz.getCluster().getLocalMember().getUuid();
             return entry.setValue(uuid);
         }
 

@@ -41,7 +41,7 @@ public class AddPartitionListenerMessageTask
         internalPartitionService.firstArrangement();
         final ClientPartitionListenerService service = clientEngine.getPartitionListenerService();
         service.registerPartitionListener(endpoint, clientMessage.getCorrelationId());
-        endpoint.addDestroyAction(UuidUtil.newUnsecureUUID().toString(), new Callable<Boolean>() {
+        endpoint.addDestroyAction(UuidUtil.newUnsecureUUID(), new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 service.deregisterPartitionListener(endpoint);

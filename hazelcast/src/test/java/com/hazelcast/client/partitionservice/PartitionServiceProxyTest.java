@@ -18,6 +18,7 @@ package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
@@ -64,7 +65,7 @@ public class PartitionServiceProxyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testRemoveMigrationListener() throws Exception {
         PartitionService p = client.getPartitionService();
-        p.removeMigrationListener("");
+        p.removeMigrationListener(UuidUtil.newUnsecureUUID());
     }
 
     @Test

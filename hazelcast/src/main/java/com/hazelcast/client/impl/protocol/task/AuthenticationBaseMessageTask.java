@@ -39,6 +39,7 @@ import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.AUTHENTICATED;
@@ -56,7 +57,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
     protected transient String clientName;
     protected transient Set<String> labels;
     protected transient Credentials credentials;
-    protected transient String clusterId;
+    protected transient UUID clusterId;
     protected transient int partitionCount;
     transient byte clientSerializationVersion;
     transient String clientVersion;
@@ -213,7 +214,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         final Address thisAddress = clientEngine.getThisAddress();
         byte status = AUTHENTICATED.getId();
         return encodeAuth(status, thisAddress, principal.getUuid(), principal.getOwnerUuid(),
-                serializationService.getVersion(), Collections.<Member>emptyList(),
+                serializationService.getVersion(), Collections.emptyList(),
                 clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
     }
 
@@ -239,19 +240,19 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         }
     }
 
-    protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid,
+    protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, UUID ownerUuid,
                                                 byte serializationVersion, List<Member> cleanedUpMembers,
-                                                int partitionCount, String clusterId);
+                                                int partitionCount, UUID clusterId);
 
     protected abstract boolean isOwnerConnection();
 
     protected abstract String getClientType();
 
-    private String getUuid() {
+    private UUID getUuid() {
         if (principal != null) {
             return principal.getUuid();
         }
-        return UuidUtil.createClientUuid(endpoint.getConnection().getEndPoint());
+        return UuidUtil.newUnsecureUUID();
     }
 
     @Override

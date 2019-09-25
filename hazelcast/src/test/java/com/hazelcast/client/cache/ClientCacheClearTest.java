@@ -47,6 +47,7 @@ import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -235,12 +236,12 @@ public class ClientCacheClearTest extends CacheClearTest {
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return CacheAddInvalidationListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
             }
 

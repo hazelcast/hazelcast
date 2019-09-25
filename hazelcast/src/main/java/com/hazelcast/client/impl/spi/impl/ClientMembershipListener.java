@@ -40,6 +40,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -113,7 +114,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     public void handleMemberAttributeChangeEvent(Member member, Collection<Member> members, String key, int opType,
                                                  String value) {
         Collection<Member> currentMembersList = clusterService.getMemberList();
-        String uuid = member.getUuid();
+        UUID uuid = member.getUuid();
         for (Member target : currentMembersList) {
             if (target.getUuid().equals(uuid)) {
                 final MemberAttributeOperationType operationType = MemberAttributeOperationType.getValue(opType);

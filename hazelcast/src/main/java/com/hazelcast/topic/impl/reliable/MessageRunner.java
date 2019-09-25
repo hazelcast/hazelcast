@@ -31,6 +31,7 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
@@ -51,20 +52,20 @@ public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSe
     protected final String topicName;
     protected long sequence;
     private final SerializationService serializationService;
-    private final ConcurrentMap<String, MessageRunner<E>> runnersMap;
-    private final String id;
+    private final ConcurrentMap<UUID, MessageRunner<E>> runnersMap;
+    private final UUID id;
     private final Executor executor;
     private final int batchSze;
     private volatile boolean cancelled;
 
-    public MessageRunner(String id,
+    public MessageRunner(UUID id,
                          ReliableMessageListener<E> listener,
                          Ringbuffer<ReliableTopicMessage> ringbuffer,
                          String topicName,
                          int batchSze,
                          SerializationService serializationService,
                          Executor executor,
-                         ConcurrentMap<String, MessageRunner<E>> runnersMap,
+                         ConcurrentMap<UUID, MessageRunner<E>> runnersMap,
                          ILogger logger) {
         this.id = id;
         this.listener = listener;

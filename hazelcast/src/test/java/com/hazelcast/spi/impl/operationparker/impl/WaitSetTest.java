@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -160,14 +161,17 @@ public class WaitSetTest {
     public void invalidateAll() {
         WaitSet waitSet = newWaitSet();
 
-        BlockedOperation op1 = newBlockingOperationWithCallerUuid("foo");
+        UUID uuid = UUID.randomUUID();
+        UUID anotherUuid = UUID.randomUUID();
+
+        BlockedOperation op1 = newBlockingOperationWithCallerUuid(uuid);
         waitSet.park(op1);
-        BlockedOperation op2 = newBlockingOperationWithCallerUuid("bar");
+        BlockedOperation op2 = newBlockingOperationWithCallerUuid(anotherUuid);
         waitSet.park(op2);
-        BlockedOperation op3 = newBlockingOperationWithCallerUuid("foo");
+        BlockedOperation op3 = newBlockingOperationWithCallerUuid(uuid);
         waitSet.park(op3);
 
-        waitSet.invalidateAll("foo");
+        waitSet.invalidateAll(uuid);
 
         assertValid(waitSet, op1, false);
         assertValid(waitSet, op2, true);
@@ -203,7 +207,7 @@ public class WaitSetTest {
         assertEquals(null, entry.cancelResponse);
     }
 
-    private static BlockedOperation newBlockingOperationWithCallerUuid(String callerUuid) {
+    private static BlockedOperation newBlockingOperationWithCallerUuid(UUID callerUuid) {
         return (BlockedOperation) new BlockedOperation().setCallerUuid(callerUuid);
     }
 

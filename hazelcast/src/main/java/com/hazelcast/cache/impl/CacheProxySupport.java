@@ -60,6 +60,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -412,7 +413,7 @@ abstract class CacheProxySupport<K, V>
         }
     }
 
-    protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    protected void addListenerLocally(UUID regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         listenerCompleter.putListenerIfAbsent(cacheEntryListenerConfiguration, regId);
     }
 
@@ -420,7 +421,7 @@ abstract class CacheProxySupport<K, V>
         listenerCompleter.removeListener(cacheEntryListenerConfiguration);
     }
 
-    protected String getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    protected UUID getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         return listenerCompleter.getListenerId(cacheEntryListenerConfiguration);
     }
 
@@ -551,9 +552,9 @@ abstract class CacheProxySupport<K, V>
         return partitionIds;
     }
 
-    private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
+    private void deregisterAllCacheEntryListener(Collection<UUID> listenerRegistrations) {
         ICacheService service = getService();
-        for (String regId : listenerRegistrations) {
+        for (UUID regId : listenerRegistrations) {
             service.deregisterListener(nameWithPrefix, regId);
         }
     }

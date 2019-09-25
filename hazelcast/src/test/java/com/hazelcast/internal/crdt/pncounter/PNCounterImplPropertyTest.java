@@ -22,6 +22,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.MutableLong;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -135,7 +136,7 @@ public class PNCounterImplPropertyTest extends AbstractCRDTPropertyTest<PNCounte
     }
 
     @Override
-    protected PNCounterImpl getCRDT(int i) {
-        return new PNCounterImpl("replica " + i, "counter");
+    protected PNCounterImpl getCRDT() {
+        return new PNCounterImpl(UuidUtil.newSecureUUID(), "counter");
     }
 }

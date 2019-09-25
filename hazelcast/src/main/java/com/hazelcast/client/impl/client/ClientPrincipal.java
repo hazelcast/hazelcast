@@ -16,24 +16,26 @@
 
 package com.hazelcast.client.impl.client;
 
+import java.util.UUID;
+
 public final class ClientPrincipal {
 
-    private String uuid;
-    private String ownerUuid;
+    private UUID uuid;
+    private UUID ownerUuid;
 
     public ClientPrincipal() {
     }
 
-    public ClientPrincipal(String uuid, String ownerUuid) {
+    public ClientPrincipal(UUID uuid, UUID ownerUuid) {
         this.uuid = uuid;
         this.ownerUuid = ownerUuid;
     }
 
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
-    public String getOwnerUuid() {
+    public UUID getOwnerUuid() {
         return ownerUuid;
     }
 

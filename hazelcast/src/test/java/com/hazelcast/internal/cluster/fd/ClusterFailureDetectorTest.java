@@ -39,7 +39,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
@@ -220,7 +220,7 @@ public class ClusterFailureDetectorTest {
         MemberVersion memberVersion = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
         return new MemberImpl.Builder(newAddress(port))
                 .version(memberVersion)
-                .uuid(newUnsecureUuidString())
+                .uuid(newUnsecureUUID())
                 .build();
     }
 

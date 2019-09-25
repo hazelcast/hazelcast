@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.nio.Address;
@@ -73,6 +74,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.isStartCompleted()).thenReturn(true);
         when(nodeExtension.isNodeVersionCompatibleWith(any(Version.class))).thenReturn(true);
         when(nodeExtension.getMemoryStats()).thenReturn(new DefaultMemoryStats());
+        when(nodeExtension.createMemberUuid()).thenReturn(UuidUtil.newUnsecureUUID());
         return nodeExtension;
     }
 

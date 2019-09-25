@@ -19,6 +19,7 @@ package com.hazelcast.partition;
 import com.hazelcast.cluster.Member;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -53,7 +54,7 @@ public interface PartitionService {
      * Adds a MigrationListener.
      * <p>
      * The addMigrationListener returns a register ID. This ID is needed to remove the MigrationListener using the
-     * {@link #removeMigrationListener(String)} method.
+     * {@link #removeMigrationListener(UUID)} method.
      * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
      *
@@ -62,9 +63,9 @@ public interface PartitionService {
      * @throws java.lang.NullPointerException if migrationListener is {@code null}
      * @throws UnsupportedOperationException  if this operation isn't supported. For example on the client side it isn't possible
      *                                        to add a MigrationListener
-     * @see #removeMigrationListener(String)
+     * @see #removeMigrationListener(UUID)
      */
-    String addMigrationListener(MigrationListener migrationListener);
+    UUID addMigrationListener(MigrationListener migrationListener);
 
     /**
      * Removes a MigrationListener.
@@ -80,14 +81,14 @@ public interface PartitionService {
      *                                        to add/remove a MigrationListener
      * @see #addMigrationListener(MigrationListener)
      */
-    boolean removeMigrationListener(String registrationId);
+    boolean removeMigrationListener(UUID registrationId);
 
 
     /**
      * Adds a PartitionLostListener.
      * <p>
      * The addPartitionLostListener returns a registration ID. This ID is needed to remove the PartitionLostListener using the
-     * {@link #removePartitionLostListener(String)} method.
+     * {@link #removePartitionLostListener(UUID)} method.
      * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
      * IMPORTANT: Please @see com.hazelcast.partition.PartitionLostListener for weaknesses
@@ -95,9 +96,9 @@ public interface PartitionService {
      * @param partitionLostListener the added PartitionLostListener
      * @return returns the registration ID for the PartitionLostListener
      * @throws java.lang.NullPointerException if partitionLostListener is {@code null}
-     * @see #removePartitionLostListener(String)
+     * @see #removePartitionLostListener(UUID)
      */
-    String addPartitionLostListener(PartitionLostListener partitionLostListener);
+    UUID addPartitionLostListener(PartitionLostListener partitionLostListener);
 
     /**
      * Removes a PartitionLostListener.
@@ -111,7 +112,7 @@ public interface PartitionService {
      * @throws java.lang.NullPointerException if registration ID is {@code null}
      * @see #addPartitionLostListener(PartitionLostListener)
      */
-    boolean removePartitionLostListener(String registrationId);
+    boolean removePartitionLostListener(UUID registrationId);
 
     /**
      * Checks whether the cluster is in a safe state.

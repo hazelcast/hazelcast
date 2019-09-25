@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,6 +38,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -55,13 +57,13 @@ public class ClientMessageSplitAndBuildTest {
     private ClientMessage createMessage() {
         String username = generateRandomString(1000);
         String password = generateRandomString(1000);
-        String uuid = generateRandomString(1000);
-        String ownerUuid = generateRandomString(1000);
+        UUID uuid = UuidUtil.newUnsecureUUID();
+        UUID ownerUuid = UuidUtil.newUnsecureUUID();
         boolean isOwnerConnection = false;
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);
         String clientName = generateRandomString(1000);
-        String clusterId = generateRandomString(1000);
+        UUID clusterId = UuidUtil.newUnsecureUUID();
         LinkedList<String> labels = new LinkedList<>();
         for (int i = 0; i < 10; i++) {
             labels.add(generateRandomString(1000));

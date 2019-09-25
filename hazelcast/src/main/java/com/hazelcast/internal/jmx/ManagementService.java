@@ -31,6 +31,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -49,7 +50,7 @@ public class ManagementService implements DistributedObjectListener {
     final HazelcastInstanceImpl instance;
     private final boolean enabled;
     private final ILogger logger;
-    private final String registrationId;
+    private final UUID registrationId;
     private final InstanceMBean instanceMBean;
 
     public ManagementService(HazelcastInstanceImpl instance) {

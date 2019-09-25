@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
 import static java.util.Collections.singletonMap;
@@ -42,10 +43,10 @@ final class MemberMap {
 
     private final int version;
     private final Map<Address, MemberImpl> addressToMemberMap;
-    private final Map<String, MemberImpl> uuidToMemberMap;
+    private final Map<UUID, MemberImpl> uuidToMemberMap;
     private final Set<MemberImpl> members;
 
-    MemberMap(int version, Map<Address, MemberImpl> addressMap, Map<String, MemberImpl> uuidMap) {
+    MemberMap(int version, Map<Address, MemberImpl> addressMap, Map<UUID, MemberImpl> uuidMap) {
         this.version = version;
         assert new HashSet<>(addressMap.values()).equals(new HashSet<>(uuidMap.values()))
                 : "Maps are different! AddressMap: " + addressMap + ", UuidMap: " + uuidMap;
@@ -94,7 +95,7 @@ final class MemberMap {
      */
     static MemberMap createNew(int version, MemberImpl... members) {
         Map<Address, MemberImpl> addressMap = createLinkedHashMap(members.length);
-        Map<String, MemberImpl> uuidMap = createLinkedHashMap(members.length);
+        Map<UUID, MemberImpl> uuidMap = createLinkedHashMap(members.length);
 
         for (MemberImpl member : members) {
             putMember(addressMap, uuidMap, member);
@@ -118,7 +119,7 @@ final class MemberMap {
         }
 
         Map<Address, MemberImpl> addressMap = new LinkedHashMap<>(source.addressToMemberMap);
-        Map<String, MemberImpl> uuidMap = new LinkedHashMap<>(source.uuidToMemberMap);
+        Map<UUID, MemberImpl> uuidMap = new LinkedHashMap<>(source.uuidToMemberMap);
 
         for (MemberImpl member : excludeMembers) {
             MemberImpl removed = addressMap.remove(member.getAddress());
@@ -144,7 +145,7 @@ final class MemberMap {
      */
     static MemberMap cloneAdding(MemberMap source, MemberImpl... newMembers) {
         Map<Address, MemberImpl> addressMap = new LinkedHashMap<>(source.addressToMemberMap);
-        Map<String, MemberImpl> uuidMap = new LinkedHashMap<>(source.uuidToMemberMap);
+        Map<UUID, MemberImpl> uuidMap = new LinkedHashMap<>(source.uuidToMemberMap);
 
         for (MemberImpl member : newMembers) {
             putMember(addressMap, uuidMap, member);
@@ -154,7 +155,7 @@ final class MemberMap {
     }
 
     private static void putMember(Map<Address, MemberImpl> addressMap,
-                                  Map<String, MemberImpl> uuidMap, MemberImpl member) {
+                                  Map<UUID, MemberImpl> uuidMap, MemberImpl member) {
 
         MemberImpl current = addressMap.put(member.getAddress(), member);
         if (current != null) {
@@ -171,11 +172,11 @@ final class MemberMap {
         return addressToMemberMap.get(address);
     }
 
-    MemberImpl getMember(String uuid) {
+    MemberImpl getMember(UUID uuid) {
         return uuidToMemberMap.get(uuid);
     }
 
-    MemberImpl getMember(Address address, String uuid) {
+    MemberImpl getMember(Address address, UUID uuid) {
         MemberImpl member1 = addressToMemberMap.get(address);
         MemberImpl member2 = uuidToMemberMap.get(uuid);
 
@@ -189,7 +190,7 @@ final class MemberMap {
         return addressToMemberMap.containsKey(address);
     }
 
-    boolean contains(String uuid) {
+    boolean contains(UUID uuid) {
         return uuidToMemberMap.containsKey(uuid);
     }
 

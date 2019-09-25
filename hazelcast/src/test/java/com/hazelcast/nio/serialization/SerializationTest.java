@@ -416,7 +416,7 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_usingMemberImpl() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -429,7 +429,7 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_usingSimpleMember() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -439,7 +439,7 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_withLiteMemberImpl() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -454,7 +454,7 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_withLiteSimpleMemberImpl() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -462,7 +462,7 @@ public class SerializationTest extends HazelcastTestSupport {
         testMemberLeftException(uuid, host, port, member);
     }
 
-    private void testMemberLeftException(String uuid, String host, int port, Member member) throws Exception {
+    private void testMemberLeftException(UUID uuid, String host, int port, Member member) throws Exception {
 
         MemberLeftException exception = new MemberLeftException(member);
 

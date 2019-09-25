@@ -28,6 +28,7 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
 
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
@@ -43,13 +44,13 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V> {
 
     private final ClientContext context;
-    private final String uuid;
+    private final UUID uuid;
     private final Address target;
     private final int partitionId;
     private final String objectName;
 
     IExecutorDelegatingFuture(ClientInvocationFuture future, ClientContext context,
-                              String uuid, V defaultValue,
+                              UUID uuid, V defaultValue,
                               ClientMessageDecoder resultDecoder, String objectName, Address address) {
         super(future, context.getSerializationService(), resultDecoder, defaultValue);
         this.context = context;
@@ -60,7 +61,7 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
     }
 
     IExecutorDelegatingFuture(ClientInvocationFuture future, ClientContext context,
-                              String uuid, V defaultValue,
+                              UUID uuid, V defaultValue,
                               ClientMessageDecoder resultDecoder, String objectName, int partitionId) {
         super(future, context.getSerializationService(), resultDecoder, defaultValue);
         this.context = context;

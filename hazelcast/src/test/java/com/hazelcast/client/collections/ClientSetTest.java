@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -164,7 +165,7 @@ public class ClientSetTest extends HazelcastTestSupport {
             public void itemRemoved(ItemEvent<String> item) {
             }
         };
-        String registrationId = set.addItemListener(listener, true);
+        UUID registrationId = set.addItemListener(listener, true);
 
         new Thread() {
             public void run() {

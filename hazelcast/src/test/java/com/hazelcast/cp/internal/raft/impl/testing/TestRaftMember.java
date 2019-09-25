@@ -20,20 +20,21 @@ import com.hazelcast.cluster.Endpoint;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.UUID;
 
 public class TestRaftMember implements Endpoint {
 
-    private String uuid;
+    private UUID uuid;
 
     private int port;
 
-    public TestRaftMember(String uuid, int port) {
+    public TestRaftMember(UUID uuid, int port) {
         this.uuid = uuid;
         this.port = port;
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 

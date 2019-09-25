@@ -70,7 +70,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -101,6 +100,7 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
@@ -405,8 +405,8 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public String createMemberUuid(Address address) {
-        return UuidUtil.createMemberUuid(address);
+    public UUID createMemberUuid() {
+        return UuidUtil.newUnsecureUUID();
     }
 
     @Override

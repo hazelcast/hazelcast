@@ -52,6 +52,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
@@ -371,7 +372,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance master = factory.newHazelcastInstance();
         final HazelcastInstance other = factory.newHazelcastInstance();
 
-        final String registrationId = master.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
+        final UUID registrationId = master.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
         // Expected = 7 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
         // + 2 from map and cache ExpirationManagers * instances
         assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 7);

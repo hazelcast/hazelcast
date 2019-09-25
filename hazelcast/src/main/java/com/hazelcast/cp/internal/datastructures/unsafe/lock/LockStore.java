@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * A container for multiple locks. Each lock is differentiated by a different {@code key}.
@@ -35,7 +36,7 @@ public interface LockStore {
      * @param leaseTime   the lease duration in milliseconds
      * @return if the lock was successfully acquired
      */
-    boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime);
+    boolean lock(Data key, UUID caller, long threadId, long referenceId, long leaseTime);
 
     /**
      * Lock a specific key on a local partition only. Does not observe LOCK_MAX_LEASE_TIME_SECONDS
@@ -48,7 +49,7 @@ public interface LockStore {
      * @return if the lock was successfully acquired
      * @see com.hazelcast.spi.properties.GroupProperty#LOCK_MAX_LEASE_TIME_SECONDS
      */
-    boolean localLock(Data key, String caller, long threadId, long referenceId, long leaseTime);
+    boolean localLock(Data key, UUID caller, long threadId, long referenceId, long leaseTime);
 
     /**
      * Lock a specific key for use inside a transaction.
@@ -61,7 +62,7 @@ public interface LockStore {
      * @param blockReads  whether reads for the key should be blocked (e.g. for map and multimap)
      * @return if the lock was successfully acquired
      */
-    boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime, boolean blockReads);
+    boolean txnLock(Data key, UUID caller, long threadId, long referenceId, long leaseTime, boolean blockReads);
 
     /**
      * Extend the lease time for an already locked key.
@@ -72,7 +73,7 @@ public interface LockStore {
      * @param leaseTime time in milliseconds for the lease to be extended
      * @return if the lease was extended
      */
-    boolean extendLeaseTime(Data key, String caller, long threadId, long leaseTime);
+    boolean extendLeaseTime(Data key, UUID caller, long threadId, long leaseTime);
 
     /**
      * Unlock a specific key.
@@ -83,7 +84,7 @@ public interface LockStore {
      * @param referenceId the identifier for the invocation of the caller (e.g. operation call ID)
      * @return if the key was unlocked
      */
-    boolean unlock(Data key, String caller, long threadId, long referenceId);
+    boolean unlock(Data key, UUID caller, long threadId, long referenceId);
 
     /**
      * Check if a key is locked by any caller and thread ID.
@@ -101,7 +102,7 @@ public interface LockStore {
      * @param threadId the identifier for the thread on the caller
      * @return if the key is locked
      */
-    boolean isLockedBy(Data key, String caller, long threadId);
+    boolean isLockedBy(Data key, UUID caller, long threadId);
 
     /**
      * Return the number of times a key was locked by the same owner (re-entered).
@@ -134,11 +135,11 @@ public interface LockStore {
      * @param threadId the identifier for the thread on the caller
      * @return if the key can be locked. Returns false if the key is already locked by a different caller or thread ID
      */
-    boolean canAcquireLock(Data key, String caller, long threadId);
+    boolean canAcquireLock(Data key, UUID caller, long threadId);
 
     /**
      * Return whether the reads for the specific key should be blocked
-     * (see {@link #txnLock(Data, String, long, long, long, boolean)}).
+     * (see {@link #txnLock(Data, UUID, long, long, long, boolean)}).
      *
      * @param key the lock key
      * @return if the reads should be blocked

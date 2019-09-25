@@ -32,6 +32,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -46,7 +48,7 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
     }
 
     @Override
-    protected String addListener() {
+    protected UUID addListener() {
         replicatedMap = client.getReplicatedMap(randomString());
         final EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
             @Override
@@ -63,7 +65,7 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
     }
 
     @Override
-    public boolean removeListener(String registrationId) {
+    public boolean removeListener(UUID registrationId) {
         return replicatedMap.removeEntryListener(registrationId);
     }
 

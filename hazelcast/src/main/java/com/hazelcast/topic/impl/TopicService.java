@@ -41,6 +41,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -174,7 +175,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public @Nonnull
-    String addMessageListener(@Nonnull String name,
+    UUID addMessageListener(@Nonnull String name,
                               @Nonnull MessageListener listener,
                               boolean localOnly) {
         EventRegistration eventRegistration;
@@ -187,7 +188,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return eventRegistration.getId();
     }
 
-    public boolean removeMessageListener(@Nonnull String name, @Nonnull String registrationId) {
+    public boolean removeMessageListener(@Nonnull String name, @Nonnull UUID registrationId) {
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
     }
 

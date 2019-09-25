@@ -24,13 +24,15 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
+import java.util.UUID;
+
 public final class MemberCallableTaskOperation extends AbstractCallableTaskOperation
         implements IdentifiedDataSerializable, MutatingOperation {
 
     public MemberCallableTaskOperation() {
     }
 
-    public MemberCallableTaskOperation(String name, String uuid, Data callableData) {
+    public MemberCallableTaskOperation(String name, UUID uuid, Data callableData) {
         super(name, uuid, callableData);
     }
 

@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -124,7 +125,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
         IQueue<String> queue = instance.getQueue(queueName);
 
         TestItemListener listener = new TestItemListener(TOTAL_QUEUE_PUT);
-        String listenerId = queue.addItemListener(listener, true);
+        UUID listenerId = queue.addItemListener(listener, true);
 
         for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
             queue.offer("item-" + i);

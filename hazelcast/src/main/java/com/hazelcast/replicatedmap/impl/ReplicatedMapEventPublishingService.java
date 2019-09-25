@@ -47,6 +47,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
+import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
@@ -129,7 +130,7 @@ public class ReplicatedMapEventPublishingService
     }
 
     public @Nonnull
-    String addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
+    UUID addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
@@ -138,7 +139,7 @@ public class ReplicatedMapEventPublishingService
         return registration.getId();
     }
 
-    public boolean removeEventListener(@Nonnull String mapName, @Nonnull String registrationId) {
+    public boolean removeEventListener(@Nonnull String mapName, @Nonnull UUID registrationId) {
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }

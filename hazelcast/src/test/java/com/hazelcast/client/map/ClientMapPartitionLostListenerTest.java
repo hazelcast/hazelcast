@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -83,7 +84,7 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
 
         String mapName = randomMapName();
 
-        String registrationId = client.getMap(mapName).addPartitionLostListener(mock(MapPartitionLostListener.class));
+        UUID registrationId = client.getMap(mapName).addPartitionLostListener(mock(MapPartitionLostListener.class));
         assertRegistrationEventually(instance, mapName, true);
 
         assertTrue(client.getMap(mapName).removePartitionLostListener(registrationId));
