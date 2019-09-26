@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.MapService;
@@ -70,6 +71,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.isStartCompleted()).thenReturn(true);
         when(nodeExtension.isNodeVersionCompatibleWith(any(Version.class))).thenReturn(true);
         when(nodeExtension.getMemoryStats()).thenReturn(new DefaultMemoryStats());
+        when(nodeExtension.getCPPersistenceService()).thenReturn(mock(CPPersistenceService.class));
         return nodeExtension;
     }
 
