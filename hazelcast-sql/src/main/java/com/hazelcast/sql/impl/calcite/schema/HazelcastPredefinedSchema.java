@@ -42,10 +42,11 @@ public class HazelcastPredefinedSchema extends HazelcastAbstractSchema {
 
     @Override
     public Map<String, Table> getTableMap() {
-        if (mode == Mode.PARTITIONED)
+        if (mode == Mode.PARTITIONED) {
             return getPartitionedTables();
-        else
+        } else {
             return getReplicatedTables();
+        }
     }
 
     /**

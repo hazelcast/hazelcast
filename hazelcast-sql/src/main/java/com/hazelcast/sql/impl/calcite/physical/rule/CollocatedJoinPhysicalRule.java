@@ -42,7 +42,7 @@ import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistr
 /**
  * The rule that tries to created a collocated join.
  */
-public class CollocatedJoinPhysicalRule extends RelOptRule {
+public final class CollocatedJoinPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new CollocatedJoinPhysicalRule();
 
     private CollocatedJoinPhysicalRule() {
@@ -69,14 +69,16 @@ public class CollocatedJoinPhysicalRule extends RelOptRule {
                 for (RelNode rightCandidate : rightCandidates) {
                     RelNode transform = tryCreateTransform(logicalJoin, leftCandidate, rightCandidate);
 
-                    if (transform != null)
+                    if (transform != null) {
                         transforms.add(transform);
+                    }
                 }
             }
         }
 
-        for (RelNode transform : transforms)
+        for (RelNode transform : transforms) {
             call.transformTo(transform);
+        }
 
         // TODO: Iff this is an equijoin!
         // TODO: Iff top-level conjunction on collocated columns are present
@@ -91,14 +93,14 @@ public class CollocatedJoinPhysicalRule extends RelOptRule {
      * @param right Physical right input.
      * @return Collocated join or {@code null} if collocation is not possible.
      */
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     private CollocatedJoinPhysicalRel tryCreateTransform(JoinLogicalRel logicalJoin, RelNode left, RelNode right) {
         JoinRelType joinType = logicalJoin.getJoinType();
 
         if (joinType == JoinRelType.FULL) {
             // TODO: Implement. Through UNION?
             throw new HazelcastSqlException(-1, "FULL JOIN is not supported at the moment.");
-        }
-        else if (joinType == JoinRelType.RIGHT) {
+        } else if (joinType == JoinRelType.RIGHT) {
             // TODO: Investigate how right joins are handled in Calcite. Are they converted to left joins or not?
             // TODO: If not, is it possible to convert a RIGHT JOIN to LEFT JOIN in all cases or not?
             throw new HazelcastSqlException(-1, "RIGHT JOIN is not supported at the moment.");
@@ -108,12 +110,14 @@ public class CollocatedJoinPhysicalRule extends RelOptRule {
         PhysicalDistributionTrait rightDist = RuleUtils.getPhysicalDistribution(right);
 
         // If two REPLICATED or SINGLETON sources are joined, the operation is always collocated.
-        if (leftDist.isComplete() && rightDist.isComplete())
+        if (leftDist.isComplete() && rightDist.isComplete()) {
             return tryCreateTransformForCompleteInputs(logicalJoin, left, right);
+        }
 
         // Singletons are not compatible with any other input types.
-        if (leftDist == SINGLETON || rightDist == SINGLETON)
+        if (leftDist == SINGLETON || rightDist == SINGLETON) {
             return null;
+        }
 
         // At least one of inputs are distributed at this point.
         switch (joinType) {
@@ -134,17 +138,22 @@ public class CollocatedJoinPhysicalRule extends RelOptRule {
                 // "replicated LEFT JOIN distributed" is a tricky case because we need to check that a tuple from
                 // the replicated input has no matching tuples from the partitioned input on *ALL* data nodes. Hence,
                 // this is not a collocated operation.
-                if (leftDist == REPLICATED)
+                if (leftDist == REPLICATED) {
                     break;
+                }
 
                 // To contrast, "partitioned LEFT JOIN replicated" qualifies for collocated join because any tuple of
                 // partitioned input exists only on a single node, so local check is enough.
-                if (rightDist == REPLICATED)
+                if (rightDist == REPLICATED) {
                     return createCollocatedJoin(logicalJoin, leftDist, left, right);
+                }
 
                 // Only distributed inputs remained. Provided that the left input is distributed and every tuple from
                 // that input is located on a single node, collocated condition is verified the same way as for INNER.
                 return tryCreateTransformForDistributedInputs(logicalJoin, left, right);
+
+            default:
+                break;
         }
 
         return null;
@@ -172,8 +181,9 @@ public class CollocatedJoinPhysicalRule extends RelOptRule {
         if (joinDist == REPLICATED) {
             // TODO: What if an owner of a SINGLETON input is not a data member? In this case we need another variation
             // TODO: of join when non-SINGLETON source is moved to the SINGLETON (or vice versa?). Return null for now.
-            if ((leftDist == SINGLETON || rightDist == SINGLETON) && !HazelcastCalciteContext.get().isDataMember())
+            if ((leftDist == SINGLETON || rightDist == SINGLETON) && !HazelcastCalciteContext.get().isDataMember()) {
                 return null;
+            }
         }
 
         return createCollocatedJoin(logicalJoin, joinDist, left, right);
@@ -201,15 +211,17 @@ public class CollocatedJoinPhysicalRule extends RelOptRule {
 
         // If we do not have information about distribution columns of at least one input, it is impossible to
         // do the collocated join.
-        if (leftDist == DISTRIBUTED || rightDist == DISTRIBUTED)
+        if (leftDist == DISTRIBUTED || rightDist == DISTRIBUTED) {
             return null;
+        }
 
         List<Integer> leftKeys = logicalJoin.getLeftKeys();
         List<Integer> rightKeys = logicalJoin.getRightKeys();
 
         // No equality conditions - collocation is not possible.
-        if (leftKeys.isEmpty())
+        if (leftKeys.isEmpty()) {
             return null;
+        }
 
         List<Integer> leftDistFields = getDistributionFields(leftDist);
         List<Integer> rightDistFields = getDistributionFields(rightDist);
@@ -227,8 +239,9 @@ public class CollocatedJoinPhysicalRule extends RelOptRule {
             int leftKeyIdx = leftKeys.indexOf(leftDistField);
             int rightKeyIdx = rightKeys.indexOf(rightDistField);
 
-            if (leftKeyIdx == -1 || leftKeyIdx != rightKeyIdx)
+            if (leftKeyIdx == -1 || leftKeyIdx != rightKeyIdx) {
                 break;
+            }
 
             // New join may use either distribution prefix of a left input, or a right input, but not both.
             // We use the left one for the sake of simplicity.
@@ -247,8 +260,9 @@ public class CollocatedJoinPhysicalRule extends RelOptRule {
         }
 
         // If none distribution fields were created, then there is no collocation.
-        if (joinDistFields.isEmpty())
+        if (joinDistFields.isEmpty()) {
             return null;
+        }
 
         // Otherwise create collocated join with the given distribution fields.
         PhysicalDistributionTrait joinDist = PhysicalDistributionTrait.distributedPartitioned(joinDistFields);
@@ -272,8 +286,9 @@ public class CollocatedJoinPhysicalRule extends RelOptRule {
         List<Integer> res = new ArrayList<>(distFields.size());
 
         for (PhysicalDistributionField distField : distFields) {
-            if (distField.getNestedField() != null)
+            if (distField.getNestedField() != null) {
                 break;
+            }
 
             res.add(distField.getIndex());
         }

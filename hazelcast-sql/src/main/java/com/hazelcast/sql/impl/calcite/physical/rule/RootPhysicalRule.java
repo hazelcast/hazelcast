@@ -30,7 +30,7 @@ import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistr
 /**
  * Rule to convert the logical root node to physical root node.
  */
-public class RootPhysicalRule extends RelOptRule {
+public final class RootPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new RootPhysicalRule();
 
     private RootPhysicalRule() {

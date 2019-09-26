@@ -46,7 +46,7 @@ import java.util.List;
 
 // TODO: Create or reuse a rule to move Filter to Join condition!
 // TODO: E.g. SELECT * FROM A, B WHERE A.a = B.b => SELECT * FROM A INNER JOIN B ON A.a = B.b
-public class JoinLogicalRule extends RelOptRule {
+public final class JoinLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new JoinLogicalRule();
 
     private JoinLogicalRule() {
@@ -98,7 +98,7 @@ public class JoinLogicalRule extends RelOptRule {
 
         RelNode transform;
 
-        if (join.getJoinType()== JoinRelType.INNER && !leftKeys.isEmpty()) {
+        if (join.getJoinType() == JoinRelType.INNER && !leftKeys.isEmpty()) {
             assert leftKeys.size() == rightKeys.size();
 
             // Perform filter pullout for equi-join. This separated filter could be used for further optimizations,
@@ -132,8 +132,7 @@ public class JoinLogicalRule extends RelOptRule {
                     filterCondition
                 );
             }
-        }
-        else {
+        } else {
             // If we failed to extract an equi-join component or join type is not INNER JOIN, then continue with
             // pessimistic approach.
             transform = new JoinLogicalRel(
@@ -167,12 +166,12 @@ public class JoinLogicalRule extends RelOptRule {
         List<RelDataTypeField> leftFields = leftInput.getRowType().getFieldList();
         List<RelDataTypeField> rightFields = rightInput.getRowType().getFieldList();
 
-        for (int i=0; i < leftKeys.size(); i++) {
+        for (int i = 0; i < leftKeys.size(); i++) {
             int leftKeyIndex = leftKeys.get(i);
             int rightKeyIndex = rightKeys.get(i);
 
-            SqlOperator operator = filterNulls.get(i) ?
-                SqlStdOperatorTable.EQUALS : SqlStdOperatorTable.IS_NOT_DISTINCT_FROM;
+            SqlOperator operator = filterNulls.get(i)
+                ? SqlStdOperatorTable.EQUALS : SqlStdOperatorTable.IS_NOT_DISTINCT_FROM;
 
             RexNode leftOperand = builder.makeInputRef(
                 leftFields.get(leftKeyIndex).getType(),

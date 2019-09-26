@@ -44,7 +44,7 @@ public class SingletonExchangePhysicalRel extends SingleRel implements PhysicalR
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
-        ((PhysicalRel)input).visit(visitor);
+        ((PhysicalRel) input).visit(visitor);
 
         visitor.onSingletonExchange(this);
     }

@@ -34,7 +34,7 @@ import java.util.List;
 /**
  * The rule that tries to create a collocated aggregate.
  */
-public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRule {
+public final class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRule {
     public static final RelOptRule INSTANCE = new CollocatedAggregatePhysicalRule();
 
     private CollocatedAggregatePhysicalRule() {
@@ -59,8 +59,9 @@ public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRu
         for (RelNode physicalInput : physicalInputs) {
             CollocatedAggregatePhysicalRel physicalAgg = tryCreateCollocatedAggregate(call, logicalAgg, physicalInput);
 
-            if (physicalAgg != null)
+            if (physicalAgg != null) {
                 call.transformTo(physicalAgg);
+            }
         }
     }
 
@@ -70,6 +71,7 @@ public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRu
      * @param logicalAgg Logical aggregate.
      * @param input Physical input.
      */
+    @SuppressWarnings("checkstyle:FallThrough")
     private CollocatedAggregatePhysicalRel tryCreateCollocatedAggregate(
         RelOptRuleCall call,
         AggregateLogicalRel logicalAgg,
@@ -81,8 +83,9 @@ public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRu
             case DISTRIBUTED_PARTITIONED:
                 boolean collocated = isCollocatedPartitioned(logicalAgg.getGroupSet(), inputDist.getFields());
 
-                if (!collocated)
+                if (!collocated) {
                     break;
+                }
 
                 // TODO: Should we make agg distribution more specialized in case of PARTITIONED input? Looks like it
                 // TODO: may make things worse sometimes, e.g. when subsequent group by on less number of columns is
@@ -92,6 +95,8 @@ public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRu
                 // Fall-through if this partitioned input could be collocated.
 
             case REPLICATED:
+                // Fall-through.
+
             case SINGLETON:
                 AggregateCollation collation = getLocalCollation(logicalAgg, input);
 
@@ -108,6 +113,9 @@ public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRu
                     logicalAgg.getAggCallList(),
                     collation.isMatchesInput()
                 );
+
+            default:
+                break;
         }
 
         return null;
@@ -127,17 +135,20 @@ public class CollocatedAggregatePhysicalRule extends AbstractAggregatePhysicalRu
     ) {
         // If group set size is less than the number of input distribution fields, then dist fields could not be a
         // prefix of group se tby definition.
-        if (groupSet.length() < inputDistFields.size())
+        if (groupSet.length() < inputDistFields.size()) {
             return false;
+        }
 
         for (int i = 0; i < inputDistFields.size(); i++) {
             PhysicalDistributionField inputField = inputDistFields.get(i);
 
-            if (inputField.getNestedField() != null)
+            if (inputField.getNestedField() != null) {
                 return false;
+            }
 
-            if (!groupSet.get(i))
+            if (!groupSet.get(i)) {
                 return false;
+            }
         }
 
         return true;

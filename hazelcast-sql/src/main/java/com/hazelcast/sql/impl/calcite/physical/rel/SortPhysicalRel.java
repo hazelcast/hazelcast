@@ -51,7 +51,7 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
-        ((PhysicalRel)input).visit(visitor);
+        ((PhysicalRel) input).visit(visitor);
 
         visitor.onSort(this);
     }

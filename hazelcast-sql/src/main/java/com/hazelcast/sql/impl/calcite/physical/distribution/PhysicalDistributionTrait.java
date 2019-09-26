@@ -49,10 +49,6 @@ public class PhysicalDistributionTrait implements RelTrait {
     // TODO: Motivation is explained in "CollocatedJoinPhysicalRule" TODOs.
     private final List<PhysicalDistributionField> fields;
 
-    public static PhysicalDistributionTrait distributedPartitioned(List<PhysicalDistributionField> fields) {
-        return new PhysicalDistributionTrait(PhysicalDistributionType.DISTRIBUTED_PARTITIONED, fields);
-    }
-
     private PhysicalDistributionTrait(PhysicalDistributionType type) {
         this(type, null);
     }
@@ -78,26 +74,31 @@ public class PhysicalDistributionTrait implements RelTrait {
     @Override
     public boolean satisfies(RelTrait targetTrait) {
         if (targetTrait instanceof PhysicalDistributionTrait) {
-            PhysicalDistributionType targetType = ((PhysicalDistributionTrait)targetTrait).getType();
+            PhysicalDistributionType targetType = ((PhysicalDistributionTrait) targetTrait).getType();
 
             // Any type satisfies ANY.
-            if (targetType == PhysicalDistributionType.ANY)
+            if (targetType == PhysicalDistributionType.ANY) {
                 return true;
-            else {
+            } else {
                 // Any distributed mode satisfies DISTRIBUTED, as it is an arbitrary distribution.
                 switch (type) {
                     case DISTRIBUTED:
                     case DISTRIBUTED_PARTITIONED:
-                        if (targetType == PhysicalDistributionType.DISTRIBUTED)
+                        if (targetType == PhysicalDistributionType.DISTRIBUTED) {
                             return true;
+                        }
 
                         break;
 
                     case REPLICATED:
-                        if (targetType == PhysicalDistributionType.SINGLETON &&
-                            HazelcastCalciteContext.get().isDataMember())
+                        if (targetType == PhysicalDistributionType.SINGLETON
+                            && HazelcastCalciteContext.get().isDataMember()) {
                             return true;
+                        }
 
+                        break;
+
+                    default:
                         break;
                 }
             }
@@ -134,13 +135,15 @@ public class PhysicalDistributionTrait implements RelTrait {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
+        }
 
-        if (o == null || getClass() != o.getClass())
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
 
-        PhysicalDistributionTrait other = (PhysicalDistributionTrait)o;
+        PhysicalDistributionTrait other = (PhysicalDistributionTrait) o;
 
         return type == other.type && fields.equals(other.fields);
     }
@@ -158,20 +161,26 @@ public class PhysicalDistributionTrait implements RelTrait {
             res.append("{");
 
             for (int i = 0; i < fields.size(); i++) {
-                if (i != 0)
+                if (i != 0) {
                     res.append(", ");
+                }
 
                 PhysicalDistributionField field = fields.get(i);
 
                 res.append("$").append(field.getIndex());
 
-                if (field.getNestedField() != null)
+                if (field.getNestedField() != null) {
                     res.append(".").append(field.getNestedField());
+                }
             }
 
             res.append("}");
         }
 
         return res.toString();
+    }
+
+    public static PhysicalDistributionTrait distributedPartitioned(List<PhysicalDistributionField> fields) {
+        return new PhysicalDistributionTrait(PhysicalDistributionType.DISTRIBUTED_PARTITIONED, fields);
     }
 }

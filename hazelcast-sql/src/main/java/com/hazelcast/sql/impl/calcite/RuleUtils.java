@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
@@ -22,7 +38,11 @@ import static org.apache.calcite.plan.RelOptRule.convert;
 /**
  * Static utility classes for rules.
  */
-public class RuleUtils {
+public final class RuleUtils {
+    private RuleUtils() {
+        // No-op.
+    }
+
     /**
      * Get operand matching a single node.
      *
@@ -163,24 +183,26 @@ public class RuleUtils {
      */
     public static Collection<RelNode> getPhysicalRelsFromSubset(RelNode subset) {
         if (subset instanceof RelSubset) {
-            RelSubset subset0 = (RelSubset)subset;
+            RelSubset subset0 = (RelSubset) subset;
 
             Set<RelTraitSet> traitSets = new HashSet<>();
 
             Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
 
             for (RelNode rel : subset0.getRelList()) {
-                if (!isPhysical(rel))
+                if (!isPhysical(rel)) {
                     continue;
+                }
 
-                if (traitSets.add(rel.getTraitSet()))
+                if (traitSets.add(rel.getTraitSet())) {
                     res.add(convert(subset, rel.getTraitSet()));
+                }
             }
 
             return res;
-        }
-        else
+        } else {
             return Collections.emptyList();
+        }
     }
 
     /**
@@ -193,8 +215,9 @@ public class RuleUtils {
         Set<RelTraitSet> traitSets = new HashSet<>();
 
         for (RelNode rel : subset.getRelList()) {
-            if (!isPhysical(rel))
+            if (!isPhysical(rel)) {
                 continue;
+            }
 
             traitSets.add(rel.getTraitSet());
         }
@@ -210,9 +233,5 @@ public class RuleUtils {
      */
     public static PhysicalDistributionTrait getPhysicalDistribution(RelNode rel) {
         return rel.getTraitSet().getTrait(PhysicalDistributionTraitDef.INSTANCE);
-    }
-
-    private RuleUtils() {
-        // No-op.
     }
 }

@@ -27,7 +27,7 @@ import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalAggregate;
 
 // TODO: GROUP BY ("__key", ...) could be converted to plain projection because every group is guaranteed to be unique.
-public class AggregateLogicalRule extends RelOptRule {
+public final class AggregateLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new AggregateLogicalRule();
 
     private AggregateLogicalRule() {
@@ -43,8 +43,9 @@ public class AggregateLogicalRule extends RelOptRule {
         LogicalAggregate agg = call.rel(0);
         RelNode input = agg.getInput(0);
 
-        if (agg.getGroupCount() > 1)
+        if (agg.getGroupCount() > 1) {
             throw new HazelcastSqlException(-1, "Grouping sets are not supported.");
+        }
 
         AggregateLogicalRel newAgg = new AggregateLogicalRel(
             agg.getCluster(),

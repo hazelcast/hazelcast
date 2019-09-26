@@ -41,7 +41,7 @@ public class HazelcastTable extends AbstractTable {
 
     @SuppressWarnings("unchecked")
     public <T extends DistributedObject> T getContainer() {
-        return (T)container;
+        return (T) container;
     }
 
     public String getName() {

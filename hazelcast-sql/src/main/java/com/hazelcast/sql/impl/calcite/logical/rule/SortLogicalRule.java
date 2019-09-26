@@ -26,7 +26,7 @@ import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.logical.LogicalSort;
 
-public class SortLogicalRule extends RelOptRule {
+public final class SortLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new SortLogicalRule();
 
     private SortLogicalRule() {

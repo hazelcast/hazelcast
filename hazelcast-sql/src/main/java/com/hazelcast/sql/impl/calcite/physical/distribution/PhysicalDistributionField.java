@@ -47,11 +47,12 @@ public class PhysicalDistributionField {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
+        }
 
         if (obj instanceof PhysicalDistributionField) {
-            PhysicalDistributionField other = (PhysicalDistributionField)obj;
+            PhysicalDistributionField other = (PhysicalDistributionField) obj;
 
             return index == other.index && Objects.equals(nestedField, other.nestedField);
         }

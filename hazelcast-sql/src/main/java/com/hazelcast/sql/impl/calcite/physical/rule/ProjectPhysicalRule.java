@@ -48,7 +48,7 @@ import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistr
  * This rule converts logical projection into physical projection. Physical projection inherits distribution of the
  * underlying operator.
  */
-public class ProjectPhysicalRule extends RelOptRule {
+public final class ProjectPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new ProjectPhysicalRule();
 
     private ProjectPhysicalRule() {
@@ -177,12 +177,13 @@ public class ProjectPhysicalRule extends RelOptRule {
         for (PhysicalDistributionField inputDistField : inputDistFields) {
             Integer idx = projectFieldMap.get(inputDistField);
 
-            if (idx != null)
+            if (idx != null) {
                 // Input distribution field mapped to project field. Continue.
                 projectDistFields.add(new PhysicalDistributionField(idx));
-            else
+            } else {
                 // Input distribution column is lost during project. Fallback to arbitrary distribution.
                 return PhysicalDistributionTrait.DISTRIBUTED;
+            }
         }
 
         // All input distribution fields have been mapped to project fields. Propagate input distribution to project.
@@ -206,18 +207,20 @@ public class ProjectPhysicalRule extends RelOptRule {
             Integer projectFieldIndex = candCollationFields.get(field.getFieldIndex());
 
             if (projectFieldIndex != null) {
-                if (fields == null)
+                if (fields == null) {
                     fields = new ArrayList<>(1);
+                }
 
                 fields.add(new RelFieldCollation(projectFieldIndex, field.getDirection(), field.nullDirection));
-            }
-            else
+            } else {
                 // No more prefixes. We are done.
                 break;
+            }
         }
 
-        if (fields == null)
+        if (fields == null) {
             fields = Collections.emptyList();
+        }
 
         return RelCollationImpl.of(fields);
     }
@@ -248,7 +251,7 @@ public class ProjectPhysicalRule extends RelOptRule {
 
             // TODO:
             if (node instanceof RexInputRef) {
-                RexInputRef node0 = (RexInputRef)node;
+                RexInputRef node0 = (RexInputRef) node;
 
                 res.put(node0.getIndex(), idx);
             }
@@ -272,11 +275,10 @@ public class ProjectPhysicalRule extends RelOptRule {
 
         for (RexNode node : project.getProjects()) {
             if (node instanceof RexInputRef) {
-                RexInputRef node0 = (RexInputRef)node;
+                RexInputRef node0 = (RexInputRef) node;
 
                 res.put(new PhysicalDistributionField(node0.getIndex()), idx);
-            }
-            else if (node instanceof RexFieldAccess) {
+            } else if (node instanceof RexFieldAccess) {
                 RexFieldAccess node0 = (RexFieldAccess) node;
 
                 if (node0.getReferenceExpr() instanceof RexInputRef) {
@@ -297,14 +299,14 @@ public class ProjectPhysicalRule extends RelOptRule {
     /**
      * A pair of input and trait set which should be used for transformation.
      */
-    private static class InputAndTraitSet {
+    private static final class InputAndTraitSet {
         /** Input of the projection. */
         private final RelNode input;
 
         /** Trait set of the projection. */
         private final RelTraitSet traitSet;
 
-        public InputAndTraitSet(RelNode input, RelTraitSet traitSet) {
+        private InputAndTraitSet(RelNode input, RelTraitSet traitSet) {
             this.input = input;
             this.traitSet = traitSet;
         }

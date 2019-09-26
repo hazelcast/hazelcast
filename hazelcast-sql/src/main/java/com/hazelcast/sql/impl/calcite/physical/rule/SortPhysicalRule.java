@@ -48,7 +48,7 @@ import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistr
  * <p>
  * Local component may be removed altogether in case the input is already sorted on required attributes.
  */
-public class SortPhysicalRule extends RelOptRule {
+public final class SortPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new SortPhysicalRule();
 
     private SortPhysicalRule() {
@@ -67,8 +67,9 @@ public class SortPhysicalRule extends RelOptRule {
 
         Collection<RelNode> transforms = getTransforms(sort, convertedInput);
 
-        for (RelNode transform : transforms)
+        for (RelNode transform : transforms) {
             call.transformTo(transform);
+        }
     }
 
     /**
@@ -95,20 +96,17 @@ public class SortPhysicalRule extends RelOptRule {
                 if (requiresLocalPhase) {
                     // Both distributed and local phases are needed.
                     relInput = createLocalSort(logicalSort, physicalInput);
-                }
-                else {
+                } else {
                     // Only distributed phase is needed, since input is already sorted locally.
                     relInput = physicalInput;
                 }
 
                 rel = createDistributedSort(logicalSort, relInput);
-            }
-            else {
+            } else {
                 if (requiresLocalPhase) {
                     // Only local sorting is needed.
                     rel = createLocalSort(logicalSort, physicalInput);
-                }
-                else {
+                } else {
                     // The best case - sorting is eliminated completely.
                     rel = physicalInput;
                 }
@@ -125,8 +123,7 @@ public class SortPhysicalRule extends RelOptRule {
 
             if (requiresLocalPhase) {
                 relInput = createLocalSort(logicalSort, convertedInput);
-            }
-            else {
+            } else {
                 relInput = convertedInput;
             }
 
@@ -157,16 +154,17 @@ public class SortPhysicalRule extends RelOptRule {
                 RelFieldCollation inputField = inputFields.get(i);
 
                 // Different collation, not a prefix => local sorting is needed.
-                if (!sortField.equals(inputField))
+                if (!sortField.equals(inputField)) {
                     return true;
+                }
             }
 
             // Prefix is confirmed => no local sorting is needed.
             return false;
-        }
-        else
+        } else {
             // Input has less collated fields than sort. Definitely not a prefix => local sorting is needed.
             return true;
+        }
     }
 
     /**

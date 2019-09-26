@@ -30,7 +30,7 @@ import java.util.Collections;
 /**
  * Convert logical filter to physical filter.
  */
-public class FilterPhysicalRule extends RelOptRule {
+public final class FilterPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new FilterPhysicalRule();
 
     private FilterPhysicalRule() {
@@ -70,8 +70,9 @@ public class FilterPhysicalRule extends RelOptRule {
     private Collection<RelNode> getInputTransforms(RelNode convertedInput) {
         Collection<RelNode> res = RuleUtils.getPhysicalRelsFromSubset(convertedInput);
 
-        if (res.isEmpty())
+        if (res.isEmpty()) {
             res = Collections.singletonList(convertedInput);
+        }
 
         return res;
     }

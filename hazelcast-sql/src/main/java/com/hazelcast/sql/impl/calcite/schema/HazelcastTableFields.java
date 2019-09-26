@@ -57,8 +57,9 @@ public class HazelcastTableFields {
     public RelDataTypeField getField(RelDataTypeFactory typeFactory, String fieldName, boolean caseSensitive) {
         // Try get existing field.
         for (RelDataTypeField field : fields) {
-            if (Util.matches(caseSensitive, field.getName(), fieldName))
+            if (Util.matches(caseSensitive, field.getName(), fieldName)) {
                 return field;
+            }
         }
 
         // TODO: Handle star.
@@ -96,8 +97,9 @@ public class HazelcastTableFields {
     public boolean isFieldCreated() {
         boolean res = created;
 
-        if (res)
+        if (res) {
             created = false;
+        }
 
         return res;
     }

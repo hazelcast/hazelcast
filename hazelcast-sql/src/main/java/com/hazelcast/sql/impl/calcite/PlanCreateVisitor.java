@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,6 +70,7 @@ package com.hazelcast.sql.impl.calcite;
  /**
  * Visitor which produces query plan.
  */
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity"})
 public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
@@ -114,12 +115,14 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
             Integer outboundEdge = fragment.getOutboundEdge();
 
-            if (outboundEdge != null)
+            if (outboundEdge != null) {
                 outboundEdgeMap.put(outboundEdge, i);
+            }
 
             if (fragment.getInboundEdges() != null) {
-                for (Integer inboundEdge : fragment.getInboundEdges())
+                for (Integer inboundEdge : fragment.getInboundEdges()) {
                     inboundEdgeMap.put(inboundEdge, i);
+                }
             }
         }
 
@@ -152,14 +155,11 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         List<Expression> projection = new ArrayList<>();
 
-        for (String fieldName : fieldNames)
+        for (String fieldName : fieldNames) {
             projection.add(new KeyValueExtractorExpression(fieldName));
+        }
 
-        MapScanPhysicalNode mapScanNode = new MapScanPhysicalNode(
-            mapName,    // Scan
-            projection, // Project
-            null        // Filter
-        );
+        MapScanPhysicalNode mapScanNode = new MapScanPhysicalNode(mapName, projection, null);
 
         pushUpstream(mapScanNode);
     }
@@ -172,14 +172,11 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         List<Expression> projection = new ArrayList<>();
 
-        for (String fieldName : fieldNames)
+        for (String fieldName : fieldNames) {
             projection.add(new KeyValueExtractorExpression(fieldName));
+        }
 
-        ReplicatedMapScanPhysicalNode mapScanNode = new ReplicatedMapScanPhysicalNode(
-            mapName,    // Scan
-            projection, // Project
-            null        // Filter
-        );
+        ReplicatedMapScanPhysicalNode mapScanNode = new ReplicatedMapScanPhysicalNode(mapName, projection, null);
 
         pushUpstream(mapScanNode);
     }
@@ -214,19 +211,15 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         // Calculate mapping.
         PhysicalDistributionTrait distTrait = RuleUtils.getPhysicalDistribution(rel);
 
-        QueryFragmentMapping mapping = distTrait.getType() == PhysicalDistributionType.REPLICATED ?
-            QueryFragmentMapping.REPLICATED : QueryFragmentMapping.DATA_MEMBERS;
+        QueryFragmentMapping mapping = distTrait.getType() == PhysicalDistributionType.REPLICATED
+            ? QueryFragmentMapping.REPLICATED : QueryFragmentMapping.DATA_MEMBERS;
 
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
         addOutboundEdge(edge);
 
-        SendPhysicalNode sendNode = new SendPhysicalNode(
-            edge,                        // Edge
-            upstreamNode,                // Underlying node
-            new ConstantExpression<>(1)  // Partitioning info: REWORK!
-        );
+        SendPhysicalNode sendNode = new SendPhysicalNode(edge, upstreamNode, new ConstantExpression<>(1));
 
         addFragment(sendNode, mapping);
 
@@ -245,24 +238,20 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         assert upstreamNode instanceof SortPhysicalNode;
 
-        SortPhysicalNode sortNode = (SortPhysicalNode)upstreamNode;
+        SortPhysicalNode sortNode = (SortPhysicalNode) upstreamNode;
 
         // Calculate mapping.
         PhysicalDistributionTrait distTrait = RuleUtils.getPhysicalDistribution(rel);
 
-        QueryFragmentMapping mapping = distTrait.getType() == PhysicalDistributionType.REPLICATED ?
-            QueryFragmentMapping.REPLICATED : QueryFragmentMapping.DATA_MEMBERS;
+        QueryFragmentMapping mapping = distTrait.getType() == PhysicalDistributionType.REPLICATED
+            ? QueryFragmentMapping.REPLICATED : QueryFragmentMapping.DATA_MEMBERS;
 
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
         addOutboundEdge(edge);
 
-        SendPhysicalNode sendNode = new SendPhysicalNode(
-            edge,                        // Edge
-            sortNode,                    // Underlying node
-            new ConstantExpression<>(1)  // Partitioning info: REWORK!
-        );
+        SendPhysicalNode sendNode = new SendPhysicalNode(edge, sortNode, new ConstantExpression<>(1));
 
         addFragment(sendNode, mapping);
 
@@ -304,7 +293,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         RexNode condition = rel.getCondition();
         Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
 
-        FilterPhysicalNode filterNode = new FilterPhysicalNode(upstreamNode, (Expression<Boolean>)convertedCondition);
+        FilterPhysicalNode filterNode = new FilterPhysicalNode(upstreamNode, (Expression<Boolean>) convertedCondition);
 
         pushUpstream(filterNode);
     }
@@ -413,8 +402,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     private void addInboundEdge(int edgeId) {
-        if (currentInboundEdges == null)
+        if (currentInboundEdges == null) {
             currentInboundEdges = new ArrayList<>(1);
+        }
 
         currentInboundEdges.add(edgeId);
     }

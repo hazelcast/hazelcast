@@ -41,7 +41,7 @@ import java.util.List;
 /**
  * Convert logical map scan to either replicated or partitioned physical scan.
  */
-public class MapScanPhysicalRule extends RelOptRule {
+public final class MapScanPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new MapScanPhysicalRule();
 
     private MapScanPhysicalRule() {
@@ -68,8 +68,7 @@ public class MapScanPhysicalRule extends RelOptRule {
                 table,
                 scan.deriveRowType()
             );
-        }
-        else {
+        } else {
             PhysicalDistributionTrait distributionTrait = getDistributionTrait(hazelcastTable);
 
             newScan = new MapScanPhysicalRel(
@@ -92,10 +91,11 @@ public class MapScanPhysicalRule extends RelOptRule {
     private static PhysicalDistributionTrait getDistributionTrait(HazelcastTable hazelcastTable) {
         List<PhysicalDistributionField> distributionFields = getDistributionFields(hazelcastTable);
 
-        if (distributionFields.isEmpty())
+        if (distributionFields.isEmpty()) {
             return PhysicalDistributionTrait.DISTRIBUTED;
-        else
+        } else {
             return PhysicalDistributionTrait.distributedPartitioned(distributionFields);
+        }
     }
 
     /**
@@ -105,8 +105,9 @@ public class MapScanPhysicalRule extends RelOptRule {
      * @return Distribution field wrapped into a list or an empty list if no distribution field could be determined.
      */
     private static List<PhysicalDistributionField> getDistributionFields(HazelcastTable hazelcastTable) {
-        if (hazelcastTable.isReplicated())
+        if (hazelcastTable.isReplicated()) {
             return Collections.emptyList();
+        }
 
         MapProxyImpl map = hazelcastTable.getContainer();
 
@@ -119,25 +120,27 @@ public class MapScanPhysicalRule extends RelOptRule {
 
             if (path.equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
                 // If there is no distribution field, use the whole key.
-                if (distributionField == null)
+                if (distributionField == null) {
                     return Collections.singletonList(new PhysicalDistributionField(index));
+                }
 
                 // Otherwise try to find desired field as a nested field of the key.
                 for (RelDataTypeField nestedField : field.getType().getFieldList()) {
                     String nestedFieldName = nestedField.getName();
 
-                    if (nestedField.getName().equals(distributionField))
+                    if (nestedField.getName().equals(distributionField)) {
                         return Collections.singletonList(new PhysicalDistributionField(index, nestedFieldName));
+                    }
                 }
-            }
-            else {
+            } else {
                 // Try extracting the field from the key-based path and check if it is the distribution field.
                 // E.g. "field" -> (attribute) -> "__key.distField" -> (strategy) -> "distField".
                 String keyPath = SqlUtils.extractKeyPath(path);
 
                 if (keyPath != null) {
-                    if (keyPath.equals(distributionField))
+                    if (keyPath.equals(distributionField)) {
                         return Collections.singletonList(new PhysicalDistributionField(index));
+                    }
                 }
             }
 
@@ -160,8 +163,9 @@ public class MapScanPhysicalRule extends RelOptRule {
 
         PartitioningStrategy strategy = map.getPartitionStrategy();
 
-        if (strategy instanceof DeclarativePartitioningStrategy)
-            return ((DeclarativePartitioningStrategy)strategy).getField();
+        if (strategy instanceof DeclarativePartitioningStrategy) {
+            return ((DeclarativePartitioningStrategy) strategy).getField();
+        }
 
         return null;
     }

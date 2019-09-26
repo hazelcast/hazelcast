@@ -55,8 +55,9 @@ public class HazelcastTableRelDataType extends RelDataTypeImpl {
     public RelDataTypeField getField(String fieldName, boolean caseSensitive, boolean elideRecord) {
         RelDataTypeField res = fields.getField(typeFactory, fieldName, caseSensitive);
 
-        if (fields.isFieldCreated())
+        if (fields.isFieldCreated()) {
             computeDigest();
+        }
 
         return res;
     }

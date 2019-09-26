@@ -14,22 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.calcite.jdbc;
-
-import com.hazelcast.sql.impl.calcite.schema.HazelcastRootSchema;
-import org.apache.calcite.schema.SchemaVersion;
-
 /**
- * Root Calcite schema.
+ * Contains Calcite-related classes.
  */
-public final class HazelcastRootCalciteSchema extends SimpleCalciteSchema {
-
-    public HazelcastRootCalciteSchema(HazelcastRootSchema schema) {
-        super(null, schema, "");
-    }
-
-    @Override
-    public CalciteSchema createSnapshot(SchemaVersion version) {
-        return this;
-    }
-}
+package org.apache.calcite.jdbc;

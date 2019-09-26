@@ -24,7 +24,7 @@ import org.apache.calcite.plan.RelTraitSet;
 /**
  * Hazelcast conventions.
  */
-public class HazelcastConventions {
+public final class HazelcastConventions {
     /** Logical convention. */
     public static final Convention LOGICAL = new Convention.Impl("LOGICAL", LogicalRel.class);
 

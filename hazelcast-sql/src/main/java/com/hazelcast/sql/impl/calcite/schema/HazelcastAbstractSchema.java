@@ -69,8 +69,9 @@ public class HazelcastAbstractSchema extends AbstractSchema {
 
         Map<String, Table> res = context.getData(contextKey);
 
-        if (res != null)
+        if (res != null) {
             return res;
+        }
 
         Collection<String> mapNames = nodeEngine.getProxyService().getDistributedObjectNames(serviceName);
 

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.HazelcastSqlException;
@@ -60,9 +76,14 @@ import java.util.List;
 /**
  * Visitor which converts REX node to a Hazelcast expression.
  */
-public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
+public final class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
     /** Singleton. */
     public static final ExpressionConverterRexVisitor INSTANCE = new ExpressionConverterRexVisitor();
+
+    private ExpressionConverterRexVisitor() {
+        // No-op.
+    }
 
     @Override
     public Expression visitInputRef(RexInputRef inputRef) {
@@ -89,6 +110,7 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
      * @param literal Literal.
      * @return Object.
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     private Object convertLiteral(RexLiteral literal) {
         switch (literal.getType().getSqlTypeName()) {
             case BOOLEAN:
@@ -139,9 +161,10 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case INTERVAL_MINUTE_SECOND:
             case INTERVAL_SECOND:
                 return convertDaySecondInterval(literal);
-        }
 
-        throw new HazelcastSqlException(-1, "Unsupported literal: " + literal);
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported literal: " + literal);
+        }
     }
 
     private SqlYearMonthInterval convertYearMonthInterval(RexLiteral literal) {
@@ -150,20 +173,22 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
         return new SqlYearMonthInterval(months);
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private SqlDaySecondInterval convertDaySecondInterval(RexLiteral literal) {
         long val = literal.getValueAs(Long.class);
 
         long sec = val / 1_000;
-        int nano = (int)(val % 1_000) * 1_000_000;
+        int nano = (int) (val % 1_000) * 1_000_000;
 
         return new SqlDaySecondInterval(sec, nano);
     }
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     private Object convertSymbol(RexLiteral literal) {
         Object literalValue = literal.getValue();
 
         if (literalValue instanceof TimeUnitRange) {
-            TimeUnitRange unit = (TimeUnitRange)literalValue;
+            TimeUnitRange unit = (TimeUnitRange) literalValue;
 
             switch (unit) {
                 case YEAR:
@@ -195,13 +220,17 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
                 case SECOND:
                     return DatePartUnit.SECOND;
+
+                default:
+                    break;
             }
         }
 
         throw new HazelcastSqlException(-1, "Unsupported literal symbol: " + literal);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "checkstyle:CyclomaticComplexity", "checkstyle:MethodLength",
+        "checkstyle:NPathComplexity", "checkstyle:ReturnCount"})
     @Override
     public Expression visitCall(RexCall call) {
         // Convert operator.
@@ -214,9 +243,9 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
         List<Expression> hzOperands;
 
-        if (operands == null || operands.isEmpty())
+        if (operands == null || operands.isEmpty()) {
             hzOperands = Collections.emptyList();
-        else {
+        } else {
             hzOperands = new ArrayList<>(operands.size());
 
             for (RexNode operand : operands) {
@@ -256,10 +285,11 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                 return new ConcatFunction(hzOperands.get(0), hzOperands.get(1));
 
             case CallOperator.POSITION:
-                if (hzOperands.size() == 2)
+                if (hzOperands.size() == 2) {
                     return new PositionFunction(hzOperands.get(0), hzOperands.get(1), null);
-                else
+                } else {
                     return new PositionFunction(hzOperands.get(0), hzOperands.get(1), hzOperands.get(2));
+                }
 
             case CallOperator.REPLACE:
                 return new ReplaceFunction(hzOperands.get(0), hzOperands.get(1), hzOperands.get(2));
@@ -286,21 +316,23 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                 return new FloorCeilFunction(hzOperands.get(0), true);
 
             case CallOperator.ROUND:
-                if (hzOperands.size() == 1)
+                if (hzOperands.size() == 1) {
                     return new RoundTruncateFunction(hzOperands.get(0), null, false);
-                else
+                } else {
                     return new RoundTruncateFunction(hzOperands.get(0), hzOperands.get(1), false);
+                }
 
             case CallOperator.TRUNCATE:
-                if (hzOperands.size() == 1)
+                if (hzOperands.size() == 1) {
                     return new RoundTruncateFunction(hzOperands.get(0), null, true);
-                else
+                } else {
                     return new RoundTruncateFunction(hzOperands.get(0), hzOperands.get(1), true);
+                }
 
             case CallOperator.RAND:
-                if (hzOperands.isEmpty())
+                if (hzOperands.isEmpty()) {
                     return new RandomFunction();
-                else {
+                } else {
                     assert hzOperands.size() == 1;
 
                     return new RandomFunction(hzOperands.get(0));
@@ -320,7 +352,7 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                 return new MathBiFunction(hzOperands.get(0), hzOperands.get(1), hzOperator);
 
             case CallOperator.EXTRACT:
-                DatePartUnit unit = ((ConstantExpression<DatePartUnit>)hzOperands.get(0)).getValue();
+                DatePartUnit unit = ((ConstantExpression<DatePartUnit>) hzOperands.get(0)).getValue();
 
                 return new DatePartFunction(hzOperands.get(1), unit);
 
@@ -419,6 +451,8 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
      * @param operator Calcite operator.
      * @return Hazelcast operator.
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity",
+        "checkstyle:ReturnCount", "checkstyle:AvoidNestedBlocks"})
     private static int convertOperator(SqlOperator operator) {
         switch (operator.getKind()) {
             case PLUS:
@@ -449,8 +483,11 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
                 return CallOperator.POSITION;
 
             case OTHER:
-                if (operator == SqlStdOperatorTable.CONCAT)
+                if (operator == SqlStdOperatorTable.CONCAT) {
                     return CallOperator.CONCAT;
+                }
+
+                break;
 
             case EXTRACT:
                 return CallOperator.EXTRACT;
@@ -503,87 +540,97 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
             case CASE:
                 return CallOperator.CASE;
 
+            case SELECT:
+                break;
+            case JOIN:
+                break;
+            case IDENTIFIER:
+                break;
+            case LITERAL:
+                break;
             case OTHER_FUNCTION: {
-                if ("ITEM".equals(operator.getName()))
+                if ("ITEM".equals(operator.getName())) {
                     return CallOperator.ITEM;
+                }
 
-                SqlFunction function = (SqlFunction)operator;
+                SqlFunction function = (SqlFunction) operator;
 
-                if (function == SqlStdOperatorTable.COS)
+                if (function == SqlStdOperatorTable.COS) {
                     return CallOperator.COS;
-                else if (function == SqlStdOperatorTable.SIN)
+                } else if (function == SqlStdOperatorTable.SIN) {
                     return CallOperator.SIN;
-                else if (function == SqlStdOperatorTable.TAN)
+                } else if (function == SqlStdOperatorTable.TAN) {
                     return CallOperator.COT;
-                else if (function == SqlStdOperatorTable.COT)
+                } else if (function == SqlStdOperatorTable.COT) {
                     return CallOperator.COT;
-                else if (function == SqlStdOperatorTable.ACOS)
+                } else if (function == SqlStdOperatorTable.ACOS) {
                     return CallOperator.ACOS;
-                else if (function == SqlStdOperatorTable.ASIN)
+                } else if (function == SqlStdOperatorTable.ASIN) {
                     return CallOperator.ASIN;
-                else if (function == SqlStdOperatorTable.ATAN)
+                } else if (function == SqlStdOperatorTable.ATAN) {
                     return CallOperator.ATAN;
-                else if (function == SqlStdOperatorTable.SQRT)
+                } else if (function == SqlStdOperatorTable.SQRT) {
                     return CallOperator.SQRT;
-                else if (function == SqlStdOperatorTable.EXP)
+                } else if (function == SqlStdOperatorTable.EXP) {
                     return CallOperator.EXP;
-                else if (function == SqlStdOperatorTable.LN)
+                } else if (function == SqlStdOperatorTable.LN) {
                     return CallOperator.LN;
-                else if (function == SqlStdOperatorTable.LOG10)
+                } else if (function == SqlStdOperatorTable.LOG10) {
                     return CallOperator.LOG10;
-                else if (function == SqlStdOperatorTable.RAND)
+                } else if (function == SqlStdOperatorTable.RAND) {
                     return CallOperator.RAND;
-                else if (function == SqlStdOperatorTable.ABS)
+                } else if (function == SqlStdOperatorTable.ABS) {
                     return CallOperator.ABS;
-                else if (function == SqlStdOperatorTable.PI)
+                } else if (function == SqlStdOperatorTable.PI) {
                     return CallOperator.PI;
-                else if (function == SqlStdOperatorTable.SIGN)
+                } else if (function == SqlStdOperatorTable.SIGN) {
                     return CallOperator.SIGN;
-                else if (function == SqlStdOperatorTable.ATAN2)
+                } else if (function == SqlStdOperatorTable.ATAN2) {
                     return CallOperator.ATAN2;
-                else if (function == SqlStdOperatorTable.POWER)
+                } else if (function == SqlStdOperatorTable.POWER) {
                     return CallOperator.POWER;
-                else if (function == SqlStdOperatorTable.DEGREES)
+                } else if (function == SqlStdOperatorTable.DEGREES) {
                     return CallOperator.DEGREES;
-                else if (function == SqlStdOperatorTable.RADIANS)
+                } else if (function == SqlStdOperatorTable.RADIANS) {
                     return CallOperator.RADIANS;
-                else if (function == SqlStdOperatorTable.ROUND)
+                } else if (function == SqlStdOperatorTable.ROUND) {
                     return CallOperator.ROUND;
-                else if (function == SqlStdOperatorTable.TRUNCATE)
+                } else if (function == SqlStdOperatorTable.TRUNCATE) {
                     return CallOperator.TRUNCATE;
+                }
 
-                if (
-                    function == SqlStdOperatorTable.CHAR_LENGTH ||
-                    function == SqlStdOperatorTable.CHARACTER_LENGTH ||
-                    function == HazelcastSqlOperatorTable.LENGTH
-                )
+                if (function == SqlStdOperatorTable.CHAR_LENGTH
+                    || function == SqlStdOperatorTable.CHARACTER_LENGTH
+                    || function == HazelcastSqlOperatorTable.LENGTH
+                ) {
                     return CallOperator.CHAR_LENGTH;
-                else if (function == SqlStdOperatorTable.UPPER)
+                } else if (function == SqlStdOperatorTable.UPPER) {
                     return CallOperator.UPPER;
-                else if (function == SqlStdOperatorTable.LOWER)
+                } else if (function == SqlStdOperatorTable.LOWER) {
                     return CallOperator.LOWER;
-                else if (function == SqlStdOperatorTable.INITCAP)
+                } else if (function == SqlStdOperatorTable.INITCAP) {
                     return CallOperator.INITCAP;
-                else if (function == SqlStdOperatorTable.ASCII)
+                } else if (function == SqlStdOperatorTable.ASCII) {
                     return CallOperator.ASCII;
-                else if (function == SqlStdOperatorTable.REPLACE)
+                } else if (function == SqlStdOperatorTable.REPLACE) {
                     return CallOperator.REPLACE;
-                else if (function == SqlStdOperatorTable.CURRENT_DATE)
+                } else if (function == SqlStdOperatorTable.CURRENT_DATE) {
                     return CallOperator.CURRENT_DATE;
-                else if (function == SqlStdOperatorTable.CURRENT_TIMESTAMP)
+                } else if (function == SqlStdOperatorTable.CURRENT_TIMESTAMP) {
                     return CallOperator.CURRENT_TIMESTAMP;
-                else if (function == SqlStdOperatorTable.LOCALTIMESTAMP)
+                } else if (function == SqlStdOperatorTable.LOCALTIMESTAMP) {
                     return CallOperator.LOCAL_TIMESTAMP;
-                else if (function == SqlStdOperatorTable.LOCALTIME)
+                } else if (function == SqlStdOperatorTable.LOCALTIME) {
                     return CallOperator.LOCAL_TIME;
+                }
+
+                break;
             }
 
             default:
-                throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+                break;
         }
-    }
 
-    private ExpressionConverterRexVisitor() {
-        // No-op.
+        throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
     }
 }

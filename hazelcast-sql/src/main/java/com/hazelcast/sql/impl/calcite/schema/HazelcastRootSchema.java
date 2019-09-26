@@ -54,11 +54,13 @@ public class HazelcastRootSchema extends HazelcastAbstractSchema {
 
         Map<String, Table> res = new HashMap<>();
 
-        for (Map.Entry<String, Table> table : replicatedTables.entrySet())
+        for (Map.Entry<String, Table> table : replicatedTables.entrySet()) {
             res.put(table.getKey(), table.getValue());
+        }
 
-        for (Map.Entry<String, Table> table : partitionedTables.entrySet())
+        for (Map.Entry<String, Table> table : partitionedTables.entrySet()) {
             res.put(table.getKey(), table.getValue());
+        }
 
         return res;
     }

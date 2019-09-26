@@ -44,7 +44,7 @@ import java.util.List;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "FieldCanBeLocal"})
 public class SqlTest extends HazelcastTestSupport {
     private static final int CITY_CNT = 2;
     private static final int DEPARTMENT_CNT = 2;
@@ -87,11 +87,13 @@ public class SqlTest extends HazelcastTestSupport {
         IMap<Long, Department> departmentMap = member.getMap("department");
         IMap<PersonKey, Person> personMap = member.getMap("person");
 
-        for (int i = 0; i < CITY_CNT; i++)
-            cityMap.put((long)i, new City("city-" + i));
+        for (int i = 0; i < CITY_CNT; i++) {
+            cityMap.put((long) i, new City("city-" + i));
+        }
 
-        for (int i = 0; i < DEPARTMENT_CNT; i++)
-            departmentMap.put((long)i, new Department("department-" + i));
+        for (int i = 0; i < DEPARTMENT_CNT; i++) {
+            departmentMap.put((long) i, new Department("department-" + i));
+        }
 
         int age = 40;
         long salary = 1000;
@@ -121,7 +123,7 @@ public class SqlTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = Long.MAX_VALUE)
-    public void testReplicatedProject() throws Exception {
+    public void testReplicatedProject() {
         doQuery(
             member,
             "SELECT name FROM city"
@@ -129,9 +131,7 @@ public class SqlTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = Long.MAX_VALUE)
-    public void testJoin() throws Exception {
-        int a = Math.abs(Integer.MAX_VALUE + 2);
-
+    public void testJoin() {
         List<SqlRow> res = doQuery(
             member,
             "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
@@ -145,8 +145,9 @@ public class SqlTest extends HazelcastTestSupport {
 
         List<SqlRow> rows = new ArrayList<>();
 
-        for (SqlRow row : cursor)
+        for (SqlRow row : cursor) {
             rows.add(row);
+        }
 
         print(rows);
 
@@ -156,18 +157,19 @@ public class SqlTest extends HazelcastTestSupport {
     private void print(List<SqlRow> rows) {
         System.out.println(">>> RESULT:");
 
-        for (SqlRow row : rows)
+        for (SqlRow row : rows) {
             System.out.println(">>>\t" + row);
+        }
     }
 
     private static class City implements Serializable {
         private String name;
 
-        public City() {
+        City() {
             // No-op.
         }
 
-        public City(String name) {
+        City(String name) {
             this.name = name;
         }
     }
@@ -175,11 +177,11 @@ public class SqlTest extends HazelcastTestSupport {
     private static class Department implements Serializable {
         private String title;
 
-        public Department() {
+        Department() {
             // No-op.
         }
 
-        public Department(String title) {
+        Department(String title) {
             this.title = title;
         }
     }
@@ -188,11 +190,11 @@ public class SqlTest extends HazelcastTestSupport {
         private long id;
         private long deptId;
 
-        public PersonKey() {
+        PersonKey() {
             // No-op.
         }
 
-        public PersonKey(long id, long deptId) {
+        PersonKey(long id, long deptId) {
             this.id = id;
             this.deptId = deptId;
         }
@@ -204,11 +206,11 @@ public class SqlTest extends HazelcastTestSupport {
         private long salary;
         private long cityId;
 
-        public Person() {
+        Person() {
             // No-op.
         }
 
-        public Person(String name, int age, long salary, long cityId) {
+        Person(String name, int age, long salary, long cityId) {
             this.name = name;
             this.age = age;
             this.salary = salary;

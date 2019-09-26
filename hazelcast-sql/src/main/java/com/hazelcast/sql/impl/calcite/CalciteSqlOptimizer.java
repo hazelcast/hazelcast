@@ -88,6 +88,7 @@ import java.util.UUID;
 /**
  * Calcite-based SQL optimizer.
  */
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Node engine. */
     private final NodeEngine nodeEngine;
@@ -102,8 +103,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         try {
             return prepare0(sql);
-        }
-        finally {
+        } finally {
             HazelcastCalciteContext.clear();
         }
     }
@@ -217,8 +217,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             SqlParser parser = SqlParser.create(sql, parserConfig.build());
 
             node = parser.parseStmt();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new HazelcastSqlException(SqlErrorCode.PARSING, e.getMessage(), e);
         }
 
@@ -288,7 +287,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             ImmutableList.of()
         );
 
-        return (PhysicalRel)res;
+        return (PhysicalRel) res;
     }
 
     /**
@@ -318,9 +317,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         for (UUID partMemberId : partMap.keySet()) {
             MemberImpl member = nodeEngine.getClusterService().getMember(partMemberId);
 
-            if (member == null)
-                throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE, "Participating member has " +
-                    "left the topology: " + partMemberId);
+            if (member == null) {
+                throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE, "Participating member has "
+                    + "left the topology: " + partMemberId);
+            }
 
             dataMemberAddresses.add(member.getAddress());
             dataMemberIds.add(member.getUuid());

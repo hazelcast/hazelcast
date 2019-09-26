@@ -26,7 +26,7 @@ import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalProject;
 
-public class ProjectLogicalRule extends RelOptRule {
+public final class ProjectLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new ProjectLogicalRule();
 
     private ProjectLogicalRule() {

@@ -56,7 +56,7 @@ public class CollocatedAggregatePhysicalRel extends AbstractAggregatePhysicalRel
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
-        ((PhysicalRel)input).visit(visitor);
+        ((PhysicalRel) input).visit(visitor);
 
         visitor.onCollocatedAggregate(this);
     }

@@ -44,7 +44,7 @@ public class RootPhysicalRel extends SingleRel implements PhysicalRel {
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
-        ((PhysicalRel)input).visit(visitor);
+        ((PhysicalRel) input).visit(visitor);
 
         visitor.onRoot(this);
     }

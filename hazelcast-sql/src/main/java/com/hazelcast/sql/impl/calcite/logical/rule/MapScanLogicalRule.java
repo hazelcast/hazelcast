@@ -16,18 +16,15 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
-import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 
-public class MapScanLogicalRule extends RelOptRule {
+public final class MapScanLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new MapScanLogicalRule();
 
     private MapScanLogicalRule() {

@@ -58,8 +58,9 @@ public abstract class AbstractAggregatePhysicalRule extends RelOptRule {
 
         int groupFieldCount = agg.getGroupSet().cardinality();
 
-        if (inputFieldCollations.size() < groupFieldCount)
+        if (inputFieldCollations.size() < groupFieldCount) {
             return AggregateCollation.EMPTY;
+        }
 
         List<RelFieldCollation> aggCollationFields = new ArrayList<>(groupFieldCount);
 
@@ -76,8 +77,7 @@ public abstract class AbstractAggregatePhysicalRule extends RelOptRule {
                 );
 
                 aggCollationFields.add(collationField);
-            }
-            else {
+            } else {
                 // TODO: Consider adding partial prefix supoprt. In this case it is not possible to avoid blocking
                 // TODO: behavior, but only part of the group key is needed for mapping. E.g. GROUP BY (a, b) on top
                 // TODO: input sorted by (a) will have "fixed" group key component of "a", and "blocking" map

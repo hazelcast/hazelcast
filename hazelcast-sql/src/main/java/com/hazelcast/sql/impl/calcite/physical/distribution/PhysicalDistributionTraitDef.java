@@ -25,8 +25,6 @@ import org.apache.calcite.plan.RelTraitDef;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 
-import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait.*;
-
 public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributionTrait> {
     public static final PhysicalDistributionTraitDef INSTANCE = new PhysicalDistributionTraitDef();
 
@@ -40,6 +38,7 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
         return getClass().getSimpleName();
     }
 
+    @SuppressWarnings("checkstyle:WhitespaceAround")
     @Override
     public RelNode convert(
         RelOptPlanner planner,
@@ -50,22 +49,26 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
         PhysicalDistributionTrait currentTrait = RuleUtils.getPhysicalDistribution(rel);
 
         // Do nothing if input is already converted.
-        if (currentTrait.equals(targetTrait))
+        if (currentTrait.equals(targetTrait)) {
             return rel;
+        }
 
         // TODO: What is the reason of having this RelSubset check?
-        if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset))
 //        if (currentTrait.equals(ANY))
+        if (currentTrait.equals(PhysicalDistributionTrait.ANY) && !(rel instanceof RelSubset)) {
             return null;
+        }
 
         // Only physical nodes could be converted.
-        if (rel.getConvention() != HazelcastConventions.PHYSICAL)
+        if (rel.getConvention() != HazelcastConventions.PHYSICAL) {
             return null;
+        }
 
         switch (targetTrait.getType()){
             case SINGLETON:
-                if (currentTrait == REPLICATED && HazelcastCalciteContext.get().isDataMember())
+                if (currentTrait == PhysicalDistributionTrait.REPLICATED && HazelcastCalciteContext.get().isDataMember()) {
                     return rel;
+                }
 
                 // TODO: Do we really need this kind of conversions? Can't this be handled on rule level?
                 // TODO: E.g. RootPhyicalRule could set proper exchanges on its own.
@@ -95,6 +98,6 @@ public class PhysicalDistributionTraitDef extends RelTraitDef<PhysicalDistributi
 
     @Override
     public PhysicalDistributionTrait getDefault() {
-        return ANY;
+        return PhysicalDistributionTrait.ANY;
     }
 }

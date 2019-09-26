@@ -43,7 +43,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ProjectIntoScanLogicalRule extends RelOptRule {
+public final class ProjectIntoScanLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new ProjectIntoScanLogicalRule();
 
     private ProjectIntoScanLogicalRule() {
@@ -59,14 +59,16 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
         Project project = call.rel(0);
         TableScan scan = call.rel(1);
 
-        if (scan.getRowType().getFieldList().isEmpty())
+        if (scan.getRowType().getFieldList().isEmpty()) {
             return;
+        }
 
         // Map projected field references to real scan fields.
         ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(scan.getRowType().getFieldList());
 
-        for (RexNode projectExp : project.getProjects())
+        for (RexNode projectExp : project.getProjects()) {
             projectExp.accept(projectFieldVisitor);
+        }
 
         projectFieldVisitor.done(scan.getCluster().getTypeFactory());
 
@@ -98,16 +100,17 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
         );
 
         // If new project is trivial, i.e. it contains only references to scan fields, then it can be eliminated.
-        if (ProjectRemoveRule.isTrivial(newProject))
+        if (ProjectRemoveRule.isTrivial(newProject)) {
             call.transformTo(newScan);
-        else
+        } else {
             call.transformTo(newProject);
+        }
     }
 
     /**
      * Visitor which collects fields from project expressions and map them to respective scna fields.
      */
-    private static class ProjectFieldVisitor extends RexVisitorImpl<Void> {
+    private static final class ProjectFieldVisitor extends RexVisitorImpl<Void> {
         /** Scan fields. */
         private final List<RelDataTypeField> scanFields;
 
@@ -142,8 +145,9 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
         public Void visitCall(RexCall call) {
             // TODO: Support "star" and "item".
 
-            for (RexNode operand : call.operands)
+            for (RexNode operand : call.operands) {
                 operand.accept(this);
+            }
 
             return null;
         }
@@ -160,8 +164,9 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
                 fieldNames.add(mappedField.getScanField().getName());
                 types.add(mappedField.getScanField().getType());
 
-                for (RexNode projectNode : mappedField.getProjectNodes())
+                for (RexNode projectNode : mappedField.getProjectNodes()) {
                     projectExpToScanFieldMap.put(projectNode, index);
+                }
 
                 index++;
             }
@@ -182,7 +187,7 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
     /**
      * Visitor which converts old project expressions (before pushdown) to new project expressions (after pushdown).
      */
-    public static class ProjectConverter extends RexShuttle {
+    public static final class ProjectConverter extends RexShuttle {
         /** Map from old project expression to relevant field in the new scan operator. */
         private final Map<RexNode, Integer> projectExpToScanFieldMap;
 
@@ -194,8 +199,9 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
         public RexNode visitCall(final RexCall call) {
             Integer index = projectExpToScanFieldMap.get(call);
 
-            if (index != null)
+            if (index != null) {
                 return new RexInputRef(index, call.getType());
+            }
 
             return super.visitCall(call);
         }
@@ -204,8 +210,9 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
         public RexNode visitInputRef(RexInputRef inputRef) {
             Integer index = projectExpToScanFieldMap.get(inputRef);
 
-            if (index != null)
+            if (index != null) {
                 return new RexInputRef(index, inputRef.getType());
+            }
 
             return super.visitInputRef(inputRef);
         }
@@ -215,7 +222,6 @@ public class ProjectIntoScanLogicalRule extends RelOptRule {
      * Scan field mapped to project REX nodes.
      */
     public static class MappedScanField {
-        /** Scna field. */
         private final RelDataTypeField scanField;
         private final List<RexNode> projectNodes = new ArrayList<>(1);
 
