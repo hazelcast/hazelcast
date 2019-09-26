@@ -16,7 +16,6 @@
 
 package com.hazelcast.transaction.impl.xa.operations;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,7 +29,7 @@ import com.hazelcast.transaction.impl.xa.XATransaction;
 import javax.transaction.xa.XAException;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 public class FinalizeRemoteTransactionOperation extends AbstractXAOperation implements BackupAwareOperation {
 
@@ -64,35 +63,14 @@ public class FinalizeRemoteTransactionOperation extends AbstractXAOperation impl
         }
         final int size = list.size();
 
-        // todo this callback can be extracted to a separate class and used from the point where it is
-        //  needed, ie TransactionLog#invokeAsync
-        final ExecutionCallback callback = new ExecutionCallback() {
-            AtomicInteger counter = new AtomicInteger();
-
-            @Override
-            public void onResponse(Object response) {
-                sendResponseIfComplete();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                // TODO log the error
-                sendResponseIfComplete();
-            }
-
-            void sendResponseIfComplete() {
-                if (size == counter.incrementAndGet()) {
-                    sendResponse(null);
-                }
-            }
-        };
+        final TransactionFinalizationCallback callback = new TransactionFinalizationCallback(this, size);
 
         for (XATransaction xaTransaction : list) {
             finalizeTransaction(xaTransaction, callback);
         }
     }
 
-    private void finalizeTransaction(XATransaction xaTransaction, ExecutionCallback callback) {
+    private void finalizeTransaction(XATransaction xaTransaction, BiConsumer callback) {
         if (isCommit) {
             xaTransaction.commitAsync(callback);
         } else {

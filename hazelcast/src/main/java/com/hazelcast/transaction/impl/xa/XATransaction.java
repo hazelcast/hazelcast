@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -176,7 +177,7 @@ public final class XATransaction implements Transaction {
         }
     }
 
-    public void commitAsync(ExecutionCallback callback) {
+    public void commitAsync(BiConsumer callback) {
         if (state != PREPARED) {
             throw new IllegalStateException("Transaction is not prepared");
         }
@@ -204,7 +205,7 @@ public final class XATransaction implements Transaction {
         }
     }
 
-    public void rollbackAsync(ExecutionCallback callback) {
+    public void rollbackAsync(BiConsumer callback) {
         if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
         }

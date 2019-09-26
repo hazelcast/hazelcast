@@ -16,7 +16,6 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -29,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 /**
  * The transaction log contains all {@link
@@ -121,19 +121,19 @@ public class TransactionLog {
         return operationService.invokeOnPartition(op.getServiceName(), op, op.getPartitionId());
     }
 
-    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+    public void commitAsync(NodeEngine nodeEngine, BiConsumer callback) {
         for (TransactionLogRecord record : recordMap.values()) {
             invokeAsync(nodeEngine, callback, record, record.newCommitOperation());
         }
     }
 
-    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+    public void rollbackAsync(NodeEngine nodeEngine, BiConsumer callback) {
         for (TransactionLogRecord record : recordMap.values()) {
             invokeAsync(nodeEngine, callback, record, record.newRollbackOperation());
         }
     }
 
-    private void invokeAsync(NodeEngine nodeEngine, ExecutionCallback callback,
+    private void invokeAsync(NodeEngine nodeEngine, BiConsumer callback,
                              TransactionLogRecord record, Operation op) {
 
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
@@ -143,13 +143,7 @@ public class TransactionLog {
             operationService.invokeOnTarget(op.getServiceName(), op, target);
         } else {
             operationService.invokeOnPartitionAsync(op.getServiceName(), op, op.getPartitionId())
-                            .whenCompleteAsync((v, t) -> {
-                                if (t == null) {
-                                    callback.onResponse(v);
-                                } else {
-                                    callback.onFailure(t);
-                                }
-                            });
+                            .whenCompleteAsync(callback);
         }
     }
 }
