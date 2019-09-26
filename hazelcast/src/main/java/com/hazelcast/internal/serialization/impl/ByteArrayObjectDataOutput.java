@@ -19,9 +19,9 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.ArrayUtils;
+import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -433,6 +433,7 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
             buffer = new byte[initialSize * 8];
         }
         version = UNKNOWN;
+        wanProtocolVersion = UNKNOWN;
     }
 
     @Override

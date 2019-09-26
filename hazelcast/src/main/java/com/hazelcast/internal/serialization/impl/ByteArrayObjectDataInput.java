@@ -76,6 +76,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             charBuffer = new char[UTF_BUFFER_SIZE * 8];
         }
         version = UNKNOWN;
+        wanProtocolVersion = UNKNOWN;
     }
 
     @Override

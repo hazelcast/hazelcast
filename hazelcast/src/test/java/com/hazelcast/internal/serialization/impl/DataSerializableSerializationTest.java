@@ -210,7 +210,7 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public IdentifiedDataSerializable create(int typeId, Version version) {
+        public IdentifiedDataSerializable create(int typeId, Version version, Version wanProtocolVersion) {
             throw new RuntimeException("Should not be used outside of the versioned context");
         }
     }
