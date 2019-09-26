@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -35,6 +36,8 @@ import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
@@ -51,9 +54,6 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.impl.Indexes;
@@ -1286,7 +1286,8 @@ public abstract class HazelcastTestSupport {
         // we are going to check five times a second
         int sleepMillis = 200;
         long iterations = timeoutSeconds * 5;
-        for (int i = 0; i < iterations; i++) {
+        long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
+        for (int i = 0; i < iterations && System.currentTimeMillis() < deadline; i++) {
             try {
                 try {
                     task.run();
@@ -1310,7 +1311,8 @@ public abstract class HazelcastTestSupport {
         // we are going to check five times a second
         int sleepMillis = 200;
         long iterations = timeoutSeconds * 5;
-        for (int i = 0; i < iterations; i++) {
+        long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
+        for (int i = 0; i < iterations && System.currentTimeMillis() < deadline; i++) {
             try {
                 try {
                     task.run();
