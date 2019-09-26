@@ -16,12 +16,13 @@
 
 package com.hazelcast.sql.impl.operation;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultConsumer;
-import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Operation which is broadcast to participating members to start query execution.
@@ -39,7 +41,7 @@ public class QueryExecuteOperation extends QueryOperation {
     private QueryId queryId;
 
     /** Mapped ownership of partitions. */
-    private Map<String, PartitionIdSet> partitionMapping;
+    private Map<UUID, PartitionIdSet> partitionMapping;
 
     /** Fragment descriptors. */
     private List<QueryFragmentDescriptor> fragmentDescriptors;
@@ -65,7 +67,7 @@ public class QueryExecuteOperation extends QueryOperation {
 
     public QueryExecuteOperation(
         QueryId queryId,
-        Map<String, PartitionIdSet> partitionMapping,
+        Map<UUID, PartitionIdSet> partitionMapping,
         List<QueryFragmentDescriptor> fragmentDescriptors,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
@@ -85,7 +87,7 @@ public class QueryExecuteOperation extends QueryOperation {
         return queryId;
     }
 
-    public Map<String, PartitionIdSet> getPartitionMapping() {
+    public Map<UUID, PartitionIdSet> getPartitionMapping() {
         return partitionMapping;
     }
 
@@ -129,8 +131,8 @@ public class QueryExecuteOperation extends QueryOperation {
         // Write partitions.
         out.writeInt(partitionMapping.size());
 
-        for (Map.Entry<String, PartitionIdSet> entry : partitionMapping.entrySet()) {
-            out.writeUTF(entry.getKey());
+        for (Map.Entry<UUID, PartitionIdSet> entry : partitionMapping.entrySet()) {
+            UUIDSerializationUtil.writeUUID(out, entry.getKey());
             out.writeInt(entry.getValue().size());
             out.writeLongArray(entry.getValue().getBitSet().toLongArray());
         }
@@ -184,8 +186,12 @@ public class QueryExecuteOperation extends QueryOperation {
 
         partitionMapping = new HashMap<>(partitionMappingCnt);
 
-        for (int i = 0; i < partitionMappingCnt; i++)
-            partitionMapping.put(in.readUTF(), new PartitionIdSet(in.readInt(), BitSet.valueOf(in.readLongArray())));
+        for (int i = 0; i < partitionMappingCnt; i++) {
+            UUID key = UUIDSerializationUtil.readUUID(in);
+            PartitionIdSet val = new PartitionIdSet(in.readInt(), BitSet.valueOf(in.readLongArray()));
+
+            partitionMapping.put(key, val);
+        }
 
         // Read fragments.
         int fragmentCnt = in.readInt();

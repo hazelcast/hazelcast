@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.exec;
 
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
@@ -27,8 +29,6 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.ArrayList;
 import java.util.Collection;

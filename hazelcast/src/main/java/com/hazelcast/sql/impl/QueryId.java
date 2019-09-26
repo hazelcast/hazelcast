@@ -16,10 +16,11 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -34,14 +35,14 @@ public class QueryId implements DataSerializable {
      * @param memberId Member ID.
      * @return Query ID.
      */
-    public static QueryId create(String memberId) {
+    public static QueryId create(UUID memberId) {
         UUID qryId = UuidUtil.newUnsecureUUID();
 
         return new QueryId(memberId, qryId.getLeastSignificantBits(), qryId.getLeastSignificantBits());
     }
 
     /** Member ID. */
-    private String memberId;
+    private UUID memberId;
 
     /** Local ID: most significant bits. */
     private long localHigh;
@@ -53,7 +54,7 @@ public class QueryId implements DataSerializable {
         // No-op.
     }
 
-    public QueryId(String memberId, long localHigh, long localLow) {
+    public QueryId(UUID memberId, long localHigh, long localLow) {
         this.memberId = memberId;
         this.localHigh = localHigh;
         this.localLow = localLow;
@@ -65,14 +66,14 @@ public class QueryId implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(memberId);
+        UUIDSerializationUtil.writeUUID(out, memberId);
         out.writeLong(localHigh);
         out.writeLong(localLow);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        memberId = in.readUTF();
+        memberId = UUIDSerializationUtil.readUUID(in);
         localHigh = in.readLong();
         localLow = in.readLong();
     }

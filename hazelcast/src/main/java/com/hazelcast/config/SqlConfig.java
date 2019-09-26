@@ -20,57 +20,34 @@ package com.hazelcast.config;
  * SQL service configuration.
  */
 public class SqlConfig {
-    /** Default number of control threads. */
-    public static final int DFLT_CONTROL_THREAD_COUNT = 2;
-
     /** Default number of data threads. */
-    public static final int DFLT_DATA_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
+    public static final int DFLT_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
 
-    private int controlThreadCount = DFLT_CONTROL_THREAD_COUNT;
-    private int dataThreadCount = DFLT_DATA_THREAD_COUNT;
-
-    /**
-     * Get number of threads responsible for query coordination tasks.
-     *
-     * @return Number of threads responsible for query coordination tasks.
-     */
-    public int getControlThreadCount() {
-        return controlThreadCount;
-    }
-
-    /**
-     * Set the number of threads responsible for query coordination tasks.
-     *
-     * @param controlThreadCount Number of threads responsible for query coordination tasks.
-     * @return This instance for chaining.
-     */
-    public SqlConfig setControlThreadCount(int controlThreadCount) {
-        this.controlThreadCount = controlThreadCount;
-        return this;
-    }
+    /** Number of threads which will execute SQL queries. */
+    private int threadCount = DFLT_THREAD_COUNT;
 
     /**
      * Get the number of threads responsible for data processing.
      *
      * @return Number of threads responsible for data processing.
      */
-    public int getDataThreadCount() {
-        return dataThreadCount;
+    public int getThreadCount() {
+        return threadCount;
     }
 
     /**
      * Set the number of threads responsible for data processing.
      *
-     * @param dataThreadCount Number of threads responsible for data processing.
+     * @param threadCount Number of threads responsible for data processing.
      * @return This instance for chaining.
      */
-    public SqlConfig setDataThreadCount(int dataThreadCount) {
-        this.dataThreadCount = dataThreadCount;
+    public SqlConfig setThreadCount(int threadCount) {
+        this.threadCount = threadCount;
         return this;
     }
 
     @Override
     public String toString() {
-        return "SqlConfig{controlThreadCount=" + controlThreadCount + ", dataThreadCount=" + dataThreadCount + '}';
+        return "SqlConfig{threadCount=" + threadCount + '}';
     }
 }

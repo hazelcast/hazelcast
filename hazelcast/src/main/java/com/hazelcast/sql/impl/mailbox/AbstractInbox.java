@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.mailbox;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.Exec;
 
+import java.util.UUID;
+
 /**
  * Abstract inbox implementation.
  */
@@ -38,14 +40,14 @@ public abstract class AbstractInbox extends AbstractMailbox {
     /**
      * Handle batch arrival. Always invoked from the worker.
      */
-    public void onBatch(String sourceMemberId, SendBatch batch) {
+    public void onBatch(UUID sourceMemberId, SendBatch batch) {
         onBatch0(sourceMemberId, batch);
 
         if (batch.isLast())
             remaining--;
     }
 
-    protected abstract void onBatch0(String sourceMemberId, SendBatch batch);
+    protected abstract void onBatch0(UUID sourceMemberId, SendBatch batch);
 
     /**
      * @return {@code True} if no more incoming batches are expected.

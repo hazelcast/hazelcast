@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.operation;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Batch operation.
@@ -29,7 +31,7 @@ import java.io.IOException;
 public class QueryBatchOperation extends QueryOperation {
     private QueryId queryId;
     private int edgeId;
-    private String sourceMemberId;
+    private UUID sourceMemberId;
     private int sourceDeploymentOffset;
     private int targetDeploymentOffset;
     private SendBatch batch;
@@ -41,7 +43,7 @@ public class QueryBatchOperation extends QueryOperation {
     public QueryBatchOperation(
         QueryId queryId,
         int edgeId,
-        String sourceMemberId,
+        UUID sourceMemberId,
         int sourceDeploymentOffset,
         int targetDeploymentOffset,
         SendBatch batch
@@ -62,7 +64,7 @@ public class QueryBatchOperation extends QueryOperation {
         return edgeId;
     }
 
-    public String getSourceMemberId() {
+    public UUID getSourceMemberId() {
         return sourceMemberId;
     }
 
@@ -83,7 +85,7 @@ public class QueryBatchOperation extends QueryOperation {
         queryId.writeData(out);
 
         out.writeInt(edgeId);
-        out.writeUTF(sourceMemberId);
+        UUIDSerializationUtil.writeUUID(out, sourceMemberId);
         out.writeInt(sourceDeploymentOffset);
         out.writeInt(targetDeploymentOffset);
 
@@ -96,7 +98,7 @@ public class QueryBatchOperation extends QueryOperation {
         queryId.readData(in);
 
         edgeId = in.readInt();
-        sourceMemberId = in.readUTF();
+        sourceMemberId = UUIDSerializationUtil.readUUID(in);
         sourceDeploymentOffset = in.readInt();
         targetDeploymentOffset = in.readInt();
 

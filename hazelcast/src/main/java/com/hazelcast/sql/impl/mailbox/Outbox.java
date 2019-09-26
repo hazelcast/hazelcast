@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.row.Row;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Outbox which sends data to a single remote stripe.
@@ -39,7 +40,7 @@ public class Outbox extends AbstractMailbox {
     private final int sourceDeploymentOffset;
 
     /** Target member ID. */
-    private final String targetMemberId;
+    private final UUID targetMemberId;
 
     /** Target deployment offset. */
     private final int targetDeploymentOffset;
@@ -58,7 +59,7 @@ public class Outbox extends AbstractMailbox {
         QueryId queryId,
         int edgeId,
         int sourceDeploymentOffset,
-        String targetMemberId,
+        UUID targetMemberId,
         int targetDeploymentOffset,
         int batchSize
     ) {

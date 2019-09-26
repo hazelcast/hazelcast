@@ -17,9 +17,9 @@
 package com.hazelcast.partition.strategy;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -29,8 +29,9 @@ import com.hazelcast.query.impl.getters.Extractors;
 @SerializableByConvention
 public class DeclarativePartitioningStrategy<K> implements PartitioningStrategy<K>, SerializationServiceAware {
 
-    private String field;
+    private static final long serialVersionUID = 8931805590580189420L;
 
+    private String field;
     private transient Extractors extractors;
 
     @Override

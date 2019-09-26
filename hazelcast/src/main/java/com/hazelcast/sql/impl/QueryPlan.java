@@ -16,21 +16,22 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Prepared query plan.
  */
 public class QueryPlan {
     /** Partition mapping. */
-    private final Map<String, PartitionIdSet> partMap;
+    private final Map<UUID, PartitionIdSet> partMap;
 
     /** Data member IDs. */
-    private final List<String> dataMemberIds;
+    private final List<UUID> dataMemberIds;
 
     /** Data member addresses. */
     private final List<Address> dataMemberAddresses;
@@ -45,8 +46,8 @@ public class QueryPlan {
     private final Map<Integer, Integer> inboundEdgeMap;
 
     public QueryPlan(
-        Map<String, PartitionIdSet> partMap,
-        List<String> dataMemberIds,
+        Map<UUID, PartitionIdSet> partMap,
+        List<UUID> dataMemberIds,
         List<Address> dataMemberAddresses,
         List<QueryFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
@@ -60,11 +61,11 @@ public class QueryPlan {
         this.inboundEdgeMap = inboundEdgeMap;
     }
 
-    public Map<String, PartitionIdSet> getPartitionMap() {
+    public Map<UUID, PartitionIdSet> getPartitionMap() {
         return partMap;
     }
 
-    public List<String> getDataMemberIds() {
+    public List<UUID> getDataMemberIds() {
         return dataMemberIds;
     }
 

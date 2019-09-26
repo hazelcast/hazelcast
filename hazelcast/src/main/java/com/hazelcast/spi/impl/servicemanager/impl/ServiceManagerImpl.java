@@ -30,12 +30,6 @@ import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongServ
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
-import com.hazelcast.crdt.CRDTReplicationMigrationService;
-import com.hazelcast.crdt.pncounter.PNCounterService;
-import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.crdt.CRDTReplicationMigrationService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;

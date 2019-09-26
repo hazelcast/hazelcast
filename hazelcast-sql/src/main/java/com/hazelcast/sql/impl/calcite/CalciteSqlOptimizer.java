@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -46,7 +47,6 @@ import com.hazelcast.sql.impl.calcite.physical.rule.ProjectPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.RootPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.SortPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRootSchema;
-import com.hazelcast.util.collection.PartitionIdSet;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -83,6 +83,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * Calcite-based SQL optimizer.
@@ -302,19 +303,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         int partCnt = parts.size();
 
-        LinkedHashMap<String, PartitionIdSet> partMap = new LinkedHashMap<>();
+        LinkedHashMap<UUID, PartitionIdSet> partMap = new LinkedHashMap<>();
 
         for (Partition part : parts) {
-            String ownerId = part.getOwner().getUuid();
+            UUID ownerId = part.getOwner().getUuid();
 
             partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
         }
 
         // Collect remote addresses.
         List<Address> dataMemberAddresses = new ArrayList<>(partMap.size());
-        List<String> dataMemberIds = new ArrayList<>(partMap.size());
+        List<UUID> dataMemberIds = new ArrayList<>(partMap.size());
 
-        for (String partMemberId : partMap.keySet()) {
+        for (UUID partMemberId : partMap.keySet()) {
             MemberImpl member = nodeEngine.getClusterService().getMember(partMemberId);
 
             if (member == null)

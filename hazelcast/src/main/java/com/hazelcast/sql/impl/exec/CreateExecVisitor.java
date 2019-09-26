@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
+ import com.hazelcast.internal.util.collection.PartitionIdSet;
  import com.hazelcast.map.impl.proxy.MapProxyImpl;
  import com.hazelcast.spi.impl.NodeEngine;
  import com.hazelcast.sql.HazelcastSqlException;
@@ -39,12 +40,12 @@ package com.hazelcast.sql.impl.exec;
  import com.hazelcast.sql.impl.physical.RootPhysicalNode;
  import com.hazelcast.sql.impl.physical.SendPhysicalNode;
  import com.hazelcast.sql.impl.physical.SortPhysicalNode;
- import com.hazelcast.util.collection.PartitionIdSet;
 
  import java.util.ArrayList;
  import java.util.Collection;
  import java.util.Collections;
  import java.util.List;
+ import java.util.UUID;
 
  /**
  * Visitor which builds an executor for every observed physical node.
@@ -60,7 +61,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     private final QueryFragmentDescriptor currentFragment;
 
     /** Member IDs. */
-    private final Collection<String> dataMemberIds;
+    private final Collection<UUID> dataMemberIds;
 
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
@@ -78,7 +79,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         NodeEngine nodeEngine,
         QueryExecuteOperation operation,
         QueryFragmentDescriptor currentFragment,
-        Collection<String> dataMemberIds,
+        Collection<UUID> dataMemberIds,
         PartitionIdSet localParts
     ) {
         this.nodeEngine = nodeEngine;
@@ -157,14 +158,14 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
         int receiveFragmentPos = operation.getInboundEdgeMap().get(node.getEdgeId());
         QueryFragmentDescriptor receiveFragment = operation.getFragmentDescriptors().get(receiveFragmentPos);
-        Collection<String> receiveFragmentMemberIds = receiveFragment.getFragmentMembers(dataMemberIds);
+        Collection<UUID> receiveFragmentMemberIds = receiveFragment.getFragmentMembers(dataMemberIds);
         int receiveFragmentDeploymentOffset = receiveFragment.getAbsoluteDeploymentOffset(operation);
 
         sendOutboxes = new Outbox[receiveFragmentMemberIds.size()];
 
         int idx = 0;
 
-        for (String receiveMemberId : receiveFragmentMemberIds) {
+        for (UUID receiveMemberId : receiveFragmentMemberIds) {
             Outbox outbox = new Outbox(
                 nodeEngine,
                 operation.getQueryId(),

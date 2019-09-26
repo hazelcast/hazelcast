@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+ import com.hazelcast.internal.util.collection.PartitionIdSet;
  import com.hazelcast.nio.Address;
  import com.hazelcast.sql.HazelcastSqlException;
  import com.hazelcast.sql.impl.QueryFragment;
@@ -53,7 +54,6 @@ package com.hazelcast.sql.impl.calcite;
  import com.hazelcast.sql.impl.physical.RootPhysicalNode;
  import com.hazelcast.sql.impl.physical.SendPhysicalNode;
  import com.hazelcast.sql.impl.physical.SortPhysicalNode;
- import com.hazelcast.util.collection.PartitionIdSet;
  import org.apache.calcite.rel.RelFieldCollation;
  import org.apache.calcite.rel.core.AggregateCall;
  import org.apache.calcite.rex.RexNode;
@@ -65,16 +65,17 @@ package com.hazelcast.sql.impl.calcite;
  import java.util.HashMap;
  import java.util.List;
  import java.util.Map;
+ import java.util.UUID;
 
-/**
+ /**
  * Visitor which produces query plan.
  */
 public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Partition mapping. */
-    private final Map<String, PartitionIdSet> partMap;
+    private final Map<UUID, PartitionIdSet> partMap;
 
     /** Data member IDs. */
-    private final List<String> dataMemberIds;
+    private final List<UUID> dataMemberIds;
 
     /** Data member addresses. */
     private final List<Address> dataMemberAddresses;
@@ -95,8 +96,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private List<Integer> currentInboundEdges;
 
     public PlanCreateVisitor(
-        Map<String, PartitionIdSet> partMap,
-        List<String> dataMemberIds,
+        Map<UUID, PartitionIdSet> partMap,
+        List<UUID> dataMemberIds,
         List<Address> dataMemberAddresses
     ) {
         this.partMap = partMap;

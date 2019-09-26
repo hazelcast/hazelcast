@@ -18,13 +18,13 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlCursor;
@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -71,17 +72,11 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
         SqlConfig cfg = nodeEngine.getConfig().getSqlConfig();
 
-        if (cfg.getControlThreadCount() <= 0) {
-            throw new HazelcastException("SqlConfig.controlThreadCount must be positive: " +
-                cfg.getControlThreadCount());
+        if (cfg.getThreadCount() <= 0) {
+            throw new HazelcastException("SqlConfig.threadCount must be positive: " + cfg.getThreadCount());
         }
 
-        if (cfg.getDataThreadCount() <= 0) {
-            throw new HazelcastException("SqlConfig.dataThreadCount must be positive: " +
-                cfg.getControlThreadCount());
-        }
-
-        workerPool = new QueryWorkerPool(nodeEngine, cfg.getDataThreadCount());
+        workerPool = new QueryWorkerPool(nodeEngine, cfg.getThreadCount());
     }
 
     @Override
@@ -118,7 +113,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
         QueryResultConsumer consumer = new QueryResultConsumerImpl();
 
-        String localMemberId = nodeEngine.getLocalMember().getUuid();
+        UUID localMemberId = nodeEngine.getLocalMember().getUuid();
 
         QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
             plan,
@@ -134,7 +129,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
         // Start execution on remote members.
         for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
-            String memberId = plan.getDataMemberIds().get(i);
+            UUID memberId = plan.getDataMemberIds().get(i);
 
             if (memberId.equals(localMemberId))
                 continue;

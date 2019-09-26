@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryContext;
@@ -33,7 +34,6 @@ import com.hazelcast.sql.impl.worker.task.ProcessBatchQueryTask;
 import com.hazelcast.sql.impl.worker.task.QueryTask;
 import com.hazelcast.sql.impl.worker.task.StartFragmentQueryTask;
 import com.hazelcast.sql.impl.worker.task.StopQueryTask;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.HashMap;
 import java.util.LinkedList;

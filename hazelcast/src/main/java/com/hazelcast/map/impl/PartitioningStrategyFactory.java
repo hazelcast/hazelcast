@@ -19,9 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 
@@ -57,7 +55,7 @@ public final class PartitioningStrategyFactory {
      * {@code mapName}, it is returned, otherwise it is instantiated, cached and returned.
      * @param mapName       Map for which this partitioning strategy is being created
      * @param config        the partitioning strategy configuration
-     * @return
+     * @return Partitioning strategy.
      */
     public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config,
         NodeEngine nodeEngine) {

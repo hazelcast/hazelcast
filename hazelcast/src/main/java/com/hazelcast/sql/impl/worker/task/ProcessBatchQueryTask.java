@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.worker.task;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
 
+import java.util.UUID;
+
 /**
  * Task to process incoming batch. Batch may be either mapped or unmapped. In the first case we submit it directly
  * to the data pool. Otherwise we pass it through the control pool to perform mapping when local context is ready.
@@ -31,7 +33,7 @@ public class ProcessBatchQueryTask implements QueryTask {
     private final int edgeId;
 
     /** Source member which sent this batch. */
-    private final String sourceMemberId;
+    private final UUID sourceMemberId;
 
     /** Source deployment ID. */
     private final int sourceDeploymentId;
@@ -45,7 +47,7 @@ public class ProcessBatchQueryTask implements QueryTask {
     public ProcessBatchQueryTask(
         QueryId queryId,
         int edgeId,
-        String sourceMemberId,
+        UUID sourceMemberId,
         int sourceDeploymentId,
         int targetDeploymentId,
         SendBatch batch
@@ -66,7 +68,7 @@ public class ProcessBatchQueryTask implements QueryTask {
         return edgeId;
     }
 
-    public String getSourceMemberId() {
+    public UUID getSourceMemberId() {
         return sourceMemberId;
     }
 

@@ -21,25 +21,26 @@ import com.hazelcast.sql.impl.QueryId;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * AbstractInbox which puts requests from different stripes into isolated queues.
  */
 public class StripedInbox extends AbstractInbox {
     /** Map from member ID to index. */
-    private final HashMap<String, Integer> memberToIdxMap = new HashMap<>();
+    private final HashMap<UUID, Integer> memberToIdxMap = new HashMap<>();
 
     /** Batches from members. */
     private final ArrayDeque<SendBatch>[] queues;
 
     @SuppressWarnings("unchecked")
-    public StripedInbox(QueryId queryId, int edgeId, Collection<String> senderMemberIds) {
+    public StripedInbox(QueryId queryId, int edgeId, Collection<UUID> senderMemberIds) {
         super(queryId, edgeId, senderMemberIds.size());
 
         // Build inverse map from the member to it's index.
         int memberIdx = 0;
 
-        for (String senderMemberId : senderMemberIds) {
+        for (UUID senderMemberId : senderMemberIds) {
             memberToIdxMap.put(senderMemberId, memberIdx);
 
             memberIdx++;
@@ -53,7 +54,7 @@ public class StripedInbox extends AbstractInbox {
     }
 
     @Override
-    public void onBatch0(String sourceMemberId, SendBatch batch) {
+    public void onBatch0(UUID sourceMemberId, SendBatch batch) {
         int idx = memberToIdxMap.get(sourceMemberId);
 
         ArrayDeque<SendBatch> queue = queues[idx];

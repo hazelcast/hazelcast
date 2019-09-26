@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -28,15 +29,15 @@ public class QueryExecuteOperationFactory {
     private final QueryId queryId;
 
     /** Local member ID. */
-    private final String localMemberId;
+    private final UUID localMemberId;
 
     /** Deployment offset. */
     private final int baseDeploymentOffset;
 
     /** Map from fragment position to the member where it should be executed. */
-    private Map<QueryFragment, String> replicatedMappedMemberIds;
+    private Map<QueryFragment, UUID> replicatedMappedMemberIds;
 
-    public QueryExecuteOperationFactory(QueryPlan plan, List<Object> args, QueryId queryId, String localMemberId) {
+    public QueryExecuteOperationFactory(QueryPlan plan, List<Object> args, QueryId queryId, UUID localMemberId) {
         this.plan = plan;
         this.args = args;
         this.queryId = queryId;
@@ -51,7 +52,7 @@ public class QueryExecuteOperationFactory {
      * @param targetMemberId Target member ID.
      * @return Operation.
      */
-    public QueryExecuteOperation create(String targetMemberId) {
+    public QueryExecuteOperation create(UUID targetMemberId) {
         List<QueryFragment> fragments = plan.getFragments();
 
         List<QueryFragmentDescriptor> descriptors = new ArrayList<>(fragments.size());
@@ -60,7 +61,7 @@ public class QueryExecuteOperationFactory {
             QueryFragmentMapping mapping = fragment.getMapping();
 
             PhysicalNode node;
-            List<String> mappedMemberIds;
+            List<UUID> mappedMemberIds;
 
             switch (mapping) {
                 case ROOT:
@@ -80,7 +81,7 @@ public class QueryExecuteOperationFactory {
                 default:
                     assert mapping == QueryFragmentMapping.REPLICATED;
 
-                    String memberId = getMemberForReplicatedFragment(fragment);
+                    UUID memberId = getMemberForReplicatedFragment(fragment);
 
                     node = targetMemberId.equals(memberId) ? fragment.getNode() : null;
                     mappedMemberIds = Collections.singletonList(memberId);
@@ -111,23 +112,23 @@ public class QueryExecuteOperationFactory {
      * @param fragment Fragment.
      * @return Member ID.
      */
-    private String getMemberForReplicatedFragment(QueryFragment fragment) {
+    private UUID getMemberForReplicatedFragment(QueryFragment fragment) {
         assert fragment.getMapping() == QueryFragmentMapping.REPLICATED;
 
         if (replicatedMappedMemberIds == null) {
             replicatedMappedMemberIds = new IdentityHashMap<>();
         }
         else {
-            String res = replicatedMappedMemberIds.get(fragment);
+            UUID res = replicatedMappedMemberIds.get(fragment);
 
             if (res != null) {
                 return res;
             }
         }
 
-        List<String> dataMemberIds = plan.getDataMemberIds();
+        List<UUID> dataMemberIds = plan.getDataMemberIds();
 
-        String res = dataMemberIds.get(ThreadLocalRandom.current().nextInt(dataMemberIds.size()));
+        UUID res = dataMemberIds.get(ThreadLocalRandom.current().nextInt(dataMemberIds.size()));
 
         replicatedMappedMemberIds.put(fragment, res);
 

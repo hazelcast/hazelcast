@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.mailbox;
 import com.hazelcast.sql.impl.QueryId;
 
 import java.util.ArrayDeque;
+import java.util.UUID;
 
 /**
  * AbstractInbox which merges batches from all the nodes into a single stream.
@@ -32,7 +33,7 @@ public class SingleInbox extends AbstractInbox {
     }
 
     @Override
-    public void onBatch0(String sourceMemberId, SendBatch batch) {
+    public void onBatch0(UUID sourceMemberId, SendBatch batch) {
         batches.add(batch);
     }
 
