@@ -116,20 +116,24 @@ public class StatisticsAwareMetricsSet {
                             .replace("Impl", "");
                     baseName = lowerCaseFirstChar(baseName);
                     if (nearCacheStats != null) {
-                        metricsRegistry.scanAndRegister(nearCacheStats,
-                                baseName + "[" + name + "].nearcache");
+                        metricsRegistry.newProbeBuilder(baseName + ".nearcache")
+                                       .withTag("name", name)
+                                       .scanAndRegister(nearCacheStats);
                     }
 
                     if (localInstanceStats instanceof LocalMapStatsImpl) {
                         Map<String, LocalIndexStats> indexStats = ((LocalMapStatsImpl) localInstanceStats).getIndexStats();
                         for (Map.Entry<String, LocalIndexStats> indexEntry : indexStats.entrySet()) {
-                            metricsRegistry.scanAndRegister(indexEntry.getValue(),
-                                    baseName + "[" + name + "].index[" + indexEntry.getKey() + "]");
+                            metricsRegistry.newProbeBuilder(baseName + ".index")
+                                           .withTag("name", name)
+                                           .withTag("index", indexEntry.getKey())
+                                           .scanAndRegister(indexEntry.getValue());
                         }
                     }
 
-                    metricsRegistry.scanAndRegister(localInstanceStats,
-                            baseName + "[" + name + "]");
+                    metricsRegistry.newProbeBuilder(baseName)
+                                   .withTag("name", name)
+                                   .scanAndRegister(localInstanceStats);
                 }
             }
         }

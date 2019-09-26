@@ -191,7 +191,9 @@ public final class NioNetworking implements Networking {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.inputThread[" + thread.getName() + "]");
+            metricsRegistry.newProbeBuilder("tcp.inputThread")
+                           .withTag("threadName", thread.getName())
+                           .scanAndRegister(thread);
             thread.start();
         }
         this.inputThreads = inThreads;
@@ -207,7 +209,9 @@ public final class NioNetworking implements Networking {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.outputThread[" + thread.getName() + "]");
+            metricsRegistry.newProbeBuilder("tcp.outputThread")
+                           .withTag("threadName", thread.getName())
+                           .scanAndRegister(thread);
             thread.start();
         }
         this.outputThreads = outThreads;

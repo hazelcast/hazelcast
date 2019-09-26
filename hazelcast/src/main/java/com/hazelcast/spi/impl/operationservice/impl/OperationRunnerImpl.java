@@ -143,9 +143,13 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     @Override
     public void provideMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
-            registry.scanAndRegister(this, "operation.partition[" + partitionId + "]");
+            registry.newProbeBuilder("operation.partition")
+                    .withTag("partitionId", String.valueOf(partitionId))
+                    .scanAndRegister(this);
         } else if (partitionId == -1) {
-            registry.scanAndRegister(this, "operation.generic[" + genericId + "]");
+            registry.newProbeBuilder("operation.generic")
+                    .withTag("genericId", String.valueOf(genericId))
+                    .scanAndRegister(this);
         } else {
             registry.scanAndRegister(this, "operation.adhoc");
         }
