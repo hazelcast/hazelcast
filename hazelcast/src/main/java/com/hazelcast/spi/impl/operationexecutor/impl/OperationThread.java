@@ -188,7 +188,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
         registry.newProbeBuilder("operation.thread")
-                .withTag("threadName", getName())
+                .withTag("thread", getName())
                 .scanAndRegister(this);
     }
 
