@@ -40,8 +40,9 @@ public class FilterExec extends AbstractUpstreamAwareExec {
     @Override
     public IterationResult advance() {
         while (true) {
-            if (!state.advance())
+            if (!state.advance()) {
                 return IterationResult.WAIT;
+            }
 
             for (Row upstreamRow : state) {
                 boolean matches = filter.eval(ctx, upstreamRow);

@@ -82,7 +82,7 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
             }
 
             // Iterate over the right input.
-            while (true) {
+            do {
                 if (!rightState.advance()) {
                     return IterationResult.WAIT;
                 }
@@ -114,10 +114,7 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
                     }
                 }
 
-                if (rightState.isDone()) {
-                    break;
-                }
-            }
+            } while (!rightState.isDone());
 
             // Nullify left row.
             leftRow = null;

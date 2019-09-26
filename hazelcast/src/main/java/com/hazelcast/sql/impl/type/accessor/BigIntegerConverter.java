@@ -26,7 +26,11 @@ import java.math.BigInteger;
  */
 public final class BigIntegerConverter extends Converter {
     /** Singleton instance. */
-    public static BigIntegerConverter INSTANCE = new BigIntegerConverter();
+    public static final BigIntegerConverter INSTANCE = new BigIntegerConverter();
+
+    private BigIntegerConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -44,50 +48,46 @@ public final class BigIntegerConverter extends Converter {
     }
 
     @Override
-    public final byte asTinyInt(Object val) {
+    public byte asTinyInt(Object val) {
         return cast(val).byteValue();
     }
 
     @Override
-    public final short asSmallInt(Object val) {
+    public short asSmallInt(Object val) {
         return cast(val).shortValue();
     }
 
     @Override
-    public final int asInt(Object val) {
+    public int asInt(Object val) {
         return cast(val).intValue();
     }
 
     @Override
-    public final long asBigInt(Object val) {
+    public long asBigInt(Object val) {
         return cast(val).longValue();
     }
 
     @Override
-    public final BigDecimal asDecimal(Object val) {
+    public BigDecimal asDecimal(Object val) {
         return new BigDecimal(cast(val));
     }
 
     @Override
-    public final float asReal(Object val) {
+    public float asReal(Object val) {
         return cast(val).floatValue();
     }
 
     @Override
-    public final double asDouble(Object val) {
+    public double asDouble(Object val) {
         return cast(val).doubleValue();
     }
 
     @Override
-    public final String asVarchar(Object val) {
+    public String asVarchar(Object val) {
         return cast(val).toString();
     }
 
     private BigInteger cast(Object val) {
-        return (BigInteger)val;
-    }
-
-    private BigIntegerConverter() {
-        // No-op.
+        return (BigInteger) val;
     }
 }

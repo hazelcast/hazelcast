@@ -87,7 +87,7 @@ public class DataType {
     public static final int PRECEDENCE_DATE = 1300;
     public static final int PRECEDENCE_TIMESTAMP = 1400;
     public static final int PRECEDENCE_TIMESTAMP_WITH_TIMEZONE = 1500;
-    public static final int PRECEDENCE_OBJECT= 1600;
+    public static final int PRECEDENCE_OBJECT = 1600;
 
     /** LATE (unresolved) data type. */
     public static final DataType LATE = new DataType(

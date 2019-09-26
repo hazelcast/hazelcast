@@ -29,9 +29,13 @@ import java.util.Date;
 /**
  * Converter for {@link java.util.Date} type.
  */
-public class DateConverter extends Converter {
+public final class DateConverter extends Converter {
     /** Singleton instance. */
-    public static DateConverter INSTANCE = new DateConverter();
+    public static final DateConverter INSTANCE = new DateConverter();
+
+    private DateConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -73,10 +77,6 @@ public class DateConverter extends Converter {
     }
 
     private Date cast(Object val) {
-        return ((Date)val);
-    }
-
-    private DateConverter() {
-        // No-op.
+        return ((Date) val);
     }
 }

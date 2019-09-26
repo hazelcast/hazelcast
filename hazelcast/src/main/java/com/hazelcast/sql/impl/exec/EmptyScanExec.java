@@ -23,9 +23,9 @@ import com.hazelcast.sql.impl.row.RowBatch;
 /**
  * Scan over an empty result-set.
  */
-public class EmptyScanExec implements Exec {
+public final class EmptyScanExec implements Exec {
     /** Singleton instance. */
-    public static EmptyScanExec INSTANCE = new EmptyScanExec();
+    public static final EmptyScanExec INSTANCE = new EmptyScanExec();
 
     private EmptyScanExec() {
         // No-op.

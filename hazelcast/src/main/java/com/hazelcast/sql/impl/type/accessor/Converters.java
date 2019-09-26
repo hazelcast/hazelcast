@@ -1,10 +1,23 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.sql.impl.type.accessor;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.DataType;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -15,7 +28,8 @@ import java.util.Map;
 /**
  * Utility methods for converters.
  */
-public class Converters {
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
+public final class Converters {
     /** Map from input class to converter. */
     private static final Map<Class, Converter> CLASS_TO_CONVERTER;
 
@@ -61,12 +75,16 @@ public class Converters {
             Converter prevConverter = CLASS_TO_CONVERTER.put(converter.getClazz(), converter);
 
             if (prevConverter != null) {
-                throw new HazelcastException("Duplicate converter for class {class=" + converter.getClazz() +
-                    ", oldConverter=" + prevConverter.getClazz().getName() +
-                    ", newConverter=" + converter.getClazz().getName() +
-                '}');
+                throw new HazelcastException("Duplicate converter for class {class=" + converter.getClazz()
+                    + ", oldConverter=" + prevConverter.getClazz().getName()
+                    + ", newConverter=" + converter.getClazz().getName()
+                    + '}');
             }
         }
+    }
+
+    private Converters() {
+        // No-op.
     }
 
     /**
@@ -80,11 +98,13 @@ public class Converters {
 
         Converter res = CLASS_TO_CONVERTER.get(val.getClass());
 
-        if (res == null)
+        if (res == null) {
             res = getConverterInexact(val);
+        }
 
-        if (res == null)
+        if (res == null) {
             throw new HazelcastSqlException(-1, "Class is not supported by Hazelcast SQL: " + val.getClass().getName());
+        }
 
         return res;
     }
@@ -96,44 +116,10 @@ public class Converters {
      * @return Converter or {@code null}.
      */
     private static Converter getConverterInexact(Object val) {
-        if (val instanceof Calendar)
+        if (val instanceof Calendar) {
             return CalendarConverter.INSTANCE;
+        }
 
         return ObjectConverter.INSTANCE;
-    }
-
-    /**
-     * Get numeric converter for the given expression.
-     *
-     * @param expr Expression.
-     * @return Converter.
-     */
-    public static Converter numericConverter(Expression expr) {
-        DataType type = expr.getType();
-
-        if (!type.isCanConvertToNumeric())
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand is not numeric: " + type);
-
-        return type.getConverter();
-    }
-
-    /**
-     * Get numeric converter for the given expression.
-     *
-     * @param expr Expression.
-     * @param operandPos Position of the operand.
-     * @return Converter.
-     */
-    public static Converter numericConverter(Expression expr, int operandPos) {
-        DataType type = expr.getType();
-
-        if (!type.isCanConvertToNumeric())
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand " + operandPos + " is not numeric: " + type);
-
-        return type.getConverter();
-    }
-
-    private Converters() {
-        // No-op.
     }
 }

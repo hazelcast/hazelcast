@@ -25,7 +25,11 @@ import java.math.BigDecimal;
  */
 public final class IntegerConverter extends Converter {
     /** Singleton instance. */
-    public static IntegerConverter INSTANCE = new IntegerConverter();
+    public static final IntegerConverter INSTANCE = new IntegerConverter();
+
+    private IntegerConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -43,50 +47,46 @@ public final class IntegerConverter extends Converter {
     }
 
     @Override
-    public final byte asTinyInt(Object val) {
-        return (byte)cast(val);
+    public byte asTinyInt(Object val) {
+        return (byte) cast(val);
     }
 
     @Override
-    public final short asSmallInt(Object val) {
-        return (short)cast(val);
+    public short asSmallInt(Object val) {
+        return (short) cast(val);
     }
 
     @Override
-    public final int asInt(Object val) {
+    public int asInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final long asBigInt(Object val) {
+    public long asBigInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final BigDecimal asDecimal(Object val) {
+    public BigDecimal asDecimal(Object val) {
         return new BigDecimal(cast(val));
     }
 
     @Override
-    public final float asReal(Object val) {
+    public float asReal(Object val) {
         return cast(val);
     }
 
     @Override
-    public final double asDouble(Object val) {
+    public double asDouble(Object val) {
         return cast(val);
     }
 
     @Override
-    public final String asVarchar(Object val) {
+    public String asVarchar(Object val) {
         return Integer.toString(cast(val));
     }
 
     private int cast(Object val) {
-        return (int)val;
-    }
-
-    private IntegerConverter() {
-        // No-op.
+        return (int) val;
     }
 }

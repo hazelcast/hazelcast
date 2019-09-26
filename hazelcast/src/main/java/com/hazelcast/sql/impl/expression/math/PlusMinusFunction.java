@@ -43,6 +43,7 @@ import static com.hazelcast.sql.impl.type.DataType.SCALE_UNLIMITED;
 /**
  * Plus expression.
  */
+@SuppressWarnings("checkstyle:AvoidNestedBlocks")
 public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
     /** Minus flag. */
     private boolean minus;
@@ -69,13 +70,15 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         // Calculate child operands with fail-fast NULL semantics.
         Object operand1Value = operand1.eval(ctx, row);
 
-        if (operand1Value == null)
+        if (operand1Value == null) {
             return null;
+        }
 
         Object operand2Value = operand2.eval(ctx, row);
 
-        if (operand2Value == null)
+        if (operand2Value == null) {
             return null;
+        }
 
         // Prepare result type if needed.
         if (resType == null) {
@@ -89,10 +92,11 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         }
 
         // Execute.
-        if (minus)
-            return (T)doMinus(operand1Value, operand1Type, operand2Value, operand2Type, resType);
-        else
-            return (T)doPlus(operand1Value, operand1Type, operand2Value, operand2Type, resType);
+        if (minus) {
+            return (T) doMinus(operand1Value, operand1Type, operand2Value, operand2Type, resType);
+        } else {
+            return (T) doPlus(operand1Value, operand1Type, operand2Value, operand2Type, resType);
+        }
     }
 
     private static Object doPlus(
@@ -102,8 +106,9 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         DataType operand2Type,
         DataType resType
     ) {
-        if (resType.isTemporal())
+        if (resType.isTemporal()) {
             return doPlusTemporal(operand1, operand1Type, operand2, operand2Type, resType);
+        }
 
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
@@ -153,8 +158,7 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             temporalOperand = operand1;
             temporalOperandType = operand1Type;
             intervalOperand = operand2;
-        }
-        else {
+        } else {
             temporalOperand = operand2;
             temporalOperandType = operand2Type;
             intervalOperand = operand1;
@@ -164,10 +168,10 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             case DATE: {
                 LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
 
-                if (intervalOperand instanceof SqlYearMonthInterval)
-                    return date.plusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
-                else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+                if (intervalOperand instanceof SqlYearMonthInterval) {
+                    return date.plusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
+                } else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
 
                     return date.atStartOfDay().plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos()).toLocalDate();
                 }
@@ -176,10 +180,10 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             case TIME: {
                 LocalTime time = temporalOperandType.getConverter().asTime(temporalOperand);
 
-                if (intervalOperand instanceof SqlYearMonthInterval)
+                if (intervalOperand instanceof SqlYearMonthInterval) {
                     return time;
-                else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+                } else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
 
                     return time.plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos());
                 }
@@ -188,10 +192,10 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             case TIMESTAMP: {
                 LocalDateTime ts = temporalOperandType.getConverter().asTimestamp(temporalOperand);
 
-                if (intervalOperand instanceof SqlYearMonthInterval)
-                    return ts.plusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
-                else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+                if (intervalOperand instanceof SqlYearMonthInterval) {
+                    return ts.plusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
+                } else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
 
                     return ts.plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos());
                 }
@@ -200,17 +204,17 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             case TIMESTAMP_WITH_TIMEZONE: {
                 OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
 
-                if (intervalOperand instanceof SqlYearMonthInterval)
-                    return ts.plusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
-                else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+                if (intervalOperand instanceof SqlYearMonthInterval) {
+                    return ts.plusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
+                } else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
 
                     return ts.plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos());
                 }
             }
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported result type: " + resType);
         }
-
-        throw new HazelcastSqlException(-1, "Unsupported result type: " + resType);
     }
 
     private static Object doMinus(
@@ -220,8 +224,9 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         DataType operand2Type,
         DataType resType
     ) {
-        if (resType.isTemporal())
+        if (resType.isTemporal()) {
             return doMinusTemporal(operand1, operand1Type, operand2, operand2Type, resType);
+        }
 
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
@@ -271,8 +276,7 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             temporalOperand = operand1;
             temporalOperandType = operand1Type;
             intervalOperand = operand2;
-        }
-        else {
+        } else {
             temporalOperand = operand2;
             temporalOperandType = operand2Type;
             intervalOperand = operand1;
@@ -282,10 +286,10 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             case DATE: {
                 LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
 
-                if (intervalOperand instanceof SqlYearMonthInterval)
-                    return date.minusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
-                else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+                if (intervalOperand instanceof SqlYearMonthInterval) {
+                    return date.minusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
+                } else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
 
                     return date.atStartOfDay().minusSeconds(interval.getSeconds()).minusNanos(interval.getNanos()).toLocalDate();
                 }
@@ -294,10 +298,10 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             case TIME: {
                 LocalTime time = temporalOperandType.getConverter().asTime(temporalOperand);
 
-                if (intervalOperand instanceof SqlYearMonthInterval)
+                if (intervalOperand instanceof SqlYearMonthInterval) {
                     return time;
-                else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+                } else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
 
                     return time.minusSeconds(interval.getSeconds()).minusNanos(interval.getNanos());
                 }
@@ -306,10 +310,10 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             case TIMESTAMP: {
                 LocalDateTime ts = temporalOperandType.getConverter().asTimestamp(temporalOperand);
 
-                if (intervalOperand instanceof SqlYearMonthInterval)
-                    return ts.minusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
-                else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+                if (intervalOperand instanceof SqlYearMonthInterval) {
+                    return ts.minusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
+                } else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
 
                     return ts.minusSeconds(interval.getSeconds()).minusNanos(interval.getNanos());
                 }
@@ -318,17 +322,18 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
             case TIMESTAMP_WITH_TIMEZONE: {
                 OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
 
-                if (intervalOperand instanceof SqlYearMonthInterval)
-                    return ts.minusDays(((SqlYearMonthInterval)intervalOperand).getMonths());
-                else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval)intervalOperand;
+                if (intervalOperand instanceof SqlYearMonthInterval) {
+                    return ts.minusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
+                } else {
+                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
 
                     return ts.minusSeconds(interval.getSeconds()).minusNanos(interval.getNanos());
                 }
             }
-        }
 
-        throw new HazelcastSqlException(-1, "Unsupported result type: " + resType);
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported result type: " + resType);
+        }
     }
 
     /**
@@ -338,38 +343,47 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
      * @param type2 Type of the second operand.
      * @return Result type.
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private static DataType inferResultType(DataType type1, DataType type2) {
-        if (type1.isTemporal() || type2.isTemporal())
+        if (type1.isTemporal() || type2.isTemporal()) {
             return inferResultTypeTemporal(type1, type2);
+        }
 
-        if (!type1.isCanConvertToNumeric())
+        if (!type1.isCanConvertToNumeric()) {
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+        }
 
-        if (!type2.isCanConvertToNumeric())
+        if (!type2.isCanConvertToNumeric()) {
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+        }
 
-        if (type1 == DataType.VARCHAR)
+        if (type1 == DataType.VARCHAR) {
             type1 = DataType.DECIMAL;
+        }
 
-        if (type2 == DataType.VARCHAR)
+        if (type2 == DataType.VARCHAR) {
             type2 = DataType.DECIMAL;
+        }
 
         // Precision is expanded by 1 to handle overflow: 9 + 1 = 10
-        int precision = type1.getPrecision() == PRECISION_UNLIMITED || type2.getPrecision() == PRECISION_UNLIMITED ?
-            PRECISION_UNLIMITED : Math.max(type1.getPrecision(), type2.getPrecision()) + 1;
+        int precision = type1.getPrecision() == PRECISION_UNLIMITED || type2.getPrecision() == PRECISION_UNLIMITED
+            ? PRECISION_UNLIMITED : Math.max(type1.getPrecision(), type2.getPrecision()) + 1;
 
         // We have only unlimited or zero scales.
         int scale = type1.getScale() == SCALE_UNLIMITED || type2.getScale() == SCALE_UNLIMITED ? SCALE_UNLIMITED : 0;
 
-        if (scale == 0)
+        if (scale == 0) {
             return DataType.integerType(precision);
-        else {
+        } else {
             DataType biggerType = type1.getPrecedence() >= type2.getPrecedence() ? type1 : type2;
 
-            if (biggerType == DataType.REAL)
-                return DataType.DOUBLE; // REAL -> DOUBLE
-            else
-                return biggerType;      // DECIMAL -> DECIMAL, DOUBLE -> DOUBLE
+            if (biggerType == DataType.REAL) {
+                // REAL -> DOUBLE
+                return DataType.DOUBLE;
+            } else {
+                // DECIMAL -> DECIMAL, DOUBLE -> DOUBLE
+                return biggerType;
+            }
         }
     }
 
@@ -384,8 +398,9 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         DataType temporalType = type1.isTemporal() ? type1 : type2;
         DataType intervalType = type1.isTemporal() ? type2 : type1;
 
-        if (intervalType != DataType.INTERVAL_DAY_SECOND && intervalType != DataType.INTERVAL_YEAR_MONTH)
+        if (intervalType != DataType.INTERVAL_DAY_SECOND && intervalType != DataType.INTERVAL_YEAR_MONTH) {
             throw new HazelcastSqlException(-1, "Data type is not interval: " + intervalType);
+        }
 
         return temporalType;
     }

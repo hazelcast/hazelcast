@@ -28,9 +28,13 @@ import java.time.ZoneOffset;
 /**
  * Converter for {@link OffsetDateTime} type.
  */
-public class OffsetDateTimeConverter extends Converter {
+public final class OffsetDateTimeConverter extends Converter {
     /** Singleton instance. */
-    public static OffsetDateTimeConverter INSTANCE = new OffsetDateTimeConverter();
+    public static final OffsetDateTimeConverter INSTANCE = new OffsetDateTimeConverter();
+
+    private OffsetDateTimeConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -70,10 +74,6 @@ public class OffsetDateTimeConverter extends Converter {
     }
 
     private OffsetDateTime cast(Object val) {
-        return ((OffsetDateTime)val);
-    }
-
-    private OffsetDateTimeConverter() {
-        // No-op.
+        return ((OffsetDateTime) val);
     }
 }

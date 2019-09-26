@@ -24,7 +24,11 @@ import com.hazelcast.sql.impl.type.GenericType;
  */
 public final class SqlDaySecondIntervalConverter extends Converter {
     /** Singleton instance. */
-    public static SqlDaySecondIntervalConverter INSTANCE = new SqlDaySecondIntervalConverter();
+    public static final SqlDaySecondIntervalConverter INSTANCE = new SqlDaySecondIntervalConverter();
+
+    private SqlDaySecondIntervalConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -34,9 +38,5 @@ public final class SqlDaySecondIntervalConverter extends Converter {
     @Override
     public GenericType getGenericType() {
         return GenericType.INTERVAL_DAY_SECOND;
-    }
-
-    private SqlDaySecondIntervalConverter() {
-        // No-op.
     }
 }

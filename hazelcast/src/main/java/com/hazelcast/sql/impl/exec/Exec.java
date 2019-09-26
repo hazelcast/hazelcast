@@ -50,5 +50,5 @@ public interface Exec {
     /**
      * Perform the reset.
      */
-    void reset(); 
+    void reset();
 }

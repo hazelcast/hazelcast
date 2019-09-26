@@ -79,13 +79,15 @@ public class Outbox extends AbstractMailbox {
      * @return {@code True} if the outbox can accept more data.
      */
     public boolean onRow(Row row) {
-        if (batch == null)
+        if (batch == null) {
             batch = new LinkedList<>();
+        }
 
         batch.add(row);
 
-        if (batch.size() >= batchSize)
+        if (batch.size() >= batchSize) {
             send(false);
+        }
 
         return true;
     }
@@ -105,8 +107,9 @@ public class Outbox extends AbstractMailbox {
     private void send(boolean last) {
         List<Row> batch0 = batch;
 
-        if (batch0 == null)
+        if (batch0 == null) {
             batch0 = Collections.emptyList();
+        }
 
         QueryBatchOperation op = new QueryBatchOperation(
             queryId,
@@ -118,12 +121,12 @@ public class Outbox extends AbstractMailbox {
         );
 
         try {
-            if (targetMember == null)
+            if (targetMember == null) {
                 targetMember = nodeEngine.getClusterService().getMember(targetMemberId);
+            }
 
             nodeEngine.getSqlService().sendRequest(op, targetMember.getAddress());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE,
                 "Failed to send data batch to member: " + this);
         }
@@ -133,10 +136,10 @@ public class Outbox extends AbstractMailbox {
 
     @Override
     public String toString() {
-        return "Outbox {queryId=" + queryId +
-            ", edgeId=" + getEdgeId() +
-            ", targetMemberId=" + targetMemberId +
-            ", targetDeploymentOffset=" + targetDeploymentOffset +
-        '}';
+        return "Outbox {queryId=" + queryId
+            + ", edgeId=" + getEdgeId()
+            + ", targetMemberId=" + targetMemberId
+            + ", targetDeploymentOffset=" + targetDeploymentOffset
+            + '}';
     }
 }

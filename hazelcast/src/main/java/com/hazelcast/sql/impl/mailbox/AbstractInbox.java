@@ -43,8 +43,9 @@ public abstract class AbstractInbox extends AbstractMailbox {
     public void onBatch(UUID sourceMemberId, SendBatch batch) {
         onBatch0(sourceMemberId, batch);
 
-        if (batch.isLast())
+        if (batch.isLast()) {
             remaining--;
+        }
     }
 
     protected abstract void onBatch0(UUID sourceMemberId, SendBatch batch);

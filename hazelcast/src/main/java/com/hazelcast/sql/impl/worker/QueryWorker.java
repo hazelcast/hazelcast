@@ -54,10 +54,10 @@ public class QueryWorker implements Runnable {
     private final CountDownLatch startLatch = new CountDownLatch(1);
 
     /** Node engine. */
-    protected final NodeEngine nodeEngine;
+    private final NodeEngine nodeEngine;
 
     /** Logger. */
-    protected final ILogger logger;
+    private final ILogger logger;
 
     /** Registered inboxes. */
     private final Map<InboxKey, AbstractInbox> inboxes = new HashMap<>();
@@ -80,8 +80,7 @@ public class QueryWorker implements Runnable {
     public void awaitStart() {
         try {
             startLatch.await();
-        }
-        catch (InterruptedException ignore) {
+        } catch (InterruptedException ignore) {
             Thread.currentThread().interrupt();
 
             throw new HazelcastException("Failed to wait for worker start (thread has been interrupted).");
@@ -104,7 +103,6 @@ public class QueryWorker implements Runnable {
         queue.offerFirst(StopQueryTask.INSTANCE);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void run() {
         startLatch.countDown();
@@ -116,21 +114,18 @@ public class QueryWorker implements Runnable {
                 if (nextTask instanceof StopQueryTask) {
                     try {
                         onStop();
-                    }
-                    finally {
+                    } finally {
                         stop = true;
                     }
-                }
-                else
+                } else {
                     executeTask(nextTask);
-            }
-            catch (InterruptedException e) {
+                }
+            } catch (InterruptedException e) {
                 EmptyStatement.ignore(e);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 // Should never happen except of bugs. Write to log in case we missed some case (bug).
-                logger.warning("Unexpected exception in SQL worker [threadName=" +
-                    Thread.currentThread().getName() + ']', e);
+                logger.warning("Unexpected exception in SQL worker [threadName="
+                    + Thread.currentThread().getName() + ']', e);
             }
         }
     }
@@ -141,12 +136,13 @@ public class QueryWorker implements Runnable {
      * @param task Task.
      */
     private void executeTask(QueryTask task) {
-        if (task instanceof StartFragmentQueryTask)
-            handleStartFragmentTask((StartFragmentQueryTask)task);
-        else if (task instanceof ProcessBatchQueryTask)
-            handleProcessBatchTask((ProcessBatchQueryTask)task);
-        else if (task instanceof AdvanceRootQueryTask)
-            handleAdvanceRootTask((AdvanceRootQueryTask)task);
+        if (task instanceof StartFragmentQueryTask) {
+            handleStartFragmentTask((StartFragmentQueryTask) task);
+        } else if (task instanceof ProcessBatchQueryTask) {
+            handleProcessBatchTask((ProcessBatchQueryTask) task);
+        } else if (task instanceof AdvanceRootQueryTask) {
+            handleAdvanceRootTask((AdvanceRootQueryTask) task);
+        }
     }
 
     /**

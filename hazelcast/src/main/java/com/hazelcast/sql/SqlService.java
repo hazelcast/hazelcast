@@ -41,5 +41,5 @@ public interface SqlService {
      * @param operation Operation.
      * @param address Address.
      */
-    public void sendRequest(QueryOperation operation, Address address);
+    void sendRequest(QueryOperation operation, Address address);
 }

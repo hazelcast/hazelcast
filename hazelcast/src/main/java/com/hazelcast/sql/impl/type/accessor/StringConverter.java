@@ -28,9 +28,13 @@ import java.time.format.DateTimeParseException;
 /**
  * Converter for {@link java.lang.String} type.
  */
-public class StringConverter extends Converter {
+public final class StringConverter extends Converter {
     /** Singleton instance. */
-    public static StringConverter INSTANCE = new StringConverter();
+    public static final StringConverter INSTANCE = new StringConverter();
+
+    private StringConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -48,77 +52,70 @@ public class StringConverter extends Converter {
     }
 
     @Override
-    public final byte asTinyInt(Object val) {
+    public byte asTinyInt(Object val) {
         try {
-            return Byte.valueOf(cast(val));
-        }
-        catch (NumberFormatException e) {
+            return Byte.parseByte(cast(val));
+        } catch (NumberFormatException e) {
             throw cannotConvertImplicit(val);
         }
     }
 
     @Override
-    public final short asSmallInt(Object val) {
+    public short asSmallInt(Object val) {
         try {
-            return Short.valueOf(cast(val));
-        }
-        catch (NumberFormatException e) {
+            return Short.parseShort(cast(val));
+        } catch (NumberFormatException e) {
             throw cannotConvertImplicit(val);
         }
     }
 
     @Override
-    public final int asInt(Object val) {
+    public int asInt(Object val) {
         try {
-            return Integer.valueOf(cast(val));
-        }
-        catch (NumberFormatException e) {
+            return Integer.parseInt(cast(val));
+        } catch (NumberFormatException e) {
             throw cannotConvertImplicit(val);
         }
     }
 
     @Override
-    public final long asBigInt(Object val) {
+    public long asBigInt(Object val) {
         try {
-            return Long.valueOf(cast(val));
-        }
-        catch (NumberFormatException e) {
+            return Long.parseLong(cast(val));
+        } catch (NumberFormatException e) {
             throw cannotConvertImplicit(val);
         }
     }
 
     @Override
-    public final BigDecimal asDecimal(Object val) {
+    public BigDecimal asDecimal(Object val) {
         try {
             return new BigDecimal(cast(val));
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             throw cannotConvertImplicit(val);
         }
     }
 
     @Override
-    public final float asReal(Object val) {
+    public float asReal(Object val) {
         try {
-            return Float.valueOf(cast(val));
-        }
-        catch (NumberFormatException e) {
+            return Float.parseFloat(cast(val));
+        } catch (NumberFormatException e) {
             throw cannotConvertImplicit(val);
         }
     }
 
     @Override
-    public final double asDouble(Object val) {
+    public double asDouble(Object val) {
         try {
-            return Double.valueOf(cast(val));
-        }
-        catch (NumberFormatException e) {
+            return Double.parseDouble(cast(val));
+        } catch (NumberFormatException e) {
             throw cannotConvertImplicit(val);
         }
     }
 
     @Override
-    public final String asVarchar(Object val) {
+    public String asVarchar(Object val) {
         return cast(val);
     }
 
@@ -126,8 +123,7 @@ public class StringConverter extends Converter {
     public LocalDate asDate(Object val) {
         try {
             return LocalDate.parse(cast(val));
-        }
-        catch (DateTimeParseException e) {
+        } catch (DateTimeParseException e) {
             throw cannotConvertImplicit(val);
         }
     }
@@ -136,8 +132,7 @@ public class StringConverter extends Converter {
     public LocalTime asTime(Object val) {
         try {
             return LocalTime.parse(cast(val));
-        }
-        catch (DateTimeParseException e) {
+        } catch (DateTimeParseException e) {
             throw cannotConvertImplicit(val);
         }
     }
@@ -146,8 +141,7 @@ public class StringConverter extends Converter {
     public LocalDateTime asTimestamp(Object val) {
         try {
             return LocalDateTime.parse(cast(val));
-        }
-        catch (DateTimeParseException e) {
+        } catch (DateTimeParseException e) {
             throw cannotConvertImplicit(val);
         }
     }
@@ -156,17 +150,12 @@ public class StringConverter extends Converter {
     public OffsetDateTime asTimestampWithTimezone(Object val) {
         try {
             return OffsetDateTime.parse(cast(val));
-        }
-        catch (DateTimeParseException e) {
+        } catch (DateTimeParseException e) {
             throw cannotConvertImplicit(val);
         }
     }
 
     private String cast(Object val) {
-        return (String)val;
-    }
-
-    private StringConverter() {
-        // No-op.
+        return (String) val;
     }
 }

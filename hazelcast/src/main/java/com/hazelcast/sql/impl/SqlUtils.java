@@ -21,7 +21,11 @@ import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 /**
  * Common SQL engine utility methods used by both "core" and "sql" modules.
  */
-public class SqlUtils {
+public final class SqlUtils {
+    private SqlUtils() {
+        // No-op.
+    }
+
     /**
      * Extract child path from the complex key-based path. E.g. "__key.field" => "field".
      *
@@ -32,9 +36,5 @@ public class SqlUtils {
         String prefix = KEY_ATTRIBUTE_NAME.value() + ".";
 
         return path.startsWith(prefix) ? path.substring(prefix.length()) : null;
-    }
-
-    private SqlUtils() {
-        // No-op.
     }
 }

@@ -49,8 +49,9 @@ public class StripedInbox extends AbstractInbox {
         // Initialize queues.
         queues = new ArrayDeque[memberIdx];
 
-        for (int i = 0; i < memberIdx; i++)
+        for (int i = 0; i < memberIdx; i++) {
             queues[i] = new ArrayDeque<>(1);
+        }
     }
 
     @Override

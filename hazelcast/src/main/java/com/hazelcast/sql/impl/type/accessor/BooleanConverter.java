@@ -25,7 +25,11 @@ import java.math.BigDecimal;
  */
 public final class BooleanConverter extends Converter {
     /** Singleton instance. */
-    public static BooleanConverter INSTANCE = new BooleanConverter();
+    public static final BooleanConverter INSTANCE = new BooleanConverter();
+
+    private BooleanConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -43,50 +47,46 @@ public final class BooleanConverter extends Converter {
     }
 
     @Override
-    public final byte asTinyInt(Object val) {
+    public byte asTinyInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final short asSmallInt(Object val) {
+    public short asSmallInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final int asInt(Object val) {
+    public int asInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final long asBigInt(Object val) {
+    public long asBigInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final BigDecimal asDecimal(Object val) {
+    public BigDecimal asDecimal(Object val) {
         return cast(val) == 0 ? BigDecimal.ZERO : BigDecimal.ONE;
     }
 
     @Override
-    public final float asReal(Object val) {
+    public float asReal(Object val) {
         return cast(val);
     }
 
     @Override
-    public final double asDouble(Object val) {
+    public double asDouble(Object val) {
         return cast(val);
     }
 
     @Override
-    public final String asVarchar(Object val) {
+    public String asVarchar(Object val) {
         return Byte.toString(cast(val));
     }
 
     private byte cast(Object val) {
-        return (Boolean)val ? (byte)1 : (byte)0;
-    }
-
-    private BooleanConverter() {
-        // No-op.
+        return (Boolean) val ? (byte) 1 : (byte) 0;
     }
 }

@@ -23,9 +23,13 @@ import java.math.BigDecimal;
 /**
  * Converter for {@link java.lang.Float} type.
  */
-public class ShortConverter extends Converter {
+public final class ShortConverter extends Converter {
     /** Singleton instance. */
-    public static ShortConverter INSTANCE = new ShortConverter();
+    public static final ShortConverter INSTANCE = new ShortConverter();
+
+    private ShortConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -43,50 +47,46 @@ public class ShortConverter extends Converter {
     }
 
     @Override
-    public final byte asTinyInt(Object val) {
+    public byte asTinyInt(Object val) {
         return (byte) cast(val);
     }
 
     @Override
-    public final short asSmallInt(Object val) {
+    public short asSmallInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final int asInt(Object val) {
+    public int asInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final long asBigInt(Object val) {
+    public long asBigInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final BigDecimal asDecimal(Object val) {
+    public BigDecimal asDecimal(Object val) {
         return new BigDecimal(cast(val));
     }
 
     @Override
-    public final float asReal(Object val) {
+    public float asReal(Object val) {
         return cast(val);
     }
 
     @Override
-    public final double asDouble(Object val) {
+    public double asDouble(Object val) {
         return cast(val);
     }
 
     @Override
-    public final String asVarchar(Object val) {
+    public String asVarchar(Object val) {
         return Short.toString(cast(val));
     }
 
     private short cast(Object val) {
-        return (short)val;
-    }
-
-    private ShortConverter() {
-        // No-op.
+        return (short) val;
     }
 }

@@ -30,7 +30,7 @@ public class SendBatch implements DataSerializable {
     /** Rows being transferred. */
     private List<Row> rows;
 
-    /** Laft batch marker. */
+    /** Left batch marker. */
     private boolean last;
 
     public SendBatch() {
@@ -54,8 +54,9 @@ public class SendBatch implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(rows.size());
 
-        for (Row row : rows)
+        for (Row row : rows) {
             out.writeObject(row);
+        }
 
         out.writeBoolean(last);
     }
@@ -65,13 +66,14 @@ public class SendBatch implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         int rowCnt = in.readInt();
 
-        if (rowCnt == 0)
+        if (rowCnt == 0) {
             rows = Collections.emptyList();
-        else {
+        } else {
             rows = new ArrayList<>(rowCnt);
 
-            for (int i = 0; i < rowCnt; i++)
+            for (int i = 0; i < rowCnt; i++) {
                 rows.add(in.readObject());
+            }
         }
 
         last = in.readBoolean();

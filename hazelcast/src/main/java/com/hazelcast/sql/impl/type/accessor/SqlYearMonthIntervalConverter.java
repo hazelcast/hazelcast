@@ -24,7 +24,11 @@ import com.hazelcast.sql.impl.type.GenericType;
  */
 public final class SqlYearMonthIntervalConverter extends Converter {
     /** Singleton instance. */
-    public static SqlYearMonthIntervalConverter INSTANCE = new SqlYearMonthIntervalConverter();
+    public static final SqlYearMonthIntervalConverter INSTANCE = new SqlYearMonthIntervalConverter();
+
+    private SqlYearMonthIntervalConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -34,9 +38,5 @@ public final class SqlYearMonthIntervalConverter extends Converter {
     @Override
     public GenericType getGenericType() {
         return GenericType.INTERVAL_YEAR_MONTH;
-    }
-
-    private SqlYearMonthIntervalConverter() {
-        // No-op.
     }
 }

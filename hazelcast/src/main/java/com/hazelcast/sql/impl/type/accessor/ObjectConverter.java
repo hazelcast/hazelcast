@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.type.accessor;
 
-import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.GenericType;
 
 /**
@@ -24,7 +23,11 @@ import com.hazelcast.sql.impl.type.GenericType;
  */
 public final class ObjectConverter extends Converter {
     /** Singleton instance. */
-    public static ObjectConverter INSTANCE = new ObjectConverter();
+    public static final ObjectConverter INSTANCE = new ObjectConverter();
+
+    private ObjectConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -39,9 +42,5 @@ public final class ObjectConverter extends Converter {
     @Override
     public String asVarchar(Object val) {
         return val != null ? val.toString() : "null";
-    }
-
-    private ObjectConverter() {
-        // No-op.
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.worker.task;
 /**
  * Task to stop a worker.
  */
-public class StopQueryTask implements QueryTask {
+public final class StopQueryTask implements QueryTask {
     /** Singleton instance. */
     public static final StopQueryTask INSTANCE = new StopQueryTask();
 

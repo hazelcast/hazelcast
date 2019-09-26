@@ -27,9 +27,13 @@ import java.time.ZonedDateTime;
 /**
  * Converter for {@link LocalDate} type.
  */
-public class LocalDateConverter extends Converter {
+public final class LocalDateConverter extends Converter {
     /** Singleton instance. */
-    public static LocalDateConverter INSTANCE = new LocalDateConverter();
+    public static final LocalDateConverter INSTANCE = new LocalDateConverter();
+
+    private LocalDateConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -62,10 +66,6 @@ public class LocalDateConverter extends Converter {
     }
 
     private LocalDate cast(Object val) {
-        return ((LocalDate)val);
-    }
-
-    private LocalDateConverter() {
-        // No-op.
+        return ((LocalDate) val);
     }
 }

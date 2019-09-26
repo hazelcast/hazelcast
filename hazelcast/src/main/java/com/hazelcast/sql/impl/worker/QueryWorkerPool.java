@@ -26,14 +26,14 @@ public class QueryWorkerPool {
     /** Prefix for child threads. */
     private static final String THREAD_PREFIX = "query-thread-";
 
+    /** Workers. */
+    private final QueryWorker[] workers;
+
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
     /** Number of threads. */
     private final int threadCnt;
-
-    /** Workers. */
-    protected final QueryWorker[] workers;
 
     public QueryWorkerPool(NodeEngine nodeEngine, int threadCnt) {
         this.nodeEngine = nodeEngine;
@@ -57,16 +57,18 @@ public class QueryWorkerPool {
             workers[i] = worker;
         }
 
-        for (QueryWorker worker : workers)
+        for (QueryWorker worker : workers) {
             worker.awaitStart();
+        }
     }
 
     /**
      * Shutdown threads.
      */
     public void shutdown() {
-        for (QueryWorker worker : workers)
+        for (QueryWorker worker : workers) {
             worker.stop();
+        }
     }
 
     /**

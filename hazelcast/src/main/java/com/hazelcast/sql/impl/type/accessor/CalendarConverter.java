@@ -29,9 +29,13 @@ import java.util.Calendar;
 /**
  * Converter for {@link java.util.Calendar} type.
  */
-public class CalendarConverter extends Converter {
+public final class CalendarConverter extends Converter {
     /** Singleton instance. */
-    public static CalendarConverter INSTANCE = new CalendarConverter();
+    public static final CalendarConverter INSTANCE = new CalendarConverter();
+
+    private CalendarConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -73,10 +77,6 @@ public class CalendarConverter extends Converter {
     }
 
     private Calendar cast(Object val) {
-        return ((Calendar)val);
-    }
-
-    private CalendarConverter() {
-        // No-op.
+        return ((Calendar) val);
     }
 }

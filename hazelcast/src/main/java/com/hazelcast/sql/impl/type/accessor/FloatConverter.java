@@ -25,7 +25,11 @@ import java.math.BigDecimal;
  */
 public final class FloatConverter extends Converter {
     /** Singleton instance. */
-    public static FloatConverter INSTANCE = new FloatConverter();
+    public static final FloatConverter INSTANCE = new FloatConverter();
+
+    private FloatConverter() {
+        // No-op.
+    }
 
     @Override
     public Class getClazz() {
@@ -43,50 +47,46 @@ public final class FloatConverter extends Converter {
     }
 
     @Override
-    public final byte asTinyInt(Object val) {
+    public byte asTinyInt(Object val) {
         return (byte) cast(val);
     }
 
     @Override
-    public final short asSmallInt(Object val) {
+    public short asSmallInt(Object val) {
         return (short) cast(val);
     }
 
     @Override
-    public final int asInt(Object val) {
+    public int asInt(Object val) {
         return (int) cast(val);
     }
 
     @Override
-    public final long asBigInt(Object val) {
+    public long asBigInt(Object val) {
         return (long) cast(val);
     }
 
     @Override
-    public final BigDecimal asDecimal(Object val) {
+    public BigDecimal asDecimal(Object val) {
         return new BigDecimal(cast(val));
     }
 
     @Override
-    public final float asReal(Object val) {
+    public float asReal(Object val) {
         return cast(val);
     }
 
     @Override
-    public final double asDouble(Object val) {
+    public double asDouble(Object val) {
         return cast(val);
     }
 
     @Override
-    public final String asVarchar(Object val) {
+    public String asVarchar(Object val) {
         return Float.toString(cast(val));
     }
 
     private float cast(Object val) {
-        return (float)val;
-    }
-
-    private FloatConverter() {
-        // No-op.
+        return (float) val;
     }
 }

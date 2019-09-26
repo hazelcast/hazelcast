@@ -24,13 +24,17 @@ import java.math.BigDecimal;
  * Converter for {@link java.lang.Long} type.
  */
 public final class LongConverter extends Converter {
+    /** Singleton instance. */
+    public static final LongConverter INSTANCE = new LongConverter();
+
+    private LongConverter() {
+        // No-op.
+    }
+
     @Override
     public Class getClazz() {
         return Long.class;
     }
-
-    /** Singleton instance. */
-    public static LongConverter INSTANCE = new LongConverter();
 
     @Override
     public GenericType getGenericType() {
@@ -43,50 +47,46 @@ public final class LongConverter extends Converter {
     }
 
     @Override
-    public final byte asTinyInt(Object val) {
+    public byte asTinyInt(Object val) {
         return (byte) cast(val);
     }
 
     @Override
-    public final short asSmallInt(Object val) {
+    public short asSmallInt(Object val) {
         return (short) cast(val);
     }
 
     @Override
-    public final int asInt(Object val) {
+    public int asInt(Object val) {
         return (int) cast(val);
     }
 
     @Override
-    public final long asBigInt(Object val) {
+    public long asBigInt(Object val) {
         return cast(val);
     }
 
     @Override
-    public final BigDecimal asDecimal(Object val) {
+    public BigDecimal asDecimal(Object val) {
         return new BigDecimal(cast(val));
     }
 
     @Override
-    public final float asReal(Object val) {
+    public float asReal(Object val) {
         return cast(val);
     }
 
     @Override
-    public final double asDouble(Object val) {
+    public double asDouble(Object val) {
         return cast(val);
     }
 
     @Override
-    public final String asVarchar(Object val) {
+    public String asVarchar(Object val) {
         return Long.toString(cast(val));
     }
 
     private long cast(Object val) {
-        return (long)val;
-    }
-
-    private LongConverter() {
-        // No-op.
+        return (long) val;
     }
 }

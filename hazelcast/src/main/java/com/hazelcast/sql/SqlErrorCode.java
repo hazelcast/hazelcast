@@ -19,7 +19,7 @@ package com.hazelcast.sql;
 /**
  * Collection of error codes.
  */
-public class SqlErrorCode {
+public final class SqlErrorCode {
     /** Generic error/ */
     public static final int GENERIC = -1;
 
