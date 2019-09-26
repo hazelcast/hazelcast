@@ -17,7 +17,6 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.version.Version;
 
 import java.io.Closeable;
 import java.io.IOException;
