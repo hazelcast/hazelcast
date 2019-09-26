@@ -70,8 +70,9 @@ public class ReceiveSortMergeExec extends AbstractExec {
     @Override
     public IterationResult advance() {
         // Try polling inputs.
-        if (!pollInputs())
+        if (!pollInputs()) {
             return inbox.closed() ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
+        }
 
         // All inputs available, sort as much as possible.
         prepareBatch();
@@ -90,14 +91,16 @@ public class ReceiveSortMergeExec extends AbstractExec {
      * @return {@code True} if all batches are available.
      */
     private boolean pollInputs() {
-        if (inputsAvailable)
+        if (inputsAvailable) {
             return true;
+        }
 
         boolean res = true;
 
         for (int i = 0; i < stripes.length; i++) {
-            if (stripesDone[i])
+            if (stripesDone[i]) {
                 continue;
+            }
 
             List<Row> stripeRows = stripes[i];
 
@@ -110,10 +113,10 @@ public class ReceiveSortMergeExec extends AbstractExec {
                         res = false;
 
                         break;
-                    }
-                    else {
-                        if (stripeBatch.isLast())
+                    } else {
+                        if (stripeBatch.isLast()) {
                             stripesDone[i] = true;
+                        }
 
                         List<Row> rows = stripeBatch.getRows();
 
@@ -127,8 +130,9 @@ public class ReceiveSortMergeExec extends AbstractExec {
             }
         }
 
-        if (res)
+        if (res) {
             inputsAvailable = true;
+        }
 
         return res;
     }
@@ -163,10 +167,10 @@ public class ReceiveSortMergeExec extends AbstractExec {
                 }
             }
 
-            if (curKey == null)
+            if (curKey == null) {
                 // Avoid infinite loop is all stripes are done.
                 break;
-            else {
+            } else {
                 List<Row> stripeRows = stripes[curIdx];
 
                 rows.add(stripeRows.remove(0));
@@ -174,8 +178,9 @@ public class ReceiveSortMergeExec extends AbstractExec {
                 if (stripeRows.isEmpty()) {
                     stripes[curIdx] = null;
 
-                    if (!stripesDone[curIdx])
+                    if (!stripesDone[curIdx]) {
                         inputsAvailable = false;
+                    }
                 }
             }
         }
@@ -193,8 +198,9 @@ public class ReceiveSortMergeExec extends AbstractExec {
     private SortKey prepareSortKey(Row row, int stripe) {
         List<Object> key = new ArrayList<>(expressions.size());
 
-        for (Expression expression : expressions)
+        for (Expression expression : expressions) {
             key.add(expression.eval(ctx, row));
+        }
 
         return new SortKey(key, stripe);
     }

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.sql.impl.exec.agg;
 
 import com.hazelcast.sql.impl.row.Row;
@@ -22,7 +38,7 @@ public abstract class AggregateKey {
     public abstract int getCount();
     public abstract boolean matches(Row row);
 
-    private static class SingleAggregateKey extends AggregateKey {
+    private static final class SingleAggregateKey extends AggregateKey {
         private final Object item;
 
         private SingleAggregateKey(Object item) {
@@ -48,13 +64,15 @@ public abstract class AggregateKey {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o)
+            if (this == o) {
                 return true;
+            }
 
-            if (o == null || getClass() != o.getClass())
+            if (o == null || getClass() != o.getClass()) {
                 return false;
+            }
 
-            SingleAggregateKey that = (SingleAggregateKey)o;
+            SingleAggregateKey that = (SingleAggregateKey) o;
 
             return item != null ? item.equals(that.item) : that.item == null;
         }
@@ -70,7 +88,7 @@ public abstract class AggregateKey {
         }
     }
 
-    private static class DualAggregateKey extends AggregateKey {
+    private static final class DualAggregateKey extends AggregateKey {
         private final Object item1;
         private final Object item2;
 
@@ -98,16 +116,19 @@ public abstract class AggregateKey {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o)
+            if (this == o) {
                 return true;
+            }
 
-            if (o == null || getClass() != o.getClass())
+            if (o == null || getClass() != o.getClass()) {
                 return false;
+            }
 
             DualAggregateKey that = (DualAggregateKey) o;
 
-            if (item1 != null ? !item1.equals(that.item1) : that.item1 != null)
+            if (item1 != null ? !item1.equals(that.item1) : that.item1 != null) {
                 return false;
+            }
 
             return item2 != null ? item2.equals(that.item2) : that.item2 == null;
         }
@@ -127,7 +148,7 @@ public abstract class AggregateKey {
         }
     }
 
-    private static class MultiAggregateKey extends AggregateKey {
+    private static final class MultiAggregateKey extends AggregateKey {
         private final Object[] items;
 
         private MultiAggregateKey(Object[] items) {
@@ -149,8 +170,9 @@ public abstract class AggregateKey {
         @Override
         public boolean matches(Row row) {
             for (int i = 0; i < items.length; i++) {
-                if (!Objects.equals(items[i], row.getColumn(i)))
+                if (!Objects.equals(items[i], row.getColumn(i))) {
                     return false;
+                }
             }
 
             return true;
@@ -158,11 +180,13 @@ public abstract class AggregateKey {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o)
+            if (this == o) {
                 return true;
+            }
 
-            if (o == null || getClass() != o.getClass())
+            if (o == null || getClass() != o.getClass()) {
                 return false;
+            }
 
             MultiAggregateKey that = (MultiAggregateKey) o;
 
@@ -181,8 +205,9 @@ public abstract class AggregateKey {
             for (int i = 0; i < items.length; i++) {
                 res.append(items[i]);
 
-                if (i != 0)
+                if (i != 0) {
                     res.append(", ");
+                }
             }
 
             res.append("}");

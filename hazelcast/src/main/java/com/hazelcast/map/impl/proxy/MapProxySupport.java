@@ -212,6 +212,7 @@ abstract class MapProxySupport<K, V>
     private final int putAllBatchSize;
     private final float putAllInitialSizeFactor;
 
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
     protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(nodeEngine, service);
         this.name = name;
@@ -241,12 +242,13 @@ abstract class MapProxySupport<K, V>
             aliases = new HashMap<>();
 
             for (AttributeConfig attributeConfig : attributeConfigs) {
-                if (attributeConfig.getPath() != null)
+                if (attributeConfig.getPath() != null) {
                     aliases.put(attributeConfig.getName(), attributeConfig.getPath());
+                }
             }
-        }
-        else
+        } else {
             aliases = Collections.emptyMap();
+        }
     }
 
     @Override
@@ -1435,8 +1437,9 @@ abstract class MapProxySupport<K, V>
     public String normalizeAttributePath(String name) {
         String res = aliases.get(name);
 
-        if (res == null)
+        if (res == null) {
             res = name;
+        }
 
         return res;
     }

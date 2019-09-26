@@ -73,8 +73,9 @@ public class MapScanExec extends AbstractMapScanExec {
             rows = new ArrayList<>();
 
             for (int i = 0; i < parts.getPartitionCount(); i++) {
-                if (!parts.contains(i))
+                if (!parts.contains(i)) {
                     continue;
+                }
 
                 // Per-partition stuff.
                 PartitionContainer partitionContainer = map.getMapServiceContext().getPartitionContainer(i);
@@ -94,8 +95,9 @@ public class MapScanExec extends AbstractMapScanExec {
 
                     HeapRow row = prepareRow(key, val);
 
-                    if (row != null)
+                    if (row != null) {
                         rows.add(row);
+                    }
                 }
             }
 
@@ -106,8 +108,7 @@ public class MapScanExec extends AbstractMapScanExec {
             currentRow = rowsIter.next();
 
             return IterationResult.FETCHED;
-        }
-        else {
+        } else {
             currentRow = null;
 
             return IterationResult.FETCHED_DONE;

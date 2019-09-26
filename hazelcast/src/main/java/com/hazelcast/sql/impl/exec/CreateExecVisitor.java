@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -166,6 +166,8 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         int idx = 0;
 
         for (UUID receiveMemberId : receiveFragmentMemberIds) {
+            // TODO: Remove magic number for batch size.
+            //noinspection CheckStyle
             Outbox outbox = new Outbox(
                 nodeEngine,
                 operation.getQueryId(),
@@ -186,15 +188,16 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     public void onMapScanNode(MapScanPhysicalNode node) {
         Exec res;
 
-        if (localParts == null)
+        if (localParts == null) {
             res = EmptyScanExec.INSTANCE;
-        else {
+        } else {
             String mapName = node.getMapName();
 
-            MapProxyImpl map = (MapProxyImpl)nodeEngine.getHazelcastInstance().getMap(mapName);
+            MapProxyImpl map = (MapProxyImpl) nodeEngine.getHazelcastInstance().getMap(mapName);
 
-            if (map == null)
+            if (map == null) {
                 throw new HazelcastSqlException(-1, "IMap doesn't exist: " + mapName);
+            }
 
             res = new MapScanExec(map, localParts, node.getProjections(), node.getFilter());
         }

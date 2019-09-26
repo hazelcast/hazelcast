@@ -43,12 +43,14 @@ public class RootExec extends AbstractUpstreamAwareExec {
     public IterationResult advance() {
         while (true) {
             // Advance if needed.
-            if (!state.advance())
+            if (!state.advance()) {
                 return IterationResult.WAIT;
+            }
 
             // Try consuming as much rows as possible.
-            if (!consumer.consume(state))
+            if (!consumer.consume(state)) {
                 return IterationResult.WAIT;
+            }
 
             // Close the consumer if we reached the end.
             if (state.isDone()) {

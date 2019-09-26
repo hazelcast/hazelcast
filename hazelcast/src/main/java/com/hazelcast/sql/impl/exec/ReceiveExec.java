@@ -44,13 +44,15 @@ public class ReceiveExec extends AbstractExec {
 
     @Override
     public IterationResult advance() {
-        if (inboxDone)
+        if (inboxDone) {
             throw new IllegalStateException("Should not be called.");
+        }
 
         SendBatch batch = inbox.poll();
 
-        if (batch == null)
+        if (batch == null) {
             return IterationResult.WAIT;
+        }
 
         List<Row> rows = batch.getRows();
 
@@ -60,9 +62,9 @@ public class ReceiveExec extends AbstractExec {
             inboxDone = true;
 
             return IterationResult.FETCHED_DONE;
-        }
-        else
+        } else {
             return IterationResult.FETCHED;
+        }
     }
 
     @Override

@@ -39,7 +39,7 @@ public class UpstreamState implements Iterable<Row> {
     private RowBatch currentBatch = EmptyRowBatch.INSTANCE;
 
     /** Current position. */
-    private int currentBatchPos = 0;
+    private int currentBatchPos;
 
     /** Last returned state. */
     private IterationResult state;
@@ -58,12 +58,14 @@ public class UpstreamState implements Iterable<Row> {
      */
     public boolean advance() {
         // If some data is available still, do not do anything, just return the previous result.
-        if (currentBatchPos < currentBatch.getRowCount())
+        if (currentBatchPos < currentBatch.getRowCount()) {
             return true;
+        }
 
         // If the upstream is exhausted, just return "done" flag.
-        if (state == FETCHED_DONE)
+        if (state == FETCHED_DONE) {
             return true;
+        }
 
         // Otherwise poll the upstream.
         state = upstream.advance();

@@ -43,8 +43,9 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
     @Override
     public IterationResult advance() {
         while (true) {
-            if (!state.advance())
+            if (!state.advance()) {
                 return IterationResult.WAIT;
+            }
 
             Row upstreamRow = state.nextIfExists();
 

@@ -49,7 +49,6 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
         super(mapName, projections, filter);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public IterationResult advance() {
         if (rows == null) {
@@ -73,8 +72,9 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
 
                     HeapRow row = prepareRow(key, val);
 
-                    if (row != null)
+                    if (row != null) {
                         rows.add(row);
+                    }
                 }
             }
 
@@ -85,8 +85,7 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
             currentRow = rowsIter.next();
 
             return IterationResult.FETCHED;
-        }
-        else {
+        } else {
             currentRow = null;
 
             return IterationResult.FETCHED_DONE;

@@ -80,18 +80,21 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
 
     @Override
     protected void setup1(QueryContext ctx) {
-        for (AggregateExpression expression : expressions)
+        for (AggregateExpression expression : expressions) {
             expression.setup(this);
+        }
 
-        if (!sorted)
+        if (!sorted) {
             map = new HashMap<>();
+        }
     }
 
     @Override
     public IterationResult advance() {
         while (true) {
-            if (!state.advance())
+            if (!state.advance()) {
                 return IterationResult.WAIT;
+            }
 
             // Loop through the current batch.
             for (Row upstreamRow : state) {
@@ -113,8 +116,7 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
                     if (singleKey == null) {
                         singleKey = key;
                         singleValues = values;
-                    }
-                    else {
+                    } else {
                         if (singleKey != key) {
                             curRow = createRowFromKeyAndValues(singleKey, singleValues);
 
@@ -130,17 +132,17 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
             // Finalize the state if no more rows are expected.
             if (state.isDone()) {
                 if (sorted) {
-                    if (singleKey == null)
+                    if (singleKey == null) {
                         curRow = EmptyRowBatch.INSTANCE;
-                    else {
+                    } else {
                         curRow = createRowFromKeyAndValues(singleKey, singleValues);
 
                         singleKey = null;
                         singleValues = null;
                     }
-                }
-                else
+                } else {
                     curRow = createRows();
+                }
 
                 return IterationResult.FETCHED_DONE;
             }
@@ -156,9 +158,9 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
         // TODO: Avoid copying from map to that row list. Initial map should be the row batch in the first place!
         int cnt = map.size();
 
-        if (cnt == 0)
+        if (cnt == 0) {
             return EmptyRowBatch.INSTANCE;
-        else {
+        } else {
             List<Row> rows = new ArrayList<>(map.size());
 
             for (Map.Entry<AggregateKey, List<AggregateCollector>> entry : map.entrySet()) {
@@ -185,11 +187,13 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
 
         int idx = 0;
 
-        for (int i = 0; i < key.getCount(); i++)
+        for (int i = 0; i < key.getCount(); i++) {
             res.set(idx++, key.get(i));
+        }
 
-        for (AggregateCollector value : values)
+        for (AggregateCollector value : values) {
             res.set(idx++, value.reduce());
+        }
 
         return res;
     }
@@ -202,13 +206,12 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
      */
     private List<AggregateCollector> getValues(AggregateKey key) {
         if (sorted) {
-            if (key == singleKey)
+            if (key == singleKey) {
                 return singleValues;
-            else {
+            } else {
                 return createValues();
             }
-        }
-        else {
+        } else {
             List<AggregateCollector> res = map.get(key);
 
             if (res == null) {
@@ -231,8 +234,9 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
 
         List<AggregateCollector> res = new ArrayList<>(cnt);
 
-        for (AggregateExpression expression : expressions)
+        for (AggregateExpression expression : expressions) {
             res.add(expression.newCollector(ctx));
+        }
 
         return res;
     }
@@ -248,12 +252,12 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
             // In the sorted mode we perform comparison before allocating a new row. If the incoming row matches
             // our expectations, we return already existing group key. Future comparison would be performed by
             // referential equality only.
-            if (singleKey != null && singleKey.matches(row))
+            if (singleKey != null && singleKey.matches(row)) {
                 return singleKey;
-            else
+            } else {
                 return createKey(row);
-        }
-        else {
+            }
+        } else {
             // Otherwise we just create a new row which will be used to lookup aggregate values.
             return createKey(row);
         }
@@ -276,8 +280,9 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
             default:
                 Object[] items = new Object[groupKeySize];
 
-                for (int i = 0; i < groupKeySize; i++)
+                for (int i = 0; i < groupKeySize; i++) {
                     items[i] = row.getColumn(i);
+                }
 
                 return AggregateKey.multiple(items);
         }
@@ -290,8 +295,9 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
 
     @Override
     protected void reset1() {
-        if (map != null)
+        if (map != null) {
             map.clear();
+        }
 
         singleKey = null;
         singleValues = null;

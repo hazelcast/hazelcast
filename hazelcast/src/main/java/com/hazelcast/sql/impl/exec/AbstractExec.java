@@ -38,8 +38,9 @@ public abstract class AbstractExec implements Exec {
 
     @Override
     public final void reset() {
-        if (!canReset())
+        if (!canReset()) {
             throw new UnsupportedOperationException("Reset is not supported: " + this.getClass().getSimpleName());
+        }
 
         reset0();
     }

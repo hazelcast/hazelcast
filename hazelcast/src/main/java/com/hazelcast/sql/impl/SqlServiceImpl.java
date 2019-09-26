@@ -85,9 +85,9 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
         List<Object> args0;
 
-        if (args == null || args.length == 0)
+        if (args == null || args.length == 0) {
             args0 = Collections.emptyList();
-        else {
+        } else {
             args0 = new ArrayList<>(args.length);
 
             Collections.addAll(args0, args);
@@ -106,8 +106,9 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
      * @return Result.
      */
     private QueryHandle execute0(QueryPlan plan, List<Object> args) {
-        if (args == null)
+        if (args == null) {
             args = Collections.emptyList();
+        }
 
         QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());
 
@@ -131,8 +132,9 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
             UUID memberId = plan.getDataMemberIds().get(i);
 
-            if (memberId.equals(localMemberId))
+            if (memberId.equals(localMemberId)) {
                 continue;
+            }
 
             QueryExecuteOperation remoteOp = operationFactory.create(memberId);
             Address address = plan.getDataMemberAddresses().get(i);
@@ -150,11 +152,11 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
         boolean local = address.equals(nodeEngine.getThisAddress());
 
-        if (local)
+        if (local) {
             handleQueryOperation(operation);
-        else {
+        } else {
             InternalSerializationService serializationService =
-                (InternalSerializationService)nodeEngine.getSerializationService();
+                (InternalSerializationService) nodeEngine.getSerializationService();
 
             byte[] bytes = serializationService.toBytes(operation);
 
@@ -168,8 +170,9 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
             boolean res = endpointManager.transmit(packet, connection);
 
             // TODO: Proper handling.
-            if (!res)
+            if (!res) {
                 throw new HazelcastException("Failed to send an operation to remote node.");
+            }
         }
     }
 
@@ -208,8 +211,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
             Constructor<SqlOptimizer> ctor = cls.getConstructor(NodeEngine.class);
 
             res = ctor.newInstance(nodeEngine);
-        }
-        catch (ReflectiveOperationException e) {
+        } catch (ReflectiveOperationException e) {
             logger.info(OPTIMIZER_CLASS + " is not in the classpath, fallback to no-op implementation.");
 
             res = new NoopSqlOptimizer();
@@ -227,18 +229,18 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
     private void handleQueryOperation(QueryOperation operation) {
         if (operation instanceof QueryExecuteOperation) {
-            handleQueryExecuteOperation((QueryExecuteOperation)operation);
-        }
-        else if (operation instanceof QueryBatchOperation) {
-            handleQueryBatchOperation((QueryBatchOperation)operation);
+            handleQueryExecuteOperation((QueryExecuteOperation) operation);
+        } else if (operation instanceof QueryBatchOperation) {
+            handleQueryBatchOperation((QueryBatchOperation) operation);
         }
     }
 
     private void handleQueryExecuteOperation(QueryExecuteOperation operation) {
         for (QueryFragmentDescriptor fragmentDescriptor : operation.getFragmentDescriptors()) {
             // Skip unrelated fragments.
-            if (fragmentDescriptor.getNode() == null)
+            if (fragmentDescriptor.getNode() == null) {
                 continue;
+            }
 
             int deploymentOffset = fragmentDescriptor.getAbsoluteDeploymentOffset(operation);
             int thread = getThreadFromDeploymentOffset(deploymentOffset);

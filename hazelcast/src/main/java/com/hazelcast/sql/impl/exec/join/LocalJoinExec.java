@@ -56,14 +56,16 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
         rightState.setup(ctx);
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public IterationResult advance() {
         while (true) {
             // Get the left row.
             if (leftRow == null) {
                 while (true) {
-                    if (!state.advance())
+                    if (!state.advance()) {
                         return IterationResult.WAIT;
+                    }
 
                     leftRow = state.nextIfExists();
 
@@ -71,8 +73,7 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
                         rightState.reset();
 
                         break;
-                    }
-                    else if (state.isDone()) {
+                    } else if (state.isDone()) {
                         curRow = EmptyRowBatch.INSTANCE;
 
                         return IterationResult.FETCHED_DONE;
@@ -82,8 +83,9 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
 
             // Iterate over the right input.
             while (true) {
-                if (!rightState.advance())
+                if (!rightState.advance()) {
                     return IterationResult.WAIT;
+                }
 
                 for (Row rightRow : rightState) {
                     JoinRow row = new JoinRow(leftRow, rightRow);
@@ -112,8 +114,9 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
                     }
                 }
 
-                if (rightState.isDone())
+                if (rightState.isDone()) {
                     break;
+                }
             }
 
             // Nullify left row.

@@ -55,11 +55,13 @@ public class LocalSortExec extends AbstractUpstreamAwareExec {
     @Override
     public IterationResult advance() {
         while (true) {
-            if (!state.advance())
+            if (!state.advance()) {
                 return IterationResult.WAIT;
+            }
 
-            for (Row upstreamRow : state)
+            for (Row upstreamRow : state) {
                 consumeRow(upstreamRow);
+            }
 
             if (state.isDone()) {
                 finalizeResult();
@@ -82,8 +84,9 @@ public class LocalSortExec extends AbstractUpstreamAwareExec {
     private void consumeRow(Row row) {
         List<Object> key = new ArrayList<>(expressions.size());
 
-        for (Expression expression : expressions)
+        for (Expression expression : expressions) {
             key.add(expression.eval(ctx, row));
+        }
 
         map.put(new SortKey(key, idx++), row);
     }
@@ -92,8 +95,9 @@ public class LocalSortExec extends AbstractUpstreamAwareExec {
      * Finalize the result.
      */
     private void finalizeResult() {
-        if (res != null)
+        if (res != null) {
             return;
+        }
 
         List<Row> resList = new ArrayList<>(map.size());
 

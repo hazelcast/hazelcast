@@ -62,7 +62,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
 
     @Override
     protected final void setup0(QueryContext ctx) {
-        serializationService = (InternalSerializationService)ctx.getNodeEngine().getSerializationService();
+        serializationService = (InternalSerializationService) ctx.getNodeEngine().getSerializationService();
         extractors = createExtractors();
 
         keyValueRow = new KeyValueRow(this);
@@ -79,11 +79,11 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
 
         Object res;
 
-        if (KEY_ATTRIBUTE_NAME.value().equals(path))
+        if (KEY_ATTRIBUTE_NAME.value().equals(path)) {
             res = key;
-        else if (THIS_ATTRIBUTE_NAME.value().equals(path))
+        } else if (THIS_ATTRIBUTE_NAME.value().equals(path)) {
             res = val;
-        else {
+        } else {
             String keyPath = SqlUtils.extractKeyPath(path);
 
             Object target;
@@ -92,15 +92,16 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
                 target = key;
 
                 path = keyPath;
-            }
-            else
+            } else {
                 target = val;
+            }
 
             res = extractors.extract(target, path, null);
         }
 
-        if (res instanceof HazelcastJsonValue)
+        if (res instanceof HazelcastJsonValue) {
             res = Json.parse(res.toString());
+        }
 
         return res;
     }
@@ -109,8 +110,9 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
         keyValueRow.setKeyValue(key, val);
 
         // Filter.
-        if (filter != null && !filter.eval(ctx, keyValueRow))
+        if (filter != null && !filter.eval(ctx, keyValueRow)) {
             return null;
+        }
 
         // Project.
         HeapRow row = new HeapRow(projections.size());

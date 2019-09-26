@@ -45,8 +45,9 @@ public final class ExtractorHelper {
             }
 
             if (config.getPath() != null) {
-                if (config.getExtractorClassName() != null)
+                if (config.getExtractorClassName() != null) {
                     throw new IllegalArgumentException("Extractor cannot be set if path is not null: " + config);
+                }
 
                 continue;
             }

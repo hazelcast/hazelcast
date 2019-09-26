@@ -76,8 +76,9 @@ public final class PartitioningStrategyFactory {
             }
         }
 
-        if (strategy instanceof SerializationServiceAware)
-            ((SerializationServiceAware)strategy).setSerializationService(nodeEngine.getSerializationService());
+        if (strategy instanceof SerializationServiceAware) {
+            ((SerializationServiceAware) strategy).setSerializationService(nodeEngine.getSerializationService());
+        }
 
         return strategy;
     }

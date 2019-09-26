@@ -41,7 +41,7 @@ public class DeclarativePartitioningStrategy<K> implements PartitioningStrategy<
 
     @Override
     public void setSerializationService(SerializationService ss) {
-        InternalSerializationService ss0 = (InternalSerializationService)ss;
+        InternalSerializationService ss0 = (InternalSerializationService) ss;
 
         extractors = Extractors.newBuilder(ss0).setClassLoader(ss0.getClassLoader()).build();
     }

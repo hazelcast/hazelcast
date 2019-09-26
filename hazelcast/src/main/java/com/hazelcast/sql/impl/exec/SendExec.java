@@ -45,15 +45,17 @@ public class SendExec extends AbstractUpstreamAwareExec {
     @Override
     public IterationResult advance() {
         if (pendingRow != null) {
-            if (pushRow(pendingRow))
+            if (pushRow(pendingRow)) {
                 pendingRow = null;
-            else
+            } else {
                 return IterationResult.WAIT;
+            }
         }
 
         while (true) {
-            if (!state.advance())
+            if (!state.advance()) {
                 return IterationResult.WAIT;
+            }
 
             for (Row upstreamRow : state) {
                 if (!pushRow(upstreamRow)) {
@@ -64,8 +66,9 @@ public class SendExec extends AbstractUpstreamAwareExec {
             }
 
             if (state.isDone()) {
-                for (Outbox outbox : outboxes)
+                for (Outbox outbox : outboxes) {
                     outbox.flush();
+                }
 
                 return IterationResult.FETCHED_DONE;
             }
