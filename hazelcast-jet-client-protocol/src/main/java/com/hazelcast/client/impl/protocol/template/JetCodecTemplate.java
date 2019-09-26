@@ -36,7 +36,8 @@ public interface JetCodecTemplate {
     @Request(id = 4, retryable = true, response = ResponseMessageConst.LIST_LONG)
     Object getJobIds();
 
-    @Request(id = 5, retryable = true, response = ResponseMessageConst.VOID)
+    // must not be retryable, Jet client has own retry mechanism here
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.VOID)
     void joinSubmittedJob(long jobId);
 
     @Request(id = 6, retryable = true, response = ResponseMessageConst.LIST_LONG)

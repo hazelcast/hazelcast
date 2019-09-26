@@ -16,9 +16,12 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.Identity;
@@ -753,6 +756,31 @@ public class JobTest extends JetTestSupport {
         assertNotNull(trackedJob);
         assertNotEquals(0, job.getSubmissionTime());
         assertNotEquals(0, trackedJob.getSubmissionTime());
+    }
+
+    @Test
+    public void when_joinFromClientTimesOut_then_futureShouldNotBeCompletedEarly() throws InterruptedException {
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
+
+        int timeoutSecs = 2;
+        ClientConfig config = new JetClientConfig()
+                .setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), Integer.toString(timeoutSecs));
+        JetInstance client = createJetClient(config);
+
+        // join request is sent along with job submission
+        Job job = client.newJob(dag);
+        NoOutputSourceP.executionStarted.await();
+
+        // wait for join invocation to timeout
+        Thread.sleep(TimeUnit.SECONDS.toMillis(timeoutSecs));
+
+        // When
+        instance1.shutdown();
+        job.cancel();
+
+        // Then
+        expectedException.expect(CancellationException.class);
+        job.join();
     }
 
     private void joinAndExpectCancellation(Job job) {
