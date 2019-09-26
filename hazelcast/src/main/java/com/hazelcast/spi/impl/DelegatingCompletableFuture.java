@@ -26,6 +26,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -123,6 +124,11 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
                 throw AbstractInvocationFuture.wrapOrPeel(cause);
             }
         }
+    }
+
+    // public for testing
+    public Future getDelegate() {
+        return future;
     }
 
     // Overriding this method means you also have to override getNow
