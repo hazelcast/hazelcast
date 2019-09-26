@@ -811,7 +811,7 @@
                 <hz:recently-active-quorum heartbeat-tolerance-millis="5123"/>
             </hz:quorum>
 
-            <hz:hot-restart-persistence enabled="true"
+            <hz:hot-restart-persistence enabled="false"
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"
                                         auto-remove-stale-data="false"
@@ -837,7 +837,7 @@
                 <hz:session-heartbeat-interval-seconds>3</hz:session-heartbeat-interval-seconds>
                 <hz:missing-cp-member-auto-removal-seconds>120</hz:missing-cp-member-auto-removal-seconds>
                 <hz:fail-on-indeterminate-operation-state>true</hz:fail-on-indeterminate-operation-state>
-                <hz:persistence-enabled>true</hz:persistence-enabled>
+                <hz:persistence-enabled>false</hz:persistence-enabled>
                 <hz:base-dir>/custom-dir</hz:base-dir>
                 <hz:data-load-timeout-seconds>30</hz:data-load-timeout-seconds>
                 <hz:raft-algorithm>

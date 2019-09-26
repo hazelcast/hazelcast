@@ -1322,7 +1322,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         File hotBackupDir = new File("/mnt/hot-backup/");
         HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
 
-        assertTrue(hotRestartPersistenceConfig.isEnabled());
+        assertFalse(hotRestartPersistenceConfig.isEnabled());
         assertEquals(dir.getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
         assertEquals(hotBackupDir.getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
@@ -1460,7 +1460,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
         assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
-        assertTrue(cpSubsystemConfig.isPersistenceEnabled());
+        assertFalse(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/custom-dir"), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
