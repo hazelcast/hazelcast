@@ -29,18 +29,6 @@ import java.util.UUID;
  * Cluster-wide unique query ID.
  */
 public class QueryId implements DataSerializable {
-    /**
-     * Create new query ID for the given member.
-     *
-     * @param memberId Member ID.
-     * @return Query ID.
-     */
-    public static QueryId create(UUID memberId) {
-        UUID qryId = UuidUtil.newUnsecureUUID();
-
-        return new QueryId(memberId, qryId.getLeastSignificantBits(), qryId.getLeastSignificantBits());
-    }
-
     /** Member ID. */
     private UUID memberId;
 
@@ -58,6 +46,18 @@ public class QueryId implements DataSerializable {
         this.memberId = memberId;
         this.localHigh = localHigh;
         this.localLow = localLow;
+    }
+
+    /**
+     * Create new query ID for the given member.
+     *
+     * @param memberId Member ID.
+     * @return Query ID.
+     */
+    public static QueryId create(UUID memberId) {
+        UUID qryId = UuidUtil.newUnsecureUUID();
+
+        return new QueryId(memberId, qryId.getLeastSignificantBits(), qryId.getLeastSignificantBits());
     }
 
     private UUID getLocalId() {
@@ -80,16 +80,18 @@ public class QueryId implements DataSerializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
+        }
 
-        if (o == null || getClass() != o.getClass())
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
 
-        QueryId other = (QueryId)o;
+        QueryId other = (QueryId) o;
 
-        return localHigh == other.localHigh && localLow == other.localLow &&
-            memberId != null ? memberId.equals(other.memberId) : other.memberId == null;
+        return localHigh == other.localHigh && localLow == other.localLow
+            && memberId != null ? memberId.equals(other.memberId) : other.memberId == null;
     }
 
     @Override

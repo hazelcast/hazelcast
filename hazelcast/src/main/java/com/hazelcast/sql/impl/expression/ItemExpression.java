@@ -44,10 +44,11 @@ public class ItemExpression<T> extends BiCallExpressionWithType<T> {
     public T eval(QueryContext ctx, Row row) {
         Object container = operand1.eval(ctx, row);
 
-        if (container == null)
+        if (container == null) {
             return null;
-        else if (containerType == null)
+        } else if (containerType == null) {
             containerType = resolveContainerType(container);
+        }
 
         int index = getIndex(ctx, row);
 
@@ -60,7 +61,7 @@ public class ItemExpression<T> extends BiCallExpressionWithType<T> {
                 break;
 
             case LIST:
-                res = ((List)container).get(index);
+                res = ((List) container).get(index);
 
                 break;
 
@@ -68,28 +69,31 @@ public class ItemExpression<T> extends BiCallExpressionWithType<T> {
                 throw new HazelcastSqlException(-1, "Unsupported container type: " + container.getClass());
         }
 
-        if (res != null && resType == null)
+        if (res != null && resType == null) {
             resType = DataType.resolveType(res);
+        }
 
-        return (T)res;
+        return (T) res;
     }
 
     private int getIndex(QueryContext ctx, Row row) {
         Object indexValue = operand2.eval(ctx, row);
 
-        if (indexValue == null)
+        if (indexValue == null) {
             throw new HazelcastSqlException(-1, "Index cannot be null.");
+        }
 
         return operand2.getType().getConverter().asInt(indexValue);
     }
 
     private static ContainerType resolveContainerType(Object container) {
-        if (container instanceof List)
+        if (container instanceof List) {
             return ContainerType.LIST;
-        else if (container.getClass().isArray())
+        } else if (container.getClass().isArray()) {
             return ContainerType.ARRAY;
-        else
+        } else {
             throw new HazelcastSqlException(-1, "Unsupported container type: " + container.getClass());
+        }
     }
 
     @Override

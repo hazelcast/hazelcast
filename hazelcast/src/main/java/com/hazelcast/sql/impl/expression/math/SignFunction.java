@@ -41,8 +41,9 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
     public Number eval(QueryContext ctx, Row row) {
         Object operandValue = operand.eval(ctx, row);
 
-        if (operandValue == null)
+        if (operandValue == null) {
             return null;
+        }
 
         if (resType == null) {
             operandType = operand.getType();
@@ -60,8 +61,9 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
      * @return Result type.
      */
     private DataType inferResultType(DataType operandType) {
-        if (!operandType.isCanConvertToNumeric())
+        if (!operandType.isCanConvertToNumeric()) {
             throw new HazelcastSqlException(-1, "Operand is not numeric: " + operandType);
+        }
 
         switch (operandType.getType()) {
             case TINYINT:
@@ -100,9 +102,10 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
 
             case DOUBLE:
                 return Math.signum(operandConverter.asDouble(operandValue));
-        }
 
-        throw new HazelcastSqlException(-1, "Unexpected type: " + resType);
+            default:
+                throw new HazelcastSqlException(-1, "Unexpected type: " + resType);
+        }
     }
 
     @Override

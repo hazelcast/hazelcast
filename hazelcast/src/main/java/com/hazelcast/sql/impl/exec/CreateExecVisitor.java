@@ -51,8 +51,11 @@ package com.hazelcast.sql.impl.exec;
  * Visitor which builds an executor for every observed physical node.
  */
 public class CreateExecVisitor implements PhysicalNodeVisitor {
-     /** Node engine. */
-     private final NodeEngine nodeEngine;
+    // TODO: Understand how to calculate it properly. It should not be hardcoded.
+    private static final int OUTBOX_BATCH_SIZE = 1024;
+
+    /** Node engine. */
+    private final NodeEngine nodeEngine;
 
     /** Operation. */
     private final QueryExecuteOperation operation;
@@ -166,8 +169,6 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         int idx = 0;
 
         for (UUID receiveMemberId : receiveFragmentMemberIds) {
-            // TODO: Remove magic number for batch size.
-            //noinspection CheckStyle
             Outbox outbox = new Outbox(
                 nodeEngine,
                 operation.getQueryId(),
@@ -175,7 +176,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
                 senderFragmentDeploymentOffset,
                 receiveMemberId,
                 receiveFragmentDeploymentOffset,
-                1024
+                OUTBOX_BATCH_SIZE
             );
 
             sendOutboxes[idx++] = outbox;

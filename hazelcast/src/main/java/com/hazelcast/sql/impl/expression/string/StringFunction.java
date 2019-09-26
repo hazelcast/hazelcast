@@ -54,15 +54,17 @@ public class StringFunction<T> extends UniCallExpression<T> {
     public T eval(QueryContext ctx, Row row) {
         Object operandValue = operand.eval(ctx, row);
 
-        if (operandValue == null)
+        if (operandValue == null) {
             return null;
+        }
 
-        if (operandType == null)
+        if (operandType == null) {
             operandType = operand.getType();
+        }
 
         String operandValueString = operandType.getConverter().asVarchar(operandValue);
 
-        return (T)eval0(operandValueString);
+        return (T) eval0(operandValueString);
     }
 
     /**
@@ -100,8 +102,9 @@ public class StringFunction<T> extends UniCallExpression<T> {
      * @return Result.
      */
     private static String doCapitalize(String operandValue) {
-        if (operandValue.length() == 0)
+        if (operandValue.length() == 0) {
             return operandValue;
+        }
 
         int strLen = operandValue.length();
 
@@ -116,14 +119,13 @@ public class StringFunction<T> extends UniCallExpression<T> {
                 res.append(c);
 
                 capitalizeNext = true;
-            }
-            else if (capitalizeNext) {
+            } else if (capitalizeNext) {
                 res.append(Character.toTitleCase(c));
 
                 capitalizeNext = false;
-            }
-            else
+            } else {
                 res.append(c);
+            }
         }
 
         return res.toString();

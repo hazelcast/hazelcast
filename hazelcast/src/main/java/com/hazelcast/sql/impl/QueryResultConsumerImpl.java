@@ -76,10 +76,11 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
             int available = batch.getRowCount() - startPos;
             int remaining = maxSize - rows.size();
 
-            int toConsume = available > remaining ? remaining : available;
+            int toConsume = Math.min(available, remaining);
 
-            for (int i = startPos; i < toConsume; i++)
+            for (int i = startPos; i < toConsume; i++) {
                 rows.add(batch.getRow(i));
+            }
 
             rootScheduled = false;
 
@@ -94,8 +95,9 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
         synchronized (mux) {
             int remaining = maxSize - rows.size();
 
-            if (remaining == 0)
+            if (remaining == 0) {
                 return false;
+            }
 
             boolean added = false;
             boolean consumed = true;
@@ -114,8 +116,9 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
 
             rootScheduled = false;
 
-            if (added)
+            if (added) {
                 mux.notifyAll();
+            }
 
             return consumed;
         }
@@ -132,8 +135,9 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
 
     @Override
     public Iterator<SqlRow> iterator() {
-        if (iter != null)
+        if (iter != null) {
             throw new IllegalStateException("Iterator can be opened only once.");
+        }
 
         iter = new InternalIterator();
 
@@ -162,15 +166,17 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
 
             currentRow = null;
 
-            if (res == null)
+            if (res == null) {
                 throw new NoSuchElementException();
+            }
 
             return res;
         }
 
         private void advanceIfNeeded() {
-            if (currentRow != null)
+            if (currentRow != null) {
                 return;
+            }
 
             currentRow = advance0();
         }
@@ -180,12 +186,13 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
                 while (true) {
                     Row row = rows.poll();
 
-                    if (row != null)
+                    if (row != null) {
                         return row;
+                    }
 
-                    if (done)
+                    if (done) {
                         return null;
-                    else {
+                    } else {
                         // Schedule root advance if needed.
                         if (root != null && !rootScheduled) {
                             root.reschedule();
@@ -195,8 +202,7 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
 
                         try {
                             mux.wait();
-                        }
-                        catch (InterruptedException e) {
+                        } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
 
                             throw new RuntimeException("Thread was interrupted while waiting for more results.", e);

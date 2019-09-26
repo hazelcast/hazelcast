@@ -41,23 +41,26 @@ public class AbsFunction extends UniCallExpressionWithType<Number> {
     public Number eval(QueryContext ctx, Row row) {
         Object operandValue = operand.eval(ctx, row);
 
-        if (operandValue == null)
+        if (operandValue == null) {
             return null;
+        }
 
         if (resType == null) {
             DataType type = operand.getType();
 
-            if (!type.isCanConvertToNumeric())
+            if (!type.isCanConvertToNumeric()) {
                 throw new HazelcastSqlException(-1, "Operand is not numeric: " + operandValue);
+            }
 
-            if (type == DataType.BIT)
+            if (type == DataType.BIT) {
                 resType = DataType.TINYINT;
-            if (type == DataType.DECIMAL_SCALE_0_BIG_INTEGER)
+            } else if (type == DataType.DECIMAL_SCALE_0_BIG_INTEGER) {
                 resType = DataType.DECIMAL_SCALE_0_BIG_DECIMAL;
-            else if (type == DataType.VARCHAR)
+            } else if (type == DataType.VARCHAR) {
                 resType = DataType.DECIMAL;
-            else
+            } else {
                 resType = type;
+            }
 
             operandType = type;
         }
@@ -78,10 +81,10 @@ public class AbsFunction extends UniCallExpressionWithType<Number> {
 
         switch (resType.getType()) {
             case TINYINT:
-                return (byte)Math.abs(operandConverter.asTinyInt(operand));
+                return (byte) Math.abs(operandConverter.asTinyInt(operand));
 
             case SMALLINT:
-                return (short)Math.abs(operandConverter.asSmallInt(operand));
+                return (short) Math.abs(operandConverter.asSmallInt(operand));
 
             case INT:
                 return Math.abs(operandConverter.asInt(operand));
@@ -97,9 +100,10 @@ public class AbsFunction extends UniCallExpressionWithType<Number> {
 
             case DOUBLE:
                 return Math.abs(operandConverter.asDouble(operand));
-        }
 
-        throw new HazelcastSqlException(-1, "Unexpected result type: " + resType);
+            default:
+                throw new HazelcastSqlException(-1, "Unexpected result type: " + resType);
+        }
     }
 
     @Override

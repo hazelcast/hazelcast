@@ -46,24 +46,26 @@ public class ConcatFunction extends BiCallExpression<String> {
         Object operand1Value = operand1.eval(ctx, row);
         Object operand2Value = operand2.eval(ctx, row);
 
-        if (operand1Value != null && operand1Type == null)
+        if (operand1Value != null && operand1Type == null) {
             operand1Type = operand1.getType();
+        }
 
-        if (operand2Value != null && operand2Type == null)
+        if (operand2Value != null && operand2Type == null) {
             operand2Type = operand2.getType();
+        }
 
         if (operand1Value == null) {
-            if (operand2Value == null)
+            if (operand2Value == null) {
                 return "";
-            else
+            } else {
                 return operand2Type.getConverter().asVarchar(operand2Value);
-        }
-        else {
-            if (operand2Value == null)
+            }
+        } else {
+            if (operand2Value == null) {
                 return operand1Type.getConverter().asVarchar(operand1Value);
-            else {
-                return operand1Type.getConverter().asVarchar(operand1Value) +
-                    operand2Type.getConverter().asVarchar(operand2Value);
+            } else {
+                return operand1Type.getConverter().asVarchar(operand1Value)
+                    + operand2Type.getConverter().asVarchar(operand2Value);
             }
         }
     }

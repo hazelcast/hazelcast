@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.type.accessor.SqlYearMonthIntervalConverter;
 
 import java.math.BigDecimal;
 
+import static com.hazelcast.sql.impl.expression.time.TemporalUtils.NANO_IN_SECONDS;
 import static com.hazelcast.sql.impl.type.DataType.PRECISION_UNLIMITED;
 import static com.hazelcast.sql.impl.type.DataType.SCALE_UNLIMITED;
 
@@ -59,13 +60,15 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
         // Calculate child operands with fail-fast NULL semantics.
         Object operand1Value = operand1.eval(ctx, row);
 
-        if (operand1Value == null)
+        if (operand1Value == null) {
             return null;
+        }
 
         Object operand2Value = operand2.eval(ctx, row);
 
-        if (operand2Value == null)
+        if (operand2Value == null) {
             return null;
+        }
 
         // Prepare result type if needed.
         if (resType == null) {
@@ -79,10 +82,10 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
         }
 
         // Execute.
-        return (T)doMultiply(operand1Value, operand1Type, operand2Value, operand2Type, resType);
+        return (T) doMultiply(operand1Value, operand1Type, operand2Value, operand2Type, resType);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:AvoidNestedBlocks"})
     private static Object doMultiply(
         Object operand1,
         DataType operand1Type,
@@ -95,10 +98,10 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
 
         switch (resType.getType()) {
             case TINYINT:
-                return (byte)(operand1Converter.asTinyInt(operand1) * operand2Converter.asTinyInt(operand2));
+                return (byte) (operand1Converter.asTinyInt(operand1) * operand2Converter.asTinyInt(operand2));
 
             case SMALLINT:
-                return (short)(operand1Converter.asSmallInt(operand1) * operand2Converter.asSmallInt(operand2));
+                return (short) (operand1Converter.asSmallInt(operand1) * operand2Converter.asSmallInt(operand2));
 
             case INT:
                 return (operand1Converter.asInt(operand1) * operand2Converter.asInt(operand2));
@@ -123,11 +126,10 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
                 int multiplier;
 
                 if (operand1Converter == SqlYearMonthIntervalConverter.INSTANCE) {
-                    interval = (SqlYearMonthInterval)operand1;
+                    interval = (SqlYearMonthInterval) operand1;
                     multiplier = operand2Converter.asInt(operand2);
-                }
-                else {
-                    interval = (SqlYearMonthInterval)operand2;
+                } else {
+                    interval = (SqlYearMonthInterval) operand2;
                     multiplier = operand1Converter.asInt(operand1);
                 }
 
@@ -139,22 +141,21 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
                 long multiplier;
 
                 if (operand1Converter == SqlDaySecondIntervalConverter.INSTANCE) {
-                    interval = (SqlDaySecondInterval)operand1;
+                    interval = (SqlDaySecondInterval) operand1;
                     multiplier = operand2Converter.asBigInt(operand2);
-                }
-                else {
-                    interval = (SqlDaySecondInterval)operand2;
+                } else {
+                    interval = (SqlDaySecondInterval) operand2;
                     multiplier = operand1Converter.asBigInt(operand1);
                 }
 
-                if (interval.getNanos() == 0)
+                if (interval.getNanos() == 0) {
                     return new SqlDaySecondInterval(interval.getSeconds() * multiplier, 0);
-                else {
+                } else {
                     long valueMultiplied = interval.getSeconds() * multiplier;
                     long nanosMultiplied = interval.getNanos() * multiplier;
 
-                    long newValue = valueMultiplied + nanosMultiplied / 1_000_000_000;
-                    int newNanos = (int)(nanosMultiplied % 1_000_000_000);
+                    long newValue = valueMultiplied + nanosMultiplied / NANO_IN_SECONDS;
+                    int newNanos = (int) (nanosMultiplied % NANO_IN_SECONDS);
 
                     return new SqlDaySecondInterval(newValue, newNanos);
                 }
@@ -176,40 +177,50 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
      * @param type2 Type 2.
      * @return Result type.
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private static DataType inferResultType(DataType type1, DataType type2) {
-        if (type1 == DataType.INTERVAL_DAY_SECOND || type2 == DataType.INTERVAL_DAY_SECOND)
+        if (type1 == DataType.INTERVAL_DAY_SECOND || type2 == DataType.INTERVAL_DAY_SECOND) {
             return DataType.INTERVAL_DAY_SECOND;
+        }
 
-        if (type1 == DataType.INTERVAL_YEAR_MONTH || type2 == DataType.INTERVAL_YEAR_MONTH)
+        if (type1 == DataType.INTERVAL_YEAR_MONTH || type2 == DataType.INTERVAL_YEAR_MONTH) {
             return DataType.INTERVAL_YEAR_MONTH;
+        }
 
-        if (!type1.isCanConvertToNumeric())
+        if (!type1.isCanConvertToNumeric()) {
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+        }
 
-        if (!type2.isCanConvertToNumeric())
+        if (!type2.isCanConvertToNumeric()) {
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+        }
 
-        if (type1 == DataType.VARCHAR)
+        if (type1 == DataType.VARCHAR) {
             type1 = DataType.DECIMAL;
+        }
 
-        if (type2 == DataType.VARCHAR)
+        if (type2 == DataType.VARCHAR) {
             type2 = DataType.DECIMAL;
+        }
 
         // Precision is expanded to accommodate all numbers: 99 * 99 = 9801;
-        int precision = type1.getPrecision() == PRECISION_UNLIMITED || type2.getPrecision() == PRECISION_UNLIMITED ?
-            PRECISION_UNLIMITED : type1.getPrecision() + type2.getPrecision();
+        int precision = type1.getPrecision() == PRECISION_UNLIMITED || type2.getPrecision() == PRECISION_UNLIMITED
+            ? PRECISION_UNLIMITED : type1.getPrecision() + type2.getPrecision();
 
         int scale = type1.getScale() == SCALE_UNLIMITED || type2.getScale() == SCALE_UNLIMITED ? SCALE_UNLIMITED : 0;
 
-        if (scale == 0)
+        if (scale == 0) {
             return DataType.integerType(precision);
-        else {
+        } else {
             DataType biggerType = type1.getPrecedence() >= type2.getPrecedence() ? type1 : type2;
 
-            if (biggerType == DataType.REAL)
-                return DataType.DOUBLE; // REAL -> DOUBLE
-            else
-                return biggerType;      // DECIMAL -> DECIMAL, DOUBLE -> DOUBLE
+            if (biggerType == DataType.REAL) {
+                // REAL -> DOUBLE
+                return DataType.DOUBLE;
+            } else {
+                // DECIMAL -> DECIMAL, DOUBLE -> DOUBLE
+                return biggerType;
+            }
         }
     }
 }

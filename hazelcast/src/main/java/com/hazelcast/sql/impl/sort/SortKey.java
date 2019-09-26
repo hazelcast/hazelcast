@@ -49,11 +49,11 @@ public class SortKey {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof SortKey) {
-            SortKey other = (SortKey)obj;
+            SortKey other = (SortKey) obj;
 
-            return other.idx == ((SortKey)obj).idx;
-        }
-        else
+            return other.idx == ((SortKey) obj).idx;
+        } else {
             return false;
+        }
     }
 }

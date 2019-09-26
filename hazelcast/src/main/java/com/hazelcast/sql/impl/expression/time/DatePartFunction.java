@@ -55,8 +55,9 @@ public class DatePartFunction extends UniCallExpression<Integer> {
     public Integer eval(QueryContext ctx, Row row) {
         Object operandValue = operand.eval(ctx, row);
 
-        if (operandValue == null)
+        if (operandValue == null) {
             return null;
+        }
 
         if (operandType == null) {
             DataType type = operand.getType();
@@ -79,6 +80,7 @@ public class DatePartFunction extends UniCallExpression<Integer> {
         return doDatePart(unit, operandValue, operandType);
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:MagicNumber"})
     private static int doDatePart(DatePartUnit unit, Object operandValue, DataType operandType) {
         OffsetDateTime dateTime;
 
@@ -90,9 +92,9 @@ public class DatePartFunction extends UniCallExpression<Integer> {
             Converter converter = parsedOperandValue.getType().getConverter();
 
             dateTime = converter.asTimestampWithTimezone(parsedOperandValue.getValue());
-        }
-        else
+        } else {
             dateTime = operandType.getConverter().asTimestampWithTimezone(operandValue);
+        }
 
         switch (unit) {
             case YEAR:
@@ -126,9 +128,10 @@ public class DatePartFunction extends UniCallExpression<Integer> {
 
             case SECOND:
                 return dateTime.getSecond();
-        }
 
-        throw new HazelcastSqlException(-1, "Unsupported unit: " + unit);
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported unit: " + unit);
+        }
     }
 
     @Override

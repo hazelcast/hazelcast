@@ -82,8 +82,9 @@ public class QueryContext {
     }
 
     public Object getArgument(int idx) {
-        if (arguments == null || idx >= arguments.size())
+        if (arguments == null || idx >= arguments.size()) {
             throw new IllegalArgumentException("Argument not found: " + idx);
+        }
 
         return arguments.get(idx);
     }
@@ -94,16 +95,18 @@ public class QueryContext {
     public Extractors getExtractors() {
         Extractors res = extractors;
 
-        if (res != null)
+        if (res != null) {
             return res;
+        }
 
-        InternalSerializationService ss = (InternalSerializationService)nodeEngine.getSerializationService();
+        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
         res = Extractors.newBuilder(ss).setClassLoader(nodeEngine.getConfigClassLoader()).build();
 
-        if (EXTRACTORS_UPDATER.compareAndSet(this, null, res))
+        if (EXTRACTORS_UPDATER.compareAndSet(this, null, res)) {
             return res;
-        else
+        } else {
             return extractors;
+        }
     }
 }

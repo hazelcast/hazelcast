@@ -45,10 +45,11 @@ public class JoinRow implements Row, DataSerializable {
     public Object getColumn(int idx) {
         int leftColumnCount = left.getColumnCount();
 
-        if (idx < leftColumnCount)
+        if (idx < leftColumnCount) {
             return left.getColumn(idx);
-        else
+        } else {
             return right.getColumn(idx - leftColumnCount);
+        }
     }
 
     @Override
@@ -73,8 +74,9 @@ public class JoinRow implements Row, DataSerializable {
         StringBuilder res = new StringBuilder("JoinRow{");
 
         for (int i = 0; i < getColumnCount(); i++) {
-            if (i != 0)
+            if (i != 0) {
                 res.append(", ");
+            }
 
             res.append(getColumn(i));
         }

@@ -56,26 +56,28 @@ public class MathBiFunction extends BiCallExpression<Double> {
     public Double eval(QueryContext ctx, Row row) {
         Object operand1Value = operand1.eval(ctx, row);
 
-        if (operand1Value == null)
+        if (operand1Value == null) {
             return null;
-        else if (operandType1 == null) {
+        } else if (operandType1 == null) {
             DataType type = operand1.getType();
 
-            if (!type.isCanConvertToNumeric())
+            if (!type.isCanConvertToNumeric()) {
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric: " + type);
+            }
 
             operandType1 = type;
         }
 
         Object operand2Value = operand2.eval(ctx, row);
 
-        if (operand2Value == null)
+        if (operand2Value == null) {
             return null;
-        else if (operandType2 == null) {
+        } else if (operandType2 == null) {
             DataType type = operand2.getType();
 
-            if (!type.isCanConvertToNumeric())
+            if (!type.isCanConvertToNumeric()) {
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric: " + type);
+            }
 
             operandType2 = type;
         }
@@ -89,9 +91,10 @@ public class MathBiFunction extends BiCallExpression<Double> {
 
             case CallOperator.POWER:
                 return Math.pow(operand1ValueDouble, operand2ValueDouble);
-        }
 
-        throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+        }
     }
 
     @Override

@@ -56,6 +56,7 @@ public class RandomFunction extends UniCallExpression<Double> {
      * @param row Row.
      * @return Random generator.
      */
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     private Random getRandom(QueryContext ctx, Row row) {
         Expression seedExp = operand;
 
@@ -66,9 +67,10 @@ public class RandomFunction extends UniCallExpression<Double> {
                 if (seedType == null) {
                     DataType type = seedExp.getType();
 
-                    if (!type.isCanConvertToNumeric())
+                    if (!type.isCanConvertToNumeric()) {
                         throw new HazelcastSqlException(-1, "Seed is not numeric: " + seedExp);
-                    
+                    }
+
                     seedType = type;
                 }
 

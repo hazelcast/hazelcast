@@ -28,6 +28,9 @@
     <artifactId>hazelcast-sql</artifactId>
 
     <properties>
+        <!-- needed for CheckStyle -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
+
         <relocation.root>com.hazelcast.sql</relocation.root>
     </properties>
 

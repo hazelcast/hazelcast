@@ -54,36 +54,43 @@ public class ReplaceFunction extends TriCallExpression<String> {
         // Get source operand.
         Object sourceValue = operand1.eval(ctx, row);
 
-        if (sourceValue == null)
+        if (sourceValue == null) {
             return null;
+        }
 
-        if (sourceType == null)
+        if (sourceType == null) {
             sourceType = operand1.getType();
+        }
 
         source = sourceType.getConverter().asVarchar(sourceValue);
 
         // Get search operand.
         Object searchValue = operand2.eval(ctx, row);
 
-        if (searchValue == null)
+        if (searchValue == null) {
             return null;
+        }
 
-        if (searchType == null)
+        if (searchType == null) {
             searchType = operand2.getType();
+        }
 
         search = searchType.getConverter().asVarchar(searchValue);
 
-        if (search.isEmpty())
+        if (search.isEmpty()) {
             throw new HazelcastSqlException(-1, "Invalid operand: search cannot be empty.");
+        }
 
         // Get replacement operand.
         Object replacementValue = operand3.eval(ctx, row);
 
-        if (replacementValue == null)
+        if (replacementValue == null) {
             return null;
+        }
 
-        if (replacementType == null)
+        if (replacementType == null) {
             replacementType = operand3.getType();
+        }
 
         replacement = replacementType.getConverter().asVarchar(replacementValue);
 

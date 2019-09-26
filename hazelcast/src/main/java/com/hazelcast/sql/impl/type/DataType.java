@@ -279,15 +279,30 @@ public class DataType {
     );
 
     /** Common cached integer data types. */
-    private static DataType[] INTEGER_TYPES = new DataType[PRECISION_BIGINT];
+    private static final DataType[] INTEGER_TYPES = new DataType[PRECISION_BIGINT];
+
+    /** Underlying generic type. */
+    private final GenericType type;
+
+    /** Converter. */
+    private final Converter converter;
+
+    /** Precision. */
+    private final int precision;
+
+    /** Scale. */
+    private final int scale;
+
+    /** Precedence */
+    private final int precedence;
 
     static {
         for (int i = 1; i < PRECISION_BIGINT; i++) {
             DataType type;
 
-            if (i == PRECISION_BIT)
+            if (i == PRECISION_BIT) {
                 type = DataType.BIT;
-            else if (i < PRECISION_TINYINT) {
+            } else if (i < PRECISION_TINYINT) {
                 type = new DataType(
                     TINYINT.type,
                     TINYINT.converter,
@@ -295,10 +310,9 @@ public class DataType {
                     TINYINT.scale,
                     TINYINT.precedence
                 );
-            }
-            else if (i == PRECISION_TINYINT)
+            } else if (i == PRECISION_TINYINT) {
                 type = DataType.TINYINT;
-            else if (i < PRECISION_SMALLINT) {
+            } else if (i < PRECISION_SMALLINT) {
                 type = new DataType(
                     SMALLINT.type,
                     SMALLINT.converter,
@@ -306,10 +320,9 @@ public class DataType {
                     SMALLINT.scale,
                     SMALLINT.precedence
                 );
-            }
-            else if (i == PRECISION_SMALLINT)
+            } else if (i == PRECISION_SMALLINT) {
                 type = DataType.SMALLINT;
-            else if (i < PRECISION_INT) {
+            } else if (i < PRECISION_INT) {
                 type = new DataType(
                     INT.type,
                     INT.converter,
@@ -317,10 +330,9 @@ public class DataType {
                     INT.scale,
                     INT.precedence
                 );
-            }
-            else if (i == PRECISION_INT)
+            } else if (i == PRECISION_INT) {
                 type = DataType.INT;
-            else {
+            } else {
                 type = new DataType(
                     INT.type,
                     INT.converter,
@@ -334,15 +346,25 @@ public class DataType {
         }
     }
 
+    public DataType(GenericType type, Converter converter, int precision, int scale, int precedence) {
+        this.type = type;
+        this.converter = converter;
+        this.precision = precision;
+        this.scale = scale;
+        this.precedence = precedence;
+    }
+
     /**
      * Get type of the given object.
      *
      * @param obj Object.
      * @return Object's type.
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     public static DataType resolveType(Object obj) {
-        if (obj == null)
+        if (obj == null) {
             return LATE;
+        }
 
         Converter converter = Converters.getConverter(obj);
 
@@ -365,10 +387,11 @@ public class DataType {
                 return DataType.BIGINT;
 
             case DECIMAL:
-                if (converter == BigDecimalConverter.INSTANCE)
+                if (converter == BigDecimalConverter.INSTANCE) {
                     return DataType.DECIMAL;
-                else if (converter == BigIntegerConverter.INSTANCE)
+                } else if (converter == BigIntegerConverter.INSTANCE) {
                     return DataType.DECIMAL_SCALE_0_BIG_INTEGER;
+                }
 
                 break;
 
@@ -391,12 +414,13 @@ public class DataType {
                 return DataType.TIMESTAMP;
 
             case TIMESTAMP_WITH_TIMEZONE:
-                if (converter == DateConverter.INSTANCE)
+                if (converter == DateConverter.INSTANCE) {
                     return DataType.TIMESTAMP_WITH_TIMEZONE_DATE;
-                else if (converter == CalendarConverter.INSTANCE)
+                } else if (converter == CalendarConverter.INSTANCE) {
                     return DataType.TIMESTAMP_WITH_TIMEZONE_CALENDAR;
-                else if (converter == OffsetDateTimeConverter.INSTANCE)
+                } else if (converter == OffsetDateTimeConverter.INSTANCE) {
                     return DataType.TIMESTAMP_WITH_TIMEZONE_OFFSET_DATE_TIME;
+                }
 
                 break;
 
@@ -408,6 +432,9 @@ public class DataType {
 
             case OBJECT:
                 return DataType.OBJECT;
+
+            default:
+                break;
         }
 
         throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported class: " + obj.getClass().getName());
@@ -422,12 +449,13 @@ public class DataType {
     public static DataType integerType(int precision) {
         assert precision != 0;
 
-        if (precision == PRECISION_UNLIMITED)
+        if (precision == PRECISION_UNLIMITED) {
             return DataType.DECIMAL_SCALE_0_BIG_DECIMAL;
-        else if (precision < PRECISION_BIGINT)
+        } else if (precision < PRECISION_BIGINT) {
             return INTEGER_TYPES[precision];
-        else
+        } else {
             return DECIMAL_SCALE_0_BIG_DECIMAL;
+        }
     }
 
     /**
@@ -438,29 +466,6 @@ public class DataType {
      */
     public static DataType notNullOrLate(DataType type) {
         return type != null ? type : DataType.LATE;
-    }
-
-    /** Underlying generic type. */
-    private final GenericType type;
-
-    /** Converter. */
-    private final Converter converter;
-
-    /** Precision. */
-    private final int precision;
-
-    /** Scale. */
-    private final int scale;
-
-    /** Precedence */
-    private final int precedence;
-
-    public DataType(GenericType type, Converter converter, int precision, int scale, int precedence) {
-        this.type = type;
-        this.converter = converter;
-        this.precision = precision;
-        this.scale = scale;
-        this.precedence = precedence;
     }
 
     public GenericType getType() {
@@ -487,9 +492,10 @@ public class DataType {
         if (val != null) {
             DataType other = resolveType(val);
 
-            if (converter != other.converter)
-                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Type mismatch {expected=" + this +
-                    ", actual=" + other + '}');
+            if (converter != other.converter) {
+                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Type mismatch {expected=" + this
+                    + ", actual=" + other + '}');
+            }
         }
     }
 

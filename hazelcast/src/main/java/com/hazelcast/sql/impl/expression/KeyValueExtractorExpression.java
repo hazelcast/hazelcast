@@ -50,14 +50,15 @@ public class KeyValueExtractorExpression<T> implements Expression<T> {
     public T eval(QueryContext ctx, Row row) {
         assert row instanceof KeyValueRow;
 
-        KeyValueRow row0 = (KeyValueRow)row;
+        KeyValueRow row0 = (KeyValueRow) row;
 
-        Object res = (T)row0.extract(path);
+        T res = (T) row0.extract(path);
 
-        if (res != null && type == null)
+        if (res != null && type == null) {
             type = DataType.resolveType(res);
+        }
 
-        return (T)res;
+        return res;
     }
 
     @Override

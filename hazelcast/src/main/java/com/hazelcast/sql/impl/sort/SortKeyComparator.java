@@ -40,18 +40,20 @@ public class SortKeyComparator implements Comparator<SortKey> {
             Object item1 = o1.getKey().get(i);
             Object item2 = o2.getKey().get(i);
 
-            Comparable item1Comp = (Comparable)item1;
-            Comparable item2Comp = (Comparable)item2;
+            Comparable item1Comp = (Comparable) item1;
+            Comparable item2Comp = (Comparable) item2;
 
             //noinspection unchecked
             res = item1Comp.compareTo(item2Comp);
 
-            if (!asc)
+            if (!asc) {
                 res = -res;
+            }
 
             if (res != 0) {
-                if (!asc)
+                if (!asc) {
                     res = -res;
+                }
 
                 return res;
             }

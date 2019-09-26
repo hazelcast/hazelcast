@@ -53,10 +53,11 @@ public class ExtractorExpression<T> implements Expression<T> {
 
         Object res = ctx.getExtractors().extract(operandValue, path, null);
 
-        if (res != null && type == null)
+        if (res != null && type == null) {
             type = DataType.resolveType(res);
+        }
 
-        return (T)res;
+        return (T) res;
     }
 
     @Override

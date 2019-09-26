@@ -70,23 +70,25 @@ public class IsPredicate extends UniCallExpression<Boolean> {
 
             case CallOperator.IS_NOT_TRUE:
                 return isTrueFalse(operandValue, operand.getType(), false, true);
-        }
 
-        return operandValue != null;
+            default:
+                return operandValue != null;
+        }
     }
 
     @SuppressWarnings("SimplifiableConditionalExpression")
     private boolean isTrueFalse(Object operand, DataType type, boolean isFalse, boolean isNot) {
-        Boolean operand0 = (Boolean)operand;
+        Boolean operand0 = (Boolean) operand;
 
         boolean res;
 
-        if (operand0 == null)
+        if (operand0 == null) {
             res = false;
-        else {
+        } else {
             if (operandChecked) {
-                if (type != DataType.BIT)
+                if (type != DataType.BIT) {
                     throw new HazelcastSqlException(-1, "Operand is not BIT.");
+                }
 
                 operandChecked = true;
             }

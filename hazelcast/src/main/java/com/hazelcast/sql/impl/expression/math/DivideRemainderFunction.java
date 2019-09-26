@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import static com.hazelcast.sql.impl.expression.time.TemporalUtils.NANO_IN_SECONDS;
+
 /**
  * Divide and remainder functions.
  */
@@ -65,13 +67,15 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
         // Calculate child operands with fail-fast NULL semantics.
         Object operand1Value = operand1.eval(ctx, row);
 
-        if (operand1Value == null)
+        if (operand1Value == null) {
             return null;
+        }
 
         Object operand2Value = operand2.eval(ctx, row);
 
-        if (operand2Value == null)
+        if (operand2Value == null) {
             return null;
+        }
 
         // Prepare result type if needed.
         if (resType == null) {
@@ -85,13 +89,15 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
         }
 
         // Execute.
-        if (remainder)
-            return (T)doRemainder(operand1Value, operand1Type, operand2Value, operand2Type, resType);
-        else
-            return (T)doDivide(operand1Value, operand1Type, operand2Value, operand2Type, resType);
+        if (remainder) {
+            return (T) doRemainder(operand1Value, operand1Type, operand2Value, operand2Type, resType);
+        } else {
+            return (T) doDivide(operand1Value, operand1Type, operand2Value, operand2Type, resType);
+        }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength",
+        "checkstyle:ReturnCount", "checkstyle:AvoidNestedBlocks"})
     private static Object doDivide(
         Object operand1,
         DataType operand1Type,
@@ -105,10 +111,10 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
         try {
             switch (resType.getType()) {
                 case TINYINT:
-                    return (byte)(operand1Converter.asTinyInt(operand1) / operand2Converter.asTinyInt(operand2));
+                    return (byte) (operand1Converter.asTinyInt(operand1) / operand2Converter.asTinyInt(operand2));
 
                 case SMALLINT:
-                    return (short)(operand1Converter.asSmallInt(operand1) / operand2Converter.asSmallInt(operand2));
+                    return (short) (operand1Converter.asSmallInt(operand1) / operand2Converter.asSmallInt(operand2));
 
                 case INT:
                     return operand1Converter.asInt(operand1) / operand2Converter.asInt(operand2);
@@ -125,8 +131,9 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                 case REAL: {
                     float res = operand1Converter.asReal(operand1) / operand2Converter.asReal(operand2);
 
-                    if (Float.isInfinite(res))
+                    if (Float.isInfinite(res)) {
                         throw new HazelcastSqlException(-1, "Division by zero.");
+                    }
 
                     return res;
                 }
@@ -134,8 +141,9 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                 case DOUBLE: {
                     double res = operand1Converter.asDouble(operand1) / operand2Converter.asDouble(operand2);
 
-                    if (Double.isInfinite(res))
+                    if (Double.isInfinite(res)) {
                         throw new HazelcastSqlException(-1, "Division by zero.");
+                    }
 
                     return res;
                 }
@@ -145,11 +153,10 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                     int divisor;
 
                     if (operand1Converter == SqlYearMonthIntervalConverter.INSTANCE) {
-                        interval = (SqlYearMonthInterval)operand1;
+                        interval = (SqlYearMonthInterval) operand1;
                         divisor = operand2Converter.asInt(operand2);
-                    }
-                    else {
-                        interval = (SqlYearMonthInterval)operand2;
+                    } else {
+                        interval = (SqlYearMonthInterval) operand2;
                         divisor = operand1Converter.asInt(operand1);
                     }
 
@@ -161,18 +168,17 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                     long divisor;
 
                     if (operand1Converter == SqlDaySecondIntervalConverter.INSTANCE) {
-                        interval = (SqlDaySecondInterval)operand1;
+                        interval = (SqlDaySecondInterval) operand1;
                         divisor = operand2Converter.asBigInt(operand2);
-                    }
-                    else {
-                        interval = (SqlDaySecondInterval)operand2;
+                    } else {
+                        interval = (SqlDaySecondInterval) operand2;
                         divisor = operand1Converter.asBigInt(operand1);
                     }
 
-                    long totalNanos = (interval.getSeconds() * 1_000_000_000 + interval.getNanos()) / divisor;
+                    long totalNanos = (interval.getSeconds() * NANO_IN_SECONDS + interval.getNanos()) / divisor;
 
-                    long newValue = totalNanos / 1_000_000_000;
-                    int newNanos = (int)(totalNanos % 1_000_000_000);
+                    long newValue = totalNanos / NANO_IN_SECONDS;
+                    int newNanos = (int) (totalNanos % NANO_IN_SECONDS);
 
                     return new SqlDaySecondInterval(newValue, newNanos);
                 }
@@ -180,13 +186,12 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                 default:
                     throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resType);
             }
-        }
-        catch (ArithmeticException e) {
+        } catch (ArithmeticException e) {
             throw new HazelcastSqlException(-1, "Division by zero.");
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     private static Object doRemainder(
         Object operand1,
         DataType operand1Type,
@@ -200,10 +205,10 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
         try {
             switch (resType.getType()) {
                 case TINYINT:
-                    return (byte)(accessor1.asTinyInt(operand1) % accessor2.asTinyInt(operand2));
+                    return (byte) (accessor1.asTinyInt(operand1) % accessor2.asTinyInt(operand2));
 
                 case SMALLINT:
-                    return (short)(accessor1.asSmallInt(operand1) % accessor2.asSmallInt(operand2));
+                    return (short) (accessor1.asSmallInt(operand1) % accessor2.asSmallInt(operand2));
 
                 case INT:
                     return accessor1.asInt(operand1) % accessor2.asInt(operand2);
@@ -220,8 +225,9 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                 case REAL: {
                     float res = accessor1.asReal(operand1) % accessor2.asReal(operand2);
 
-                    if (Float.isInfinite(res))
+                    if (Float.isInfinite(res)) {
                         throw new HazelcastSqlException(-1, "Division by zero.");
+                    }
 
                     return res;
                 }
@@ -229,8 +235,9 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                 case DOUBLE: {
                     double res = accessor1.asDouble(operand1) % accessor2.asDouble(operand2);
 
-                    if (Double.isInfinite(res))
+                    if (Double.isInfinite(res)) {
                         throw new HazelcastSqlException(-1, "Division by zero.");
+                    }
 
                     return res;
                 }
@@ -238,8 +245,7 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
                 default:
                     throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resType);
             }
-        }
-        catch (ArithmeticException e) {
+        } catch (ArithmeticException e) {
             throw new HazelcastSqlException(-1, "Division by zero.");
         }
     }
@@ -251,29 +257,37 @@ public class DivideRemainderFunction<T> extends BiCallExpressionWithType<T> {
      * @param type2 Type of the second operand.
      * @return Result type.
      */
+    @SuppressWarnings("checkstyle:NPathComplexity")
     private static DataType inferResultType(DataType type1, DataType type2) {
-        if (type1 == DataType.INTERVAL_DAY_SECOND || type2 == DataType.INTERVAL_DAY_SECOND)
+        if (type1 == DataType.INTERVAL_DAY_SECOND || type2 == DataType.INTERVAL_DAY_SECOND) {
             return DataType.INTERVAL_DAY_SECOND;
+        }
 
-        if (type1 == DataType.INTERVAL_YEAR_MONTH || type2 == DataType.INTERVAL_YEAR_MONTH)
+        if (type1 == DataType.INTERVAL_YEAR_MONTH || type2 == DataType.INTERVAL_YEAR_MONTH) {
             return DataType.INTERVAL_YEAR_MONTH;
+        }
 
-        if (!type1.isCanConvertToNumeric())
+        if (!type1.isCanConvertToNumeric()) {
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+        }
 
-        if (!type2.isCanConvertToNumeric())
+        if (!type2.isCanConvertToNumeric()) {
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+        }
 
-        if (type1 == DataType.VARCHAR)
+        if (type1 == DataType.VARCHAR) {
             type1 = DataType.DECIMAL;
+        }
 
-        if (type2 == DataType.VARCHAR)
+        if (type2 == DataType.VARCHAR) {
             type2 = DataType.DECIMAL;
+        }
 
         DataType higherType = type1.getPrecedence() > type2.getPrecedence() ? type1 : type2;
 
-        if (higherType == DataType.BIT)
+        if (higherType == DataType.BIT) {
             higherType = DataType.TINYINT;
+        }
 
         return higherType;
     }

@@ -55,28 +55,30 @@ public class AndOrPredicate extends BiCallExpression<Boolean> {
     public Boolean eval(QueryContext ctx, Row row) {
         Object operand1Value = operand1.eval(ctx, row);
 
-        if (operand1Value == null)
+        if (operand1Value == null) {
             return null;
-        else if (!operand1Checked) {
-            if (operand1.getType() != DataType.BIT)
+        } else if (!operand1Checked) {
+            if (operand1.getType() != DataType.BIT) {
                 throw new HazelcastSqlException(-1, "Operand 1 is not BIT.");
+            }
 
             operand1Checked = true;
         }
 
         Object operand2Value = operand2.eval(ctx, row);
 
-        if (operand2Value == null)
+        if (operand2Value == null) {
             return null;
-        else if (!operand2Checked) {
-            if (operand2.getType() != DataType.BIT)
+        } else if (!operand2Checked) {
+            if (operand2.getType() != DataType.BIT) {
                 throw new HazelcastSqlException(-1, "Operand 2 is not BIT.");
+            }
 
             operand2Checked = true;
         }
 
-        boolean first = (boolean)operand1Value;
-        boolean second = (boolean)operand2Value;
+        boolean first = (boolean) operand1Value;
+        boolean second = (boolean) operand2Value;
 
         return or ? first || second : first && second;
     }

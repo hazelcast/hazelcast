@@ -45,6 +45,7 @@ public class PositionFunction extends TriCallExpression<Integer> {
         super(operand1, operand2, operand3);
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:NestedIfDepth"})
     @Override
     public Integer eval(QueryContext ctx, Row row) {
         String seek;
@@ -54,39 +55,44 @@ public class PositionFunction extends TriCallExpression<Integer> {
         // Get seek operand.
         Object seekValue = operand1.eval(ctx, row);
 
-        if (seekValue == null)
+        if (seekValue == null) {
             return null;
+        }
 
-        if (seekType == null)
+        if (seekType == null) {
             seekType = operand1.getType();
+        }
 
         seek = seekType.getConverter().asVarchar(seekValue);
 
         // Get source operand.
         Object op2 = operand2.eval(ctx, row);
 
-        if (op2 == null)
+        if (op2 == null) {
             return null;
+        }
 
-        if (sourceType == null)
+        if (sourceType == null) {
             sourceType = operand2.getType();
+        }
 
         source = sourceType.getConverter().asVarchar(op2);
 
         // Get "FROM"
-        if (operand3 == null)
+        if (operand3 == null) {
             pos = 0;
-        else {
+        } else {
             Object op3 = operand3.eval(ctx, row);
 
-            if (op3 == null)
+            if (op3 == null) {
                 pos = 0;
-            else {
+            } else {
                 if (posType == null) {
                     DataType type = operand3.getType();
 
-                    if (!type.isCanConvertToNumeric() || type.getScale() != 0)
+                    if (!type.isCanConvertToNumeric() || type.getScale() != 0) {
                         throw new HazelcastSqlException(-1, "Unsupported data type: " + type);
+                    }
 
                     posType = type;
                 }
@@ -96,13 +102,14 @@ public class PositionFunction extends TriCallExpression<Integer> {
         }
 
         // Process.
-        if (pos == 0)
+        if (pos == 0) {
             return source.indexOf(seek) + 1;
-        else {
+        } else {
             int pos0 = pos - 1;
 
-            if (pos0 < 0 || pos0 > source.length())
+            if (pos0 < 0 || pos0 > source.length()) {
                 return 0;
+            }
 
             return source.indexOf(seek, pos0) + 1;
         }

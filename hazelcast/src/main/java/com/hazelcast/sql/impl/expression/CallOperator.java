@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression;
 /**
  * Function operator.
  */
-public class CallOperator {
+public final class CallOperator {
     /** Plus function: A + B */
     public static final int PLUS = 0;
 

@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.row;
 /**
  * Empty row batch.
  */
-public class EmptyRowBatch implements RowBatch {
+public final class EmptyRowBatch implements RowBatch {
     /** Singleton instance. */
     public static final EmptyRowBatch INSTANCE = new EmptyRowBatch();
 

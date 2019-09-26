@@ -50,17 +50,19 @@ public class MathUniFunction extends UniCallExpression<Double> {
         this.operator = operator;
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     @Override
     public Double eval(QueryContext ctx, Row row) {
         Object operandValue = operand.eval(ctx, row);
 
-        if (operandValue == null)
+        if (operandValue == null) {
             return null;
-        else if (operandType == null) {
+        } else if (operandType == null) {
             DataType type = operand.getType();
 
-            if (!type.isCanConvertToNumeric())
+            if (!type.isCanConvertToNumeric()) {
                 throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand is not numeric: " + type);
+            }
 
             operandType = type;
         }
@@ -106,9 +108,10 @@ public class MathUniFunction extends UniCallExpression<Double> {
 
             case CallOperator.RADIANS:
                 return Math.toRadians(operandValueDouble);
-        }
 
-        throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+        }
     }
 
     @Override

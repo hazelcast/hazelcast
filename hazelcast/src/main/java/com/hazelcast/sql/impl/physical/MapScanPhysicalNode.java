@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Node to scan a partitioned map.
  */
-public class MapScanPhysicalNode extends AbstractMapScanPhysicalNode{
+public class MapScanPhysicalNode extends AbstractMapScanPhysicalNode {
     public MapScanPhysicalNode() {
         // No-op.
     }

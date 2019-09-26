@@ -73,8 +73,9 @@ public class CaseExpression<T> implements CallExpression<T> {
 
             Boolean conditionRes = condition.eval(ctx, row);
 
-            if (conditionRes != null && conditionRes)
+            if (conditionRes != null && conditionRes) {
                 return getResult(results[i], ctx, row);
+            }
         }
 
         return getResult(results[results.length - 1], ctx, row);
@@ -90,18 +91,21 @@ public class CaseExpression<T> implements CallExpression<T> {
      */
     @SuppressWarnings("unchecked")
     private T getResult(Expression operand, QueryContext ctx, Row row) {
-        if (operand == null)
+        if (operand == null) {
             return null;
+        }
 
         Object operandValue = operand.eval(ctx, row);
 
-        if (operandValue == null)
+        if (operandValue == null) {
             return null;
+        }
 
-        if (resType == null)
+        if (resType == null) {
             resType = operand.getType();
+        }
 
-        return (T)operandValue;
+        return (T) operandValue;
     }
 
     @Override

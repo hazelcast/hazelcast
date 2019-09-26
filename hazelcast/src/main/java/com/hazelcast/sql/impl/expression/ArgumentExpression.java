@@ -49,10 +49,11 @@ public class ArgumentExpression<T> implements Expression<T> {
     public T eval(QueryContext ctx, Row row) {
         Object res = ctx.getArgument(idx);
 
-        if (res != null && type == null)
+        if (res != null && type == null) {
             type = DataType.resolveType(res);
+        }
 
-        return (T)res;
+        return (T) res;
     }
 
     @Override

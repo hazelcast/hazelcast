@@ -63,13 +63,15 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
     public Boolean eval(QueryContext ctx, Row row) {
         Object operand1Value = operand1.eval(ctx, row);
 
-        if (operand1Value == null)
+        if (operand1Value == null) {
             return null;
+        }
 
         Object operand2Value = operand2.eval(ctx, row);
 
-        if (operand2Value == null)
+        if (operand2Value == null) {
             return null;
+        }
 
         if (resType == null) {
             DataType type1 = operand1.getType();
@@ -84,6 +86,7 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
         return doCompare(operator, operand1Value, operand1Type, operand2Value, operand2Type, resType);
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:AvoidNestedBlocks"})
     private static boolean doCompare(
         int operator,
         Object operand1,
@@ -151,10 +154,10 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
             }
 
             case INTERVAL_DAY_SECOND:
-                return doCompareComparable(operator, (SqlDaySecondInterval)operand1, (SqlDaySecondInterval)operand2);
+                return doCompareComparable(operator, (SqlDaySecondInterval) operand1, (SqlDaySecondInterval) operand2);
 
             case INTERVAL_YEAR_MONTH:
-                return doCompareComparable(operator, (SqlYearMonthInterval)operand1, (SqlYearMonthInterval)operand2);
+                return doCompareComparable(operator, (SqlYearMonthInterval) operand1, (SqlYearMonthInterval) operand2);
 
             case VARCHAR: {
                 String first = converter1.asVarchar(operand1);
@@ -162,11 +165,11 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
 
                 return doCompareComparable(operator, first, second);
             }
+
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported result type: " + resType);
         }
-
-        throw new HazelcastSqlException(-1, "Unsupported result type: " + resType);
     }
-
 
     private static boolean doCompareLong(int operator, long first, long second) {
         int compare = Long.compare(first, second);
@@ -206,9 +209,10 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
 
             case CallOperator.LESS_THAN_EQUAL:
                 return compare <= 0;
-        }
 
-        throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+        }
     }
 
     /**
@@ -219,8 +223,9 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
      * @return Result type.
      */
     private DataType inferResultType(DataType type1, DataType type2) {
-        if (type1.getType() == type2.getType())
+        if (type1.getType() == type2.getType()) {
             return type1;
+        }
 
         DataType biggerType;
         DataType smallerType;
@@ -228,8 +233,7 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
         if (type1.getPrecedence() > type2.getPrecedence()) {
             biggerType = type1;
             smallerType = type2;
-        }
-        else {
+        } else {
             biggerType = type2;
             smallerType = type1;
         }
@@ -245,14 +249,16 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
      * @param biggerType Bigger type.
      * @param smallerType Smaller type.
      */
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     private void checkTypeCompatibility(DataType biggerType, DataType smallerType) {
         switch (biggerType.getType()) {
             case TIMESTAMP_WITH_TIMEZONE:
             case TIMESTAMP:
                 // Any smaller temporal type could be converted to a timestamp, hence check for temporal trait.
-                if (!smallerType.isTemporal())
-                    throw new HazelcastSqlException(-1, "Type cannot be converted to " + biggerType + ": " +
-                        smallerType);
+                if (!smallerType.isTemporal()) {
+                    throw new HazelcastSqlException(-1, "Type cannot be converted to " + biggerType + ": "
+                        + smallerType);
+                }
 
                 break;
 
@@ -282,9 +288,10 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
             case SMALLINT:
             case TINYINT:
             case BIT:
-                if (!smallerType.isCanConvertToNumeric())
-                    throw new HazelcastSqlException(-1, "Type cannot be converted to " + biggerType + ": " +
-                        smallerType);
+                if (!smallerType.isCanConvertToNumeric()) {
+                    throw new HazelcastSqlException(-1, "Type cannot be converted to " + biggerType + ": "
+                        + smallerType);
+                }
 
                 break;
 
@@ -299,8 +306,9 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
     }
 
     private void checkTypeEqual(DataType expType, DataType actualType) {
-        if (expType != actualType)
+        if (expType != actualType) {
             throw new HazelcastSqlException(-1, "Type cannot be converted to " + expType + ": " + actualType);
+        }
     }
 
     @Override

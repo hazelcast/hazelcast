@@ -86,8 +86,9 @@ public class CollocatedAggregatePhysicalNode implements PhysicalNode {
 
         out.writeInt(accumulators.size());
 
-        for (AggregateExpression accumulator : accumulators)
+        for (AggregateExpression accumulator : accumulators) {
             out.writeObject(accumulator);
+        }
 
         out.writeBoolean(sorted);
     }
@@ -101,8 +102,9 @@ public class CollocatedAggregatePhysicalNode implements PhysicalNode {
 
         accumulators = new ArrayList<>(accumulatorsCount);
 
-        for (int i = 0; i < accumulatorsCount; i++)
+        for (int i = 0; i < accumulatorsCount; i++) {
             accumulators.add(in.readObject());
+        }
 
         sorted = in.readBoolean();
     }

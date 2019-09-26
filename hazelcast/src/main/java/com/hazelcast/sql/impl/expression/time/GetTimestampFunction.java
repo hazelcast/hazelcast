@@ -58,13 +58,13 @@ public class GetTimestampFunction<T> extends UniCallExpression<T> {
 
         switch (operator) {
             case CallOperator.CURRENT_TIMESTAMP:
-                return (T)getCurrentTimestamp(precision);
+                return (T) getCurrentTimestamp(precision);
 
             case CallOperator.LOCAL_TIMESTAMP:
-                return (T)getLocalTimestamp(precision);
+                return (T) getLocalTimestamp(precision);
 
             case CallOperator.LOCAL_TIME:
-                return (T)getLocalTime(precision);
+                return (T) getLocalTime(precision);
 
             default:
                 throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
@@ -74,8 +74,9 @@ public class GetTimestampFunction<T> extends UniCallExpression<T> {
     private OffsetDateTime getCurrentTimestamp(int precision) {
         OffsetDateTime res = OffsetDateTime.now();
 
-        if (precision < TemporalUtils.NANO_PRECISION)
+        if (precision < TemporalUtils.NANO_PRECISION) {
             res = res.withNano(getNano(res.getNano(), precision));
+        }
 
         return res;
     }
@@ -83,8 +84,9 @@ public class GetTimestampFunction<T> extends UniCallExpression<T> {
     private LocalDateTime getLocalTimestamp(int precision) {
         LocalDateTime res = LocalDateTime.now();
 
-        if (precision < TemporalUtils.NANO_PRECISION)
+        if (precision < TemporalUtils.NANO_PRECISION) {
             res = res.withNano(getNano(res.getNano(), precision));
+        }
 
         return res;
     }
@@ -92,38 +94,41 @@ public class GetTimestampFunction<T> extends UniCallExpression<T> {
     private LocalTime getLocalTime(int precision) {
         LocalTime res = LocalTime.now();
 
-        if (precision < TemporalUtils.NANO_PRECISION)
+        if (precision < TemporalUtils.NANO_PRECISION) {
             res = res.withNano(getNano(res.getNano(), precision));
+        }
 
         return res;
     }
 
     private int getPrecision(QueryContext ctx, Row row) {
-        if (operand == null)
+        if (operand == null) {
             return TemporalUtils.NANO_PRECISION;
+        }
 
         Object operandValue = operand.eval(ctx, row);
 
-        if (operandValue == null)
+        if (operandValue == null) {
             return TemporalUtils.NANO_PRECISION;
+        }
 
         if (precisionType == null) {
             DataType type = operand.getType();
 
-            if (!type.isCanConvertToNumeric())
+            if (!type.isCanConvertToNumeric()) {
                 throw new HazelcastSqlException(-1, "Operand type cannot be converted to INT: " + type);
+            }
 
             precisionType = type;
         }
 
         int res = precisionType.getConverter().asInt(operandValue);
 
-        if (res <= 0)
+        if (res <= 0) {
             return res;
-        else if (res > TemporalUtils.NANO_PRECISION)
-            return TemporalUtils.NANO_PRECISION;
-        else
-            return res;
+        } else {
+            return Math.min(res, TemporalUtils.NANO_PRECISION);
+        }
     }
 
     /**
@@ -150,9 +155,10 @@ public class GetTimestampFunction<T> extends UniCallExpression<T> {
 
             case CallOperator.LOCAL_TIME:
                 return DataType.TIME;
-        }
 
-        throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+            default:
+                throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+        }
     }
 
     @Override

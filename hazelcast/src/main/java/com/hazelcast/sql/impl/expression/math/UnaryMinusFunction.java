@@ -50,8 +50,9 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
     public T eval(QueryContext ctx, Row row) {
         Object operandValue = operand.eval(ctx, row);
 
-        if (operandValue == null)
+        if (operandValue == null) {
             return null;
+        }
 
         if (resType == null) {
             operandType = operand.getType();
@@ -59,7 +60,7 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
             resType = inferResultType(operandType);
         }
 
-        return (T)doMinus(operandValue, operandType, resType);
+        return (T) doMinus(operandValue, operandType, resType);
     }
 
     /**
@@ -69,22 +70,24 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
      * @return Result type.
      */
     private DataType inferResultType(DataType operandType) {
-        if (!operandType.isCanConvertToNumeric())
+        if (!operandType.isCanConvertToNumeric()) {
             throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+        }
 
-        if (operandType == DataType.VARCHAR)
+        if (operandType == DataType.VARCHAR) {
             operandType = DataType.DECIMAL;
+        }
 
         if (operandType.getScale() == 0) {
             // Integer type.
             int precision = operandType.getPrecision();
 
-            if (precision != PRECISION_UNLIMITED)
+            if (precision != PRECISION_UNLIMITED) {
                 precision++;
+            }
 
             return DataType.integerType(precision);
-        }
-        else {
+        } else {
             // DECIMAL, REAL or DOUBLE. REAL is expanded to DOUBLE. DECIMAL and DOUBLE are already the widest.
             return operandType == DataType.REAL ? DataType.DOUBLE : operandType;
         }
@@ -104,10 +107,10 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
 
         switch (resType.getType()) {
             case TINYINT:
-                return (byte)(-operandConverter.asTinyInt(operandValue));
+                return (byte) (-operandConverter.asTinyInt(operandValue));
 
             case SMALLINT:
-                return (short)(-operandConverter.asSmallInt(operandValue));
+                return (short) (-operandConverter.asSmallInt(operandValue));
 
             case INT:
                 return -operandConverter.asInt(operandValue);

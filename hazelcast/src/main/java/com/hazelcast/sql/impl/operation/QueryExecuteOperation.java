@@ -160,13 +160,14 @@ public class QueryExecuteOperation extends QueryOperation {
         }
 
         // Write arguments.
-        if (arguments == null)
+        if (arguments == null) {
             out.writeInt(0);
-        else {
+        } else {
             out.writeInt(arguments.size());
 
-            for (Object argument : arguments)
+            for (Object argument : arguments) {
                 out.writeObject(argument);
+            }
         }
 
         // Write deployment offset.
@@ -222,13 +223,14 @@ public class QueryExecuteOperation extends QueryOperation {
         // Read arguments.
         int argumentCnt = in.readInt();
 
-        if (argumentCnt == 0)
+        if (argumentCnt == 0) {
             arguments = Collections.emptyList();
-        else {
+        } else {
             arguments = new ArrayList<>(argumentCnt);
 
-            for (int i = 0; i < argumentCnt; i++)
+            for (int i = 0; i < argumentCnt; i++) {
                 arguments.add(in.readObject());
+            }
         }
 
         // Read deployment offset.

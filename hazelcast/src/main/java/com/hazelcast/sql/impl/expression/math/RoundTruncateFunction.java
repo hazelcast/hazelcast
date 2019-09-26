@@ -58,12 +58,13 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
     public T eval(QueryContext ctx, Row row) {
         Object val = getValue(ctx, row);
 
-        if (val == null)
+        if (val == null) {
             return null;
+        }
 
         int len = getLength(ctx, row);
 
-        return (T)(doRoundTruncate(val, len));
+        return (T) (doRoundTruncate(val, len));
     }
 
     /**
@@ -76,8 +77,9 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
     public Object getValue(QueryContext ctx, Row row) {
         Object val = operand1.eval(ctx, row);
 
-        if (val == null)
+        if (val == null) {
             return null;
+        }
 
         if (resType == null) {
             DataType type = operand1.getType();
@@ -126,8 +128,9 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
     private int getLength(QueryContext ctx, Row row) {
         Object len = operand2 != null ? operand2.eval(ctx, row) : null;
 
-        if (len == null)
+        if (len == null) {
             return 0;
+        }
 
         if (lenType == null) {
             DataType type = operand2.getType();
@@ -143,8 +146,8 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
                     break;
 
                 default:
-                    throw new HazelcastSqlException(-1, "Unsupported type of the second operand: " +
-                        operand2.getType());
+                    throw new HazelcastSqlException(-1, "Unsupported type of the second operand: "
+                        + operand2.getType());
             }
         }
 
@@ -163,10 +166,11 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
 
         RoundingMode roundingMode = truncate ? RoundingMode.DOWN : RoundingMode.HALF_UP;
 
-        if (len == 0)
+        if (len == 0) {
             res = res.setScale(0, roundingMode);
-        else
+        } else {
             res = res.movePointRight(len).setScale(0, roundingMode).movePointLeft(len);
+        }
 
         try {
             switch (resType.getType()) {
@@ -185,8 +189,7 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
                 default:
                     throw new HazelcastSqlException(-1, "Unexpected result type: " + resType);
             }
-        }
-        catch (ArithmeticException e) {
+        } catch (ArithmeticException e) {
             throw new HazelcastSqlException(-1, "Data overflow.");
         }
     }

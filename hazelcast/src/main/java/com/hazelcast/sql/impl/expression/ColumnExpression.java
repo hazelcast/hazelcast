@@ -47,13 +47,14 @@ public class ColumnExpression<T> implements Expression<T> {
         Object res = row.getColumn(idx);
 
         if (res != null) {
-            if (type == null)
+            if (type == null) {
                 type = DataType.resolveType(res);
-            else
+            } else {
                 type.ensureSame(res);
+            }
         }
 
-        return (T)res;
+        return (T) res;
     }
 
     @Override
