@@ -107,7 +107,9 @@ public class TcpIpAcceptor implements MetricsProvider {
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "tcp." + acceptorThread.getName());
+        registry.newProbeBuilder("tcp.acceptor")
+                .withTag("thread", acceptorThread.getName())
+                .scanAndRegister(this);
     }
 
     public TcpIpAcceptor start() {
