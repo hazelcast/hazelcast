@@ -482,7 +482,7 @@ public class MigrationManager {
             logger.fine("Node is not joined, will not trigger ControlTask");
             return;
         }
-        if (!node.isMaster()) {
+        if (!partitionService.isLocalMemberMaster()) {
             logger.fine("Node is not master, will not trigger ControlTask");
             return;
         }
@@ -617,7 +617,7 @@ public class MigrationManager {
     }
 
     private void publishCompletedMigrations() {
-        assert node.isMaster();
+        assert partitionService.isLocalMemberMaster();
         assert partitionStateManager.isInitialized();
 
         final List<MigrationInfo> migrations = getCompletedMigrationsCopy();
@@ -674,7 +674,7 @@ public class MigrationManager {
     private class RepartitioningTask implements MigrationRunnable {
         @Override
         public void run() {
-            if (!node.isMaster()) {
+            if (!partitionService.isLocalMemberMaster()) {
                 return;
             }
             partitionServiceLock.lock();
@@ -919,7 +919,7 @@ public class MigrationManager {
 
         @Override
         public void run() {
-            if (!node.isMaster()) {
+            if (!partitionService.isLocalMemberMaster()) {
                 return;
             }
             if (migrationInfo.getSource() == null
@@ -1480,7 +1480,7 @@ public class MigrationManager {
     private class ProcessShutdownRequestsTask implements MigrationRunnable {
         @Override
         public void run() {
-            if (!node.isMaster()) {
+            if (!partitionService.isLocalMemberMaster()) {
                 return;
             }
             partitionServiceLock.lock();
