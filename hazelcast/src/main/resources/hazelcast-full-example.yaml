@@ -3185,7 +3185,7 @@ hazelcast:
     missing-cp-member-auto-removal-seconds: 120
     fail-on-indeterminate-operation-state: false
     persistence-enabled: true
-    base-dir: custom-cp-data
+    base-dir: custom-cp-dir
     data-load-timeout-seconds: 30
     raft-algorithm:
       leader-election-timeout-in-millis: 2000
