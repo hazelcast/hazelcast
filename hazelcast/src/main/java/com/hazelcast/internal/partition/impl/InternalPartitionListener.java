@@ -29,13 +29,11 @@ import com.hazelcast.logging.ILogger;
  * Also this listener delegates the partition change events to its child listeners.
  */
 final class InternalPartitionListener implements PartitionListener {
-    private final Node node;
     private final InternalPartitionServiceImpl partitionService;
     private final ILogger logger;
     private volatile PartitionListenerNode listenerHead;
 
     InternalPartitionListener(Node node, InternalPartitionServiceImpl partitionService) {
-        this.node = node;
         this.partitionService = partitionService;
         logger = node.getLogger(InternalPartitionService.class);
     }
@@ -49,7 +47,7 @@ final class InternalPartitionListener implements PartitionListener {
             partitionService.getReplicaManager().cancelReplicaSync(partitionId);
         }
 
-        if (node.isMaster()) {
+        if (partitionService.isLocalMemberMaster()) {
             partitionService.getPartitionStateManager().incrementVersion();
         }
 
