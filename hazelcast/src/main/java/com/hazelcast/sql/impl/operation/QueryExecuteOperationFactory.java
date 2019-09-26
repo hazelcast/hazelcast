@@ -30,6 +30,9 @@ public class QueryExecuteOperationFactory {
     /** Local member ID. */
     private final String localMemberId;
 
+    /** Deployment offset. */
+    private final int baseDeploymentOffset;
+
     /** Map from fragment position to the member where it should be executed. */
     private Map<QueryFragment, String> replicatedMappedMemberIds;
 
@@ -38,6 +41,8 @@ public class QueryExecuteOperationFactory {
         this.args = args;
         this.queryId = queryId;
         this.localMemberId = localMemberId;
+
+        baseDeploymentOffset = ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE / 2);
     }
 
     /**
@@ -50,8 +55,6 @@ public class QueryExecuteOperationFactory {
         List<QueryFragment> fragments = plan.getFragments();
 
         List<QueryFragmentDescriptor> descriptors = new ArrayList<>(fragments.size());
-
-        int baseDeploymentOffset = ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE / 2);
 
         for (QueryFragment fragment : fragments) {
             QueryFragmentMapping mapping = fragment.getMapping();

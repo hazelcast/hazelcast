@@ -18,11 +18,15 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
@@ -48,7 +52,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
     private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
     /** Node engine. */
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
 
     /** Query optimizer. */
     private final SqlOptimizer optimizer;
@@ -59,7 +63,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
     /** Worker thread pool. */
     private QueryWorkerPool workerPool;
 
-    public SqlServiceImpl(NodeEngine nodeEngine) {
+    public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(SqlServiceImpl.class);
 
@@ -124,9 +128,9 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         );
 
         // Start execution on local member.
-        QueryExecuteOperation localOp = operationFactory.create(localMemberId);
+        QueryExecuteOperation localOp = operationFactory.create(localMemberId).setRootConsumer(consumer);
 
-        handleQueryExecuteOperation(localOp, consumer);
+        handleQueryExecuteOperation(localOp);
 
         // Start execution on remote members.
         for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
@@ -136,13 +140,42 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
                 continue;
 
             QueryExecuteOperation remoteOp = operationFactory.create(memberId);
-
             Address address = plan.getDataMemberAddresses().get(i);
 
-            nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, remoteOp, address);
+            sendRequest(remoteOp, address);
         }
 
         return new QueryHandle(queryId, consumer);
+    }
+
+    @Override
+    public void sendRequest(QueryOperation operation, Address address) {
+        assert operation != null;
+        assert address != null;
+
+        boolean local = address.equals(nodeEngine.getThisAddress());
+
+        if (local)
+            handleQueryOperation(operation);
+        else {
+            InternalSerializationService serializationService =
+                (InternalSerializationService)nodeEngine.getSerializationService();
+
+            byte[] bytes = serializationService.toBytes(operation);
+
+            Packet packet = new Packet(bytes).setPacketType(Packet.Type.SQL);
+
+            EndpointManager endpointManager = nodeEngine.getNode().getEndpointManager();
+
+            Connection connection = endpointManager.getConnection(address);
+
+            @SuppressWarnings("unchecked")
+            boolean res = endpointManager.transmit(packet, connection);
+
+            // TODO: Proper handling.
+            if (!res)
+                throw new HazelcastException("Failed to send an operation to remote node.");
+        }
     }
 
     @Override
@@ -194,15 +227,19 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
     public void accept(Packet packet) {
         QueryOperation op = nodeEngine.toObject(packet);
 
-        if (op instanceof QueryExecuteOperation) {
-            handleQueryExecuteOperation((QueryExecuteOperation)op, null);
+        handleQueryOperation(op);
+    }
+
+    private void handleQueryOperation(QueryOperation operation) {
+        if (operation instanceof QueryExecuteOperation) {
+            handleQueryExecuteOperation((QueryExecuteOperation)operation);
         }
-        else if (op instanceof QueryBatchOperation) {
-            handleQueryBatchOperation((QueryBatchOperation)op);
+        else if (operation instanceof QueryBatchOperation) {
+            handleQueryBatchOperation((QueryBatchOperation)operation);
         }
     }
 
-    private void handleQueryExecuteOperation(QueryExecuteOperation operation, QueryResultConsumer consumer) {
+    private void handleQueryExecuteOperation(QueryExecuteOperation operation) {
         for (QueryFragmentDescriptor fragmentDescriptor : operation.getFragmentDescriptors()) {
             // Skip unrelated fragments.
             if (fragmentDescriptor.getNode() == null)
@@ -211,7 +248,11 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
             int deploymentOffset = fragmentDescriptor.getAbsoluteDeploymentOffset(operation);
             int thread = getThreadFromDeploymentOffset(deploymentOffset);
 
-            StartFragmentQueryTask task = new StartFragmentQueryTask(operation, fragmentDescriptor, consumer);
+            StartFragmentQueryTask task = new StartFragmentQueryTask(
+                operation,
+                fragmentDescriptor,
+                operation.getRootConsumer()
+            );
 
             workerPool.submit(thread, task);
         }

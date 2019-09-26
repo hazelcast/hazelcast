@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlTransientException;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
 import com.hazelcast.sql.impl.row.Row;
@@ -121,7 +120,7 @@ public class Outbox extends AbstractMailbox {
             if (targetMember == null)
                 targetMember = nodeEngine.getClusterService().getMember(targetMemberId);
 
-            nodeEngine.getOperationService().invokeOnTarget(SqlService.SERVICE_NAME, op, targetMember.getAddress());
+            nodeEngine.getSqlService().sendRequest(op, targetMember.getAddress());
         }
         catch (Exception e) {
             throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE,

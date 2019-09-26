@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryResultConsumer;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.io.IOException;
@@ -54,6 +55,9 @@ public class QueryExecuteOperation extends QueryOperation {
 
     /** Offset which defines which data thread will be used for fragments. */
     private int baseDeploymentOffset;
+
+    /** Root fragment result consumer. Applicable only to root fragment being executed on local node. */
+    private transient QueryResultConsumer rootConsumer;
 
     public QueryExecuteOperation() {
         // No-op.
@@ -103,6 +107,16 @@ public class QueryExecuteOperation extends QueryOperation {
 
     public int getBaseDeploymentOffset() {
         return baseDeploymentOffset;
+    }
+
+    public QueryResultConsumer getRootConsumer() {
+        return rootConsumer;
+    }
+
+    public QueryExecuteOperation setRootConsumer(QueryResultConsumer rootConsumer) {
+        this.rootConsumer = rootConsumer;
+
+        return this;
     }
 
     @Override
@@ -176,7 +190,7 @@ public class QueryExecuteOperation extends QueryOperation {
         // Read fragments.
         int fragmentCnt = in.readInt();
 
-        fragmentDescriptors = new ArrayList<>(fragmentDescriptors);
+        fragmentDescriptors = new ArrayList<>(fragmentCnt);
 
         for (int i = 0; i < fragmentCnt; i++) {
             fragmentDescriptors.add(in.readObject());

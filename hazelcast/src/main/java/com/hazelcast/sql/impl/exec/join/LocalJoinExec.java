@@ -46,8 +46,6 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
     public LocalJoinExec(Exec left, Exec right, Expression<Boolean> filter) {
         super(left);
 
-        System.out.println(">>> JOIN CREATED");
-
         rightState = new UpstreamState(right);
 
         this.filter = filter;
@@ -77,8 +75,6 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
                     else if (state.isDone()) {
                         curRow = EmptyRowBatch.INSTANCE;
 
-                        System.out.println(">>> JOIN DONE 1");
-
                         return IterationResult.FETCHED_DONE;
                     }
                 }
@@ -106,12 +102,8 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
                     if (filter.eval(ctx, row)) {
                         curRow = row;
 
-                        System.out.println(">>> JOIN ROW: " + curRow);
-
                         if (state.isDone() && rightState.isDone()) {
                             leftRow = null;
-
-                            System.out.println(">>> JOIN DONE 2");
 
                             return IterationResult.FETCHED_DONE;
                         }
