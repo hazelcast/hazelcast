@@ -6,7 +6,6 @@ Release 3.12.2
 - Introduced CP Subsystem Persistence.
 - Improved the CP Subsystem chapter's whole content in Hazelcast IMDG Reference Manual.
 - Fixed an issue where Management Center was not able to see the 3.12.2 members (members with CP subsystem enabled).
-- Improved the client graceful shutdown mechanism so that the tasks are executed before marking a client as inactive.
 
 Release 3.12.1
 
