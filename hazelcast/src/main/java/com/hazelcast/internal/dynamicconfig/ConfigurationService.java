@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -130,13 +129,6 @@ public interface ConfigurationService {
      * @return Ringbuffer config or {@code null} when requested Ringbuffer configuration does not exist
      */
     RingbufferConfig findRingbufferConfig(String name);
-
-    /**
-     * Finds existing AtomicLong config.
-     *
-     * @return AtomicLong Config or {@code null} when requested AtomicLong configuration does not exist
-     */
-    AtomicLongConfig findAtomicLongConfig(String name);
 
     /**
      * Finds existing Lock config.
@@ -257,13 +249,6 @@ public interface ConfigurationService {
      * @return registered ringbuffer configurations
      */
     Map<String, RingbufferConfig> getRingbufferConfigs();
-
-    /**
-     * Returns all registered AtomicLong configurations.
-     *
-     * @return registered AtomicLong configurations
-     */
-    Map<String, AtomicLongConfig> getAtomicLongConfigs();
 
     /**
      * Returns all registered topic configurations.

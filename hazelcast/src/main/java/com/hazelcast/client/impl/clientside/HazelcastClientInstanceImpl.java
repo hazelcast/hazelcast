@@ -80,12 +80,8 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
@@ -601,21 +597,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public IdGenerator getIdGenerator(String name) {
-        checkNotNull(name, "Retrieving an ID-generator instance with a null name is not allowed!");
-        return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
-    }
-
-    @Override
     public FlakeIdGenerator getFlakeIdGenerator(String name) {
         checkNotNull(name, "Retrieving a Flake ID-generator instance with a null name is not allowed!");
         return getDistributedObject(FlakeIdGeneratorService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public IAtomicLong getAtomicLong(String name) {
-        checkNotNull(name, "Retrieving an atomic-long instance with a null name is not allowed!");
-        return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
     @Override

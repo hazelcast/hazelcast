@@ -46,7 +46,6 @@ enum ConfigSections {
     RELIABLE_TOPIC("reliable-topic", true),
     LOCK("lock", true),
     RINGBUFFER("ringbuffer", true),
-    ATOMIC_LONG("atomic-long", true),
     LISTENERS("listeners", false),
     SERIALIZATION("serialization", false),
     SERVICES("services", false),

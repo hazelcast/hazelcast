@@ -17,8 +17,9 @@
 package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -56,20 +57,20 @@ public class ClientProxyDestroyTest {
 
     @Test
     public void testUsageAfterDestroy() {
-        IAtomicLong proxy = newClientProxy();
+        ISet proxy = newClientProxy();
         proxy.destroy();
-        proxy.get();
+        proxy.size();
     }
 
     @Test
     public void testMultipleDestroyCalls() {
-        IAtomicLong proxy = newClientProxy();
+        DistributedObject proxy = newClientProxy();
         proxy.destroy();
         proxy.destroy();
     }
 
-    private IAtomicLong newClientProxy() {
-        return client.getAtomicLong(HazelcastTestSupport.randomString());
+    private ISet<Object> newClientProxy() {
+        return client.getSet(HazelcastTestSupport.randomString());
     }
 
     @Test

@@ -29,10 +29,8 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -177,18 +175,8 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public IdGenerator getIdGenerator(String name) {
-        return delegatedInstance.getIdGenerator(name);
-    }
-
-    @Override
     public FlakeIdGenerator getFlakeIdGenerator(String name) {
         return delegatedInstance.getFlakeIdGenerator(name);
-    }
-
-    @Override
-    public IAtomicLong getAtomicLong(String name) {
-        return delegatedInstance.getAtomicLong(name);
     }
 
     @Override

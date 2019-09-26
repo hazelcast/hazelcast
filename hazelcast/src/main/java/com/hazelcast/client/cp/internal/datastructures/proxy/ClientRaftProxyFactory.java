@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cp.internal.datastructures.proxy;
 
-import com.hazelcast.client.cp.internal.datastructures.atomiclong.RaftAtomicLongProxy;
+import com.hazelcast.client.cp.internal.datastructures.atomiclong.AtomicLongProxy;
 import com.hazelcast.client.cp.internal.datastructures.atomicref.AtomicRefProxy;
 import com.hazelcast.client.cp.internal.datastructures.countdownlatch.CountDownLatchProxy;
 import com.hazelcast.client.cp.internal.datastructures.lock.RaftFencedLockProxy;
@@ -31,7 +31,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
@@ -69,8 +69,8 @@ public class ClientRaftProxyFactory {
 
         RaftGroupId groupId = getGroupId(proxyName, objectName);
 
-        if (serviceName.equals(RaftAtomicLongService.SERVICE_NAME)) {
-            return (T) new RaftAtomicLongProxy(context, groupId, proxyName, objectName);
+        if (serviceName.equals(AtomicLongService.SERVICE_NAME)) {
+            return (T) new AtomicLongProxy(context, groupId, proxyName, objectName);
         } else if (serviceName.equals(AtomicRefService.SERVICE_NAME)) {
             return (T) new AtomicRefProxy(context, groupId, proxyName, objectName);
         } else if (serviceName.equals(CountDownLatchService.SERVICE_NAME)) {

@@ -17,8 +17,8 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.operations.AddAndGetOperation;
+import com.hazelcast.internal.longregister.LongRegisterService;
+import com.hazelcast.internal.longregister.operations.AddAndGetOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -493,7 +493,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         OperationServiceImpl operationService = getNode(hz3).getNodeEngine().getOperationService();
         Operation op = new AddAndGetOperation(randomName(), 1);
         Future<Long> future = operationService
-                .invokeOnPartition(AtomicLongService.SERVICE_NAME, op, 1);
+                .invokeOnPartition(LongRegisterService.SERVICE_NAME, op, 1);
 
         exception.expect(IllegalStateException.class);
         try {
@@ -630,7 +630,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         OperationServiceImpl operationService = getNode(hz3).getNodeEngine().getOperationService();
         Operation op = new AddAndGetOperation(key, 1);
         final Future<Long> future = operationService
-                .invokeOnPartition(AtomicLongService.SERVICE_NAME, op, partitionId);
+                .invokeOnPartition(LongRegisterService.SERVICE_NAME, op, partitionId);
 
         assertFalse(future.isDone());
 

@@ -128,7 +128,7 @@ public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
         String key = generateKeyOwnedBy(first);
 
         String runCounterName = "runCount";
-        IAtomicLong runCount = second.getAtomicLong(runCounterName);
+        IAtomicLong runCount = second.getCPSubsystem().getAtomicLong(runCounterName);
 
         String name = randomString();
         DurableExecutorService executorService = first.getDurableExecutorService(name);

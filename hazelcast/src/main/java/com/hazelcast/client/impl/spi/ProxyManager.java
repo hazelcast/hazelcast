@@ -31,12 +31,10 @@ import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListen
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
-import com.hazelcast.client.impl.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.impl.proxy.ClientCardinalityEstimatorProxy;
 import com.hazelcast.client.impl.proxy.ClientDurableExecutorServiceProxy;
 import com.hazelcast.client.impl.proxy.ClientExecutorServiceProxy;
 import com.hazelcast.client.impl.proxy.ClientFlakeIdGeneratorProxy;
-import com.hazelcast.client.impl.proxy.ClientIdGeneratorProxy;
 import com.hazelcast.client.impl.proxy.ClientListProxy;
 import com.hazelcast.client.impl.proxy.ClientLockProxy;
 import com.hazelcast.client.impl.proxy.ClientMultiMapProxy;
@@ -65,14 +63,13 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.longregister.LongRegisterService;
+import com.hazelcast.internal.longregister.client.ClientLongRegisterProxy;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.map.impl.MapService;
@@ -175,7 +172,6 @@ public final class ProxyManager {
         register(ListService.SERVICE_NAME, ClientListProxy.class);
         register(SetService.SERVICE_NAME, ClientSetProxy.class);
         register(TopicService.SERVICE_NAME, ClientTopicProxy.class);
-        register(AtomicLongService.SERVICE_NAME, ClientAtomicLongProxy.class);
         register(DistributedExecutorService.SERVICE_NAME, ClientExecutorServiceProxy.class);
         register(DistributedDurableExecutorService.SERVICE_NAME, ClientDurableExecutorServiceProxy.class);
         register(LockServiceImpl.SERVICE_NAME, ClientLockProxy.class);
@@ -188,17 +184,11 @@ public final class ProxyManager {
                 return new ClientReliableTopicProxy(id, context, client);
             }
         });
-        register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
-            @Override
-            public ClientProxy create(String id, ClientContext context) {
-                IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + id);
-                return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, context, atomicLong);
-            }
-        });
         register(FlakeIdGeneratorService.SERVICE_NAME, ClientFlakeIdGeneratorProxy.class);
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);
         register(PNCounterService.SERVICE_NAME, ClientPNCounterProxy.class);
+        register(LongRegisterService.SERVICE_NAME, ClientLongRegisterProxy.class);
 
         ClassLoader classLoader = config.getClassLoader();
         for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -481,52 +480,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 RingbufferConfig dataConfig = hazelcastInstance.getConfig().findRingbufferConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testAtomicLongConfig_Static() {
-        TestCase<AtomicLongConfig> testCase = new TestCase<AtomicLongConfig>(new AtomicLongConfig(STATIC_NAME),
-                new AtomicLongConfig(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addAtomicLongConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addAtomicLongConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                AtomicLongConfig dataConfig = hazelcastInstance.getConfig().findAtomicLongConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testAtomicLongConfig_Dynamic() {
-        TestCase<AtomicLongConfig> testCase = new TestCase<AtomicLongConfig>(new AtomicLongConfig(STATIC_NAME),
-                new AtomicLongConfig(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addAtomicLongConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addAtomicLongConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                AtomicLongConfig dataConfig = hazelcastInstance.getConfig().findAtomicLongConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
             }
         };

@@ -99,8 +99,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int DISCOVERY_CONFIG = 57;
     public static final int DISCOVERY_STRATEGY_CONFIG = 58;
 
-    // AtomicLong and Lock will be removed soon...
-    public static final int ATOMIC_LONG_CONFIG = 59;
+    // Lock will be removed soon...
     public static final int LOCK_CONFIG = 60;
 
     private static final int LEN = LOCK_CONFIG + 1;
@@ -167,7 +166,6 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[CACHE_PARTITION_LOST_LISTENER_CONFIG] = arg -> new CachePartitionLostListenerConfig();
         constructors[SIMPLE_CACHE_ENTRY_LISTENER_CONFIG] = arg -> new CacheSimpleEntryListenerConfig();
         constructors[FLAKE_ID_GENERATOR_CONFIG] = arg -> new FlakeIdGeneratorConfig();
-        constructors[ATOMIC_LONG_CONFIG] = arg -> new AtomicLongConfig();
         constructors[MERGE_POLICY_CONFIG] = arg -> new MergePolicyConfig();
         constructors[PN_COUNTER_CONFIG] = arg -> new PNCounterConfig();
         constructors[MERKLE_TREE_CONFIG] = arg -> new MerkleTreeConfig();

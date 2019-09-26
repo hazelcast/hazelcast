@@ -142,7 +142,6 @@ public class ConfigXmlGenerator {
         topicXmlGenerator(gen, config);
         lockXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
-        atomicLongXmlGenerator(gen, config);
         executorXmlGenerator(gen, config);
         durableExecutorXmlGenerator(gen, config);
         scheduledExecutorXmlGenerator(gen, config);
@@ -596,17 +595,6 @@ public class ConfigXmlGenerator {
             }
             MergePolicyConfig mergePolicyConfig = rbConfig.getMergePolicyConfig();
             gen.node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
-                    .close();
-        }
-    }
-
-    private static void atomicLongXmlGenerator(XmlGenerator gen, Config config) {
-        Collection<AtomicLongConfig> configs = config.getAtomicLongConfigs().values();
-        for (AtomicLongConfig atomicLongConfig : configs) {
-            MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
-            gen.open("atomic-long", "name", atomicLongConfig.getName())
-                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
-                    .node("split-brain-protection-ref", atomicLongConfig.getSplitBrainProtectionName())
                     .close();
         }
     }

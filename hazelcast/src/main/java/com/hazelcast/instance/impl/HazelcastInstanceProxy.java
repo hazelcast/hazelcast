@@ -30,10 +30,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -165,18 +163,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
-    public IdGenerator getIdGenerator(String name) {
-        return getOriginal().getIdGenerator(name);
-    }
-
-    @Override
     public FlakeIdGenerator getFlakeIdGenerator(String name) {
         return getOriginal().getFlakeIdGenerator(name);
-    }
-
-    @Override
-    public IAtomicLong getAtomicLong(String name) {
-        return getOriginal().getAtomicLong(name);
     }
 
     @Override

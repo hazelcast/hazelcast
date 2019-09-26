@@ -17,7 +17,6 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AdvancedNetworkConfig;
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -55,7 +54,6 @@ import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
@@ -588,43 +586,6 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public Config setRingbufferConfigs(Map<String, RingbufferConfig> ringbufferConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    public AtomicLongConfig findAtomicLongConfig(String name) {
-        return new AtomicLongConfigReadOnly(getAtomicLongConfigInternal(name, "default"));
-    }
-
-    @Override
-    public AtomicLongConfig getAtomicLongConfig(String name) {
-        return getAtomicLongConfigInternal(name, name);
-    }
-
-    @Override
-    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getAtomicLongConfigs(),
-                atomicLongConfig.getName(), atomicLongConfig);
-        if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(atomicLongConfig);
-        }
-        return this;
-    }
-
-    @Override
-    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
-        Map<String, AtomicLongConfig> staticConfigs = staticConfig.getAtomicLongConfigs();
-        Map<String, AtomicLongConfig> dynamicConfigs = configurationService.getAtomicLongConfigs();
-
-        return aggregate(staticConfigs, dynamicConfigs);
-    }
-
-    @Override
-    public Config setAtomicLongConfigs(Map<String, AtomicLongConfig> atomicLongConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    private AtomicLongConfig getAtomicLongConfigInternal(String name, String fallbackName) {
-        return (AtomicLongConfig) configSearcher.getConfig(name, fallbackName, supplierFor(AtomicLongConfig.class));
     }
 
     @Override

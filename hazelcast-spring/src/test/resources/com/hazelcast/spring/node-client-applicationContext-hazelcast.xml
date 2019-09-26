@@ -380,7 +380,6 @@
     <hz:set id="set" instance-ref="client" name="set"/>
     <hz:list id="list" instance-ref="client" name="list"/>
     <hz:executorService id="executorService" instance-ref="client" name="executorService"/>
-    <hz:idGenerator id="idGenerator" instance-ref="client" name="idGenerator"/>
     <hz:flakeIdGenerator id="flakeIdGenerator" instance-ref="client" name="flakeIdGenerator"/>
     <hz:atomicLong id="atomicLong" instance-ref="client" name="atomicLong"/>
     <hz:atomicReference id="atomicReference" instance-ref="client" name="atomicReference"/>
