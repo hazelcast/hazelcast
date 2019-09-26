@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.util.Arrays;
 import java.util.LinkedList;

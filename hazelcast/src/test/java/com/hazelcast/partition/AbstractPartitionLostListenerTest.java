@@ -27,7 +27,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import org.junit.After;
 import org.junit.Before;
 

@@ -36,12 +36,13 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.String.format;
 
 /**
@@ -49,7 +50,7 @@ import static java.lang.String.format;
  */
 public class ClientContext {
 
-    private String localUuid;
+    private UUID localUuid;
     private final InternalSerializationService serializationService;
     private final ClientClusterService clusterService;
     private final ClientPartitionService partitionService;
@@ -107,7 +108,7 @@ public class ClientContext {
         return getOrPutIfAbsent(repairingTasks, serviceName, repairingTaskConstructor);
     }
 
-    private String getLocalUuid() {
+    private UUID getLocalUuid() {
         if (this.localUuid == null) {
             this.localUuid = clusterService.getLocalClient().getUuid();
         }

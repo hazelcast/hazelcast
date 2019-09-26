@@ -29,7 +29,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Merges data structures which have been collected via an {@link AbstractContainerCollector}.

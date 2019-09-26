@@ -16,10 +16,16 @@
 
 package com.hazelcast.spi.properties;
 
+import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -32,9 +38,11 @@ import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
+import java.util.Map;
 import java.util.function.Function;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -139,7 +147,7 @@ public final class GroupProperty {
                 return checkPositive(partitionThreadCount, "partitionThreadCount must be positive,"
                         + " but was " + partitionThreadCount);
             } else {
-                return Math.max(2, availableProcessors);
+                return max(2, availableProcessors);
             }
         }
     });
@@ -154,7 +162,7 @@ public final class GroupProperty {
             (Function<HazelcastProperties, Integer>) o -> {
                 // default generic operation thread count
                 int processors = RuntimeAvailableProcessors.get();
-                return Math.max(2, processors / 2);
+                return max(2, processors / 2);
             });
 
     /**
@@ -276,10 +284,63 @@ public final class GroupProperty {
      * <p>
      * The default is depends on the number of available processors. If the available processors count is
      * smaller than 20, there will be 3+3 io threads, otherwise 4+4.
+     *
+     * If SSL is enabled, then the default number of IO threads will be corecount/2.
      */
+    @SuppressWarnings("AnonInnerLength")
     public static final HazelcastProperty IO_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.io.thread.count",
-            properties -> Runtime.getRuntime().availableProcessors() >= 20 ? 4 : 3);
+            = new HazelcastProperty("hazelcast.io.thread.count", new Function<HazelcastProperties, Integer>() {
+        @Override
+        public Integer apply(HazelcastProperties properties) {
+            return isSSLDetected(properties) ? getWhenSSLDetected() : getWhenNoSSLDetected();
+        }
+
+        private boolean isSSLDetected(HazelcastProperties properties) {
+            Config config = properties.getConfig();
+            if (config == null) {
+                return false;
+            }
+
+            return isSSLDetected(config.getAdvancedNetworkConfig()) || isSSLDetected(config.getNetworkConfig());
+        }
+
+        private boolean isSSLDetected(AdvancedNetworkConfig networkConfig) {
+            if (networkConfig == null || !networkConfig.isEnabled()) {
+                return false;
+            }
+
+            for (Map.Entry<EndpointQualifier, EndpointConfig> entry : networkConfig.getEndpointConfigs().entrySet()) {
+                EndpointQualifier endpointQualifier = entry.getKey();
+                if (!endpointQualifier.equals(EndpointQualifier.MEMBER) && !entry.getKey().equals(EndpointQualifier.CLIENT)) {
+                    continue;
+                }
+                EndpointConfig endpointConfig = entry.getValue();
+                SSLConfig endpointSSLConfig = endpointConfig.getSSLConfig();
+                if (endpointSSLConfig != null && endpointSSLConfig.isEnabled()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean isSSLDetected(NetworkConfig networkConfig) {
+            if (networkConfig == null) {
+                return false;
+            }
+
+            SSLConfig sslConfig = networkConfig.getSSLConfig();
+            return sslConfig != null && sslConfig.isEnabled();
+        }
+
+        private int getWhenSSLDetected() {
+            return max(getWhenNoSSLDetected(), RuntimeAvailableProcessors.get() / 2);
+        }
+
+        private int getWhenNoSSLDetected() {
+            return RuntimeAvailableProcessors.get() >= 20 ? 4 : 3;
+        }
+    });
+    ;
 
     /**
      * Controls the number of socket input threads. By default it is the same as {@link #IO_THREAD_COUNT}.

@@ -36,7 +36,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -156,7 +156,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
 
         PromoteLiteMemberOp op = new PromoteLiteMemberOp();
-        op.setCallerUuid(UuidUtil.newUnsecureUuidString());
+        op.setCallerUuid(UuidUtil.newUnsecureUUID());
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz1));

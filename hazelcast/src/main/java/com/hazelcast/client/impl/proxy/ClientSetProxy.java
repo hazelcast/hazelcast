@@ -46,9 +46,10 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
-import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Proxy implementation of {@link ISet}.
@@ -171,7 +172,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
 
     @Nonnull
     @Override
-    public String addItemListener(@Nonnull final ItemListener<E> listener, final boolean includeValue) {
+    public UUID addItemListener(@Nonnull final ItemListener<E> listener, final boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
@@ -185,12 +186,12 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return SetAddListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return SetRemoveListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -202,7 +203,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     }
 
     @Override
-    public boolean removeItemListener(@Nonnull String registrationId) {
+    public boolean removeItemListener(@Nonnull UUID registrationId) {
         return deregisterListener(registrationId);
     }
 
@@ -229,7 +230,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         }
 
         @Override
-        public void handleItemEvent(Data dataItem, String uuid, int eventType) {
+        public void handleItemEvent(Data dataItem, UUID uuid, int eventType) {
             Member member = getContext().getClusterService().getMember(uuid);
             ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
                     dataItem, member, getSerializationService());

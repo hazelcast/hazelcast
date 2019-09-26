@@ -21,9 +21,9 @@ import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.HotRestartState;
 
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 public class HotRestartStateImpl implements HotRestartState {
 

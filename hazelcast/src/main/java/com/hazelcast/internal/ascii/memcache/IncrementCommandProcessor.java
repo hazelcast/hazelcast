@@ -18,7 +18,7 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -27,7 +27,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.NOT_FOUND;
 import static com.hazelcast.internal.ascii.TextCommandConstants.RETURN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class IncrementCommandProcessor extends MemcacheCommandProcessor<IncrementCommand> {
 

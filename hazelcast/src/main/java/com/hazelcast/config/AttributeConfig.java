@@ -24,7 +24,7 @@ import com.hazelcast.query.QueryConstants;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static java.lang.String.format;
 
 /**
@@ -40,8 +40,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
     private String name;
     private String path;
     private String extractorClassName;
-
-    private transient AttributeConfigReadOnly readOnly;
 
     /**
      * Creates an empty AttributeConfig.
@@ -69,19 +67,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
         name = config.getName();
         path = config.getPath();
         extractorClassName = config.getExtractorClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public AttributeConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new AttributeConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

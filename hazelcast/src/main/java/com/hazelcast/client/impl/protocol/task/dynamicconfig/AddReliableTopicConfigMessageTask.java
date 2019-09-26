@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicCon
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.topic.TopicOverloadPolicy;
 

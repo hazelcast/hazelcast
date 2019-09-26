@@ -21,7 +21,7 @@ import com.hazelcast.cluster.Member;
 import java.util.Collection;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Arranges members in single-member groups (every member is its own group).

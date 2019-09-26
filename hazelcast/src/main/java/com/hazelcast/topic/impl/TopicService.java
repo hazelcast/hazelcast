@@ -33,21 +33,22 @@ import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
         StatisticsAwareService<LocalTopicStats> {
@@ -174,7 +175,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public @Nonnull
-    String addMessageListener(@Nonnull String name,
+    UUID addMessageListener(@Nonnull String name,
                               @Nonnull MessageListener listener,
                               boolean localOnly) {
         EventRegistration eventRegistration;
@@ -187,7 +188,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return eventRegistration.getId();
     }
 
-    public boolean removeMessageListener(@Nonnull String name, @Nonnull String registrationId) {
+    public boolean removeMessageListener(@Nonnull String name, @Nonnull UUID registrationId) {
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
     }
 

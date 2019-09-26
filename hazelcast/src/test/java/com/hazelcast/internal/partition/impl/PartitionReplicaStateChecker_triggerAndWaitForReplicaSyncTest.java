@@ -27,7 +27,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -102,7 +102,7 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
         configureNeedsReplicaStateCheckResponse();
 
         Address address = new Address("127.0.0.1", 5701);
-        InternalPartition partition = new DummyInternalPartition(new PartitionReplica[]{new PartitionReplica(address, UuidUtil.newUnsecureUuidString())}, 1);
+        InternalPartition partition = new DummyInternalPartition(new PartitionReplica[]{new PartitionReplica(address, UuidUtil.newUnsecureUUID())}, 1);
         partitions.add(partition);
 
         assertEquals(REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());

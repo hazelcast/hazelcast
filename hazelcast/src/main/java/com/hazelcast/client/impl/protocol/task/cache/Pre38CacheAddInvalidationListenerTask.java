@@ -25,7 +25,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 
 import java.security.Permission;
@@ -44,11 +44,11 @@ public class Pre38CacheAddInvalidationListenerTask
     protected Object call() {
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
-        String uuid = nodeEngine.getLocalMember().getUuid();
+        UUID uuid = nodeEngine.getLocalMember().getUuid();
         long correlationId = clientMessage.getCorrelationId();
         Pre38NearCacheInvalidationListener listener
                 = new Pre38NearCacheInvalidationListener(endpoint, cacheContext, uuid, correlationId);
-        String registrationId =
+        UUID registrationId =
                 cacheService.addInvalidationListener(parameters.name, listener, parameters.localOnly);
         endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
@@ -61,19 +61,19 @@ public class Pre38CacheAddInvalidationListenerTask
     private final class Pre38NearCacheInvalidationListener extends AbstractCacheClientNearCacheInvalidationListener {
 
         Pre38NearCacheInvalidationListener(ClientEndpoint endpoint, CacheContext cacheContext,
-                                           String localMemberUuid, long correlationId) {
+                                           UUID localMemberUuid, long correlationId) {
             super(endpoint, cacheContext, localMemberUuid, correlationId);
         }
 
         @Override
-        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids,
+        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<UUID> sourceUuids,
                                                         List<UUID> partitionUuids, List<Long> sequences) {
             return CacheAddInvalidationListenerCodec.encodeCacheBatchInvalidationEvent(name, keys, sourceUuids,
                     partitionUuids, sequences);
         }
 
         @Override
-        protected ClientMessage encodeSingleInvalidation(String name, Data key, String sourceUuid,
+        protected ClientMessage encodeSingleInvalidation(String name, Data key, UUID sourceUuid,
                                                          UUID partitionUuid, long sequence) {
             return CacheAddInvalidationListenerCodec.encodeCacheInvalidationEvent(name, key, sourceUuid,
                     partitionUuid, sequence);
@@ -97,7 +97,7 @@ public class Pre38CacheAddInvalidationListenerTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddInvalidationListenerCodec.encodeResponse((String) response);
+        return CacheAddInvalidationListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

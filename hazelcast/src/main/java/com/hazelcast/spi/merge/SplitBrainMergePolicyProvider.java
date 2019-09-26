@@ -18,15 +18,15 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.newInstance;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * A provider for {@link SplitBrainMergePolicy} instances.

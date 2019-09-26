@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
@@ -121,7 +122,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         final Set<String> collectionNames = getContainerMap().keySet();
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : collectionNames) {

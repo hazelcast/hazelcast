@@ -67,7 +67,7 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
@@ -86,11 +86,11 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.IterableUtil;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.MutableLong;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.IterableUtil;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.MutableLong;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -104,6 +104,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -117,15 +118,15 @@ import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCE
 import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
-import static com.hazelcast.util.CollectionUtil.asIntegerList;
-import static com.hazelcast.util.ConcurrencyUtil.CALLER_RUNS;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.IterableUtil.nullToEmpty;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
-import static com.hazelcast.util.ThreadUtil.getThreadId;
-import static com.hazelcast.util.TimeUtil.timeInMsOrOneIfResultIsZero;
+import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
@@ -1163,21 +1164,21 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public String addLocalEntryListenerInternal(Object listener) {
+    public UUID addLocalEntryListenerInternal(Object listener) {
         return mapServiceContext.addLocalEventListener(listener, name);
     }
 
-    public String addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
+    public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
     }
 
-    protected String addEntryListenerInternal(Object listener, Data key, boolean includeValue) {
+    protected UUID addEntryListenerInternal(Object listener, Data key, boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
-    protected String addEntryListenerInternal(Object listener,
+    protected UUID addEntryListenerInternal(Object listener,
                                               Predicate predicate,
                                               @Nullable Data key,
                                               boolean includeValue) {
@@ -1185,15 +1186,15 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
-    protected boolean removeEntryListenerInternal(String id) {
+    protected boolean removeEntryListenerInternal(UUID id) {
         return mapServiceContext.removeEventListener(name, id);
     }
 
-    protected String addPartitionLostListenerInternal(MapPartitionLostListener listener) {
+    protected UUID addPartitionLostListenerInternal(MapPartitionLostListener listener) {
         return mapServiceContext.addPartitionLostListener(listener, name);
     }
 
-    protected boolean removePartitionLostListenerInternal(String id) {
+    protected boolean removePartitionLostListenerInternal(UUID id) {
         return mapServiceContext.removePartitionLostListener(name, id);
     }
 

@@ -24,13 +24,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
@@ -56,7 +57,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     private LockStoreImpl lockStore;
 
     private Data key = new HeapData();
-    private String callerId = "called";
+    private UUID callerId = new UUID(1, 1);
     private long threadId = 1;
     private long referenceId = 1;
     private long leaseTime = Long.MAX_VALUE;
@@ -174,7 +175,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     @Test
     public void testIsLockedBy_whenLockedByDifferentCallerAndSameThread_thenReturnFalse() {
         lockAndIncreaseReferenceId();
-        String differentCaller = callerId + "different";
+        UUID differentCaller = new UUID(2, 2);
         boolean lockedBy = lockStore.isLockedBy(key, differentCaller, threadId);
         assertFalse(lockedBy);
     }
@@ -183,7 +184,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     public void testIsLockedBy_whenLockedByDifferentCallerAndDifferentThread_thenReturnFalse() {
         lockAndIncreaseReferenceId();
         long differentThreadId = threadId + 1;
-        String differentCaller = callerId + "different";
+        UUID differentCaller = new UUID(2, 2);
         boolean lockedBy = lockStore.isLockedBy(key, differentCaller, differentThreadId);
         assertFalse(lockedBy);
     }
@@ -225,7 +226,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     @Test
     public void testCanAquireLock_whenLockedBySameThreadAndDifferentCaller_thenReturnFalse() {
         lockAndIncreaseReferenceId();
-        String differentCaller = callerId + "different";
+        UUID differentCaller = new UUID(2, 2);
         boolean canAcquire = lockStore.canAcquireLock(key, differentCaller, threadId);
         assertFalse(canAcquire);
     }
@@ -242,7 +243,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     public void testCanAcquireLock_whenLockedByDifferentThreadAndDifferentCaller_thenReturnFalse() {
         lockAndIncreaseReferenceId();
         long differentThreadId = threadId + 1;
-        String differentCaller = callerId + "different";
+        UUID differentCaller = new UUID(2, 2);
         boolean canAcquire = lockStore.canAcquireLock(key, differentCaller, differentThreadId);
         assertFalse(canAcquire);
     }
@@ -252,7 +253,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
         lockAndIncreaseReferenceId();
         unlockAndIncreaseReferenceId();
         long differentThreadId = threadId + 1;
-        String differentCaller = callerId + "different";
+        UUID differentCaller = new UUID(2, 2);
         boolean canAcquire = lockStore.canAcquireLock(key, differentCaller, differentThreadId);
         assertTrue(canAcquire);
     }
@@ -340,7 +341,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     @Test
     public void testUnlock_whenLockedByDifferentCallerAndSameThreadId_thenReturnFalse() {
         lockAndIncreaseReferenceId();
-        callerId += "different";
+        callerId = UUID.randomUUID();
         boolean unlocked = unlockAndIncreaseReferenceId();
         assertFalse(unlocked);
     }
@@ -366,7 +367,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     public void testUnlock_whenLockedByDifferentCallerAndDifferentThreadId_thenReturnFalse() {
         lockAndIncreaseReferenceId();
         threadId++;
-        callerId += "different";
+        callerId = UUID.randomUUID();
         boolean unlocked = unlockAndIncreaseReferenceId();
         assertFalse(unlocked);
     }
@@ -388,7 +389,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     @Test
     public void testTxnLock_whenLockedByDifferentCallerAndSameThreadId_thenReturnFalse() {
         txnLockAndIncreaseReferenceId();
-        callerId += "different";
+        callerId = UUID.randomUUID();
         boolean locked = txnLockAndIncreaseReferenceId();
         assertFalse(locked);
     }

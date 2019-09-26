@@ -17,18 +17,17 @@
 package com.hazelcast.osgi.impl;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.ICacheManager;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.collection.IList;
 import com.hazelcast.cp.lock.ILock;
@@ -40,27 +39,32 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
 import com.hazelcast.osgi.HazelcastOSGiService;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.util.StringUtil;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -196,32 +200,17 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
-        return delegatedInstance.getAtomicReference(name);
-    }
-
-    @Override
-    public ICountDownLatch getCountDownLatch(String name) {
-        return delegatedInstance.getCountDownLatch(name);
-    }
-
-    @Override
-    public ISemaphore getSemaphore(String name) {
-        return delegatedInstance.getSemaphore(name);
-    }
-
-    @Override
     public Collection<DistributedObject> getDistributedObjects() {
         return delegatedInstance.getDistributedObjects();
     }
 
     @Override
-    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    public UUID addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         return delegatedInstance.addDistributedObjectListener(distributedObjectListener);
     }
 
     @Override
-    public boolean removeDistributedObjectListener(String registrationId) {
+    public boolean removeDistributedObjectListener(UUID registrationId) {
         return delegatedInstance.removeDistributedObjectListener(registrationId);
     }
 
@@ -344,9 +333,8 @@ class HazelcastOSGiInstanceImpl
         sb.append("HazelcastOSGiInstanceImpl");
         sb.append("{delegatedInstance='").append(delegatedInstance).append('\'');
         Config config = getConfig();
-        GroupConfig groupConfig = config.getGroupConfig();
-        if (groupConfig != null && !StringUtil.isNullOrEmpty(groupConfig.getName())) {
-            sb.append(", groupName=").append(groupConfig.getName());
+        if (!StringUtil.isNullOrEmpty(config.getClusterName())) {
+            sb.append(", clusterName=").append(config.getClusterName());
         }
         sb.append(", ownerServiceId=").append(ownerService.getId());
         sb.append('}');

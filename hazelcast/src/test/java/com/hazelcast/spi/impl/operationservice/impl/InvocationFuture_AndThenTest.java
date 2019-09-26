@@ -18,6 +18,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,8 +31,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -57,6 +61,31 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
         InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         future.andThen(null);
+    }
+
+    @Test
+    public void whenNodeIsShutdown() throws Throwable {
+        Address address = getAddress(local);
+        local.shutdown();
+
+        DummyOperation op = new DummyOperation(null);
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, address);
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Throwable> reference = new AtomicReference<>();
+        future.andThen(new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object response) {
+
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                reference.set(t);
+                latch.countDown();
+            }
+        });
+        assertOpenEventually(latch);
+        assertInstanceOf(HazelcastInstanceNotActiveException.class, reference.get());
     }
 
     @Test(expected = IllegalArgumentException.class)

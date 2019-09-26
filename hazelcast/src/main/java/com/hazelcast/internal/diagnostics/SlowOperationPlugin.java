@@ -27,7 +27,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.List;
 
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**

@@ -31,6 +31,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.RemoteService;
 
 import java.util.Collection;
+import java.util.UUID;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ICacheService
@@ -87,7 +88,7 @@ public interface ICacheService
 
     CacheContext getOrCreateCacheContext(String cacheNameWithPrefix);
 
-    void deleteCache(String cacheNameWithPrefix, String callerUuid, boolean destroy);
+    void deleteCache(String cacheNameWithPrefix, UUID callerUuid, boolean destroy);
 
     void deleteCacheStat(String cacheNameWithPrefix);
 
@@ -101,11 +102,11 @@ public interface ICacheService
 
     NodeEngine getNodeEngine();
 
-    String registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal);
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal);
 
-    String registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
 
-    boolean deregisterListener(String cacheNameWithPrefix, String registrationId);
+    boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId);
 
     void deregisterAllListener(String cacheNameWithPrefix);
 
@@ -118,9 +119,9 @@ public interface ICacheService
      */
     CacheOperationProvider getCacheOperationProvider(String cacheNameWithPrefix, InMemoryFormat storageType);
 
-    String addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
+    UUID addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
 
-    void sendInvalidationEvent(String cacheNameWithPrefix, Data key, String sourceUuid);
+    void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid);
 
     /**
      * Returns {@code true} if WAN replication is enabled for the cache named {@code cacheNameWithPrefix}.
@@ -140,7 +141,7 @@ public interface ICacheService
      * @param cacheNameWithPrefix the full name of the {@link
      *                            com.hazelcast.cache.ICache}, including the manager scope prefix
      */
-    void checkWanReplicationQueues(String cacheNameWithPrefix);
+    void doPrepublicationChecks(String cacheNameWithPrefix);
 
     /**
      * Returns an interface for interacting with the cache event journals.

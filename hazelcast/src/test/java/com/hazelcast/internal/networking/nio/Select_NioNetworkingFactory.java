@@ -18,9 +18,9 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.tcp.MockIOService;
-import com.hazelcast.nio.tcp.NetworkingFactory;
-import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
+import com.hazelcast.internal.nio.tcp.MockIOService;
+import com.hazelcast.internal.nio.tcp.NetworkingFactory;
+import com.hazelcast.internal.nio.tcp.TcpIpConnectionChannelErrorHandler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;

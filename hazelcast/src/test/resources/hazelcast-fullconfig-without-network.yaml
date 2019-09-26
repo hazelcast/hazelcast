@@ -33,7 +33,7 @@
 #    ’hazelcast-default.yaml’, which is included in the the Hazelcast jar
 
 hazelcast:
-  group:
+  cluster:
     name: dev
     password: dev-pass
   license-key: HAZELCAST_ENTERPRISE_LICENSE_KEY
@@ -57,7 +57,7 @@ hazelcast:
     my-wan-cluster:
       batch-publisher:
         tokyoPublisherId:
-          group-name: tokyo
+          cluster-name: tokyo
           class-name: com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication
           queue-capacity: 1000
           queue-full-behavior: THROW_EXCEPTION
@@ -99,7 +99,7 @@ hazelcast:
             tenant-id: TENANT_ID
             subscription-id: SUB_ID
             cluster-id: HZLCAST001
-            group-name: GROUP-NAME
+            cluster-name: CLUSTER-NAME
           kubernetes:
             enabled: false
             namespace: MY-KUBERNETES-NAMESPACE
@@ -447,13 +447,6 @@ hazelcast:
       message-listeners:
         - com.hazelcast.examples.MessageListener
 
-  semaphore:
-    default:
-      initial-permits: 10
-      backup-count: 1
-      async-backup-count: 0
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-
   lock:
     default:
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
@@ -464,17 +457,6 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
-
-  atomic-reference:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-      merge-policy:
-        batch-size: 100
-        class-name: PutIfAbsentMergePolicy
-
-  count-down-latch:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   ringbuffer:
     default:

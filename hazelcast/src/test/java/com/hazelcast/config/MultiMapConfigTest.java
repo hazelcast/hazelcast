@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
+import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
@@ -71,7 +72,6 @@ public class MultiMapConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MultiMapConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .withPrefabValues(MultiMapConfigReadOnly.class,
                         new MultiMapConfigReadOnly(new MultiMapConfig("red")),

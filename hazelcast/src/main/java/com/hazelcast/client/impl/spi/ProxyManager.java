@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.spi;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
-import com.hazelcast.client.ClientExtension;
+import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.cache.impl.ClientCacheProxyFactory;
@@ -32,9 +32,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.proxy.ClientAtomicLongProxy;
-import com.hazelcast.client.impl.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.impl.proxy.ClientCardinalityEstimatorProxy;
-import com.hazelcast.client.impl.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.impl.proxy.ClientDurableExecutorServiceProxy;
 import com.hazelcast.client.impl.proxy.ClientExecutorServiceProxy;
 import com.hazelcast.client.impl.proxy.ClientFlakeIdGeneratorProxy;
@@ -48,7 +46,6 @@ import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.impl.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.impl.proxy.ClientRingbufferProxy;
 import com.hazelcast.client.impl.proxy.ClientScheduledExecutorProxy;
-import com.hazelcast.client.impl.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.impl.proxy.ClientSetProxy;
 import com.hazelcast.client.impl.proxy.ClientTopicProxy;
 import com.hazelcast.client.impl.proxy.txn.xa.XAResourceProxy;
@@ -70,25 +67,22 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
-import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.internal.services.DistributedObjectNamespace;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -101,12 +95,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ServiceLoader.classIterator;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ServiceLoader.classIterator;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -132,12 +127,12 @@ public final class ProxyManager {
         }
 
         @Override
-        public String decodeAddResponse(ClientMessage clientMessage) {
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
             return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
         }
 
         @Override
-        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
             return ClientRemoveDistributedObjectListenerCodec.encodeRequest(realRegistrationId);
         }
 
@@ -179,14 +174,11 @@ public final class ProxyManager {
         register(MultiMapService.SERVICE_NAME, ClientMultiMapProxy.class);
         register(ListService.SERVICE_NAME, ClientListProxy.class);
         register(SetService.SERVICE_NAME, ClientSetProxy.class);
-        register(SemaphoreService.SERVICE_NAME, ClientSemaphoreProxy.class);
         register(TopicService.SERVICE_NAME, ClientTopicProxy.class);
         register(AtomicLongService.SERVICE_NAME, ClientAtomicLongProxy.class);
-        register(AtomicReferenceService.SERVICE_NAME, ClientAtomicReferenceProxy.class);
         register(DistributedExecutorService.SERVICE_NAME, ClientExecutorServiceProxy.class);
         register(DistributedDurableExecutorService.SERVICE_NAME, ClientDurableExecutorServiceProxy.class);
         register(LockServiceImpl.SERVICE_NAME, ClientLockProxy.class);
-        register(CountDownLatchService.SERVICE_NAME, ClientCountDownLatchProxy.class);
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
         register(XAService.SERVICE_NAME, XAResourceProxy.class);
         register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);
@@ -456,7 +448,7 @@ public final class ProxyManager {
         proxies.clear();
     }
 
-    public String addDistributedObjectListener(final DistributedObjectListener listener) {
+    public UUID addDistributedObjectListener(final DistributedObjectListener listener) {
         final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
     }
@@ -518,7 +510,7 @@ public final class ProxyManager {
         }
     }
 
-    public boolean removeDistributedObjectListener(String id) {
+    public boolean removeDistributedObjectListener(UUID id) {
         return client.getListenerService().deregisterListener(id);
     }
 

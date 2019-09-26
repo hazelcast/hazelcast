@@ -20,7 +20,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -29,14 +29,15 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.client.impl.ClientEngineImpl.SERVICE_NAME;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.
@@ -48,7 +49,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     @Probe(name = "count", level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
-            new ConcurrentHashMap<Connection, ClientEndpoint>();
+            new ConcurrentHashMap<>();
 
     @Probe(name = "totalRegistrations", level = MANDATORY)
     private final MwCounter totalRegistrations = newMwCounter();
@@ -61,7 +62,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public Set<ClientEndpoint> getEndpoints(String clientUuid) {
+    public Set<ClientEndpoint> getEndpoints(UUID clientUuid) {
         checkNotNull(clientUuid, "clientUuid can't be null");
 
         Set<ClientEndpoint> endpointSet = createHashSet(endpoints.size());
@@ -123,7 +124,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     private void sendClientEvent(ClientEvent event) {
         final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        String uuid = event.getUuid();
+        UUID uuid = event.getUuid();
         eventService.publishEvent(SERVICE_NAME, regs, event, uuid.hashCode());
     }
 

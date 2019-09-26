@@ -38,7 +38,6 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     private DiscoveryServiceProvider discoveryServiceProvider;
     private NodeFilter nodeFilter;
     private String nodeFilterClass;
-    private DiscoveryConfig readonly;
 
     public DiscoveryConfig() {
     }
@@ -56,25 +55,11 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         discoveryServiceProvider = discoveryConfig.discoveryServiceProvider;
         nodeFilter = discoveryConfig.nodeFilter;
         nodeFilterClass = discoveryConfig.nodeFilterClass;
-        readonly = discoveryConfig.readonly;
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public DiscoveryConfig getAsReadOnly() {
-        if (readonly != null) {
-            return readonly;
-        }
-        readonly = new DiscoveryConfigReadOnly(this);
-        return readonly;
-    }
-
-    public void setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
+    public DiscoveryConfig setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
         this.discoveryServiceProvider = discoveryServiceProvider;
+        return this;
     }
 
     public DiscoveryServiceProvider getDiscoveryServiceProvider() {
@@ -85,16 +70,18 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         return nodeFilter;
     }
 
-    public void setNodeFilter(NodeFilter nodeFilter) {
+    public DiscoveryConfig setNodeFilter(NodeFilter nodeFilter) {
         this.nodeFilter = nodeFilter;
+        return this;
     }
 
     public String getNodeFilterClass() {
         return nodeFilterClass;
     }
 
-    public void setNodeFilterClass(String nodeFilterClass) {
+    public DiscoveryConfig setNodeFilterClass(String nodeFilterClass) {
         this.nodeFilterClass = nodeFilterClass;
+        return this;
     }
 
     public boolean isEnabled() {
@@ -119,11 +106,13 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
      * Sets the strategy configurations for this discovery config.
      *
      * @param discoveryStrategyConfigs the strategy configurations
+     * @return this configuration
      */
-    public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
+    public DiscoveryConfig setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
         this.discoveryStrategyConfigs = discoveryStrategyConfigs == null
                 ? new ArrayList<DiscoveryStrategyConfig>(1)
                 : discoveryStrategyConfigs;
+        return this;
     }
 
     /**
@@ -133,9 +122,11 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
      * remember when building custom {@link com.hazelcast.config.Config} instances.
      *
      * @param discoveryStrategyConfig the {@link DiscoveryStrategyConfig} to add
+     * @return this configuration
      */
-    public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
+    public DiscoveryConfig addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
         discoveryStrategyConfigs.add(discoveryStrategyConfig);
+        return this;
     }
 
     @Override

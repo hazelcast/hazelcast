@@ -23,6 +23,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -247,7 +248,7 @@ public interface CPSubsystemManagementService {
      * @throws IllegalArgumentException if the given CP member is already
      *         removed from the CP member list
      */
-    ICompletableFuture<Void> removeCPMember(String cpMemberUuid);
+    ICompletableFuture<Void> removeCPMember(UUID cpMemberUuid);
 
     /**
      * Wipes and resets the whole CP subsystem and initializes it

@@ -53,7 +53,7 @@ import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.chang
 import static com.hazelcast.internal.cluster.impl.ClusterJoinManager.STALE_JOIN_PREVENTION_DURATION_PROP;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -220,7 +220,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, hz1, hz2);
 
         newHazelcastInstance(initOrCreateConfig(new Config()),
-                randomName(), new StaticMemberNodeContext(factory, newUnsecureUuidString(), member3.getAddress()));
+                randomName(), new StaticMemberNodeContext(factory, newUnsecureUUID(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
 
         OperationServiceImpl operationService = getOperationService(hz1);

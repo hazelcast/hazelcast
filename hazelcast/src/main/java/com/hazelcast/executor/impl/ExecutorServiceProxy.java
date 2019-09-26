@@ -37,9 +37,9 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.FutureUtil.ExceptionHandler;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,6 +48,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -58,11 +59,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class ExecutorServiceProxy
@@ -212,7 +213,7 @@ public class ExecutorServiceProxy
         NodeEngine nodeEngine = getNodeEngine();
         Callable<T> callable = createRunnableAdapter(task);
         Data callableData = nodeEngine.toData(callable);
-        String uuid = newUnsecureUuidString();
+        UUID uuid = newUnsecureUUID();
         int partitionId = getTaskPartitionId(callable);
 
         Operation op = new CallableTaskOperation(name, uuid, callableData)
@@ -248,7 +249,7 @@ public class ExecutorServiceProxy
 
         NodeEngine nodeEngine = getNodeEngine();
         Data taskData = nodeEngine.toData(task);
-        String uuid = newUnsecureUuidString();
+        UUID uuid = newUnsecureUUID();
 
         boolean sync = !preventSync && checkSync();
         Operation op = new CallableTaskOperation(name, uuid, taskData)
@@ -310,7 +311,7 @@ public class ExecutorServiceProxy
 
     private  <T> Future<T> submitToMember(Data taskData, Member member) {
         NodeEngine nodeEngine = getNodeEngine();
-        String uuid = newUnsecureUuidString();
+        UUID uuid = newUnsecureUUID();
         Address target = member.getAddress();
 
         boolean sync = checkSync();
@@ -404,7 +405,7 @@ public class ExecutorServiceProxy
         checkNotShutdown();
 
         NodeEngine nodeEngine = getNodeEngine();
-        String uuid = newUnsecureUuidString();
+        UUID uuid = newUnsecureUUID();
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = member.getAddress();

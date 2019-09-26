@@ -160,7 +160,7 @@ public final class FailoverClientConfigSupport {
 
     /**
      * For a client to be valid alternative, all configurations should be equal except
-     * GroupConfig
+     * Cluster name
      * SecurityConfig
      * Discovery related parts of NetworkConfig
      * Credentials related configs
@@ -193,8 +193,8 @@ public final class FailoverClientConfigSupport {
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private static void checkValidAlternative(ClientConfig mainConfig, ClientConfig alternativeConfig) {
-        String mainClusterName = mainConfig.getGroupConfig().getName();
-        String alterNativeClusterName = alternativeConfig.getGroupConfig().getName();
+        String mainClusterName = mainConfig.getClusterName();
+        String alterNativeClusterName = alternativeConfig.getClusterName();
 
         checkValidAlternativeForNetwork(mainConfig, alternativeConfig);
 
@@ -255,12 +255,15 @@ public final class FailoverClientConfigSupport {
         if (notEqual(mainConfig.getUserContext(), alternativeConfig.getUserContext())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "userContext");
         }
+        if (notEqual(mainConfig.getMetricsConfig(), alternativeConfig.getMetricsConfig())) {
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "metricsConfig");
+        }
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private static void checkValidAlternativeForNetwork(ClientConfig mainConfig, ClientConfig alternativeConfig) {
-        String mainClusterName = mainConfig.getGroupConfig().getName();
-        String alterNativeClusterName = alternativeConfig.getGroupConfig().getName();
+        String mainClusterName = mainConfig.getClusterName();
+        String alterNativeClusterName = alternativeConfig.getClusterName();
 
         ClientNetworkConfig mainNetworkConfig = mainConfig.getNetworkConfig();
         ClientNetworkConfig alternativeNetworkConfig = alternativeConfig.getNetworkConfig();

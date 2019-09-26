@@ -17,13 +17,13 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
  * Split brain protection service will ask map service about whether map has defined split brain protection or not.

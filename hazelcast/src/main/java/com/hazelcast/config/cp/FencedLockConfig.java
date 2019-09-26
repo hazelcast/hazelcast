@@ -17,7 +17,7 @@
 package com.hazelcast.config.cp;
 
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
 
 /**
  * Contains configuration options for {@link FencedLock}

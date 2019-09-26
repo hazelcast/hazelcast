@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.TextCommandService;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
 

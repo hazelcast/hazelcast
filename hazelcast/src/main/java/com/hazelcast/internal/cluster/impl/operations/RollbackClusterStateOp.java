@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
@@ -31,19 +32,20 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class RollbackClusterStateOp extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
         IdentifiedDataSerializable {
 
     private Address initiator;
-    private String txnId;
+    private UUID txnId;
 
     private boolean response;
 
     public RollbackClusterStateOp() {
     }
 
-    public RollbackClusterStateOp(Address initiator, String txnId) {
+    public RollbackClusterStateOp(Address initiator, UUID txnId) {
         this.initiator = initiator;
         this.txnId = txnId;
     }
@@ -78,14 +80,14 @@ public class RollbackClusterStateOp extends Operation implements AllowedDuringPa
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(initiator);
-        out.writeUTF(txnId);
+        UUIDSerializationUtil.writeUUID(out, txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         initiator = in.readObject();
-        txnId = in.readUTF();
+        txnId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

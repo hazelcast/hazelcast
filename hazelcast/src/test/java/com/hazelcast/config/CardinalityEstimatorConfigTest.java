@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.CardinalityEstimatorConfig.CardinalityEstimatorConfigReadOnly;
+import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -144,14 +144,13 @@ public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(CardinalityEstimatorConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
-                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                .withPrefabValues(CardinalityEstimatorConfigReadOnly.class,
-                        new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("red")),
-                        new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("black")))
-                .withPrefabValues(MergePolicyConfig.class,
-                        new MergePolicyConfig(),
-                        new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
-                .verify();
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(CardinalityEstimatorConfigReadOnly.class,
+                              new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("red")),
+                              new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
+                      .verify();
     }
 }

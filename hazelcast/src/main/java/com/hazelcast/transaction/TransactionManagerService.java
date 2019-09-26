@@ -16,11 +16,13 @@
 
 package com.hazelcast.transaction;
 
+import java.util.UUID;
+
 public interface TransactionManagerService {
 
     <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
 
     TransactionContext newTransactionContext(TransactionOptions options);
 
-    TransactionContext newClientTransactionContext(TransactionOptions options, String clientUuid);
+    TransactionContext newClientTransactionContext(TransactionOptions options, UUID clientUuid);
 }

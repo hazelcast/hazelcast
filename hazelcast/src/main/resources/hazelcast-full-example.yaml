@@ -72,7 +72,7 @@ hazelcast:
   # Cluster groups allow you to create separate sub-clusters with different names.
   # They are also referenced in the WAN Replication configuration.
   # The group password is only used when the security is enabled (Enterprise edition feature).
-  group:
+  cluster:
     name: dev
     password: dev-pass
   #
@@ -141,16 +141,16 @@ hazelcast:
   #     WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication.
   #     Waits until a batch size is reached or a delay time is passed.
   #     Please see the batch-size and batch-max-delay-millis configuration descriptions below.
-  #     * "group-name":
-  #         Sets the group name used as an endpoint group name for authentication
+  #     * "cluster-name":
+  #         Sets the cluster name used as an endpoint cluster name for authentication
   #         on the target endpoint.
-  #         If there is no separate publisher ID property defined, this group name
+  #         If there is no separate publisher ID property defined, this cluster name
   #         will also be used as a WAN publisher ID. This ID is then used for
   #         identifying the publisher in a WanReplicationConfig.
   #     * "publisher-id":
   #         Sets the publisher ID used for identifying the publisher in a
   #         WanReplicationConfig.
-  #         If there is no publisher ID defined (it is empty), the group name will
+  #         If there is no publisher ID defined (it is empty), the cluster name will
   #         be used as a publisher ID.
   #     * "batch-size":
   #         Changes the maximum size of events that are sent to the target cluster
@@ -310,7 +310,7 @@ hazelcast:
   #                  connection-timeout-seconds: 10
   #                  hz-port: 5702
   # * "custom-publisher":
-  #     Custom implementation of a WAN publisher implementing WanReplicationEndpoint.
+  #     Custom implementation of a WAN publisher implementing WanReplicationPublisher.
   #     * "class-name":
   #     Mandatory config value defining the fully qualified class name of the
   #     WAN publisher implementation.
@@ -343,7 +343,7 @@ hazelcast:
     my-wan-cluster-batch:
       batch-publisher:
         nycPublisherId:
-          group-name: nyc
+          cluster-name: nyc
           batch-size: 1000
           batch-max-delay-millis: 2000
           response-timeout-millis: 60000
@@ -654,7 +654,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        group-name: GROUP-NAME
+        cluster-name: CLUSTER-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -1828,44 +1828,6 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
-  #
-  # ===== HAZELCAST SEMAPHORE CONFIGURATION =====
-  #
-  # Configuration element's name is "semaphore". It has the required attribute "name" with which you
-  # can specify the name of your Semaphore. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "initial-permits":
-  #     The thread count to which the concurrent access is limited. For example, if you set
-  # it to 3, concurrent access to the object is limited to 3 threads.
-  # * "backup-count":
-  #     Number of synchronous backups. For example, if it is set to 1, all permits of the semaphore
-  #     are copied to one other member for fail-safety. Its default value is 1.
-  # * "async-backup-count":
-  # Number of asynchronous backups. Its default value is 0.
-  # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  #
-  semaphore:
-    default:
-      initial-permits: 0
-      backup-count: 1
-      async-backup-count: 0
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
-
-  #
-  # ===== HAZELCAST COUNT-DOWN-LATCH CONFIGURATION =====
-  #
-  # Configuration element's name is "count-down-latch". It has the required attribute "name" with which you
-  # can specify the name of your CountDownLatch. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  #
-  count-down-latch:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST LOCK CONFIGURATION =====
@@ -2017,22 +1979,6 @@ hazelcast:
         class-name: PutIfAbsentMergePolicy
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
-  #
-  # ===== HAZELCAST ATOMIC REFERENCE CONFIGURATION =====
-  #
-  # Configuration element's name is "atomic-reference". It has the required attribute "name" with which you
-  # can specify the name of your IAtomicReference. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "split-brain-protection-ref":
-  # Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set the
-  # "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  #
-  atomic-reference:
-    default:
-      merge-policy:
-        batch-size: 100
-        class-name: PutIfAbsentMergePolicy
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
 
   #
   # ===== HAZELCAST LISTENER CONFIGURATIONS =====
@@ -2890,7 +2836,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        group-name: GROUP-NAME
+        cluster-name: CLUSTER-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -3199,3 +3145,12 @@ hazelcast:
         lock-acquire-limit: 1
       lock2:
         lock-acquire-limit: 2
+
+  metrics:
+    enabled: false
+    mc-enabled: false
+    jmx-enabled: false
+    collection-interval-seconds: 10
+    retention-seconds: 30
+    metrics-for-data-structures: true
+    minimum-level: DEBUG

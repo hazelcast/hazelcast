@@ -88,8 +88,8 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(splitBrainProtection1.isMinimumClusterSizeSatisfied());
-                assertFalse(splitBrainProtection2.isMinimumClusterSizeSatisfied());
+                assertTrue(splitBrainProtection1.hasMinimumSize());
+                assertFalse(splitBrainProtection2.hasMinimumSize());
             }
         });
     }
@@ -114,7 +114,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(splitBrainProtection.isMinimumClusterSizeSatisfied());
+                assertTrue(splitBrainProtection.hasMinimumSize());
             }
         });
     }
@@ -139,7 +139,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(splitBrainProtection.isMinimumClusterSizeSatisfied());
+                assertTrue(splitBrainProtection.hasMinimumSize());
             }
         });
     }
@@ -231,7 +231,7 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
         } catch (Exception ignored) {
         }
         SplitBrainProtection splitBrainProtection = hazelcastInstance.getSplitBrainProtectionService().getSplitBrainProtection(splitBrainProtectionName);
-        assertFalse(splitBrainProtection.isMinimumClusterSizeSatisfied());
+        assertFalse(splitBrainProtection.hasMinimumSize());
     }
 
     @Test(expected = SplitBrainProtectionException.class)

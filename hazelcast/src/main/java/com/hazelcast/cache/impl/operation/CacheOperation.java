@@ -35,7 +35,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.Closeable;
 
@@ -98,7 +98,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
 
         if (recordStore != null && recordStore.isWanReplicationEnabled()) {
             wanEventPublisher = cacheService.getCacheWanEventPublisher();
-            cacheService.checkWanReplicationQueues(name);
+            cacheService.doPrepublicationChecks(name);
         }
 
         beforeRunInternal();

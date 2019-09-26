@@ -20,7 +20,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Executor;
 

@@ -33,11 +33,11 @@ import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link IMap}.
@@ -116,8 +116,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
 
-    private transient MapConfigReadOnly readOnly;
-
     public MapConfig() {
     }
 
@@ -155,19 +153,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MapConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
@@ -620,9 +605,11 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
 
     /**
      * Sets {@link QueryCacheConfig} instances to this {@code MapConfig}.
+     * @return this configuration
      */
-    public void setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
+    public MapConfig setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
         this.queryCacheConfigs = queryCacheConfigs;
+        return this;
     }
 
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {

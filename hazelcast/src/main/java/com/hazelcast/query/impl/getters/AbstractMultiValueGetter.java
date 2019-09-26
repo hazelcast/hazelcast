@@ -16,8 +16,8 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;

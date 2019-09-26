@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,7 +27,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
@@ -34,7 +34,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractInvocationFuture_ClosedExecutorTest extends AbstractInvocationFuture_AbstractTest {
-
 
     @Test
     public void whenCompleteBeforeShutdown_thenCallback() {
@@ -51,7 +50,7 @@ public class AbstractInvocationFuture_ClosedExecutorTest extends AbstractInvocat
 
             @Override
             public void onFailure(Throwable t) {
-                if (t instanceof RejectedExecutionException) {
+                if (t instanceof HazelcastInstanceNotActiveException) {
                     onFailure.set(true);
                 }
             }
@@ -74,7 +73,7 @@ public class AbstractInvocationFuture_ClosedExecutorTest extends AbstractInvocat
 
             @Override
             public void onFailure(Throwable t) {
-                if (t instanceof RejectedExecutionException) {
+                if (t instanceof HazelcastInstanceNotActiveException) {
                     onFailure.set(true);
                 }
             }

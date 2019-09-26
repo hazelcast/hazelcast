@@ -19,8 +19,8 @@ package com.hazelcast.config;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for the multicast discovery mechanism.

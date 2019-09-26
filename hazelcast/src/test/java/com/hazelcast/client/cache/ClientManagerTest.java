@@ -49,16 +49,16 @@ public class ClientManagerTest {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().setPort(5701);
-        config.getGroupConfig().setName("cluster1");
-        config.getGroupConfig().setPassword("cluster1pass");
+        config.setClusterName("cluster1");
+        config.setClusterPassword("cluster1pass");
 
         Hazelcast.newHazelcastInstance(config);
 
         Config config2 = new Config();
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().setPort(5702);
-        config2.getGroupConfig().setName("cluster2");
-        config2.getGroupConfig().setPassword("cluster2pass");
+        config2.setClusterName("cluster2");
+        config2.setClusterPassword("cluster2pass");
 
         Hazelcast.newHazelcastInstance(config2);
     }

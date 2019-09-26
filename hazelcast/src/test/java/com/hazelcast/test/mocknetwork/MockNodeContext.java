@@ -26,9 +26,9 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.instance.impl.NodeExtensionFactory;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.NetworkingService;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.FirewallingNetworkingService;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.NodeIOService;
+import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.compatibility.SamplingNodeExtension;
 
@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class MockNodeContext implements NodeContext {
 

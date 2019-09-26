@@ -19,9 +19,9 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 
 /**
  * An extended {@link SampleableConcurrentHashMap} with {@link IMap} specifics.

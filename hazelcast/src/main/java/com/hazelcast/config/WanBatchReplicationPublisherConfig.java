@@ -24,8 +24,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -33,7 +33,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * Hazelcast Enterprise). The publisher sends events to another Hazelcast
  * cluster in batches, sending when either when enough events are enqueued
  * or enqueued events have waited for enough time.
- * The endpoint can be a different cluster defined by static IP's or
+ * The publisher can be a different cluster defined by static IP's or
  * discovered using a cloud discovery mechanism.
  *
  * @see DiscoveryConfig
@@ -41,14 +41,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:javadocvariable"})
 public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConfig {
-    public static final String DEFAULT_GROUP_NAME = "dev";
+    public static final String DEFAULT_CLUSTER_NAME = "dev";
     public static final boolean DEFAULT_SNAPSHOT_ENABLED = false;
     public static final WanPublisherState DEFAULT_INITIAL_PUBLISHER_STATE = WanPublisherState.REPLICATING;
     public static final int DEFAULT_QUEUE_CAPACITY = 10000;
     public static final int DEFAULT_BATCH_SIZE = 500;
     public static final int DEFAULT_BATCH_MAX_DELAY_MILLIS = 1000;
     public static final int DEFAULT_RESPONSE_TIMEOUT_MILLIS = 60000;
-    public static final WANQueueFullBehavior DEFAULT_QUEUE_FULL_BEHAVIOUR = WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
+    public static final WanQueueFullBehavior DEFAULT_QUEUE_FULL_BEHAVIOUR = WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
     public static final WanAcknowledgeType DEFAULT_ACKNOWLEDGE_TYPE = WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE;
     public static final int DEFAULT_DISCOVERY_PERIOD_SECONDS = 10;
     public static final int DEFAULT_MAX_TARGET_ENDPOINTS = Integer.MAX_VALUE;
@@ -58,14 +58,14 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     public static final long DEFAULT_IDLE_MAX_PARK_NS = MILLISECONDS.toNanos(250);
     public static final String DEFAULT_TARGET_ENDPOINTS = "";
 
-    private String groupName = DEFAULT_GROUP_NAME;
+    private String clusterName = DEFAULT_CLUSTER_NAME;
     private boolean snapshotEnabled = DEFAULT_SNAPSHOT_ENABLED;
     private WanPublisherState initialPublisherState = DEFAULT_INITIAL_PUBLISHER_STATE;
     private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
     private int batchSize = DEFAULT_BATCH_SIZE;
     private int batchMaxDelayMillis = DEFAULT_BATCH_MAX_DELAY_MILLIS;
     private int responseTimeoutMillis = DEFAULT_RESPONSE_TIMEOUT_MILLIS;
-    private WANQueueFullBehavior queueFullBehavior = DEFAULT_QUEUE_FULL_BEHAVIOUR;
+    private WanQueueFullBehavior queueFullBehavior = DEFAULT_QUEUE_FULL_BEHAVIOUR;
     private WanAcknowledgeType acknowledgeType = DEFAULT_ACKNOWLEDGE_TYPE;
 
     private int discoveryPeriodSeconds = DEFAULT_DISCOVERY_PERIOD_SECONDS;
@@ -132,33 +132,33 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     }
 
     /**
-     * Returns the group name used as an endpoint group name for authentication
+     * Returns the cluster name used as a publisher cluster name for authentication
      * on the target endpoint.
-     * If there is no separate publisher ID property defined, this group name
+     * If there is no separate publisher ID property defined, this cluster name
      * will also be used as a WAN publisher ID. This ID is then used for
      * identifying the publisher in a {@link WanReplicationConfig}.
      *
-     * @return the WAN endpoint group name
+     * @return the WAN endpoint cluster name
      * @see #getPublisherId()
      */
     public @Nonnull
-    String getGroupName() {
-        return groupName;
+    String getClusterName() {
+        return clusterName;
     }
 
     /**
-     * Sets the group name used as an endpoint group password for authentication
+     * Sets the cluster name used as an endpoint group password for authentication
      * on the target endpoint.
-     * If there is no separate publisher ID property defined, this group name
+     * If there is no separate publisher ID property defined, this cluster name
      * will also be used as a WAN publisher ID. This ID is then used for
      * identifying the publisher in a {@link WanReplicationConfig}.
      *
-     * @param groupName the WAN endpoint group name
+     * @param clusterName the WAN endpoint cluster name
      * @return this config
      * @see #getPublisherId()
      */
-    public WanBatchReplicationPublisherConfig setGroupName(@Nonnull String groupName) {
-        this.groupName = checkNotNull(groupName, "Group name must not be null");
+    public WanBatchReplicationPublisherConfig setClusterName(@Nonnull String clusterName) {
+        this.clusterName = checkNotNull(clusterName, "Cluster name must not be null");
         return this;
     }
 
@@ -377,7 +377,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * is full.
      */
     public @Nonnull
-    WANQueueFullBehavior getQueueFullBehavior() {
+    WanQueueFullBehavior getQueueFullBehavior() {
         return queueFullBehavior;
     }
 
@@ -388,7 +388,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @param queueFullBehavior the behaviour of this publisher when the WAN queue is full
      * @return this config
      */
-    public WanBatchReplicationPublisherConfig setQueueFullBehavior(@Nonnull WANQueueFullBehavior queueFullBehavior) {
+    public WanBatchReplicationPublisherConfig setQueueFullBehavior(@Nonnull WanQueueFullBehavior queueFullBehavior) {
         this.queueFullBehavior = checkNotNull(queueFullBehavior, "Queue full behaviour must not be null");
         return this;
     }
@@ -777,7 +777,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     @Override
     public String toString() {
         return "WanBatchReplicationPublisherConfig{"
-                + "groupName='" + groupName + '\''
+                + "clusterName='" + clusterName + '\''
                 + ", publisherId='" + publisherId + '\''
                 + ", queueCapacity=" + queueCapacity
                 + ", queueFullBehavior=" + queueFullBehavior
@@ -809,7 +809,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(groupName);
+        out.writeUTF(clusterName);
         out.writeBoolean(snapshotEnabled);
         out.writeByte(initialPublisherState.getId());
         out.writeInt(queueCapacity);
@@ -838,14 +838,14 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        groupName = in.readUTF();
+        clusterName = in.readUTF();
         snapshotEnabled = in.readBoolean();
         initialPublisherState = WanPublisherState.getByType(in.readByte());
         queueCapacity = in.readInt();
         batchSize = in.readInt();
         batchMaxDelayMillis = in.readInt();
         responseTimeoutMillis = in.readInt();
-        queueFullBehavior = WANQueueFullBehavior.getByType(in.readInt());
+        queueFullBehavior = WanQueueFullBehavior.getByType(in.readInt());
         acknowledgeType = WanAcknowledgeType.getById(in.readInt());
         discoveryPeriodSeconds = in.readInt();
         maxTargetEndpoints = in.readInt();

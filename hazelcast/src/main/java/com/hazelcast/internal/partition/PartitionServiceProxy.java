@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.FutureUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,10 +38,11 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class PartitionServiceProxy implements PartitionService {
 
@@ -88,22 +89,22 @@ public class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public String addMigrationListener(final MigrationListener migrationListener) {
+    public UUID addMigrationListener(final MigrationListener migrationListener) {
         return partitionService.addMigrationListener(migrationListener);
     }
 
     @Override
-    public boolean removeMigrationListener(final String registrationId) {
+    public boolean removeMigrationListener(final UUID registrationId) {
         return partitionService.removeMigrationListener(registrationId);
     }
 
     @Override
-    public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
+    public UUID addPartitionLostListener(PartitionLostListener partitionLostListener) {
         return partitionService.addPartitionLostListener(partitionLostListener);
     }
 
     @Override
-    public boolean removePartitionLostListener(String registrationId) {
+    public boolean removePartitionLostListener(UUID registrationId) {
         return partitionService.removePartitionLostListener(registrationId);
     }
 

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 hazelcast:
-  group:
+  cluster:
     name: dev
     password: dev-pass
   network:

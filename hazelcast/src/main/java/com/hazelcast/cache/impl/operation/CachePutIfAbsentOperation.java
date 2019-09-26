@@ -27,9 +27,9 @@ import java.io.IOException;
 
 /**
  * Operation implementation for calling
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String, int)}.
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, java.util.UUID, int)}.
  *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, java.util.UUID, int)
  */
 public class CachePutIfAbsentOperation extends MutatingCacheOperation {
 

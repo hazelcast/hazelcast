@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
@@ -49,7 +50,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
@@ -81,14 +82,13 @@ import com.hazelcast.wan.impl.WanReplicationService;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
-import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.CONCURRENT_WINDOW_MS;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -102,8 +102,6 @@ import static java.lang.System.currentTimeMillis;
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class NodeEngineImpl implements NodeEngine {
-
-    private static final String JET_SERVICE_NAME = "hz:impl:jetService";
 
     private final Node node;
     private final SerializationService serializationService;
@@ -192,8 +190,8 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
-        ProbeLevel probeLevel = node.getProperties().getEnum(METRICS_LEVEL, ProbeLevel.class);
-        return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class), probeLevel);
+        ProbeLevel minimumLevel = node.getConfig().getMetricsConfig().getMinimumLevel();
+        return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class), minimumLevel);
     }
 
     private Diagnostics newDiagnostics() {
@@ -223,9 +221,12 @@ public class NodeEngineImpl implements NodeEngine {
         ThreadMetricSet.register(metricsRegistry);
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
-        if (node.getProperties().getBoolean(METRICS_DISTRIBUTED_DATASTRUCTURES)) {
+
+        MetricsConfig metricsConfig = node.getConfig().getMetricsConfig();
+        if (metricsConfig.isEnabled() && metricsConfig.isMetricsForDataStructuresEnabled()) {
             new StatisticsAwareMetricsSet(serviceManager, this).register(metricsRegistry);
         }
+
         metricsRegistry.scanAndRegister(node.getNodeExtension().getMemoryStats(), "memory");
         metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
 
@@ -439,7 +440,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService.onMemberLeft(member);
     }
 
-    public void onClientDisconnected(String clientUuid) {
+    public void onClientDisconnected(UUID clientUuid) {
         operationParker.onClientDisconnected(clientUuid);
     }
 

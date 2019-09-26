@@ -36,10 +36,10 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.UuidUtil;
 
 import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
@@ -51,11 +51,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * The {@link ClientClusterService} implementation.
@@ -65,7 +66,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     protected final HazelcastClientInstanceImpl client;
     private ClientMembershipListener clientMembershipListener;
     private final AtomicReference<Map<Address, Member>> members = new AtomicReference<>();
-    private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final Object initialMembershipListenerMutex = new Object();
     private final Set<String> labels;
 
@@ -97,7 +98,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public Member getMember(@Nonnull String uuid) {
+    public Member getMember(@Nonnull UUID uuid) {
         checkNotNull(uuid, "UUID must not be null");
         final Collection<Member> memberList = getMemberList();
         for (Member member : memberList) {
@@ -153,25 +154,25 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         final ClientConnection connection = cm.getOwnerConnection();
         InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
         ClientPrincipal principal = cm.getPrincipal();
-        final String uuid = principal != null ? principal.getUuid() : null;
+        final UUID uuid = principal != null ? principal.getUuid() : null;
         return new ClientImpl(uuid, inetSocketAddress, client.getName(), labels);
     }
 
     @Nonnull
     @Override
-    public String addMembershipListener(@Nonnull MembershipListener listener) {
+    public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         checkNotNull(listener, "Listener can't be null");
 
         synchronized (initialMembershipListenerMutex) {
-            String id = addMembershipListenerWithoutInit(listener);
+            UUID id = addMembershipListenerWithoutInit(listener);
             initMembershipListener(listener);
             return id;
         }
     }
 
     private @Nonnull
-    String addMembershipListenerWithoutInit(@Nonnull MembershipListener listener) {
-        String id = UuidUtil.newUnsecureUuidString();
+    UUID addMembershipListenerWithoutInit(@Nonnull MembershipListener listener) {
+        UUID id = UuidUtil.newUnsecureUUID();
         listeners.put(id, listener);
         return id;
     }
@@ -192,7 +193,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public boolean removeMembershipListener(@Nonnull String registrationId) {
+    public boolean removeMembershipListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
         return listeners.remove(registrationId) != null;
     }

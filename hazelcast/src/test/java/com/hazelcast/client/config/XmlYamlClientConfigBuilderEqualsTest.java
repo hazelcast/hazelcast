@@ -17,7 +17,7 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

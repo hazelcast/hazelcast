@@ -20,9 +20,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.nio.InboundHandlerWithCounters;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.util.collection.Long2ObjectHashMap;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
@@ -33,7 +33,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT_FLAG
 import static com.hazelcast.client.impl.protocol.ClientMessage.FRAGMENTATION_ID_OFFSET;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
-import static com.hazelcast.nio.IOUtil.compactOrClear;
+import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 
 /**
  * Builds {@link ClientMessage}s from byte chunks.

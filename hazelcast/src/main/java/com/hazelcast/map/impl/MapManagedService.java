@@ -21,7 +21,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreInfo;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Properties;
 

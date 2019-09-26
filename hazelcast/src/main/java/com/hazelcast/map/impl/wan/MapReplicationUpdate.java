@@ -24,15 +24,18 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.impl.InternalWanReplicationEvent;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * WAN replication object for map update operations.
  */
-public class MapReplicationUpdate implements WanReplicationEvent, IdentifiedDataSerializable {
+public class MapReplicationUpdate implements InternalWanReplicationEvent, IdentifiedDataSerializable {
     private String mapName;
     /**
      * The policy how to merge the entry on the receiving cluster
@@ -56,14 +59,6 @@ public class MapReplicationUpdate implements WanReplicationEvent, IdentifiedData
         } else {
             this.entryView = new WanMapEntryView<>(entryView);
         }
-    }
-
-    public String getMapName() {
-        return mapName;
-    }
-
-    public void setMapName(String mapName) {
-        this.mapName = mapName;
     }
 
     public SplitBrainMergePolicy getMergePolicy() {
@@ -111,13 +106,38 @@ public class MapReplicationUpdate implements WanReplicationEvent, IdentifiedData
         counters.incrementUpdate(mapName);
     }
 
+    @Nonnull
     @Override
     public Data getKey() {
         return entryView.getKey();
     }
 
+    @Nonnull
+    @Override
+    public Set<String> getClusterNames() {
+        // called only in EE
+        return Collections.emptySet();
+    }
+
+    @Override
+    public int getBackupCount() {
+        // called only in EE
+        return 0;
+    }
+
+    @Override
+    public long getCreationTime() {
+        // called only in EE
+        return 0;
+    }
+
     @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getObjectName() {
+        return mapName;
     }
 }

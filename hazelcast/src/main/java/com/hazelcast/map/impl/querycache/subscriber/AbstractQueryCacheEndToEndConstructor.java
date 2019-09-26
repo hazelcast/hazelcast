@@ -27,9 +27,11 @@ import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
 import com.hazelcast.query.Predicate;
 
+import java.util.UUID;
+
 import static com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo.toAccumulatorInfo;
 import static com.hazelcast.map.impl.querycache.subscriber.NullQueryCache.NULL_QUERY_CACHE;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Provides generic functionality for {@code QueryCacheEndToEndConstructor} implementations.
@@ -49,7 +51,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     protected InternalQueryCache queryCache;
 
     private Predicate predicate;
-    private String publisherListenerId;
+    private UUID publisherListenerId;
 
     public AbstractQueryCacheEndToEndConstructor(QueryCacheRequest request) {
         this.request = request;
@@ -85,7 +87,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
 
             info.setPublishable(true);
 
-            String publisherListenerId = queryCache.getPublisherListenerId();
+            UUID publisherListenerId = queryCache.getPublisherListenerId();
             if (publisherListenerId == null) {
                 createSubscriberAccumulator(info);
             }

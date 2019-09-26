@@ -98,7 +98,7 @@ public final class Aggregators {
      * Aggregation result type is a Set of R.
      */
     public static <I, R> Aggregator<I, Set<R>> distinct() {
-        return new DistinctValuesAggregator<I, R>();
+        return new DistinctValuesAggregator<>();
     }
 
     /**
@@ -110,7 +110,7 @@ public final class Aggregators {
      * Aggregation result type is a Set of R.
      */
     public static <I, R> Aggregator<I, Set<R>> distinct(String attributePath) {
-        return new DistinctValuesAggregator<I, R>(attributePath);
+        return new DistinctValuesAggregator<>(attributePath);
     }
 
     // ---------------------------------------------------------------------------------------------------------

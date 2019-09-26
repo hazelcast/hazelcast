@@ -18,7 +18,7 @@ package com.hazelcast.executor;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;

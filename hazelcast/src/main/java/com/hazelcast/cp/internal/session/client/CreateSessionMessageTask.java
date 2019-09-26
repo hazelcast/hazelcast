@@ -24,8 +24,8 @@ import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.session.SessionResponse;
 import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.Clock;
 
 import static com.hazelcast.cp.session.CPSession.CPSessionOwnerType.CLIENT;
 

@@ -27,9 +27,9 @@ import com.hazelcast.internal.json.JsonObject;
 import java.util.Set;
 
 import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * Request for updating map configuration from Management Center.

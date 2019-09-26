@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 
 
 /**
@@ -107,7 +107,7 @@ public class LazyEntryViewFromRecord<R extends Record> extends SampleableConcurr
     }
 
     @Override
-    public Long getMaxIdle() {
+    public long getMaxIdle() {
         return record.getMaxIdle();
     }
 

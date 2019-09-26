@@ -1,1 +1,1 @@
-com.hazelcast.util.ServiceLoaderTest$ServiceLoaderTestInterfaceImpl
+com.hazelcast.internal.util.ServiceLoaderTest$ServiceLoaderTestInterfaceImpl

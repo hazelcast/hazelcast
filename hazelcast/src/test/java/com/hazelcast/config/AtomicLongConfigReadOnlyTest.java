@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,6 +29,6 @@ public class AtomicLongConfigReadOnlyTest extends AbstractBasicConfigReadOnlyTes
 
     @Override
     protected AtomicLongConfig createConfig() {
-        return new AtomicLongConfig().getAsReadOnly();
+        return new AtomicLongConfigReadOnly(new AtomicLongConfig());
     }
 }

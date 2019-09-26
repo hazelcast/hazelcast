@@ -20,6 +20,8 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 
+import java.util.UUID;
+
 /**
  * An interface that can be implemented by SPI services that want to deal with transactions.
  */
@@ -28,5 +30,5 @@ public interface TransactionalService {
 
     <T extends TransactionalObject> T createTransactionalObject(String name, Transaction transaction);
 
-    void rollbackTransaction(String transactionId);
+    void rollbackTransaction(UUID transactionId);
 }

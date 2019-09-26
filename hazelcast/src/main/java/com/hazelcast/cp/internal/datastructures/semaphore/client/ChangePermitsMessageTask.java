@@ -17,15 +17,15 @@
 package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPSemaphoreChangeCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreChangeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.ChangePermitsOp;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SemaphorePermission;
 
@@ -36,7 +36,7 @@ import static java.lang.Math.abs;
 /**
  * Client message task for {@link ChangePermitsOp}
  */
-public class ChangePermitsMessageTask extends AbstractMessageTask<CPSemaphoreChangeCodec.RequestParameters>
+public class ChangePermitsMessageTask extends AbstractMessageTask<SemaphoreChangeCodec.RequestParameters>
         implements ExecutionCallback<Boolean> {
 
     public ChangePermitsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -52,18 +52,18 @@ public class ChangePermitsMessageTask extends AbstractMessageTask<CPSemaphoreCha
     }
 
     @Override
-    protected CPSemaphoreChangeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPSemaphoreChangeCodec.decodeRequest(clientMessage);
+    protected SemaphoreChangeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreChangeCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPSemaphoreChangeCodec.encodeResponse((Boolean) response);
+        return SemaphoreChangeCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftSemaphoreService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override

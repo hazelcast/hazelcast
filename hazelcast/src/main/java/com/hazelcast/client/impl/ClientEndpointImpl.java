@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -36,6 +36,7 @@ import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,9 +50,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final Connection connection;
-    private final ConcurrentMap<String, TransactionContext> transactionContextMap
-            = new ConcurrentHashMap<String, TransactionContext>();
-    private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
+    private final ConcurrentMap<UUID, TransactionContext> transactionContextMap
+            = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<UUID, Callable>();
     private final SocketAddress socketAddress;
     private final long creationTime;
 
@@ -87,7 +88,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return principal != null ? principal.getUuid() : null;
     }
 
@@ -199,7 +200,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public TransactionContext getTransactionContext(String txnId) {
+    public TransactionContext getTransactionContext(UUID txnId) {
         final TransactionContext transactionContext = transactionContextMap.get(txnId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context found for txnId:" + txnId);
@@ -218,12 +219,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void removeTransactionContext(String txnId) {
+    public void removeTransactionContext(UUID txnId) {
         transactionContextMap.remove(txnId);
     }
 
     @Override
-    public void addListenerDestroyAction(final String service, final String topic, final String id) {
+    public void addListenerDestroyAction(final String service, final String topic, final UUID id) {
         final EventService eventService = clientEngine.getEventService();
         addDestroyAction(id, new Callable<Boolean>() {
             @Override
@@ -234,12 +235,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void addDestroyAction(String registrationId, Callable<Boolean> removeAction) {
+    public void addDestroyAction(UUID registrationId, Callable<Boolean> removeAction) {
         removeListenerActions.put(registrationId, removeAction);
     }
 
     @Override
-    public boolean removeDestroyAction(String id) {
+    public boolean removeDestroyAction(UUID id) {
         return removeListenerActions.remove(id) != null;
     }
 

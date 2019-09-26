@@ -191,6 +191,6 @@ public class XmlConfigBuilderConfigResolutionTest {
     @Test
     public void testResolveDefault() {
         Config config = new XmlConfigBuilder().build();
-        assertEquals("dev", config.getGroupConfig().getName());
+        assertEquals("dev", config.getClusterName());
     }
 }

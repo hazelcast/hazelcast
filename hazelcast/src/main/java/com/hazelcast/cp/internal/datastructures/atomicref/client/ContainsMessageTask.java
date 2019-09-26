@@ -17,14 +17,14 @@
 package com.hazelcast.cp.internal.datastructures.atomicref.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicRefContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicRefContainsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ContainsOp;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicReferencePermission;
 
@@ -35,7 +35,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link ContainsOp}
  */
-public class ContainsMessageTask extends AbstractMessageTask<CPAtomicRefContainsCodec.RequestParameters>
+public class ContainsMessageTask extends AbstractMessageTask<AtomicRefContainsCodec.RequestParameters>
         implements ExecutionCallback<Boolean> {
 
     public ContainsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -51,19 +51,19 @@ public class ContainsMessageTask extends AbstractMessageTask<CPAtomicRefContains
     }
 
     @Override
-    protected CPAtomicRefContainsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicRefContainsCodec.decodeRequest(clientMessage);
+    protected AtomicRefContainsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicRefContainsCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicRefContainsCodec.encodeResponse((Boolean) response);
+        return AtomicRefContainsCodec.encodeResponse((Boolean) response);
     }
 
 
     @Override
     public String getServiceName() {
-        return RaftAtomicRefService.SERVICE_NAME;
+        return AtomicRefService.SERVICE_NAME;
     }
 
     @Override

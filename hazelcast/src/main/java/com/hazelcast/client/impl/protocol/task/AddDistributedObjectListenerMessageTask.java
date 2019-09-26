@@ -22,11 +22,12 @@ import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 public class AddDistributedObjectListenerMessageTask
@@ -40,7 +41,7 @@ public class AddDistributedObjectListenerMessageTask
     @Override
     protected Object call() throws Exception {
         final ProxyService proxyService = clientEngine.getProxyService();
-        final String registrationId = proxyService.addProxyListener(this);
+        final UUID registrationId = proxyService.addProxyListener(this);
         endpoint.addDestroyAction(registrationId, new Callable() {
             @Override
             public Boolean call() {
@@ -58,7 +59,7 @@ public class AddDistributedObjectListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientAddDistributedObjectListenerCodec.encodeResponse((String) response);
+        return ClientAddDistributedObjectListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

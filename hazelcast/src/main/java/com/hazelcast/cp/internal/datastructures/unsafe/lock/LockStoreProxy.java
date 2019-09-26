@@ -21,6 +21,7 @@ import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Proxy to a {@link LockStoreImpl}. Since a {@link LockStoreImpl} may be destroyed
@@ -42,31 +43,31 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
+    public boolean lock(Data key, UUID caller, long threadId, long referenceId, long leaseTime) {
         LockStore lockStore = getOrCreateLockStore();
         return lockStore != null && lockStore.lock(key, caller, threadId, referenceId, leaseTime);
     }
 
     @Override
-    public boolean localLock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
+    public boolean localLock(Data key, UUID caller, long threadId, long referenceId, long leaseTime) {
         LockStore lockStore = getOrCreateLockStore();
         return lockStore != null && lockStore.localLock(key, caller, threadId, referenceId, leaseTime);
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime, boolean blockReads) {
+    public boolean txnLock(Data key, UUID caller, long threadId, long referenceId, long leaseTime, boolean blockReads) {
         LockStore lockStore = getOrCreateLockStore();
         return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, leaseTime, blockReads);
     }
 
     @Override
-    public boolean extendLeaseTime(Data key, String caller, long threadId, long leaseTime) {
+    public boolean extendLeaseTime(Data key, UUID caller, long threadId, long leaseTime) {
         LockStore lockStore = getLockStoreOrNull();
         return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, leaseTime);
     }
 
     @Override
-    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
+    public boolean unlock(Data key, UUID caller, long threadId, long referenceId) {
         LockStore lockStore = getLockStoreOrNull();
         return lockStore != null && lockStore.unlock(key, caller, threadId, referenceId);
     }
@@ -78,7 +79,7 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean isLockedBy(Data key, String caller, long threadId) {
+    public boolean isLockedBy(Data key, UUID caller, long threadId) {
         LockStore lockStore = getLockStoreOrNull();
         return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
     }
@@ -111,7 +112,7 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean canAcquireLock(Data key, String caller, long threadId) {
+    public boolean canAcquireLock(Data key, UUID caller, long threadId) {
         LockStore lockStore = getLockStoreOrNull();
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }

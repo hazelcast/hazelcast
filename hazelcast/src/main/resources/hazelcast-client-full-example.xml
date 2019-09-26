@@ -79,14 +79,14 @@
     </config-replacers>
 
     <!--
-        Specifies the name and password for a cluster group you connect to.
-        Cluster groups allow you to create separate sub-clusters with different names.
+        Specifies the name and password for a cluster you connect to.
+        Cluster configuration allow you to create separate sub-clusters with different names.
         The password is only checked when security is enabled on Hazelcast members (Enterprise edition feature).
     -->
-    <group>
+    <cluster>
         <name>dev</name>
         <password>dev-pass</password>
-    </group>
+    </cluster>
 
     <!--
         When Hazelcast instances are created, they are put in a global registry with their creation names.
@@ -342,7 +342,7 @@
             <tenant-id>TENANT_ID</tenant-id>
             <subscription-id>SUB_ID</subscription-id>
             <cluster-id>HZLCAST001</cluster-id>
-            <group-name>GROUP-NAME</group-name>
+            <cluster-name>CLUSTER-NAME</cluster-name>
         </azure>
         <kubernetes enabled="false">
             <namespace>MY-KUBERNETES-NAMESPACE</namespace>

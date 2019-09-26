@@ -26,7 +26,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.impl.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.impl.spi.ClientTransactionManagerService;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Address;
@@ -39,8 +38,8 @@ import javax.transaction.xa.Xid;
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.Clock.currentTimeMillis;
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 public class ClientTransactionManagerServiceImpl implements ClientTransactionManagerService {
 
@@ -103,12 +102,8 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     }
 
     @Override
-    public String getGroupName() {
-        final GroupConfig groupConfig = client.getClientConfig().getGroupConfig();
-        if (groupConfig == null) {
-            throw new RuntimeException("GroupConfig cannot be null client is participate in XA Transaction");
-        }
-        return groupConfig.getName();
+    public String getClusterName() {
+        return client.getClientConfig().getClusterName();
     }
 
     public ClientConnection connect() throws Exception {

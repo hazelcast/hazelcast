@@ -31,7 +31,7 @@ import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Client side cluster-wide iterator for {@link com.hazelcast.cache.ICache}.

@@ -16,7 +16,9 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -33,7 +35,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  * <pre>{@code
  * <hz:hazelcast id="instance">
  *      <hz:config>
- *          <hz:group name="dev" password="password"/>
+ *          <hz:cluster name="dev" password="password"/>
  *          <hz:network port="5701" port-auto-increment="false">
  *              <hz:join>
  *                  <hz:multicast enabled="false" multicast-group="224.2.2.3" multicast-port="54327"/>
@@ -50,6 +52,8 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  * }</pre>
  */
 public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
+
+    static final String CP_SUBSYSTEM_SUFFIX = "@cp-subsystem";
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -86,6 +90,18 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
             HazelcastConfigBeanDefinitionParser configParser = new HazelcastConfigBeanDefinitionParser();
             AbstractBeanDefinition configBeanDef = configParser.parseInternal(config, parserContext);
             builder.addConstructorArgValue(configBeanDef);
+
+            registerCPSubsystemBean(element);
+        }
+
+        private void registerCPSubsystemBean(Element element) {
+            String instanceBeanRef = element.getAttribute("id");
+            BeanDefinitionBuilder cpBeanDefBuilder = BeanDefinitionBuilder.rootBeanDefinition(CPSubsystem.class);
+            cpBeanDefBuilder.setFactoryMethodOnBean("getCPSubsystem", instanceBeanRef);
+
+            BeanDefinitionHolder holder =
+                    new BeanDefinitionHolder(cpBeanDefBuilder.getBeanDefinition(), instanceBeanRef + CP_SUBSYSTEM_SUFFIX);
+            registerBeanDefinition(holder, parserContext.getRegistry());
         }
     }
 }

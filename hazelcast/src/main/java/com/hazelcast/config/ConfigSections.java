@@ -25,7 +25,7 @@ enum ConfigSections {
     INSTANCE_NAME("instance-name", false),
     IMPORT("import", true),
     CONFIG_REPLACERS("config-replacers", false),
-    GROUP("group", false),
+    CLUSTER("cluster", false),
     LICENSE_KEY("license-key", false),
     MANAGEMENT_CENTER("management-center", false),
     PROPERTIES("properties", false),
@@ -44,12 +44,9 @@ enum ConfigSections {
     SET("set", true),
     TOPIC("topic", true),
     RELIABLE_TOPIC("reliable-topic", true),
-    SEMAPHORE("semaphore", true),
     LOCK("lock", true),
     RINGBUFFER("ringbuffer", true),
     ATOMIC_LONG("atomic-long", true),
-    ATOMIC_REFERENCE("atomic-reference", true),
-    COUNT_DOWN_LATCH("count-down-latch", true),
     LISTENERS("listeners", false),
     SERIALIZATION("serialization", false),
     SERVICES("services", false),
@@ -66,7 +63,8 @@ enum ConfigSections {
     CRDT_REPLICATION("crdt-replication", false),
     PN_COUNTER("pn-counter", true),
     ADVANCED_NETWORK("advanced-network", false),
-    CP_SUBSYSTEM("cp-subsystem", false);
+    CP_SUBSYSTEM("cp-subsystem", false),
+    METRICS("metrics", false);
 
     final String name;
     final boolean multipleOccurrence;

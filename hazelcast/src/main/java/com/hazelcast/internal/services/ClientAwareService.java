@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.services;
 
+import java.util.UUID;
+
 /**
  * A interface that can be implemented by a SPI Service so that it can be notified about client disconnects.
  * <p>
@@ -28,5 +30,5 @@ public interface ClientAwareService {
      *
      * @param clientUuid the UUID of the client that disconnected from a member
      */
-    void clientDisconnected(String clientUuid);
+    void clientDisconnected(UUID clientUuid);
 }

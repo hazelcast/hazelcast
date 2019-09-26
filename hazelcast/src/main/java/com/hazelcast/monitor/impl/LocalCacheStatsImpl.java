@@ -20,8 +20,8 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.LocalCacheStats;
 
-import static com.hazelcast.util.JsonUtil.getFloat;
-import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getFloat;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 /**
  * Default implementation of {@link com.hazelcast.monitor.LocalCacheStats}

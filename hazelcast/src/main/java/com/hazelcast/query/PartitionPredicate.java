@@ -16,7 +16,7 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
 /**
  * A {@link Predicate} that restricts the execution of a Predicate to a single Partition.

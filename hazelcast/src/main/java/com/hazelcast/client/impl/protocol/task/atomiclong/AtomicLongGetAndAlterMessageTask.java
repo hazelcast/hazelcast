@@ -23,7 +23,7 @@ import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongServ
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.operations.GetAndAlterOperation;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicLongPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;

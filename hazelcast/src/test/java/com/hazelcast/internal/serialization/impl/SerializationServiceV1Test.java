@@ -25,7 +25,7 @@ import com.hazelcast.test.AbstractTestOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,8 +53,8 @@ public class SerializationServiceV1Test {
 
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
-        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
-        operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
+        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUUID(), true);
+        operation.setCallerUuid(UuidUtil.newUnsecureUUID());
         OperationAccessor.setCallId(operation, 12345);
 
         Data data = serializationService.toData(operation);

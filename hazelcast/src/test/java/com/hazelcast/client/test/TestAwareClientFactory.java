@@ -43,13 +43,13 @@ public class TestAwareClientFactory extends TestAwareInstanceFactory {
 
     /**
      * Creates new client instance which uses in its network configuration the first member created by this factory. The value
-     * {@link com.hazelcast.test.AbstractHazelcastClassRunner#getTestMethodName()} is used as a cluster group name.
+     * {@link com.hazelcast.test.AbstractHazelcastClassRunner#getTestMethodName()} is used as a cluster cluster name.
      */
     public HazelcastInstance newHazelcastClient(ClientConfig config) {
         if (config == null) {
             config = new ClientConfig();
         }
-        config.getGroupConfig().setName(getTestMethodName());
+        config.setClusterName(getTestMethodName());
         List<HazelcastInstance> members = getOrInitInstances(perMethodMembers);
         if (members.isEmpty()) {
             throw new IllegalStateException("Members have to be created first");

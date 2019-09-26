@@ -27,25 +27,29 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomicreference.AtomicReferenceService;
-import com.hazelcast.cp.internal.datastructures.unsafe.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
 import com.hazelcast.cp.internal.datastructures.unsafe.semaphore.SemaphoreService;
 import com.hazelcast.crdt.CRDTReplicationMigrationService;
 import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.config.ServicesConfig;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.crdt.CRDTReplicationMigrationService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -65,7 +69,7 @@ import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.lang.reflect.Constructor;
@@ -80,8 +84,8 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public final class ServiceManagerImpl implements ServiceManager {
@@ -157,9 +161,6 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
         registerService(DistributedDurableExecutorService.SERVICE_NAME, new DistributedDurableExecutorService(nodeEngine));
         registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
-        registerService(AtomicReferenceService.SERVICE_NAME, new AtomicReferenceService());
-        registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
-        registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
         registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
         registerService(FlakeIdGeneratorService.SERVICE_NAME, new FlakeIdGeneratorService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
@@ -169,7 +170,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(PNCounterService.SERVICE_NAME, new PNCounterService());
         registerService(CRDTReplicationMigrationService.SERVICE_NAME, new CRDTReplicationMigrationService());
         registerService(DistributedScheduledExecutorService.SERVICE_NAME, new DistributedScheduledExecutorService());
-
+        registerService(MetricsService.SERVICE_NAME, new MetricsService(nodeEngine));
         registerCacheServiceIfAvailable();
         readServiceDescriptors();
     }

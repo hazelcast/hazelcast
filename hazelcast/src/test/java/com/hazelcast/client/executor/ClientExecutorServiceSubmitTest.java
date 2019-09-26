@@ -51,6 +51,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -62,7 +63,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.util.FutureUtil.waitForever;
+import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -106,10 +107,10 @@ public class ClientExecutorServiceSubmitTest {
             throws Exception {
         IExecutorService service = client.getExecutorService(randomString());
 
-        Callable<String> getUuidCallable = new GetMemberUuidTask();
+        Callable<UUID> getUuidCallable = new GetMemberUuidTask();
         Member member = server.getCluster().getLocalMember();
 
-        Future<String> result = service.submitToMember(getUuidCallable, member);
+        Future<UUID> result = service.submitToMember(getUuidCallable, member);
 
         assertEquals(member.getUuid(), result.get());
     }
@@ -119,13 +120,13 @@ public class ClientExecutorServiceSubmitTest {
             throws Exception {
         IExecutorService service = client.getExecutorService(randomString());
 
-        Callable<String> getUuidCallable = new GetMemberUuidTask();
+        Callable<UUID> getUuidCallable = new GetMemberUuidTask();
         Collection<Member> collection = server.getCluster().getMembers();
 
-        Map<Member, Future<String>> map = service.submitToMembers(getUuidCallable, collection);
+        Map<Member, Future<UUID>> map = service.submitToMembers(getUuidCallable, collection);
         for (Member member : map.keySet()) {
-            Future<String> result = map.get(member);
-            String uuid = result.get();
+            Future<UUID> result = map.get(member);
+            UUID uuid = result.get();
 
             assertEquals(member.getUuid(), uuid);
         }
@@ -150,13 +151,13 @@ public class ClientExecutorServiceSubmitTest {
             throws Exception {
         IExecutorService service = client.getExecutorService(randomString());
 
-        Callable<String> getUuidCallable = new GetMemberUuidTask();
+        Callable<UUID> getUuidCallable = new GetMemberUuidTask();
         MemberSelector selectAll = new SelectAllMembers();
 
-        Map<Member, Future<String>> map = service.submitToMembers(getUuidCallable, selectAll);
+        Map<Member, Future<UUID>> map = service.submitToMembers(getUuidCallable, selectAll);
         for (Member member : map.keySet()) {
-            Future<String> result = map.get(member);
-            String uuid = result.get();
+            Future<UUID> result = map.get(member);
+            UUID uuid = result.get();
 
             assertEquals(member.getUuid(), uuid);
         }
@@ -691,8 +692,8 @@ public class ClientExecutorServiceSubmitTest {
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         Member member = server.getCluster().getLocalMember();
 
-        Callable<String> callable = new MapPutPartitionAwareCallable<String, String>(mapName, key);
-        Future<String> result = service.submit(callable);
+        Callable<UUID> callable = new MapPutPartitionAwareCallable<>(mapName, key);
+        Future<UUID> result = service.submit(callable);
 
         assertEquals(member.getUuid(), result.get());
         assertTrue(map.containsKey(member.getUuid()));
@@ -707,13 +708,13 @@ public class ClientExecutorServiceSubmitTest {
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         Member member = server.getCluster().getLocalMember();
 
-        Callable<String> runnable = new MapPutPartitionAwareCallable<String, String>(mapName, key);
+        Callable<UUID> runnable = new MapPutPartitionAwareCallable<>(mapName, key);
 
-        final AtomicReference<String> result = new AtomicReference<String>();
+        final AtomicReference<UUID> result = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable, new ExecutionCallback<String>() {
-            public void onResponse(String response) {
+        service.submit(runnable, new ExecutionCallback<UUID>() {
+            public void onResponse(UUID response) {
                 result.set(response);
                 responseLatch.countDown();
             }

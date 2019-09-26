@@ -18,7 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Helper class for OutOfMemoryHandlers to close sockets, stop threads, release allocated resources

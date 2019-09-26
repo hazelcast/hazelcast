@@ -39,7 +39,7 @@ import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 

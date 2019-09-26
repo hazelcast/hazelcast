@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -211,7 +211,7 @@ public class SimpleEntryView<K, V>
     }
 
     @Override
-    public Long getMaxIdle() {
+    public long getMaxIdle() {
         return maxIdle;
     }
 

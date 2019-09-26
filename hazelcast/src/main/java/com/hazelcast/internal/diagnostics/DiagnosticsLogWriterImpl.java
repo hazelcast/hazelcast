@@ -22,8 +22,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
-import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.LOCALE_INTERNAL;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;

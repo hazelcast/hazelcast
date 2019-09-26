@@ -44,17 +44,18 @@ import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 @SuppressWarnings("checkstyle:methodcount")
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
@@ -183,7 +184,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
         final MemberImpl member = event.getMember();
-        final String uuid = member.getUuid();
+        final UUID uuid = member.getUuid();
         releaseLocksOwnedBy(uuid);
     }
 
@@ -191,7 +192,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    private void releaseLocksOwnedBy(final String uuid) {
+    private void releaseLocksOwnedBy(final UUID uuid) {
         final OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         for (final LockStoreContainer container : containers) {
             operationService.execute(new PartitionSpecificRunnable() {
@@ -211,7 +212,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         }
     }
 
-    private void cleanUpLock(OperationService operationService, String uuid, int partitionId, LockStoreImpl lockStore) {
+    private void cleanUpLock(OperationService operationService, UUID uuid, int partitionId, LockStoreImpl lockStore) {
         Collection<LockResource> locks = lockStore.getLocks();
         for (LockResource lock : locks) {
             Data key = lock.getKey();
@@ -224,7 +225,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         }
     }
 
-    private UnlockOperation createLockCleanupOperation(int partitionId, ObjectNamespace namespace, Data key, String uuid) {
+    private UnlockOperation createLockCleanupOperation(int partitionId, ObjectNamespace namespace, Data key, UUID uuid) {
         UnlockOperation op = new LocalLockCleanupOperation(namespace, key, uuid);
         op.setAsyncBackup(true);
         op.setNodeEngine(nodeEngine);
@@ -237,7 +238,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
 
     @Override
     public Collection<LockResource> getAllLocks() {
-        final Collection<LockResource> locks = new LinkedList<LockResource>();
+        final Collection<LockResource> locks = new LinkedList<>();
         for (LockStoreContainer container : containers) {
             for (LockStoreImpl lockStore : container.getLockStores()) {
                 locks.addAll(lockStore.getLocks());
@@ -365,7 +366,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     }
 
     @Override
-    public void clientDisconnected(String clientUuid) {
+    public void clientDisconnected(UUID clientUuid) {
         releaseLocksOwnedBy(clientUuid);
     }
 

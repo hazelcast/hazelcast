@@ -26,7 +26,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -79,7 +79,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void addMessageListener() {
-        String id = topic.addMessageListener(new ReliableMessageListenerMock());
+        UUID id = topic.addMessageListener(new ReliableMessageListenerMock());
 
         assertNotNull(id);
     }
@@ -94,7 +94,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     @Test
     public void removeMessageListener_whenExisting() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
 
         boolean removed = topic.removeMessageListener(id);
         assertTrue(removed);
@@ -111,7 +111,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void removeMessageListener_whenNonExisting() {
-        boolean result = topic.removeMessageListener(UUID.randomUUID().toString());
+        boolean result = topic.removeMessageListener(UUID.randomUUID());
 
         assertFalse(result);
     }
@@ -119,7 +119,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     @Test
     public void removeMessageListener_whenAlreadyRemoved() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
         topic.removeMessageListener(id);
 
         boolean result = topic.removeMessageListener(id);

@@ -19,6 +19,8 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 
+import java.util.UUID;
+
 /**
  * Base class for suspended {@link Transaction} implementations.
  *
@@ -53,7 +55,7 @@ public abstract class SuspendedTransaction implements Transaction {
         throw new IllegalStateException("Transaction suspended.");
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return transaction.getTxnId();
     }
 
@@ -77,7 +79,7 @@ public abstract class SuspendedTransaction implements Transaction {
         throw new IllegalStateException("Transaction suspended.");
     }
 
-    public String getOwnerUuid() {
+    public UUID getOwnerUuid() {
         return transaction.getOwnerUuid();
     }
 

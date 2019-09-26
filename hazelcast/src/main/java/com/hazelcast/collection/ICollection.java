@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * Concurrent, distributed, partitioned, listenable collection.
@@ -44,7 +45,7 @@ public interface ICollection<E> extends Collection<E>, DistributedObject {
      * @return returns the registration ID
      */
     @Nonnull
-    String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue);
+    UUID addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue);
 
     /**
      * Removes the specified item listener.
@@ -53,5 +54,5 @@ public interface ICollection<E> extends Collection<E>, DistributedObject {
      * @param registrationId ID of the listener registration
      * @return {@code true} if the item listener is removed, {@code false} otherwise
      */
-    boolean removeItemListener(@Nonnull String registrationId);
+    boolean removeItemListener(@Nonnull UUID registrationId);
 }

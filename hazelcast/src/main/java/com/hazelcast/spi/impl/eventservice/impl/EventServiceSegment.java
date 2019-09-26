@@ -21,12 +21,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.internal.services.ListenerWrapperEventFilter;
 import com.hazelcast.internal.services.NotifiableEventListener;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -55,7 +56,7 @@ public class EventServiceSegment<S> {
 
     /** Registration ID to registration map */
     @Probe(name = "listenerCount")
-    private final ConcurrentMap<String, Registration> registrationIdMap = new ConcurrentHashMap<String, Registration>();
+    private final ConcurrentMap<UUID, Registration> registrationIdMap = new ConcurrentHashMap<UUID, Registration>();
 
     @Probe(name = "publicationCount")
     private final AtomicLong totalPublishes = new AtomicLong();
@@ -133,7 +134,7 @@ public class EventServiceSegment<S> {
     /**
      * Returns the map from registration ID to the listener registration.
      */
-    public ConcurrentMap<String, Registration> getRegistrationIdMap() {
+    public ConcurrentMap<UUID, Registration> getRegistrationIdMap() {
         return registrationIdMap;
     }
 
@@ -167,9 +168,9 @@ public class EventServiceSegment<S> {
      *
      * @param topic the registration topic name
      * @param id    the registration ID
-     * @return the registration which was removed or {@code null} if none matchec
+     * @return the registration which was removed or {@code null} if none matched
      */
-    public Registration removeRegistration(String topic, String id) {
+    public Registration removeRegistration(String topic, UUID id) {
         Registration registration = registrationIdMap.remove(id);
         if (registration != null) {
             final Collection<Registration> all = registrations.get(topic);

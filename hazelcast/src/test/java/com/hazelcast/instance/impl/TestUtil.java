@@ -32,7 +32,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.reflect.Proxy.isProxyClass;
 
 @SuppressWarnings("WeakerAccess")

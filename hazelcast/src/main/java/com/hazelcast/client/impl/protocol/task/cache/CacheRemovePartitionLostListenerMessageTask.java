@@ -22,9 +22,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class CacheRemovePartitionLostListenerMessageTask
         extends AbstractRemoveListenerMessageTask<CacheRemovePartitionLostListenerCodec.RequestParameters> {
@@ -42,7 +43,7 @@ public class CacheRemovePartitionLostListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

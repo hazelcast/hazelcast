@@ -25,13 +25,14 @@ import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 
 public class GetConnectedClientsOperation extends AbstractClientOperation implements ReadonlyOperation {
 
-    private Map<String, ClientType> clients;
+    private Map<UUID, ClientType> clients;
 
     public GetConnectedClientsOperation() {
     }

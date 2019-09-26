@@ -27,9 +27,9 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.nio.EndpointManager;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-import static com.hazelcast.util.StringUtil.timeToStringFriendly;
+import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
 /**
  * Client implementation of {@link Connection}.

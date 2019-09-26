@@ -26,6 +26,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.membergroup.ConfigMemberGroupFactory;
 import com.hazelcast.partition.membergroup.DefaultMemberGroup;
@@ -311,7 +312,7 @@ public class PartitionStateGeneratorTest {
             count++;
             port++;
             MemberImpl m = new MemberImpl(new Address(InetAddress.getByAddress(new byte[]{ip[0], ip[1], ip[2], ip[3]})
-                    , port), VERSION, false);
+                    , port), VERSION, false, UuidUtil.newUnsecureUUID());
             members.add(m);
             if ((0xff & ip[3]) == 255) {
                 ip[2] = ++ip[2];

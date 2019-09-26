@@ -32,7 +32,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.reliable.DurableSubscriptionTest;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerMock;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
@@ -91,7 +91,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     @Test
     public void addMessageListener() {
         ITopic topic = client.getReliableTopic(randomString());
-        String id = topic.addMessageListener(new ReliableMessageListenerMock());
+        UUID id = topic.addMessageListener(new ReliableMessageListenerMock());
         assertNotNull(id);
     }
 
@@ -107,7 +107,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     public void removeMessageListener_whenExisting() {
         ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
 
         boolean removed = topic.removeMessageListener(id);
         assertTrue(removed);
@@ -125,7 +125,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     @Test
     public void removeMessageListener_whenNonExisting() {
         ITopic topic = client.getReliableTopic(randomString());
-        boolean result = topic.removeMessageListener(UUID.randomUUID().toString());
+        boolean result = topic.removeMessageListener(UUID.randomUUID());
 
         assertFalse(result);
     }
@@ -134,7 +134,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     public void removeMessageListener_whenAlreadyRemoved() {
         ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
         topic.removeMessageListener(id);
 
         boolean result = topic.removeMessageListener(id);
@@ -290,7 +290,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
             public void onMessage(Message message) {
             }
         };
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
 
         assertTrue(topic.removeMessageListener(id));
     }
@@ -316,7 +316,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
         final CountDownLatch messageArrived = new CountDownLatch(publishCount);
         ITopic<String> topic = client.getReliableTopic(topicName);
-        final String id = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
+        final UUID id = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
             @Override
             public void onMessage(Message<String> message) {
                 messageArrived.countDown();

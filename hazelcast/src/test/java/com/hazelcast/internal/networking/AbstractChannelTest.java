@@ -28,7 +28,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 

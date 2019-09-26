@@ -120,7 +120,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
-        config.getGroupConfig().setName(generateRandomString(10));
+        config.setClusterName(generateRandomString(10));
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(mapName);
         replicatedMapConfig.getMergePolicyConfig().setPolicy(mergePolicy);
         return config;

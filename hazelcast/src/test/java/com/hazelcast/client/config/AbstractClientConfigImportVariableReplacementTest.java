@@ -26,7 +26,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static java.io.File.createTempFile;
 
 public abstract class AbstractClientConfigImportVariableReplacementTest extends HazelcastTestSupport {
@@ -82,7 +82,7 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
     public abstract void testNoConfigReplacersMissingProperties();
 
     @Test
-    public abstract void testImportGroupConfigFromClassPath();
+    public abstract void testImportClusterConfigFromClassPath();
 
     @Test
     public abstract void testReplaceVariablesUseSystemProperties() throws Exception;

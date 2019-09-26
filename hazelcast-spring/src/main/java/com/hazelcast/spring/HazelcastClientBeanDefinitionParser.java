@@ -35,7 +35,6 @@ import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -43,7 +42,9 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.cp.CPSubsystem;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -60,7 +61,8 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
 import static org.springframework.util.Assert.isTrue;
 
@@ -70,7 +72,7 @@ import static org.springframework.util.Assert.isTrue;
  * <b>Sample Spring XML for Hazelcast Client:</b>
  * <pre>{@code
  *   <hz:client id="client">
- *      <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+ *      <hz:cluster name="${cluster.name}" password="${cluster.password}" />
  *      <hz:network connection-attempt-limit="3"
  *          connection-attempt-period="3000"
  *          connection-timeout="1000"
@@ -87,7 +89,20 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
-        return springXmlBuilder.handleClient(element);
+        AbstractBeanDefinition bean = springXmlBuilder.handleClient(element);
+        registerCPSubsystemBean(element, parserContext);
+        return bean;
+    }
+
+    private void registerCPSubsystemBean(Element element, ParserContext parserContext) {
+        String instanceBeanRef = element.getAttribute("id");
+        BeanDefinitionBuilder cpBeanDefBuilder = BeanDefinitionBuilder.rootBeanDefinition(CPSubsystem.class);
+        cpBeanDefBuilder.setFactoryMethodOnBean("getCPSubsystem", instanceBeanRef);
+        cpBeanDefBuilder.setLazyInit(true);
+
+        BeanDefinitionHolder holder =
+                new BeanDefinitionHolder(cpBeanDefBuilder.getBeanDefinition(), instanceBeanRef + CP_SUBSYSTEM_SUFFIX);
+        registerBeanDefinition(holder, parserContext.getRegistry());
     }
 
     /**
@@ -131,8 +146,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             handleClientAttributes(rootNode);
             for (Node node : childElements(rootNode)) {
                 String nodeName = cleanNodeName(node);
-                if ("group".equals(nodeName)) {
-                    createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
+                if ("cluster".equals(nodeName)) {
+                    handleClusterAttributes(node);
                 } else if ("properties".equals(nodeName)) {
                     handleProperties(node, configBuilder);
                 } else if ("network".equals(nodeName)) {
@@ -504,6 +519,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             configBuilder.addPropertyValue("labels", labels);
         }
+
     }
 
 }

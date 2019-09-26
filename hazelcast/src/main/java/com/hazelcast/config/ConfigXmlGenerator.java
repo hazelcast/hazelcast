@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -29,8 +29,8 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -53,10 +53,10 @@ import static com.hazelcast.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryC
 import static com.hazelcast.config.PermissionConfig.PermissionType.ALL;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.Preconditions.isNotNull;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.Arrays.asList;
 
 /**
@@ -119,9 +119,9 @@ public class ConfigXmlGenerator {
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd\">");
-        gen.open("group")
-                .node("name", config.getGroupConfig().getName())
-                .node("password", getOrMaskValue(config.getGroupConfig().getPassword()))
+        gen.open("cluster")
+                .node("name", config.getClusterName())
+                .node("password", getOrMaskValue(config.getClusterPassword()))
                 .close()
                 .node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName());
@@ -140,12 +140,9 @@ public class ConfigXmlGenerator {
         collectionXmlGenerator(gen, "list", config.getListConfigs().values());
         collectionXmlGenerator(gen, "set", config.getSetConfigs().values());
         topicXmlGenerator(gen, config);
-        semaphoreXmlGenerator(gen, config);
         lockXmlGenerator(gen, config);
-        countDownLatchXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
         atomicLongXmlGenerator(gen, config);
-        atomicReferenceXmlGenerator(gen, config);
         executorXmlGenerator(gen, config);
         durableExecutorXmlGenerator(gen, config);
         scheduledExecutorXmlGenerator(gen, config);
@@ -163,6 +160,7 @@ public class ConfigXmlGenerator {
         pnCounterXmlGenerator(gen, config);
         splitBrainProtectionXmlGenerator(gen, config);
         cpSubsystemConfig(gen, config);
+        metricsConfig(gen, config);
         userCodeDeploymentConfig(gen, config);
 
         xml.append("</hazelcast>");
@@ -491,25 +489,6 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void semaphoreXmlGenerator(XmlGenerator gen, Config config) {
-        for (SemaphoreConfig sc : config.getSemaphoreConfigs()) {
-            gen.open("semaphore", "name", sc.getName())
-                    .node("initial-permits", sc.getInitialPermits())
-                    .node("backup-count", sc.getBackupCount())
-                    .node("async-backup-count", sc.getAsyncBackupCount())
-                    .node("split-brain-protection-ref", sc.getSplitBrainProtectionName())
-                    .close();
-        }
-    }
-
-    private static void countDownLatchXmlGenerator(XmlGenerator gen, Config config) {
-        for (CountDownLatchConfig lc : config.getCountDownLatchConfigs().values()) {
-            gen.open("count-down-latch", "name", lc.getName())
-                    .node("split-brain-protection-ref", lc.getSplitBrainProtectionName())
-                    .close();
-        }
-    }
-
     private static void topicXmlGenerator(XmlGenerator gen, Config config) {
         for (TopicConfig t : config.getTopicConfigs().values()) {
             gen.open("topic", "name", t.getName())
@@ -632,17 +611,6 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void atomicReferenceXmlGenerator(XmlGenerator gen, Config config) {
-        Collection<AtomicReferenceConfig> configs = config.getAtomicReferenceConfigs().values();
-        for (AtomicReferenceConfig atomicReferenceConfig : configs) {
-            MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
-            gen.open("atomic-reference", "name", atomicReferenceConfig.getName())
-                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
-                    .node("split-brain-protection-ref", atomicReferenceConfig.getSplitBrainProtectionName())
-                    .close();
-        }
-    }
-
     private static void wanReplicationXmlGenerator(XmlGenerator gen, Config config) {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
             gen.open("wan-replication", "name", wan.getName());
@@ -676,7 +644,7 @@ public class ConfigXmlGenerator {
     private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchReplicationPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("batch-publisher");
-        gen.node("group-name", c.getGroupName())
+        gen.node("cluster-name", c.getClusterName())
            .node("batch-size", c.getBatchSize())
            .node("batch-max-delay-millis", c.getBatchMaxDelayMillis())
            .node("response-timeout-millis", c.getResponseTimeoutMillis())
@@ -1458,8 +1426,8 @@ public class ConfigXmlGenerator {
 
         gen.open("semaphores");
 
-        for (CPSemaphoreConfig semaphoreConfig : cpSubsystemConfig.getSemaphoreConfigs().values()) {
-            gen.open("cp-semaphore")
+        for (SemaphoreConfig semaphoreConfig : cpSubsystemConfig.getSemaphoreConfigs().values()) {
+            gen.open("semaphore")
                     .node("name", semaphoreConfig.getName())
                     .node("jdk-compatible", semaphoreConfig.isJDKCompatible())
                     .close();
@@ -1475,6 +1443,19 @@ public class ConfigXmlGenerator {
         }
 
         gen.close().close();
+    }
+
+    private static void metricsConfig(XmlGenerator gen, Config config) {
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        gen.open("metrics",
+                "enabled", metricsConfig.isEnabled(),
+                "mc-enabled", metricsConfig.isMcEnabled(),
+                "jmx-enabled", metricsConfig.isJmxEnabled())
+           .node("collection-interval-seconds", metricsConfig.getCollectionIntervalSeconds())
+           .node("retention-seconds", metricsConfig.getRetentionSeconds())
+           .node("metrics-for-data-structures", metricsConfig.isMetricsForDataStructuresEnabled())
+           .node("minimum-level", metricsConfig.getMinimumLevel())
+           .close();
     }
 
     private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {

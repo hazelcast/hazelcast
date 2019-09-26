@@ -27,7 +27,7 @@
             <xs:choice minOccurs="1" maxOccurs="unbounded">
                 <xs:element ref="import"/>
                 <xs:element name="config-replacers" type="config-replacers" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="group" type="cluster-group" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="cluster" type="cluster" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>
@@ -54,12 +54,9 @@
                 <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="lock" type="lock" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="atomic-long" type="atomic-long" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="atomic-reference" type="atomic-reference" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="count-down-latch" type="count-down-latch" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
@@ -76,6 +73,7 @@
                 <xs:element name="pn-counter" type="pn-counter" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="advanced-network" type="advanced-network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cp-subsystem" type="cp-subsystem" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="metrics" type="metrics" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -1125,55 +1123,6 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="semaphore">
-        <xs:all>
-            <xs:element name="initial-permits" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        The thread count to which the concurrent access is limited. For example, if you set
-                        it to "3", concurrent access to the object is limited to 3 threads.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then all permits of the semaphore are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                        then all permits of the semaphore are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                        You should set the split-brain-protection-ref's value as the split brain protection's name.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="name" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of the semaphore. Required.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string"/>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
-
     <xs:complexType name="lock">
         <xs:all>
             <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
@@ -1311,51 +1260,6 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the IAtomicLong. Required.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string"/>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
-    <xs:complexType name="atomic-reference">
-        <xs:all>
-            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                        You should set the split-brain-protection-ref's value as the split brain protection's name.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="name" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of the IAtomicReference. Required.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string"/>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
-    <xs:complexType name="count-down-latch">
-        <xs:all>
-            <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                        You should set the split-brain-protection-ref's value as the split brain protection's name.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="name" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of the CountDownLatch. Required.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
@@ -2242,12 +2146,12 @@
     </xs:complexType>
     <xs:complexType name="wan-batch-publisher" mixed="true">
         <xs:all>
-            <xs:element name="group-name" type="xs:string" minOccurs="1" maxOccurs="1">
+            <xs:element name="cluster-name" type="xs:string" minOccurs="1" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets the group name used as an endpoint group name for authentication
+                        Sets the cluster name used as an endpoint cluster name for authentication
                         on the target endpoint.
-                        If there is no separate publisher ID property defined, this group name
+                        If there is no separate publisher ID property defined, this cluster name
                         will also be used as a WAN publisher ID. This ID is then used for
                         identifying the publisher in a WanReplicationConfig.
                     </xs:documentation>
@@ -2438,7 +2342,7 @@
                     <xs:documentation>
                         Sets the publisher ID used for identifying the publisher in a
                         WanReplicationConfig.
-                        If there is no publisher ID defined (it is empty), the group name will
+                        If there is no publisher ID defined (it is empty), the cluster name will
                         be used as a publisher ID.
                     </xs:documentation>
                 </xs:annotation>
@@ -2477,7 +2381,7 @@
                     <xs:documentation>
                         Sets the publisher ID used for identifying the publisher in a
                         WanReplicationConfig.
-                        If there is no publisher ID defined (it is empty), the group name will
+                        If there is no publisher ID defined (it is empty), the cluster name will
                         be used as a publisher ID.
                     </xs:documentation>
                 </xs:annotation>
@@ -2485,7 +2389,7 @@
             <xs:element name="class-name" type="xs:string" minOccurs="1" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
+                        Fully qualified class name of WAN Replication implementation WanReplicationPublisher.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2911,7 +2815,7 @@
             </xs:element>
         </xs:sequence>
     </xs:complexType>
-    <xs:complexType name="cluster-group">
+    <xs:complexType name="cluster">
         <xs:all>
             <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" default="dev">
                 <xs:annotation>
@@ -4488,7 +4392,7 @@
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="cp-semaphore" type="cp-semaphore" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -4570,7 +4474,7 @@
         </xs:all>
     </xs:complexType>
 
-    <xs:complexType name="cp-semaphore">
+    <xs:complexType name="semaphore">
         <xs:all>
             <xs:element name="name" type="xs:string">
                 <xs:annotation>
@@ -4630,4 +4534,57 @@
             </xs:element>
         </xs:all>
     </xs:complexType>
+
+    <xs:complexType name="metrics">
+        <xs:all>
+            <xs:element name="collection-interval-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
+            <xs:element name="retention-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
+            <xs:element name="metrics-for-data-structures" type="xs:boolean" default="false" minOccurs="0"/>
+            <xs:element name="minimum-level" type="metric-minimum-level" default="INFO" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Master-switch for the metrics system. Controls whether
+                    the metrics are collected and publishers are enabled.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="mc-enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls whether the metrics collected are exposed to
+                    Hazelcast Management Center. It is enabled by default.
+                    Please note that the metrics are polled by the
+                    Hazelcast Management Center, hence the members need to
+                    buffer the collected metrics between two polls. The aim
+                    for this switch is to reduce memory consumption of the
+                    metrics system if the Hazelcast Management Center is not
+                    used.
+                    In order to expose the metrics, the metrics system need
+                    to be enabled via the enabled master-switch attribute.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="jmx-enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls whether the metrics collected are exposed to
+                    through JMX. It is enabled by default.
+                    In order to expose the metrics, the metrics system need
+                    to be enabled via the enabled master-switch attribute.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="metric-minimum-level">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="MANDATORY"/>
+            <xs:enumeration value="INFO"/>
+            <xs:enumeration value="DEBUG"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
 </xs:schema>

@@ -25,7 +25,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import java.io.IOException;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a Map Store.
@@ -55,7 +55,6 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     private Properties properties = new Properties();
     private InitialLoadMode initialLoadMode = InitialLoadMode.LAZY;
 
-    private transient MapStoreConfigReadOnly readOnly;
     /**
      * Initial load module
      */
@@ -84,19 +83,6 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
         initialLoadMode = config.getInitialLoadMode();
         writeCoalescing = config.isWriteCoalescing();
         properties.putAll(config.getProperties());
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MapStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapStoreConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

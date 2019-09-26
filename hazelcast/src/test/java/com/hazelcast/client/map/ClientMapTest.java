@@ -63,6 +63,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -117,7 +118,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     public void testIssue537() {
         IMap<String, GenericEvent> map = createMap();
         AddAndExpiredListener listener = new AddAndExpiredListener();
-        String id = map.addEntryListener(listener, true);
+        UUID id = map.addEntryListener(listener, true);
 
         map.put("key1", new GenericEvent("value1"), 2, TimeUnit.SECONDS);
 

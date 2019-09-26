@@ -15,8 +15,8 @@
  */
 
 /**
- * This package contains CRDT (conflict-free replicated data type)
- * implementations based on the Hazelcast infrastructure.
+ * This package contains the common classes for CRDT (conflict-free replicated
+ * data type) implementations based on the Hazelcast infrastructure.
  *
  * @since 3.10
  */

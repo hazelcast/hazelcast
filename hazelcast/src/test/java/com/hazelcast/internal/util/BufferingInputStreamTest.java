@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

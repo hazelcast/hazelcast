@@ -41,10 +41,10 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <group>
+    <cluster>
         <name>dev</name>
         <password>dev-pass</password>
-    </group>
+    </cluster>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
     <management-center enabled="true" update-interval="5" scripting-enabled="false">
@@ -62,7 +62,7 @@
     </properties>
     <wan-replication name="my-wan-cluster">
         <batch-publisher>
-            <group-name>tokyo</group-name>
+            <cluster-name>tokyo</cluster-name>
             <publisher-id>tokyoPublisherId</publisher-id>
             <queue-capacity>1000</queue-capacity>
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
@@ -78,7 +78,7 @@
             </wan-sync>
         </batch-publisher>
         <batch-publisher>
-            <group-name>istanbul</group-name>
+            <cluster-name>istanbul</cluster-name>
             <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>
             <initial-publisher-state>STOPPED</initial-publisher-state>
             <queue-capacity>12345</queue-capacity>
@@ -103,7 +103,7 @@
                 <tenant-id>TENANT_ID</tenant-id>
                 <subscription-id>SUB_ID</subscription-id>
                 <cluster-id>HZLCAST001</cluster-id>
-                <group-name>GROUP-NAME</group-name>
+                <cluster-name>CLUSTER-NAME</cluster-name>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -454,13 +454,6 @@
         </message-listeners>
     </reliable-topic>
 
-    <semaphore name="default">
-        <initial-permits>10</initial-permits>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-    </semaphore>
-
     <lock name="default">
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </lock>
@@ -469,15 +462,6 @@
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-long>
-
-    <atomic-reference name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-    </atomic-reference>
-
-    <count-down-latch name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-    </count-down-latch>
 
     <ringbuffer name="default">
         <capacity>25311</capacity>
@@ -824,14 +808,14 @@
             <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
         </raft-algorithm>
         <semaphores>
-            <cp-semaphore>
+            <semaphore>
                 <name>sem1</name>
                 <jdk-compatible>true</jdk-compatible>
-            </cp-semaphore>
-            <cp-semaphore>
+            </semaphore>
+            <semaphore>
                 <name>sem2</name>
                 <jdk-compatible>false</jdk-compatible>
-            </cp-semaphore>
+            </semaphore>
         </semaphores>
         <locks>
             <fenced-lock>

@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -47,7 +46,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -346,12 +345,9 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue455ZeroTTLShouldPreventEviction() {
-        GroupConfig groupConfig = new GroupConfig()
-                .setName("testIssue455ZeroTTLShouldPreventEviction");
         MapConfig mapConfig = newMapConfig("testIssue455ZeroTTLShouldPreventEviction")
                 .setNearCacheConfig(new NearCacheConfig());
-        Config config = getConfig()
-                .setGroupConfig(groupConfig)
+        Config config = getConfig().setClusterName("testIssue455ZeroTTLShouldPreventEviction")
                 .addMapConfig(mapConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
@@ -365,12 +361,9 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue585ZeroTTLShouldPreventEvictionWithSet() {
-        GroupConfig groupConfig = new GroupConfig()
-                .setName("testIssue585ZeroTTLShouldPreventEvictionWithSet");
         MapConfig mapConfig = newMapConfig("testIssue585ZeroTTLShouldPreventEvictionWithSet")
                 .setNearCacheConfig(new NearCacheConfig());
-        Config config = getConfig()
-                .setGroupConfig(groupConfig)
+        Config config = getConfig().setClusterName("testIssue585ZeroTTLShouldPreventEvictionWithSet")
                 .addMapConfig(mapConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);

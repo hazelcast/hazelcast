@@ -31,6 +31,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -74,7 +75,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      */
     Address getThisAddress();
 
-    String getThisUuid();
+    UUID getThisUuid();
 
     ClientEndpointManager getEndpointManager();
 
@@ -158,11 +159,11 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * Not: Please observe that the name for the ICache appears to be the hazelcast instance name "hz" followed by "/" and
      * followed by the cache name provided which is StatTestCacheName.
      *
-     * @return Map of [client UUID String, client statistics String]
+     * @return Map of [client UUID UUID, client statistics String]
      */
-    Map<String, String> getClientStatistics();
+    Map<UUID, String> getClientStatistics();
 
-    String getOwnerUuid(String clientUuid);
+    UUID getOwnerUuid(UUID clientUuid);
 
     /**
      * @param client to check if allowed through current ClientSelector

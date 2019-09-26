@@ -31,9 +31,9 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <group>
+    <cluster>
         <name>dev</name>
-    </group>
+    </cluster>
     <management-center enabled="false">http://localhost:8080/hazelcast-mancenter</management-center>
     <network>
         <port auto-increment="true" port-count="100">5701</port>
@@ -76,7 +76,7 @@
                 <tenant-id>TENANT_ID</tenant-id>
                 <subscription-id>SUB_ID</subscription-id>
                 <cluster-id>HZLCAST001</cluster-id>
-                <group-name>GROUP-NAME</group-name>
+                <cluster-name>CLUSTER-NAME</cluster-name>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -261,12 +261,6 @@
         <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </set>
 
-    <semaphore name="default">
-        <initial-permits>0</initial-permits>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-    </semaphore>
-
     <reliable-topic name="default">
         <read-batch-size>10</read-batch-size>
         <topic-overload-policy>BLOCK</topic-overload-policy>
@@ -293,12 +287,6 @@
     <atomic-long name="default">
         <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </atomic-long>
-
-    <atomic-reference name="default">
-        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
-    </atomic-reference>
-
-    <count-down-latch name="default"/>
 
     <serialization>
         <portable-version>0</portable-version>

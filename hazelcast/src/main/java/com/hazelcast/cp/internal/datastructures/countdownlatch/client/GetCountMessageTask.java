@@ -17,14 +17,14 @@
 package com.hazelcast.cp.internal.datastructures.countdownlatch.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchGetRoundCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetRoundCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetCountOp;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CountDownLatchPermission;
 
@@ -35,7 +35,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link GetCountOp}
  */
-public class GetCountMessageTask extends AbstractMessageTask<CPCountDownLatchGetRoundCodec.RequestParameters>
+public class GetCountMessageTask extends AbstractMessageTask<CountDownLatchGetRoundCodec.RequestParameters>
         implements ExecutionCallback<Integer> {
 
     public GetCountMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -51,18 +51,18 @@ public class GetCountMessageTask extends AbstractMessageTask<CPCountDownLatchGet
     }
 
     @Override
-    protected CPCountDownLatchGetRoundCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPCountDownLatchGetRoundCodec.decodeRequest(clientMessage);
+    protected CountDownLatchGetRoundCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CountDownLatchGetRoundCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPCountDownLatchGetRoundCodec.encodeResponse((Integer) response);
+        return CountDownLatchGetRoundCodec.encodeResponse((Integer) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftCountDownLatchService.SERVICE_NAME;
+        return CountDownLatchService.SERVICE_NAME;
     }
 
     @Override

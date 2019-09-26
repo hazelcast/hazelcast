@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;

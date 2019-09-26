@@ -20,9 +20,9 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.JsonSerializable;
 
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 class NearCachePreloaderConfigDTO implements JsonSerializable {
     private NearCachePreloaderConfig preloaderConfig;

@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * {@link OperationFactory} implementation for RemoveAll Operations.

@@ -20,6 +20,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.test.AssertTask;
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
@@ -87,7 +89,7 @@ public class ClientMultiMapListenersTest {
         final MultiMap mm = client.getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNotNullListener(1);
-        final String id = mm.addEntryListener(listener, true);
+        final UUID id = mm.addEntryListener(listener, true);
 
         assertTrue(mm.removeEntryListener(id));
     }
@@ -96,7 +98,7 @@ public class ClientMultiMapListenersTest {
     public void testRemoveListener_whenNotExist() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
 
-        assertFalse(mm.removeEntryListener("NOT_THERE"));
+        assertFalse(mm.removeEntryListener(UuidUtil.newUnsecureUUID()));
     }
 
     @Test
@@ -266,7 +268,7 @@ public class ClientMultiMapListenersTest {
         final MultiMap mm = client.getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNotNullListener(maxItems, 1);
-        final String id = mm.addEntryListener(listener, key, true);
+        final UUID id = mm.addEntryListener(listener, key, true);
 
         for (int i = 0; i < maxItems; i++) {
             mm.put(key, i);
@@ -283,7 +285,7 @@ public class ClientMultiMapListenersTest {
         final MultiMap mm = client.getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNullListener(maxItems, 1);
-        final String id = mm.addEntryListener(listener, key, false);
+        final UUID id = mm.addEntryListener(listener, key, false);
 
         for (int i = 0; i < maxItems; i++) {
             mm.put(key, i);

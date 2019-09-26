@@ -45,7 +45,7 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.util.IterationType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,14 +55,15 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Thread.currentThread;
@@ -365,21 +366,21 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
-    public boolean removeEntryListener(@Nonnull String id) {
+    public boolean removeEntryListener(@Nonnull UUID id) {
         checkNotNull(id, "Listener ID should not be null!");
         return eventPublishingService.removeEventListener(name, id);
     }
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return eventPublishingService.addEventListener(listener, TrueEventFilter.INSTANCE, name);
     }
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedEntryEventFilter(serializationService.toData(key));
         return eventPublishingService.addEventListener(listener, eventFilter, name);
@@ -387,7 +388,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedQueryEventFilter(null, predicate);
@@ -396,7 +397,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Nonnull
     @Override
-    public String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                    @Nonnull Predicate<K, V> predicate,
                                    @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);

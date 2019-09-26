@@ -44,10 +44,11 @@ import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
@@ -177,9 +178,9 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     QueryCacheContext getQueryCacheContext();
 
-    String addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName);
+    UUID addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName);
 
-    String addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);
+    UUID addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);
 
     IndexCopyBehavior getIndexCopyBehavior();
 

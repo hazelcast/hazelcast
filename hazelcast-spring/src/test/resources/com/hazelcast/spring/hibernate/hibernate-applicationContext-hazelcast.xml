@@ -35,9 +35,9 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:group
-                    name="${cluster.group.name}"
-                    password="${cluster.group.password}"/>
+            <hz:cluster
+                    name="${cluster.name}"
+                    password="${cluster.password}"/>
             <hz:network port="${cluster.port}" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"

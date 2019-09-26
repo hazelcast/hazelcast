@@ -35,9 +35,9 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +53,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Helper to ClientConnectionManager.
@@ -230,8 +230,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         //non retryable client messages will fail immediately
         //retryable client messages will be retried but they will wait for new partition table
         client.getConnectionManager().beforeClusterSwitch(context);
-        //update logger with new group name
-        ((ClientLoggingService) client.getLoggingService()).updateGroupName(context.getName());
+        //update logger with new cluster name
+        ((ClientLoggingService) client.getLoggingService()).updateClusterName(context.getName());
     }
 
     private boolean connectToCandidate(CandidateClusterContext context) {

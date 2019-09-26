@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Assert;
 import org.junit.Test;
 

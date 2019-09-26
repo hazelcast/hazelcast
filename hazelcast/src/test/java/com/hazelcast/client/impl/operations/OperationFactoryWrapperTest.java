@@ -51,7 +51,7 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         OperationServiceImpl operationService = getOperationServiceImpl(hz);
 
-        String expectedCallersUUID = UUID.randomUUID().toString();
+        UUID expectedCallersUUID = UUID.randomUUID();
 
         GetCallersUUIDOperationFactory operationFactory = new GetCallersUUIDOperationFactory();
         OperationFactoryWrapper wrapper = new OperationFactoryWrapper(operationFactory, expectedCallersUUID);
@@ -59,7 +59,7 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
         int partitionId = 0;
         Map<Integer, Object> responses = operationService.invokeOnPartitions(SERVICE_NAME, wrapper, singletonList(partitionId));
 
-        String actualCallersUUID = (String) responses.get(partitionId);
+        UUID actualCallersUUID = (UUID) responses.get(partitionId);
         assertEquals("Callers UUID should not be changed", expectedCallersUUID, actualCallersUUID);
     }
 

@@ -163,7 +163,7 @@ public class XmlClientConfigBuilderResolutionTest {
     @Test
     public void testResolveDefault() {
         ClientConfig config = new XmlClientConfigBuilder().build();
-        assertEquals("dev", config.getGroupConfig().getName());
+        assertEquals("dev", config.getClusterName());
     }
 
 }

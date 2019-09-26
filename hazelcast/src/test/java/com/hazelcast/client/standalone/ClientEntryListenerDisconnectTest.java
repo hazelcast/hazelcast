@@ -19,7 +19,6 @@ package com.hazelcast.client.standalone;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
@@ -42,7 +41,8 @@ public class ClientEntryListenerDisconnectTest {
     public static void main(String[] args) throws InterruptedException {
 
         Config config = new Config();
-        config.setGroupConfig(new GroupConfig("test", "test"));
+        config.setClusterName("test");
+        config.setClusterPassword("test");
         config.getNetworkConfig().setPort(6701);
 
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
@@ -52,7 +52,7 @@ public class ClientEntryListenerDisconnectTest {
         Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig(new GroupConfig("test", "test"));
+        clientConfig.setClusterName("test").setClusterPassword("test");
         clientConfig.getNetworkConfig()
                 .addAddress("localhost:6701", "localhost:6702")
                 .setConnectionAttemptLimit(100)

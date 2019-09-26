@@ -18,6 +18,7 @@ package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.logging.ILogger;
@@ -33,19 +34,21 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public abstract class AbstractMember implements Member {
 
     protected final Map<String, String> attributes = new ConcurrentHashMap<>();
     protected Address address;
     protected Map<EndpointQualifier, Address> addressMap;
-    protected String uuid;
+    protected UUID uuid;
     protected boolean liteMember;
     protected MemberVersion version;
 
@@ -53,12 +56,12 @@ public abstract class AbstractMember implements Member {
     }
 
     protected AbstractMember(Map<EndpointQualifier, Address> addresses, MemberVersion version,
-                             String uuid, Map<String, String> attributes, boolean liteMember) {
+                             UUID uuid, Map<String, String> attributes, boolean liteMember) {
         this.address = addresses.get(MEMBER);
         this.addressMap = addresses;
         assert address != null : "Address is required!";
         this.version = version;
-        this.uuid = uuid != null ? uuid : "<" + address.toString() + ">";
+        this.uuid = uuid;
         if (attributes != null) {
             this.attributes.putAll(attributes);
         }
@@ -123,12 +126,12 @@ public abstract class AbstractMember implements Member {
         }
     }
 
-    void setUuid(String uuid) {
+    void setUuid(UUID uuid) {
         this.uuid = uuid;
     }
 
     @Override
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
@@ -169,7 +172,7 @@ public abstract class AbstractMember implements Member {
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
         liteMember = in.readBoolean();
         version = in.readObject();
         int size = in.readInt();
@@ -184,7 +187,7 @@ public abstract class AbstractMember implements Member {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeBoolean(liteMember);
         out.writeObject(version);
         Map<String, String> attributes = new HashMap<>(this.attributes);
@@ -216,7 +219,7 @@ public abstract class AbstractMember implements Member {
     @Override
     public int hashCode() {
         int result = address.hashCode();
-        result = 31 * result + uuid.hashCode();
+        result = 31 * result + Objects.hashCode(uuid);
         return result;
     }
 
@@ -234,6 +237,6 @@ public abstract class AbstractMember implements Member {
         }
 
         Member that = (Member) obj;
-        return address.equals(that.getAddress()) && uuid.equals(that.getUuid());
+        return address.equals(that.getAddress()) && Objects.equals(uuid, that.getUuid());
     }
 }

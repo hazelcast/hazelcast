@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -77,7 +79,7 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         final ClusterServiceImpl clusterService = node1.getClusterService();
         long node1ClusterStartTime = clusterService.getClusterClock().getClusterStartTime();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
-        String node1ClusterId = clusterService.getClusterId();
+        UUID node1ClusterId = clusterService.getClusterId();
 
         assertTrue(clusterUpTime > 0);
         assertNotEquals(node1ClusterStartTime, Long.MIN_VALUE);
@@ -103,7 +105,7 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         final ClusterServiceImpl clusterService = node1.getClusterService();
         long node1ClusterStartTime = clusterService.getClusterClock().getClusterStartTime();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
-        String node1ClusterId = clusterService.getClusterId();
+        UUID node1ClusterId = clusterService.getClusterId();
 
         assertTrue(clusterUpTime > 0);
         assertTrue(node1.isMaster());

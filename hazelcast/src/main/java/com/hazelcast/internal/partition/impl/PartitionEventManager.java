@@ -32,6 +32,7 @@ import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.partition.PartitionAwareService;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
@@ -68,7 +69,7 @@ public class PartitionEventManager {
         eventService.publishEvent(SERVICE_NAME, registrations, event, event.getPartitionId());
     }
 
-    public String addMigrationListener(MigrationListener listener) {
+    public UUID addMigrationListener(MigrationListener listener) {
         if (listener == null) {
             throw new NullPointerException("listener can't be null");
         }
@@ -80,7 +81,7 @@ public class PartitionEventManager {
         return registration.getId();
     }
 
-    public boolean removeMigrationListener(String registrationId) {
+    public boolean removeMigrationListener(UUID registrationId) {
         if (registrationId == null) {
             throw new NullPointerException("registrationId can't be null");
         }
@@ -89,7 +90,7 @@ public class PartitionEventManager {
         return eventService.deregisterListener(SERVICE_NAME, MIGRATION_EVENT_TOPIC, registrationId);
     }
 
-    public String addPartitionLostListener(PartitionLostListener listener) {
+    public UUID addPartitionLostListener(PartitionLostListener listener) {
         if (listener == null) {
             throw new NullPointerException("listener can't be null");
         }
@@ -101,7 +102,7 @@ public class PartitionEventManager {
         return registration.getId();
     }
 
-    public String addLocalPartitionLostListener(PartitionLostListener listener) {
+    public UUID addLocalPartitionLostListener(PartitionLostListener listener) {
         if (listener == null) {
             throw new NullPointerException("listener can't be null");
         }
@@ -114,7 +115,7 @@ public class PartitionEventManager {
         return registration.getId();
     }
 
-    public boolean removePartitionLostListener(String registrationId) {
+    public boolean removePartitionLostListener(UUID registrationId) {
         if (registrationId == null) {
             throw new NullPointerException("registrationId can't be null");
         }

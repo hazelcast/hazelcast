@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 
 public class MultipleEntryOperation extends MapOperation

@@ -26,7 +26,7 @@ import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
 import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
-import static com.hazelcast.util.HashUtil.fastLongMix;
+import static com.hazelcast.internal.util.HashUtil.fastLongMix;
 
 /**
  * Implementation of {@link HashSlotArray}, common to all its subtype implementations.

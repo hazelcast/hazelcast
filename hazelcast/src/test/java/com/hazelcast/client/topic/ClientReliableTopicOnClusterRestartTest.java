@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -102,7 +103,7 @@ public class ClientReliableTopicOnClusterRestartTest {
         final CountDownLatch messageArrived = new CountDownLatch(1);
         String topicName = "topic";
         ITopic<String> topic = client.getReliableTopic(topicName);
-        String registrationId = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
+        UUID registrationId = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
             @Override
             public void onMessage(Message<String> message) {
                 messageArrived.countDown();
@@ -144,7 +145,7 @@ public class ClientReliableTopicOnClusterRestartTest {
         member.getReliableTopic(topicName).publish("message");
 
         final ITopic<String> topic = client.getReliableTopic(topicName);
-        final String registrationId = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
+        final UUID registrationId = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
             @Override
             public void onMessage(Message<String> message) {
                 messageCount.incrementAndGet();
@@ -185,7 +186,7 @@ public class ClientReliableTopicOnClusterRestartTest {
         member.getReliableTopic(topicName).publish("message");
 
         final ITopic<String> topic = client.getReliableTopic(topicName);
-        final String registrationId = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
+        final UUID registrationId = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
             @Override
             public void onMessage(Message<String> message) {
                 messageCount.incrementAndGet();

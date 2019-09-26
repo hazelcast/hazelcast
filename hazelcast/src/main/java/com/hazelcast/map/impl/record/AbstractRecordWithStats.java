@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 
 /**
  * @param <V> type of {@link AbstractRecord}

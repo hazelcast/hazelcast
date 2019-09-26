@@ -24,7 +24,9 @@ import com.hazelcast.spi.impl.NodeEngine;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import java.util.UUID;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Topic proxy used when global ordering is disabled (nodes get
@@ -47,13 +49,13 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
     @Nonnull
     @Override
-    public String addMessageListener(@Nonnull MessageListener<E> listener) {
+    public UUID addMessageListener(@Nonnull MessageListener<E> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return addMessageListenerInternal(listener);
     }
 
     @Override
-    public boolean removeMessageListener(@Nonnull String registrationId) {
+    public boolean removeMessageListener(@Nonnull UUID registrationId) {
         return removeMessageListenerInternal(registrationId);
     }
 

@@ -26,8 +26,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ThreadUtil;
+
+import java.util.UUID;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -37,7 +39,7 @@ import static com.hazelcast.transaction.impl.Transaction.State.COMMIT_FAILED;
 import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 final class TransactionProxy {
 
@@ -49,7 +51,7 @@ final class TransactionProxy {
     private final ClientConnection connection;
     private final ILogger logger;
 
-    private String txnId;
+    private UUID txnId;
     private State state = NO_TXN;
     private long startTime;
 
@@ -60,7 +62,7 @@ final class TransactionProxy {
         this.logger = client.getLoggingService().getLogger(TransactionProxy.class);
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 

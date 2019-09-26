@@ -23,7 +23,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.mapstore.TestEntryStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.AbstractClockTest;
+import com.hazelcast.internal.util.AbstractClockTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

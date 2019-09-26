@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
-import static com.hazelcast.util.StringUtil.VERSION_PATTERN;
+import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

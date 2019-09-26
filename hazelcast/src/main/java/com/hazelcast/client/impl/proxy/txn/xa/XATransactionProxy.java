@@ -29,10 +29,11 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -43,8 +44,8 @@ import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * This class does not need to be thread-safe, it is only used via XAResource
@@ -59,7 +60,7 @@ public class XATransactionProxy {
     private final ILogger logger;
 
     private Transaction.State state = NO_TXN;
-    private volatile String txnId;
+    private volatile UUID txnId;
     private long startTime;
 
     public XATransactionProxy(HazelcastClientInstanceImpl client, ClientConnection connection, Xid xid, int timeout) {
@@ -127,7 +128,7 @@ public class XATransactionProxy {
         state = ROLLED_BACK;
     }
 
-    public String getTxnId() {
+    public UUID getTxnId() {
         return txnId;
     }
 

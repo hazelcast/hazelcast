@@ -16,14 +16,14 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.RingbufferStoreConfig.RingbufferStoreConfigReadOnly;
-import com.hazelcast.ringbuffer.RingbufferStore;
-import com.hazelcast.ringbuffer.RingbufferStoreFactory;
+import com.hazelcast.internal.config.RingbufferStoreConfigReadOnly;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.RingbufferStoreWrapper;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -113,11 +113,10 @@ public class RingbufferStoreConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(RingbufferStoreConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
-                .suppress(Warning.NONFINAL_FIELDS)
-                .withPrefabValues(RingbufferStoreConfigReadOnly.class,
-                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
-                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
-                .verify();
+                      .suppress(Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(RingbufferStoreConfigReadOnly.class,
+                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
+                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
+                      .verify();
     }
 }

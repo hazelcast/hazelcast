@@ -19,7 +19,7 @@ package com.hazelcast.logging;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -27,7 +27,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class LoggingServiceImpl implements LoggingService {
 
@@ -52,10 +52,10 @@ public class LoggingServiceImpl implements LoggingService {
     private volatile String thisAddressString = "[LOCAL] ";
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(String groupName, String loggingType, BuildInfo buildInfo) {
+    public LoggingServiceImpl(String clusterName, String loggingType, BuildInfo buildInfo) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        versionMessage = "[" + groupName + "] ["
+        versionMessage = "[" + clusterName + "] ["
                 + (jetBuildInfo != null ?  jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
     }
 

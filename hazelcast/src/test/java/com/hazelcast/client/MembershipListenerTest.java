@@ -26,6 +26,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -180,7 +181,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     public void removedPhantomListener_thenFalse() throws Exception {
         hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-        assertFalse(client.getCluster().removeMembershipListener(randomString()));
+        assertFalse(client.getCluster().removeMembershipListener(UuidUtil.newUnsecureUUID()));
     }
 
     @Test(expected = NullPointerException.class)

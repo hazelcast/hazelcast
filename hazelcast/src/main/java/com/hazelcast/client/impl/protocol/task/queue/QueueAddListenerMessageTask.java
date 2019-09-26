@@ -25,12 +25,13 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -74,7 +75,7 @@ public class QueueAddListenerMessageTask
                 }
             }
         };
-        String registrationId =
+        UUID registrationId =
                 service.addItemListener(parameters.name, listener, parameters.includeValue, parameters.localOnly);
         endpoint.addListenerDestroyAction(QueueService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
@@ -88,7 +89,7 @@ public class QueueAddListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return QueueAddListenerCodec.encodeResponse((String) response);
+        return QueueAddListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

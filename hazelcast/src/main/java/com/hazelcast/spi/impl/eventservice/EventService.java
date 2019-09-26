@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.eventservice;
 
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -221,13 +221,13 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
     /**
      * Executes an event callback on a random event thread.
      * <p>
-     * If {@code callback} is an instance of {@link com.hazelcast.util.executor.StripedRunnable},
-     * then {@link com.hazelcast.util.executor.StripedRunnable#getKey()} will be used as order key
+     * If {@code callback} is an instance of {@link com.hazelcast.internal.util.executor.StripedRunnable},
+     * then {@link com.hazelcast.internal.util.executor.StripedRunnable#getKey()} will be used as order key
      * to pick event thread.
      * </p>
      *
      * @param callback the callback to execute on a random event thread
-     * @see com.hazelcast.util.executor.StripedRunnable
+     * @see com.hazelcast.internal.util.executor.StripedRunnable
      */
     void executeEventCallback(@Nonnull Runnable callback);
 

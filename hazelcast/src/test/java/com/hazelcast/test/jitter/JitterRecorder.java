@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.test.jitter.JitterRule.AGGREGATION_INTERVAL_MILLIS;
 import static com.hazelcast.test.jitter.JitterRule.CAPACITY;
-import static com.hazelcast.util.QuickMath.modPowerOfTwo;
+import static com.hazelcast.internal.util.QuickMath.modPowerOfTwo;
 
 class JitterRecorder {
 

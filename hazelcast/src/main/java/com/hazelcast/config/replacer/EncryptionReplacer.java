@@ -16,7 +16,7 @@
 
 package com.hazelcast.config.replacer;
 
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -40,12 +40,12 @@ import java.util.Properties;
 
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.StringUtil.UTF8_CHARSET;
-import static com.hazelcast.util.StringUtil.trim;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
+import static com.hazelcast.internal.util.StringUtil.trim;
 import static java.lang.String.format;
 
 /**

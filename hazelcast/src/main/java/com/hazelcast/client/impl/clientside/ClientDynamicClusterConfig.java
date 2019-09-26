@@ -18,10 +18,8 @@ package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicLongConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicReferenceConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCountDownLatchConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
@@ -35,7 +33,6 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicCon
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSemaphoreConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
@@ -49,17 +46,14 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -67,6 +61,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -74,35 +69,34 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Client implementation of member side config. Clients use this to submit new data structure configurations into
@@ -128,7 +122,7 @@ public class ClientDynamicClusterConfig extends Config {
                 adaptListenerConfigs(mapConfig.getPartitionLostListenerConfigs());
         List<QueryCacheConfigHolder> queryCacheConfigHolders = null;
         if (mapConfig.getQueryCacheConfigs() != null && !mapConfig.getQueryCacheConfigs().isEmpty()) {
-            queryCacheConfigHolders = new ArrayList<QueryCacheConfigHolder>(mapConfig.getQueryCacheConfigs().size());
+            queryCacheConfigHolders = new ArrayList<>(mapConfig.getQueryCacheConfigs().size());
             for (QueryCacheConfig config : mapConfig.getQueryCacheConfigs()) {
                 queryCacheConfigHolders.add(QueryCacheConfigHolder.of(config, serializationService));
             }
@@ -338,15 +332,6 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        ClientMessage request = DynamicConfigAddSemaphoreConfigCodec.encodeRequest(
-                semaphoreConfig.getName(), semaphoreConfig.getInitialPermits(), semaphoreConfig.getBackupCount(),
-                semaphoreConfig.getAsyncBackupCount(), semaphoreConfig.getSplitBrainProtectionName());
-        invoke(request);
-        return this;
-    }
-
-    @Override
     public Config addPNCounterConfig(PNCounterConfig pnCounterConfig) {
         ClientMessage request = DynamicConfigAddPNCounterConfigCodec.encodeRequest(
                 pnCounterConfig.getName(), pnCounterConfig.getReplicaCount(),
@@ -356,28 +341,10 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
-        ClientMessage request = DynamicConfigAddAtomicReferenceConfigCodec.encodeRequest(
-                atomicReferenceConfig.getName(), atomicReferenceConfig.getSplitBrainProtectionName(),
-                atomicReferenceConfig.getMergePolicyConfig().getPolicy(),
-                atomicReferenceConfig.getMergePolicyConfig().getBatchSize());
-        invoke(request);
-        return this;
-    }
-
-    @Override
     public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
         ClientMessage request = DynamicConfigAddAtomicLongConfigCodec.encodeRequest(
                 atomicLongConfig.getName(), atomicLongConfig.getSplitBrainProtectionName(),
                 atomicLongConfig.getMergePolicyConfig().getPolicy(), atomicLongConfig.getMergePolicyConfig().getBatchSize());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
-        ClientMessage request = DynamicConfigAddCountDownLatchConfigCodec.encodeRequest(
-                countDownLatchConfig.getName(), countDownLatchConfig.getSplitBrainProtectionName());
         invoke(request);
         return this;
     }
@@ -426,7 +393,7 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+    public Config setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -446,7 +413,7 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+    public Config setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -471,12 +438,22 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public GroupConfig getGroupConfig() {
-        return instance.getClientConfig().getGroupConfig();
+    public String getClusterName() {
+        return instance.getClientConfig().getClusterName();
     }
 
     @Override
-    public Config setGroupConfig(GroupConfig groupConfig) {
+    public Config setClusterName(String clusterName) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public String getClusterPassword() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setClusterPassword(final String password) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -802,51 +779,6 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public SemaphoreConfig findSemaphoreConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public SemaphoreConfig getSemaphoreConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Collection<SemaphoreConfig> getSemaphoreConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, SemaphoreConfig> getSemaphoreConfigsAsMap() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicReferenceConfig getAtomicReferenceConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setAtomicReferenceConfigs(Map<String, AtomicReferenceConfig> atomicReferenceConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
     public AtomicLongConfig findAtomicLongConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
@@ -863,26 +795,6 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setAtomicLongConfigs(Map<String, AtomicLongConfig> atomicLongConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public CountDownLatchConfig findCountDownLatchConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public CountDownLatchConfig getCountDownLatchConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setCountDownLatchConfigs(Map<String, CountDownLatchConfig> countDownLatchConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -1140,6 +1052,19 @@ public class ClientDynamicClusterConfig extends Config {
     public Config setCPSubsystemConfig(CPSubsystemConfig cpSubsystemConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
+
+    @Override
+    @Nonnull
+    public Config setMetricsConfig(MetricsConfig metricsConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    @Nonnull
+    public MetricsConfig getMetricsConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
 
     @Override
     public String toString() {

@@ -31,17 +31,18 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.util.Collections.singletonMap;
 
 public final class MemberImpl
@@ -66,7 +67,7 @@ public final class MemberImpl
         this(singletonMap(MEMBER, address), version, localMember, null, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
     }
 
-    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid) {
+    public MemberImpl(Address address, MemberVersion version, boolean localMember, UUID uuid) {
         this(singletonMap(MEMBER, address), version, localMember, uuid, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
     }
 
@@ -78,7 +79,7 @@ public final class MemberImpl
     }
 
     private MemberImpl(Map<EndpointQualifier, Address> addresses, MemberVersion version, boolean localMember,
-                       String uuid, Map<String, String> attributes, boolean liteMember, int memberListJoinVersion,
+                       UUID uuid, Map<String, String> attributes, boolean liteMember, int memberListJoinVersion,
                        HazelcastInstanceImpl instance) {
         super(addresses, version, uuid, attributes, liteMember);
         this.memberListJoinVersion = memberListJoinVersion;
@@ -196,7 +197,7 @@ public final class MemberImpl
         @Override
         public Operation get() {
             NodeEngineImpl nodeEngine = instance.node.nodeEngine;
-            String uuid = nodeEngine.getLocalMember().getUuid();
+            UUID uuid = nodeEngine.getLocalMember().getUuid();
             return new MemberAttributeChangedOp(operationType, key, value)
                     .setCallerUuid(uuid).setNodeEngine(nodeEngine);
         }
@@ -207,7 +208,7 @@ public final class MemberImpl
 
         private Map<String, String> attributes;
         private boolean localMember;
-        private String uuid;
+        private UUID uuid;
         private boolean liteMember;
         private MemberVersion version;
         private int memberListJoinVersion = NA_MEMBER_LIST_JOIN_VERSION;
@@ -234,7 +235,7 @@ public final class MemberImpl
             return this;
         }
 
-        public Builder uuid(String uuid) {
+        public Builder uuid(UUID uuid) {
             this.uuid = uuid;
             return this;
         }

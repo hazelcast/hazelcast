@@ -22,9 +22,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for an event journal. The event journal keeps events related
@@ -143,15 +143,6 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns an immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    EventJournalConfig getAsReadOnly() {
-        return new EventJournalConfigReadOnly(this);
-    }
-
-    /**
      * Returns if the event journal is enabled.
      *
      * @return {@code true} if the event journal is enabled, {@code false} otherwise
@@ -222,27 +213,5 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
         result = 31 * result + capacity;
         result = 31 * result + timeToLiveSeconds;
         return result;
-    }
-
-    // not private for testing
-    static class EventJournalConfigReadOnly extends EventJournalConfig {
-        EventJournalConfigReadOnly(EventJournalConfig config) {
-            super(config);
-        }
-
-        @Override
-        public EventJournalConfig setCapacity(int capacity) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public EventJournalConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public EventJournalConfig setEnabled(boolean enabled) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
     }
 }

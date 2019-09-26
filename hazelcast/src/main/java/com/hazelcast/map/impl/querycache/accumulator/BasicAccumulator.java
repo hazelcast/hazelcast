@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherAccumulatorHandler;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * This class implements basic functionality of an {@link Accumulator}.

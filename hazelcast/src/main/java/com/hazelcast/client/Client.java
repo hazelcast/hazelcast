@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Endpoint;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * The Client interface allows to get information about
@@ -35,7 +36,7 @@ public interface Client extends Endpoint {
      *
      * @return a unique UUID for this client
      */
-    String getUuid();
+    UUID getUuid();
 
     /**
      * Returns the socket address of this client.

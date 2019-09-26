@@ -24,20 +24,21 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -66,7 +67,7 @@ public class BatchInvalidator extends Invalidator {
 
     private final int batchSize;
     private final int batchFrequencySeconds;
-    private final String nodeShutdownListenerId;
+    private final UUID nodeShutdownListenerId;
     private final AtomicBoolean runningBackgroundTask = new AtomicBoolean(false);
 
     public BatchInvalidator(String serviceName, int batchSize, int batchFrequencySeconds,
@@ -80,7 +81,7 @@ public class BatchInvalidator extends Invalidator {
     }
 
     @Override
-    protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
+    protected Invalidation newInvalidation(Data key, String dataStructureName, UUID sourceUuid, int partitionId) {
         checkBackgroundTaskIsRunning();
         return super.newInvalidation(key, dataStructureName, sourceUuid, partitionId);
     }
@@ -155,7 +156,7 @@ public class BatchInvalidator extends Invalidator {
     /**
      * Sends remaining invalidation events in this invalidator's queues to the recipients.
      */
-    private String registerNodeShutdownListener() {
+    private UUID registerNodeShutdownListener() {
         HazelcastInstance node = nodeEngine.getHazelcastInstance();
         LifecycleService lifecycleService = node.getLifecycleService();
         return lifecycleService.addLifecycleListener(new LifecycleListener() {
@@ -205,7 +206,7 @@ public class BatchInvalidator extends Invalidator {
     }
 
     @Override
-    public void destroy(String dataStructureName, String sourceUuid) {
+    public void destroy(String dataStructureName, UUID sourceUuid) {
         invalidationQueues.remove(dataStructureName);
         super.destroy(dataStructureName, sourceUuid);
     }

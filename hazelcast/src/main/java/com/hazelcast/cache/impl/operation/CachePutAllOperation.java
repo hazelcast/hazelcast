@@ -31,8 +31,9 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class CachePutAllOperation extends CacheOperation
         implements BackupAwareOperation, MutableOperation, MutatingOperation {
@@ -66,7 +67,7 @@ public class CachePutAllOperation extends CacheOperation
 
     @Override
     public void run() throws Exception {
-        String callerUuid = getCallerUuid();
+        UUID callerUuid = getCallerUuid();
         backupRecords = createHashMap(entries.size());
 
         for (Map.Entry<Data, Data> entry : entries) {

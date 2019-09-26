@@ -19,15 +19,17 @@ package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
+import java.util.UUID;
+
 public final class ConditionKey implements WaitNotifyKey {
 
     private final String name;
     private final Data key;
     private final String conditionId;
     private final long threadId;
-    private final String uuid;
+    private final UUID uuid;
 
-    public ConditionKey(String name, Data key, String conditionId, String uuid, long threadId) {
+    public ConditionKey(String name, Data key, String conditionId, UUID uuid, long threadId) {
         this.name = name;
         this.key = key;
         this.conditionId = conditionId;
@@ -40,7 +42,7 @@ public final class ConditionKey implements WaitNotifyKey {
         return LockServiceImpl.SERVICE_NAME;
     }
 
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 

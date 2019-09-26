@@ -19,6 +19,8 @@ package com.hazelcast.client.impl.querycache.subscriber;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
+import java.util.UUID;
+
 /**
  * Contains all listener specific information for {@link ClientQueryCacheEventService}.
  *
@@ -26,11 +28,11 @@ import com.hazelcast.spi.impl.eventservice.EventFilter;
  */
 public class ListenerInfo {
 
-    private final String id;
+    private final UUID id;
     private final EventFilter filter;
     private final ListenerAdapter listenerAdapter;
 
-    public ListenerInfo(EventFilter filter, ListenerAdapter listenerAdapter, String id) {
+    public ListenerInfo(EventFilter filter, ListenerAdapter listenerAdapter, UUID id) {
         this.id = id;
         this.filter = filter;
         this.listenerAdapter = listenerAdapter;
@@ -44,7 +46,7 @@ public class ListenerInfo {
         return listenerAdapter;
     }
 
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 }

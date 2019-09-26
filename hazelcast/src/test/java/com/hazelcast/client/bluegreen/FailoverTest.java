@@ -48,26 +48,26 @@ public class FailoverTest extends ClientTestSupport {
     @Test(expected = IllegalStateException.class)
     public void testFailoverNotSupportedInCommunityVersion() {
         Config config1 = new Config();
-        config1.getGroupConfig().setName("dev1");
+        config1.setClusterName("dev1");
         config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
 
         Config config2 = new Config();
-        config2.getGroupConfig().setName("dev2");
+        config2.setClusterName("dev2");
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
 
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config2);
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("dev1");
+        clientConfig.setClusterName("dev1");
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         Member member1 = (Member) instance1.getLocalEndpoint();
         Address address1 = member1.getAddress();
         networkConfig.setAddresses(Collections.singletonList(address1.getHost() + ":" + address1.getPort()));
 
         ClientConfig clientConfig2 = new ClientConfig();
-        clientConfig2.getGroupConfig().setName("dev2");
+        clientConfig2.setClusterName("dev2");
         ClientNetworkConfig networkConfig2 = clientConfig2.getNetworkConfig();
         Member member2 = (Member) instance2.getLocalEndpoint();
         Address address2 = member2.getAddress();

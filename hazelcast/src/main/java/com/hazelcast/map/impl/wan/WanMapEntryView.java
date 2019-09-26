@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -44,6 +44,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     private long lastUpdateTime;
     private long version;
     private long ttl;
+    private long maxIdle;
 
     public WanMapEntryView() {
     }
@@ -60,6 +61,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.creationTime = entryView.getCreationTime();
         this.expirationTime = entryView.getExpirationTime();
         this.lastStoredTime = entryView.getLastStoredTime();
+        this.maxIdle = entryView.getMaxIdle();
     }
 
     @Override
@@ -118,8 +120,8 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     }
 
     @Override
-    public Long getMaxIdle() {
-        return null;
+    public long getMaxIdle() {
+        return maxIdle;
     }
 
     @Override
@@ -135,6 +137,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
         out.writeLong(ttl);
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -150,6 +153,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         lastUpdateTime = in.readLong();
         version = in.readLong();
         ttl = in.readLong();
+        maxIdle = in.readLong();
     }
 
     @Override
@@ -200,6 +204,9 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         if (ttl != that.ttl) {
             return false;
         }
+        if (maxIdle != that.maxIdle) {
+            return false;
+        }
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
@@ -219,6 +226,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
         result = 31 * result + (int) (version ^ (version >>> 32));
         result = 31 * result + (int) (ttl ^ (ttl >>> 32));
+        result = 31 * result + (int) (maxIdle ^ (maxIdle >>> 32));
         return result;
     }
 
@@ -236,6 +244,7 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", version=" + version
                 + ", ttl=" + ttl
+                + ", maxIdle=" + maxIdle
                 + '}';
     }
 }

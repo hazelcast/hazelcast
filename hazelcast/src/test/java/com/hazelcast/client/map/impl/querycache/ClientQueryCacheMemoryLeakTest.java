@@ -61,13 +61,14 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.util.RandomPicker.getInt;
+import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -316,7 +317,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         MapListenerRegistry mapListenerRegistry = publisherContext.getMapListenerRegistry();
         QueryCacheListenerRegistry registry = mapListenerRegistry.getOrNull(mapName);
         if (registry != null) {
-            Map<String, String> registeredListeners = registry.getAll();
+            Map<String, UUID> registeredListeners = registry.getAll();
             assertTrue(registeredListeners.isEmpty());
         }
     }

@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
 
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
-import static com.hazelcast.nio.Bits.UTF_8;
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.internal.nio.Bits.UTF_8;
 
 public class ObjectDataInputStream extends VersionedObjectDataInput implements Closeable {
 

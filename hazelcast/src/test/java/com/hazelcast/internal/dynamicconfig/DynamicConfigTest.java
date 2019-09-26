@@ -55,7 +55,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -550,19 +549,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSemaphoreConfig() {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig()
-                .setName(name)
-                .setInitialPermits(33)
-                .setAsyncBackupCount(4)
-                .setBackupCount(2);
-
-        driver.getConfig().addSemaphoreConfig(semaphoreConfig);
-
-        assertConfigurationsEqualsOnAllMembers(semaphoreConfig);
-    }
-
-    @Test
     public void testTopicConfig() {
         TopicConfig topicConfig = new TopicConfig(name)
                 .setGlobalOrderingEnabled(true)
@@ -775,14 +761,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         for (HazelcastInstance instance : members) {
             ReliableTopicConfig registeredConfig = instance.getConfig().getReliableTopicConfig(name);
             assertEquals(reliableTopicConfig, registeredConfig);
-        }
-    }
-
-    private void assertConfigurationsEqualsOnAllMembers(SemaphoreConfig semaphoreConfig) {
-        String name = semaphoreConfig.getName();
-        for (HazelcastInstance instance : members) {
-            SemaphoreConfig registeredConfig = instance.getConfig().getSemaphoreConfig(name);
-            assertEquals(semaphoreConfig, registeredConfig);
         }
     }
 

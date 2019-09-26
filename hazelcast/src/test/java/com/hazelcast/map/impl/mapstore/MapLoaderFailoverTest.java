@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -195,8 +194,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     private Config newConfig(String mapName, MapStoreConfig.InitialLoadMode loadMode, int backups, MapLoader loader) {
-        Config config = new Config()
-                .setGroupConfig(new GroupConfig(getClass().getSimpleName()))
+        Config config = new Config().setClusterName(getClass().getSimpleName())
                 .setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE))
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "13");
 

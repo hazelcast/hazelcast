@@ -22,6 +22,7 @@ import com.hazelcast.core.ICompletableFuture;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -40,8 +41,8 @@ public abstract class AbstractCacheSyncListenerCompleter
     private final AtomicInteger completionIdCounter = new AtomicInteger();
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations = new ConcurrentHashMap<>();
-    private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations = new ConcurrentHashMap<>();
+    private final ConcurrentMap<CacheEntryListenerConfiguration, UUID> asyncListenerRegistrations = new ConcurrentHashMap<>();
+    private final ConcurrentMap<CacheEntryListenerConfiguration, UUID> syncListenerRegistrations = new ConcurrentHashMap<>();
 
     @Override
     public void countDownCompletionLatch(int countDownLatchId) {
@@ -121,7 +122,7 @@ public abstract class AbstractCacheSyncListenerCompleter
     protected abstract void awaitLatch(CountDownLatch countDownLatch, ICompletableFuture future)
             throws ExecutionException;
 
-    public void putListenerIfAbsent(CacheEntryListenerConfiguration configuration, String regId) {
+    public void putListenerIfAbsent(CacheEntryListenerConfiguration configuration, UUID regId) {
         if (configuration.isSynchronous()) {
             syncListenerRegistrations.putIfAbsent(configuration, regId);
         } else {
@@ -129,7 +130,7 @@ public abstract class AbstractCacheSyncListenerCompleter
         }
     }
 
-    public String removeListener(CacheEntryListenerConfiguration configuration) {
+    public UUID removeListener(CacheEntryListenerConfiguration configuration) {
         if (configuration.isSynchronous()) {
             return syncListenerRegistrations.remove(configuration);
         } else {
@@ -137,7 +138,7 @@ public abstract class AbstractCacheSyncListenerCompleter
         }
     }
 
-    public String getListenerId(CacheEntryListenerConfiguration configuration) {
+    public UUID getListenerId(CacheEntryListenerConfiguration configuration) {
         if (configuration.isSynchronous()) {
             return syncListenerRegistrations.get(configuration);
         } else {
@@ -151,7 +152,7 @@ public abstract class AbstractCacheSyncListenerCompleter
         notifyAndClearSyncListenerLatches();
     }
 
-    public Collection<String> getListenersIds(boolean sync) {
+    public Collection<UUID> getListenersIds(boolean sync) {
         if (sync) {
             return syncListenerRegistrations.values();
         } else {

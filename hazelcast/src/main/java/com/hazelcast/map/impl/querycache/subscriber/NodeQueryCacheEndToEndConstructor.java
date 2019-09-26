@@ -26,16 +26,16 @@ import com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOpe
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 

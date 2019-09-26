@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -916,7 +917,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
-        assertFalse(map1.removeEntryListener("2"));
+        assertFalse(map1.removeEntryListener(UUID.randomUUID()));
     }
 
     @Test(expected = NullPointerException.class)

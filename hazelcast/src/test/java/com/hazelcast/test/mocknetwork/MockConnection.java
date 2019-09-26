@@ -18,12 +18,12 @@ package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionLifecycleListener;
-import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.PacketIOHelper;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionLifecycleListener;
+import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.net.InetAddress;
@@ -34,7 +34,7 @@ import java.security.cert.Certificate;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.mocknetwork.MockNetworkingService.MockEndpointManager.isTargetLeft;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static org.junit.Assert.assertNotNull;
 
 public class MockConnection implements Connection {

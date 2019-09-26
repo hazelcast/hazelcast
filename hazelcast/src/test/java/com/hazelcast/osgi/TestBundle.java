@@ -17,7 +17,7 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.osgi.impl.Activator;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;

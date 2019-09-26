@@ -25,19 +25,20 @@ import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.spi.impl.eventservice.EventFilter;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -54,16 +55,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -84,7 +86,7 @@ import static java.util.Collections.emptyMap;
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         implements EventJournalReader<EventJournalCacheEvent<K, V>> {
 
@@ -219,7 +221,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
         if (clazz.isInstance(cacheConfig)) {
-            return clazz.cast(cacheConfig.getAsReadOnly());
+            return clazz.cast(new CacheConfigReadOnly<>(cacheConfig));
         }
         throw new IllegalArgumentException("The configuration class " + clazz + " is not supported by this implementation");
     }
@@ -279,7 +281,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration,
                 getNodeEngine().getSerializationService());
-        String regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener, false);
+        UUID regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -295,7 +297,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
 
-        String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
+        UUID regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId != null) {
             if (getService().deregisterListener(getDistributedObjectName(), regId)) {
                 removeListenerLocally(cacheEntryListenerConfiguration);
@@ -324,7 +326,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     }
 
     @Override
-    public String addPartitionLostListener(CachePartitionLostListener listener) {
+    public UUID addPartitionLostListener(CachePartitionLostListener listener) {
         checkNotNull(listener, "CachePartitionLostListener can't be null");
 
         EventFilter filter = new CachePartitionLostEventFilter();
@@ -337,7 +339,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     }
 
     @Override
-    public boolean removePartitionLostListener(String id) {
+    public boolean removePartitionLostListener(UUID id) {
         checkNotNull(id, "Listener ID should not be null!");
         return getService().getNodeEngine().getEventService()
                 .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);

@@ -24,12 +24,13 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 
 import java.util.EventListener;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -41,7 +42,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Default {@link com.hazelcast.core.LifecycleService} implementation for the client.
@@ -51,8 +52,8 @@ public final class LifecycleServiceImpl implements LifecycleService {
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
     private final HazelcastClientInstanceImpl client;
-    private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
-            = new ConcurrentHashMap<String, LifecycleListener>();
+    private final ConcurrentMap<UUID, LifecycleListener> lifecycleListeners
+            = new ConcurrentHashMap<UUID, LifecycleListener>();
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final BuildInfo buildInfo;
     private final ExecutorService executor;
@@ -89,14 +90,14 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     @Override
-    public String addLifecycleListener(LifecycleListener lifecycleListener) {
-        final String id = UuidUtil.newUnsecureUuidString();
+    public UUID addLifecycleListener(LifecycleListener lifecycleListener) {
+        final UUID id = UuidUtil.newUnsecureUUID();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }
 
     @Override
-    public boolean removeLifecycleListener(String registrationId) {
+    public boolean removeLifecycleListener(UUID registrationId) {
         return lifecycleListeners.remove(registrationId) != null;
     }
 
@@ -137,12 +138,13 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     @Override
     public void shutdown() {
-        doShutdown(true);
+        client.onGracefulShutdown();
+        doShutdown();
     }
 
     @Override
     public void terminate() {
-        doShutdown(false);
+        doShutdown();
     }
 
     public void start() {
@@ -151,14 +153,14 @@ public final class LifecycleServiceImpl implements LifecycleService {
         fireLifecycleEvent(STARTED);
     }
 
-    private void doShutdown(boolean isGraceful) {
+    private void doShutdown() {
         if (!active.compareAndSet(true, false)) {
             return;
         }
 
         fireLifecycleEvent(SHUTTING_DOWN);
         HazelcastClient.shutdown(client.getName());
-        client.doShutdown(isGraceful);
+        client.doShutdown();
         fireLifecycleEvent(SHUTDOWN);
 
         shutdownExecutor();

@@ -25,13 +25,13 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class ClientLoggingService implements LoggingService {
 
@@ -51,16 +51,16 @@ public class ClientLoggingService implements LoggingService {
     private final String clientName;
     private volatile String versionMessage;
 
-    public ClientLoggingService(String groupName, String loggingType, BuildInfo buildInfo, String clientName) {
+    public ClientLoggingService(String clusterName, String loggingType, BuildInfo buildInfo, String clientName) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.buildInfo = buildInfo;
         this.clientName = clientName;
-        updateGroupName(groupName);
+        updateClusterName(clusterName);
     }
 
-    public void updateGroupName(String groupName) {
+    public void updateClusterName(String clusterName) {
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        this.versionMessage = clientName + " [" + groupName + "]"
+        this.versionMessage = clientName + " [" + clusterName + "]"
                 + (jetBuildInfo != null ? " [" + jetBuildInfo.getVersion() + "]" : "")
                 + " [" + buildInfo.getVersion() + "] ";
     }

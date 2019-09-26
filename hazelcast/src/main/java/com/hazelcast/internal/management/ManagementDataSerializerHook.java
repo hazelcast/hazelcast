@@ -19,6 +19,7 @@ package com.hazelcast.internal.management;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.dto.PermissionConfigDTO;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
+import com.hazelcast.internal.management.operation.SetLicenseOperation;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
 import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
@@ -27,7 +28,7 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MANAGEMENT_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MANAGEMENT_DS_FACTORY_ID;
@@ -42,8 +43,9 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
     public static final int MAP_CONFIG_DTO = 3;
     public static final int UPDATE_PERMISSION_CONFIG_OPERATION = 4;
     public static final int PERMISSION_CONFIG_DTO = 5;
+    public static final int SET_LICENSE = 6;
 
-    private static final int LEN = PERMISSION_CONFIG_DTO + 1;
+    private static final int LEN = SET_LICENSE + 1;
 
     @Override
     public int getFactoryId() {
@@ -62,6 +64,7 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
         constructors[MAP_CONFIG_DTO] = arg -> new MapConfigDTO();
         constructors[UPDATE_PERMISSION_CONFIG_OPERATION] = arg -> new UpdatePermissionConfigOperation();
         constructors[PERMISSION_CONFIG_DTO] = arg -> new PermissionConfigDTO();
+        constructors[SET_LICENSE] = arg -> new SetLicenseOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

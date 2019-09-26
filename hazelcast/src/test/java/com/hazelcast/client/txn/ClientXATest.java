@@ -193,7 +193,6 @@ public class ClientXATest {
         for (Xid xid : recovered) {
             clientXaResource.commit(xid, false);
         }
-
         assertEquals("value", client.getMap("map").get("key"));
     }
 

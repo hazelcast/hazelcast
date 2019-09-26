@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 
 /**

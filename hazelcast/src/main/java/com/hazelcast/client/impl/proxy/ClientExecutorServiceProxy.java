@@ -38,9 +38,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -58,8 +59,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * @author ali 5/24/13
@@ -394,7 +395,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private <T> Future<T> submitToKeyOwnerInternal(Data task, Object key, T defaultValue) {
         checkNotNull(task, "task should not be null");
 
-        String uuid = getUUID();
+        UUID uuid = getUUID();
         int partitionId = getPartitionId(key);
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
@@ -403,7 +404,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private <T> Future<T> submitToKeyOwnerInternal(Data task, Object key, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
-        String uuid = getUUID();
+        UUID uuid = getUUID();
         int partitionId = getPartitionId(key);
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
@@ -420,7 +421,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private <T> Future<T> submitToRandomInternal(Data task, T defaultValue, boolean preventSync) {
         checkNotNull(task, "task should not be null");
 
-        String uuid = getUUID();
+        UUID uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
@@ -430,7 +431,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private <T> void submitToRandomInternal(Data task, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
 
-        String uuid = getUUID();
+        UUID uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
@@ -442,7 +443,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private <T> Future<T> submitToTargetInternal(Data task, Address address, T defaultValue, boolean preventSync) {
         checkNotNull(task, "task should not be null");
 
-        String uuid = getUUID();
+        UUID uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, task, address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
         return checkSync(f, uuid, address, preventSync, defaultValue);
@@ -451,7 +452,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private <T> void submitToTargetInternal(Data task, Address address, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
 
-        String uuid = getUUID();
+        UUID uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, task, address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, address, false,
@@ -466,7 +467,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return "IExecutorService{" + "name='" + name + '\'' + '}';
     }
 
-    private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid, Address address,
+    private <T> Future<T> checkSync(ClientInvocationFuture f, UUID uuid, Address address,
                                     boolean preventSync, T defaultValue) {
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
@@ -479,7 +480,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid, int partitionId,
+    private <T> Future<T> checkSync(ClientInvocationFuture f, UUID uuid, int partitionId,
                                     boolean preventSync, T defaultValue) {
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
@@ -616,8 +617,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private String getUUID() {
-        return UuidUtil.newUnsecureUuidString();
+    private UUID getUUID() {
+        return UuidUtil.newUnsecureUUID();
     }
 
     private Address getMemberAddress(Member member) {

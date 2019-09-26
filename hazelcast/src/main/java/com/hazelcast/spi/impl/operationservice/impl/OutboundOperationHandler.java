@@ -19,14 +19,14 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.operation.QueryOperation;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.nio.Packet.FLAG_URGENT;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Responsible for sending Operations to another member.

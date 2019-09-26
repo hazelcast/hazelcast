@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -235,8 +234,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
         final CountDownLatch countDownLatch = new CountDownLatch(instanceCount - 1);
         final Config config = getConfig();
-        GroupConfig groupConfig = new GroupConfig("testEager");
-        config.setGroupConfig(groupConfig);
+        config.setClusterName("testEager");
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
@@ -264,8 +262,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
         final CountDownLatch countDownLatch = new CountDownLatch(instanceCount - 1);
         final Config config = getConfig();
-        GroupConfig groupConfig = new GroupConfig("testEager");
-        config.setGroupConfig(groupConfig);
+        config.setClusterName("testEager");
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));

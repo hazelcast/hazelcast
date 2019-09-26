@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Contains the configuration for an index in a map. This class should be used in combination
@@ -38,7 +38,6 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
 
     private String attribute;
     private boolean ordered;
-    private transient MapIndexConfigReadOnly readOnly;
 
     /**
      * Creates a MapIndexConfig without an attribute and with ordered set to {@code false}.
@@ -62,19 +61,6 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
     public MapIndexConfig(MapIndexConfig config) {
         attribute = config.getAttribute();
         ordered = config.isOrdered();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MapIndexConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapIndexConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

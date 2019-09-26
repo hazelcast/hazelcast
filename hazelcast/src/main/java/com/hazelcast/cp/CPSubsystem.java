@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp;
 
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.core.DistributedObject;
@@ -255,7 +255,7 @@ public interface CPSubsystem {
      * <strong>Each call of this method performs a commit to the Metadata CP
      * group. Hence, callers should cache the returned proxy.</strong>
      *
-     * @see CPSemaphoreConfig
+     * @see SemaphoreConfig
      *
      * @param name name of the {@link ISemaphore} proxy
      * @return {@link ISemaphore} proxy for the given name

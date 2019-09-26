@@ -31,7 +31,7 @@ import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKeyContainer;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.operation.ExpireWaitKeysOp;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -46,8 +46,9 @@ import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.cp.internal.datastructures.lock.FencedLockBasicTest.assertInvalidFence;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
-import static com.hazelcast.util.ThreadUtil.getThreadId;
-import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.cp.lock.FencedLock.INVALID_FENCE;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -527,7 +528,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
 
         RaftInvocationManager invocationManager = getRaftInvocationManager();
         UUID invUid = newUnsecureUUID();
-        Tuple2[] lockWaitTimeoutKeyRef = new Tuple2[1];
+        BiTuple[] lockWaitTimeoutKeyRef = new BiTuple[1];
 
         InternalCompletableFuture<Long> f1 = invocationManager
                 .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, SECONDS.toMillis(300)));
@@ -537,7 +538,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> {
             RaftLockRegistry registry = service.getRegistryOrNull(groupId);
-            Map<Tuple2<String, UUID>, Tuple2<Long, Long>> waitTimeouts = registry.getWaitTimeouts();
+            Map<BiTuple<String, UUID>, BiTuple<Long, Long>> waitTimeouts = registry.getWaitTimeouts();
             assertEquals(1, waitTimeouts.size());
             lockWaitTimeoutKeyRef[0] = waitTimeouts.keySet().iterator().next();
         });
@@ -585,6 +586,39 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
 
         assertInvalidFence(fence1);
         assertInvalidFence(fence2);
+    }
+
+    @Test
+    public void testExpiredAndRetriedTryLockRequestReceivesFailureResponse() {
+        final CountDownLatch unlockLatch = new CountDownLatch(1);
+        spawn(() -> {
+            lock.lock();
+            assertOpenEventually(unlockLatch);
+            lock.unlock();
+        });
+
+        assertTrueEventually(() -> assertTrue(lock.isLocked()));
+
+        final RaftGroupId groupId = lock.getGroupId();
+        long sessionId = getSessionManager().getSession(groupId);
+        RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
+        UUID invUid = newUnsecureUUID();
+
+        InternalCompletableFuture<Long> f1 = invocationManager
+                .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, SECONDS.toMillis(5)));
+
+        long fence1 = f1.join();
+        assertEquals(INVALID_FENCE, fence1);
+
+        unlockLatch.countDown();
+
+        assertTrueEventually(() -> assertFalse(lock.isLocked()));
+
+        InternalCompletableFuture<Long> f2 = invocationManager
+                .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, SECONDS.toMillis(5)));
+
+        long fence2 = f2.join();
+        assertEquals(INVALID_FENCE, fence2);
     }
 
     private RaftInvocationManager getRaftInvocationManager() {

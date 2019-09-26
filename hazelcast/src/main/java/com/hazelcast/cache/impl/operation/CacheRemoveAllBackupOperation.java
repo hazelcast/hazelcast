@@ -32,7 +32,7 @@ import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import java.io.IOException;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Backup operation of {@link com.hazelcast.cache.impl.operation.CacheRemoveAllOperation}.

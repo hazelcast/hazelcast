@@ -17,7 +17,7 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

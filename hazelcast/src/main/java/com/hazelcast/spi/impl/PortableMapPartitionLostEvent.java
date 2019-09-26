@@ -21,17 +21,18 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class PortableMapPartitionLostEvent implements Portable {
 
     private int partitionId;
 
-    private String uuid;
+    private UUID uuid;
 
     public PortableMapPartitionLostEvent() {
     }
 
-    public PortableMapPartitionLostEvent(int partitionId, String uuid) {
+    public PortableMapPartitionLostEvent(int partitionId, UUID uuid) {
         this.partitionId = partitionId;
         this.uuid = uuid;
     }
@@ -40,7 +41,7 @@ public class PortableMapPartitionLostEvent implements Portable {
         return partitionId;
     }
 
-    public String getUuid() {
+    public UUID getUuid() {
         return uuid;
     }
 
@@ -58,7 +59,8 @@ public class PortableMapPartitionLostEvent implements Portable {
     public void writePortable(PortableWriter writer)
             throws IOException {
         writer.writeInt("p", partitionId);
-        writer.writeUTF("u", uuid);
+        writer.writeLong("uHigh", uuid.getMostSignificantBits());
+        writer.writeLong("uLow", uuid.getLeastSignificantBits());
 
     }
 
@@ -66,6 +68,6 @@ public class PortableMapPartitionLostEvent implements Portable {
     public void readPortable(PortableReader reader)
             throws IOException {
         partitionId = reader.readInt("p");
-        uuid = reader.readUTF("u");
+        uuid = new UUID(reader.readLong("uHigh"), reader.readLong("uLow"));
     }
 }

@@ -20,8 +20,8 @@ import com.hazelcast.internal.serialization.PortableHook;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
 
 import java.util.Collection;
 import java.util.HashMap;

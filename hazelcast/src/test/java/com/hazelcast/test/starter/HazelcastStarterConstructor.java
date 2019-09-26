@@ -45,7 +45,7 @@ public @interface HazelcastStarterConstructor {
      * The {@link ProxyPolicy} the supported classes should use.
      * <p>
      * Note: Classes which use {@link ProxyPolicy#NO_PROXY} have to implement
-     * {@link com.hazelcast.util.ConstructorFunction}. Classes which use
+     * {@link com.hazelcast.internal.util.ConstructorFunction}. Classes which use
      * {@link ProxyPolicy#SUBCLASS_PROXY} can be an empty class.
      *
      * @return the {@link ProxyPolicy} of the supported classes

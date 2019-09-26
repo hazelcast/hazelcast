@@ -17,7 +17,6 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,8 +28,8 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Contains enough information about Hazelcast Config to do a validation check so that clusters with different configurations
@@ -38,7 +37,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  */
 public final class ConfigCheck implements IdentifiedDataSerializable {
 
-    private String groupName;
+    private String clusterName;
 
     private String joinerType;
 
@@ -64,11 +63,8 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         properties.put(PARTITION_COUNT.getName(), config.getProperty(PARTITION_COUNT.getName()));
         properties.put(APPLICATION_VALIDATION_TOKEN.getName(), config.getProperty(APPLICATION_VALIDATION_TOKEN.getName()));
 
-        // Copying group-config settings
-        GroupConfig groupConfig = config.getGroupConfig();
-        if (groupConfig != null) {
-            this.groupName = groupConfig.getName();
-        }
+        // Copying cluster settings
+        this.clusterName = config.getClusterName();
 
         // Partition-group settings
         final PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
@@ -92,7 +88,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
      */
     public boolean isCompatible(ConfigCheck found) {
         // check group-properties.
-        if (!equals(groupName, found.groupName)) {
+        if (!equals(clusterName, found.clusterName)) {
             return false;
         }
 
@@ -104,7 +100,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     }
 
     public boolean isSameGroup(ConfigCheck found) {
-        return equals(groupName, found.groupName);
+        return equals(clusterName, found.clusterName);
     }
 
     private void verifyApplicationValidationToken(ConfigCheck found) {
@@ -166,7 +162,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(groupName);
+        out.writeUTF(clusterName);
         out.writeUTF(joinerType);
         out.writeBoolean(partitionGroupEnabled);
         if (partitionGroupEnabled) {
@@ -194,7 +190,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        groupName = in.readUTF();
+        clusterName = in.readUTF();
         joinerType = in.readUTF();
         partitionGroupEnabled = in.readBoolean();
         if (partitionGroupEnabled) {

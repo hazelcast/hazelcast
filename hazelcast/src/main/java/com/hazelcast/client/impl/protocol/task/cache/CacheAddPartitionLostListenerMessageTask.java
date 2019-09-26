@@ -27,12 +27,13 @@ import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCod
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class CacheAddPartitionLostListenerMessageTask
         extends AbstractCallableMessageTask<CacheAddPartitionLostListenerCodec.RequestParameters>
@@ -70,7 +71,7 @@ public class CacheAddPartitionLostListenerMessageTask
             registration = eventService
                     .registerListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter);
         }
-        String registrationId = registration.getId();
+        UUID registrationId = registration.getId();
         endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
 
@@ -83,7 +84,7 @@ public class CacheAddPartitionLostListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddPartitionLostListenerCodec.encodeResponse((String) response);
+        return CacheAddPartitionLostListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

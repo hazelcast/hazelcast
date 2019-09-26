@@ -18,17 +18,14 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -37,27 +34,41 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
+import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
+import com.hazelcast.internal.config.ExecutorConfigReadOnly;
+import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
+import com.hazelcast.internal.config.ListConfigReadOnly;
+import com.hazelcast.internal.config.LockConfigReadOnly;
+import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.config.MultiMapConfigReadOnly;
+import com.hazelcast.internal.config.QueueConfigReadOnly;
+import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
+import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
+import com.hazelcast.internal.config.RingbufferConfigReadOnly;
+import com.hazelcast.internal.config.SetConfigReadOnly;
+import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
@@ -67,8 +78,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -78,7 +87,10 @@ import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
 import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
 
-@SuppressWarnings({"unchecked", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"unchecked",
+        "checkstyle:methodcount",
+        "checkstyle:classfanoutcomplexity",
+        "checkstyle:classdataabstractioncoupling"})
 public class DynamicConfigurationAwareConfig extends Config {
 
     private final ConfigSupplier<MapConfig> mapConfigOrNullConfigSupplier = new ConfigSupplier<MapConfig>() {
@@ -133,8 +145,8 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
-        staticConfig.setConfigPatternMatcher(configPatternMatcher);
+    public Config setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+        return staticConfig.setConfigPatternMatcher(configPatternMatcher);
     }
 
     @Override
@@ -153,8 +165,8 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
-        staticConfig.setMemberAttributeConfig(memberAttributeConfig);
+    public Config setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+        return staticConfig.setMemberAttributeConfig(memberAttributeConfig);
     }
 
     @Override
@@ -178,13 +190,23 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public GroupConfig getGroupConfig() {
-        return staticConfig.getGroupConfig();
+    public String getClusterName() {
+        return staticConfig.getClusterName();
     }
 
     @Override
-    public Config setGroupConfig(GroupConfig groupConfig) {
-        return staticConfig.setGroupConfig(groupConfig);
+    public Config setClusterName(String clusterName) {
+        return staticConfig.setClusterName(clusterName);
+    }
+
+    @Override
+    public String getClusterPassword() {
+        return staticConfig.getClusterPassword();
+    }
+
+    @Override
+    public Config setClusterPassword(final String password) {
+        return staticConfig.setClusterPassword(password);
     }
 
     @Override
@@ -209,7 +231,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public MapConfig findMapConfig(String name) {
-        return getMapConfigInternal(name, "default").getAsReadOnly();
+        return new MapConfigReadOnly(getMapConfigInternal(name, "default"));
     }
 
     @Override
@@ -267,7 +289,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public CacheSimpleConfig findCacheConfig(String name) {
-        return getCacheConfigInternal(name, "default").getAsReadOnly();
+        return new CacheSimpleConfigReadOnly(getCacheConfigInternal(name, "default"));
     }
 
     @Override
@@ -277,7 +299,7 @@ public class DynamicConfigurationAwareConfig extends Config {
         if (cacheConfig == null) {
             return null;
         }
-        return cacheConfig.getAsReadOnly();
+        return new CacheSimpleConfigReadOnly(cacheConfig);
     }
 
     @Override
@@ -314,7 +336,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public QueueConfig findQueueConfig(String name) {
-        return getQueueConfigInternal(name, "default").getAsReadOnly();
+        return new QueueConfigReadOnly(getQueueConfigInternal(name, "default"));
     }
 
     @Override
@@ -350,7 +372,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public LockConfig findLockConfig(String name) {
-        return getLockConfigInternal(name, "default").getAsReadOnly();
+        return new LockConfigReadOnly(getLockConfigInternal(name, "default"));
     }
 
     @Override
@@ -386,7 +408,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public ListConfig findListConfig(String name) {
-        return getListConfigInternal(name, "default").getAsReadOnly();
+        return new ListConfigReadOnly(getListConfigInternal(name, "default"));
     }
 
     @Override
@@ -423,7 +445,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public SetConfig findSetConfig(String name) {
-        return getSetConfigInternal(name, "default").getAsReadOnly();
+        return new SetConfigReadOnly(getSetConfigInternal(name, "default"));
     }
 
     @Override
@@ -459,7 +481,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public MultiMapConfig findMultiMapConfig(String name) {
-        return getMultiMapConfigInternal(name, "default").getAsReadOnly();
+        return new MultiMapConfigReadOnly(getMultiMapConfigInternal(name, "default"));
     }
 
     @Override
@@ -496,7 +518,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public ReplicatedMapConfig findReplicatedMapConfig(String name) {
-        return getReplicatedMapConfigInternal(name, "default").getAsReadOnly();
+        return new ReplicatedMapConfigReadOnly(getReplicatedMapConfigInternal(name, "default"));
     }
 
     @Override
@@ -533,7 +555,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public RingbufferConfig findRingbufferConfig(String name) {
-        return getRingbufferConfigInternal(name, "default").getAsReadOnly();
+        return new RingbufferConfigReadOnly(getRingbufferConfigInternal(name, "default"));
     }
 
     @Override
@@ -570,7 +592,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public AtomicLongConfig findAtomicLongConfig(String name) {
-        return getAtomicLongConfigInternal(name, "default").getAsReadOnly();
+        return new AtomicLongConfigReadOnly(getAtomicLongConfigInternal(name, "default"));
     }
 
     @Override
@@ -606,82 +628,8 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
-        return getAtomicReferenceConfigInternal(name, "default").getAsReadOnly();
-    }
-
-    @Override
-    public AtomicReferenceConfig getAtomicReferenceConfig(String name) {
-        return getAtomicReferenceConfigInternal(name, name);
-    }
-
-    @Override
-    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getAtomicReferenceConfigs(),
-                atomicReferenceConfig.getName(), atomicReferenceConfig);
-        if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(atomicReferenceConfig);
-        }
-        return this;
-    }
-
-    @Override
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
-        Map<String, AtomicReferenceConfig> staticConfigs = staticConfig.getAtomicReferenceConfigs();
-        Map<String, AtomicReferenceConfig> dynamicConfigs = configurationService.getAtomicReferenceConfigs();
-
-        return aggregate(staticConfigs, dynamicConfigs);
-    }
-
-    @Override
-    public Config setAtomicReferenceConfigs(Map<String, AtomicReferenceConfig> atomicReferenceConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    private AtomicReferenceConfig getAtomicReferenceConfigInternal(String name, String fallbackName) {
-        return (AtomicReferenceConfig) configSearcher.getConfig(name, fallbackName, supplierFor(AtomicReferenceConfig.class));
-    }
-
-    @Override
-    public CountDownLatchConfig findCountDownLatchConfig(String name) {
-        return getCountDownLatchConfigInternal(name, "default").getAsReadOnly();
-    }
-
-    @Override
-    public CountDownLatchConfig getCountDownLatchConfig(String name) {
-        return getCountDownLatchConfigInternal(name, name);
-    }
-
-    @Override
-    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getCountDownLatchConfigs(),
-                countDownLatchConfig.getName(), countDownLatchConfig);
-        if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(countDownLatchConfig);
-        }
-        return this;
-    }
-
-    @Override
-    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
-        Map<String, CountDownLatchConfig> staticConfigs = staticConfig.getCountDownLatchConfigs();
-        Map<String, CountDownLatchConfig> dynamicConfigs = configurationService.getCountDownLatchConfigs();
-
-        return aggregate(staticConfigs, dynamicConfigs);
-    }
-
-    @Override
-    public Config setCountDownLatchConfigs(Map<String, CountDownLatchConfig> countDownLatchConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    private CountDownLatchConfig getCountDownLatchConfigInternal(String name, String fallbackName) {
-        return (CountDownLatchConfig) configSearcher.getConfig(name, fallbackName, supplierFor(CountDownLatchConfig.class));
-    }
-
-    @Override
     public TopicConfig findTopicConfig(String name) {
-        return getTopicConfigInternal(name, "default").getAsReadOnly();
+        return new TopicConfigReadOnly(getTopicConfigInternal(name, "default"));
     }
 
     @Override
@@ -718,7 +666,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public ReliableTopicConfig findReliableTopicConfig(String name) {
-        return getReliableTopicConfigInternal(name, "default").getAsReadOnly();
+        return new ReliableTopicConfigReadOnly(getReliableTopicConfigInternal(name, "default"));
     }
 
     @Override
@@ -755,7 +703,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public ExecutorConfig findExecutorConfig(String name) {
-        return getExecutorConfigInternal(name, "default").getAsReadOnly();
+        return new ExecutorConfigReadOnly(getExecutorConfigInternal(name, "default"));
     }
 
     @Override
@@ -942,54 +890,6 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public SemaphoreConfig findSemaphoreConfig(String name) {
-        return getSemaphoreConfigInternal(name, "default").getAsReadOnly();
-    }
-
-    @Override
-    public SemaphoreConfig getSemaphoreConfig(String name) {
-        return getSemaphoreConfigInternal(name, name);
-    }
-
-    private SemaphoreConfig getSemaphoreConfigInternal(String name, String fallbackName) {
-        return (SemaphoreConfig) configSearcher.getConfig(name, fallbackName, supplierFor(SemaphoreConfig.class));
-    }
-
-    @Override
-    public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getSemaphoreConfigsAsMap(),
-                semaphoreConfig.getName(), semaphoreConfig);
-        if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(semaphoreConfig);
-        }
-        return this;
-    }
-
-    @Override
-    public Collection<SemaphoreConfig> getSemaphoreConfigs() {
-        Collection<SemaphoreConfig> staticConfigs = staticConfig.getSemaphoreConfigs();
-        Map<String, SemaphoreConfig> semaphoreConfigs = configurationService.getSemaphoreConfigs();
-
-        ArrayList<SemaphoreConfig> aggregated = new ArrayList<SemaphoreConfig>(staticConfigs);
-        aggregated.addAll(semaphoreConfigs.values());
-
-        return aggregated;
-    }
-
-    @Override
-    public Map<String, SemaphoreConfig> getSemaphoreConfigsAsMap() {
-        Map<String, SemaphoreConfig> staticConfigs = staticConfig.getSemaphoreConfigsAsMap();
-        Map<String, SemaphoreConfig> dynamicConfigs = configurationService.getSemaphoreConfigs();
-
-        return aggregate(staticConfigs, dynamicConfigs);
-    }
-
-    @Override
-    public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
     public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
         Map<String, FlakeIdGeneratorConfig> staticMapConfigs = staticConfig.getFlakeIdGeneratorConfigs();
         Map<String, FlakeIdGeneratorConfig> dynamicMapConfigs = configurationService.getFlakeIdGeneratorConfigs();
@@ -998,7 +898,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
-        return getFlakeIdGeneratorConfigInternal(name, "default").getAsReadOnly();
+        return new FlakeIdGeneratorConfigReadOnly(getFlakeIdGeneratorConfigInternal(name, "default"));
     }
 
     @Override
@@ -1260,6 +1160,18 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setCPSubsystemConfig(CPSubsystemConfig cpSubsystemConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public MetricsConfig getMetricsConfig() {
+        return staticConfig.getMetricsConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

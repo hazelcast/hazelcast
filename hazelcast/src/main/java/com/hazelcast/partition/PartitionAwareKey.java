@@ -18,12 +18,12 @@ package com.hazelcast.partition;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * A {@link PartitionAware} key. This is useful in combination with a Map where you want to control the

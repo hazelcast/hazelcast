@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 
 import java.util.ListIterator;
 import java.util.Map;
@@ -44,7 +44,7 @@ public final class MemberCodec {
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         FixedSizeTypesCodec.encodeBoolean(initialFrame.content, LITE_MEMBER_OFFSET, member.isLiteMember());
-        FixedSizeTypesCodec.encodeUUID(initialFrame.content, UUID_OFFSET, UUID.fromString(member.getUuid()));
+        FixedSizeTypesCodec.encodeUUID(initialFrame.content, UUID_OFFSET, member.getUuid());
         clientMessage.add(initialFrame);
 
         AddressCodec.encode(clientMessage, member.getAddress());
@@ -66,6 +66,6 @@ public final class MemberCodec {
 
         fastForwardToEndFrame(iterator);
 
-        return new MemberImpl(address, uuid.toString(), attributes, isLiteMember);
+        return new MemberImpl(address, uuid, attributes, isLiteMember);
     }
 }

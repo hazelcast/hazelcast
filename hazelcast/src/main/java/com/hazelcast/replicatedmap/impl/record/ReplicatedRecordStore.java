@@ -18,7 +18,7 @@ package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
 import java.util.Comparator;

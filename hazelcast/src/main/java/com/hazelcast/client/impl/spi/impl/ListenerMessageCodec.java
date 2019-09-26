@@ -18,13 +18,15 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
+import java.util.UUID;
+
 public interface ListenerMessageCodec {
 
     ClientMessage encodeAddRequest(boolean localOnly);
 
-    String decodeAddResponse(ClientMessage clientMessage);
+    UUID decodeAddResponse(ClientMessage clientMessage);
 
-    ClientMessage encodeRemoveRequest(String realRegistrationId);
+    ClientMessage encodeRemoveRequest(UUID realRegistrationId);
 
     boolean decodeRemoveResponse(ClientMessage clientMessage);
 }

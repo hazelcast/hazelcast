@@ -23,10 +23,27 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
+import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
+import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
+import com.hazelcast.internal.config.ExecutorConfigReadOnly;
+import com.hazelcast.internal.config.ListConfigReadOnly;
+import com.hazelcast.internal.config.LockConfigReadOnly;
+import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.config.MultiMapConfigReadOnly;
+import com.hazelcast.internal.config.PNCounterConfigReadOnly;
+import com.hazelcast.internal.config.QueueConfigReadOnly;
+import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
+import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
+import com.hazelcast.internal.config.RingbufferConfigReadOnly;
+import com.hazelcast.internal.config.ScheduledExecutorConfigReadOnly;
+import com.hazelcast.internal.config.SetConfigReadOnly;
+import com.hazelcast.internal.config.TopicConfigReadOnly;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -34,9 +51,9 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.topic.ITopic;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
-import java.util.Collection;
 import java.util.EventListener;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,8 +66,9 @@ import java.util.function.BiConsumer;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Contains all the configuration to start a
@@ -64,6 +82,16 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class Config {
 
+    /**
+     * Default cluster name.
+     */
+    public static final String DEFAULT_CLUSTER_NAME = "dev";
+
+    /**
+     * Default group password.
+     */
+    public static final String DEFAULT_CLUSTER_PASSWORD = "dev-pass";
+
     private URL configurationUrl;
 
     private File configurationFile;
@@ -74,7 +102,9 @@ public class Config {
 
     private String instanceName;
 
-    private GroupConfig groupConfig = new GroupConfig();
+    private String clusterName = DEFAULT_CLUSTER_NAME;
+
+    private String clusterPassword = DEFAULT_CLUSTER_PASSWORD;
 
     private NetworkConfig networkConfig = new NetworkConfig();
 
@@ -106,11 +136,6 @@ public class Config {
     private final Map<String, ScheduledExecutorConfig> scheduledExecutorConfigs
             = new ConcurrentHashMap<String, ScheduledExecutorConfig>();
 
-    private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
-
-    private final Map<String, CountDownLatchConfig> countDownLatchConfigs =
-            new ConcurrentHashMap<String, CountDownLatchConfig>();
-
     private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<String, ReplicatedMapConfig>();
 
     private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
@@ -126,9 +151,6 @@ public class Config {
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
     private final Map<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
-
-    private final Map<String, AtomicReferenceConfig> atomicReferenceConfigs
-            = new ConcurrentHashMap<String, AtomicReferenceConfig>();
 
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
 
@@ -168,6 +190,8 @@ public class Config {
     private CPSubsystemConfig cpSubsystemConfig = new CPSubsystemConfig();
 
     private SqlConfig sqlConfig = new SqlConfig();
+
+    private MetricsConfig metricsConfig = new MetricsConfig();
 
     public Config() {
     }
@@ -222,12 +246,14 @@ public class Config {
      *
      * @param configPatternMatcher the pattern matcher
      * @throws IllegalArgumentException if the pattern matcher is {@code null}
+     * @return this configuration
      */
-    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+    public Config setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
         }
         this.configPatternMatcher = configPatternMatcher;
+        return this;
     }
 
     /**
@@ -276,9 +302,11 @@ public class Config {
      * attributes are exchanged with other members, e.g. on membership events.
      *
      * @param memberAttributeConfig the member attribute configuration
+     * @return this configuration
      */
-    public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+    public Config setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
         this.memberAttributeConfig = memberAttributeConfig;
+        return this;
     }
 
     /**
@@ -330,28 +358,51 @@ public class Config {
     }
 
     /**
-     * Returns the configuration for hazelcast groups. Members of a cluster
-     * must share the same group configuration. Other instances that are
-     * reachable but don't have the same group configuration will form
-     * independent clusters.
+     * Returns the cluster name uniquely identifying the hazelcast cluster. This name is
+     * used in different scenarios, such as identifying cluster for WAN publisher.
      *
-     * @return the hazelcast group configuration
+     * @return the cluster name.
      */
-    public GroupConfig getGroupConfig() {
-        return groupConfig;
+    public String getClusterName() {
+        return clusterName;
     }
 
     /**
-     * Sets the configuration for hazelcast groups. Members of a cluster must
-     * share the same group configuration. Other instances that are reachable
-     * but don't have the same group configuration will form independent
-     * clusters.
-     *
-     * @param groupConfig the hazelcast group configuration
+     * Sets the cluster name uniquely identifying the hazelcast cluster. This name is
+     * used in different scenarios, such as identifying cluster for WAN publisher.
+     * @param clusterName the new cluster name
      * @return this config instance
+     * @throws IllegalArgumentException if name is {@code null}
      */
-    public Config setGroupConfig(GroupConfig groupConfig) {
-        this.groupConfig = groupConfig;
+    public Config setClusterName(String clusterName) {
+        this.clusterName = isNotNull(clusterName, "clusterName");
+        return this;
+    }
+
+    /**
+     * Gets the password of the cluster.
+     *
+     * @return the password of the cluster
+     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
+     * {@link SecurityConfig security} is enabled (Enterprise edition only).
+     */
+    @Deprecated
+    public String getClusterPassword() {
+        return clusterPassword;
+    }
+
+    /**
+     * Sets the password for the cluster.
+     *
+     * @param password the password to set for the cluster
+     * @return the updated Config
+     * @throws IllegalArgumentException if password is {@code null}
+     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
+     * {@link SecurityConfig security} is enabled (Enterprise edition only).
+     */
+    @Deprecated
+    public Config setClusterPassword(final String password) {
+        this.clusterPassword = isNotNull(password, "cluster password");
         return this;
     }
 
@@ -406,9 +457,9 @@ public class Config {
         MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
         if (config != null) {
             initDefaultMaxSizeForOnHeapMaps(config.getNearCacheConfig());
-            return config.getAsReadOnly();
+            return new MapConfigReadOnly(config);
         }
-        return getMapConfig("default").getAsReadOnly();
+        return new MapConfigReadOnly(getMapConfig("default"));
     }
 
     /**
@@ -522,9 +573,9 @@ public class Config {
         name = getBaseName(name);
         final CacheSimpleConfig config = lookupByPattern(configPatternMatcher, cacheConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new CacheSimpleConfigReadOnly(config);
         }
-        return getCacheConfig("default").getAsReadOnly();
+        return new CacheSimpleConfigReadOnly(getCacheConfig("default"));
     }
 
     /**
@@ -640,9 +691,9 @@ public class Config {
         name = getBaseName(name);
         QueueConfig config = lookupByPattern(configPatternMatcher, queueConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new QueueConfigReadOnly(config);
         }
-        return getQueueConfig("default").getAsReadOnly();
+        return new QueueConfigReadOnly(getQueueConfig("default"));
     }
 
     /**
@@ -740,9 +791,9 @@ public class Config {
         name = getBaseName(name);
         final LockConfig config = lookupByPattern(configPatternMatcher, lockConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new LockConfigReadOnly(config);
         }
-        return getLockConfig("default").getAsReadOnly();
+        return new LockConfigReadOnly(getLockConfig("default"));
     }
 
     /**
@@ -840,9 +891,9 @@ public class Config {
         name = getBaseName(name);
         ListConfig config = lookupByPattern(configPatternMatcher, listConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ListConfigReadOnly(config);
         }
-        return getListConfig("default").getAsReadOnly();
+        return new ListConfigReadOnly(getListConfig("default"));
     }
 
     /**
@@ -940,9 +991,9 @@ public class Config {
         name = getBaseName(name);
         SetConfig config = lookupByPattern(configPatternMatcher, setConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new SetConfigReadOnly(config);
         }
-        return getSetConfig("default").getAsReadOnly();
+        return new SetConfigReadOnly(getSetConfig("default"));
     }
 
     /**
@@ -1040,9 +1091,9 @@ public class Config {
         name = getBaseName(name);
         MultiMapConfig config = lookupByPattern(configPatternMatcher, multiMapConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new MultiMapConfigReadOnly(config);
         }
-        return getMultiMapConfig("default").getAsReadOnly();
+        return new MultiMapConfigReadOnly(getMultiMapConfig("default"));
     }
 
     /**
@@ -1140,9 +1191,9 @@ public class Config {
         name = getBaseName(name);
         ReplicatedMapConfig config = lookupByPattern(configPatternMatcher, replicatedMapConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ReplicatedMapConfigReadOnly(config);
         }
-        return getReplicatedMapConfig("default").getAsReadOnly();
+        return new ReplicatedMapConfigReadOnly(getReplicatedMapConfig("default"));
     }
 
     /**
@@ -1241,9 +1292,9 @@ public class Config {
         name = getBaseName(name);
         RingbufferConfig config = lookupByPattern(configPatternMatcher, ringbufferConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new RingbufferConfigReadOnly(config);
         }
-        return getRingbufferConfig("default").getAsReadOnly();
+        return new RingbufferConfigReadOnly(getRingbufferConfig("default"));
     }
 
     /**
@@ -1340,9 +1391,9 @@ public class Config {
         name = getBaseName(name);
         AtomicLongConfig config = lookupByPattern(configPatternMatcher, atomicLongConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new AtomicLongConfigReadOnly(config);
         }
-        return getAtomicLongConfig("default").getAsReadOnly();
+        return new AtomicLongConfigReadOnly(getAtomicLongConfig("default"));
     }
 
     /**
@@ -1417,198 +1468,6 @@ public class Config {
     }
 
     /**
-     * Returns a read-only AtomicReference configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the AtomicReference config
-     * @return the AtomicReference configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
-        name = getBaseName(name);
-        AtomicReferenceConfig config = lookupByPattern(configPatternMatcher, atomicReferenceConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getAtomicReferenceConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns the AtomicReferenceConfig for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking {@link #addAtomicReferenceConfig(AtomicReferenceConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the AtomicReference config
-     * @return the AtomicReference configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public AtomicReferenceConfig getAtomicReferenceConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, atomicReferenceConfigs, name, AtomicReferenceConfig.class);
-    }
-
-    /**
-     * Adds the AtomicReference configuration. The configuration is saved under the config
-     * name, which may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param atomicReferenceConfig the AtomicReference configuration
-     * @return this config instance
-     */
-    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
-        atomicReferenceConfigs.put(atomicReferenceConfig.getName(), atomicReferenceConfig);
-        return this;
-    }
-
-    /**
-     * Returns the map of AtomicReference configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration was initially obtained.
-     *
-     * @return the AtomicReference configurations mapped by config name
-     */
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
-        return atomicReferenceConfigs;
-    }
-
-    /**
-     * Sets the map of AtomicReference configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be obtained in the future.
-     *
-     * @param atomicReferenceConfigs the AtomicReference configuration map to set
-     * @return this config instance
-     */
-    public Config setAtomicReferenceConfigs(Map<String, AtomicReferenceConfig> atomicReferenceConfigs) {
-        this.atomicReferenceConfigs.clear();
-        this.atomicReferenceConfigs.putAll(atomicReferenceConfigs);
-        for (Entry<String, AtomicReferenceConfig> entry : atomicReferenceConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Returns a read-only CountDownLatch configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the CountDownLatch config
-     * @return the CountDownLatch configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public CountDownLatchConfig findCountDownLatchConfig(String name) {
-        name = getBaseName(name);
-        CountDownLatchConfig config = lookupByPattern(configPatternMatcher, countDownLatchConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getCountDownLatchConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns the CountDownLatchConfig for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking {@link #addCountDownLatchConfig(CountDownLatchConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the CountDownLatch config
-     * @return the CountDownLatch configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public CountDownLatchConfig getCountDownLatchConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, countDownLatchConfigs, name, CountDownLatchConfig.class);
-    }
-
-    /**
-     * Adds the CountDownLatch configuration. The configuration is saved under the config
-     * name, which may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param countDownLatchConfig the CountDownLatch configuration
-     * @return this config instance
-     */
-    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
-        countDownLatchConfigs.put(countDownLatchConfig.getName(), countDownLatchConfig);
-        return this;
-    }
-
-    /**
-     * Returns the map of CountDownLatch configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration was initially obtained.
-     *
-     * @return the CountDownLatch configurations mapped by config name
-     */
-    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
-        return countDownLatchConfigs;
-    }
-
-    /**
-     * Sets the map of CountDownLatch configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be obtained in the future.
-     *
-     * @param countDownLatchConfigs the CountDownLatch configuration map to set
-     * @return this config instance
-     */
-    public Config setCountDownLatchConfigs(Map<String, CountDownLatchConfig> countDownLatchConfigs) {
-        this.countDownLatchConfigs.clear();
-        this.countDownLatchConfigs.putAll(countDownLatchConfigs);
-        for (Entry<String, CountDownLatchConfig> entry : countDownLatchConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
      * Returns a read-only {@link ITopic}
      * configuration for the given name.
      * <p>
@@ -1630,9 +1489,9 @@ public class Config {
         name = getBaseName(name);
         TopicConfig config = lookupByPattern(configPatternMatcher, topicConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new TopicConfigReadOnly(config);
         }
-        return getTopicConfig("default").getAsReadOnly();
+        return new TopicConfigReadOnly(getTopicConfig("default"));
     }
 
     /**
@@ -1701,9 +1560,9 @@ public class Config {
         name = getBaseName(name);
         ReliableTopicConfig config = lookupByPattern(configPatternMatcher, reliableTopicConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ReliableTopicConfigReadOnly(config);
         }
-        return getReliableTopicConfig("default").getAsReadOnly();
+        return new ReliableTopicConfigReadOnly(getReliableTopicConfig("default"));
     }
 
     /**
@@ -1829,9 +1688,9 @@ public class Config {
         name = getBaseName(name);
         ExecutorConfig config = lookupByPattern(configPatternMatcher, executorConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ExecutorConfigReadOnly(config);
         }
-        return getExecutorConfig("default").getAsReadOnly();
+        return new ExecutorConfigReadOnly(getExecutorConfig("default"));
     }
 
     /**
@@ -1855,9 +1714,9 @@ public class Config {
         name = getBaseName(name);
         DurableExecutorConfig config = lookupByPattern(configPatternMatcher, durableExecutorConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new DurableExecutorConfigReadOnly(config);
         }
-        return getDurableExecutorConfig("default").getAsReadOnly();
+        return new DurableExecutorConfigReadOnly(getDurableExecutorConfig("default"));
     }
 
     /**
@@ -1881,9 +1740,9 @@ public class Config {
         name = getBaseName(name);
         ScheduledExecutorConfig config = lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new ScheduledExecutorConfigReadOnly(config);
         }
-        return getScheduledExecutorConfig("default").getAsReadOnly();
+        return new ScheduledExecutorConfigReadOnly(getScheduledExecutorConfig("default"));
     }
 
     /**
@@ -1908,9 +1767,9 @@ public class Config {
         name = getBaseName(name);
         CardinalityEstimatorConfig config = lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new CardinalityEstimatorConfigReadOnly(config);
         }
-        return getCardinalityEstimatorConfig("default").getAsReadOnly();
+        return new CardinalityEstimatorConfigReadOnly(getCardinalityEstimatorConfig("default"));
     }
 
     /**
@@ -1935,9 +1794,9 @@ public class Config {
         name = getBaseName(name);
         PNCounterConfig config = lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
         if (config != null) {
-            return config.getAsReadOnly();
+            return new PNCounterConfigReadOnly(config);
         }
-        return getPNCounterConfig("default").getAsReadOnly();
+        return new PNCounterConfigReadOnly(getPNCounterConfig("default"));
     }
 
     /**
@@ -2306,117 +2165,6 @@ public class Config {
         this.pnCounterConfigs.clear();
         this.pnCounterConfigs.putAll(pnCounterConfigs);
         for (Entry<String, PNCounterConfig> entry : pnCounterConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Returns a read-only {@link ISemaphore}
-     * configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the semaphore config
-     * @return the semaphore configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     * @see EvictionConfig#setSize(int)
-     */
-    public SemaphoreConfig findSemaphoreConfig(String name) {
-        name = getBaseName(name);
-        SemaphoreConfig config = lookupByPattern(configPatternMatcher, semaphoreConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getSemaphoreConfig("default").getAsReadOnly();
-    }
-
-    /**
-     * Returns the SemaphoreConfig for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking
-     * {@link #addSemaphoreConfig(SemaphoreConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the semaphore config
-     * @return the semaphore configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public SemaphoreConfig getSemaphoreConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, semaphoreConfigs, name, SemaphoreConfig.class);
-    }
-
-    /**
-     * Adds the {@link ISemaphore} configuration.
-     * The configuration is saved under the config name, which may be a
-     * pattern with which the configuration will be obtained in the future.
-     *
-     * @param semaphoreConfig semaphoreConfig config to add
-     * @return this config instance
-     */
-    public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        this.semaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
-        return this;
-    }
-
-    /**
-     * Returns the collection of {@link ISemaphore} configs
-     * added to this config object.
-     *
-     * @return semaphore configs
-     */
-    public Collection<SemaphoreConfig> getSemaphoreConfigs() {
-        return semaphoreConfigs.values();
-    }
-
-    /**
-     * Returns the map of {@link ISemaphore} configurations,
-     * mapped by config name. The config name may be a pattern with which the
-     * configuration was initially obtained.
-     *
-     * @return the semaphore configurations mapped by config name
-     */
-    public Map<String, SemaphoreConfig> getSemaphoreConfigsAsMap() {
-        return semaphoreConfigs;
-    }
-
-    /**
-     * Sets the map of semaphore configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param semaphoreConfigs the semaphore configuration map to set
-     * @return this config instance
-     */
-    public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
-        this.semaphoreConfigs.clear();
-        this.semaphoreConfigs.putAll(semaphoreConfigs);
-        for (final Entry<String, SemaphoreConfig> entry : this.semaphoreConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -2854,7 +2602,7 @@ public class Config {
     }
 
     /**
-     * Sets the replication configuration for {@link com.hazelcast.crdt.CRDT}
+     * Sets the replication configuration for {@link com.hazelcast.internal.crdt.CRDT}
      * implementations.
      *
      * @param crdtReplicationConfig the replication configuration
@@ -3103,10 +2851,28 @@ public class Config {
         return this;
     }
 
+    /**
+     * Returns the metrics collection config.
+     */
+    @Nonnull
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    /**
+     * Sets the metrics collection config.
+     */
+    @Nonnull
+    public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
+        Preconditions.checkNotNull(metricsConfig, "metricsConfig");
+        this.metricsConfig = metricsConfig;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "Config{"
-                + "groupConfig=" + groupConfig
+                + "clusterName=" + clusterName
                 + ", properties=" + properties
                 + ", networkConfig=" + networkConfig
                 + ", mapConfigs=" + mapConfigs
@@ -3115,11 +2881,8 @@ public class Config {
                 + ", queueConfigs=" + queueConfigs
                 + ", multiMapConfigs=" + multiMapConfigs
                 + ", executorConfigs=" + executorConfigs
-                + ", semaphoreConfigs=" + semaphoreConfigs
-                + ", countDownLatchConfigs=" + countDownLatchConfigs
                 + ", ringbufferConfigs=" + ringbufferConfigs
                 + ", atomicLongConfigs=" + atomicLongConfigs
-                + ", atomicReferenceConfigs=" + atomicReferenceConfigs
                 + ", wanReplicationConfigs=" + wanReplicationConfigs
                 + ", listenerConfigs=" + listenerConfigs
                 + ", partitionGroupConfig=" + partitionGroupConfig
@@ -3130,6 +2893,7 @@ public class Config {
                 + ", advancedNetworkConfig=" + advancedNetworkConfig
                 + ", cpSubsystemConfig=" + cpSubsystemConfig
                 + ", sqlConfig=" + sqlConfig
+                + ", metricsConfig=" + metricsConfig
                 + '}';
     }
 }

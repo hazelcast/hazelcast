@@ -35,7 +35,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanSyncStatus;
@@ -77,19 +77,20 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         replicatedMapStats.incrementPuts(30);
         CacheStatisticsImpl cacheStatistics = new CacheStatisticsImpl(Clock.currentTimeMillis());
         cacheStatistics.increaseCacheHits(5);
+        UUID clientUuid = UUID.randomUUID();
 
-        Collection<ClientEndPointDTO> clients = new ArrayList<ClientEndPointDTO>();
+        Collection<ClientEndPointDTO> clients = new ArrayList<>();
         ClientEndPointDTO client = new ClientEndPointDTO();
-        client.uuid = "abc123456";
+        client.uuid = clientUuid;
         client.address = "localhost";
         client.clientType = "undefined";
         client.name = "aClient";
-        client.labels = new HashSet<String>(Collections.singletonList("label"));
+        client.labels = new HashSet<>(Collections.singletonList("label"));
         client.ipAddress = "10.176.167.34";
         client.canonicalHostName = "ip-10-176-167-34.ec2.internal";
         clients.add(client);
 
-        Map<String, Long> runtimeProps = new HashMap<String, Long>();
+        Map<String, Long> runtimeProps = new HashMap<>();
         runtimeProps.put("prop1", 598123L);
 
         ClusterState clusterState = ClusterState.ACTIVE;
@@ -102,10 +103,10 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus, true, backupDirectory);
         final WanSyncState wanSyncState = new WanSyncStateImpl(WanSyncStatus.IN_PROGRESS, 86, "atob", "B");
 
-        Map<String, String> clientStats = new HashMap<String, String>();
-        clientStats.put("abc123456", "someStats");
+        Map<UUID, String> clientStats = new HashMap<>();
+        clientStats.put(clientUuid, "someStats");
 
-        Map<EndpointQualifier, Address> endpoints = new HashMap<EndpointQualifier, Address>();
+        Map<EndpointQualifier, Address> endpoints = new HashMap<>();
         endpoints.put(EndpointQualifier.MEMBER, new Address("127.0.0.1", 5701));
         endpoints.put(EndpointQualifier.resolve(ProtocolType.WAN, "MyWAN"), new Address("127.0.0.1", 5901));
 
@@ -114,9 +115,9 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         MemberStateImpl memberState = timedMemberState.getMemberState();
         memberState.setAddress("memberStateAddress:Port");
-        String uuid = UUID.randomUUID().toString();
+        UUID uuid = UUID.randomUUID();
         memberState.setUuid(uuid);
-        String cpMemberUuid = UUID.randomUUID().toString();
+        UUID cpMemberUuid = UUID.randomUUID();
         memberState.setCpMemberUuid(cpMemberUuid);
         memberState.setEndpoints(endpoints);
         memberState.putLocalMapStats("mapStats", new LocalMapStatsImpl());
@@ -168,7 +169,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getMXBeans());
 
         client = deserialized.getClients().iterator().next();
-        assertEquals("abc123456", client.uuid);
+        assertEquals(clientUuid, client.uuid);
         assertEquals("localhost", client.address);
         assertEquals("undefined", client.clientType);
         assertEquals("aClient", client.name);
@@ -200,7 +201,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(-1, clusterHotRestartStatus.getRemainingDataLoadTimeMillis());
         assertTrue(clusterHotRestartStatus.getMemberHotRestartStatusMap().isEmpty());
 
-        Map<String, String> deserializedClientStats = deserialized.getClientStats();
-        assertEquals("someStats", deserializedClientStats.get("abc123456"));
+        Map<UUID, String> deserializedClientStats = deserialized.getClientStats();
+        assertEquals("someStats", deserializedClientStats.get(clientUuid));
     }
 }

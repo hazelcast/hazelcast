@@ -23,7 +23,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;

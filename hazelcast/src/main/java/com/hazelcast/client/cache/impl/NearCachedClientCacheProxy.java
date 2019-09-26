@@ -35,7 +35,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
@@ -54,8 +54,8 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * An {@link ICacheInternal} implementation which handles Near Cache specific behaviour of methods.
@@ -72,7 +72,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     private NearCacheManager nearCacheManager;
     private NearCache<Object, Object> nearCache;
-    private String nearCacheMembershipRegistrationId;
+    private UUID nearCacheMembershipRegistrationId;
 
     NearCachedClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
@@ -550,7 +550,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
     }
 
-    public String addNearCacheInvalidationListener(EventHandler eventHandler) {
+    public UUID addNearCacheInvalidationListener(EventHandler eventHandler) {
         return registerListener(createInvalidationListenerCodec(nameWithPrefix), eventHandler);
     }
 
@@ -568,7 +568,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             return;
         }
 
-        String registrationId = nearCacheMembershipRegistrationId;
+        UUID registrationId = nearCacheMembershipRegistrationId;
         if (registrationId != null) {
             getContext().getRepairingTask(getServiceName()).deregisterHandler(nameWithPrefix);
             getContext().getListenerService().deregisterListener(registrationId);
@@ -745,14 +745,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void handleCacheInvalidationEvent(String name, Data key, String sourceUuid,
+        public void handleCacheInvalidationEvent(String name, Data key, UUID sourceUuid,
                                                  UUID partitionUuid, long sequence) {
             repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
         }
 
         @Override
         public void handleCacheBatchInvalidationEvent(String name, Collection<Data> keys,
-                                                      Collection<String> sourceUuids,
+                                                      Collection<UUID> sourceUuids,
                                                       Collection<UUID> partitionUuids,
                                                       Collection<Long> sequences) {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);

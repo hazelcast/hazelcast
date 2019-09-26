@@ -21,7 +21,8 @@ import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.crdt.pncounter.AbstractPNCounterBasicIntegrationTest;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.internal.crdt.pncounter.AbstractPNCounterBasicIntegrationTest;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,7 +42,7 @@ import static java.util.Arrays.asList;
 
 /**
  * Client implementation for basic
- * {@link com.hazelcast.crdt.pncounter.PNCounter} integration tests
+ * {@link PNCounter} integration tests
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

@@ -37,6 +37,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertTrue;
@@ -82,7 +83,7 @@ public class ClientEvictionTest extends HazelcastTestSupport {
         int margin = 10;
         final CountDownLatch evictedCount = new CountDownLatch(populationCount - maxSize - margin);
         final QueryCache<Integer, Integer> cache = map.getQueryCache(cacheName, Predicates.alwaysTrue(), true);
-        String listener = cache.addEntryListener(new EntryEvictedListener() {
+        UUID listener = cache.addEntryListener(new EntryEvictedListener() {
             @Override
             public void entryEvicted(EntryEvent event) {
                 evictedCount.countDown();

@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.util.TimeUtil.zeroOutMs;
+import static com.hazelcast.internal.util.TimeUtil.zeroOutMs;
 
 /**
  * Used to transfer expired keys from owner replica to backup replicas.

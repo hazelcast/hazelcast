@@ -29,14 +29,14 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import org.junit.Assert;
@@ -416,7 +416,7 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_usingMemberImpl() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -429,7 +429,7 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_usingSimpleMember() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -439,7 +439,7 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_withLiteMemberImpl() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -454,7 +454,7 @@ public class SerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberLeftException_withLiteSimpleMemberImpl() throws Exception {
-        String uuid = UuidUtil.newUnsecureUuidString();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -462,7 +462,7 @@ public class SerializationTest extends HazelcastTestSupport {
         testMemberLeftException(uuid, host, port, member);
     }
 
-    private void testMemberLeftException(String uuid, String host, int port, Member member) throws Exception {
+    private void testMemberLeftException(UUID uuid, String host, int port, Member member) throws Exception {
 
         MemberLeftException exception = new MemberLeftException(member);
 

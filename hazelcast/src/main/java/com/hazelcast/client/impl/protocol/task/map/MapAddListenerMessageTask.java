@@ -30,10 +30,11 @@ import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.BatchIMapEvent;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -52,10 +53,10 @@ public class MapAddListenerMessageTask
         return registerListener(endpoint, this);
     }
 
-    private String registerListener(ClientEndpoint endpoint, ListenerAdapter adapter) {
+    private UUID registerListener(ClientEndpoint endpoint, ListenerAdapter adapter) {
         MapService mapService = getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        String registrationId;
+        UUID registrationId;
         if (parameters.localOnly) {
             registrationId = mapServiceContext.addLocalListenerAdapter(adapter, parameters.listenerName);
         } else {
@@ -106,7 +107,7 @@ public class MapAddListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ContinuousQueryAddListenerCodec.encodeResponse((String) response);
+        return ContinuousQueryAddListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.event;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**

@@ -42,7 +42,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -272,8 +272,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
                 .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
                 .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
 
-        config.getGroupConfig()
-                .setName(generateRandomString(10));
+        config.setClusterName(generateRandomString(10));
 
         config.getMapConfig(mapName)
                 .getMergePolicyConfig().setPolicy(mergePolicy);

@@ -90,9 +90,9 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
-import com.hazelcast.util.AddressUtil;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.version.MemberVersion;
-import com.hazelcast.wan.WANReplicationQueueFullException;
+import com.hazelcast.wan.WanReplicationQueueFullException;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
@@ -619,7 +619,7 @@ public class ReferenceObjects {
         }
     }
 
-    public static Member aMember = new MemberImpl(anAddress, MemberVersion.UNKNOWN, aString,
+    public static Member aMember = new MemberImpl(anAddress, MemberVersion.UNKNOWN, aUUID,
             Collections.singletonMap(aString, aString), false);
     public static Collection<Map.Entry<Address, List<Integer>>> aPartitionTable;
 
@@ -818,7 +818,7 @@ public class ReferenceObjects {
             aString), new AccessControlException(aString), new LoginException(aString), new UnsupportedCallbackException(
             new Callback() {
             }), new NoDataMemberInClusterException(aString), new ReplicatedMapCantBeCreatedOnLiteMemberException(
-            aString), new MaxMessageSizeExceeded(), new WANReplicationQueueFullException(aString), new AssertionError(
+            aString), new MaxMessageSizeExceeded(), new WanReplicationQueueFullException(aString), new AssertionError(
             aString), new OutOfMemoryError(aString), new StackOverflowError(aString), new NativeOutOfMemoryError(aString)};
 
     public static Throwable[] throwables_1_1 = {new StaleTaskIdException(aString), new ServiceNotFoundException(aString)};

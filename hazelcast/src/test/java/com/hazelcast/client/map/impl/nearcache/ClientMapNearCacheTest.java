@@ -1331,14 +1331,14 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         }
 
         @Override
-        public void handleIMapInvalidationEvent(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
+        public void handleIMapInvalidationEvent(Data key, UUID sourceUuid, UUID partitionUuid, long sequence) {
             if (key == null) {
                 clearEventCount.incrementAndGet();
             }
         }
 
         @Override
-        public void handleIMapBatchInvalidationEvent(Collection<Data> keys, Collection<String> sourceUuids,
+        public void handleIMapBatchInvalidationEvent(Collection<Data> keys, Collection<UUID> sourceUuids,
                                                         Collection<UUID> partitionUuids, Collection<Long> sequences) {
 
         }

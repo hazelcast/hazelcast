@@ -47,8 +47,6 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String splitBrainProtectionName;
 
-    private transient ExecutorConfigReadOnly readOnly;
-
     public ExecutorConfig() {
     }
 
@@ -67,19 +65,6 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         this.queueCapacity = config.queueCapacity;
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public ExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ExecutorConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

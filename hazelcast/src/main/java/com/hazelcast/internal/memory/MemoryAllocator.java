@@ -17,7 +17,7 @@
 package com.hazelcast.internal.memory;
 
 import com.hazelcast.memory.NativeOutOfMemoryError;
-import com.hazelcast.nio.Disposable;
+import com.hazelcast.internal.nio.Disposable;
 
 /**
  * Manages the usage of an address space by allocating and freeing blocks of addresses.

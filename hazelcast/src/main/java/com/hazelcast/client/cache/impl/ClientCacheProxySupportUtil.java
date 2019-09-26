@@ -42,13 +42,14 @@ import javax.cache.integration.CompletionListener;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.CacheEventType.PARTITION_LOST;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Helper class mainly for {@link ClientCacheProxySupport} that contains utility-methods and utility-classes.
@@ -131,12 +132,12 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public String decodeAddResponse(ClientMessage clientMessage) {
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
             return CacheAddEntryListenerCodec.decodeResponse(clientMessage).response;
         }
 
         @Override
-        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
             return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
         }
 
@@ -160,12 +161,12 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public String decodeAddResponse(ClientMessage clientMessage) {
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
             return CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
         }
 
         @Override
-        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
             return CacheRemovePartitionLostListenerCodec.encodeRequest(name, realRegistrationId);
         }
 
@@ -189,12 +190,12 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public String decodeAddResponse(ClientMessage clientMessage) {
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
             return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
         }
 
         @Override
-        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
             return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
         }
 
@@ -284,7 +285,7 @@ final class ClientCacheProxySupportUtil {
         }
 
         @Override
-        public void handleCachePartitionLostEvent(int partitionId, String uuid) {
+        public void handleCachePartitionLostEvent(int partitionId, UUID uuid) {
             Member member = clientContext.getClusterService().getMember(uuid);
             listener.partitionLost(new CachePartitionLostEvent(name, member, PARTITION_LOST.getType(), partitionId));
         }

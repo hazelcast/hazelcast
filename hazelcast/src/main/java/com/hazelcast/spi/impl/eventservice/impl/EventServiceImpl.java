@@ -26,9 +26,9 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -40,8 +40,8 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.StripedExecutor;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -65,10 +66,10 @@ import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -296,7 +297,7 @@ public class EventServiceImpl implements EventService, MetricsProvider {
             throw new IllegalArgumentException("Null filter is not allowed!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
-        String id = UuidUtil.newUnsecureUuidString();
+        UUID id = UuidUtil.newUnsecureUUID();
         Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly);
         if (!segment.addRegistration(topic, reg)) {
             return null;
@@ -329,7 +330,7 @@ public class EventServiceImpl implements EventService, MetricsProvider {
         if (segment == null) {
             return false;
         }
-        Registration reg = segment.removeRegistration(topic, String.valueOf(id));
+        Registration reg = segment.removeRegistration(topic, (UUID) id);
         if (reg != null && !reg.isLocalOnly()) {
             Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
             invokeOnAllMembers(supplier);

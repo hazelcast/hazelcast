@@ -17,11 +17,12 @@
 package com.hazelcast.cp.internal.datastructures.unsafe.lock;
 
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.AwaitOperation;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,17 +33,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook.F_ID;
 import static com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook.LOCK_RESOURCE;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 @SuppressWarnings("checkstyle:methodcount")
 final class LockResourceImpl implements IdentifiedDataSerializable, LockResource {
 
     private Data key;
-    private String owner;
+    private UUID owner;
     private long threadId;
     private long referenceId;
     private int lockCount;
@@ -79,11 +81,11 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     }
 
     @Override
-    public boolean isLockedBy(String owner, long threadId) {
+    public boolean isLockedBy(UUID owner, long threadId) {
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
-    boolean lock(String owner, long threadId, long referenceId, long leaseTime, boolean transactional,
+    boolean lock(UUID owner, long threadId, long referenceId, long leaseTime, boolean transactional,
                  boolean blockReads, boolean local) {
         if (lockCount == 0) {
             this.owner = owner;
@@ -120,7 +122,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
      * @param leaseTime
      * @return
      */
-    boolean extendLeaseTime(String caller, long threadId, long leaseTime) {
+    boolean extendLeaseTime(UUID caller, long threadId, long leaseTime) {
         if (!isLockedBy(caller, threadId)) {
             return false;
         }
@@ -147,7 +149,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         }
     }
 
-    boolean unlock(String owner, long threadId, long referenceId) {
+    boolean unlock(UUID owner, long threadId, long referenceId) {
         if (lockCount == 0) {
             return false;
         }
@@ -168,11 +170,11 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         return true;
     }
 
-    boolean canAcquireLock(String caller, long threadId) {
+    boolean canAcquireLock(UUID caller, long threadId) {
         return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
     }
 
-    void addAwait(String conditionId, String caller, long threadId) {
+    void addAwait(String conditionId, UUID caller, long threadId) {
         if (waiters == null) {
             waiters = createHashMap(2);
         }
@@ -185,7 +187,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         condition.addWaiter(caller, threadId);
     }
 
-    void removeAwait(String conditionId, String caller, long threadId) {
+    void removeAwait(String conditionId, UUID caller, long threadId) {
         if (waiters == null) {
             return;
         }
@@ -314,7 +316,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     }
 
     @Override
-    public String getOwner() {
+    public UUID getOwner() {
         return owner;
     }
 
@@ -396,7 +398,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeData(key);
-        out.writeUTF(owner);
+        UUIDSerializationUtil.writeUUID(out, owner);
         out.writeLong(threadId);
         out.writeLong(referenceId);
         out.writeInt(lockCount);
@@ -418,7 +420,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
             for (ConditionKey signalKey : conditionKeys) {
                 out.writeUTF(signalKey.getObjectName());
                 out.writeUTF(signalKey.getConditionId());
-                out.writeUTF(signalKey.getUuid());
+                UUIDSerializationUtil.writeUUID(out, signalKey.getUuid());
                 out.writeLong(signalKey.getThreadId());
             }
         }
@@ -446,7 +448,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         key = in.readData();
-        owner = in.readUTF();
+        owner = UUIDSerializationUtil.readUUID(in);
         threadId = in.readLong();
         referenceId = in.readLong();
         lockCount = in.readInt();
@@ -469,7 +471,8 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         if (len > 0) {
             conditionKeys = createHashSet(len);
             for (int i = 0; i < len; i++) {
-                conditionKeys.add(new ConditionKey(in.readUTF(), key, in.readUTF(), in.readUTF(), in.readLong()));
+                conditionKeys.add(new ConditionKey(in.readUTF(), key, in.readUTF(),
+                        UUIDSerializationUtil.readUUID(in), in.readLong()));
             }
         }
 
@@ -528,7 +531,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         return m == null || m.isEmpty();
     }
 
-    void cleanWaitersAndSignalsFor(String uuid) {
+    void cleanWaitersAndSignalsFor(UUID uuid) {
         if (conditionKeys != null) {
             Iterator<ConditionKey> iter = conditionKeys.iterator();
             while (iter.hasNext()) {

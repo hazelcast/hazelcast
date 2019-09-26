@@ -18,7 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.UUID;
 
 import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.singleton;
@@ -82,6 +83,6 @@ public class JoinMessageTrustCheckerTest extends HazelcastTestSupport {
         InetAddress inetAddress = InetAddress.getByName(ip);
         Address address = new Address(inetAddress, 5701);
         ConfigCheck configCheck = new ConfigCheck();
-        return new JoinMessage(Packet.VERSION, 0, MemberVersion.UNKNOWN, address, "uuid", false, configCheck);
+        return new JoinMessage(Packet.VERSION, 0, MemberVersion.UNKNOWN, address, UUID.randomUUID(), false, configCheck);
     }
 }

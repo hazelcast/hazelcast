@@ -25,8 +25,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * The {@code FlakeIdGeneratorConfig} contains the configuration for the member
@@ -35,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  *
  * @since 3.10
  */
-public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable , NamedConfig {
+public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Default value for {@link #getPrefetchCount()}.
@@ -64,8 +64,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable , Name
     private long nodeIdOffset;
     private boolean statisticsEnabled = true;
 
-    private transient FlakeIdGeneratorConfigReadOnly readOnly;
-
     // for deserialization
     FlakeIdGeneratorConfig() {
     }
@@ -84,19 +82,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable , Name
         this.idOffset = other.idOffset;
         this.nodeIdOffset = other.nodeIdOffset;
         this.statisticsEnabled = other.statisticsEnabled;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public FlakeIdGeneratorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new FlakeIdGeneratorConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

@@ -24,10 +24,10 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduleType;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.internal.util.scheduler.ScheduleType;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 
 import java.util.HashSet;
 import java.util.Objects;

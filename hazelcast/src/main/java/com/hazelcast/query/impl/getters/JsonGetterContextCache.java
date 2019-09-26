@@ -16,8 +16,8 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.util.SampleableConcurrentHashMap;
-import com.hazelcast.util.SampleableConcurrentHashMap.SamplingEntry;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap.SamplingEntry;
 
 public class JsonGetterContextCache {
 

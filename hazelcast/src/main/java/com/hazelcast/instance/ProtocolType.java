@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.nio.Protocols;
+import com.hazelcast.internal.nio.Protocols;
 
 import java.util.Collections;
 import java.util.EnumSet;

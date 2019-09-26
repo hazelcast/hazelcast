@@ -26,12 +26,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Base class for client proxies.
@@ -54,11 +55,11 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected final @Nonnull
-    String registerListener(ListenerMessageCodec codec, EventHandler handler) {
+    UUID registerListener(ListenerMessageCodec codec, EventHandler handler) {
         return getContext().getListenerService().registerListener(codec, handler);
     }
 
-    protected final boolean deregisterListener(@Nonnull String registrationId) {
+    protected final boolean deregisterListener(@Nonnull UUID registrationId) {
         return getContext().getListenerService().deregisterListener(registrationId);
     }
 

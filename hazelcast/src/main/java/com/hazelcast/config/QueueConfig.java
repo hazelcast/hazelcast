@@ -29,9 +29,9 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for an {@link IQueue}.
@@ -69,7 +69,6 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-    private transient QueueConfigReadOnly readOnly;
 
     public QueueConfig() {
     }
@@ -90,19 +89,6 @@ public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataS
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public QueueConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new QueueConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

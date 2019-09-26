@@ -25,7 +25,7 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -222,12 +222,12 @@ public class MultiMapSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
 
     @Test
     public void removeEntryListenerWithKey_successful_whenSplitBrainProtectionSize_met() {
-        map(0).removeEntryListener("id123");
+        map(0).removeEntryListener(UuidUtil.newUnsecureUUID());
     }
 
     @Test
     public void removeEntryListenerWithKey_successful_whenSplitBrainProtectionSize_notMet() {
-        map(3).removeEntryListener("id123");
+        map(3).removeEntryListener(UuidUtil.newUnsecureUUID());
     }
 
     protected MultiMap map(int index) {

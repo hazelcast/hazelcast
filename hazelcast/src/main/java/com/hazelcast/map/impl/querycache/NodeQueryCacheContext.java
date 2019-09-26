@@ -36,11 +36,12 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
@@ -175,7 +176,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         return lifecycleMutexFactory;
     }
 
-    private String registerLocalIMapListener(final String name) {
+    private UUID registerLocalIMapListener(final String name) {
         return mapServiceContext.addLocalListenerAdapter(new ListenerAdapter<IMapEvent>() {
             @Override
             public void onEvent(IMapEvent event) {
@@ -189,9 +190,9 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         }, name);
     }
 
-    private class RegisterMapListenerFunction implements Function<String, String> {
+    private class RegisterMapListenerFunction implements Function<String, UUID> {
         @Override
-        public String apply(String name) {
+        public UUID apply(String name) {
             return registerLocalIMapListener(name);
         }
     }

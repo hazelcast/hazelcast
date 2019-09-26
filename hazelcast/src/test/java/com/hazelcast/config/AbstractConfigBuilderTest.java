@@ -104,9 +104,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void networkReuseAddress();
 
     @Test
-    public abstract void readSemaphoreConfig();
-
-    @Test
     public abstract void readQueueConfig();
 
     @Test
@@ -126,12 +123,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void readAtomicLong();
-
-    @Test
-    public abstract void readAtomicReference();
-
-    @Test
-    public abstract void readCountDownLatch();
 
     @Test
     public abstract void testCaseInsensitivityOfSettings();
@@ -547,6 +538,14 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     protected abstract Config buildCompleteAdvancedNetworkConfig();
 
     public abstract void testCPSubsystemConfig();
+
+    public abstract void testMetricsConfig();
+
+    public abstract void testMetricsConfigMasterSwitchDisabled();
+
+    public abstract void testMetricsConfigMcDisabled();
+
+    public abstract void testMetricsConfigJmxDisabled();
 
     protected static void assertAwsConfig(AwsConfig aws) {
         assertEquals("sample-access-key", aws.getProperties().get("access-key"));

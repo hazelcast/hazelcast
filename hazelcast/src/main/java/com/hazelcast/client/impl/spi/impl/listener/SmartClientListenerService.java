@@ -22,15 +22,16 @@ import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 public class SmartClientListenerService extends AbstractClientListenerService  {
 
@@ -60,7 +61,7 @@ public class SmartClientListenerService extends AbstractClientListenerService  {
 
     @Nonnull
     @Override
-    public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
+    public UUID registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
         trySyncConnectToAllMembers();
         return super.registerListener(codec, handler);
     }

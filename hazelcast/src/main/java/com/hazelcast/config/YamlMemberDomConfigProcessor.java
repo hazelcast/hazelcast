@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.instance.ProtocolType;
@@ -37,11 +37,11 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlMapping;
-import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlSequence;
+import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
+import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlSequence;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
 
 class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
@@ -182,15 +182,15 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         if ("batch-publisher".equals(nodeName)) {
             for (Node publisherNode : childElements(nodeTarget)) {
                 WanBatchReplicationPublisherConfig publisherConfig = new WanBatchReplicationPublisherConfig();
-                String groupNameOrPublisherId = publisherNode.getNodeName();
-                Node groupNameAttr = publisherNode.getAttributes().getNamedItem("group-name");
+                String clusterNameOrPublisherId = publisherNode.getNodeName();
+                Node clusterNameAttr = publisherNode.getAttributes().getNamedItem("cluster-name");
 
                 // the publisher's key may mean either the publisher-id or the
-                // group-name depending on whether the group-name is explicitly defined
-                String groupName = groupNameAttr != null ? groupNameAttr.getTextContent() : groupNameOrPublisherId;
-                String publisherId = groupNameAttr != null ? groupNameOrPublisherId : null;
+                // cluster-name depending on whether the cluster-name is explicitly defined
+                String clusterName = clusterNameAttr != null ? clusterNameAttr.getTextContent() : clusterNameOrPublisherId;
+                String publisherId = clusterNameAttr != null ? clusterNameOrPublisherId : null;
                 publisherConfig.setPublisherId(publisherId);
-                publisherConfig.setGroupName(groupName);
+                publisherConfig.setClusterName(clusterName);
 
                 handleBatchWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
             }
@@ -222,15 +222,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 int portCount = parseInt(value);
                 networkConfig.setPortCount(portCount);
             }
-        }
-    }
-
-    @Override
-    protected void handleSemaphore(Node node) {
-        for (Node semaphoreNode : childElements(node)) {
-            SemaphoreConfig sConfig = new SemaphoreConfig();
-            sConfig.setName(semaphoreNode.getNodeName());
-            handleSemaphoreNode(semaphoreNode, sConfig);
         }
     }
 
@@ -303,24 +294,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             AtomicLongConfig atomicLongConfig = new AtomicLongConfig();
             atomicLongConfig.setName(atomicLongNode.getNodeName());
             handleAtomicLongNode(atomicLongNode, atomicLongConfig);
-        }
-    }
-
-    @Override
-    protected void handleAtomicReference(Node node) {
-        for (Node atomicReferenceNode : childElements(node)) {
-            AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig();
-            atomicReferenceConfig.setName(atomicReferenceNode.getNodeName());
-            handleAtomicReferenceNode(atomicReferenceNode, atomicReferenceConfig);
-        }
-    }
-
-    @Override
-    protected void handleCountDownLatchConfig(Node node) {
-        for (Node countDownLatchNode : childElements(node)) {
-            CountDownLatchConfig countDownLatchConfig = new CountDownLatchConfig();
-            countDownLatchConfig.setName(countDownLatchNode.getNodeName());
-            handleCountDownLatchNode(countDownLatchNode, countDownLatchConfig);
         }
     }
 
@@ -887,18 +860,18 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    void handleCPSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
+    void handleSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
         for (Node child : childElements(node)) {
-            CPSemaphoreConfig cpSemaphoreConfig = new CPSemaphoreConfig();
-            cpSemaphoreConfig.setName(child.getNodeName());
+            SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
+            semaphoreConfig.setName(child.getNodeName());
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
                 String value = getTextContent(subChild).trim();
                 if ("jdk-compatible".equals(nodeName)) {
-                    cpSemaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
+                    semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
                 }
             }
-            cpSubsystemConfig.addSemaphoreConfig(cpSemaphoreConfig);
+            cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
         }
     }
 

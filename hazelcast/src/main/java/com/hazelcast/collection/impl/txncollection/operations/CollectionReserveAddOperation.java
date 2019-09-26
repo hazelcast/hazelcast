@@ -19,22 +19,24 @@ package com.hazelcast.collection.impl.txncollection.operations;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class CollectionReserveAddOperation extends CollectionOperation implements MutatingOperation {
 
-    private String transactionId;
+    private UUID transactionId;
     private Data value;
 
     public CollectionReserveAddOperation() {
     }
 
-    public CollectionReserveAddOperation(String name, String transactionId, Data value) {
+    public CollectionReserveAddOperation(String name, UUID transactionId, Data value) {
         super(name);
         this.transactionId = transactionId;
         this.value = value;
@@ -54,7 +56,7 @@ public class CollectionReserveAddOperation extends CollectionOperation implement
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
         out.writeData(value);
 
     }
@@ -62,7 +64,7 @@ public class CollectionReserveAddOperation extends CollectionOperation implement
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
         value = in.readData();
     }
 }

@@ -29,7 +29,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -41,10 +41,10 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.collection.PartitionIdSet;
-import com.hazelcast.util.executor.CompletableFutureTask;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -60,6 +60,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -68,9 +69,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -412,7 +413,7 @@ abstract class CacheProxySupport<K, V>
         }
     }
 
-    protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    protected void addListenerLocally(UUID regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         listenerCompleter.putListenerIfAbsent(cacheEntryListenerConfiguration, regId);
     }
 
@@ -420,7 +421,7 @@ abstract class CacheProxySupport<K, V>
         listenerCompleter.removeListener(cacheEntryListenerConfiguration);
     }
 
-    protected String getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    protected UUID getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         return listenerCompleter.getListenerId(cacheEntryListenerConfiguration);
     }
 
@@ -551,9 +552,9 @@ abstract class CacheProxySupport<K, V>
         return partitionIds;
     }
 
-    private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
+    private void deregisterAllCacheEntryListener(Collection<UUID> listenerRegistrations) {
         ICacheService service = getService();
-        for (String regId : listenerRegistrations) {
+        for (UUID regId : listenerRegistrations) {
             service.deregisterListener(nameWithPrefix, regId);
         }
     }

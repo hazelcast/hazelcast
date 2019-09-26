@@ -18,14 +18,15 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.SortingUtil;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.SortingUtil;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -45,7 +46,8 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  * @param <V> the entry value type
  */
 @BinaryInterface
-public class PagingPredicateImpl<K, V> implements PagingPredicate<K, V>, IndexAwarePredicate<K, V>, IdentifiedDataSerializable {
+public class PagingPredicateImpl<K, V>
+        implements PagingPredicate<K, V>, IndexAwarePredicate<K, V>, VisitablePredicate, IdentifiedDataSerializable {
 
     private static final Map.Entry<Integer, Map.Entry> NULL_ANCHOR = new SimpleImmutableEntry(-1, null);
 
@@ -122,6 +124,32 @@ public class PagingPredicateImpl<K, V> implements PagingPredicate<K, V>, IndexAw
         this(pageSize);
         setInnerPredicate(predicate);
         this.comparator = comparator;
+    }
+
+    /**
+     * Creates a shallow copy of the given original paging predicate while
+     * replacing its inner predicate with the given predicate.
+     *
+     * @param originalPagingPredicate the original paging predicate to copy.
+     * @param predicateReplacement    the inner predicate replacement.
+     */
+    @SuppressWarnings("unchecked")
+    private PagingPredicateImpl(PagingPredicateImpl originalPagingPredicate, Predicate predicateReplacement) {
+        this.anchorList = originalPagingPredicate.anchorList;
+        this.comparator = originalPagingPredicate.comparator;
+        this.pageSize = originalPagingPredicate.pageSize;
+        this.page = originalPagingPredicate.page;
+        this.iterationType = originalPagingPredicate.iterationType;
+        setInnerPredicate(predicateReplacement);
+    }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        if (predicate instanceof VisitablePredicate) {
+            Predicate transformed = ((VisitablePredicate) predicate).accept(visitor, indexes);
+            return transformed == predicate ? this : new PagingPredicateImpl(this, transformed);
+        }
+        return this;
     }
 
     /**

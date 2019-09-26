@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl.eventservice;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.util.UUID;
+
 /**
  * The result of a Event Registration.
  */
@@ -29,7 +31,7 @@ public interface EventRegistration extends IdentifiedDataSerializable {
      *
      * @return the event registration ID
      */
-    String getId();
+    UUID getId();
 
     /**
      * Returns the {@link EventFilter} attached to this registration.

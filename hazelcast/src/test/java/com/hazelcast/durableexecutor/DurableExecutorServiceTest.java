@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -170,7 +171,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertTrue(instance1.getCountDownLatch("latch").trySetCount(1));
+        assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
         String name = randomString();
         DurableExecutorService executorService = instance2.getDurableExecutorService(name);
@@ -180,7 +181,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(1);
         future.andThen(callback);
-        instance1.getCountDownLatch("latch").countDown();
+        instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
 
         assertTrue(future.get());
         assertOpenEventually(callback.getLatch());
@@ -210,7 +211,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertTrue(instance1.getCountDownLatch("latch").trySetCount(1));
+        assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
         String name = randomString();
         DurableExecutorService executorService = instance2.getDurableExecutorService(name);
@@ -222,7 +223,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(latch);
         future.andThen(callback);
         future.andThen(callback);
-        instance1.getCountDownLatch("latch").countDown();
+        instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
 
         assertTrue(future.get());
         assertOpenEventually(latch, 10);
@@ -273,7 +274,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance();
         String key = generateKeyOwnedBy(instance2);
         String instanceName = instance2.getName();
-        ICountDownLatch latch = instance2.getCountDownLatch(instanceName);
+        ICountDownLatch latch = instance2.getCPSubsystem().getCountDownLatch(instanceName);
         latch.trySetCount(1);
 
         DurableExecutorService durableExecutorService = instance1.getDurableExecutorService(randomString());
@@ -330,7 +331,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
             HazelcastInstance instance = instances[i];
             DurableExecutorService service = instance.getDurableExecutorService("testSubmitToKeyOwnerRunnable");
             Member localMember = instance.getCluster().getLocalMember();
-            String uuid = localMember.getUuid();
+            UUID uuid = localMember.getUuid();
             Runnable runnable = new IncrementAtomicLongIfMemberUUIDNotMatchRunnable(uuid, "testSubmitToKeyOwnerRunnable");
             int key = findNextKeyForMember(instance, localMember);
             service.submitToKeyOwner(runnable, key).andThen(callback);
@@ -590,7 +591,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         @Override
         public void run() {
             if (instanceName.equals(instance.getName())) {
-                instance.getCountDownLatch(instanceName).countDown();
+                instance.getCPSubsystem().getCountDownLatch(instanceName).countDown();
             }
         }
 
@@ -652,7 +653,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         @Override
         public Boolean call()
                 throws Exception {
-            return instance.getCountDownLatch(name).await(100, TimeUnit.SECONDS);
+            return instance.getCPSubsystem().getCountDownLatch(name).await(100, TimeUnit.SECONDS);
         }
 
         @Override

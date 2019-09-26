@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapListenerAdaptors;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 /**
  * Responsible for creating {@link com.hazelcast.map.QueryCache QueryCache}

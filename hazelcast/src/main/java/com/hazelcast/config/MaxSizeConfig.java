@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
@@ -35,8 +35,6 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
      * Default maximum size of map.
      */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
-
-    private MaxSizeConfigReadOnly readOnly;
 
     private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
@@ -106,19 +104,6 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
          * Policy based on minimum free native memory percentage per Hazelcast instance
          */
         FREE_NATIVE_MEMORY_PERCENTAGE
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MaxSizeConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MaxSizeConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

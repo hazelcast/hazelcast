@@ -18,7 +18,7 @@ package com.hazelcast.internal.eviction.impl.comparator;
 
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 /**
  * {@link com.hazelcast.config.EvictionPolicy#LFU} policy based {@link EvictionPolicyComparator}.

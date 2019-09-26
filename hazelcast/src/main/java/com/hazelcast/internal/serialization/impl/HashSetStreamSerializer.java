@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.util.SetUtil;
+import com.hazelcast.internal.util.SetUtil;
 
 import java.io.IOException;
 import java.util.HashSet;

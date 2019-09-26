@@ -19,13 +19,13 @@ package com.hazelcast.client.impl.proxy.txn;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.util.ExceptionUtil.RuntimeExceptionFactory;
+import com.hazelcast.internal.util.ExceptionUtil.RuntimeExceptionFactory;
 
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Contains static method that is used from client transaction classes.
@@ -49,7 +49,7 @@ public final class ClientTransactionUtil {
      * More specifically IOException, because in case of a IO problem in ClientInvocation that send to a connection
      * sends IOException to user. This wraps that exception into a TransactionException.
      */
-    public static ClientMessage invoke(ClientMessage request, String objectName, HazelcastClientInstanceImpl client,
+    public static ClientMessage invoke(ClientMessage request, Object objectName, HazelcastClientInstanceImpl client,
                                        Connection connection) {
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, connection);

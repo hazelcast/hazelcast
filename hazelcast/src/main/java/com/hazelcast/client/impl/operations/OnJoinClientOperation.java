@@ -18,22 +18,24 @@ package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class OnJoinClientOperation extends AbstractClientOperation {
 
-    private Map<String, String> mappings;
+    private Map<UUID, UUID> mappings;
 
     public OnJoinClientOperation() {
     }
 
-    public OnJoinClientOperation(Map<String, String> mappings) {
+    public OnJoinClientOperation(Map<UUID, UUID> mappings) {
         this.mappings = mappings;
     }
 
@@ -43,7 +45,7 @@ public class OnJoinClientOperation extends AbstractClientOperation {
             return;
         }
         ClientEngineImpl engine = getService();
-        for (Map.Entry<String, String> entry : mappings.entrySet()) {
+        for (Map.Entry<UUID, UUID> entry : mappings.entrySet()) {
             engine.addOwnershipMapping(entry.getKey(), entry.getValue());
         }
     }
@@ -67,9 +69,9 @@ public class OnJoinClientOperation extends AbstractClientOperation {
         }
         int len = mappings.size();
         out.writeInt(len);
-        for (Map.Entry<String, String> entry : mappings.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeUTF(entry.getValue());
+        for (Map.Entry<UUID, UUID> entry : mappings.entrySet()) {
+            UUIDSerializationUtil.writeUUID(out, entry.getKey());
+            UUIDSerializationUtil.writeUUID(out, entry.getValue());
         }
     }
 
@@ -79,8 +81,8 @@ public class OnJoinClientOperation extends AbstractClientOperation {
         int len = in.readInt();
         mappings = createHashMap(len);
         for (int i = 0; i < len; i++) {
-            String clientUuid = in.readUTF();
-            String ownerUuid = in.readUTF();
+            UUID clientUuid = UUIDSerializationUtil.readUUID(in);
+            UUID ownerUuid = UUIDSerializationUtil.readUUID(in);
             mappings.put(clientUuid, ownerUuid);
         }
     }

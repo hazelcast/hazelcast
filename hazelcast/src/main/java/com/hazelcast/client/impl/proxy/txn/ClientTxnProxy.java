@@ -26,6 +26,8 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionalObject;
 
+import java.util.UUID;
+
 abstract class ClientTxnProxy implements TransactionalObject {
 
     final String name;
@@ -61,7 +63,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
         return ClientTransactionUtil.invoke(request, getName(), client, connection);
     }
 
-    String getTransactionId() {
+    UUID getTransactionId() {
         return transactionContext.getTxnId();
     }
 

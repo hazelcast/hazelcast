@@ -69,7 +69,7 @@ import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
@@ -84,11 +84,11 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.collection.PartitionIdSet;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -96,6 +96,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -113,7 +114,7 @@ import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATIO
 import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
-import static com.hazelcast.util.SetUtil.immutablePartitionIdSet;
+import static com.hazelcast.internal.util.SetUtil.immutablePartitionIdSet;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -654,19 +655,19 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String addLocalEventListener(Object listener, String mapName) {
+    public UUID addLocalEventListener(Object listener, String mapName) {
         EventRegistration registration = addListenerInternal(listener, TrueEventFilter.INSTANCE, mapName, true);
         return registration.getId();
     }
 
     @Override
-    public String addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
+    public UUID addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, true);
         return registration.getId();
     }
 
     @Override
-    public String addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+    public UUID addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName) {
         ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
         EventFilter filter = new MapPartitionLostEventFilter();
         EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdapter);
@@ -674,13 +675,13 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String addEventListener(Object listener, EventFilter eventFilter, String mapName) {
+    public UUID addEventListener(Object listener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, false);
         return registration.getId();
     }
 
     @Override
-    public String addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+    public UUID addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
         ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
         EventFilter filter = new MapPartitionLostEventFilter();
         EventRegistration registration = eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdapter);
@@ -702,12 +703,12 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public boolean removeEventListener(String mapName, String registrationId) {
+    public boolean removeEventListener(String mapName, UUID registrationId) {
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     @Override
-    public boolean removePartitionLostListener(String mapName, String registrationId) {
+    public boolean removePartitionLostListener(String mapName, UUID registrationId) {
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
@@ -785,14 +786,14 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName) {
+    public UUID addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName) {
         EventRegistration registration = getNodeEngine().getEventService().
                 registerListener(MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
         return registration.getId();
     }
 
     @Override
-    public String addLocalListenerAdapter(ListenerAdapter adapter, String mapName) {
+    public UUID addLocalListenerAdapter(ListenerAdapter adapter, String mapName) {
         EventService eventService = getNodeEngine().getEventService();
         EventRegistration registration = eventService.registerLocalListener(MapService.SERVICE_NAME, mapName, adapter);
         return registration.getId();

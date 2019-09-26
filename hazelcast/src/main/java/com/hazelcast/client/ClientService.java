@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * ClientService allows you to query connected {@link Client}s and
@@ -42,10 +43,10 @@ public interface ClientService {
      * When a ClientListener is added more than once, it will receive duplicate events.
      *
      * @param clientListener the ClientListener to add
-     * @return registration ID which can be used to remove the listener using the {@link #removeClientListener(String)} method
+     * @return registration ID which can be used to remove the listener using the {@link #removeClientListener(UUID)} method
      * @throws java.lang.NullPointerException if clientListener is {@code null}
      */
-    String addClientListener(ClientListener clientListener);
+    UUID addClientListener(ClientListener clientListener);
 
     /**
      * Removes a ClientListener.
@@ -56,5 +57,5 @@ public interface ClientService {
      * @return {@code true} if registration is removed, {@code false} otherwise
      * @throws java.lang.NullPointerException if registration ID is {@code null}
      */
-    boolean removeClientListener(String registrationId);
+    boolean removeClientListener(UUID registrationId);
 }

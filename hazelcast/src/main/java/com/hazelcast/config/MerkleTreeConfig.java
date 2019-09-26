@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for a merkle tree.
@@ -89,15 +89,6 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
                 + "enabled=" + enabled
                 + ", depth=" + depth
                 + '}';
-    }
-
-    /**
-     * Returns an immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     */
-    MerkleTreeConfig getAsReadOnly() {
-        return new MerkleTreeConfigReadOnly(this);
     }
 
     /**
@@ -191,22 +182,5 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
         int result = (enabled ? 1 : 0);
         result = 31 * result + depth;
         return result;
-    }
-
-    // not private for testing
-    static class MerkleTreeConfigReadOnly extends MerkleTreeConfig {
-        MerkleTreeConfigReadOnly(MerkleTreeConfig config) {
-            super(config);
-        }
-
-        @Override
-        public MerkleTreeConfig setDepth(int depth) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
-
-        @Override
-        public MerkleTreeConfig setEnabled(boolean enabled) {
-            throw new UnsupportedOperationException("This config is read-only");
-        }
     }
 }

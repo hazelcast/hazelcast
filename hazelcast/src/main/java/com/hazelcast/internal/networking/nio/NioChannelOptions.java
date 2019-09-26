@@ -36,7 +36,7 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_REUSEADDR;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_TIMEOUT;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.logging.Level.WARNING;
 
 /**

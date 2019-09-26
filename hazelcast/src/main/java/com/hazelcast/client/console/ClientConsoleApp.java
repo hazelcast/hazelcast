@@ -42,8 +42,8 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
@@ -69,7 +69,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 
@@ -458,7 +458,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             Member member = members.get(k % members.size());
             if (taskCount % totalThreadCount == 0) {
                 latchId = taskCount / totalThreadCount;
-                hazelcast.getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
+                hazelcast.getCPSubsystem().getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
 
             }
             Future f = executor.submitToMember(new SimulateLoadTask(durationSec, k + 1, "latch" + latchId), member);

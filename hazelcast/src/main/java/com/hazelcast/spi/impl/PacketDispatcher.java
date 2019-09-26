@@ -18,16 +18,16 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.function.Consumer;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
-import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
-import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_CONTROL;
+import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 
 /**
  * A {@link Consumer} that dispatches the {@link Packet} to the right service. For example, operations are sent to the

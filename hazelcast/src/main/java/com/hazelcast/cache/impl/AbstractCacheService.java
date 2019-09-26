@@ -40,7 +40,7 @@ import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -55,13 +55,13 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.partition.PartitionAwareService;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.MapUtil;
-import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.wan.impl.WanReplicationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -86,8 +87,8 @@ import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
 
@@ -116,7 +117,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * Map from full prefixed cache name to set of {@link Closeable} resources
      */
     protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<>();
-    protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<UUID, Closeable> closeableListeners = new ConcurrentHashMap<>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
             new ConcurrentHashMap<>();
 
@@ -344,7 +345,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public void deleteCache(String cacheNameWithPrefix, String callerUuid, boolean destroy) {
+    public void deleteCache(String cacheNameWithPrefix, UUID callerUuid, boolean destroy) {
         CacheConfig config = deleteCacheConfig(cacheNameWithPrefix);
         if (config == null) {
             // Cache is already cleaned up
@@ -576,17 +577,17 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public String registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal) {
+    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal) {
         return registerListenerInternal(cacheNameWithPrefix, listener, null, isLocal);
     }
 
     @Override
-    public String registerListener(String cacheNameWithPrefix, CacheEventListener listener,
+    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener,
                                    EventFilter eventFilter, boolean isLocal) {
         return registerListenerInternal(cacheNameWithPrefix, listener, eventFilter, isLocal);
     }
 
-    protected String registerListenerInternal(String cacheNameWithPrefix, CacheEventListener listener,
+    protected UUID registerListenerInternal(String cacheNameWithPrefix, CacheEventListener listener,
                                               EventFilter eventFilter, boolean isLocal) {
         EventService eventService = getNodeEngine().getEventService();
         EventRegistration reg;
@@ -606,7 +607,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             }
         }
 
-        String id = reg.getId();
+        UUID id = reg.getId();
         if (listener instanceof Closeable) {
             closeableListeners.put(id, (Closeable) listener);
         } else if (listener instanceof CacheEntryListenerProvider) {
@@ -619,7 +620,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public boolean deregisterListener(String cacheNameWithPrefix, String registrationId) {
+    public boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId) {
         EventService eventService = getNodeEngine().getEventService();
         boolean result = eventService.deregisterListener(SERVICE_NAME, cacheNameWithPrefix, registrationId);
         Closeable listener = closeableListeners.remove(registrationId);
@@ -785,7 +786,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * @return the ID which is unique for current registration
      */
     @Override
-    public String addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly) {
+    public UUID addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
         if (localOnly) {
@@ -805,7 +806,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * @param sourceUuid          an ID that represents the source for invalidation event
      */
     @Override
-    public void sendInvalidationEvent(String cacheNameWithPrefix, Data key, String sourceUuid) {
+    public void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid) {
         cacheEventHandler.sendInvalidationEvent(cacheNameWithPrefix, key, sourceUuid);
     }
 

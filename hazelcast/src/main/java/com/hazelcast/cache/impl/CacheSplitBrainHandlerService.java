@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
-import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
+import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 
 /**
  * Handles split-brain functionality for cache.

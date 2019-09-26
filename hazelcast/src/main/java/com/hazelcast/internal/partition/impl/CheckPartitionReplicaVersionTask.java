@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 // runs on the partition owner
 final class CheckPartitionReplicaVersionTask extends AbstractPartitionPrimaryReplicaAntiEntropyTask {

@@ -28,7 +28,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.util.RootCauseMatcher;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -45,7 +45,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 
-import static com.hazelcast.nio.IOUtil.delete;
+import static com.hazelcast.internal.nio.IOUtil.delete;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -99,7 +99,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     public void loadingThroughSystemProperty_existingFile() throws IOException {
         String yaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: foobar\n"
                 + "    password: dev-pass";
 
@@ -113,7 +113,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar", config.getGroupConfig().getName());
+        assertEquals("foobar", config.getClusterName());
     }
 
     @Override
@@ -130,7 +130,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar-yaml", config.getGroupConfig().getName());
+        assertEquals("foobar-yaml", config.getClusterName());
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory",
                 config.getNetworkConfig().getSSLConfig().getFactoryClassName());
         assertEquals(128, config.getNetworkConfig().getSocketOptions().getBufferSize());

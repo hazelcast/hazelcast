@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
@@ -38,6 +39,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,8 +64,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
     public void test_clientOwnedByMember() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-        String instanceUuid = instance.getLocalEndpoint().getUuid();
-        String clientUuid = client.getLocalEndpoint().getUuid();
+        UUID instanceUuid = instance.getLocalEndpoint().getUuid();
+        UUID clientUuid = client.getLocalEndpoint().getUuid();
 
         ClientEngineImpl clientEngine = getClientEngineImpl(instance);
 
@@ -77,8 +79,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
-        final String instanceUuid = instance1.getLocalEndpoint().getUuid();
-        final String clientUuid = client.getLocalEndpoint().getUuid();
+        final UUID instanceUuid = instance1.getLocalEndpoint().getUuid();
+        final UUID clientUuid = client.getLocalEndpoint().getUuid();
 
         final ClientEngineImpl clientEngine1 = getClientEngineImpl(instance1);
         final ClientEngineImpl clientEngine2 = getClientEngineImpl(instance2);
@@ -101,8 +103,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         instance1.shutdown();
 
-        final String instance2Uuid = instance2.getLocalEndpoint().getUuid();
-        final String clientUuid = client.getLocalEndpoint().getUuid();
+        final UUID instance2Uuid = instance2.getLocalEndpoint().getUuid();
+        final UUID clientUuid = client.getLocalEndpoint().getUuid();
         final ClientEngineImpl clientEngine = getClientEngineImpl(instance2);
 
         assertTrueEventually(new AssertTask() {
@@ -121,12 +123,13 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         OperationServiceImpl operationService = getHazelcastInstanceImpl(instance).node.nodeEngine.getOperationService();
 
         Address address = instance.getCluster().getLocalMember().getAddress();
-        ClientReAuthOperation reAuthOperation = new ClientReAuthOperation("clientUUId", 1);
+        UUID uuid = UuidUtil.newUnsecureUUID();
+        ClientReAuthOperation reAuthOperation = new ClientReAuthOperation(uuid, 1);
         Future<Object> future = operationService.invokeOnTarget(ClientEngineImpl.SERVICE_NAME, reAuthOperation, address);
         future.get();
 
         //retrying ClientReAuthOperation with same parameters, should not throw exception
-        ClientReAuthOperation reAuthOperation2 = new ClientReAuthOperation("clientUUId", 1);
+        ClientReAuthOperation reAuthOperation2 = new ClientReAuthOperation(uuid, 1);
         Future<Object> future2 = operationService.invokeOnTarget(ClientEngineImpl.SERVICE_NAME, reAuthOperation2, address);
         future2.get();
 
@@ -151,8 +154,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
 
         instance1.shutdown();
 
-        final String instance2Uuid = instance2.getLocalEndpoint().getUuid();
-        final String clientUuid = client.getLocalEndpoint().getUuid();
+        final UUID instance2Uuid = instance2.getLocalEndpoint().getUuid();
+        final UUID clientUuid = client.getLocalEndpoint().getUuid();
         final ClientEngineImpl clientEngine = getClientEngineImpl(instance2);
 
         assertTrueEventually(new AssertTask() {
@@ -164,7 +167,7 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertClientEndpointExists(ClientEngineImpl clientEngine, String clientUuid, boolean asOwner) {
+    private void assertClientEndpointExists(ClientEngineImpl clientEngine, UUID clientUuid, boolean asOwner) {
         Set<ClientEndpoint> endpoints = clientEngine.getEndpointManager().getEndpoints(clientUuid);
         assertEquals(1, endpoints.size());
         ClientEndpoint endpoint = endpoints.iterator().next();
@@ -181,8 +184,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
-        final String instanceUuid = instance1.getLocalEndpoint().getUuid();
-        final String clientUuid = client.getLocalEndpoint().getUuid();
+        final UUID instanceUuid = instance1.getLocalEndpoint().getUuid();
+        final UUID clientUuid = client.getLocalEndpoint().getUuid();
 
         final ClientEngineImpl clientEngine1 = getClientEngineImpl(instance1);
         final ClientEngineImpl clientEngine2 = getClientEngineImpl(instance2);
@@ -228,9 +231,9 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             }
         });
 
-        final String instanceUuid = instance2.getLocalEndpoint().getUuid();
+        final UUID instanceUuid = instance2.getLocalEndpoint().getUuid();
         final ClientEngineImpl clientEngine2 = getClientEngineImpl(instance2);
-        final String clientUuid = client.getLocalEndpoint().getUuid();
+        final UUID clientUuid = client.getLocalEndpoint().getUuid();
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -256,7 +259,7 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().setSmartRouting(smart);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
-        final String clientUuid = client.getLocalEndpoint().getUuid();
+        final UUID clientUuid = client.getLocalEndpoint().getUuid();
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
         client.getLifecycleService().terminate();
@@ -282,12 +285,12 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
     public void test_ownerShipCarried_inJoin() throws InterruptedException {
         hazelcastFactory.newHazelcastInstance();
 
-        final AtomicReference<List<String>> clientUUID = new AtomicReference<List<String>>();
+        final AtomicReference<List<UUID>> clientUUID = new AtomicReference<>();
         final int clientCount = 20;
         new Thread(new Runnable() {
             @Override
             public void run() {
-                List<String> list = new ArrayList<String>();
+                List<UUID> list = new ArrayList<>();
                 for (int i = 0; i < clientCount; i++) {
                     ClientConfig config = new ClientConfig();
                     config.getNetworkConfig().setConnectionTimeout(30000);
@@ -303,9 +306,9 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                List<String> list = clientUUID.get();
+                List<UUID> list = clientUUID.get();
                 assertNotNull(list);
-                for (String clientUuid : list) {
+                for (UUID clientUuid : list) {
                     assertNotNull(clientUuid + " " + list.size(), clientEngineImpl.getOwnerUuid(clientUuid));
                 }
             }

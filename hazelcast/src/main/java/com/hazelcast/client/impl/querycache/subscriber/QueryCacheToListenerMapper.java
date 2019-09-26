@@ -18,17 +18,18 @@ package com.hazelcast.client.impl.querycache.subscriber;
 
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * This class includes mappings for cacheId to its listener-info-collection
@@ -49,20 +50,20 @@ public class QueryCacheToListenerMapper {
         this.registrations = new ConcurrentHashMap<String, Collection<ListenerInfo>>();
     }
 
-    public String addListener(String cacheId, ListenerAdapter listenerAdapter, EventFilter filter) {
+    public UUID addListener(String cacheId, ListenerAdapter listenerAdapter, EventFilter filter) {
         Collection<ListenerInfo> adapters = getOrPutIfAbsent(registrations, cacheId, LISTENER_SET_CONSTRUCTOR);
-        String id = UuidUtil.newUnsecureUuidString();
+        UUID id = UuidUtil.newUnsecureUUID();
         ListenerInfo info = new ListenerInfo(filter, listenerAdapter, id);
         adapters.add(info);
         return id;
     }
 
-    public boolean removeListener(String cacheId, String listenerId) {
+    public boolean removeListener(String cacheId, UUID listenerId) {
         Collection<ListenerInfo> adapters = getOrPutIfAbsent(registrations, cacheId, LISTENER_SET_CONSTRUCTOR);
         Iterator<ListenerInfo> iterator = adapters.iterator();
         while (iterator.hasNext()) {
             ListenerInfo listenerInfo = iterator.next();
-            String listenerInfoId = listenerInfo.getId();
+            UUID listenerInfoId = listenerInfo.getId();
             if (listenerInfoId.equals(listenerId)) {
                 iterator.remove();
                 return true;

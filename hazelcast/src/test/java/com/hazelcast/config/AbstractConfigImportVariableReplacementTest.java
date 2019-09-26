@@ -100,7 +100,7 @@ public abstract class AbstractConfigImportVariableReplacementTest {
     public abstract void testMapConfigFromMainAndImportedFile() throws Exception;
 
     @Test
-    public abstract void testImportGroupConfigFromClassPath();
+    public abstract void testImportClusterConfigFromClassPath();
 
     @Test
     public abstract void testReplacers() throws Exception;

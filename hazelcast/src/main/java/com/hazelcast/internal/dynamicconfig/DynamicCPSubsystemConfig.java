@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -68,12 +68,12 @@ class DynamicCPSubsystemConfig extends CPSubsystemConfig {
     }
 
     @Override
-    public CPSubsystemConfig addSemaphoreConfig(CPSemaphoreConfig cpSemaphoreConfig) {
+    public CPSubsystemConfig addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public CPSubsystemConfig setSemaphoreConfigs(Map<String, CPSemaphoreConfig> cpSemaphoreConfigs) {
+    public CPSubsystemConfig setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
         throw new UnsupportedOperationException();
     }
 

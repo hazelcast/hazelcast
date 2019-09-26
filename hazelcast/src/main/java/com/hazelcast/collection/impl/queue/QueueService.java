@@ -56,11 +56,11 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -70,14 +70,15 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.scheduler.ScheduleType.POSTPONE;
 
 /**
  * Provides important services via methods for the the Queue
@@ -273,7 +274,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         splitBrainProtectionConfigCache.remove(name);
     }
 
-    public String addItemListener(String name, ItemListener listener, boolean includeValue, boolean isLocal) {
+    public UUID addItemListener(String name, ItemListener listener, boolean includeValue, boolean isLocal) {
         EventService eventService = nodeEngine.getEventService();
         QueueEventFilter filter = new QueueEventFilter(includeValue);
         EventRegistration registration;
@@ -289,7 +290,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return registration.getId();
     }
 
-    public boolean removeItemListener(String name, String registrationId) {
+    public boolean removeItemListener(String name, UUID registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
@@ -352,7 +353,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         final Set<String> queueNames = containerMap.keySet();
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : queueNames) {

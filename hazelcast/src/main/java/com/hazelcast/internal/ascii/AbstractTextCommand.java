@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.nio.ascii.TextDecoder;
-import com.hazelcast.nio.ascii.TextEncoder;
+import com.hazelcast.internal.nio.ascii.TextDecoder;
+import com.hazelcast.internal.nio.ascii.TextEncoder;
 
 public abstract class AbstractTextCommand implements TextCommand {
     protected final TextCommandConstants.TextCommandType type;

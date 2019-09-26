@@ -22,7 +22,7 @@ import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.datastructures.semaphore.proxy.RaftSessionAwareSemaphoreProxy;
+import com.hazelcast.cp.internal.datastructures.semaphore.proxy.SessionAwareSemaphoreProxy;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
@@ -477,8 +477,8 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSemaphoreService service = getNodeEngineImpl(instance).getService(RaftSemaphoreService.SERVICE_NAME);
-                RaftSemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
+                SemaphoreService service = getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
+                SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
                 assertNotNull(registry);
                 assertFalse(registry.getWaitTimeouts().isEmpty());
             }
@@ -491,8 +491,8 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSemaphoreService service = getNodeEngineImpl(instance).getService(RaftSemaphoreService.SERVICE_NAME);
-                RaftSemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
+                SemaphoreService service = getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
+                SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
                 assertTrue(registry.getWaitTimeouts().isEmpty());
             }
         });
@@ -510,7 +510,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
     }
 
     protected RaftGroupId getGroupId(ISemaphore semaphore) {
-        return ((RaftSessionAwareSemaphoreProxy) semaphore).getGroupId();
+        return ((SessionAwareSemaphoreProxy) semaphore).getGroupId();
     }
 
     protected abstract <T> InternalCompletableFuture<T> invokeRaftOp(RaftGroupId groupId, RaftOp raftOp);

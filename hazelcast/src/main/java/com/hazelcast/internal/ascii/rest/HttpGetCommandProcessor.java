@@ -35,10 +35,10 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.AggregateEndpointManager;
-import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.NetworkingService;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collection;
 
@@ -49,8 +49,8 @@ import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200_WITH_NO_CONTENT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_503;
-import static com.hazelcast.util.ExceptionUtil.peel;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
@@ -326,7 +326,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private JsonObject toJson(CPMember cpMember) {
         Address address = cpMember.getAddress();
         return new JsonObject()
-                .add("uuid", cpMember.getUuid())
+                .add("uuid", cpMember.getUuid().toString())
                 .add("address", "[" + address.getHost() + "]:" + address.getPort());
     }
 

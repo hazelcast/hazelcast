@@ -17,7 +17,6 @@
 package com.hazelcast.osgi.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -25,8 +24,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
 import com.hazelcast.osgi.HazelcastOSGiService;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.StringUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -81,10 +80,9 @@ class HazelcastOSGiServiceImpl
         }
     }
 
-    private boolean shouldSetGroupName(GroupConfig groupConfig) {
-        if (groupConfig == null
-                || StringUtil.isNullOrEmpty(groupConfig.getName())
-                || GroupConfig.DEFAULT_GROUP_NAME.equals(groupConfig.getName())) {
+    private boolean shouldSetClusterName(Config config) {
+        if (StringUtil.isNullOrEmpty(config.getClusterName())
+                || Config.DEFAULT_CLUSTER_NAME.equals(config.getClusterName())) {
             if (!Boolean.getBoolean(HAZELCAST_OSGI_GROUPING_DISABLED)) {
                 return true;
             }
@@ -96,14 +94,8 @@ class HazelcastOSGiServiceImpl
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
-        GroupConfig groupConfig = config.getGroupConfig();
-        if (shouldSetGroupName(groupConfig)) {
-            String groupName = id;
-            if (groupConfig == null) {
-                config.setGroupConfig(new GroupConfig(groupName));
-            } else {
-                groupConfig.setName(groupName);
-            }
+        if (shouldSetClusterName(config)) {
+            config.setClusterName(id);
         }
         return config;
     }

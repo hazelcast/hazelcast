@@ -20,6 +20,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLICATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
 
@@ -30,8 +31,8 @@ public final class ReplicateAllowedDuringPassiveStateTxBackupLogOperation
     public ReplicateAllowedDuringPassiveStateTxBackupLogOperation() {
     }
 
-    public ReplicateAllowedDuringPassiveStateTxBackupLogOperation(Collection<TransactionLogRecord> logs, String callerUuid,
-                                                                  String txnId, long timeoutMillis, long startTime) {
+    public ReplicateAllowedDuringPassiveStateTxBackupLogOperation(Collection<TransactionLogRecord> logs, UUID callerUuid,
+                                                                  UUID txnId, long timeoutMillis, long startTime) {
         super(logs, callerUuid, txnId, timeoutMillis, startTime);
     }
 

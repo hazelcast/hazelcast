@@ -22,8 +22,9 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -33,8 +34,8 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 public class LifecycleServiceImpl implements LifecycleService {
 
     private final HazelcastInstanceImpl instance;
-    private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
-            = new ConcurrentHashMap<String, LifecycleListener>();
+    private final ConcurrentMap<UUID, LifecycleListener> lifecycleListeners
+            = new ConcurrentHashMap<UUID, LifecycleListener>();
     private final Object lifecycleLock = new Object();
 
     public LifecycleServiceImpl(HazelcastInstanceImpl instance) {
@@ -46,14 +47,14 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     @Override
-    public String addLifecycleListener(LifecycleListener lifecycleListener) {
-        final String id = UuidUtil.newUnsecureUuidString();
+    public UUID addLifecycleListener(LifecycleListener lifecycleListener) {
+        final UUID id = UuidUtil.newUnsecureUUID();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }
 
     @Override
-    public boolean removeLifecycleListener(String registrationId) {
+    public boolean removeLifecycleListener(UUID registrationId) {
         return lifecycleListeners.remove(registrationId) != null;
     }
 

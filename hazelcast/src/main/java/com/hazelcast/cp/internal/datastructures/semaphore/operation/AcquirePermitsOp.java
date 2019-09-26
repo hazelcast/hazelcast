@@ -16,14 +16,15 @@
 
 package com.hazelcast.cp.internal.datastructures.semaphore.operation;
 
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.CallerAware;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.datastructures.semaphore.AcquireInvocationKey;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphore;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult;
+import com.hazelcast.cp.internal.datastructures.semaphore.Semaphore;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,12 +33,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.UUID;
 
+import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.SUCCESSFUL;
+import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 
 /**
  * Operation for {@link ISemaphore#acquire()}
  *
- * @see RaftSemaphore#acquire(AcquireInvocationKey, boolean)
+ * @see Semaphore#acquire(AcquireInvocationKey, boolean)
  */
 public class AcquirePermitsOp extends AbstractSemaphoreOp implements CallerAware, IndeterminateOperationStateAware {
 
@@ -57,14 +60,16 @@ public class AcquirePermitsOp extends AbstractSemaphoreOp implements CallerAware
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftSemaphoreService service = getService();
+        SemaphoreService service = getService();
         AcquireInvocationKey key = new AcquireInvocationKey(commitIndex, invocationUid, callerAddress, callId,
                 getSemaphoreEndpoint(), permits);
-        boolean acquired = service.acquirePermits(groupId, name, key, timeoutMs);
-        if (!acquired && timeoutMs != 0) {
+        AcquireResult result = service.acquirePermits(groupId, name, key, timeoutMs);
+
+        if (result.status() == WAIT_KEY_ADDED) {
             return PostponedResponse.INSTANCE;
         }
-        return acquired;
+
+        return result.status() == SUCCESSFUL;
     }
 
     @Override
@@ -80,7 +85,7 @@ public class AcquirePermitsOp extends AbstractSemaphoreOp implements CallerAware
 
     @Override
     public int getClassId() {
-        return RaftSemaphoreDataSerializerHook.ACQUIRE_PERMITS_OP;
+        return SemaphoreDataSerializerHook.ACQUIRE_PERMITS_OP;
     }
 
     @Override

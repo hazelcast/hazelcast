@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.impl;
 
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.util.SetUtil;
+import com.hazelcast.internal.util.SetUtil;
 
 import java.util.Collection;
 import java.util.Collections;

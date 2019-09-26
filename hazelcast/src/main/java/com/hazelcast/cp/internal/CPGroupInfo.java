@@ -32,7 +32,7 @@ import java.util.Set;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.ACTIVE;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
-import static com.hazelcast.util.Preconditions.checkState;
+import static com.hazelcast.internal.util.Preconditions.checkState;
 
 /**
  * Contains metadata information for Raft groups, such as group id,

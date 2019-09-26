@@ -40,8 +40,8 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -58,10 +58,10 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -75,7 +75,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     private boolean serializeKeys;
     private NearCache<Object, Object> nearCache;
 
-    private volatile String invalidationListenerId;
+    private volatile UUID invalidationListenerId;
 
     public NearCachedClientMapProxy(String serviceName, String name, ClientContext context) {
         super(serviceName, name, context);
@@ -609,7 +609,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         nearCache.invalidate(key);
     }
 
-    public String addNearCacheInvalidationListener(EventHandler handler) {
+    public UUID addNearCacheInvalidationListener(EventHandler handler) {
         return registerListener(createNearCacheEntryListenerCodec(), handler);
     }
 
@@ -631,12 +631,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             }
 
             @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
                 return MapAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
                 return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
@@ -648,7 +648,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     private void removeNearCacheInvalidationListener() {
-        String invalidationListenerId = this.invalidationListenerId;
+        UUID invalidationListenerId = this.invalidationListenerId;
         if (invalidationListenerId == null) {
             return;
         }
@@ -677,7 +677,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         @Override
-        public void handleIMapInvalidationEvent(Data key, String sourceUuid,
+        public void handleIMapInvalidationEvent(Data key, UUID sourceUuid,
                                                 UUID partitionUuid, long sequence) {
             repairingHandler.handle(key, sourceUuid, partitionUuid, sequence);
         }
@@ -685,7 +685,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         @Override
         public void handleIMapBatchInvalidationEvent(Collection<Data> keys,
-                                                     Collection<String> sourceUuids,
+                                                     Collection<UUID> sourceUuids,
                                                      Collection<UUID> partitionUuids,
                                                      Collection<Long> sequences) {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);

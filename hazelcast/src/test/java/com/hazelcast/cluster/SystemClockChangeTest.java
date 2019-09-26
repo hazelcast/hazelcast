@@ -21,7 +21,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.util.AbstractClockTest;
+import com.hazelcast.internal.util.AbstractClockTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

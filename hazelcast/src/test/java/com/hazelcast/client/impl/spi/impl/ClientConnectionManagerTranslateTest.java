@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
@@ -26,14 +27,13 @@ import com.hazelcast.client.impl.connection.nio.DefaultCredentialsFactory;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -64,7 +64,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
         final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         clientConnectionManager = new ClientConnectionManagerImpl(clientInstanceImpl);
         DefaultCredentialsFactory factory =
-                new DefaultCredentialsFactory(new ClientSecurityConfig(), new GroupConfig(), ClassLoader.getSystemClassLoader());
+                new DefaultCredentialsFactory(new ClientSecurityConfig(), new ClientConfig(), ClassLoader.getSystemClassLoader());
         clientConnectionManager.start();
         ChannelInitializerProvider channelInitializerProvider = new ChannelInitializerProvider() {
 

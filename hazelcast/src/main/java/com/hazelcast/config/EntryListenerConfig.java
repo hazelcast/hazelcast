@@ -36,7 +36,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.EventListener;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Configuration for EntryListener
@@ -46,8 +46,6 @@ public class EntryListenerConfig extends ListenerConfig {
     private boolean local;
 
     private boolean includeValue = true;
-
-    private EntryListenerConfigReadOnly readOnly;
 
     public EntryListenerConfig() {
     }
@@ -75,20 +73,6 @@ public class EntryListenerConfig extends ListenerConfig {
         local = config.isLocal();
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    @Override
-    public EntryListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new EntryListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override

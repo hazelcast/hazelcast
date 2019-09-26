@@ -23,8 +23,8 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.NetworkingService;
-import com.hazelcast.nio.Protocols;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -54,7 +54,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     @Test
     public void testMemoryLeak_with_RestConnections() throws IOException {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
+        config.setClusterName(randomName());
         config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
         config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
 
@@ -78,7 +78,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     @Test
     public void testMemoryLeak_with_SocketConnections() {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
+        config.setClusterName(randomName());
         config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final Address address = instance.getCluster().getLocalMember().getAddress();

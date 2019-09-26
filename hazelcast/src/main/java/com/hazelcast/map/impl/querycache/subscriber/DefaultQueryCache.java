@@ -42,9 +42,9 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,16 +53,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor.OPERATION_WAIT_TIMEOUT_MINUTES;
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEntryEvent;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.Preconditions.checkNoNullInside;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -398,20 +399,20 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     }
 
     @Override
-    public String addEntryListener(MapListener listener, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, boolean includeValue) {
         checkNotNull(listener, "listener cannot be null");
 
         return addEntryListenerInternal(listener, null, includeValue);
     }
 
     @Override
-    public String addEntryListener(MapListener listener, K key, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, K key, boolean includeValue) {
         checkNotNull(listener, "listener cannot be null");
 
         return addEntryListenerInternal(listener, key, includeValue);
     }
 
-    private String addEntryListenerInternal(MapListener listener, K key, boolean includeValue) {
+    private UUID addEntryListenerInternal(MapListener listener, K key, boolean includeValue) {
         checkNotNull(listener, "listener cannot be null");
 
         Data keyData = toData(key);
@@ -422,7 +423,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     }
 
     @Override
-    public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         checkNotNull(listener, "listener cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
 
@@ -433,7 +434,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     }
 
     @Override
-    public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+    public UUID addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         checkNotNull(listener, "listener cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
         checkNotNull(key, "key cannot be null");
@@ -445,7 +446,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     }
 
     @Override
-    public boolean removeEntryListener(String id) {
+    public boolean removeEntryListener(UUID id) {
         checkNotNull(id, "listener ID cannot be null");
 
         QueryCacheEventService eventService = getEventService();

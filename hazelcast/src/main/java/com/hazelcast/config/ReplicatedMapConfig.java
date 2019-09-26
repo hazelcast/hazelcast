@@ -30,7 +30,7 @@ import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for an {@link ReplicatedMap}
@@ -55,8 +55,6 @@ public class ReplicatedMapConfig
     private List<ListenerConfig> listenerConfigs;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-
-    private transient volatile ReplicatedMapConfigReadOnly readOnly;
 
     public ReplicatedMapConfig() {
     }
@@ -173,22 +171,11 @@ public class ReplicatedMapConfig
      *
      * @param asyncFillup {@code true} if the replicated map is available for reads before the initial
      *                    replication is completed, {@code false} otherwise
+     * @return this configuration
      */
-    public void setAsyncFillup(boolean asyncFillup) {
+    public ReplicatedMapConfig setAsyncFillup(boolean asyncFillup) {
         this.asyncFillup = asyncFillup;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public ReplicatedMapConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ReplicatedMapConfigReadOnly(this);
-        }
-        return readOnly;
+        return this;
     }
 
     /**

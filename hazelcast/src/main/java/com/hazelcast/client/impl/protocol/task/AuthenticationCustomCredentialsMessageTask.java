@@ -22,12 +22,13 @@ import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.SimpleTokenCredentials;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Custom Authentication with custom credential impl
@@ -54,9 +55,9 @@ public class AuthenticationCustomCredentialsMessageTask
     protected ClientAuthenticationCustomCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         ClientAuthenticationCustomCodec.RequestParameters parameters = ClientAuthenticationCustomCodec
                 .decodeRequest(clientMessage);
-        String uuid = parameters.uuid;
-        String ownerUuid = parameters.ownerUuid;
-        if (uuid != null && uuid.length() > 0) {
+        UUID uuid = parameters.uuid;
+        UUID ownerUuid = parameters.ownerUuid;
+        if (uuid != null) {
             principal = new ClientPrincipal(uuid, ownerUuid);
         }
         credentials = new SimpleTokenCredentials(parameters.credentials.toByteArray());
@@ -75,8 +76,8 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
-    protected ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid, byte version,
-                                       List<Member> cleanedUpMembers, int partitionCount, String clusterId) {
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, UUID ownerUuid, byte version,
+                                       List<Member> cleanedUpMembers, int partitionCount, UUID clusterId) {
         return ClientAuthenticationCustomCodec
                 .encodeResponse(status, thisAddress, uuid, ownerUuid, version, getMemberBuildInfo().getVersion(),
                         cleanedUpMembers, partitionCount, clusterId);

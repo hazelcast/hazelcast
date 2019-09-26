@@ -18,7 +18,9 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
+
+import java.util.UUID;
 
 /**
  * Base class for remove listener message tasks that removes a client listener registration
@@ -40,7 +42,7 @@ public abstract class AbstractRemoveListenerMessageTask<P> extends AbstractCalla
 
     protected abstract boolean deRegisterListener();
 
-    protected abstract String getRegistrationId();
+    protected abstract UUID getRegistrationId();
 
     @Override
     public Object[] getParameters() {

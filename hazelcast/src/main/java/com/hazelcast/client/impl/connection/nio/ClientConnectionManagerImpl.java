@@ -36,7 +36,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfo;
@@ -49,8 +48,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
@@ -58,7 +57,7 @@ import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.AddressUtil;
+import com.hazelcast.internal.util.AddressUtil;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -71,6 +70,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -83,8 +83,8 @@ import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVA
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -93,7 +93,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
-    private static final int DEFAULT_SSL_THREAD_COUNT = 3;
+    private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
 
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
@@ -121,7 +121,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile Credentials lastCredentials;
     private volatile ClientPrincipal principal;
     private volatile int clusterPartitionCount = -1;
-    private volatile String clusterId;
+    private volatile UUID clusterId;
     private volatile Address ownerConnectionAddress;
     private volatile CandidateClusterContext currentClusterContext;
 
@@ -157,22 +157,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     protected NioNetworking initNetworking(final HazelcastClientInstanceImpl client) {
         HazelcastProperties properties = client.getProperties();
 
-        SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
-        boolean sslEnabled = sslConfig != null && sslConfig.isEnabled();
+        ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
+        boolean smartClient = networkConfig == null || networkConfig.isSmartRouting();
 
         int configuredInputThreads = properties.getInteger(IO_INPUT_THREAD_COUNT);
         int configuredOutputThreads = properties.getInteger(IO_OUTPUT_THREAD_COUNT);
 
         int inputThreads;
         if (configuredInputThreads == -1) {
-            inputThreads = sslEnabled ? DEFAULT_SSL_THREAD_COUNT : 1;
+            inputThreads = smartClient ? DEFAULT_SMART_CLIENT_THREAD_COUNT : 1;
         } else {
             inputThreads = configuredInputThreads;
         }
 
         int outputThreads;
         if (configuredOutputThreads == -1) {
-            outputThreads = sslEnabled ? DEFAULT_SSL_THREAD_COUNT : 1;
+            outputThreads = smartClient ? DEFAULT_SMART_CLIENT_THREAD_COUNT : 1;
         } else {
             outputThreads = configuredOutputThreads;
         }
@@ -189,7 +189,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         .writeThroughEnabled(properties.getBoolean(IO_WRITE_THROUGH_ENABLED))
                         .concurrencyDetection(client.getConcurrencyDetection()));
     }
-
 
     public ClientConnectionStrategy getConnectionStrategy() {
         return connectionStrategy;
@@ -599,8 +598,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         private ClientMessage encodeAuthenticationRequest() {
             InternalSerializationService ss = client.getSerializationService();
             byte serializationVersion = ss.getVersion();
-            String uuid = null;
-            String ownerUuid = null;
+            UUID uuid = null;
+            UUID ownerUuid = null;
             ClientPrincipal principal = getPrincipal();
             if (principal != null) {
                 uuid = principal.getUuid();
@@ -610,7 +609,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             Credentials credentials = currentClusterContext.getCredentialsFactory().newCredentials();
             lastCredentials = credentials;
 
-            String resolvedClusterId = null;
+            UUID resolvedClusterId = null;
             if (failoverConfigProvided) {
                 resolvedClusterId = clusterId;
             }

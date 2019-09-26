@@ -50,10 +50,10 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
@@ -64,6 +64,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 
@@ -74,7 +75,7 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.emptyList;
 
 /**
@@ -258,31 +259,31 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl, boolean blockReads) {
+    public boolean txnLock(Data key, UUID caller, long threadId, long referenceId, long ttl, boolean blockReads) {
         checkIfLoaded();
         return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl, blockReads);
     }
 
     @Override
-    public boolean extendLock(Data key, String caller, long threadId, long ttl) {
+    public boolean extendLock(Data key, UUID caller, long threadId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
     @Override
-    public boolean localLock(Data key, String caller, long threadId, long referenceId, long ttl) {
+    public boolean localLock(Data key, UUID caller, long threadId, long referenceId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.localLock(key, caller, threadId, referenceId, ttl);
     }
 
     @Override
-    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
+    public boolean unlock(Data key, UUID caller, long threadId, long referenceId) {
         checkIfLoaded();
         return lockStore != null && lockStore.unlock(key, caller, threadId, referenceId);
     }
 
     @Override
-    public boolean lock(Data key, String caller, long threadId, long referenceId, long ttl) {
+    public boolean lock(Data key, UUID caller, long threadId, long referenceId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.lock(key, caller, threadId, referenceId, ttl);
     }
@@ -303,12 +304,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean canAcquireLock(Data key, String caller, long threadId) {
+    public boolean canAcquireLock(Data key, UUID caller, long threadId) {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
     @Override
-    public boolean isLockedBy(Data key, String caller, long threadId) {
+    public boolean isLockedBy(Data key, UUID caller, long threadId) {
         return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
     }
 

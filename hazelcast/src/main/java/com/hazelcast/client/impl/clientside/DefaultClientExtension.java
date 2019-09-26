@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.ClientExtension;
+import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
@@ -41,9 +41,9 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.memory.DefaultMemoryStats;
-import com.hazelcast.memory.MemoryStats;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.memory.DefaultMemoryStats;
+import com.hazelcast.internal.memory.MemoryStats;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -56,7 +56,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 @SuppressWarnings("WeakerAccess")
 public class DefaultClientExtension implements ClientExtension {

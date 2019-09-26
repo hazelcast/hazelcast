@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getFragments;
 import static groovy.util.GroovyTestCase.assertEquals;
@@ -46,13 +47,13 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     public void setUp() throws Exception {
         String username = generateRandomString(1000);
         String password = generateRandomString(1000);
-        String uuid = generateRandomString(1000);
-        String ownerUuid = generateRandomString(1000);
+        UUID uuid = UUID.randomUUID();
+        UUID ownerUuid = UUID.randomUUID();
         boolean isOwnerConnection = false;
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);
         String clientName = generateRandomString(1000);
-        String clusterId = generateRandomString(1000);
+        UUID clusterId = UUID.randomUUID();
         LinkedList<String> labels = new LinkedList<>();
         for (int i = 0; i < 10; i++) {
             labels.add(generateRandomString(1000));
@@ -71,7 +72,7 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     public void testGetSubFrames() {
         List<ClientMessage> fragments = getFragments(128, clientMessage);
         ListIterator<ClientMessage.Frame> originalIterator = clientMessage.listIterator();
-        assertEquals(21, fragments.size());
+        assertEquals(18, fragments.size());
 
         assertFragments(fragments, originalIterator);
     }

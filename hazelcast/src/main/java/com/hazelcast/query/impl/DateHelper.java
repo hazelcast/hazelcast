@@ -23,7 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
+import static com.hazelcast.internal.util.StringUtil.LOCALE_INTERNAL;
 
 final class DateHelper {
 

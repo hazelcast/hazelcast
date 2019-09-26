@@ -19,9 +19,9 @@ package com.hazelcast.cp.internal.datastructures.semaphore.operation;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphore;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
+import com.hazelcast.cp.internal.datastructures.semaphore.Semaphore;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -35,7 +35,7 @@ import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_S
  * Operation for {@link ISemaphore#increasePermits(int)}
  * and {@link ISemaphore#reducePermits(int)}
  *
- * @see RaftSemaphore#change(long, long, UUID, int)
+ * @see Semaphore#change(long, long, UUID, int)
  */
 public class ChangePermitsOp extends AbstractSemaphoreOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
 
@@ -51,7 +51,7 @@ public class ChangePermitsOp extends AbstractSemaphoreOp implements Indeterminat
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftSemaphoreService service = getService();
+        SemaphoreService service = getService();
         return service.changePermits(groupId, commitIndex, name, getSemaphoreEndpoint(), invocationUid, permits);
     }
 
@@ -62,17 +62,17 @@ public class ChangePermitsOp extends AbstractSemaphoreOp implements Indeterminat
 
     @Override
     protected String getServiceName() {
-        return RaftSemaphoreService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override
     public int getFactoryId() {
-        return RaftSemaphoreDataSerializerHook.F_ID;
+        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftSemaphoreDataSerializerHook.CHANGE_PERMITS_OP;
+        return SemaphoreDataSerializerHook.CHANGE_PERMITS_OP;
     }
 
     @Override

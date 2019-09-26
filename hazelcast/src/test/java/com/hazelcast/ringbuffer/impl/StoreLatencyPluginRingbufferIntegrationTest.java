@@ -37,7 +37,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.util.Random;
 
-import static com.hazelcast.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.test.TestStringUtils.fileAsText;
 
 @RunWith(HazelcastParallelClassRunner.class)

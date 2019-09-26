@@ -17,20 +17,17 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.collection.IList;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -39,12 +36,12 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -53,6 +50,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -318,45 +316,6 @@ public interface HazelcastInstance {
     IAtomicLong getAtomicLong(String name);
 
     /**
-     * Creates or returns a cluster-wide atomic reference. Hazelcast {@link IAtomicReference} is distributed
-     * implementation of <code>java.util.concurrent.atomic.AtomicReference</code>.
-     *
-     * @param name name of the {@link IAtomicReference} proxy
-     * @return {@link IAtomicReference} proxy for the given name
-     * @deprecated This implementation may lose strong consistency in case of network failures
-     * or server failures. Please use {@link CPSubsystem#getAtomicReference(String)} instead.
-     * This method will be removed in Hazelcast 4.0.
-     */
-    @Deprecated
-    <E> IAtomicReference<E> getAtomicReference(String name);
-
-    /**
-     * Creates or returns a cluster-wide CountDownLatch. Hazelcast {@link ICountDownLatch} is distributed
-     * implementation of <code>java.util.concurrent.CountDownLatch</code>.
-     *
-     * @param name name of the {@link ICountDownLatch} proxy
-     * @return {@link ICountDownLatch} proxy for the given name
-     * @deprecated This implementation may lose strong consistency in case of network failures
-     * or server failures. Please use {@link CPSubsystem#getCountDownLatch(String)} instead.
-     * This method will be removed in Hazelcast 4.0.
-     */
-    @Deprecated
-    ICountDownLatch getCountDownLatch(String name);
-
-    /**
-     * Creates or returns a cluster-wide semaphore. Hazelcast {@link ISemaphore} is distributed
-     * implementation of <code>java.util.concurrent.Semaphore</code>.
-     *
-     * @param name name of the {@link ISemaphore} proxy
-     * @return {@link ISemaphore} proxy for the given name
-     * @deprecated This implementation may lose strong consistency in case of network failures
-     * or server failures. Please use {@link CPSubsystem#getSemaphore(String)} instead.
-     * This method will be removed in Hazelcast 4.0.
-     */
-    @Deprecated
-    ISemaphore getSemaphore(String name);
-
-    /**
      * Returns all {@link DistributedObject}s, that is all maps, queues,
      * topics, locks etc.
      * <p>
@@ -376,7 +335,7 @@ public interface HazelcastInstance {
      * @param distributedObjectListener instance listener
      * @return returns registration ID
      */
-    String addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
+    UUID addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
 
     /**
      * Removes the specified Distributed Object listener. Returns silently
@@ -385,7 +344,7 @@ public interface HazelcastInstance {
      * @param registrationId ID of listener registration
      * @return {@code true} if registration is removed, {@code false} otherwise
      */
-    boolean removeDistributedObjectListener(String registrationId);
+    boolean removeDistributedObjectListener(UUID registrationId);
 
     /**
      * Returns the configuration of this Hazelcast instance.
@@ -493,7 +452,7 @@ public interface HazelcastInstance {
     CardinalityEstimator getCardinalityEstimator(String name);
 
     /**
-     * Creates or returns a {@link com.hazelcast.crdt.pncounter.PNCounter} with the given
+     * Creates or returns a {@link PNCounter} with the given
      * name.
      * <p>
      * The PN counter can be used as a counter with strong eventual consistency
@@ -502,7 +461,7 @@ public interface HazelcastInstance {
      * converge to the same value.
      *
      * @param name the name of the PN counter
-     * @return a {@link com.hazelcast.crdt.pncounter.PNCounter}
+     * @return a {@link PNCounter}
      */
     PNCounter getPNCounter(String name);
 

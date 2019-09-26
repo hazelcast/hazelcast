@@ -35,6 +35,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -1997,7 +1998,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see #localKeySet()
      * @see MapListener
      */
-    String addLocalEntryListener(@Nonnull MapListener listener);
+    UUID addLocalEntryListener(@Nonnull MapListener listener);
 
     /**
      * Adds a local entry listener for this map. The added listener will only be
@@ -2020,7 +2021,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see #localKeySet()
      * @deprecated please use {@link #addLocalEntryListener(MapListener)} instead
      */
-    String addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
+    UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
 
     /**
      * Adds a {@link MapListener} for this map.
@@ -2037,7 +2038,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException          if the {@code listener} or {@code predicate} is {@code null}
      * @see MapListener
      */
-    String addLocalEntryListener(@Nonnull MapListener listener,
+    UUID addLocalEntryListener(@Nonnull MapListener listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  boolean includeValue);
 
@@ -2057,7 +2058,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the predicate is {@code null}
      * @deprecated please use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
      */
-    String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
+    UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  boolean includeValue);
 
@@ -2078,7 +2079,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the predicate is {@code null}
      * @see MapListener
      */
-    String addLocalEntryListener(@Nonnull MapListener listener,
+    UUID addLocalEntryListener(@Nonnull MapListener listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  @Nullable K key,
                                  boolean includeValue);
@@ -2100,7 +2101,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the predicate is {@code null}
      * @deprecated please use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
      */
-    String addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
+    UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  @Nullable K key,
                                  boolean includeValue);
@@ -2137,7 +2138,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified listener is {@code null}
      * @see MapListener
      */
-    String addEntryListener(@Nonnull MapListener listener, boolean includeValue);
+    UUID addEntryListener(@Nonnull MapListener listener, boolean includeValue);
 
     /**
      * Adds an entry listener for this map.
@@ -2150,7 +2151,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified listener is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, boolean)} instead
      */
-    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                             boolean includeValue);
 
     /**
@@ -2161,14 +2162,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param id ID of registered listener
      * @return true if registration is removed, false otherwise
      */
-    boolean removeEntryListener(@Nonnull String id);
+    boolean removeEntryListener(@Nonnull UUID id);
 
     /**
      * Adds a MapPartitionLostListener.
      * <p>
      * The method returns a register ID. This ID is needed to remove the
      * {@link MapPartitionLostListener} using the
-     * {@link #removePartitionLostListener(String)} method.
+     * {@link #removePartitionLostListener(UUID)} method.
      * <p>
      * There is no check for duplicate registrations, so if you register the
      * listener twice, you will receive events twice.
@@ -2185,10 +2186,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param listener the added MapPartitionLostListener
      * @return returns the registration ID for the MapPartitionLostListener
      * @throws java.lang.NullPointerException if listener is {@code null}
-     * @see #removePartitionLostListener(String)
+     * @see #removePartitionLostListener(UUID)
      * @see com.hazelcast.partition.PartitionLostListener
      */
-    String addPartitionLostListener(@Nonnull MapPartitionLostListener listener);
+    UUID addPartitionLostListener(@Nonnull MapPartitionLostListener listener);
 
     /**
      * Removes the specified map partition lost listener.
@@ -2199,7 +2200,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return true if registration is removed, false otherwise
      * @throws NullPointerException if {@code id} is {@code null}
      */
-    boolean removePartitionLostListener(@Nonnull String id);
+    boolean removePartitionLostListener(@Nonnull UUID id);
 
     /**
      * Adds a {@link MapListener} for this map. To receive an event, you should
@@ -2219,7 +2220,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is {@code null}
      * @see MapListener
      */
-    String addEntryListener(@Nonnull MapListener listener, @Nonnull K key, boolean includeValue);
+    UUID addEntryListener(@Nonnull MapListener listener, @Nonnull K key, boolean includeValue);
 
     /**
      * Adds the specified entry listener for the specified key.
@@ -2241,7 +2242,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, Object, boolean)} instead
      */
-    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                             @Nonnull K key,
                             boolean includeValue);
 
@@ -2259,7 +2260,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *                              is {@code null}
      * @see MapListener
      */
-    String addEntryListener(@Nonnull MapListener listener,
+    UUID addEntryListener(@Nonnull MapListener listener,
                             @Nonnull Predicate<K, V> predicate,
                             boolean includeValue);
 
@@ -2275,7 +2276,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
      */
-    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                             @Nonnull Predicate<K, V> predicate,
                             boolean includeValue);
 
@@ -2292,7 +2293,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
      * @see MapListener
      */
-    String addEntryListener(@Nonnull MapListener listener,
+    UUID addEntryListener(@Nonnull MapListener listener,
                             @Nonnull Predicate<K, V> predicate,
                             @Nullable K key,
                             boolean includeValue);
@@ -2310,7 +2311,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
      * @deprecated please use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
      */
-    String addEntryListener(@Nonnull EntryListener<K, V> listener,
+    UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                             @Nonnull Predicate<K, V> predicate,
                             @Nullable K key,
                             boolean includeValue);

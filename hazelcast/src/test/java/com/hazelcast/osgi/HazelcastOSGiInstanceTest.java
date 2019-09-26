@@ -16,35 +16,37 @@
 
 package com.hazelcast.osgi;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.LifecycleService;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.collection.IList;
-import com.hazelcast.cp.lock.ILock;
-import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.ISet;
-import com.hazelcast.core.IdGenerator;
-import com.hazelcast.core.LifecycleService;
+import com.hazelcast.cp.lock.ILock;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.logging.LoggingService;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
@@ -54,6 +56,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.osgi.impl.HazelcastOSGiTestUtil.createHazelcastOSGiInstance;
@@ -423,11 +426,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getAtomicReference("my-atomicreference")).thenReturn(mockAtomicReference);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(cpSubsystem.getAtomicReference("my-atomicreference")).thenReturn(mockAtomicReference);
 
-        assertEquals(mockAtomicReference, hazelcastOSGiInstance.getAtomicReference("my-atomicreference"));
+        assertEquals(mockAtomicReference, hazelcastOSGiInstance.getCPSubsystem().getAtomicReference("my-atomicreference"));
 
-        verify(mockHazelcastInstance).getAtomicReference("my-atomicreference");
+        verify(cpSubsystem).getAtomicReference("my-atomicreference");
     }
 
     @Test
@@ -436,11 +441,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getCountDownLatch("my-countdownlatch")).thenReturn(mockCountDownLatch);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(cpSubsystem.getCountDownLatch("my-countdownlatch")).thenReturn(mockCountDownLatch);
 
-        assertEquals(mockCountDownLatch, hazelcastOSGiInstance.getCountDownLatch("my-countdownlatch"));
+        assertEquals(mockCountDownLatch, hazelcastOSGiInstance.getCPSubsystem().getCountDownLatch("my-countdownlatch"));
 
-        verify(mockHazelcastInstance).getCountDownLatch("my-countdownlatch");
+        verify(cpSubsystem).getCountDownLatch("my-countdownlatch");
     }
 
     @Test
@@ -449,11 +456,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getSemaphore("my-semaphore")).thenReturn(mockSemaphore);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(cpSubsystem.getSemaphore("my-semaphore")).thenReturn(mockSemaphore);
 
-        assertEquals(mockSemaphore, hazelcastOSGiInstance.getSemaphore("my-semaphore"));
+        assertEquals(mockSemaphore, hazelcastOSGiInstance.getCPSubsystem().getSemaphore("my-semaphore"));
 
-        verify(mockHazelcastInstance).getSemaphore("my-semaphore");
+        verify(cpSubsystem).getSemaphore("my-semaphore");
     }
 
     @Test
@@ -490,9 +499,10 @@ public class HazelcastOSGiInstanceTest {
         HazelcastOSGiInstance hazelcastOSGiInstance =
                 createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.addDistributedObjectListener(mockDistributedObjectListener)).thenReturn("my-registration-id");
+        UUID registrationId = UuidUtil.newUnsecureUUID();
+        when(mockHazelcastInstance.addDistributedObjectListener(mockDistributedObjectListener)).thenReturn(registrationId);
 
-        assertEquals("my-registration-id", hazelcastOSGiInstance.addDistributedObjectListener(mockDistributedObjectListener));
+        assertEquals(registrationId, hazelcastOSGiInstance.addDistributedObjectListener(mockDistributedObjectListener));
 
         verify(mockHazelcastInstance).addDistributedObjectListener(mockDistributedObjectListener);
     }
@@ -502,11 +512,13 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.removeDistributedObjectListener("my-registration-id")).thenReturn(true);
+        UUID registrationId = UuidUtil.newUnsecureUUID();
 
-        assertTrue(hazelcastOSGiInstance.removeDistributedObjectListener("my-registration-id"));
+        when(mockHazelcastInstance.removeDistributedObjectListener(registrationId)).thenReturn(true);
 
-        verify(mockHazelcastInstance).removeDistributedObjectListener("my-registration-id");
+        assertTrue(hazelcastOSGiInstance.removeDistributedObjectListener(registrationId));
+
+        verify(mockHazelcastInstance).removeDistributedObjectListener(registrationId);
     }
 
     @Test

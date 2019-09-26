@@ -52,7 +52,7 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static org.springframework.util.Assert.isTrue;
@@ -360,6 +360,22 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
             networkConfigBuilder.addPropertyValue("socketInterceptorConfig",
                     socketInterceptorConfigBuilder.getBeanDefinition());
+        }
+
+        void handleClusterAttributes(Node node) {
+            NamedNodeMap attributes = node.getAttributes();
+            if (attributes != null) {
+                for (int a = 0; a < attributes.getLength(); a++) {
+                    Node att = attributes.item(a);
+                    String name = att.getNodeName();
+                    String value = att.getNodeValue();
+                    if ("name".equals(name)) {
+                        configBuilder.addPropertyValue("clusterName", value);
+                    } else if ("password".equals(name)) {
+                        configBuilder.addPropertyValue("clusterPassword", value);
+                    }
+                }
+            }
         }
 
         protected void handleProperties(Node node, BeanDefinitionBuilder beanDefinitionBuilder) {

@@ -16,11 +16,13 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.LeaderDemotedException;
 import com.hazelcast.cp.exception.NotLeaderException;
+import com.hazelcast.cp.exception.StaleAppendRequestException;
 import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dataservice.RaftDataService;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
@@ -499,11 +501,13 @@ public class LocalRaftTest extends HazelcastTestSupport {
             }
         });
 
-        for (int i = 0; i < nodeCount; i++) {
-            if (Arrays.binarySearch(split, i) < 0) {
-                assertEquals(leaderEndpoint, getLeaderMember(group.getNode(i)));
+        assertTrueEventually(() -> {
+            for (int i = 0; i < nodeCount; i++) {
+                if (Arrays.binarySearch(split, i) < 0) {
+                    assertNull(getLeaderMember(group.getNode(i)));
+                }
             }
-        }
+        });
 
         group.merge();
         group.waitUntilLeaderElected();
@@ -777,6 +781,23 @@ public class LocalRaftTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("valFinal")).get();
             fail();
         } catch (CannotReplicateException ignored) {
+        }
+    }
+
+    @Test
+    public void when_leaderStaysInMinority_then_itDemotesItselfToFollower() throws ExecutionException, InterruptedException {
+        group = newGroupWithService(2, new RaftAlgorithmConfig());
+        group.start();
+
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+
+        group.split(leader.getLocalMember());
+        ICompletableFuture f = leader.replicate(new ApplyRaftRunnable("val"));
+
+        try {
+            f.get();
+            fail();
+        } catch (StaleAppendRequestException ignored) {
         }
     }
 

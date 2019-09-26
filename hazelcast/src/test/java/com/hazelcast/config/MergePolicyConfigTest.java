@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MergePolicyConfigReadOnly;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -114,7 +115,7 @@ public class MergePolicyConfigTest {
         config.setPolicy(HigherHitsMergePolicy.class.getName());
         config.setBatchSize(2342);
 
-        MergePolicyConfig readOnly = config.getAsReadOnly();
+        MergePolicyConfig readOnly = new MergePolicyConfigReadOnly(config);
 
         assertEquals(config.getPolicy(), readOnly.getPolicy());
         assertEquals(config.getBatchSize(), readOnly.getBatchSize());
@@ -137,7 +138,6 @@ public class MergePolicyConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MergePolicyConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(MergePolicyConfig.class,
                         new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 1000),

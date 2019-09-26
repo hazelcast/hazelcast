@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.SINGLE_RUN;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 

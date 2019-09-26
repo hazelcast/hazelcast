@@ -21,13 +21,14 @@ import com.hazelcast.cluster.impl.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.INHERITANCE;
+import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.INHERITANCE;
 import static java.util.Collections.singletonMap;
 
 /**
@@ -50,15 +51,15 @@ public final class MemberImpl extends AbstractMember implements Member {
         super(singletonMap(MEMBER, address), version, null, null, false);
     }
 
-    public MemberImpl(Address address, MemberVersion version, String uuid) {
+    public MemberImpl(Address address, MemberVersion version, UUID uuid) {
         super(singletonMap(MEMBER, address), version, uuid, null, false);
     }
 
-    public MemberImpl(Address address, String uuid, Map<String, String> attributes, boolean liteMember) {
+    public MemberImpl(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember) {
         super(singletonMap(MEMBER, address), MemberVersion.UNKNOWN, uuid, attributes, liteMember);
     }
 
-    public MemberImpl(Address address, MemberVersion version, String uuid, Map<String, String> attributes, boolean liteMember) {
+    public MemberImpl(Address address, MemberVersion version, UUID uuid, Map<String, String> attributes, boolean liteMember) {
         super(singletonMap(MEMBER, address), version, uuid, attributes, liteMember);
     }
 

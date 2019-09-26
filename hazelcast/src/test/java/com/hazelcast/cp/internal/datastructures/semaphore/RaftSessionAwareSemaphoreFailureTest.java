@@ -21,7 +21,7 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.internal.util.ThreadUtil;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RaftSessionAwareSemaphoreFailureTest extends RaftSemaphoreFailureTest {
+public class RaftSessionAwareSemaphoreFailureTest extends SemaphoreFailureTest {
 
     @Override
     boolean isJDKCompatible() {

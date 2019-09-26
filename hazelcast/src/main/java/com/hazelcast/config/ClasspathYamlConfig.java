@@ -22,7 +22,7 @@ import com.hazelcast.logging.Logger;
 import java.io.InputStream;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * A {@link Config} which is initialized by loading a YAML configuration file from the classpath.

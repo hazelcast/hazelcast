@@ -27,7 +27,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class ListAddListenerMessageTask
         extends AbstractCallableMessageTask<ListAddListenerCodec.RequestParameters> implements ListenerMessageTask {
@@ -55,7 +56,7 @@ public class ListAddListenerMessageTask
         } else {
             registration = eventService.registerListener(getServiceName(), parameters.name, filter, listener);
         }
-        String registrationId = registration.getId();
+        UUID registrationId = registration.getId();
         endpoint.addListenerDestroyAction(getServiceName(), parameters.name, registrationId);
         return registrationId;
     }
@@ -97,7 +98,7 @@ public class ListAddListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ListAddListenerCodec.encodeResponse((String) response);
+        return ListAddListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

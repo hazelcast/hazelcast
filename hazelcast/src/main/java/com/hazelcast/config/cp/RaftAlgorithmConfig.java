@@ -16,7 +16,7 @@
 
 package com.hazelcast.config.cp;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for Hazelcast's implementation of the Raft consensus algorithm

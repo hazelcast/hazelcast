@@ -21,11 +21,12 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class MapRemoveEntryListenerMessageTask
         extends AbstractRemoveListenerMessageTask<MapRemoveEntryListenerCodec.RequestParameters> {
@@ -41,7 +42,7 @@ public class MapRemoveEntryListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

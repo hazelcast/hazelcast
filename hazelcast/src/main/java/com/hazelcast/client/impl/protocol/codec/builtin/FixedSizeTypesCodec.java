@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
-import com.hazelcast.nio.Bits;
+import com.hazelcast.internal.nio.Bits;
 
 import java.util.UUID;
 
@@ -26,7 +26,7 @@ public final class FixedSizeTypesCodec {
     public static final int LONG_SIZE_IN_BYTES = Bits.LONG_SIZE_IN_BYTES;
     public static final int INT_SIZE_IN_BYTES = Bits.INT_SIZE_IN_BYTES;
     public static final int BOOLEAN_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES;
-    public static final int UUID_SIZE_IN_BYTES = Bits.LONG_SIZE_IN_BYTES * 2;
+    public static final int UUID_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES + Bits.LONG_SIZE_IN_BYTES * 2;
 
     private FixedSizeTypesCodec() {
     }
@@ -72,15 +72,24 @@ public final class FixedSizeTypesCodec {
     }
 
     public static void encodeUUID(byte[] buffer, int pos, UUID value) {
+        boolean isNull = value == null;
+        encodeBoolean(buffer, pos, isNull);
+        if (isNull) {
+            return;
+        }
         long mostSigBits = value.getMostSignificantBits();
         long leastSigBits = value.getLeastSignificantBits();
-        encodeLong(buffer, pos, mostSigBits);
-        encodeLong(buffer, pos + LONG_SIZE_IN_BYTES, leastSigBits);
+        encodeLong(buffer, pos + BOOLEAN_SIZE_IN_BYTES, mostSigBits);
+        encodeLong(buffer, pos + BOOLEAN_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES, leastSigBits);
     }
 
     public static UUID decodeUUID(byte[] buffer, int pos) {
-        long mostSigBits = decodeLong(buffer, pos);
-        long leastSigBits = decodeLong(buffer, pos + LONG_SIZE_IN_BYTES);
+        boolean isNull = decodeBoolean(buffer, pos);
+        if (isNull) {
+            return null;
+        }
+        long mostSigBits = decodeLong(buffer, pos + BOOLEAN_SIZE_IN_BYTES);
+        long leastSigBits = decodeLong(buffer, pos + BOOLEAN_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES);
         return new UUID(mostSigBits, leastSigBits);
     }
 

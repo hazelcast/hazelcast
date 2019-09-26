@@ -54,10 +54,10 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.FutureUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -75,6 +75,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -90,10 +91,10 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.addCallback;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.getSafely;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.handleFailureOnCompletionListener;
-import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -133,7 +134,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 
     private final ClientCacheProxySyncListenerCompleter listenerCompleter;
-    private final ConcurrentMap<String, Closeable> closeableListeners;
+    private final ConcurrentMap<UUID, Closeable> closeableListeners;
 
     protected ClientCacheProxySupport(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(ICacheService.SERVICE_NAME, cacheConfig.getName(), context);
@@ -632,7 +633,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
+    protected void addListenerLocally(UUID regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                       CacheEventListenerAdaptor<K, V> adaptor) {
         listenerCompleter.putListenerIfAbsent(cacheEntryListenerConfiguration, regId);
         CacheEntryListener<K, V> entryListener = adaptor.getCacheEntryListener();
@@ -642,20 +643,20 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     protected void removeListenerLocally(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        String registrationId = listenerCompleter.removeListener(cacheEntryListenerConfiguration);
+        UUID registrationId = listenerCompleter.removeListener(cacheEntryListenerConfiguration);
         if (registrationId != null) {
             Closeable closeable = closeableListeners.remove(registrationId);
             IOUtil.closeResource(closeable);
         }
     }
 
-    protected String getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    protected UUID getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         return listenerCompleter.getListenerId(cacheEntryListenerConfiguration);
     }
 
-    private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
+    private void deregisterAllCacheEntryListener(Collection<UUID> listenerRegistrations) {
         ClientListenerService listenerService = getContext().getListenerService();
-        for (String regId : listenerRegistrations) {
+        for (UUID regId : listenerRegistrations) {
             listenerService.deregisterListener(regId);
         }
     }

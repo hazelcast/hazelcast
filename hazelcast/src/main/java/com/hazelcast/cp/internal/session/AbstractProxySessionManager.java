@@ -20,8 +20,8 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.RaftGroupId;
-import com.hazelcast.cp.internal.util.Tuple2;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,9 +37,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static com.hazelcast.util.ExceptionUtil.peel;
-import static com.hazelcast.util.Preconditions.checkState;
-import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.Preconditions.checkState;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 
 /**
  * Implements session management APIs for Raft-based server and client proxies
@@ -53,7 +53,7 @@ public abstract class AbstractProxySessionManager {
 
     private final ConcurrentMap<RaftGroupId, Object> mutexes = new ConcurrentHashMap<>();
     private final ConcurrentMap<RaftGroupId, SessionState> sessions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Tuple2<RaftGroupId, Long>, Long> threadIds = new ConcurrentHashMap<>();
+    private final ConcurrentMap<BiTuple<RaftGroupId, Long>, Long> threadIds = new ConcurrentHashMap<>();
     private final AtomicBoolean scheduleHeartbeat = new AtomicBoolean(false);
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private boolean running = true;
@@ -98,7 +98,7 @@ public abstract class AbstractProxySessionManager {
     public final Long getOrCreateUniqueThreadId(RaftGroupId groupId) {
         lock.readLock().lock();
         try {
-            Tuple2<RaftGroupId, Long> key = Tuple2.of(groupId, getThreadId());
+            BiTuple<RaftGroupId, Long> key = BiTuple.of(groupId, getThreadId());
             Long globalThreadId = threadIds.get(key);
             if (globalThreadId != null) {
                 return globalThreadId;

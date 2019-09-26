@@ -46,10 +46,10 @@
         </replacer>
     </config-replacers>
 
-    <group>
+    <cluster>
         <name>dev</name>
         <password>dev-pass</password>
-    </group>
+    </cluster>
     <instance-name>CLIENT_NAME</instance-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <properties>
@@ -127,7 +127,7 @@
             <tenant-id>TENANT_ID</tenant-id>
             <subscription-id>SUB_ID</subscription-id>
             <cluster-id>HZLCAST001</cluster-id>
-            <group-name>GROUP-NAME</group-name>
+            <cluster-name>CLUSTER-NAME</cluster-name>
         </azure>
         <kubernetes enabled="false">
             <namespace>MY-KUBERNETES-NAMESPACE</namespace>

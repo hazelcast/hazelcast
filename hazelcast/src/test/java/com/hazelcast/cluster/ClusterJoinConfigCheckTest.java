@@ -67,10 +67,10 @@ public class ClusterJoinConfigCheckTest {
 
     private void whenDifferentGroups_thenDifferentClustersAreFormed(boolean tcp) {
         Config config1 = new Config();
-        config1.getGroupConfig().setName("group1");
+        config1.setClusterName("group1");
 
         Config config2 = new Config();
-        config2.getGroupConfig().setName("group2");
+        config2.setClusterName("group2");
 
         if (tcp) {
             enableTcp(config1);

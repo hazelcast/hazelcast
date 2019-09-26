@@ -27,10 +27,9 @@ public class WanConsistencyCheckFinishedEvent extends AbstractWanAntiEntropyEven
     private final int checkedCount;
     private final int entriesToSync;
 
-    public WanConsistencyCheckFinishedEvent(UUID uuid, String wanReplicationName, String targetGroupName, String mapName,
+    public WanConsistencyCheckFinishedEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName,
                                             int diffCount, int checkedCount, int entriesToSync) {
-        super(uuid, wanReplicationName, targetGroupName, mapName);
-
+        super(uuid, wanReplicationName, wanPublisherId, mapName);
         this.diffCount = diffCount;
         this.checkedCount = checkedCount;
         this.entriesToSync = entriesToSync;

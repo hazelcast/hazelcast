@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -37,8 +38,9 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -85,7 +87,7 @@ public class MemberImplTest extends HazelcastTestSupport {
         MemberImpl member = new MemberImpl.Builder(address)
                 .version(MemberVersion.of("3.8.0"))
                 .localMember(true)
-                .uuid(newUnsecureUuidString())
+                .uuid(newUnsecureUUID())
                 .liteMember(true)
                 .build();
 
@@ -99,7 +101,7 @@ public class MemberImplTest extends HazelcastTestSupport {
         MemberImpl member = new MemberImpl.Builder(address)
                 .version(MemberVersion.of("3.8.0"))
                 .localMember(true)
-                .uuid(newUnsecureUuidString())
+                .uuid(newUnsecureUUID())
                 .build();
 
         assertBasicMemberImplFields(member);
@@ -109,12 +111,13 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withHazelcastInstance() throws Exception {
+        UUID uuid = UuidUtil.newUnsecureUUID();
         MemberImpl member = new MemberImpl.Builder(address).version(MemberVersion.of("3.8.0"))
-                .localMember(true).uuid("uuid2342").instance(hazelcastInstance).build();
+                .localMember(true).uuid(uuid).instance(hazelcastInstance).build();
 
         assertBasicMemberImplFields(member);
         assertTrue(member.localMember());
-        assertEquals("uuid2342", member.getUuid());
+        assertEquals(uuid, member.getUuid());
     }
 
     @Test
@@ -123,12 +126,13 @@ public class MemberImplTest extends HazelcastTestSupport {
         attributes.put("key1", "value");
         attributes.put("key2", "12345");
 
+        UUID uuid = UuidUtil.newUnsecureUUID();
         MemberImpl member = new MemberImpl.Builder(address).version(MemberVersion.of("3.8.0")).localMember(true)
-                .uuid("uuid2342").attributes(attributes).instance(hazelcastInstance).build();
+                .uuid(uuid).attributes(attributes).instance(hazelcastInstance).build();
 
         assertBasicMemberImplFields(member);
         assertTrue(member.localMember());
-        assertEquals("uuid2342", member.getUuid());
+        assertEquals(uuid, member.getUuid());
         assertEquals("value", member.getAttribute("key1"));
         assertEquals("12345", member.getAttribute("key2"));
         assertFalse(member.isLiteMember());
@@ -175,8 +179,12 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAttribute_withHazelcastInstance() {
-        MemberImpl member = new MemberImpl.Builder(address).version(MemberVersion.of("3.8.0")).localMember(true).uuid("uuid")
-                .instance(hazelcastInstance).build();
+        MemberImpl member = new MemberImpl.Builder(address)
+                .version(MemberVersion.of("3.8.0"))
+                .localMember(true)
+                .uuid(newUnsecureUUID())
+                .instance(hazelcastInstance)
+                .build();
 
         member.removeAttribute("removeKeyWithInstance");
         assertNull(member.getAttribute("removeKeyWithInstance"));
@@ -184,7 +192,10 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testSetAttribute_withHazelcastInstance() {
-        MemberImpl member = new MemberImpl.Builder(address).version(MemberVersion.of("3.8.0")).localMember(true).uuid("uuid")
+        MemberImpl member = new MemberImpl.Builder(address)
+                .version(MemberVersion.of("3.8.0"))
+                .localMember(true)
+                .uuid(newUnsecureUUID())
                 .instance(hazelcastInstance).build();
 
         member.setAttribute("setKeyWithInstance", "setValueWithInstance");

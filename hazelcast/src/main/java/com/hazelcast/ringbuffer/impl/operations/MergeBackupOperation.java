@@ -27,8 +27,8 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.readObject;
-import static com.hazelcast.nio.IOUtil.writeObject;
+import static com.hazelcast.internal.nio.IOUtil.readObject;
+import static com.hazelcast.internal.nio.IOUtil.writeObject;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.MERGE_BACKUP_OPERATION;
 
 /**

@@ -28,7 +28,7 @@ import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -38,8 +38,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.executor.ExecutorType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -142,14 +143,14 @@ public class MembershipManager {
         return memberMap.getMember(address);
     }
 
-    public MemberImpl getMember(String uuid) {
+    public MemberImpl getMember(UUID uuid) {
         assert uuid != null : "UUID required!";
 
         MemberMap memberMap = memberMapRef.get();
         return memberMap.getMember(uuid);
     }
 
-    public MemberImpl getMember(Address address, String uuid) {
+    public MemberImpl getMember(Address address, UUID uuid) {
         assert address != null : "Address required!";
         assert uuid != null : "UUID required!";
 
@@ -933,7 +934,7 @@ public class MembershipManager {
         return isNewMemberPresent;
     }
 
-    private Future<MembersView> invokeFetchMembersViewOp(Address target, String targetUuid) {
+    private Future<MembersView> invokeFetchMembersViewOp(Address target, UUID targetUuid) {
         Operation op = new FetchMembersViewOp(targetUuid).setCallerUuid(clusterService.getThisUuid());
 
         return nodeEngine.getOperationService()
@@ -950,7 +951,7 @@ public class MembershipManager {
      * @param uuid Uuid of the missing member
      * @return true if it's a known missing member, false otherwise
      */
-    boolean isMissingMember(Address address, String uuid) {
+    boolean isMissingMember(Address address, UUID uuid) {
         Map<Object, MemberImpl> m = missingMembersRef.get();
         return isHotRestartEnabled() ? m.containsKey(uuid) : m.containsKey(address);
     }
@@ -963,7 +964,7 @@ public class MembershipManager {
      * @param uuid Uuid of the missing member
      * @return the missing member
      */
-    MemberImpl getMissingMember(Address address, String uuid) {
+    MemberImpl getMissingMember(Address address, UUID uuid) {
         Map<Object, MemberImpl> m = missingMembersRef.get();
         return isHotRestartEnabled() ? m.get(uuid) : m.get(address);
     }
@@ -1048,7 +1049,7 @@ public class MembershipManager {
         }
     }
 
-    void shrinkMissingMembers(Collection<String> memberUuidsToRemove) {
+    void shrinkMissingMembers(Collection<UUID> memberUuidsToRemove) {
         clusterServiceLock.lock();
         try {
             Map<Object, MemberImpl> m = new HashMap<>(missingMembersRef.get());
@@ -1084,7 +1085,7 @@ public class MembershipManager {
         }
     }
 
-    public MembersView promoteToDataMember(Address address, String uuid) {
+    public MembersView promoteToDataMember(Address address, UUID uuid) {
         clusterServiceLock.lock();
         try {
             ensureLiteMemberPromotionIsAllowed();
@@ -1190,7 +1191,7 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             memberMapRef.set(MemberMap.singleton(clusterService.getLocalMember()));
-            missingMembersRef.set(Collections.<Object, MemberImpl>emptyMap());
+            missingMembersRef.set(Collections.emptyMap());
             suspectedMembers.clear();
         } finally {
             clusterServiceLock.unlock();

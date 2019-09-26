@@ -23,7 +23,7 @@
 # To learn how to configure Hazelcast, please see the Reference Manual
 # at https://hazelcast.org/documentation/
 hazelcast:
-  group:
+  cluster:
     name: dev
   management-center:
     enabled: false
@@ -69,7 +69,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        group-name: GROUP-NAME
+        cluster-name: CLUSTER-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -250,12 +250,6 @@ hazelcast:
         batch-size: 100
         class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
 
-  semaphore:
-    default:
-      initial-permits: 0
-      backup-count: 1
-      async-backup-count: 0
-
   reliable-topic:
     default:
       read-batch-size: 10
@@ -286,15 +280,6 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
-
-  atomic-reference:
-    default:
-      merge-policy:
-        batch-size: 100
-        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
-
-  count-down-latch:
-    default: {}
 
   serialization:
     portable-version: 0

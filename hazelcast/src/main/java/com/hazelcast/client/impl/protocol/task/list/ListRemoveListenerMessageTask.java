@@ -21,12 +21,13 @@ import com.hazelcast.client.impl.protocol.codec.ListRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -46,7 +47,7 @@ public class ListRemoveListenerMessageTask
     }
 
     @Override
-    protected String getRegistrationId() {
+    protected UUID getRegistrationId() {
         return parameters.registrationId;
     }
 

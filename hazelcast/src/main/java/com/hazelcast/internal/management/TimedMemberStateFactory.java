@@ -22,14 +22,13 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPMember;
-import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
@@ -79,7 +78,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * A Factory for creating {@link TimedMemberState} instances.
@@ -134,8 +133,8 @@ public class TimedMemberStateFactory {
             timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
         }
         timedMemberState.setMemberState(memberState);
-        GroupConfig groupConfig = instance.getConfig().getGroupConfig();
-        timedMemberState.setClusterName(groupConfig.getName());
+        Config config = instance.getConfig();
+        timedMemberState.setClusterName(config.getClusterName());
         SSLConfig sslConfig = getActiveMemberNetworkConfig(instance.getConfig()).getSSLConfig();
         timedMemberState.setSslEnabled(sslConfig != null && sslConfig.isEnabled());
         timedMemberState.setLite(instance.node.isLiteMember());

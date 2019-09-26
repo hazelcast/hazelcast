@@ -16,8 +16,8 @@
 
 package classloading;
 
-import com.hazelcast.util.FilteringClassLoader;
-import com.hazelcast.util.RootCauseMatcher;
+import com.hazelcast.internal.util.FilteringClassLoader;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;

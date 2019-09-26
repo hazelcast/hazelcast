@@ -22,10 +22,10 @@ import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor12byteKey;
 import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.util.HashUtil.fastIntMix;
-import static com.hazelcast.util.HashUtil.fastLongMix;
-import static com.hazelcast.util.QuickMath.modPowerOfTwo;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.util.HashUtil.fastIntMix;
+import static com.hazelcast.internal.util.HashUtil.fastLongMix;
+import static com.hazelcast.internal.util.QuickMath.modPowerOfTwo;
 
 /**
  * Implementation of {@link HashSlotArray8byteKey} as a restriction of {@link HashSlotArrayBase}

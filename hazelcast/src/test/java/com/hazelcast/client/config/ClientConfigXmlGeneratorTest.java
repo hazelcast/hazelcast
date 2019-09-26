@@ -24,7 +24,6 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -42,7 +41,10 @@ import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -66,6 +68,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static final boolean DEBUG = false;
@@ -77,13 +80,12 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void escape() {
         String toEscape = "<>&\"'";
         //escape xml value
-        GroupConfig groupConfig = new GroupConfig(toEscape, "pass");
         //escape xml attribute
         NearCacheConfig nearCacheConfig = new NearCacheConfig(toEscape);
-        clientConfig.setGroupConfig(groupConfig).addNearCacheConfig(nearCacheConfig);
+        clientConfig.setClusterName(toEscape).setClusterPassword("pass").addNearCacheConfig(nearCacheConfig);
 
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(groupConfig.getName(), actual.getGroupConfig().getName());
+        assertEquals(clientConfig.getClusterName(), actual.getClusterName());
         assertEquals(toEscape, actual.getNearCacheConfig(toEscape).getName());
     }
 
@@ -105,14 +107,13 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void group() {
+    public void cluster() {
         String name = randomString();
         String pass = randomString();
-        GroupConfig expected = new GroupConfig(name, pass);
-        clientConfig.setGroupConfig(expected);
+        clientConfig.setClusterName(name).setClusterPassword(pass);
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(name, actual.getGroupConfig().getName());
-        assertEquals(pass, actual.getGroupConfig().getPassword());
+        assertEquals(name, actual.getClusterName());
+        assertEquals(pass, actual.getClusterPassword());
     }
 
     @Test
@@ -350,7 +351,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         expected.setInMemoryFormat(InMemoryFormat.NATIVE)
                 .setSerializeKeys(true)
                 .setInvalidateOnChange(false)
-                .setCacheLocalEntries(true)
                 .setTimeToLiveSeconds(randomInt())
                 .setMaxIdleSeconds(randomInt())
                 .setLocalUpdatePolicy(CACHE_ON_UPDATE)

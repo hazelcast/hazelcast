@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.MultiResult;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.AbstractSet;
 import java.util.Collection;

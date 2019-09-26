@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -154,9 +155,9 @@ public class ListenerTest extends HazelcastTestSupport {
         IMap<String, String> map1 = instance1.getMap(name);
         IMap<String, String> map2 = instance2.getMap(name);
 
-        String id1 = map1.addEntryListener(createEntryListener(false), false);
-        String id2 = map1.addEntryListener(createEntryListener(false), true);
-        String id3 = map2.addEntryListener(createEntryListener(false), true);
+        UUID id1 = map1.addEntryListener(createEntryListener(false), false);
+        UUID id2 = map1.addEntryListener(createEntryListener(false), true);
+        UUID id3 = map2.addEntryListener(createEntryListener(false), true);
         int k = 3;
         map1.removeEntryListener(id1);
         map1.removeEntryListener(id2);

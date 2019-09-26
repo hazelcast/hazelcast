@@ -19,16 +19,16 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch.operation;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
  * Operation for {@link ICountDownLatch#countDown()}
@@ -49,7 +49,7 @@ public class CountDownOp extends AbstractCountDownLatchOp implements Indetermina
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftCountDownLatchService service = getService();
+        CountDownLatchService service = getService();
         return service.countDown(groupId, name, invocationUid, expectedRound);
     }
 
@@ -60,7 +60,7 @@ public class CountDownOp extends AbstractCountDownLatchOp implements Indetermina
 
     @Override
     public int getClassId() {
-        return RaftCountDownLatchDataSerializerHook.COUNT_DOWN_OP;
+        return CountDownLatchDataSerializerHook.COUNT_DOWN_OP;
     }
 
     @Override

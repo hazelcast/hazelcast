@@ -23,9 +23,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a Near Cache.
@@ -90,8 +90,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     private LocalUpdatePolicy localUpdatePolicy = DEFAULT_LOCAL_UPDATE_POLICY;
     private NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
 
-    private NearCacheConfigReadOnly readOnly;
-
     public NearCacheConfig() {
     }
 
@@ -110,20 +108,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
         this.cacheLocalEntries = config.cacheLocalEntries;
         this.localUpdatePolicy = config.localUpdatePolicy;
         this.preloaderConfig = config.preloaderConfig;
-    }
-
-    /**
-     * Returns an immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    @Deprecated
-    public NearCacheConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new NearCacheConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**

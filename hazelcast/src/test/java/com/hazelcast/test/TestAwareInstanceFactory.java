@@ -43,7 +43,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 /**
  * Per test-method factory for Hazelcast members. It sets existing members host:port from given cluster to TCP join
  * configuration of other members. The instances are kept per test method which allows to terminate them in
- * {@link org.junit.After} methods (see {@link #terminateAll()}). The factory methods also sets custom group name which prevents
+ * {@link org.junit.After} methods (see {@link #terminateAll()}). The factory methods also sets custom cluster name which prevents
  * accidental joins (e.g. dangling members).
  * <p>
  * <b>Tests using this factory should not be annotated with {@link ParallelJVMTest} category to avoid runs in multiple JVMs.</b>
@@ -103,7 +103,7 @@ public class TestAwareInstanceFactory {
         if (config == null) {
             config = new Config();
         }
-        config.getGroupConfig().setName(getTestMethodName());
+        config.setClusterName(getTestMethodName());
         List<HazelcastInstance> members = getOrInitInstances(perMethodMembers);
 
         // Prepare Unified Networking (legacy)

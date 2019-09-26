@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.DefaultOutOfMemoryHandler;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * To clear resources of the client upon OutOfMemory
@@ -65,7 +65,7 @@ public class ClientOutOfMemoryHandler extends DefaultOutOfMemoryHandler {
 
         private static void tryShutdown(HazelcastClientInstanceImpl client) {
             try {
-                client.doShutdown(false);
+                client.doShutdown();
             } catch (Throwable ignored) {
                 ignore(ignored);
             }

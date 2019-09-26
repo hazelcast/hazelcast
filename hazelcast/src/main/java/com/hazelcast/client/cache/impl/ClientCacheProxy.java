@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheEventJournalReadCodec;
@@ -32,16 +33,16 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -57,6 +58,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -67,10 +69,10 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createCacheEntryListenerCodec;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createHandler;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createPartitionLostListenerCodec;
-import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -259,7 +261,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
         if (clazz.isInstance(cacheConfig)) {
-            return clazz.cast(cacheConfig.getAsReadOnly());
+            return clazz.cast(new CacheConfigReadOnly<>(cacheConfig));
         }
         throw new IllegalArgumentException("The configuration class " + clazz + " is not supported by this implementation");
     }
@@ -326,7 +328,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<>(this, cacheEntryListenerConfiguration,
                 getSerializationService());
         EventHandler handler = createHandler(adaptor);
-        String regId = getContext().getListenerService().registerListener(createCacheEntryListenerCodec(nameWithPrefix), handler);
+        UUID regId = getContext().getListenerService().registerListener(createCacheEntryListenerCodec(nameWithPrefix), handler);
         if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -343,7 +345,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
+        UUID regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId == null) {
             return;
         }
@@ -375,7 +377,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
-    public String addPartitionLostListener(CachePartitionLostListener listener) {
+    public UUID addPartitionLostListener(CachePartitionLostListener listener) {
         EventHandler<ClientMessage> handler = new ClientCacheProxySupportUtil.ClientCachePartitionLostEventHandler(name,
                 getContext(), listener);
         injectDependencies(listener);
@@ -383,7 +385,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
-    public boolean removePartitionLostListener(String id) {
+    public boolean removePartitionLostListener(UUID id) {
         return getContext().getListenerService().deregisterListener(id);
     }
 

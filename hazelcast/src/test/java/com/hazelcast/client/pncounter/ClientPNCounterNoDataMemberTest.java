@@ -20,7 +20,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.crdt.pncounter.AbstractPNCounterNoDataMemberTest;
+import com.hazelcast.internal.crdt.pncounter.AbstractPNCounterNoDataMemberTest;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.memory;
 
-import com.hazelcast.nio.Disposable;
+import com.hazelcast.internal.nio.Disposable;
 
 /**
  * Contract to allocate and access memory in an abstract address space, which is not necessarily the

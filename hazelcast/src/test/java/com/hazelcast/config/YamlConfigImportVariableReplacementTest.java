@@ -17,10 +17,10 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.RootCauseMatcher;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -55,22 +55,19 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     public void readVariables() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  semaphore:\n"
+                + "  map:\n"
                 + "    ${name}:\n"
-                + "      initial-permits: ${initial.permits}\n"
                 + "      backup-count: ${backupcount.part1}${backupcount.part2}\n";
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");
-        properties.setProperty("initial.permits", "25");
 
         properties.setProperty("backupcount.part1", "0");
         properties.setProperty("backupcount.part2", "6");
         Config config = buildConfig(yaml, properties);
-        SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
-        assertEquals(25, semaphoreConfig.getInitialPermits());
-        assertEquals(6, semaphoreConfig.getBackupCount());
-        assertEquals(0, semaphoreConfig.getAsyncBackupCount());
+        MapConfig mapConfig = config.getMapConfig("s");
+        assertEquals(6, mapConfig.getBackupCount());
+        assertEquals(0, mapConfig.getAsyncBackupCount());
     }
 
     @Override
@@ -348,15 +345,14 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
     @Override
     @Test
-    public void testImportGroupConfigFromClassPath() {
+    public void testImportClusterConfigFromClassPath() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - classpath:test-hazelcast.yaml";
         Config config = buildConfig(yaml, null);
-        GroupConfig groupConfig = config.getGroupConfig();
-        assertEquals("foobar-yaml", groupConfig.getName());
-        assertEquals("dev-pass", groupConfig.getPassword());
+        assertEquals("foobar-yaml", config.getClusterName());
+        assertEquals("dev-pass", config.getClusterPassword());
     }
 
     @Override
@@ -383,12 +379,12 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "          secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1\n"
                 + "          secretKeyAlgorithm: DES\n"
                 + "      - class-name: " + IdentityReplacer.class.getName() + "\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: ${java.version} $ID{dev}\n"
                 + "    password: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}\n";
-        GroupConfig groupConfig = buildConfig(yaml, System.getProperties()).getGroupConfig();
-        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getName());
-        assertEquals("My very secret secret", groupConfig.getPassword());
+        Config config = buildConfig(yaml, System.getProperties());
+        assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
+        assertEquals("My very secret secret", config.getClusterPassword());
     }
 
     @Override
@@ -409,10 +405,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     public void testBadVariableSyntaxIsIgnored() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: ${noSuchPropertyAvailable]";
-        GroupConfig groupConfig = buildConfig(yaml, System.getProperties()).getGroupConfig();
-        assertEquals("${noSuchPropertyAvailable]", groupConfig.getName());
+        Config config = buildConfig(yaml, System.getProperties());
+        assertEquals("${noSuchPropertyAvailable]", config.getClusterName());
     }
 
     @Override
@@ -429,10 +425,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "          p2: \"\"\n"
                 + "          p3: another property\n"
                 + "          p4: <test/>\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}\n";
-        GroupConfig groupConfig = buildConfig(yaml, System.getProperties()).getGroupConfig();
-        assertEquals("a property  another property <test/> $T{p5}", groupConfig.getName());
+        Config config = buildConfig(yaml, System.getProperties());
+        assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
     }
 
     /**
@@ -446,10 +442,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     public void testNoConfigReplacersMissingProperties() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: ${noSuchPropertyAvailable}";
-        GroupConfig groupConfig = buildConfig(yaml, System.getProperties()).getGroupConfig();
-        assertEquals("${noSuchPropertyAvailable}", groupConfig.getName());
+        Config config = buildConfig(yaml, System.getProperties());
+        assertEquals("${noSuchPropertyAvailable}", config.getClusterName());
     }
 
     @Override
@@ -618,11 +614,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
+                + "  cluster:\n"
                 + "    name: name";
 
         Config config = buildConfig(yaml, "config.location", file.getAbsolutePath());
-        assertEquals("name", config.getGroupConfig().getName());
+        assertEquals("name", config.getClusterName());
     }
 
     @Test

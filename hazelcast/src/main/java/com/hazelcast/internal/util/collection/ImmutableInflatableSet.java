@@ -22,7 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
 /**
  * An immutable {@link InflatableSet}.

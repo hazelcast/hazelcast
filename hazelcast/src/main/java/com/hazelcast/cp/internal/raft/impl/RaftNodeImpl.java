@@ -58,12 +58,12 @@ import com.hazelcast.cp.internal.raft.impl.task.QueryTask;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
 import com.hazelcast.cp.internal.raft.impl.task.ReplicateTask;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.RandomPicker;
-import com.hazelcast.util.collection.Long2ObjectHashMap;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.RandomPicker;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -79,7 +79,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATING;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.UPDATING_GROUP_MEMBER_LIST;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Math.min;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -931,7 +931,7 @@ public class RaftNodeImpl implements RaftNode {
     public void toFollower(int term) {
         LeaderState leaderState = state.leaderState();
         if (leaderState != null) {
-            for (Tuple2<Object, SimpleCompletableFuture> t : leaderState.queryState().operations()) {
+            for (BiTuple<Object, SimpleCompletableFuture> t : leaderState.queryState().operations()) {
                 t.element2.complete(new NotLeaderException(groupId, localMember, null));
             }
         }
@@ -976,6 +976,11 @@ public class RaftNodeImpl implements RaftNode {
         }
     }
 
+    private boolean isHeartbeatTimedOut(long timestamp) {
+        long missedHeartbeatThreshold = maxMissedLeaderHeartbeatCount * heartbeatPeriodInMillis;
+        return timestamp + missedHeartbeatThreshold < Clock.currentTimeMillis();
+    }
+
     /**
      * Periodic heartbeat task, which is scheduled on leader only with {@link #heartbeatPeriodInMillis} delay,
      * and sends heartbeat messages (append-entries) if no append-entries request is sent
@@ -989,6 +994,13 @@ public class RaftNodeImpl implements RaftNode {
         @Override
         protected void innerRun() {
             if (state.role() == LEADER) {
+                if (isHeartbeatTimedOut(state.leaderState().majorityAppendRequestAckTimestamp(state.majority()))) {
+                    logger.warning("Demoting to " + FOLLOWER  + " since not received acks from majority recently...");
+                    toFollower(state.term());
+                    invalidateFuturesUntil(state.log().lastLogOrSnapshotIndex(), new StaleAppendRequestException(null));
+                    return;
+                }
+
                 if (lastAppendEntriesTimestamp < Clock.currentTimeMillis() - heartbeatPeriodInMillis) {
                     broadcastAppendRequest();
                 }
@@ -1019,7 +1031,7 @@ public class RaftNodeImpl implements RaftNode {
                 } else if (!raftIntegration.isReachable(leader)) {
                     logger.warning("Current leader " + leader + " is not reachable. Will start new election round...");
                     resetLeaderAndStartElection();
-                } else if (isLeaderHeartbeatTimedOut()) {
+                } else if (isHeartbeatTimedOut(lastAppendEntriesTimestamp)) {
                     // Even though leader endpoint is reachable by raft-integration,
                     // leader itself may be crashed and another member may be restarted on the same endpoint.
                     logger.warning("Current leader " + leader + "'s heartbeats are timed-out. Will start new election round...");
@@ -1031,11 +1043,6 @@ public class RaftNodeImpl implements RaftNode {
             } finally {
                 scheduleLeaderFailureDetection();
             }
-        }
-
-        private boolean isLeaderHeartbeatTimedOut() {
-            long missedHeartbeatThreshold = maxMissedLeaderHeartbeatCount * heartbeatPeriodInMillis;
-            return lastAppendEntriesTimestamp + missedHeartbeatThreshold < Clock.currentTimeMillis();
         }
 
         final void resetLeaderAndStartElection() {

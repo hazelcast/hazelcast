@@ -17,10 +17,8 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -34,7 +32,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -90,27 +87,12 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public SemaphoreConfig findSemaphoreConfig(String name) {
-        return null;
-    }
-
-    @Override
     public RingbufferConfig findRingbufferConfig(String name) {
         return null;
     }
 
     @Override
     public AtomicLongConfig findAtomicLongConfig(String name) {
-        return null;
-    }
-
-    @Override
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
-        return null;
-    }
-
-    @Override
-    public CountDownLatchConfig findCountDownLatchConfig(String name) {
         return null;
     }
 
@@ -200,16 +182,6 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
-        return emptyMap();
-    }
-
-    @Override
     public Map<String, TopicConfig> getTopicConfigs() {
         return emptyMap();
     }
@@ -241,11 +213,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, PNCounterConfig> getPNCounterConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public Map<String, SemaphoreConfig> getSemaphoreConfigs() {
         return emptyMap();
     }
 

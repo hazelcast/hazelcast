@@ -22,6 +22,7 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -80,6 +81,7 @@ public class ConflictingConfigTest {
     }
 
     @Test(expected = IllegalStateException.class)
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/15576")
     public void testAwsEnabled_and_DiscoverySPIEnabled() {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().getAwsConfig().setEnabled(true).setProperty("access-key", "12345").setSecretKey("56789");

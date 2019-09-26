@@ -200,7 +200,7 @@ public class ManagementCenterServiceIntegrationTest {
 
     private static Config getManagementCenterConfig() {
         Config config = new Config();
-        config.getGroupConfig().setName(clusterName);
+        config.setClusterName(clusterName);
         config.getManagementCenterConfig().setEnabled(true);
         config.getManagementCenterConfig().setUrl(format("http://localhost:%d%s/", mancenterMock.getListeningPort(), "/mancen"));
         return config;

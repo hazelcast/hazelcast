@@ -40,6 +40,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
@@ -111,7 +112,7 @@ public class ClientExecutorServiceExecuteTest {
         String mapName = randomString();
 
         Member member = server1.getCluster().getLocalMember();
-        final String targetUuid = member.getUuid();
+        final UUID targetUuid = member.getUuid();
         String key = generateKeyOwnedBy(server1);
 
         service.executeOnKeyOwner(new MapPutRunnable(mapName), key);
@@ -133,7 +134,7 @@ public class ClientExecutorServiceExecuteTest {
         String mapName = randomString();
 
         Member member = server1.getCluster().getLocalMember();
-        final String targetUuid = member.getUuid();
+        final UUID targetUuid = member.getUuid();
 
         service.executeOnMember(new MapPutRunnable(mapName), member);
 

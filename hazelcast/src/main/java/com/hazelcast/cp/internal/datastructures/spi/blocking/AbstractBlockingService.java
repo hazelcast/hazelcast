@@ -29,17 +29,17 @@ import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.session.SessionAccessor;
 import com.hazelcast.cp.internal.session.SessionAwareService;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
-import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.collection.Long2ObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,7 +56,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -171,10 +171,10 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     public final void restoreSnapshot(CPGroupId groupId, long commitIndex, RR registry) {
         RR prev = registries.put(registry.getGroupId(), registry);
         // do not shift the already existing wait timeouts...
-        Map<Tuple2<String, UUID>, Tuple2<Long, Long>> existingWaitTimeouts =
+        Map<BiTuple<String, UUID>, BiTuple<Long, Long>> existingWaitTimeouts =
                 prev != null ? prev.getWaitTimeouts() : Collections.emptyMap();
-        Map<Tuple2<String, UUID>, Long> newWaitKeys = registry.overwriteWaitTimeouts(existingWaitTimeouts);
-        for (Entry<Tuple2<String, UUID>, Long> e : newWaitKeys.entrySet()) {
+        Map<BiTuple<String, UUID>, Long> newWaitKeys = registry.overwriteWaitTimeouts(existingWaitTimeouts);
+        for (Entry<BiTuple<String, UUID>, Long> e : newWaitKeys.entrySet()) {
             scheduleTimeout(groupId, e.getKey().element1, e.getKey().element2, e.getValue());
         }
         registry.onSnapshotRestore();
@@ -235,7 +235,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         }
     }
 
-    public final void expireWaitKeys(CPGroupId groupId, Collection<Tuple2<String, UUID>> keys) {
+    public final void expireWaitKeys(CPGroupId groupId, Collection<BiTuple<String, UUID>> keys) {
         // no need to validate the session. if the session is expired, the corresponding wait key is gone already
         ResourceRegistry<W, R> registry = registries.get(groupId);
         if (registry == null) {
@@ -244,7 +244,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         }
 
         List<W> expired = new ArrayList<>();
-        for (Tuple2<String, UUID> key : keys) {
+        for (BiTuple<String, UUID> key : keys) {
             registry.expireWaitKey(key.element1, key.element2, expired);
         }
 
@@ -261,7 +261,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         return registries.get(groupId);
     }
 
-    public Collection<Tuple2<Address, Long>> getLiveOperations(CPGroupId groupId) {
+    public Collection<BiTuple<Address, Long>> getLiveOperations(CPGroupId groupId) {
         RR registry = registries.get(groupId);
         if (registry == null) {
             return Collections.emptySet();
@@ -282,7 +282,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     protected final void scheduleTimeout(CPGroupId groupId, String name, UUID invocationUid, long timeoutMs) {
         if (timeoutMs > 0 && timeoutMs <= WAIT_TIMEOUT_TASK_UPPER_BOUND_MILLIS) {
             ExecutionService executionService = nodeEngine.getExecutionService();
-            executionService.schedule(new ExpireWaitKeysTask(groupId, Tuple2.of(name, invocationUid)), timeoutMs, MILLISECONDS);
+            executionService.schedule(new ExpireWaitKeysTask(groupId, BiTuple.of(name, invocationUid)), timeoutMs, MILLISECONDS);
         }
     }
 
@@ -324,7 +324,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         }
     }
 
-    private void locallyInvokeExpireWaitKeysOp(CPGroupId groupId, Collection<Tuple2<String, UUID>> keys) {
+    private void tryReplicateExpiredWaitKeys(CPGroupId groupId, Collection<BiTuple<String, UUID>> keys) {
         try {
             ExpireWaitKeysOp op = new ExpireWaitKeysOp(serviceName(), keys);
             if (raftService.isCpSubsystemEnabled()) {
@@ -348,33 +348,33 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
     private class ExpireWaitKeysTask implements Runnable {
         final CPGroupId groupId;
-        final Collection<Tuple2<String, UUID>> keys;
+        final Collection<BiTuple<String, UUID>> keys;
 
-        ExpireWaitKeysTask(CPGroupId groupId, Tuple2<String, UUID> key) {
+        ExpireWaitKeysTask(CPGroupId groupId, BiTuple<String, UUID> key) {
             this.groupId = groupId;
             this.keys = Collections.singleton(key);
         }
 
         @Override
         public void run() {
-            locallyInvokeExpireWaitKeysOp(groupId, keys);
+            tryReplicateExpiredWaitKeys(groupId, keys);
         }
     }
 
     private class ExpireWaitKeysPeriodicTask implements Runnable {
         @Override
         public void run() {
-            for (Entry<CPGroupId, Collection<Tuple2<String, UUID>>> e : getWaitKeysToExpire().entrySet()) {
-                locallyInvokeExpireWaitKeysOp(e.getKey(), e.getValue());
+            for (Entry<CPGroupId, Collection<BiTuple<String, UUID>>> e : getWaitKeysToExpire().entrySet()) {
+                tryReplicateExpiredWaitKeys(e.getKey(), e.getValue());
             }
         }
 
         // queried locally
-        private Map<CPGroupId, Collection<Tuple2<String, UUID>>> getWaitKeysToExpire() {
-            Map<CPGroupId, Collection<Tuple2<String, UUID>>> timeouts = new HashMap<>();
+        private Map<CPGroupId, Collection<BiTuple<String, UUID>>> getWaitKeysToExpire() {
+            Map<CPGroupId, Collection<BiTuple<String, UUID>>> timeouts = new HashMap<>();
             long now = Clock.currentTimeMillis();
             for (ResourceRegistry<W, R> registry : registries.values()) {
-                Collection<Tuple2<String, UUID>> t = registry.getWaitKeysToExpire(now);
+                Collection<BiTuple<String, UUID>> t = registry.getWaitKeysToExpire(now);
                 if (t.size() > 0) {
                     timeouts.put(registry.getGroupId(), t);
                 }
@@ -394,7 +394,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         assert !raftService.isCpSubsystemEnabled();
         return getGroupIdSet().stream()
                 .filter(groupId -> raftService.getCPGroupPartitionId(groupId) == partitionId)
-                .map(groupId -> Tuple2.of(groupId, takeSnapshot(groupId, 0L)))
+                .map(groupId -> BiTuple.of(groupId, takeSnapshot(groupId, 0L)))
                 .collect(Collectors.toMap(tuple -> tuple.element1, tuple -> tuple.element2));
     }
 

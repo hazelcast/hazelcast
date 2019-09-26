@@ -22,8 +22,8 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.security.Permission;
 import java.util.concurrent.Callable;
@@ -41,7 +41,7 @@ public class AddPartitionListenerMessageTask
         internalPartitionService.firstArrangement();
         final ClientPartitionListenerService service = clientEngine.getPartitionListenerService();
         service.registerPartitionListener(endpoint, clientMessage.getCorrelationId());
-        endpoint.addDestroyAction(UuidUtil.newUnsecureUUID().toString(), new Callable<Boolean>() {
+        endpoint.addDestroyAction(UuidUtil.newUnsecureUUID(), new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 service.deregisterPartitionListener(endpoint);

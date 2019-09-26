@@ -23,6 +23,7 @@ import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.topic.ReliableMessageListener;
 
+import java.util.UUID;
 import java.util.concurrent.Executor;
 
 public class ReliableMessageRunner<E> extends MessageRunner<E> {
@@ -30,7 +31,7 @@ public class ReliableMessageRunner<E> extends MessageRunner<E> {
     private final ClusterService clusterService;
     private final ReliableTopicProxy<E> proxy;
 
-    ReliableMessageRunner(String id, ReliableMessageListener<E> listener,
+    ReliableMessageRunner(UUID id, ReliableMessageListener<E> listener,
                           SerializationService serializationService,
                           Executor executor, ILogger logger, ClusterService clusterService,
                           ReliableTopicProxy<E> proxy) {

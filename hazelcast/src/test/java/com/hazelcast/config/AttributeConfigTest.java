@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.AttributeConfigReadOnly;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -124,7 +125,7 @@ public class AttributeConfigTest {
     public void validReadOnly() {
         AttributeConfig config = new AttributeConfig("iq", "com.test.IqExtractor");
 
-        AttributeConfigReadOnly readOnlyConfig = config.getAsReadOnly();
+        AttributeConfigReadOnly readOnlyConfig = new AttributeConfigReadOnly(config);
 
         assertThat(readOnlyConfig, instanceOf(AttributeConfigReadOnly.class));
         assertEquals("iq", readOnlyConfig.getName());

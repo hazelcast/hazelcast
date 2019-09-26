@@ -19,12 +19,13 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 
@@ -52,7 +53,7 @@ public class AddPartitionLostListenerMessageTask
             }
         };
 
-        String registrationId;
+        UUID registrationId;
         if (parameters.localOnly) {
             registrationId = partitionService.addLocalPartitionLostListener(listener);
         } else {
@@ -70,7 +71,7 @@ public class AddPartitionLostListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientAddPartitionLostListenerCodec.encodeResponse((String) response);
+        return ClientAddPartitionLostListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

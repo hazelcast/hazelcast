@@ -30,7 +30,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperati
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -41,7 +41,7 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -50,11 +50,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCollectionConfig;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.singleton;
 
 public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S>
@@ -221,7 +222,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public @Nonnull
-    String addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
+    UUID addItemListener(@Nonnull ItemListener<E> listener, boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
         final EventService eventService = getNodeEngine().getEventService();
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
@@ -229,7 +230,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         return registration.getId();
     }
 
-    public boolean removeItemListener(@Nonnull String registrationId) {
+    public boolean removeItemListener(@Nonnull UUID registrationId) {
         EventService eventService = getNodeEngine().getEventService();
         return eventService.deregisterListener(getServiceName(), name, registrationId);
     }

@@ -27,13 +27,14 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         extends AbstractCallableMessageTask<Parameter> implements ListenerMessageTask {
@@ -50,7 +51,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         String name = getDistributedObjectName();
         EventFilter eventFilter = getEventFilter();
-        String registrationId;
+        UUID registrationId;
         if (isLocalOnly()) {
             registrationId = mapServiceContext.addLocalEventListener(listener, eventFilter, name);
         } else {
@@ -111,7 +112,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                 return;
             }
             EntryEventType type = event.getEventType();
-            String uuid = event.getMember().getUuid();
+            UUID uuid = event.getMember().getUuid();
             int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
             sendClientMessage(null, encodeEvent(null,
                     null, null, null, type.getType(), uuid, numberOfEntriesAffected));
@@ -120,5 +121,5 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
 
     protected abstract ClientMessage encodeEvent(Data keyData, Data newValueData,
                                                  Data oldValueData, Data meringValueData,
-                                                 int type, String uuid, int numberOfEntriesAffected);
+                                                 int type, UUID uuid, int numberOfEntriesAffected);
 }

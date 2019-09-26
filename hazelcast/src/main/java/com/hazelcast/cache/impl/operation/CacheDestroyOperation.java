@@ -29,13 +29,14 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * <p>
  * Destroys the cache on the cluster or on a single node by calling
- * {@link ICacheService#deleteCache(String, String, boolean)}.
+ * {@link ICacheService#deleteCache(String, UUID, boolean)}.
  * </p>
- * @see ICacheService#deleteCache(String, String, boolean)
+ * @see ICacheService#deleteCache(String, UUID, boolean)
  */
 public class CacheDestroyOperation
         extends AbstractNamedOperation
@@ -64,7 +65,7 @@ public class CacheDestroyOperation
         }
     }
 
-    private void destroyCacheOnAllMembers(String name, String callerUuid) {
+    private void destroyCacheOnAllMembers(String name, UUID callerUuid) {
         NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Member> members = nodeEngine.getClusterService().getMembers();

@@ -51,6 +51,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
@@ -68,8 +69,8 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     public ExpectedException exception = ExpectedException.none();
 
     private Config config = new Config();
-    private String groupName = config.getGroupConfig().getName();
-    private String groupPassword = config.getGroupConfig().getPassword();
+    private String clusterName = config.getClusterName();
+    private String groupPassword = config.getClusterPassword();
 
     @Before
     public void setup() {
@@ -157,9 +158,9 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         for (JsonValue val : (JsonArray) json.get("members")) {
             JsonObject mem = (JsonObject) val;
-            cpMember1Found |= cpMember1.getUuid().equals(mem.getString("uuid", ""));
-            cpMember2Found |= cpMember2.getUuid().equals(mem.getString("uuid", ""));
-            cpMember3Found |= cpMember3.getUuid().equals(mem.getString("uuid", ""));
+            cpMember1Found |= cpMember1.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
+            cpMember2Found |= cpMember2.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
+            cpMember3Found |= cpMember3.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
         }
 
         assertTrue(cpMember1Found);
@@ -198,9 +199,9 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         for (JsonValue val : (JsonArray) json.get("members")) {
             JsonObject mem = (JsonObject) val;
-            cpMember1Found |= cpMember1.getUuid().equals(mem.getString("uuid", ""));
-            cpMember2Found |= cpMember2.getUuid().equals(mem.getString("uuid", ""));
-            cpMember3Found |= cpMember3.getUuid().equals(mem.getString("uuid", ""));
+            cpMember1Found |= cpMember1.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
+            cpMember2Found |= cpMember2.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
+            cpMember3Found |= cpMember3.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
         }
 
         assertTrue(cpMember1Found);
@@ -239,9 +240,9 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         for (JsonValue val : (JsonArray) json.get("members")) {
             JsonObject mem = (JsonObject) val;
-            cpMember1Found |= cpMember1.getUuid().equals(mem.getString("uuid", ""));
-            cpMember2Found |= cpMember2.getUuid().equals(mem.getString("uuid", ""));
-            cpMember3Found |= cpMember3.getUuid().equals(mem.getString("uuid", ""));
+            cpMember1Found |= cpMember1.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
+            cpMember2Found |= cpMember2.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
+            cpMember3Found |= cpMember3.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
         }
 
         assertTrue(cpMember1Found);
@@ -285,9 +286,9 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         CPMember cpMember2 = instance2.getCPSubsystem().getLocalCPMember();
         CPMember cpMember3 = instance3.getCPSubsystem().getLocalCPMember();
 
-        assertEquals(cpMember1.getUuid(), ((JsonObject) Json.parse(response1.response)).getString("uuid", ""));
-        assertEquals(cpMember2.getUuid(), ((JsonObject) Json.parse(response2.response)).getString("uuid", ""));
-        assertEquals(cpMember3.getUuid(), ((JsonObject) Json.parse(response3.response)).getString("uuid", ""));
+        assertEquals(cpMember1.getUuid(), UUID.fromString(((JsonObject) Json.parse(response1.response)).getString("uuid", "")));
+        assertEquals(cpMember2.getUuid(), UUID.fromString(((JsonObject) Json.parse(response2.response)).getString("uuid", "")));
+        assertEquals(cpMember3.getUuid(), UUID.fromString(((JsonObject) Json.parse(response3.response)).getString("uuid", "")));
     }
 
     @Test
@@ -312,9 +313,9 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         for (JsonValue val : arr) {
             JsonObject mem = (JsonObject) val;
-            cpMember1Found |= cpMember1.getUuid().equals(mem.getString("uuid", ""));
-            cpMember2Found |= cpMember2.getUuid().equals(mem.getString("uuid", ""));
-            cpMember3Found |= cpMember3.getUuid().equals(mem.getString("uuid", ""));
+            cpMember1Found |= cpMember1.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
+            cpMember2Found |= cpMember2.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
+            cpMember3Found |= cpMember3.getUuid().equals(UUID.fromString(mem.getString("uuid", "")));
         }
 
         assertTrue(cpMember1Found);
@@ -330,7 +331,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         IAtomicLong long1 = instance1.getCPSubsystem().getAtomicLong("long1");
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup(DEFAULT_GROUP_NAME, groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup(DEFAULT_GROUP_NAME, clusterName, groupPassword);
 
         assertEquals(200, response.responseCode);
 
@@ -358,7 +359,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup(METADATA_CP_GROUP_NAME, groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup(METADATA_CP_GROUP_NAME, clusterName, groupPassword);
 
         assertEquals(400, response.responseCode);
     }
@@ -369,7 +370,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup("custom", groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).forceDestroyCPGroup("custom", clusterName, groupPassword);
 
         assertEquals(400, response.responseCode);
     }
@@ -387,7 +388,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, instance1, instance2);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(crashedCPMember.getUuid(), groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(crashedCPMember.getUuid().toString(), clusterName, groupPassword);
 
         assertEquals(200, response.responseCode);
     }
@@ -405,7 +406,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, instance1, instance2);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(crashedCPMember.getUuid(), "x", "x");
+        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(crashedCPMember.getUuid().toString(), "x", "x");
 
         assertEquals(403, response.responseCode);
     }
@@ -416,7 +417,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember("invalid_uid", groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember("invalid_uid", clusterName, groupPassword);
 
         assertEquals(400, response.responseCode);
     }
@@ -437,7 +438,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         CPMember crashedCPMember = instance2.getCPSubsystem().getLocalCPMember();
         instance2.getLifecycleService().terminate();
 
-        ConnectionResponse response = new HTTPCommunicator(instance3).removeCPMember(crashedCPMember.getUuid(), groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance3).removeCPMember(crashedCPMember.getUuid().toString(), clusterName, groupPassword);
 
         assertEquals(200, response.responseCode);
     }
@@ -454,7 +455,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                ConnectionResponse response = new HTTPCommunicator(instance4).promoteCPMember(groupName, groupPassword);
+                ConnectionResponse response = new HTTPCommunicator(instance4).promoteCPMember(clusterName, groupPassword);
                 assertEquals(200, response.responseCode);
             }
         });
@@ -487,7 +488,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         waitUntilCPDiscoveryCompleted(instance1);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).promoteCPMember(groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).promoteCPMember(clusterName, groupPassword);
 
         assertEquals(200, response.responseCode);
 
@@ -510,7 +511,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         sleepAtLeastMillis(10);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).restart(groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).restart(clusterName, groupPassword);
         assertEquals(200, response.responseCode);
 
         instance1.getCPSubsystem().getAtomicLong("long1").set(5);
@@ -579,7 +580,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         long sessionId = sessions1.iterator().next().id();
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, sessionId, groupName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, sessionId, clusterName, groupPassword);
 
         assertEquals(200, response.responseCode);
 
@@ -629,7 +630,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         instance1.getCPSubsystem().getAtomicLong("long1").set(5);
 
-        ConnectionResponse response1 = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, 1, groupName, groupPassword);
+        ConnectionResponse response1 = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, 1, clusterName, groupPassword);
 
         assertEquals(400, response1.responseCode);
     }
@@ -640,7 +641,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response1 = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, 1, groupName, groupPassword);
+        ConnectionResponse response1 = new HTTPCommunicator(instance1).forceCloseCPSession(DEFAULT_GROUP_NAME, 1, clusterName, groupPassword);
 
         assertEquals(400, response1.responseCode);
     }
