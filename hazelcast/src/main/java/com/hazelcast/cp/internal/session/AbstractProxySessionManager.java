@@ -315,7 +315,6 @@ public abstract class AbstractProxySessionManager {
                 if (session.isInUse()) {
                     InternalCompletableFuture<Object> f = heartbeat(groupId, session.id);
                     f.exceptionally(t -> {
-                        // todo need to peel here???
                         Throwable cause = peel(t);
                         if (cause instanceof SessionExpiredException || cause instanceof CPGroupDestroyedException) {
                             invalidateSession(groupId, session.id);

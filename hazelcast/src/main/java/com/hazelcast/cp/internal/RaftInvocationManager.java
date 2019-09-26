@@ -134,7 +134,6 @@ public class RaftInvocationManager {
                 }
                 invokeCreateRaftGroup(groupName, groupSize, groupEndpoints, resultFuture);
             } else {
-                // todo wrapping ExecutionException seemed unnecessary here, needs verification
                 resultFuture.completeExceptionally(t);
             }
         });
