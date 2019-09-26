@@ -235,6 +235,7 @@ public class CacheConfigHolder {
                     cachePartitionLostListenerConfigs.size());
             cachePartitionLostListenerConfigs.forEach(listenerConfigHolder -> partitionLostListenerConfigs
                     .add(listenerConfigHolder.asListenerConfig(serializationService)));
+            config.setPartitionLostListenerConfigs(partitionLostListenerConfigs);
         }
 
         return config;
