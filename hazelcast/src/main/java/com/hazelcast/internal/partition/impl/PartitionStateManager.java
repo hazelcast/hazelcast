@@ -76,7 +76,7 @@ public class PartitionStateManager {
         this.partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
 
-        PartitionReplicaInterceptor interceptor = new DefaultPartitionReplicaInterceptor(node, partitionService);
+        PartitionReplicaInterceptor interceptor = new DefaultPartitionReplicaInterceptor(partitionService);
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (int i = 0; i < partitionCount; i++) {
             this.partitions[i] = new InternalPartitionImpl(i, interceptor, localReplica);

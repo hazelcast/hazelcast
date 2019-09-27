@@ -37,7 +37,7 @@ class PublishPartitionRuntimeStateTask implements Runnable {
 
     @Override
     public void run() {
-        if (node.isMaster()) {
+        if (partitionService.isLocalMemberMaster()) {
             MigrationManager migrationManager = partitionService.getMigrationManager();
             boolean migrationAllowed = migrationManager.areMigrationTasksAllowed()
                     && !partitionService.isFetchMostRecentPartitionTableTaskRequired();
