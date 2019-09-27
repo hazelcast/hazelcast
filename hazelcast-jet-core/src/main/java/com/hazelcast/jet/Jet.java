@@ -18,12 +18,14 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceFactory;
@@ -48,14 +50,14 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.core.JetProperties.JET_SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetClientConfig;
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetJetConfig;
 import static com.hazelcast.jet.impl.metrics.JetMetricsService.applyMetricsConfig;
-import static com.hazelcast.jet.core.JetProperties.JET_SHUTDOWNHOOK_ENABLED;
-import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 
 /**
@@ -114,6 +116,41 @@ public final class Jet {
         Preconditions.checkNotNull(config, "config");
         return getJetClientInstance(HazelcastClient.newHazelcastClient(config));
     }
+
+    /**
+     * Creates a Jet client with cluster failover capability. Client will try to connect
+     * to alternative clusters according to the supplied {@link ClientFailoverConfig}
+     * when it disconnects from a cluster.
+     */
+    @Nonnull
+    public static JetInstance newJetFailoverClient(@Nonnull ClientFailoverConfig config) {
+        Preconditions.checkNotNull(config, "config");
+        return getJetClientInstance(HazelcastClient.newHazelcastFailoverClient(config));
+    }
+
+    /**
+     * Creates a Jet client with cluster failover capability. Client will try to connect
+     * to alternative clusters according to resolved {@link ClientFailoverConfig} when
+     * it disconnects from a cluster.
+     * <p>
+     * The failover configuration is loaded using the following resolution mechanism:
+     * <ol>
+     * <li>System property {@code hazelcast.client.failover.config} is checked. If found,
+     * and begins with {@code classpath:}, then a classpath resource is loaded, otherwise
+     * it will be loaded from the file system. The configuration can be either an XML or a YAML
+     * file, distinguished by the suffix of the provided file</li>
+     * <li>{@code hazelcast-client-failover.xml} is checked on in the working dir</li>
+     * <li>{@code hazelcast-client-failover.xml} is checked on the classpath</li>
+     * <li>{@code hazelcast-client-failover.yaml} is checked on the working dir</li>
+     * <li>{@code hazelcast-client-failover.yaml} is checked on the classpath</li>
+     * <li>If none are available, then a {@link HazelcastException} is thrown</li>
+     * </ol>
+     */
+    @Nonnull
+    public static JetInstance newJetFailoverClient() {
+        return getJetClientInstance(HazelcastClient.newHazelcastFailoverClient());
+    }
+
 
     /**
      * Shuts down all running Jet client and member instances.
