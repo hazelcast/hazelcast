@@ -481,7 +481,7 @@ public class TcpIpEndpointManager
         }
 
         void onConnectionClose(TcpIpConnection connection) {
-            bytesTransceivedOnClosed.inc(connection.getChannel().bytesRead());
+            bytesTransceivedOnClosed.inc(channelBytesSupplier.get(connection.getChannel()));
         }
 
         long calculate() {
