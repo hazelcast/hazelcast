@@ -17,7 +17,9 @@
 
 package com.hazelcast.instance.impl;
 
-import java.util.Random;
+import com.hazelcast.internal.util.RandomPicker;
+
+import java.util.Arrays;
 
 /**
  * Java port of the Moby Project random name generator (https://github.com/moby/moby).
@@ -165,10 +167,6 @@ final class MobyNames {
             // Linda Brown Buck - American biologist and Nobel laureate best known for her genetic and molecular analyses of
             // the mechanisms of smell. https://en.wikipedia.org/wiki/Linda_B._Buck
             "buck",
-
-            // Dame Susan Jocelyn Bell Burnell - Northern Irish astrophysicist who discovered radio pulsars and was the first
-            // to analyse them. https://en.wikipedia.org/wiki/Jocelyn_Bell_Burnell
-            "burnell",
 
             // Annie Jump Cannon - pioneering female astronomer who classified hundreds of thousands of stars and created the
             // system we use to understand stars today. https://en.wikipedia.org/wiki/Annie_Jump_Cannon
@@ -994,15 +992,28 @@ final class MobyNames {
             // .org/wiki/Nikolay_Yegorovich_Zhukovsky
             "zhukovsky"};
 
+    static {
+        Arrays.sort(LEFT, MobyNames::compareRandomly);
+        Arrays.sort(RIGHT, MobyNames::compareRandomly);
+    }
+
     private MobyNames() {
     }
 
     /**
-     * GetRandomName generates a random name from the list of adjectives and surnames in this package formatted as
+     * Returns a name from the list of adjectives and surnames in this package formatted as
      * "adjective_surname". For example 'focused_turing'.
+     * @param number in the sequence of all possible names. The sequence is created randomly on class initialization.
+     * @return name in Moby style.
      */
-    static String getRandomName() {
-        Random random = new Random();
-        return String.format(NAME_FORMAT, LEFT[random.nextInt(LEFT.length)], RIGHT[random.nextInt(RIGHT.length)]);
+    static String getRandomName(int number) {
+        int combinationIdx = number % (LEFT.length * RIGHT.length);
+        int rightIdx = combinationIdx / LEFT.length;
+        int leftIdx = combinationIdx % LEFT.length;
+        return String.format(NAME_FORMAT, LEFT[leftIdx], RIGHT[rightIdx]);
+    }
+
+    private static int compareRandomly(String a, String b) {
+        return RandomPicker.getInt(-1, 1);
     }
 }
