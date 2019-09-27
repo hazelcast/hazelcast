@@ -42,7 +42,7 @@ import java.util.concurrent.Future;
  */
 public class TransactionLog {
 
-    private final Map<Object, TransactionLogRecord> recordMap = new HashMap<>();
+    private final Map<Object, TransactionLogRecord> recordMap = new HashMap<Object, TransactionLogRecord>();
 
     public TransactionLog() {
     }
