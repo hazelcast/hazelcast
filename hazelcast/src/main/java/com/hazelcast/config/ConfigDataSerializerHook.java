@@ -99,10 +99,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int DISCOVERY_CONFIG = 57;
     public static final int DISCOVERY_STRATEGY_CONFIG = 58;
 
-    // Lock will be removed soon...
-    public static final int LOCK_CONFIG = 60;
-
-    private static final int LEN = LOCK_CONFIG + 1;
+    private static final int LEN = DISCOVERY_STRATEGY_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -141,7 +138,6 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[ITEM_LISTENER_CONFIG] = arg -> new ItemListenerConfig();
         constructors[QUEUE_STORE_CONFIG] = arg -> new QueueStoreConfig();
         constructors[QUEUE_CONFIG] = arg -> new QueueConfig();
-        constructors[LOCK_CONFIG] = arg -> new LockConfig();
         constructors[LIST_CONFIG] = arg -> new ListConfig();
         constructors[SET_CONFIG] = arg -> new SetConfig();
         constructors[EXECUTOR_CONFIG] = arg -> new ExecutorConfig();

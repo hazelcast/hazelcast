@@ -17,12 +17,12 @@
 package com.hazelcast.cp.internal.datastructures.lock.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPFencedLockTryLockCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockTryLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.TryLockOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Client message task for {@link TryLockOp}
  */
-public class TryLockMessageTask extends AbstractMessageTask<CPFencedLockTryLockCodec.RequestParameters>
+public class TryLockMessageTask extends AbstractMessageTask<FencedLockTryLockCodec.RequestParameters>
         implements ExecutionCallback<Long> {
 
     public TryLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -51,18 +51,18 @@ public class TryLockMessageTask extends AbstractMessageTask<CPFencedLockTryLockC
     }
 
     @Override
-    protected CPFencedLockTryLockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPFencedLockTryLockCodec.decodeRequest(clientMessage);
+    protected FencedLockTryLockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return FencedLockTryLockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPFencedLockTryLockCodec.encodeResponse((Long) response);
+        return FencedLockTryLockCodec.encodeResponse((Long) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftLockService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     @Override

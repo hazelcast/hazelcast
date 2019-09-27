@@ -251,15 +251,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleLock(Node node) {
-        for (Node lockNode : childElements(node)) {
-            LockConfig lockConfig = new LockConfig();
-            lockConfig.setName(lockNode.getNodeName());
-            handleLockNode(lockNode, lockConfig);
-        }
-    }
-
-    @Override
     protected void handleReliableTopic(Node node) {
         for (Node topicNode : childElements(node)) {
             ReliableTopicConfig topicConfig = new ReliableTopicConfig();

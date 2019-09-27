@@ -168,11 +168,10 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPendingInvocationAndWaitEntryCancelled_whenDisconnected_withLock() {
+    public void testPendingInvocationAndWaitEntryCancelled_whenDisconnected_withQueue() {
         Config config = new Config();
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
         final String name = randomName();
-        server.getLock(name).lock();
 
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
@@ -180,7 +179,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 try {
-                    client.getLock(name).lock();
+                    client.getQueue(name).take();
                 } catch (Throwable ignored) {
                 }
             }

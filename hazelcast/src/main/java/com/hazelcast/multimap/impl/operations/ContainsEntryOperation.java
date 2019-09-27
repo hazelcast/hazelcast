@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockWaitNotifyKey;
+import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;

@@ -22,7 +22,6 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -91,11 +90,6 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public LockConfig findLockConfig(String name) {
-        return null;
-    }
-
-    @Override
     public ListConfig findListConfig(String name) {
         return null;
     }
@@ -127,11 +121,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, CacheSimpleConfig> getCacheSimpleConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public Map<String, LockConfig> getLockConfigs() {
         return emptyMap();
     }
 

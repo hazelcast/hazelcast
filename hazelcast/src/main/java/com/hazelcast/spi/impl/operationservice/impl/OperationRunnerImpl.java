@@ -25,6 +25,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.locksupport.operations.IsLockedOperation;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -196,6 +197,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
             ensureNoPartitionProblems(op);
 
+            if (op instanceof IsLockedOperation) {
+                System.err.println();
+            }
             ensureNoSplitBrain(op);
 
             op.beforeRun();

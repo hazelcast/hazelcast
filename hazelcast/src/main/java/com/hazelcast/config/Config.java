@@ -23,7 +23,6 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
@@ -31,7 +30,6 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
-import com.hazelcast.internal.config.LockConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.internal.config.PNCounterConfigReadOnly;
@@ -118,8 +116,6 @@ public class Config {
     private final Map<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<String, ReliableTopicConfig>();
 
     private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
-
-    private final Map<String, LockConfig> lockConfigs = new ConcurrentHashMap<String, LockConfig>();
 
     private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
 
@@ -759,106 +755,6 @@ public class Config {
         this.queueConfigs.clear();
         this.queueConfigs.putAll(queueConfigs);
         for (Entry<String, QueueConfig> entry : queueConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Returns a read-only {@link ILock} configuration for
-     * the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the lock config
-     * @return the lock configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     * @see EvictionConfig#setSize(int)
-     */
-    public LockConfig findLockConfig(String name) {
-        name = getBaseName(name);
-        final LockConfig config = lookupByPattern(configPatternMatcher, lockConfigs, name);
-        if (config != null) {
-            return new LockConfigReadOnly(config);
-        }
-        return new LockConfigReadOnly(getLockConfig("default"));
-    }
-
-    /**
-     * Returns the LockConfig for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking {@link #addLockConfig(LockConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the lock config
-     * @return the lock configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public LockConfig getLockConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, lockConfigs, name, LockConfig.class);
-    }
-
-    /**
-     * Adds the lock configuration. The configuration is saved under the config
-     * name, which may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param lockConfig the lock configuration
-     * @return this config instance
-     */
-    public Config addLockConfig(LockConfig lockConfig) {
-        lockConfigs.put(lockConfig.getName(), lockConfig);
-        return this;
-    }
-
-    /**
-     * Returns the map of {@link ILock} configurations,
-     * mapped by config name. The config name may be a pattern with which the
-     * configuration was initially obtained.
-     *
-     * @return the lock configurations mapped by config name
-     */
-    public Map<String, LockConfig> getLockConfigs() {
-        return lockConfigs;
-    }
-
-    /**
-     * Sets the map of {@link ILock} configurations,
-     * mapped by config name. The config name may be a pattern with which the
-     * configuration will be obtained in the future.
-     *
-     * @param lockConfigs the ILock configuration map to set
-     * @return this config instance
-     */
-    public Config setLockConfigs(Map<String, LockConfig> lockConfigs) {
-        this.lockConfigs.clear();
-        this.lockConfigs.putAll(lockConfigs);
-        for (Entry<String, LockConfig> entry : lockConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

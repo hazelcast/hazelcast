@@ -953,7 +953,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
-        Lock lock = hazelcast.getLock(key);
+        Lock lock = hazelcast.getCPSubsystem().getLock(key);
         if (lockStr.equalsIgnoreCase("lock")) {
             lock.lock();
             println("true");

@@ -16,9 +16,9 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreContainer;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.locksupport.LockStoreContainer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -385,7 +385,7 @@ public class MapLockTest extends HazelcastTestSupport {
         map.destroy();
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
-        LockServiceImpl lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        LockSupportServiceImpl lockService = nodeEngine.getService(LockSupportService.SERVICE_NAME);
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             LockStoreContainer lockContainer = lockService.getLockContainer(i);

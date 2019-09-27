@@ -54,7 +54,6 @@
                 <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="lock" type="lock" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
@@ -1115,28 +1114,6 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the reliable topic.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string"/>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
-    <xs:complexType name="lock">
-        <xs:all>
-            <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                        You should set the split-brain-protection-ref's value as the split brain protection's name.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="name" use="optional" default="default">
-            <xs:annotation>
-                <xs:documentation>
-                    Name of the lock.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>

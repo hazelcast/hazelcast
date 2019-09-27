@@ -113,9 +113,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void readSetConfig();
 
     @Test
-    public abstract void readLockConfig();
-
-    @Test
     public abstract void readReliableTopic();
 
     @Test

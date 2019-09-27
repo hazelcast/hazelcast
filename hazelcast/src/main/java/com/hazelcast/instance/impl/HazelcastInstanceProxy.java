@@ -32,7 +32,6 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -125,11 +124,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public <E> Ringbuffer<E> getRingbuffer(String name) {
         return getOriginal().getRingbuffer(name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        return getOriginal().getLock(key);
     }
 
     @Override

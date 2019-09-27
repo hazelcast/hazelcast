@@ -95,7 +95,6 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("ringbuffer", c1, c2, c1.getRingbufferConfigs(), c2.getRingbufferConfigs(),
                 new RingbufferConfigChecker());
         checkCompatibleConfigs("queue", c1, c2, c1.getQueueConfigs(), c2.getQueueConfigs(), new QueueConfigChecker());
-        checkCompatibleConfigs("lock", c1, c2, c1.getLockConfigs(), c2.getLockConfigs(), new LockConfigChecker());
         checkCompatibleConfigs("topic", c1, c2, c1.getTopicConfigs(), c2.getTopicConfigs(), new TopicConfigChecker());
         checkCompatibleConfigs("reliable topic", c1, c2, c1.getReliableTopicConfigs(), c2.getReliableTopicConfigs(),
                 new ReliableTopicConfigChecker());
@@ -294,20 +293,6 @@ public class ConfigCompatibilityChecker {
         @Override
         QueueConfig getDefault(Config c) {
             return c.getQueueConfig("default");
-        }
-    }
-
-    private static class LockConfigChecker extends ConfigChecker<LockConfig> {
-        @Override
-        boolean check(LockConfig c1, LockConfig c2) {
-            return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
-        }
-
-        @Override
-        LockConfig getDefault(Config c) {
-            return c.getLockConfig("default");
         }
     }
 

@@ -29,7 +29,7 @@ import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
@@ -66,7 +66,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     @Override
     public FencedLock getLock(String name) {
-        return proxyFactory.createProxy(RaftLockService.SERVICE_NAME, name);
+        return proxyFactory.createProxy(LockService.SERVICE_NAME, name);
     }
 
     @Override

@@ -59,12 +59,12 @@ public class LockInvocationKey extends WaitKey implements IdentifiedDataSerializ
 
     @Override
     public int getFactoryId() {
-        return RaftLockDataSerializerHook.F_ID;
+        return LockDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftLockDataSerializerHook.LOCK_INVOCATION_KEY;
+        return LockDataSerializerHook.LOCK_INVOCATION_KEY;
     }
 
     @Override

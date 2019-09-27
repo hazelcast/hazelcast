@@ -16,22 +16,22 @@
 
 package com.hazelcast.splitbrainprotection;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.cp.lock.ILock;
-import com.hazelcast.map.IMap;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
-import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
-import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
+import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -381,12 +381,8 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
         IMap<Object, Object> splitBrainProtectionMap = hz.getMap("splitBrainProtectionMap");
         splitBrainProtectionMap.put(generateKeyOwnedBy(hz), "bar");
 
-        ILock lock = hz.getLock("noSplitBrainProtectionLock");
-        try {
-            lock.lock();
-        } finally {
-            lock.unlock();
-        }
+        IQueue queue = hz.getQueue("noSplitBrainProtectionQueue");
+        queue.offer("item");
     }
 
     @Test
