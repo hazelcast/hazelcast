@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("8448a7afdc1ca6c988061fd5877b8086")
+@Generated("9243c0472356c2cf7251225f92325f17")
 public final class ContinuousQueryPublisherCreateWithValueCodec {
     //hex: 0x180100
     public static final int REQUEST_MESSAGE_TYPE = 1573120;
@@ -146,7 +147,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
+        EntryListCodec.encode(clientMessage, response, DataCodec::encode, DataCodec::encode);
         return clientMessage;
     }
 
@@ -155,7 +156,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = MapCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return response;
     }
 

@@ -20,6 +20,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.nio.Bits;
 
 import java.util.ListIterator;
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 
 public final class StringCodec {
 
@@ -28,6 +31,14 @@ public final class StringCodec {
 
     public static void encode(ClientMessage clientMessage, String value) {
         clientMessage.add(new ClientMessage.Frame(value.getBytes(Bits.UTF_8)));
+    }
+
+    public static void encode(ClientMessage clientMessage, TimeUnit timeUnit) {
+        encode(clientMessage, timeUnit.name());
+    }
+
+    public static void encode(ClientMessage clientMessage, ExpiryPolicyType expiryPolicyType) {
+        encode(clientMessage, expiryPolicyType.name());
     }
 
     public static String decode(ListIterator<ClientMessage.Frame> iterator) {

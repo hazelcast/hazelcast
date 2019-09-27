@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("6703077a680cf6808d3af83104e161e3")
+@Generated("c1ae294ef0b47f7fed0a5530d36a625e")
 public final class CacheAddInvalidationListenerCodec {
     //hex: 0x150200
     public static final int REQUEST_MESSAGE_TYPE = 1376768;
@@ -108,9 +109,9 @@ public final class CacheAddInvalidationListenerCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 
@@ -131,6 +132,7 @@ public final class CacheAddInvalidationListenerCodec {
         encodeUUID(initialFrame.content, EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET, partitionUuid);
         encodeLong(initialFrame.content, EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET, sequence);
         clientMessage.add(initialFrame);
+
         StringCodec.encode(clientMessage, name);
         CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
         return clientMessage;
@@ -141,6 +143,7 @@ public final class CacheAddInvalidationListenerCodec {
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
+
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, sourceUuids, ListUUIDCodec::encode);
@@ -168,10 +171,10 @@ public final class CacheAddInvalidationListenerCodec {
                 //empty initial frame
                 iterator.next();
                 java.lang.String name = StringCodec.decode(iterator);
-                java.util.List<com.hazelcast.nio.serialization.Data> keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-                java.util.List<java.util.UUID> sourceUuids = CodecUtil.decodeNullable(iterator, ListUUIDCodec::decode);
-                java.util.List<java.util.UUID> partitionUuids = ListUUIDCodec.decode(iterator);
-                java.util.List<java.lang.Long> sequences = ListLongCodec.decode(iterator);
+                java.util.Collection<com.hazelcast.nio.serialization.Data> keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+                java.util.Collection<java.util.UUID> sourceUuids = CodecUtil.decodeNullable(iterator, ListUUIDCodec::decode);
+                java.util.Collection<java.util.UUID> partitionUuids = ListUUIDCodec.decode(iterator);
+                java.util.Collection<java.lang.Long> sequences = ListLongCodec.decode(iterator);
                 handleCacheBatchInvalidationEvent(name, keys, sourceUuids, partitionUuids, sequences);
                 return;
             }

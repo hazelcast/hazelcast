@@ -67,7 +67,7 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
     }
 
     public String name() {
-        return id.name();
+        return id.getName();
     }
 
     public int initialMemberCount() {

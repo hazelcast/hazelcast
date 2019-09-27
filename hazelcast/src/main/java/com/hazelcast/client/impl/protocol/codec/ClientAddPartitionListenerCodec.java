@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("e280bc08b20f10072f39ea343eca3a2f")
+@Generated("94a08f2af45cdb720eb81d0e2c2462ee")
 public final class ClientAddPartitionListenerCodec {
     //hex: 0x001200
     public static final int REQUEST_MESSAGE_TYPE = 4608;
@@ -103,7 +104,8 @@ public final class ClientAddPartitionListenerCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_PARTITIONS_MESSAGE_TYPE);
         encodeInt(initialFrame.content, EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET, partitionStateVersion);
         clientMessage.add(initialFrame);
-        MapCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
+
+        EntryListCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
         return clientMessage;
     }
 
@@ -115,7 +117,7 @@ public final class ClientAddPartitionListenerCodec {
             if (messageType == EVENT_PARTITIONS_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int partitionStateVersion = decodeInt(initialFrame.content, EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET);
-                java.util.List<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions = MapCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
+                java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions = EntryListCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
                 handlePartitionsEvent(partitions, partitionStateVersion);
                 return;
             }

@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If any threads are waiting on this condition then they are all woken up. Each thread must re-acquire the lock
  * before it can return from
  */
-@Generated("d1ecc0307dc01b1b25c4c68757b4aff2")
+@Generated("be5b5350164be820d090cfdd8e0201ab")
 public final class ConditionSignalAllCodec {
     //hex: 0x080400
     public static final int REQUEST_MESSAGE_TYPE = 525312;

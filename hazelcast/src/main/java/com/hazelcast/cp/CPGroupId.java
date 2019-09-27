@@ -24,10 +24,10 @@ public interface CPGroupId {
     /**
      * Returns name of the CP group.
      */
-    String name();
+    String getName();
 
     /**
      * Returns unique id of the CP group.
      */
-    long id();
+    long getId();
 }

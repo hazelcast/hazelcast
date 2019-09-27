@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns current lock ownership status of the given FencedLock instance.
  */
-@Generated("3a8dd2678b3812a3ca24956203cada2e")
+@Generated("b14aedb95cc3c35ecc92cf6898975ea2")
 public final class CPFencedLockGetLockOwnershipCodec {
     //hex: 0x260400
     public static final int REQUEST_MESSAGE_TYPE = 2491392;
@@ -116,12 +117,12 @@ public final class CPFencedLockGetLockOwnershipCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.add(initialFrame);
-
         encodeLong(initialFrame.content, RESPONSE_FENCE_FIELD_OFFSET, fence);
         encodeInt(initialFrame.content, RESPONSE_LOCK_COUNT_FIELD_OFFSET, lockCount);
         encodeLong(initialFrame.content, RESPONSE_SESSION_ID_FIELD_OFFSET, sessionId);
         encodeLong(initialFrame.content, RESPONSE_THREAD_ID_FIELD_OFFSET, threadId);
+        clientMessage.add(initialFrame);
+
         return clientMessage;
     }
 

@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -50,7 +51,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * An implementation can favor responding to an interrupt over normal method return in response to a signal. In that
  * case the implementation must ensure that the signal is redirected to another waiting thread, if there is one.
  */
-@Generated("0f13d1203c52143947138004825aa691")
+@Generated("a0b9b16ff32fbaf578296c8b3801967c")
 public final class ConditionBeforeAwaitCodec {
     //hex: 0x080200
     public static final int REQUEST_MESSAGE_TYPE = 524800;

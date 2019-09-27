@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -42,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("7d67d7df4054598f1fe0fa08b156ba98")
+@Generated("0a82ccab737d9fe7e545de17526fffd9")
 public final class CacheEventJournalReadCodec {
     //hex: 0x152200
     public static final int REQUEST_MESSAGE_TYPE = 1384960;
@@ -151,10 +152,10 @@ public final class CacheEventJournalReadCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.add(initialFrame);
-
         encodeInt(initialFrame.content, RESPONSE_READ_COUNT_FIELD_OFFSET, readCount);
         encodeLong(initialFrame.content, RESPONSE_NEXT_SEQ_FIELD_OFFSET, nextSeq);
+        clientMessage.add(initialFrame);
+
         ListMultiFrameCodec.encode(clientMessage, items, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, itemSeqs, LongArrayCodec::encode);
         return clientMessage;

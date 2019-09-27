@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("fdf1888e2a5d87d0e04b37a7a58f2187")
+@Generated("673d4c347d29f93ab06d4c52c83347ff")
 public final class MapAssignAndGetUuidsCodec {
     //hex: 0x014300
     public static final int REQUEST_MESSAGE_TYPE = 82688;
@@ -85,7 +86,7 @@ public final class MapAssignAndGetUuidsCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
+        EntryListIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
         return clientMessage;
     }
 
@@ -94,7 +95,7 @@ public final class MapAssignAndGetUuidsCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.partitionUuidList = MapIntegerUUIDCodec.decode(iterator);
+        response.partitionUuidList = EntryListIntegerUUIDCodec.decode(iterator);
         return response;
     }
 

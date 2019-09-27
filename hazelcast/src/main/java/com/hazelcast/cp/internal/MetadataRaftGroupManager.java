@@ -245,7 +245,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     long getGroupIdSeed() {
-        return getMetadataGroupId().seed();
+        return getMetadataGroupId().getSeed();
     }
 
     public Collection<CPGroupId> getGroupIds() {
@@ -271,7 +271,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     public CPGroupInfo getGroup(CPGroupId groupId) {
         checkNotNull(groupId);
 
-        if ((groupId instanceof RaftGroupId) && ((RaftGroupId) groupId).seed() < getGroupIdSeed()) {
+        if ((groupId instanceof RaftGroupId) && ((RaftGroupId) groupId).getSeed() < getGroupIdSeed()) {
             throw new CPGroupDestroyedException(groupId);
         }
 
@@ -799,7 +799,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     public void handleMetadataGroupId(RaftGroupId newMetadataGroupId) {
         checkNotNull(newMetadataGroupId);
         RaftGroupId metadataGroupId = getMetadataGroupId();
-        while (metadataGroupId.seed() < newMetadataGroupId.seed()) {
+        while (metadataGroupId.getSeed() < newMetadataGroupId.getSeed()) {
             if (metadataGroupIdRef.compareAndSet(metadataGroupId, newMetadataGroupId)) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Updated METADATA groupId: " + newMetadataGroupId);
@@ -903,7 +903,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         // it has read is at least up to date as the commit index
         activeMembers = unmodifiableCollection(members);
         activeMembersCommitIndex = commitIndex;
-        updateInvocationManagerMembers(getMetadataGroupId().seed(), commitIndex, activeMembers);
+        updateInvocationManagerMembers(getMetadataGroupId().getSeed(), commitIndex, activeMembers);
         raftService.updateMissingMembers();
         broadcastActiveCPMembers();
     }
@@ -1045,7 +1045,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
 
             // we must update invocation manager's member list before making the first raft invocation
-            updateInvocationManagerMembers(getMetadataGroupId().seed(), 0, discoveredCPMembers);
+            updateInvocationManagerMembers(getMetadataGroupId().getSeed(), 0, discoveredCPMembers);
 
             if (!commitMetadataRaftGroupInit(localMemberCandidate, discoveredCPMembers)) {
                 handleDiscoveryFailure();
@@ -1131,7 +1131,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                     raftService.createRaftNode(metadataGroupId, metadataMembers, localCPMemberCandidate);
                 }
 
-                RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers, metadataGroupId.seed());
+                RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers, metadataGroupId.getSeed());
                 raftService.getInvocationManager().invoke(metadataGroupId, op).get();
                 // By default, we use the same member UUID for both AP and CP members.
                 // But it's not guaranteed to be same. For example;
@@ -1187,7 +1187,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private static class CPGroupIdComparator implements Comparator<CPGroupId> {
         @Override
         public int compare(CPGroupId o1, CPGroupId o2) {
-            return Long.compare(o1.id(), o2.id());
+            return Long.compare(o1.getId(), o2.getId());
         }
     }
 }

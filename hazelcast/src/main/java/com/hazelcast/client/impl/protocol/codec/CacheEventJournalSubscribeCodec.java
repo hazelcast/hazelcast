@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -37,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("d9f42ce8f7576b07c9fc3b58c1334325")
+@Generated("12fb7c7da32c99d8f426ff3d5cb40434")
 public final class CacheEventJournalSubscribeCodec {
     //hex: 0x152100
     public static final int REQUEST_MESSAGE_TYPE = 1384704;
@@ -99,10 +100,10 @@ public final class CacheEventJournalSubscribeCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.add(initialFrame);
-
         encodeLong(initialFrame.content, RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET, oldestSequence);
         encodeLong(initialFrame.content, RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET, newestSequence);
+        clientMessage.add(initialFrame);
+
         return clientMessage;
     }
 

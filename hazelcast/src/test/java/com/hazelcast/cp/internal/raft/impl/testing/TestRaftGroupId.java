@@ -28,12 +28,12 @@ public class TestRaftGroupId implements CPGroupId {
     }
 
     @Override
-    public String name() {
+    public String getName() {
         return name;
     }
 
     @Override
-    public long id() {
+    public long getId() {
         return 0;
     }
 

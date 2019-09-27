@@ -43,6 +43,21 @@ public class MapStoreConfigHolder {
     public MapStoreConfigHolder() {
     }
 
+    public MapStoreConfigHolder(boolean enabled, boolean writeCoalescing, int writeDelaySeconds, int writeBatchSize,
+                                String className, Data implementation, String factoryClassName,
+                                Data factoryImplementation, Map<String, String> properties, String initialLoadMode) {
+        this.enabled = enabled;
+        this.writeCoalescing = writeCoalescing;
+        this.className = className;
+        this.factoryClassName = factoryClassName;
+        this.writeDelaySeconds = writeDelaySeconds;
+        this.writeBatchSize = writeBatchSize;
+        this.implementation = implementation;
+        this.factoryImplementation = factoryImplementation;
+        this.properties = properties;
+        this.initialLoadMode = initialLoadMode;
+    }
+
     public boolean isEnabled() {
         return enabled;
     }

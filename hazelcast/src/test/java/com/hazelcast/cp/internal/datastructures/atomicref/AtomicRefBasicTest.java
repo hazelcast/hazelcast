@@ -61,7 +61,7 @@ public class AtomicRefBasicTest extends AbstractAtomicRefBasicTest {
     @Test
     public void testCreate_withDefaultGroup() {
         IAtomicReference<String> atomicRef = createAtomicRef(randomName());
-        assertEquals(DEFAULT_GROUP_NAME, getGroupId(atomicRef).name());
+        assertEquals(DEFAULT_GROUP_NAME, getGroupId(atomicRef).getName());
     }
 
     @Test

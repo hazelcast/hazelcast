@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("b7de65e67b0059c9297856a10a7f9fac")
+@Generated("56c7571e08fdbc23ceb405e7a4aa2ea7")
 public final class XATransactionFinalizeCodec {
     //hex: 0x160300
     public static final int REQUEST_MESSAGE_TYPE = 1442560;
@@ -54,7 +55,7 @@ public final class XATransactionFinalizeCodec {
         /**
          * Java XA transaction id as defined in interface javax.transaction.xa.Xid.
          */
-        public javax.transaction.xa.Xid xid;
+        public com.hazelcast.transaction.impl.xa.SerializableXID xid;
 
         /**
          * If true, the transaction is committed else transaction is rolled back.

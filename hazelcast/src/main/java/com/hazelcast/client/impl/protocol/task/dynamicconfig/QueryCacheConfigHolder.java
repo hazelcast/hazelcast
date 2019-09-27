@@ -45,6 +45,24 @@ public class QueryCacheConfigHolder {
     public QueryCacheConfigHolder() {
     }
 
+    public QueryCacheConfigHolder(int batchSize, int bufferSize, int delaySeconds, boolean includeValue,
+                                  boolean populate, boolean coalesce, String inMemoryFormat, String name,
+                                  PredicateConfigHolder predicateConfigHolder, EvictionConfigHolder evictionConfigHolder,
+                                  List<ListenerConfigHolder> listenerConfigs, List<MapIndexConfig> indexConfigs) {
+        this.batchSize = batchSize;
+        this.bufferSize = bufferSize;
+        this.delaySeconds = delaySeconds;
+        this.includeValue = includeValue;
+        this.populate = populate;
+        this.coalesce = coalesce;
+        this.inMemoryFormat = inMemoryFormat;
+        this.name = name;
+        this.predicateConfigHolder = predicateConfigHolder;
+        this.evictionConfigHolder = evictionConfigHolder;
+        this.listenerConfigs = listenerConfigs;
+        this.indexConfigs = indexConfigs;
+    }
+
     public int getBatchSize() {
         return batchSize;
     }
@@ -149,17 +167,17 @@ public class QueryCacheConfigHolder {
         config.setDelaySeconds(delaySeconds);
         config.setEvictionConfig(evictionConfigHolder.asEvictionConfg(serializationService));
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
-            List<EntryListenerConfig> entryListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
+            List<EntryListenerConfig> entryListenerConfigs = new ArrayList<>(listenerConfigs.size());
             for (ListenerConfigHolder holder : listenerConfigs) {
-                entryListenerConfigs.add((EntryListenerConfig) holder.asListenerConfig(serializationService));
+                entryListenerConfigs.add(holder.asListenerConfig(serializationService));
             }
             config.setEntryListenerConfigs(entryListenerConfigs);
         } else {
-            config.setEntryListenerConfigs(new ArrayList<EntryListenerConfig>());
+            config.setEntryListenerConfigs(new ArrayList<>());
         }
         config.setIncludeValue(includeValue);
         config.setInMemoryFormat(InMemoryFormat.valueOf(inMemoryFormat));
-        config.setIndexConfigs(indexConfigs == null ? new ArrayList<MapIndexConfig>() : indexConfigs);
+        config.setIndexConfigs(indexConfigs == null ? new ArrayList<>() : indexConfigs);
         config.setName(name);
         config.setPredicateConfig(predicateConfigHolder.asPredicateConfig(serializationService));
         config.setPopulate(populate);
@@ -177,7 +195,7 @@ public class QueryCacheConfigHolder {
         holder.setInMemoryFormat(config.getInMemoryFormat().toString());
         holder.setName(config.getName());
         if (config.getIndexConfigs() != null && !config.getIndexConfigs().isEmpty()) {
-            List<MapIndexConfig> indexConfigs = new ArrayList<MapIndexConfig>(config.getIndexConfigs().size());
+            List<MapIndexConfig> indexConfigs = new ArrayList<>(config.getIndexConfigs().size());
             for (MapIndexConfig indexConfig : config.getIndexConfigs()) {
                 indexConfigs.add(new MapIndexConfig(indexConfig));
             }
@@ -185,7 +203,7 @@ public class QueryCacheConfigHolder {
         }
         if (config.getEntryListenerConfigs() != null && !config.getEntryListenerConfigs().isEmpty()) {
             List<ListenerConfigHolder> listenerConfigHolders =
-                    new ArrayList<ListenerConfigHolder>(config.getEntryListenerConfigs().size());
+                    new ArrayList<>(config.getEntryListenerConfigs().size());
             for (EntryListenerConfig listenerConfig : config.getEntryListenerConfigs()) {
                 listenerConfigHolders.add(ListenerConfigHolder.of(listenerConfig, serializationService));
             }

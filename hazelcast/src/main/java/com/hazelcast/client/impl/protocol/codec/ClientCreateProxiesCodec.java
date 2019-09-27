@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -39,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-@Generated("cc4fbf4a6315dec786c6f57b8cab81d2")
+@Generated("aa33db7b2d611a57bda4d611f4fcb3bd")
 public final class ClientCreateProxiesCodec {
     //hex: 0x001300
     public static final int REQUEST_MESSAGE_TYPE = 4864;
@@ -71,7 +72,7 @@ public final class ClientCreateProxiesCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
-        MapCodec.encode(clientMessage, proxies, StringCodec::encode, StringCodec::encode);
+        EntryListCodec.encode(clientMessage, proxies, StringCodec::encode, StringCodec::encode);
         return clientMessage;
     }
 
@@ -80,7 +81,7 @@ public final class ClientCreateProxiesCodec {
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.proxies = MapCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
+        request.proxies = EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
         return request;
     }
 

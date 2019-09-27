@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("b4fcbe2c1d021d3c8b70709f5c6d4665")
+@Generated("81ed4aadeb5ae2e3cd99c2d2e4e3d049")
 public final class FlakeIdGeneratorNewIdBatchCodec {
     //hex: 0x1F0100
     public static final int REQUEST_MESSAGE_TYPE = 2031872;
@@ -110,11 +111,11 @@ public final class FlakeIdGeneratorNewIdBatchCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.add(initialFrame);
-
         encodeLong(initialFrame.content, RESPONSE_BASE_FIELD_OFFSET, base);
         encodeLong(initialFrame.content, RESPONSE_INCREMENT_FIELD_OFFSET, increment);
         encodeInt(initialFrame.content, RESPONSE_BATCH_SIZE_FIELD_OFFSET, batchSize);
+        clientMessage.add(initialFrame);
+
         return clientMessage;
     }
 

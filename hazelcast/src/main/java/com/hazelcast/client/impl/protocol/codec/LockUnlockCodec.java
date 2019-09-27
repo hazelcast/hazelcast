@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Releases the lock.
  */
-@Generated("4d072481fac61dbf5bf2c93c6a2e56bf")
+@Generated("98fe559b948be40579012e836de8ad83")
 public final class LockUnlockCodec {
     //hex: 0x070600
     public static final int REQUEST_MESSAGE_TYPE = 460288;
