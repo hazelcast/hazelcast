@@ -60,6 +60,7 @@ Make sure you have the `hazelcast-aws.jar` dependency in your classpath. Then, y
         <tag-key>aws-test-cluster</tag-key>
         <tag-value>cluster1</tag-value>
         <hz-port>5701-5708</hz-port>
+        <connection-retries>3</connection-retries>
       </aws>
     </join>
   </network>
@@ -77,7 +78,8 @@ config.getNetworkConfig().getJoin().getAwsConfig().setEnabled(true)
       .setProperty("security-group-name", "hazelcast")
       .setProperty("tag-key", "aws-test-cluster")
       .setProperty("tag-value", "cluster1")
-      .setProperty("hz-port", "5701-5708");
+      .setProperty("hz-port", "5701-5708")
+      .setProperty("connection-retries", 3);
 ```
 
 Here are the definitions of the properties
@@ -90,6 +92,7 @@ Here are the definitions of the properties
 * `tag-key`, `tag-value`: filter to look only for EC2 Instances with the given `tag-key`/`tag-value`; they are optional
 * `connection-timeout-seconds`: maximum amount of time Hazelcast will try to connect to a well known member before giving up; setting this value too low could mean that a member is not able to connect to a cluster; setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up); its default value is 5
 * `hz-port`: a range of ports where the plugin looks for Hazelcast members; if not set, the default value `5701-5708` is used
+* `connection-retries`: number of retries while connecting to AWS Services; default to 10
 
 Note that:
 * If you don't specify any of the properties, then the plugin uses the IAM Role assigned to EC2 Instance and forms a cluster from all Hazelcast members running in the default region `us-east-1`
@@ -139,6 +142,7 @@ Following are example declarative and programmatic configuration snippets.
       <tag-key>aws-test-cluster</tag-key>
       <tag-value>cluster1</tag-value>
       <hz-port>5701-5708</hz-port>
+      <connection-retries>3</connection-retries>
       <use-public-ip>true</use-public-ip>
     </aws>
   </network>
@@ -156,6 +160,7 @@ clientConfig.getAwsConfig().setEnabled(true)
       .setProperty("tag-key", "aws-test-cluster")
       .setProperty("tag-value", "cluster1")
       .setProperty("hz-port", "5701-5708")
+      .setProperty("connection-retries", 3)
       .setProperty("use-public-ip", "true");
 ```
 
