@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -65,14 +66,9 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
 
     @Test
     public void test_forEach() {
-        test_forScheduleType(ScheduleType.FOR_EACH);
-    }
-
-    @SuppressWarnings("unchecked")
-    private void test_forScheduleType(ScheduleType scheduleType) {
         final EventCountingEntryProcessor processor = new EventCountingEntryProcessor();
-        final SecondsBasedEntryTaskScheduler scheduler = new SecondsBasedEntryTaskScheduler(executorService, processor,
-                scheduleType);
+        final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler
+                = new SecondsBasedEntryTaskScheduler<>(executorService, processor, ScheduleType.FOR_EACH);
 
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             final Thread thread = new Thread() {
@@ -95,7 +91,8 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
         final long numberOfExpectedEvents = NUMBER_OF_THREADS * NUMBER_OF_EVENTS_PER_THREAD;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
+                assertTrue(scheduler.isEmpty());
                 assertEquals(numberOfExpectedEvents, processor.getNumberOfEvents());
             }
         });
@@ -105,13 +102,13 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
     public void test_postpone() {
         final EntryStoringProcessor processor = new EntryStoringProcessor();
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler
-                = new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, processor, ScheduleType.POSTPONE);
+                = new SecondsBasedEntryTaskScheduler<>(executorService, processor, ScheduleType.POSTPONE);
 
         final int numberOfKeys = NUMBER_OF_THREADS;
         final Object[] locks = new Object[numberOfKeys];
         Arrays.fill(locks, new Object());
 
-        final Map<Integer, Integer> latestValues = new ConcurrentHashMap<Integer, Integer>();
+        final Map<Integer, Integer> latestValues = new ConcurrentHashMap<>();
 
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             final Thread thread = new Thread() {
@@ -139,7 +136,8 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
+                assertTrue(scheduler.isEmpty());
                 assertEquals(latestValues.size(), processor.values.size());
 
                 for (int key = 0; key < numberOfKeys; key++) {
@@ -156,12 +154,14 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
         });
     }
 
-    private static class EventCountingEntryProcessor implements ScheduledEntryProcessor {
+    private static class EventCountingEntryProcessor implements ScheduledEntryProcessor<Integer, Integer> {
         final AtomicInteger numberOfEvents = new AtomicInteger();
 
         @Override
-        public void process(EntryTaskScheduler scheduler, Collection collection) {
-            numberOfEvents.addAndGet(collection.size());
+        public void process(EntryTaskScheduler<Integer, Integer> scheduler,
+                            Collection<ScheduledEntry<Integer, Integer>> entries) {
+
+            numberOfEvents.addAndGet(entries.size());
         }
 
         long getNumberOfEvents() {
@@ -170,7 +170,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
     }
 
     private static class EntryStoringProcessor implements ScheduledEntryProcessor<Integer, Integer> {
-        final Map<Integer, Integer> values = new ConcurrentHashMap<Integer, Integer>();
+        final Map<Integer, Integer> values = new ConcurrentHashMap<>();
 
         @Override
         public void process(EntryTaskScheduler<Integer, Integer> scheduler,
