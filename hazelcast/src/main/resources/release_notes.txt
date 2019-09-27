@@ -1,5 +1,29 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.3 ====
+
+1. Enhancements
+
+- Added a new implementation of SecondsBasedEntryTaskScheduler for the FOR_EACH mode to improve the performance of TransactionContext.commit(). [#15586]
+- Improved the client graceful shutdown mechanism so that its tasks are executed before marking a client as inactive. [#15565]
+- Added sent/received bytes logs for each ProtocolType into the diagnostics. [#15541]
+- Improved the performance of TransactionLog.add() by avoiding the LinkedList.remove() call. [#15435]
+- To be shown on Management Center, the clients now send both its IP address and canonical hostname. Before, only the hostname of the client was shown. [#15421]
+- Added the support for nested JSON objects in the arrays. [#15368]
+
+2. Fixes
+
+- Fixed an issue where the node.isMaster() method could cause inconsistent behaviors when it is executed during a partition service lock. [#15618]
+- Fixed an issue where Management Center was not able to see the 3.12.2 members (members with CP subsystem enabled) after performing a rolling upgrade from Hazelcast IMDG 3.11.4 to 3.12.2. 'ManagementCenterService' was shutting down and throwing an exception when a CP-subsystem-enabled member was trying to report to Management Center for the first time. [#15609]
+- Made PagingPredicate a VisitablePredicate so the optimizer is able to visit its inner predicate to optimize it or to select an index to evaluate the inner predicate with. [#15602]
+- Fixed an issue where CP subsystem restarts were not being canceled or waited the running/scheduled discovery tasks. Otherwise, two different discovery tasks could overlap and run concurrently or one of the discovery tasks could run in a corrupted state. [#15568]
+- Fixed an issue where the cleaner task for expired records was logging the exceptions during migrations: the log level for PartitionMigratingException has been set to FINEST. [#15543]
+- Fixed an issue where the executor service message task was blocking the partition thread. [#15526]
+- Fixed an issue where normalFramesRead and priorityFramesRead were never incremented as seen in the diagnostic logs. [#15479]
+- Fixed an issue where the readBackupData and statisticsEnabled options were not respected when a new map configuration is dynamically added from a client to a running Hazelcast cluster. [#15392]
+- Fixed an issue where a lock was required when registering metrics on the happy path. [#15378]
+- Fixed an issue where some updates to the entries got lost from the write behind queue: It was a concurrency issue when there are updates to CoalescedWriteBehindQueue while StoreWorker is running. [#15060]
+
 ==== 3.12.2 ====
 
 1. Enhancements 
