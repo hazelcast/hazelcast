@@ -26,7 +26,7 @@ import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
@@ -51,7 +51,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     @Override
     public IAtomicLong getAtomicLong(String name) {
-        return proxyFactory.createProxy(RaftAtomicLongService.SERVICE_NAME, name);
+        return proxyFactory.createProxy(AtomicLongService.SERVICE_NAME, name);
     }
 
     @Override

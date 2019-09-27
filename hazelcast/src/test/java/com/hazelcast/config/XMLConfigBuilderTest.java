@@ -756,25 +756,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readAtomicLong() {
-        String xml = HAZELCAST_START_TAG
-                + "    <atomic-long name=\"custom\">"
-                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
-                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "    </atomic-long>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
-        assertEquals("custom", atomicLongConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", atomicLongConfig.getSplitBrainProtectionName());
-
-        MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(23, mergePolicyConfig.getBatchSize());
-    }
-
-    @Override
-    @Test
     public void testCaseInsensitivityOfSettings() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"testCaseInsensitivity\">"

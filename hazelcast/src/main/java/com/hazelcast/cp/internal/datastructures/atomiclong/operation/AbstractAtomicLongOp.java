@@ -21,9 +21,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLong;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLong;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 
 import java.io.IOException;
 
@@ -41,14 +41,14 @@ public abstract class AbstractAtomicLongOp extends RaftOp implements IdentifiedD
         this.name = name;
     }
 
-    RaftAtomicLong getAtomicLong(CPGroupId groupId) {
-        RaftAtomicLongService service = getService();
+    AtomicLong getAtomicLong(CPGroupId groupId) {
+        AtomicLongService service = getService();
         return service.getAtomicValue(groupId, name);
     }
 
     @Override
     public final String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override
@@ -63,7 +63,7 @@ public abstract class AbstractAtomicLongOp extends RaftOp implements IdentifiedD
 
     @Override
     public final int getFactoryId() {
-        return RaftAtomicLongDataSerializerHook.F_ID;
+        return AtomicLongDataSerializerHook.F_ID;
     }
 
     @Override

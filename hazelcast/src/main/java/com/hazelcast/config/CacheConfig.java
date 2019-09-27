@@ -20,10 +20,11 @@ import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
@@ -52,11 +53,11 @@ import java.util.Set;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
-import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}.
@@ -527,6 +528,21 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
 
         out.writeObject(mergePolicyConfig);
         out.writeBoolean(disablePerEntryInvalidationEvents);
+
+        writePartitionLostListenerConfigs(out);
+    }
+
+    private void writePartitionLostListenerConfigs(ObjectDataOutput out)
+            throws IOException {
+        if (partitionLostListenerConfigs == null) {
+            out.writeInt(Bits.NULL_ARRAY_LENGTH);
+            return;
+        }
+
+        out.writeInt(partitionLostListenerConfigs.size());
+        for (CachePartitionLostListenerConfig partitionLostListenerConfig : partitionLostListenerConfigs) {
+            out.writeObject(partitionLostListenerConfig);
+        }
     }
 
     @Override
@@ -574,6 +590,19 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
 
         setClassLoader(in.getClassLoader());
         this.serializationService = in.getSerializationService();
+
+        readPartitionLostListenerConfigs(in);
+    }
+
+    private void readPartitionLostListenerConfigs(ObjectDataInput in)
+            throws IOException {
+        int partitionLostListenerConfigCount = in.readInt();
+        if (partitionLostListenerConfigCount > 0) {
+            partitionLostListenerConfigs = new ArrayList<>(partitionLostListenerConfigCount);
+            for (int i = 0; i < partitionLostListenerConfigCount; i++) {
+                partitionLostListenerConfigs.add(in.readObject());
+            }
+        }
     }
 
     @Override

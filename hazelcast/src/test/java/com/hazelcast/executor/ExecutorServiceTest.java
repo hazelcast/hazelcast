@@ -377,7 +377,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             assertEquals(Integer.valueOf(rand), future.get(10, TimeUnit.SECONDS));
         }
 
-        IAtomicLong count = instances[0].getAtomicLong("count");
+        IAtomicLong count = instances[0].getCPSubsystem().getAtomicLong("count");
         assertEquals(NODE_COUNT, count.get());
     }
 
@@ -408,7 +408,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
                     key, callback);
         }
         assertOpenEventually(responseLatch);
-        assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
+        assertEquals(0, instances[0].getCPSubsystem().getAtomicLong("testSubmitToKeyOwnerRunnable").get());
         assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 
@@ -439,7 +439,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
                     localMember, callback);
         }
         assertOpenEventually(responseLatch);
-        assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
+        assertEquals(0, instances[0].getCPSubsystem().getAtomicLong("testSubmitToMemberRunnable").get());
         assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 
@@ -462,7 +462,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         assertOpenEventually(callback.getLatch());
-        IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong("testSubmitToMembersRunnable");
         assertEquals(sum, result.get());
         assertEquals(sum, callback.getCount());
     }
@@ -491,7 +491,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         assertTrue(responseLatch.await(30, TimeUnit.SECONDS));
-        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong("testSubmitToAllMembersRunnable");
         assertEquals(NODE_COUNT * NODE_COUNT, result.get());
         assertEquals(NODE_COUNT * NODE_COUNT, nullResponseCount.get());
     }
@@ -639,7 +639,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         assertOpenEventually(latch);
-        IAtomicLong result = instances[0].getAtomicLong(name);
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong(name);
         assertEquals(sum, result.get());
         assertEquals(sum, count.get());
     }
@@ -664,7 +664,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             service.submitToAllMembers(new IncrementAtomicLongCallable("testSubmitToAllMembersCallable"), callback);
         }
         assertOpenEventually(countDownLatch);
-        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong("testSubmitToAllMembersCallable");
         assertEquals(NODE_COUNT * NODE_COUNT, result.get());
         assertEquals(NODE_COUNT * NODE_COUNT, count.get());
     }

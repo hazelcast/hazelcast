@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicLongConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
@@ -45,7 +44,6 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConf
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AdvancedNetworkConfig;
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -336,15 +334,6 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddPNCounterConfigCodec.encodeRequest(
                 pnCounterConfig.getName(), pnCounterConfig.getReplicaCount(),
                 pnCounterConfig.isStatisticsEnabled(), pnCounterConfig.getSplitBrainProtectionName());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
-        ClientMessage request = DynamicConfigAddAtomicLongConfigCodec.encodeRequest(
-                atomicLongConfig.getName(), atomicLongConfig.getSplitBrainProtectionName(),
-                atomicLongConfig.getMergePolicyConfig().getPolicy(), atomicLongConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -775,26 +764,6 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config setCardinalityEstimatorConfigs(
             Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicLongConfig findAtomicLongConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicLongConfig getAtomicLongConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setAtomicLongConfigs(Map<String, AtomicLongConfig> atomicLongConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

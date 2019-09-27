@@ -350,11 +350,6 @@
                 <hz:ringbuffer-store enabled="true" factory-implementation="dummyRingbufferStoreFactory"/>
             </hz:ringbuffer>
 
-            <hz:atomic-long name="testAtomicLong">
-                <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-                <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
-            </hz:atomic-long>
-
             <hz:reliable-topic name="testReliableTopic" topic-overload-policy="BLOCK" read-batch-size="10"
                                statistics-enabled="false">
                 <hz:message-listeners>
@@ -691,11 +686,6 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:set-permission>
-                    <hz:id-generator-permission name="*">
-                        <hz:actions>
-                            <hz:action>all</hz:action>
-                        </hz:actions>
-                    </hz:id-generator-permission>
                     <hz:flake-id-generator-permission name="*">
                         <hz:actions>
                             <hz:action>all</hz:action>
@@ -883,7 +873,6 @@
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
     <hz:scheduledExecutorService id="scheduledExec" instance-ref="instance" name="scheduledExec"/>
     <hz:durableExecutorService id="durableExec" instance-ref="instance" name="durableExec"/>
-    <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
     <hz:flakeIdGenerator id="flakeIdGenerator" instance-ref="instance" name="flakeIdGenerator"/>
     <hz:atomicLong id="atomicLong" instance-ref="instance" name="testAtomicLong"/>
     <hz:atomicReference id="atomicReference" instance-ref="instance" name="testAtomicReference"/>

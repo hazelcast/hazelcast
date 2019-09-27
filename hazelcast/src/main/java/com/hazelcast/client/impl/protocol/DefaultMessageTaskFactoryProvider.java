@@ -16,6 +16,13 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefApplyCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefCompareAndSetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefContainsCodec;
@@ -130,6 +137,22 @@ import com.hazelcast.cp.internal.session.client.HeartbeatSessionMessageTask;
 import com.hazelcast.flakeidgen.impl.client.NewIdBatchMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterAddAndGetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterDecrementAndGetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterGetAndAddCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterGetAndIncrementCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterGetAndSetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterGetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterIncrementAndGetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterSetCodec;
+import com.hazelcast.internal.longregister.client.task.LongRegisterAddAndGetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterDecrementAndGetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterGetAndAddMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterGetAndIncrementMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterGetAndSetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterGetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterIncrementAndGetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterSetMessageTask;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
@@ -582,70 +605,45 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         });
 //endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.atomiclong
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+//region ----------  REGISTRATION FOR com.hazelcast.internal.longregister.client.task
+        factories.put(LongRegisterDecrementAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongApplyMessageTask(clientMessage, node, connection);
+                return new LongRegisterDecrementAndGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongDecrementAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterGetAndAddCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongDecrementAndGetMessageTask(clientMessage, node, connection);
+                return new LongRegisterGetAndAddMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterAddAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetAndAddMessageTask(clientMessage, node, connection);
+                return new LongRegisterAddAndGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongAlterAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongAlterAndGetMessageTask(clientMessage, node, connection);
+                return new LongRegisterGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongAddAndGetMessageTask(clientMessage, node, connection);
+                return new LongRegisterSetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterIncrementAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetMessageTask(clientMessage, node, connection);
+                return new LongRegisterIncrementAndGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterGetAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongCompareAndSetMessageTask(clientMessage, node, connection);
+                return new LongRegisterGetAndSetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterGetAndIncrementCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongSetMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongAlterMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongIncrementAndGetMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetAndSetMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAlterCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetAndAlterMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndIncrementCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetAndIncrementMessageTask(clientMessage, node, connection);
+                return new LongRegisterGetAndIncrementMessageTask(clientMessage, node, connection);
             }
         });
 //endregion
@@ -2061,43 +2059,43 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         });
 
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongAddAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongAddAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddAndGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongCompareAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongCompareAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new CompareAndSetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndAddCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongGetAndAddCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetAndAddMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongGetAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetAndSetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongApplyCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongApplyCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new ApplyMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongAlterCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongAlterCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AlterMessageTask(clientMessage, node, connection);

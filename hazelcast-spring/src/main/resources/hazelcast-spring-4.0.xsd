@@ -387,22 +387,6 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
-                        <xs:element name="atomic-long" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:sequence>
-                                    <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
-                                        <xs:annotation>
-                                            <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
-                                            </xs:documentation>
-                                        </xs:annotation>
-                                    </xs:element>
-                                    <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
-                                </xs:sequence>
-                                <xs:attribute name="name" use="required" type="xs:string"/>
-                            </xs:complexType>
-                        </xs:element>
                         <xs:element name="reliable-topic" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
@@ -1740,18 +1724,6 @@
             </xs:appinfo>
         </xs:annotation>
     </xs:element>
-    <xs:element name="idGenerator" type="hazelcast-type">
-        <xs:annotation>
-            <xs:documentation>
-                Retrieve a Hazelcast IdGenerator instance
-            </xs:documentation>
-            <xs:appinfo>
-                <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IdGenerator"/>
-                </tool:annotation>
-            </xs:appinfo>
-        </xs:annotation>
-    </xs:element>
     <xs:element name="flakeIdGenerator" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
@@ -2814,8 +2786,6 @@
                         <xs:element name="countdown-latch-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="semaphore-permission" type="instance-permission" minOccurs="0"
-                                    maxOccurs="unbounded"/>
-                        <xs:element name="id-generator-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="flake-id-generator-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>

@@ -23,7 +23,6 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
@@ -113,7 +112,6 @@ import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
@@ -219,9 +217,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Resource(name = "executorService")
     private ExecutorService executorService;
-
-    @Resource(name = "idGenerator")
-    private IdGenerator idGenerator;
 
     @Resource(name = "flakeIdGenerator")
     private FlakeIdGenerator flakeIdGenerator;
@@ -584,7 +579,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         final Set<PermissionConfig> clientPermissionConfigs = securityConfig.getClientPermissionConfigs();
         assertFalse(securityConfig.getClientBlockUnmappedActions());
         assertTrue(isNotEmpty(clientPermissionConfigs));
-        assertEquals(23, clientPermissionConfigs.size());
+        assertEquals(22, clientPermissionConfigs.size());
         final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")
                 .addAction("create")
                 .setEndpoints(Collections.emptySet());
@@ -594,17 +589,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
             permTypes.remove(pc.getType());
         }
         assertTrue("All permission types should be listed in fullConfig. Not found ones: " + permTypes, permTypes.isEmpty());
-    }
-
-    @Test
-    public void testAtomicLongConfig() {
-        AtomicLongConfig testAtomicLong = config.getAtomicLongConfig("testAtomicLong");
-        assertNotNull(testAtomicLong);
-        assertEquals("testAtomicLong", testAtomicLong.getName());
-
-        MergePolicyConfig mergePolicyConfig = testAtomicLong.getMergePolicyConfig();
-        assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
     @Test
@@ -923,7 +907,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(set);
         assertNotNull(list);
         assertNotNull(executorService);
-        assertNotNull(idGenerator);
         assertNotNull(flakeIdGenerator);
         assertNotNull(atomicLong);
         assertNotNull(atomicReference);
@@ -939,7 +922,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("testTopic", topic.getName());
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
-        assertEquals("idGenerator", idGenerator.getName());
         assertEquals("flakeIdGenerator", flakeIdGenerator.getName());
         assertEquals("testAtomicLong", atomicLong.getName());
         assertEquals("testAtomicReference", atomicReference.getName());

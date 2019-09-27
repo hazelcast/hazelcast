@@ -24,8 +24,6 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -110,23 +108,6 @@ final class MBeans {
             @Override
             public String getServiceName() {
                 return ListService.SERVICE_NAME;
-            }
-        },
-
-        ATOMIC_LONG {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new AtomicLongMBean((IAtomicLong) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "IAtomicLong";
-            }
-
-            @Override
-            public String getServiceName() {
-                return AtomicLongService.SERVICE_NAME;
             }
         },
 

@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.MergePolicyConfig;
@@ -87,6 +88,8 @@ public final class CacheConfigHolderCodec {
         encodeNullable(clientMessage, config.getSplitBrainProtectionName(), StringCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, config.getListenerConfigurations(), DataCodec::encode);
         MergePolicyConfigCodec.encode(clientMessage, config.getMergePolicyConfig());
+        ListMultiFrameCodec
+                .encodeNullable(clientMessage, config.getCachePartitionLostListenerConfigs(), ListenerConfigHolderCodec::encode);
 
         clientMessage.add(END_FRAME);
     }
@@ -127,11 +130,13 @@ public final class CacheConfigHolderCodec {
         String splitBrainProtectionName = decodeNullable(iterator, StringCodec::decode);
         List<Data> listenerConfigurations = ListMultiFrameCodec.decodeNullable(iterator, DataCodec::decode);
         MergePolicyConfig mergePolicyConfig = MergePolicyConfigCodec.decode(iterator);
+        List<ListenerConfigHolder> cachePartitionLostListenerConfigs = ListMultiFrameCodec
+                .decodeNullable(iterator, ListenerConfigHolderCodec::decode);
 
         return new CacheConfigHolder(name, managerPrefix, uriString, backupCount, asyncBackupCount, inMemoryFormat,
                 evictionConfigHolder, wanReplicationRef, keyClassName, valueClassName, cacheLoaderFactory, cacheWriterFactory,
                 expiryPolicyFactory, isReadThrough, isWriteThrough, isStoreByValue, isManagementEnabled, isStatisticsEnabled,
                 hotRestartConfig, eventJournalConfig, splitBrainProtectionName, listenerConfigurations, mergePolicyConfig,
-                disablePerEntryInvalidationEvents);
+                disablePerEntryInvalidationEvents, cachePartitionLostListenerConfigs);
     }
 }

@@ -474,11 +474,6 @@
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </lock>
 
-    <atomic-long name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-    </atomic-long>
-
     <ringbuffer name="default">
         <capacity>25311</capacity>
         <backup-count>2</backup-count>
@@ -683,11 +678,6 @@
                     <action>all</action>
                 </actions>
             </set-permission>
-            <id-generator-permission name="*">
-                <actions>
-                    <action>all</action>
-                </actions>
-            </id-generator-permission>
             <flake-id-generator-permission name="*">
                 <actions>
                     <action>all</action>

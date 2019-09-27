@@ -16,8 +16,8 @@
 
 package com.hazelcast.flakeidgen;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.internal.cluster.ClusterService;
 
 /**
@@ -49,7 +49,7 @@ import com.hazelcast.internal.cluster.ClusterService;
  *
  * @since 3.10
  */
-public interface FlakeIdGenerator extends IdGenerator {
+public interface FlakeIdGenerator extends DistributedObject {
 
     /**
      * Generates and returns a cluster-wide unique ID.
@@ -67,23 +67,7 @@ public interface FlakeIdGenerator extends IdGenerator {
      *
      * @throws HazelcastException if node ID for all members in the cluster is out of valid range.
      *      See "Node ID overflow" in {@link FlakeIdGenerator class documentation} for more details.
-     * @throws UnsupportedOperationException if the cluster version is below 3.10
      */
-    @Override
     long newId();
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>
-     * <b>Note for Flake ID Generator:</b> This method does nothing and will simply tell if the next ID
-     * will be larger than the given ID.
-     * You don't need to call this method on cluster restart - uniqueness is preserved thanks to the
-     * timestamp component of the ID.
-     *
-     * @return {@code true}, if the next ID will be larger than the supplied id
-     */
-    @Override
-    @Deprecated
-    boolean init(long id);
 }

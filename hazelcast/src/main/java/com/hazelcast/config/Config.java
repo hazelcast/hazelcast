@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.internal.config.AtomicLongConfigReadOnly;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.internal.config.ConfigUtils;
@@ -149,8 +148,6 @@ public class Config {
 
     private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
-
-    private final Map<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
 
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
 
@@ -1364,102 +1361,6 @@ public class Config {
         this.ringbufferConfigs.clear();
         this.ringbufferConfigs.putAll(ringbufferConfigs);
         for (Entry<String, RingbufferConfig> entry : ringbufferConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Returns a read-only AtomicLong configuration for the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the AtomicLong config
-     * @return the AtomicLong configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public AtomicLongConfig findAtomicLongConfig(String name) {
-        name = getBaseName(name);
-        AtomicLongConfig config = lookupByPattern(configPatternMatcher, atomicLongConfigs, name);
-        if (config != null) {
-            return new AtomicLongConfigReadOnly(config);
-        }
-        return new AtomicLongConfigReadOnly(getAtomicLongConfig("default"));
-    }
-
-    /**
-     * Returns the AtomicLongConfig for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking {@link #addAtomicLongConfig(AtomicLongConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the AtomicLong config
-     * @return the AtomicLong configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public AtomicLongConfig getAtomicLongConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, atomicLongConfigs, name, AtomicLongConfig.class);
-    }
-
-    /**
-     * Adds the AtomicLong configuration. The configuration is saved under the config
-     * name, which may be a pattern with which the configuration will be
-     * obtained in the future.
-     *
-     * @param atomicLongConfig the AtomicLong configuration
-     * @return this config instance
-     */
-    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
-        atomicLongConfigs.put(atomicLongConfig.getName(), atomicLongConfig);
-        return this;
-    }
-
-    /**
-     * Returns the map of AtomicLong configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration was initially obtained.
-     *
-     * @return the AtomicLong configurations mapped by config name
-     */
-    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
-        return atomicLongConfigs;
-    }
-
-    /**
-     * Sets the map of AtomicLong configurations, mapped by config name.
-     * The config name may be a pattern with which the configuration will be obtained in the future.
-     *
-     * @param atomicLongConfigs the AtomicLong configuration map to set
-     * @return this config instance
-     */
-    public Config setAtomicLongConfigs(Map<String, AtomicLongConfig> atomicLongConfigs) {
-        this.atomicLongConfigs.clear();
-        this.atomicLongConfigs.putAll(atomicLongConfigs);
-        for (Entry<String, AtomicLongConfig> entry : atomicLongConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -2871,7 +2772,6 @@ public class Config {
                 + ", multiMapConfigs=" + multiMapConfigs
                 + ", executorConfigs=" + executorConfigs
                 + ", ringbufferConfigs=" + ringbufferConfigs
-                + ", atomicLongConfigs=" + atomicLongConfigs
                 + ", wanReplicationConfigs=" + wanReplicationConfigs
                 + ", listenerConfigs=" + listenerConfigs
                 + ", partitionGroupConfig=" + partitionGroupConfig

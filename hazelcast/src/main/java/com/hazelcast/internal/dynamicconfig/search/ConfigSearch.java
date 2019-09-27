@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.dynamicconfig.search;
 
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -201,22 +200,6 @@ public final class ConfigSearch {
             @Override
             public Map<String, RingbufferConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getRingbufferConfigs();
-            }
-        });
-        CONFIG_SUPPLIERS.put(AtomicLongConfig.class, new ConfigSupplier<AtomicLongConfig>() {
-            @Override
-            public AtomicLongConfig getDynamicConfig(@Nonnull ConfigurationService configurationService, @Nonnull String name) {
-                return configurationService.findAtomicLongConfig(name);
-            }
-
-            @Override
-            public AtomicLongConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getAtomicLongConfig(name);
-            }
-
-            @Override
-            public Map<String, AtomicLongConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getAtomicLongConfigs();
             }
         });
         CONFIG_SUPPLIERS.put(TopicConfig.class, new ConfigSupplier<TopicConfig>() {

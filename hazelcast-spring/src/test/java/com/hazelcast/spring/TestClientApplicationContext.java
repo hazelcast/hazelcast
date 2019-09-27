@@ -56,7 +56,6 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.test.annotation.QuickTest;
@@ -164,9 +163,6 @@ public class TestClientApplicationContext {
 
     @Resource(name = "executorService")
     private ExecutorService executorService;
-
-    @Resource(name = "idGenerator")
-    private IdGenerator idGenerator;
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
@@ -302,7 +298,6 @@ public class TestClientApplicationContext {
         assertNotNull(set);
         assertNotNull(list);
         assertNotNull(executorService);
-        assertNotNull(idGenerator);
         assertNotNull(atomicLong);
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
@@ -315,7 +310,6 @@ public class TestClientApplicationContext {
         assertEquals("topic", topic.getName());
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
-        assertEquals("idGenerator", idGenerator.getName());
         assertEquals("atomicLong", atomicLong.getName());
         assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());

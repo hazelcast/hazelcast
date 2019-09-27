@@ -17,7 +17,6 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.version.Version;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -72,6 +71,4 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
     void position(int newPos);
 
     void clear();
-
-    void setVersion(Version version);
 }

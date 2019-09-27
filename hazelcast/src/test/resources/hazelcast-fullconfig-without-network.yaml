@@ -453,13 +453,6 @@ hazelcast:
     default:
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
-  atomic-long:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-      merge-policy:
-        batch-size: 100
-        class-name: PutIfAbsentMergePolicy
-
   ringbuffer:
     default:
       capacity: 25311
@@ -637,11 +630,6 @@ hazelcast:
         principal: deployer
       countdown-latch:
         - name: "*"
-          actions:
-            - all
-      id-generator:
-        - name: "*"
-          principal: "*"
           actions:
             - all
       set:

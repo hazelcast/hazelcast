@@ -697,29 +697,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testAtomicLong() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(DiscardMergePolicy.class.getSimpleName())
-                .setBatchSize(1234);
-
-        AtomicLongConfig expectedConfig = new AtomicLongConfig("testAtomicLongConfig")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-        Config config = new Config()
-                .addAtomicLongConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        AtomicLongConfig actualConfig = xmlConfig.getAtomicLongConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-
-        MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
-        assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
-        assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
-    }
-
-    @Test
     public void testList() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
                 .setPolicy(HigherHitsMergePolicy.class.getName())

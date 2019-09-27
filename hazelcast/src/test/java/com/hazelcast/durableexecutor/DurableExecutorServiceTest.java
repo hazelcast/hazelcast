@@ -306,7 +306,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
             assertEquals(Integer.valueOf(rand), future.get(10, TimeUnit.SECONDS));
         }
 
-        IAtomicLong count = instances[0].getAtomicLong("count");
+        IAtomicLong count = instances[0].getCPSubsystem().getAtomicLong("count");
         assertEquals(NODE_COUNT, count.get());
     }
 
@@ -337,7 +337,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
             service.submitToKeyOwner(runnable, key).andThen(callback);
         }
         assertOpenEventually(responseLatch);
-        assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
+        assertEquals(0, instances[0].getCPSubsystem().getAtomicLong("testSubmitToKeyOwnerRunnable").get());
         assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 

@@ -33,14 +33,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Atomically sets the value to the given updated value only if the current value the expected value.
+ * Atomically sets the value to the given updated value only if the current
+ * value the expected value.
  */
-@Generated("e7da957c7405e08134a4c925efbe8e37")
+@Generated("13b332285d722ec68fe840b77b286660")
 public final class AtomicLongCompareAndSetCodec {
-    //hex: 0x0A0600
-    public static final int REQUEST_MESSAGE_TYPE = 656896;
-    //hex: 0x0A0601
-    public static final int RESPONSE_MESSAGE_TYPE = 656897;
+    //hex: 0x0A0400
+    public static final int REQUEST_MESSAGE_TYPE = 656384;
+    //hex: 0x0A0401
+    public static final int RESPONSE_MESSAGE_TYPE = 656385;
     private static final int REQUEST_EXPECTED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_UPDATED_FIELD_OFFSET = REQUEST_EXPECTED_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UPDATED_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -54,22 +55,27 @@ public final class AtomicLongCompareAndSetCodec {
     public static class RequestParameters {
 
         /**
-         * The name of this IAtomicLong instance.
+         * CP group id of this IAtomicLong instance.
+         */
+        public com.hazelcast.cp.internal.RaftGroupId groupId;
+
+        /**
+         * Name of this IAtomicLong instance.
          */
         public java.lang.String name;
 
         /**
-         * the expected value
+         * The expected value
          */
         public long expected;
 
         /**
-         * the new value
+         * The new value
          */
         public long updated;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, long expected, long updated) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, long expected, long updated) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -79,6 +85,7 @@ public final class AtomicLongCompareAndSetCodec {
         encodeLong(initialFrame.content, REQUEST_EXPECTED_FIELD_OFFSET, expected);
         encodeLong(initialFrame.content, REQUEST_UPDATED_FIELD_OFFSET, updated);
         clientMessage.add(initialFrame);
+        RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
@@ -89,6 +96,7 @@ public final class AtomicLongCompareAndSetCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.expected = decodeLong(initialFrame.content, REQUEST_EXPECTED_FIELD_OFFSET);
         request.updated = decodeLong(initialFrame.content, REQUEST_UPDATED_FIELD_OFFSET);
+        request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
         return request;
     }

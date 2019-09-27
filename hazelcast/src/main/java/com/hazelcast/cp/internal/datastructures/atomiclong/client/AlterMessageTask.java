@@ -17,12 +17,12 @@
 package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicLongAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp.AlterResultType;
 import com.hazelcast.instance.impl.Node;
@@ -35,7 +35,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link AlterOp}
  */
-public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec.RequestParameters>
+public class AlterMessageTask extends AbstractMessageTask<AtomicLongAlterCodec.RequestParameters>
         implements ExecutionCallback<Long> {
 
     public AlterMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -53,18 +53,18 @@ public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec
     }
 
     @Override
-    protected CPAtomicLongAlterCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicLongAlterCodec.decodeRequest(clientMessage);
+    protected AtomicLongAlterCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicLongAlterCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicLongAlterCodec.encodeResponse((Long) response);
+        return AtomicLongAlterCodec.encodeResponse((Long) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override

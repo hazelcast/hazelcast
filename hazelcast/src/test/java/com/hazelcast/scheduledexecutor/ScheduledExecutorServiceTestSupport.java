@@ -90,14 +90,14 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void run() {
             status++;
-            instance.getAtomicLong(runCounterName).set(status);
+            instance.getCPSubsystem().getAtomicLong(runCounterName).set(status);
             instance.getCPSubsystem().getCountDownLatch(latchName).countDown();
         }
 
         @Override
         public void load(Map<String, Integer> snapshot) {
             status = snapshot.get("status");
-            instance.getAtomicLong(loadCounterName).incrementAndGet();
+            instance.getCPSubsystem().getAtomicLong(loadCounterName).incrementAndGet();
         }
 
         @Override
@@ -160,7 +160,7 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public void run() {
-            instance.getAtomicLong(runEntryCounterName).incrementAndGet();
+            instance.getCPSubsystem().getAtomicLong(runEntryCounterName).incrementAndGet();
             instance.getCPSubsystem().getCountDownLatch(startedLatch).countDown();
 
             IMap<String, Integer> map = instance.getMap(mapName);

@@ -20,7 +20,6 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -49,14 +48,6 @@ public class MBeanTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         holder = new MBeanDataHolder(createHazelcastInstanceFactory(1));
-    }
-
-    @Test
-    public void testAtomicLong() throws Exception {
-        IAtomicLong atomicLong = holder.getHz().getAtomicLong("atomiclong");
-        atomicLong.incrementAndGet();
-
-        holder.assertMBeanExistEventually("IAtomicLong", atomicLong.getName());
     }
 
     @Test
