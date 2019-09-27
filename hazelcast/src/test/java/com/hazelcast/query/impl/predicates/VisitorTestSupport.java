@@ -28,6 +28,7 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -122,7 +123,7 @@ public abstract class VisitorTestSupport {
         CompositeEqualPredicate actualEqualPredicate = (CompositeEqualPredicate) actual;
 
         assertEquals(expected.indexName, actualEqualPredicate.indexName);
-        assertEquals(expected.components, actualEqualPredicate.components);
+        assertArrayEquals(expected.components, actualEqualPredicate.components);
         assertEquals(expected.value, actualEqualPredicate.value);
     }
 
@@ -131,7 +132,7 @@ public abstract class VisitorTestSupport {
         CompositeRangePredicate actualRangePredicate = (CompositeRangePredicate) actual;
 
         assertEquals(expected.indexName, actualRangePredicate.indexName);
-        assertEquals(expected.components, actualRangePredicate.components);
+        assertArrayEquals(expected.components, actualRangePredicate.components);
 
         assertEquals(expected.from, actualRangePredicate.from);
         assertEquals(expected.fromInclusive, actualRangePredicate.fromInclusive);

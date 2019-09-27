@@ -195,7 +195,7 @@ public class AttributeIndexRegistry {
 
         @Override
         public IndexConfig getConfig() {
-            return delegate.getConfig();
+            throw newUnsupportedException();
         }
 
         @Override

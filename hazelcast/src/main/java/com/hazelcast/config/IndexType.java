@@ -34,9 +34,6 @@ public enum IndexType {
 
     /**
      * Gets the ID for the given {@link IndexType}.
-     * <p>
-     * The reason this ID is used instead of an the ordinal value is that the ordinal value is more prone to changes
-     * due to reordering.
      *
      * @return the ID
      */

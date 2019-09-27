@@ -134,7 +134,7 @@ public class Indexes {
         converterCache.invalidate(index);
 
         indexes = indexesByName.values().toArray(EMPTY_INDEXES);
-        if (index.getComponents().length > 0) {
+        if (index.getComponents().length > 1) {
             InternalIndex[] oldCompositeIndexes = compositeIndexes;
             InternalIndex[] newCompositeIndexes = Arrays.copyOf(oldCompositeIndexes, oldCompositeIndexes.length + 1);
             newCompositeIndexes[oldCompositeIndexes.length] = index;
