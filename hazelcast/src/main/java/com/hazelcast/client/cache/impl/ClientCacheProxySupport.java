@@ -49,7 +49,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -82,6 +81,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.NULL_KEY_IS_NOT_ALLOWED;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateConfiguredTypes;
@@ -311,7 +311,9 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
 
         Data keyData = toData(key);
         ClientDelegatingFuture<T> delegatingFuture = getAndRemoveInternal(keyData, false);
-        ExecutionCallback<T> callback = !statisticsEnabled ? null : statsHandler.newOnRemoveCallback(true, startNanos);
+        BiConsumer<T, Throwable> callback = !statisticsEnabled
+                ? null
+                : statsHandler.newOnRemoveCallback(true, startNanos);
         onGetAndRemoveAsyncInternal(key, keyData, delegatingFuture, callback);
         return delegatingFuture;
     }
@@ -328,7 +330,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     protected <T> void onGetAndRemoveAsyncInternal(K key, Data keyData, ClientDelegatingFuture<T> delegatingFuture,
-                                                   ExecutionCallback<T> callback) {
+                                                   BiConsumer<T, Throwable> callback) {
         addCallback(delegatingFuture, callback);
     }
 
@@ -352,7 +354,9 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientDelegatingFuture delegatingFuture =
                 newDelegatingFuture(future, clientMessage -> CacheRemoveCodec.decodeResponse(clientMessage).response);
         if (async) {
-            ExecutionCallback callback = !statisticsEnabled ? null : statsHandler.newOnRemoveCallback(false, startNanos);
+            BiConsumer<Object, Throwable> callback = !statisticsEnabled
+                    ? null
+                    : statsHandler.newOnRemoveCallback(false, startNanos);
             onRemoveAsyncInternal(key, keyData, delegatingFuture, callback);
             return delegatingFuture;
         } else {
@@ -370,7 +374,8 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         // NOP
     }
 
-    protected void onRemoveAsyncInternal(Object key, Data keyData, ClientDelegatingFuture future, ExecutionCallback callback) {
+    protected void onRemoveAsyncInternal(Object key, Data keyData, ClientDelegatingFuture future,
+                                         BiConsumer<Object, Throwable> callback) {
         addCallback(future, callback);
     }
 
@@ -410,13 +415,15 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientInvocationFuture future = invoke(request, keyData, completionId);
         ClientDelegatingFuture<T> delegatingFuture = newDelegatingFuture(future,
                 message -> CacheReplaceCodec.decodeResponse(message).response);
-        ExecutionCallback<T> callback = async && statisticsEnabled ? statsHandler.newOnReplaceCallback(startNanos) : null;
+        BiConsumer<T, Throwable> callback = async && statisticsEnabled
+                ? statsHandler.newOnReplaceCallback(startNanos)
+                : null;
         onReplaceInternalAsync(key, newValue, keyData, newValueData, delegatingFuture, callback);
         return delegatingFuture;
     }
 
     protected <T> void onReplaceInternalAsync(K key, V value, Data keyData, Data valueData,
-                                              ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
+                                              ClientDelegatingFuture<T> delegatingFuture, BiConsumer<T, Throwable> callback) {
         addCallback(delegatingFuture, callback);
     }
 
@@ -444,13 +451,15 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientInvocationFuture future = invoke(request, keyData, completionId);
         ClientDelegatingFuture<T> delegatingFuture =
                 newDelegatingFuture(future, message -> CacheGetAndReplaceCodec.decodeResponse(message).response);
-        ExecutionCallback<T> callback = async && statisticsEnabled ? statsHandler.<T>newOnReplaceCallback(startNanos) : null;
+        BiConsumer<T, Throwable> callback = async && statisticsEnabled
+                ? statsHandler.<T>newOnReplaceCallback(startNanos)
+                : null;
         onReplaceAndGetAsync(key, newValue, keyData, newValueData, delegatingFuture, callback);
         return delegatingFuture;
     }
 
     protected <T> void onReplaceAndGetAsync(K key, V value, Data keyData, Data valueData,
-                                            ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
+                                            ClientDelegatingFuture<T> delegatingFuture, BiConsumer<T, Throwable> callback) {
         addCallback(delegatingFuture, callback);
     }
 
@@ -486,7 +495,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     protected ClientDelegatingFuture putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean isGet,
-                                                      boolean withCompletionEvent, OneShotExecutionCallback<V> callback) {
+                                                      boolean withCompletionEvent, BiConsumer<V, Throwable> callback) {
         ensureOpen();
         validateNotNull(key, value);
         validateConfiguredTypes(cacheConfig, key, value);
@@ -501,20 +510,17 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
 
     protected ClientDelegatingFuture<V> wrapPutAsyncFuture(K key, V value, Data keyData, Data valueData,
                                                            ClientInvocationFuture invocationFuture,
-                                                           OneShotExecutionCallback<V> callback) {
-        if (callback == null) {
-            return newDelegatingFuture(invocationFuture, message -> CachePutCodec.decodeResponse(message).response);
+                                                           BiConsumer<V, Throwable> callback) {
+
+        ClientDelegatingFuture<V> future = newDelegatingFuture(invocationFuture,
+                message -> CachePutCodec.decodeResponse(message).response);
+        if (callback != null) {
+            future.whenComplete(callback);
         }
-
-        CallbackAwareClientDelegatingFuture<V> future = new CallbackAwareClientDelegatingFuture<>(invocationFuture,
-                getSerializationService(), message -> CachePutCodec.decodeResponse(message).response, callback);
-        // todo FIXME transition callback to BiConsumer
-//        future.andThen(callback);
-
         return future;
     }
 
-    protected OneShotExecutionCallback<V> newStatsCallbackOrNull(boolean isGet) {
+    protected BiConsumer<V, Throwable> newStatsCallbackOrNull(boolean isGet) {
         if (!statisticsEnabled) {
             return null;
         }
@@ -558,7 +564,9 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientDelegatingFuture<Boolean> delegatingFuture =
                 newDelegatingFuture(future, message -> CachePutIfAbsentCodec.decodeResponse(message).response);
         if (async) {
-            ExecutionCallback<Boolean> callback = !statisticsEnabled ? null : statsHandler.newOnPutIfAbsentCallback(startNanos);
+            BiConsumer<Boolean, Throwable> callback = !statisticsEnabled
+                    ? null
+                    : statsHandler.newOnPutIfAbsentCallback(startNanos);
             onPutIfAbsentAsyncInternal(key, value, keyData, valueData, delegatingFuture, callback);
             return delegatingFuture;
         } else {
@@ -578,7 +586,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
 
     protected void onPutIfAbsentAsyncInternal(K key, V value, Data keyData, Data valueData,
                                               ClientDelegatingFuture<Boolean> delegatingFuture,
-                                              ExecutionCallback<Boolean> callback) {
+                                              BiConsumer<Boolean, Throwable> callback) {
         addCallback(delegatingFuture, callback);
     }
 
@@ -677,7 +685,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     protected InternalCompletableFuture<V> getAsyncInternal(Object key, ExpiryPolicy expiryPolicy,
-                                                            ExecutionCallback<V> callback) {
+                                                            BiConsumer<V, Throwable> callback) {
         Data dataKey = toData(key);
         ClientDelegatingFuture<V> future = getInternal(dataKey, expiryPolicy, true);
         addCallback(future, callback);

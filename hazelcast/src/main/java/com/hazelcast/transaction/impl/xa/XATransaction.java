@@ -16,7 +16,6 @@
 
 package com.hazelcast.transaction.impl.xa;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;

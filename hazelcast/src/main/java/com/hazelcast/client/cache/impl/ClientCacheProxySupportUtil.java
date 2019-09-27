@@ -34,7 +34,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.cache.CacheException;
@@ -45,6 +44,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.cache.CacheEventType.PARTITION_LOST;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -84,18 +84,11 @@ final class ClientCacheProxySupportUtil {
         }
     }
 
-    // todo completely remove ExecutionCallback
-    static <T> void addCallback(ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
+    static <T> void addCallback(ClientDelegatingFuture<T> delegatingFuture, BiConsumer<T, Throwable> callback) {
         if (callback == null) {
             return;
         }
-        delegatingFuture.whenCompleteAsync((result, throwable) -> {
-            if (throwable == null) {
-                callback.onResponse(result);
-            } else {
-                callback.onFailure(throwable);
-            }
-        });
+        delegatingFuture.whenComplete(callback);
     }
 
     static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {

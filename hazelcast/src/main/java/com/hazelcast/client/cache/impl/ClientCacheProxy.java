@@ -34,7 +34,6 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
@@ -60,6 +59,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -428,7 +428,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         ensureOpen();
         validateNotNull(key);
 
-        ExecutionCallback<V> callback = !statisticsEnabled ? null : statsHandler.newOnGetCallback(startNanos);
+        BiConsumer<V, Throwable> callback = !statisticsEnabled ? null : statsHandler.newOnGetCallback(startNanos);
         return getAsyncInternal(key, expiryPolicy, callback);
     }
 

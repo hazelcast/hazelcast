@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
@@ -46,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.checkNearCacheConfig;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.createInvalidationListenerCodec;
@@ -128,7 +128,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @Override
     @SuppressWarnings("unchecked")
     protected InternalCompletableFuture<V> getAsyncInternal(Object key, ExpiryPolicy expiryPolicy,
-                                                            ExecutionCallback<V> callback) {
+                                                            BiConsumer<V, Throwable> callback) {
         key = serializeKeys ? toData(key) : key;
         V value = (V) getCachedValue(key, false);
         if (value != NOT_CACHED) {
@@ -167,7 +167,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @Override
     protected void onPutIfAbsentAsyncInternal(K key, V value, Data keyData, Data valueData,
                                               ClientDelegatingFuture<Boolean> delegatingFuture,
-                                              ExecutionCallback<Boolean> callback) {
+                                              BiConsumer<Boolean, Throwable> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
         CacheOrInvalidateCallback<Boolean> wrapped = new CacheOrInvalidateCallback<>(callbackKey, keyData, value,
                 valueData, callback);
@@ -177,7 +177,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @Override
     protected ClientDelegatingFuture<V> wrapPutAsyncFuture(K key, V value, Data keyData, Data valueData,
                                                            ClientInvocationFuture invocationFuture,
-                                                           OneShotExecutionCallback<V> callback) {
+                                                           BiConsumer<V, Throwable> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
         PutAsyncOneShotCallback wrapped = new PutAsyncOneShotCallback(callbackKey, keyData, value, valueData, callback);
         return super.wrapPutAsyncFuture(key, value, keyData, valueData, invocationFuture, wrapped);
@@ -185,7 +185,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     @Override
     protected <T> void onGetAndRemoveAsyncInternal(K key, Data keyData, ClientDelegatingFuture<T> delegatingFuture,
-                                                   ExecutionCallback<T> callback) {
+                                                   BiConsumer<T, Throwable> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
         InvalidateCallback<T> wrapped = new InvalidateCallback<>(callbackKey, callback);
         super.onGetAndRemoveAsyncInternal(key, keyData, delegatingFuture, wrapped);
@@ -193,7 +193,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     @Override
     protected <T> void onReplaceInternalAsync(K key, V value, Data keyData, Data valueData,
-                                              ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
+                                              ClientDelegatingFuture<T> delegatingFuture, BiConsumer<T, Throwable> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
         CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<>(callbackKey, keyData, value, valueData, callback);
         super.onReplaceInternalAsync(key, value, keyData, valueData, delegatingFuture, wrapped);
@@ -201,7 +201,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     @Override
     protected <T> void onReplaceAndGetAsync(K key, V value, Data keyData, Data valueData,
-                                            ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
+                                            ClientDelegatingFuture<T> delegatingFuture, BiConsumer<T, Throwable> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
         CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<>(callbackKey, keyData, value, valueData, callback);
         super.onReplaceAndGetAsync(key, value, keyData, valueData, delegatingFuture, wrapped);
@@ -430,7 +430,8 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    protected void onRemoveAsyncInternal(Object key, Data keyData, ClientDelegatingFuture future, ExecutionCallback callback) {
+    protected void onRemoveAsyncInternal(Object key, Data keyData, ClientDelegatingFuture future,
+                                         BiConsumer<Object, Throwable> callback) {
         try {
             super.onRemoveAsyncInternal(key, keyData, future, callback);
         } finally {
@@ -574,51 +575,44 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
     }
 
-    private final class GetAsyncCallback implements ExecutionCallback<V> {
+    private final class GetAsyncCallback implements BiConsumer<V, Throwable> {
 
         private final Object key;
         private final long reservationId;
-        private final ExecutionCallback<V> callback;
+        private final BiConsumer<V, Throwable> callback;
 
-        GetAsyncCallback(Object key, long reservationId, ExecutionCallback<V> callback) {
+        GetAsyncCallback(Object key, long reservationId, BiConsumer<V, Throwable> callback) {
             this.key = key;
             this.reservationId = reservationId;
             this.callback = callback;
         }
 
         @Override
-        public void onResponse(V valueData) {
+        public void accept(V valueData, Throwable throwable) {
             try {
                 if (callback != null) {
-                    callback.onResponse(valueData);
+                    callback.accept(valueData, throwable);
                 }
             } finally {
-                tryPublishReserved(key, valueData, reservationId, false);
-            }
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            try {
-                if (callback != null) {
-                    callback.onFailure(t);
+                if (throwable == null) {
+                    tryPublishReserved(key, valueData, reservationId, false);
+                } else {
+                    invalidateNearCache(key);
                 }
-            } finally {
-                invalidateNearCache(key);
             }
         }
     }
 
-    private final class PutAsyncOneShotCallback extends OneShotExecutionCallback<V> {
+    private final class PutAsyncOneShotCallback implements BiConsumer<V, Throwable> {
 
         private final Object key;
         private final Data keyData;
         private final V newValue;
         private final Data newValueData;
-        private final OneShotExecutionCallback<V> statsCallback;
+        private final BiConsumer<V, Throwable> statsCallback;
 
         private PutAsyncOneShotCallback(Object key, Data keyData, V newValue, Data newValueData,
-                                        OneShotExecutionCallback<V> callback) {
+                                        BiConsumer<V, Throwable> callback) {
             this.key = key;
             this.keyData = keyData;
             this.newValue = newValue;
@@ -627,93 +621,68 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        protected void onResponseInternal(V response) {
+        public void accept(V v, Throwable throwable) {
             try {
                 if (statsCallback != null) {
-                    statsCallback.onResponseInternal(response);
+                    statsCallback.accept(v, throwable);
                 }
             } finally {
-                cacheOrInvalidate(key, keyData, newValue, newValueData);
-            }
-        }
-
-        @Override
-        protected void onFailureInternal(Throwable t) {
-            try {
-                if (statsCallback != null) {
-                    statsCallback.onFailureInternal(t);
+                if (throwable == null) {
+                    cacheOrInvalidate(key, keyData, newValue, newValueData);
+                } else {
+                    invalidateNearCache(key);
                 }
-            } finally {
-                invalidateNearCache(key);
             }
         }
     }
 
-    private final class CacheOrInvalidateCallback<T> implements ExecutionCallback<T> {
+    private final class CacheOrInvalidateCallback<T> implements BiConsumer<T, Throwable> {
 
         private final Object key;
         private final Data keyData;
         private final V value;
         private final Data valueData;
-        private final ExecutionCallback<T> callback;
+        private final BiConsumer<T, Throwable> delegate;
 
-        CacheOrInvalidateCallback(Object key, Data keyData, V value, Data valueData, ExecutionCallback<T> callback) {
+        CacheOrInvalidateCallback(Object key, Data keyData, V value, Data valueData, BiConsumer<T, Throwable> delegate) {
             this.key = key;
             this.keyData = keyData;
             this.value = value;
             this.valueData = valueData;
-            this.callback = callback;
+            this.delegate = delegate;
         }
 
         @Override
-        public void onResponse(T response) {
+        public void accept(T t, Throwable throwable) {
             try {
-                if (callback != null) {
-                    callback.onResponse(response);
+                if (delegate != null) {
+                    delegate.accept(t, throwable);
                 }
             } finally {
-                cacheOrInvalidate(key, keyData, value, valueData);
-            }
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            try {
-                if (callback != null) {
-                    callback.onFailure(t);
+                if (throwable == null) {
+                    cacheOrInvalidate(key, keyData, value, valueData);
+                } else {
+                    invalidateNearCache(key);
                 }
-            } finally {
-                invalidateNearCache(key);
             }
         }
     }
 
-    private final class InvalidateCallback<T> implements ExecutionCallback<T> {
+    private final class InvalidateCallback<T> implements BiConsumer<T, Throwable> {
 
         private final Object key;
-        private final ExecutionCallback<T> callback;
+        private final BiConsumer<T, Throwable> delegate;
 
-        InvalidateCallback(Object key, ExecutionCallback<T> callback) {
+        InvalidateCallback(Object key, BiConsumer<T, Throwable> delegate) {
             this.key = key;
-            this.callback = callback;
+            this.delegate = delegate;
         }
 
         @Override
-        public void onResponse(T response) {
+        public void accept(T value, Throwable throwable) {
             try {
-                if (callback != null) {
-                    callback.onResponse(response);
-                }
-            } finally {
-                invalidateNearCache(key);
-            }
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            try {
-                if (callback != null) {
-                    callback.onFailure(t);
+                if (delegate != null) {
+                    delegate.accept(value, throwable);
                 }
             } finally {
                 invalidateNearCache(key);

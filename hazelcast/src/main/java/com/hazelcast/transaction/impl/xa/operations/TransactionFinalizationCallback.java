@@ -26,7 +26,7 @@ final class TransactionFinalizationCallback<V> implements BiConsumer<V, Throwabl
     private final int size;
     private final Operation operation;
 
-    public TransactionFinalizationCallback(Operation operation, int size) {
+    TransactionFinalizationCallback(Operation operation, int size) {
         this.operation = operation;
         this.size = size;
     }

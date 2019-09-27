@@ -16,8 +16,9 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.serialization.SerializationService;
+
+import java.util.function.BiConsumer;
 
 /**
  * Helper class which contains specific statistic calculations per context
@@ -57,15 +58,10 @@ final class CacheStatsHandler {
         }
     }
 
-    <T> ExecutionCallback<T> newOnReplaceCallback(final long startNanos) {
-        return new ExecutionCallback<T>() {
-            @Override
-            public void onResponse(T response) {
+    <T> BiConsumer<T, Throwable> newOnReplaceCallback(final long startNanos) {
+        return (response, throwable) -> {
+            if (throwable == null) {
                 onReplace(true, startNanos, toObject(response));
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
             }
         };
     }
@@ -78,16 +74,11 @@ final class CacheStatsHandler {
         }
     }
 
-    ExecutionCallback<Boolean> newOnPutIfAbsentCallback(final long startNanos) {
-        return new ExecutionCallback<Boolean>() {
-            @Override
-            public void onResponse(Boolean responseData) {
+    BiConsumer<Boolean, Throwable> newOnPutIfAbsentCallback(final long startNanos) {
+        return (responseData, throwable) -> {
+            if (throwable == null) {
                 Object response = toObject(responseData);
                 onPutIfAbsent(startNanos, (Boolean) response);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
             }
         };
     }
@@ -105,15 +96,10 @@ final class CacheStatsHandler {
         }
     }
 
-    <T> OneShotExecutionCallback<T> newOnPutCallback(final boolean isGet, final long startNanos) {
-        return new OneShotExecutionCallback<T>() {
-            @Override
-            protected void onResponseInternal(T responseData) {
+    <T> BiConsumer<T, Throwable> newOnPutCallback(final boolean isGet, final long startNanos) {
+        return (responseData, throwable) -> {
+            if (throwable == null) {
                 onPut(isGet, startNanos, responseData != null);
-            }
-
-            @Override
-            protected void onFailureInternal(Throwable t) {
             }
         };
     }
@@ -136,13 +122,10 @@ final class CacheStatsHandler {
         }
     }
 
-    <T> ExecutionCallback<T> newOnRemoveCallback(final boolean isGet, final long startNanos) {
-        return new ExecutionCallback<T>() {
-            public void onResponse(T response) {
-                onRemove(isGet, startNanos, response);
-            }
-
-            public void onFailure(Throwable t) {
+    <T> BiConsumer<T, Throwable> newOnRemoveCallback(final boolean isGet, final long startNanos) {
+        return (v, throwable) -> {
+            if (throwable == null) {
+                onRemove(isGet, startNanos, v);
             }
         };
     }
@@ -156,15 +139,10 @@ final class CacheStatsHandler {
         statistics.addGetTimeNanos(System.nanoTime() - startNanos);
     }
 
-    <T> ExecutionCallback<T> newOnGetCallback(final long startNanos) {
-        return new ExecutionCallback<T>() {
-            @Override
-            public void onResponse(T response) {
+    <T> BiConsumer<T, Throwable> newOnGetCallback(final long startNanos) {
+        return (response, throwable) -> {
+            if (throwable == null) {
                 onGet(startNanos, response != null);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
             }
         };
     }
