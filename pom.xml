@@ -196,7 +196,7 @@
             <Import-Package>
               com.hazelcast.config,com.hazelcast.config.properties,
               com.hazelcast.spi.discovery,com.hazelcast.core,
-              com.hazelcast.logging,com.hazelcast.nio, com.hazelcast.internal.util,
+              com.hazelcast.logging,com.hazelcast.nio,com.hazelcast.internal.nio, com.hazelcast.internal.util,
               com.hazelcast.internal.json,javax.net.ssl,javax.security.auth.x500,
               javax.naming, javax.naming.directory, com.hazelcast.spi.partitiongroup
             </Import-Package>

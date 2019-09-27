@@ -17,7 +17,7 @@
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import org.junit.Test;
 
 import java.io.BufferedWriter;

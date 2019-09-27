@@ -18,7 +18,7 @@ package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.properties.PropertyDefinition;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.StringUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
