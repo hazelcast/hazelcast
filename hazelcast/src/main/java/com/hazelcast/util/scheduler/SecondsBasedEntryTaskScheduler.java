@@ -21,12 +21,12 @@ import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -69,9 +69,9 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
     };
 
     /** Map from entry key to the scheduler responsible for this key */
-    private HashMap<K, PerKeyScheduler> keys = new HashMap<>();
+    private HashMap<K, PerKeyScheduler> keys = new HashMap<K, PerKeyScheduler>();
     /** Map from second to the group of entries to be processed in this second */
-    private HashMap<Integer, ScheduledGroup> groups = new HashMap<>();
+    private HashMap<Integer, ScheduledGroup> groups = new HashMap<Integer, ScheduledGroup>();
 
     private final AtomicLong uniqueIdGenerator = new AtomicLong();
     private final Object mutex = new Object();
@@ -90,10 +90,10 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
     @Override
     public boolean schedule(long delayMillis, K key, V value) {
         int delaySeconds = ceilToSecond(delayMillis);
-        int second = findRelativeSecond(delayMillis);
+        final int second = findRelativeSecond(delayMillis);
         long id = uniqueIdGenerator.incrementAndGet();
         synchronized (mutex) {
-            ScheduledEntry<K, V> entry = new ScheduledEntry<>(key, value, delayMillis, delaySeconds, id);
+            ScheduledEntry<K, V> entry = new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id);
             PerKeyScheduler keyScheduler = keys.get(key);
             if (keyScheduler == null) {
                 switch (scheduleType) {
@@ -105,7 +105,12 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
             }
             ScheduledGroup group = groups.get(second);
             if (group == null) {
-                Runnable groupExecutor = () -> executeGroup(second);
+                Runnable groupExecutor = new Runnable() {
+                    @Override
+                    public void run() {
+                        executeGroup(second);
+                    }
+                };
                 ScheduledFuture executorFuture = taskScheduler.schedule(groupExecutor, delaySeconds, TimeUnit.SECONDS);
                 group = new ScheduledGroup(second, executorFuture);
                 groups.put(second, group);
@@ -122,12 +127,12 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
                 // group removed in meantime
                 return;
             }
-            entries = new ArrayList<>(group.listEntries());
+            entries = new ArrayList<ScheduledEntry<K, V>>(group.listEntries());
             for (ScheduledEntry<K, V> entry : entries) {
                 keys.get(entry.getKey()).executed(entry);
             }
         }
-        entries.sort(SCHEDULED_ENTRIES_COMPARATOR);
+        Collections.sort(entries, SCHEDULED_ENTRIES_COMPARATOR);
         entryProcessor.process(this, entries);
     }
 
@@ -207,7 +212,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
 
         int cancelIfExists(V value) {
             ScheduledEntry<K, V> entry = group.getEntry(id);
-            if (Objects.equals(entry.getValue(), value)) {
+            if (areEqual(entry.getValue(), value)) {
                 group.removeEntry(id);
                 keys.remove(key);
                 return 1;
@@ -228,7 +233,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
      */
     private final class PerKeyForEachScheduler extends PerKeyScheduler {
         final K key;
-        final Map<Long, ScheduledGroup> idToGroupMap = new HashMap<>();
+        final Map<Long, ScheduledGroup> idToGroupMap = new HashMap<Long, ScheduledGroup>();
 
         PerKeyForEachScheduler(K key) {
             this.key = key;
@@ -272,7 +277,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
                 Long id = idToGroup.getKey();
                 ScheduledGroup group = idToGroup.getValue();
                 ScheduledEntry<K, V> entry = group.getEntry(id);
-                if (Objects.equals(entry.getValue(), value)) {
+                if (areEqual(entry.getValue(), value)) {
                     group.removeEntry(id);
                     iterator.remove();
                     cancelled++;
@@ -299,7 +304,7 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
     private final class ScheduledGroup {
         final int second;
         final ScheduledFuture executor;
-        final Map<Long, ScheduledEntry<K, V>> idToEntryMap = new HashMap<>();
+        final Map<Long, ScheduledEntry<K, V>> idToEntryMap = new HashMap<Long, ScheduledEntry<K, V>>();
 
         private ScheduledGroup(int second, ScheduledFuture executor) {
             this.second = second;
@@ -392,5 +397,9 @@ public final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskSche
 
     private static int ceilToSecond(long delayMillis) {
         return (int) Math.ceil(delayMillis / FACTOR);
+    }
+
+    private static boolean areEqual(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
     }
 }
