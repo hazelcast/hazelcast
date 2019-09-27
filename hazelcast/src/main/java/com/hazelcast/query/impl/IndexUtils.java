@@ -114,7 +114,7 @@ public final class IndexUtils {
         IndexConfig newConfig = new IndexConfig().setType(indexType);
 
         StringBuilder nameBuilder = indexName == null
-            ? new StringBuilder(mapName + (indexType == IndexType.SORTED ? "_sorted" : "_hash")) : null;
+            ? new StringBuilder(mapName + "_" + getIndexTypeName(indexType)) : null;
 
         for (String normalizedAttributeName : normalizedAttributeNames) {
             newConfig.addAttribute(normalizedAttributeName);
@@ -345,5 +345,18 @@ public final class IndexUtils {
         }
 
         return res;
+    }
+
+    private static String getIndexTypeName(IndexType type) {
+        switch (type) {
+            case SORTED:
+                return "sorted";
+
+            case HASH:
+                return "hash";
+
+            default:
+                throw new IllegalArgumentException("Unsupported index type: " + type);
+        }
     }
 }
