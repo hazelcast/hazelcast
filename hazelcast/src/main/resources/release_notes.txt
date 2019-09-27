@@ -14,7 +14,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 2. Fixes
 
 - Fixed an issue where the node.isMaster() method could cause inconsistent behaviors when it is executed during a partition service lock. [#15618]
-- Fixed an issue where Management Center was not able to see the 3.12.2 members (members with CP subsystem enabled) after performing a rolling upgrade from Hazelcast IMDG 3.11.4 to 3.12.2. 'ManagementCenterService' was shutting down and throwing an exception when a CP-subsystem-enabled member was trying to report to Management Center for the first time. [#15609]
+- Fixed an issue where Management Center was not able to see the 3.12.2 members (members with CP subsystem enabled) after performing a rolling upgrade from Hazelcast IMDG 3.11.4 to 3.12.2. 'ManagementCenterService' was shutting down and throwing an exception when a CP-subsystem-enabled member was trying to report to Management Center for the first time. [#15621]
 - Made PagingPredicate a VisitablePredicate so the optimizer is able to visit its inner predicate to optimize it or to select an index to evaluate the inner predicate with. [#15602]
 - Fixed an issue where CP subsystem restarts were not being canceled or waited the running/scheduled discovery tasks. Otherwise, two different discovery tasks could overlap and run concurrently or one of the discovery tasks could run in a corrupted state. [#15568]
 - Fixed an issue where the cleaner task for expired records was logging the exceptions during migrations: the log level for PartitionMigratingException has been set to FINEST. [#15543]
