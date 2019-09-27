@@ -147,7 +147,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     private final AtomicReference<CountDownLatch> shutdownLatchRef = new AtomicReference<CountDownLatch>();
 
-    private volatile Address lastMaster;
+    private volatile Address latestMaster;
 
     /** Whether the master should fetch the partition tables from other nodes, can happen when node becomes new master. */
     private volatile boolean shouldFetchPartitionTables;
@@ -247,7 +247,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     @Override
     public PartitionRuntimeState firstArrangement() {
-        if (!node.isMaster()) {
+        if (!isLocalMemberMaster()) {
             triggerMasterToAssignPartitions();
             return null;
         }
@@ -281,7 +281,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             return;
         }
 
-        final Address masterAddress = clusterService.getMasterAddress();
+        final Address masterAddress = latestMaster;
         if (masterAddress == null || masterAddress.equals(node.getThisAddress())) {
             return;
         }
@@ -359,11 +359,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         logger.fine("Adding " + member);
         lock.lock();
         try {
-            lastMaster = node.getClusterService().getMasterAddress();
+            latestMaster = node.getClusterService().getMasterAddress();
             if (!member.localMember()) {
                 partitionStateManager.updateMemberGroupsSize();
             }
-            if (node.isMaster()) {
+            if (isLocalMemberMaster()) {
                 if (partitionStateManager.isInitialized()) {
                     migrationManager.triggerControlTask();
                 }
@@ -381,21 +381,24 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             migrationManager.onMemberRemove(member);
             replicaManager.cancelReplicaSyncRequestsTo(member);
 
+            Address formerMaster = latestMaster;
+            latestMaster = node.getClusterService().getMasterAddress();
+
             ClusterState clusterState = node.getClusterService().getClusterState();
             if (clusterState.isMigrationAllowed() || clusterState.isPartitionPromotionAllowed()) {
                 partitionStateManager.updateMemberGroupsSize();
 
-                boolean isThisNodeNewMaster = node.isMaster() && !node.getThisAddress().equals(lastMaster);
+                boolean isMaster = node.isMaster();
+                boolean isThisNodeNewMaster = isMaster && !node.getThisAddress().equals(formerMaster);
                 if (isThisNodeNewMaster) {
                     assert !shouldFetchPartitionTables;
                     shouldFetchPartitionTables = true;
                 }
-                if (node.isMaster()) {
+                if (isMaster) {
                     migrationManager.triggerControlTask();
                 }
             }
 
-            lastMaster = node.getClusterService().getMasterAddress();
         } finally {
             lock.unlock();
         }
@@ -409,7 +412,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         if (!partitionStateManager.isInitialized()) {
             return;
         }
-        if (!node.isMaster()) {
+        if (!isLocalMemberMaster()) {
             return;
         }
 
@@ -556,7 +559,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             return;
         }
 
-        if (!node.isMaster()) {
+        if (!isLocalMemberMaster()) {
             return;
         }
 
@@ -589,7 +592,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     void sendPartitionRuntimeState(Address target) {
-        if (!node.isMaster()) {
+        if (!isLocalMemberMaster()) {
             return;
         }
         assert partitionStateManager.isInitialized();
@@ -612,7 +615,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             return;
         }
 
-        if (!node.isMaster()) {
+        if (!isLocalMemberMaster()) {
             return;
         }
 
@@ -721,8 +724,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     private boolean validateSenderIsMaster(Address sender, String messageType) {
-        Address master = node.getClusterService().getMasterAddress();
-        if (node.isMaster() && !node.getThisAddress().equals(sender)) {
+        Address master = latestMaster;
+        Address thisAddress = node.getThisAddress();
+        if (thisAddress.equals(master) && !thisAddress.equals(sender)) {
             logger.warning("This is the master node and received " + messageType + " from " + sender
                     + ". Ignoring incoming state! ");
             return false;
@@ -1067,7 +1071,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     @Override
     public boolean hasOnGoingMigration() {
         return hasOnGoingMigrationLocal()
-                || (!node.isMaster() && partitionReplicaStateChecker.hasOnGoingMigrationMaster(Level.FINEST));
+                || (!isLocalMemberMaster() && partitionReplicaStateChecker.hasOnGoingMigrationMaster(Level.FINEST));
     }
 
     @Override
@@ -1321,6 +1325,24 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * Returns true only if local member is the last known master by
+     * {@code InternalPartitionServiceImpl}.
+     * <p>
+     * Last known master is updated under partition service lock,
+     * when the former master leaves the cluster.
+     * <p>
+     * This method should be used instead of {@code node.isMaster()}
+     * when the logic relies on being master.
+     */
+    boolean isLocalMemberMaster() {
+        Address master = latestMaster;
+        if (master == null && node.getClusterService().getSize() == 1) {
+            master = node.getClusterService().getMasterAddress();
+        }
+        return node.getThisAddress().equals(master);
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")

@@ -90,7 +90,7 @@ public class PartitionReplicaStateChecker {
             return MIGRATION_LOCAL;
         }
 
-        if (!node.isMaster() && hasOnGoingMigrationMaster(Level.OFF)) {
+        if (!partitionService.isLocalMemberMaster() && hasOnGoingMigrationMaster(Level.OFF)) {
             return MIGRATION_ON_MASTER;
         }
 
