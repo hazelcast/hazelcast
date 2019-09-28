@@ -14,8 +14,8 @@ public class CpuPool {
     public final static CpuPool EMPTY_POOL = new CpuPool(null);
     private final static boolean AFFINITY_AVAILABLE = isAffinityAvailable();
 
-    private List<Integer> cpus;
-    private Queue<Integer> pool = new ConcurrentLinkedQueue<>();
+    private final List<Integer> cpus;
+    private final Queue<Integer> pool = new ConcurrentLinkedQueue<>();
 
     public CpuPool(String cpuString) {
         if (AFFINITY_AVAILABLE) {
@@ -46,7 +46,6 @@ public class CpuPool {
         }
 
         AffinityLock lock = AffinityLock.acquireLock(cpu);
-
         try {
             r.run();
         } finally {
@@ -55,7 +54,7 @@ public class CpuPool {
         }
     }
 
-    public static List<Integer> parseCpuString(String cpuString) {
+    static List<Integer> parseCpuString(String cpuString) {
         List<Integer> cpus = new ArrayList<>();
         if (cpuString == null) {
             return cpus;
