@@ -21,11 +21,9 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import net.openhft.affinity.Affinity;
-import net.openhft.affinity.AffinityLock;
-import net.openhft.affinity.AffinitySupport;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -36,7 +34,6 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_BYTES_TRANSCEIVED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_COMPLETED_TASK_COUNT;
@@ -60,7 +57,7 @@ import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
 @ExcludedMetricTargets(MANAGEMENT_CENTER)
-public class NioThread extends Thread implements OperationHostileThread {
+public class NioThread extends HazelcastManagedThread implements OperationHostileThread {
 
     // WARNING: This value has significant effect on idle CPU usage!
     private static final int SELECT_WAIT_TIME_MILLIS
@@ -229,29 +226,8 @@ public class NioThread extends Thread implements OperationHostileThread {
         }
     }
 
-
-    public final static AtomicInteger CPU_ID = new AtomicInteger(Integer.getInteger("ioThreadCpuId",0));
-    public final static boolean THREAD_AFFINITY = Boolean.parseBoolean(System.getProperty("thread.affinity","true"));
-
     @Override
-    public void run() {
-        System.out.println("ThreadAffinity enabled:"+THREAD_AFFINITY);
-        System.out.println("Is JNA available:"+ Affinity.isJNAAvailable());
-
-        if(THREAD_AFFINITY) {
-            AffinityLock lock = AffinityLock.acquireLock(CPU_ID.getAndIncrement());
-            try {
-                System.out.println(getName() + " ThreadId:" + AffinitySupport.getThreadId());
-                doRun();
-            } finally {
-                lock.release();
-            }
-        }else{
-            doRun();
-        }
-    }
-
-    private void doRun() {
+    protected void executeRun() {
         // This outer loop is a bit complex but it takes care of a lot of stuff:
         // * it calls runSelectNowLoop or runSelectLoop based on selectNow enabled or not.
         // * handles backoff and retrying in case if io exception is thrown

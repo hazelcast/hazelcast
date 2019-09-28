@@ -17,6 +17,8 @@
 package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.util.CpuPool;
+import net.openhft.affinity.AffinityLock;
 
 /**
  * Base class for all Hazelcast threads to manage them from a single point.
@@ -26,6 +28,8 @@ import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
  * {@link com.hazelcast.internal.util.executor.HazelcastManagedThread#afterRun} methods.
  */
 public class HazelcastManagedThread extends Thread {
+
+    private CpuPool cpuPool;
 
     public HazelcastManagedThread() {
     }
@@ -40,6 +44,10 @@ public class HazelcastManagedThread extends Thread {
 
     public HazelcastManagedThread(Runnable target, String name) {
         super(target, name);
+    }
+
+    public void setCpuPool(CpuPool cpuPool) {
+        this.cpuPool = cpuPool;
     }
 
     @Override
@@ -74,14 +82,28 @@ public class HazelcastManagedThread extends Thread {
     /**
      * Manages the thread lifecycle and can be overridden to customize if needed.
      */
-    public void run() {
+    public final void run() {
+        int cpu = -1;
+        AffinityLock lock = null;
         try {
+            cpu = cpuPool.deque();
+            if (cpu != -1) {
+                lock = AffinityLock.acquireLock(cpu);
+            }
             beforeRun();
             executeRun();
         } catch (OutOfMemoryError e) {
             OutOfMemoryErrorDispatcher.onOutOfMemory(e);
         } finally {
             afterRun();
+
+            if (cpu != -1) {
+                cpuPool.enque(cpu);
+            }
+
+            if (lock != null) {
+                lock.release();
+            }
         }
     }
 }

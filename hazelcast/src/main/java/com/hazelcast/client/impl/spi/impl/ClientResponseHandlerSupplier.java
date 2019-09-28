@@ -20,19 +20,17 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.CpuPool;
 import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import net.openhft.affinity.Affinity;
-import net.openhft.affinity.AffinityLock;
-import net.openhft.affinity.AffinitySupport;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -79,6 +77,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private final Consumer<ClientMessage> responseHandler;
     private final boolean responseThreadsDynamic;
     private final ConcurrencyDetection concurrencyDetection;
+    private final CpuPool cpuPool = new CpuPool(System.getProperty("responseCpus"));
 
     public ClientResponseHandlerSupplier(AbstractClientInvocationService invocationService,
                                          ConcurrencyDetection concurrencyDetection) {
@@ -86,6 +85,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         this.concurrencyDetection = concurrencyDetection;
         this.client = invocationService.client;
         this.logger = invocationService.invocationLogger;
+
 
         HazelcastProperties properties = client.getProperties();
         int responseThreadCount = properties.getInteger(RESPONSE_THREAD_COUNT);
@@ -97,6 +97,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         this.responseThreads = new ResponseThread[responseThreadCount];
         for (int k = 0; k < responseThreads.length; k++) {
             responseThreads[k] = new ResponseThread(invocationService.client.getName() + ".responsethread-" + k + "-");
+            responseThreads[k].setCpuPool(cpuPool);
         }
 
         if (responseThreadCount == 0) {
@@ -171,42 +172,22 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
     }
 
-
-    public final static AtomicInteger CPU_ID = new AtomicInteger(Integer.getInteger("responseThreadCpuId",0));
-    public final static boolean THREAD_AFFINITY = Boolean.parseBoolean(System.getProperty("thread.affinity","true"));
-
-
-    private class ResponseThread extends Thread {
+    private class ResponseThread extends HazelcastManagedThread {
         private final BlockingQueue<ClientMessage> responseQueue;
         private final AtomicBoolean started = new AtomicBoolean();
 
         ResponseThread(String name) {
             super(name);
             setContextClassLoader(client.getClientConfig().getClassLoader());
+            setCpuPool(cpuPool);
             this.responseQueue = new MPSCQueue<ClientMessage>(this,
                     getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
         }
+
         @Override
-        public void run() {
-            System.out.println("ThreadAffinity enabled:"+THREAD_AFFINITY);
-            System.out.println("Is JNA available:"+ Affinity.isJNAAvailable());
-
-            if(THREAD_AFFINITY) {
-                AffinityLock lock = AffinityLock.acquireLock(CPU_ID.getAndIncrement());
-                try {
-                    System.out.println(getName() + " ThreadId:" + AffinitySupport.getThreadId());
-                    doRun();
-                } finally {
-                    lock.release();
-                }
-            }else{
-                doRun();
-            }
-        }
-
-        public void doRun() {
+        public void executeRun() {
             try {
-                doRunIt();
+                doRun();
             } catch (OutOfMemoryError e) {
                 onOutOfMemory(e);
             } catch (Throwable t) {
@@ -214,7 +195,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
             }
         }
 
-        private void doRunIt() {
+        public void doRun() {
             while (!invocationService.isShutdown()) {
                 ClientMessage response;
                 try {
