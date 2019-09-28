@@ -20,15 +20,19 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.util.MutableInteger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import net.openhft.affinity.Affinity;
+import net.openhft.affinity.AffinityLock;
+import net.openhft.affinity.AffinitySupport;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -36,8 +40,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec.EXCEP
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.onOutOfMemory;
-import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
+import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 
 /**
  * A {@link Supplier} for {@link Supplier} instance that processes responses for client
@@ -167,6 +171,11 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
     }
 
+
+    public final static AtomicInteger CPU_ID = new AtomicInteger(Integer.getInteger("responseThreadCpuId",0));
+    public final static boolean THREAD_AFFINITY = Boolean.parseBoolean(System.getProperty("thread.affinity","true"));
+
+
     private class ResponseThread extends Thread {
         private final BlockingQueue<ClientMessage> responseQueue;
         private final AtomicBoolean started = new AtomicBoolean();
@@ -177,11 +186,27 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
             this.responseQueue = new MPSCQueue<ClientMessage>(this,
                     getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
         }
-
         @Override
         public void run() {
-            try {
+            System.out.println("ThreadAffinity enabled:"+THREAD_AFFINITY);
+            System.out.println("Is JNA available:"+ Affinity.isJNAAvailable());
+
+            if(THREAD_AFFINITY) {
+                AffinityLock lock = AffinityLock.acquireLock(CPU_ID.getAndIncrement());
+                try {
+                    System.out.println(getName() + " ThreadId:" + AffinitySupport.getThreadId());
+                    doRun();
+                } finally {
+                    lock.release();
+                }
+            }else{
                 doRun();
+            }
+        }
+
+        public void doRun() {
+            try {
+                doRunIt();
             } catch (OutOfMemoryError e) {
                 onOutOfMemory(e);
             } catch (Throwable t) {
@@ -189,7 +214,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
             }
         }
 
-        private void doRun() {
+        private void doRunIt() {
             while (!invocationService.isShutdown()) {
                 ClientMessage response;
                 try {

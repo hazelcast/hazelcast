@@ -74,6 +74,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
+import net.openhft.affinity.AffinityLock;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -224,6 +225,17 @@ public class NodeEngineImpl implements NodeEngine {
 
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
+        Thread thread = new Thread(){
+            public void run(){
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                }
+
+                System.out.println("\nThe assignment of CPUs is\n" + AffinityLock.dumpLocks());
+            }
+        };
+        thread.start();
     }
 
     public ConcurrencyDetection getConcurrencyDetection() {
