@@ -3,12 +3,17 @@ package com.hazelcast.internal.util;
 import net.openhft.affinity.Affinity;
 import net.openhft.affinity.AffinityLock;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * This class is threadsafe.
+ */
 public class CpuPool {
 
     public final static CpuPool EMPTY_POOL = new CpuPool(null);
@@ -32,18 +37,34 @@ public class CpuPool {
 
     private static boolean isAffinityAvailable() {
         try {
-            return Affinity.isJNAAvailable();
+            boolean jnaAvailable = Affinity.isJNAAvailable();
+            if (!jnaAvailable) {
+                System.err.println("jna is not available");
+            }
+            return jnaAvailable;
         } catch (NoClassDefFoundError e) {
+            e.printStackTrace();
+            System.err.println("Affinity jar isn't available");
             return false;
+        }
+        //return true;
+    }
+
+    public void run(Runnable r) {
+        if (true) {
+            runPeterLawrey(r);
+        } else {
+            runPeterVeentjer(r);
         }
     }
 
-    public void runWithAffinityLock(Runnable r) {
+    private void runPeterLawrey(Runnable r) {
         Integer cpu = pool.poll();
         if (cpu == null) {
             r.run();
             return;
         }
+
 
         AffinityLock lock = AffinityLock.acquireLock(cpu);
         try {
@@ -52,6 +73,67 @@ public class CpuPool {
             pool.add(cpu);
             lock.release();
         }
+    }
+
+    private void runPeterVeentjer(Runnable r) {
+        Integer cpu = pool.poll();
+        if (cpu == null) {
+            r.run();
+            return;
+        }
+
+        String threadId = getThreadId();
+        System.out.println("threadId:" + threadId);
+        taskSetLock(cpu, threadId);
+        try {
+            r.run();
+        } finally {
+            pool.add(cpu);
+            //lock.release();
+        }
+    }
+
+    private static void taskSetLock(Integer cpu, String threadId) {
+        bash(threadId, "taskset -c " + cpu + " -p " + threadId);
+    }
+
+    private static void taskSetUnlock(String threadId) {
+       // bash(threadId, "taskset -c " + cpu + " -p " + threadId);
+    }
+
+    private static void bash(String threadId, String command) {
+        ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", command);
+        try {
+            builder.redirectErrorStream(true);
+            File log = new File("taskset" + threadId + ".log");
+            builder.redirectOutput(log);
+            Process p = builder.start();
+            int exitCode = p.waitFor();
+            System.out.println("exitCode:" + exitCode);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String getThreadId() {
+        byte[] bo = new byte[100];
+        String[] cmd = {"bash", "-c", "echo $PPID"};
+        Process p = null;
+        try {
+            p = Runtime.getRuntime().exec(cmd);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        try {
+            p.getInputStream().read(bo);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new String(bo);
     }
 
     static List<Integer> parseCpuString(String cpuString) {
@@ -84,4 +166,5 @@ public class CpuPool {
         }
         return cpus;
     }
+
 }
