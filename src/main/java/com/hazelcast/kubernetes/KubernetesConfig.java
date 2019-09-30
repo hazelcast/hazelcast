@@ -34,6 +34,8 @@ import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_CA_CERTIF
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_MASTER_URL;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
 import static com.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
+import static com.hazelcast.kubernetes.KubernetesProperties.POD_LABEL_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.POD_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.RESOLVE_NOT_READY_ADDRESSES;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
@@ -46,6 +48,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.USE_NODE_NAME_AS_EXT
 /**
  * Responsible for fetching, parsing, and validating Hazelcast Kubernetes Discovery Strategy input properties.
  */
+@SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
 final class KubernetesConfig {
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
     private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
@@ -60,6 +63,8 @@ final class KubernetesConfig {
     private final String serviceLabelName;
     private final String serviceLabelValue;
     private final String namespace;
+    private final String podLabelName;
+    private final String podLabelValue;
     private final boolean resolveNotReadyAddresses;
     private final boolean useNodeNameAsExternalAddress;
     private final int kubernetesApiRetries;
@@ -78,6 +83,8 @@ final class KubernetesConfig {
         this.serviceLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
         this.serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
         this.namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
+        this.podLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_NAME);
+        this.podLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_VALUE);
         this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, false);
         this.useNodeNameAsExternalAddress
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, USE_NODE_NAME_AS_EXTERNAL_ADDRESS, false);
@@ -198,16 +205,25 @@ final class KubernetesConfig {
     }
 
     private void validateConfig() {
-        if (serviceDns != null && (serviceName != null || serviceLabelName != null)) {
+        if (serviceDns != null && (serviceName != null || serviceLabelName != null || podLabelName != null)) {
             throw new InvalidConfigurationException(
-                    String.format("Properties '%s' and ('%s' or '%s') cannot be defined at the same time",
-                            SERVICE_DNS.key(), SERVICE_NAME.key(), SERVICE_LABEL_NAME.key()));
+                    String.format("Properties '%s' and ('%s' or '%s' or %s) cannot be defined at the same time",
+                            SERVICE_DNS.key(), SERVICE_NAME.key(), SERVICE_LABEL_NAME.key(), POD_LABEL_NAME.key()));
         }
         if (serviceName != null && serviceLabelName != null) {
             throw new InvalidConfigurationException(
                     String.format("Properties '%s' and '%s' cannot be defined at the same time",
                             SERVICE_NAME.key(), SERVICE_LABEL_NAME.key()));
-
+        }
+        if (serviceName != null && podLabelName != null) {
+            throw new InvalidConfigurationException(
+                    String.format("Properties '%s' and '%s' cannot be defined at the same time",
+                            SERVICE_NAME.key(), POD_LABEL_NAME.key()));
+        }
+        if (serviceLabelName != null && podLabelName != null) {
+            throw new InvalidConfigurationException(
+                    String.format("Properties '%s' and '%s' cannot be defined at the same time",
+                            SERVICE_LABEL_NAME.key(), POD_LABEL_NAME.key()));
         }
         if (serviceDnsTimeout < 0) {
             throw new InvalidConfigurationException(
@@ -255,6 +271,14 @@ final class KubernetesConfig {
         return namespace;
     }
 
+    public String getPodLabelName() {
+        return podLabelName;
+    }
+
+    public String getPodLabelValue() {
+        return podLabelValue;
+    }
+
     boolean isResolveNotReadyAddresses() {
         return resolveNotReadyAddresses;
     }
@@ -293,6 +317,8 @@ final class KubernetesConfig {
                 + "service-label: " + serviceLabelName + ", "
                 + "service-label-value: " + serviceLabelValue + ", "
                 + "namespace: " + namespace + ", "
+                + "pod-label: " + podLabelName + ", "
+                + "pod-label-value: " + podLabelValue + ", "
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
                 + "use-node-name-as-external-address: " + useNodeNameAsExternalAddress + ", "
                 + "kubernetes-api-retries: " + kubernetesApiRetries + ", "

@@ -48,7 +48,9 @@ final class HazelcastKubernetesDiscoveryStrategy
                     config.getServiceDnsTimeout());
         } else {
             endpointResolver = new KubernetesApiEndpointResolver(logger, config.getServiceName(), config.getServicePort(),
-                    config.getServiceLabelName(), config.getServiceLabelValue(), config.isResolveNotReadyAddresses(), client);
+                    config.getServiceLabelName(), config.getServiceLabelValue(),
+                    config.getPodLabelName(), config.getPodLabelValue(),
+                    config.isResolveNotReadyAddresses(), client);
         }
 
         logger.info("Kubernetes Discovery activated with mode: " + config.getMode().name());

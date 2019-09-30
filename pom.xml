@@ -50,7 +50,7 @@
     <mockito.version>1.10.19</mockito.version>
     <powermock.version>1.7.3</powermock.version>
 
-    <hazelcast.version>3.11</hazelcast.version>
+    <hazelcast.version>3.12.1</hazelcast.version>
 
     <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
     <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>

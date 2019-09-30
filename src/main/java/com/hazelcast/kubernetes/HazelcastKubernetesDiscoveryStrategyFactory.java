@@ -43,6 +43,8 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
                 KubernetesProperties.SERVICE_LABEL_NAME,
                 KubernetesProperties.SERVICE_LABEL_VALUE,
                 KubernetesProperties.NAMESPACE,
+                KubernetesProperties.POD_LABEL_NAME,
+                KubernetesProperties.POD_LABEL_VALUE,
                 KubernetesProperties.RESOLVE_NOT_READY_ADDRESSES,
                 KubernetesProperties.USE_NODE_NAME_AS_EXTERNAL_ADDRESS,
                 KubernetesProperties.KUBERNETES_API_RETIRES,

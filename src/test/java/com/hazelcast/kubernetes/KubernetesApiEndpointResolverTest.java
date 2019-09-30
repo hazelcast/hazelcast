@@ -40,8 +40,10 @@ import static org.mockito.BDDMockito.given;
 public class KubernetesApiEndpointResolverTest {
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
     private static final String SERVICE_NAME = "serviceName";
-    private static final String SERVICE_LABEL = "theLabel";
+    private static final String SERVICE_LABEL = "serviceLabel";
     private static final String SERVICE_LABEL_VALUE = "serviceLabelValue";
+    private static final String POD_LABEL = "podLabel";
+    private static final String POD_LABEL_VALUE = "podLabelValue";
     private static final Boolean RESOLVE_NOT_READY_ADDRESSES = true;
 
     @Mock
@@ -59,7 +61,7 @@ public class KubernetesApiEndpointResolverTest {
         List<Endpoint> endpoints = Collections.<Endpoint>emptyList();
         given(client.endpoints()).willReturn(endpoints);
 
-        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, null, null, null, client);
+        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, null, null, null, null, null, client);
 
         // when
         List<DiscoveryNode> nodes = sut.resolve();
@@ -83,7 +85,7 @@ public class KubernetesApiEndpointResolverTest {
         List<Endpoint> endpoints = createEndpoints(1);
         given(client.endpointsByName(SERVICE_NAME)).willReturn(endpoints);
 
-        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, port, null, null, null,
+        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, port, null, null, null, null, null,
                 client);
 
         // when
@@ -98,10 +100,27 @@ public class KubernetesApiEndpointResolverTest {
     public void resolveWithServiceLabelWhenNodeWithServiceLabel() {
         // given
         List<Endpoint> endpoints = createEndpoints(2);
-        given(client.endpointsByLabel(SERVICE_LABEL, SERVICE_LABEL_VALUE)).willReturn(endpoints);
+        given(client.endpointsByServiceLabel(SERVICE_LABEL, SERVICE_LABEL_VALUE)).willReturn(endpoints);
 
         KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, SERVICE_LABEL, SERVICE_LABEL_VALUE,
-                null, client);
+                null, null, null, client);
+
+        // when
+        List<DiscoveryNode> nodes = sut.resolve();
+
+        // then
+        assertEquals(1, nodes.size());
+        assertEquals(2, nodes.get(0).getPrivateAddress().getPort());
+    }
+
+    @Test
+    public void resolveWithPodLabelWhenNodeWithPodLabel() {
+        // given
+        List<Endpoint> endpoints = createEndpoints(2);
+        given(client.endpointsByPodLabel(POD_LABEL, POD_LABEL_VALUE)).willReturn(endpoints);
+
+        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, null, null,
+                POD_LABEL, POD_LABEL_VALUE, null, client);
 
         // when
         List<DiscoveryNode> nodes = sut.resolve();
@@ -118,7 +137,7 @@ public class KubernetesApiEndpointResolverTest {
         given(client.endpointsByName(SERVICE_NAME)).willReturn(endpoints);
 
         KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, 0, null, null,
-                RESOLVE_NOT_READY_ADDRESSES, client);
+                null, null, RESOLVE_NOT_READY_ADDRESSES, client);
 
         // when
         List<DiscoveryNode> nodes = sut.resolve();
@@ -133,7 +152,7 @@ public class KubernetesApiEndpointResolverTest {
         List<Endpoint> endpoints = createNotReadyEndpoints(2);
         given(client.endpointsByName(SERVICE_NAME)).willReturn(endpoints);
 
-        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, 0, null, null, null,
+        KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, 0, null, null, null, null, null,
                 client);
 
         // when

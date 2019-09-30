@@ -33,11 +33,14 @@ class KubernetesApiEndpointResolver
     private final String serviceName;
     private final String serviceLabel;
     private final String serviceLabelValue;
+    private final String podLabel;
+    private final String podLabelValue;
     private final Boolean resolveNotReadyAddresses;
     private final int port;
     private final KubernetesClient client;
 
-    KubernetesApiEndpointResolver(ILogger logger, String serviceName, int port, String serviceLabel, String serviceLabelValue,
+    KubernetesApiEndpointResolver(ILogger logger, String serviceName, int port,
+                                  String serviceLabel, String serviceLabelValue, String podLabel, String podLabelValue,
                                   Boolean resolveNotReadyAddresses, KubernetesClient client) {
 
         super(logger);
@@ -46,6 +49,8 @@ class KubernetesApiEndpointResolver
         this.port = port;
         this.serviceLabel = serviceLabel;
         this.serviceLabelValue = serviceLabelValue;
+        this.podLabel = podLabel;
+        this.podLabelValue = podLabelValue;
         this.resolveNotReadyAddresses = resolveNotReadyAddresses;
         this.client = client;
     }
@@ -53,9 +58,14 @@ class KubernetesApiEndpointResolver
     @Override
     List<DiscoveryNode> resolve() {
         if (serviceName != null && !serviceName.isEmpty()) {
+            logger.fine("Using service name to discover nodes.");
             return getSimpleDiscoveryNodes(client.endpointsByName(serviceName));
         } else if (serviceLabel != null && !serviceLabel.isEmpty()) {
-            return getSimpleDiscoveryNodes(client.endpointsByLabel(serviceLabel, serviceLabelValue));
+            logger.fine("Using service label to discover nodes.");
+            return getSimpleDiscoveryNodes(client.endpointsByServiceLabel(serviceLabel, serviceLabelValue));
+        } else if (podLabel != null && !podLabel.isEmpty()) {
+            logger.fine("Using pod label to discover nodes.");
+            return getSimpleDiscoveryNodes(client.endpointsByPodLabel(podLabel, podLabelValue));
         }
         return getSimpleDiscoveryNodes(client.endpoints());
     }

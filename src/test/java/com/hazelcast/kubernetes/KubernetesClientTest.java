@@ -142,7 +142,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceAndLabel() {
+    public void endpointsByNamespaceAndServiceLabel() {
         // given
         //language=JSON
         String endpointsListResponse = "{\n"
@@ -190,7 +190,7 @@ public class KubernetesClientTest {
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), queryParams, endpointsListResponse);
 
         // when
-        List<Endpoint> result = kubernetesClient.endpointsByLabel(serviceLabel, serviceLabelValue);
+        List<Endpoint> result = kubernetesClient.endpointsByServiceLabel(serviceLabel, serviceLabelValue);
 
         // then
         assertThat(format(result),
@@ -226,6 +226,71 @@ public class KubernetesClientTest {
 
         // then
         assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+    }
+
+    @Test
+    public void endpointsByNamespaceAndPodLabel() {
+        // given
+        //language=JSON
+        String podsListResponse = "{\n"
+                + "  \"kind\": \"PodList\",\n"
+                + "  \"items\": [\n"
+                + "    {\n"
+                + "      \"spec\": {\n"
+                + "        \"containers\": [\n"
+                + "          {\n"
+                + "            \"ports\": [\n"
+                + "              {\n"
+                + "                \"containerPort\": 5701\n"
+                + "              }\n"
+                + "            ]\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      },\n"
+                + "      \"status\": {\n"
+                + "        \"podIP\": \"192.168.0.25\",\n"
+                + "        \"containerStatuses\": [\n"
+                + "          {\n"
+                + "            \"ready\": true\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"spec\": {\n"
+                + "        \"containers\": [\n"
+                + "          {\n"
+                + "            \"ports\": [\n"
+                + "              {\n"
+                + "                \"containerPort\": 5702\n"
+                + "              }\n"
+                + "            ]\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      },\n"
+                + "      \"status\": {\n"
+                + "        \"podIP\": \"172.17.0.5\",\n"
+                + "        \"containerStatuses\": [\n"
+                + "          {\n"
+                + "            \"ready\": true\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+
+        String podLabel = "sample-pod-label";
+        String podLabelValue = "sample-pod-label-value";
+        Map<String, String> queryParams = singletonMap("labelSelector", String.format("%s=%s", podLabel, podLabelValue));
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE, podLabel), queryParams, podsListResponse);
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpointsByPodLabel(podLabel, podLabelValue);
+
+        // then
+        assertThat(format(result),
+                containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
     }
 
     @Test

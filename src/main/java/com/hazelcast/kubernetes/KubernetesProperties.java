@@ -86,6 +86,17 @@ public final class KubernetesProperties {
     public static final PropertyDefinition NAMESPACE = property("namespace", STRING);
 
     /**
+     * <p>Configuration key: <tt>pod-label-name</tt></p>
+     * Defines the pod label to lookup through the Service Discovery REST API of Kubernetes.
+     */
+    public static final PropertyDefinition POD_LABEL_NAME = property("pod-label-name", STRING);
+    /**
+     * <p>Configuration key: <tt>pod-label-value</tt></p>
+     * Defines the pod label value to lookup through the Service Discovery REST API of Kubernetes.
+     */
+    public static final PropertyDefinition POD_LABEL_VALUE = property("pod-label-value", STRING);
+
+    /**
      * <p>Configuration key: <tt>resolve-not-ready-addresses</tt></p>
      * Defines if not ready addresses should be evaluated to be discovered on startup.
      */
