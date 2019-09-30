@@ -37,9 +37,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * TODO:
- *
- *
  * The Client Delegating Future is used to delegate {@link
  * ClientInvocationFuture} to a user type to be used with further computation stages or
  * {@code get()}. It converts {@link ClientMessage} coming from {@link
