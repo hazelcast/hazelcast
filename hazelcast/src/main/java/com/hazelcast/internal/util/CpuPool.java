@@ -3,8 +3,9 @@ package com.hazelcast.internal.util;
 import net.openhft.affinity.Affinity;
 import net.openhft.affinity.AffinityLock;
 
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -62,11 +63,12 @@ public class CpuPool {
         Integer cpu = pool.poll();
         if (cpu == null) {
             r.run();
+            System.err.println("Failed to allocate a cpu");
             return;
         }
 
-
         AffinityLock lock = AffinityLock.acquireLock(cpu);
+        System.out.println("Running with affinity");
         try {
             r.run();
         } finally {
@@ -83,7 +85,7 @@ public class CpuPool {
         }
 
         String threadId = getThreadId();
-        System.out.println("threadId:" + threadId);
+        System.out.println("threadId: [" + threadId + "]");
         taskSetLock(cpu, threadId);
         try {
             r.run();
@@ -93,47 +95,54 @@ public class CpuPool {
         }
     }
 
-    private static void taskSetLock(Integer cpu, String threadId) {
-        bash(threadId, "taskset -c " + cpu + " -p " + threadId);
+    private synchronized static void taskSetLock(Integer cpu, String threadId) {
+        System.out.println("--------------------------------------------");
+        String command = "taskset -c " + cpu + " -p " + threadId;
+        System.out.println(command);
+        System.out.println(bash(command));
+        System.out.println(bash("taskset -p " + threadId));
     }
 
     private static void taskSetUnlock(String threadId) {
-       // bash(threadId, "taskset -c " + cpu + " -p " + threadId);
+        // bash(threadId, "taskset -c " + cpu + " -p " + threadId);
     }
 
-    private static void bash(String threadId, String command) {
-        ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", command);
+    private synchronized static String getThreadId() {
+        System.out.println("================ thread id ======================");
+        String s= bash("echo $PID").trim();
+        System.out.println("Thread:"+Thread.currentThread().getName());
+        System.out.println("ThreadId:"+s);
+        System.out.println("================ thread id ======================");
+        return s;
+    }
+
+    private static String bash(String command) {
+        String[] cmd = {"bash", "-c", command};
         try {
-            builder.redirectErrorStream(true);
-            File log = new File("taskset" + threadId + ".log");
-            builder.redirectOutput(log);
-            Process p = builder.start();
-            int exitCode = p.waitFor();
-            System.out.println("exitCode:" + exitCode);
+            Process process = Runtime.getRuntime().exec(cmd);
+            int result = process.waitFor();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder builder = new StringBuilder();
+            String line;
+            boolean first = true;
+            while ((line = reader.readLine()) != null) {
+                if (first) {
+                    first = false;
+                } else {
+                    builder.append(System.getProperty("line.separator"));
+                }
+                builder.append(line);
+            }
+            if (result != 0) {
+                System.out.println(builder.toString());
+            }
+
+            return builder.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-    }
-
-    private static String getThreadId() {
-        byte[] bo = new byte[100];
-        String[] cmd = {"bash", "-c", "echo $PPID"};
-        Process p = null;
-        try {
-            p = Runtime.getRuntime().exec(cmd);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        try {
-            p.getInputStream().read(bo);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return new String(bo);
     }
 
     static List<Integer> parseCpuString(String cpuString) {
