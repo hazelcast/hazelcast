@@ -18,8 +18,6 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * A class providing static factory methods that create write behind queues.
  */
@@ -28,9 +26,9 @@ public final class WriteBehindQueues {
     private WriteBehindQueues() {
     }
 
-    public static WriteBehindQueue<DelayedEntry> createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter) {
+    public static WriteBehindQueue<DelayedEntry> createBoundedWriteBehindQueue(NodeWideUsedCapacityCounter counter) {
         final WriteBehindQueue<DelayedEntry> queue = createCyclicWriteBehindQueue();
-        final WriteBehindQueue<DelayedEntry> boundedQueue = createBoundedWriteBehindQueue(maxCapacity, counter, queue);
+        final WriteBehindQueue<DelayedEntry> boundedQueue = createBoundedWriteBehindQueue(queue, counter);
         return createSynchronizedWriteBehindQueue(boundedQueue);
     }
 
@@ -39,20 +37,20 @@ public final class WriteBehindQueues {
         return createSynchronizedWriteBehindQueue(queue);
     }
 
+    static WriteBehindQueue<DelayedEntry> createCoalescedWriteBehindQueue() {
+        return new CoalescedWriteBehindQueue();
+    }
+
+    static <T> WriteBehindQueue<T> createBoundedWriteBehindQueue(WriteBehindQueue<T> queue,
+                                                                 NodeWideUsedCapacityCounter nodeWideUsedCapacityCounter) {
+        return new BoundedWriteBehindQueue<>(queue, nodeWideUsedCapacityCounter);
+    }
+
     private static <T> WriteBehindQueue<T> createSynchronizedWriteBehindQueue(WriteBehindQueue<T> queue) {
         return new SynchronizedWriteBehindQueue<>(queue);
     }
 
-    private static WriteBehindQueue<DelayedEntry> createCoalescedWriteBehindQueue() {
-        return new CoalescedWriteBehindQueue();
-    }
-
     private static WriteBehindQueue<DelayedEntry> createCyclicWriteBehindQueue() {
         return new CyclicWriteBehindQueue();
-    }
-
-    private static <T> WriteBehindQueue<T> createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter,
-                                                                  WriteBehindQueue<T> queue) {
-        return new BoundedWriteBehindQueue<>(maxCapacity, counter, queue);
     }
 }

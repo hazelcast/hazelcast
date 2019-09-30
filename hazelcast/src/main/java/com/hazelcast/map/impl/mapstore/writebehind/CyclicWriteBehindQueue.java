@@ -75,7 +75,7 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     }
 
     @Override
-    public void addLast(DelayedEntry entry) {
+    public void addLast(DelayedEntry entry, boolean capacityReservedBefore) {
         deque.addLast(entry);
         addCountIndex(entry);
     }

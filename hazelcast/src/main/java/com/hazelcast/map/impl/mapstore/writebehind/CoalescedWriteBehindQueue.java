@@ -56,7 +56,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     }
 
     @Override
-    public void addLast(DelayedEntry delayedEntry) {
+    public void addLast(DelayedEntry delayedEntry, boolean capacityReservedBefore) {
         if (delayedEntry == null) {
             return;
         }

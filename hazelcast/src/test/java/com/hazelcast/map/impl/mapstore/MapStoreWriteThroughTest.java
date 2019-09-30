@@ -25,7 +25,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.mapstore.MapStoreTest.TestMapStore;
-import com.hazelcast.map.impl.mapstore.MapStoreWriteBehindTest.FailAwareMapStore;
+import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWriteBehindTest.FailAwareMapStore;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;

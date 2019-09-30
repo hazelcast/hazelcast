@@ -22,8 +22,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import java.util.UUID;
-
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -73,8 +71,7 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
         NodeState state = nodeEngine.getNode().getState();
         writer.writeKeyValueEntry("nodeState", state == null ? "null" : state.toString());
 
-        UUID clusterId = nodeEngine.getClusterService().getClusterId();
-        writer.writeKeyValueEntry("clusterId", clusterId != null ? clusterId.toString() : "null");
+        writer.writeKeyValueEntry("clusterId", nodeEngine.getClusterService().getClusterId().toString());
         writer.writeKeyValueEntry("clusterSize", nodeEngine.getClusterService().getSize());
         writer.writeKeyValueEntry("isMaster", nodeEngine.getClusterService().isMaster());
         Address masterAddress = nodeEngine.getClusterService().getMasterAddress();

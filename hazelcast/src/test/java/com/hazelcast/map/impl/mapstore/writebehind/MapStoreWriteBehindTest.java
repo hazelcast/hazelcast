@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.mapstore;
+package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -24,14 +24,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreAdapter;
-import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.mapstore.AbstractMapStoreTest;
+import com.hazelcast.map.impl.mapstore.EventBasedMapStore;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreTest.MapStoreWithStoreCount;
 import com.hazelcast.map.impl.mapstore.MapStoreTest.SimpleMapStore;
 import com.hazelcast.map.impl.mapstore.MapStoreTest.TestMapStore;
-import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
-import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -42,6 +42,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionalMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -192,7 +193,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
     @Test(timeout = 120000)
     public void testOneMemberWriteBehind() throws Exception {
-        MapStoreTest.TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 5);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -457,7 +458,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     public void testIssue1085WriteBehindBackupTransactional() {
         final String name = randomMapName();
         final int size = 1000;
-        MapStoreTest.MapStoreWithStoreCount mapStore = new MapStoreTest.MapStoreWithStoreCount(size, 120);
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 120);
         Config config = newConfig(name, mapStore, 5);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
@@ -682,18 +683,18 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
     public static class FailAwareMapStore implements MapStore {
 
-        final Map<Object, Object> db = new ConcurrentHashMap<Object, Object>();
+        public final Map<Object, Object> db = new ConcurrentHashMap<Object, Object>();
 
-        final AtomicLong deletes = new AtomicLong();
-        final AtomicLong deleteAlls = new AtomicLong();
-        final AtomicLong stores = new AtomicLong();
-        final AtomicLong storeAlls = new AtomicLong();
-        final AtomicLong loads = new AtomicLong();
-        final AtomicLong loadAlls = new AtomicLong();
-        final AtomicLong loadAllKeys = new AtomicLong();
-        final AtomicBoolean storeFail = new AtomicBoolean(false);
-        final AtomicBoolean loadFail = new AtomicBoolean(false);
-        final List<BlockingQueue<Object>> listeners = new CopyOnWriteArrayList<BlockingQueue<Object>>();
+        public final AtomicLong deletes = new AtomicLong();
+        public final AtomicLong deleteAlls = new AtomicLong();
+        public final AtomicLong stores = new AtomicLong();
+        public final AtomicLong storeAlls = new AtomicLong();
+        public final AtomicLong loads = new AtomicLong();
+        public final AtomicLong loadAlls = new AtomicLong();
+        public final AtomicLong loadAllKeys = new AtomicLong();
+        public final AtomicBoolean storeFail = new AtomicBoolean(false);
+        public final AtomicBoolean loadFail = new AtomicBoolean(false);
+        public final List<BlockingQueue<Object>> listeners = new CopyOnWriteArrayList<BlockingQueue<Object>>();
 
         public void addListener(BlockingQueue<Object> obj) {
             listeners.add(obj);

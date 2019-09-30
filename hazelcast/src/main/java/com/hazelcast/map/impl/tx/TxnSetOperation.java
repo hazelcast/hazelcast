@@ -47,6 +47,7 @@ public class TxnSetOperation extends BasePutOperation
     private long ttl;
     private long version;
     private UUID ownerUuid;
+    private UUID transactionId;
 
     private transient boolean shouldBackup;
 
@@ -70,6 +71,7 @@ public class TxnSetOperation extends BasePutOperation
         super.innerBeforeRun();
 
         if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
+            wbqCapacityCounter().decrement(transactionId);
             throw new TransactionException("Cannot acquire lock UUID: " + ownerUuid + ", threadId: " + threadId);
         }
     }
@@ -84,7 +86,7 @@ public class TxnSetOperation extends BasePutOperation
                 oldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }
             eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-            recordStore.set(dataKey, dataValue, ttl, RecordStore.DEFAULT_MAX_IDLE);
+            recordStore.setTxn(dataKey, dataValue, ttl, RecordStore.DEFAULT_MAX_IDLE, transactionId);
             shouldBackup = true;
         }
     }
@@ -102,6 +104,11 @@ public class TxnSetOperation extends BasePutOperation
     @Override
     public void setOwnerUuid(UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
+    }
+
+    @Override
+    public void setTransactionId(UUID transactionId) {
+        this.transactionId = transactionId;
     }
 
     @Override
@@ -131,7 +138,7 @@ public class TxnSetOperation extends BasePutOperation
         if (isPostProcessing(recordStore)) {
             dataValue = mapServiceContext.toData(record.getValue());
         }
-        return new TxnSetBackupOperation(name, dataKey, dataValue, replicationInfo);
+        return new TxnSetBackupOperation(name, dataKey, dataValue, replicationInfo, transactionId);
     }
 
     @Override
@@ -143,16 +150,18 @@ public class TxnSetOperation extends BasePutOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(version);
-        UUIDSerializationUtil.writeUUID(out, ownerUuid);
         out.writeLong(ttl);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         version = in.readLong();
-        ownerUuid = UUIDSerializationUtil.readUUID(in);
         ttl = in.readLong();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

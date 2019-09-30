@@ -40,7 +40,7 @@ import java.util.Map;
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 /**
- * Replicates all IMap-states of this partition to a replica partition.
+ * Replicates all IMap-states of this partition to a repReservedCapacityCounterTestlica partition.
  */
 public class MapReplicationOperation extends Operation
         implements IdentifiedDataSerializable {

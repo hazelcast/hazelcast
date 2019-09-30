@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -129,10 +130,8 @@ public abstract class MapOperation extends AbstractNamedOperation
             return;
         }
 
-        if (mapContainer.getMapConfig().getInMemoryFormat() == NATIVE) {
-            assert getPartitionId() != GENERIC_PARTITION_ID
-                    : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
-        }
+        assert mapContainer.getMapConfig().getInMemoryFormat() != NATIVE || getPartitionId() != GENERIC_PARTITION_ID
+                : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
     }
 
     protected void afterRunInternal() {
@@ -248,7 +247,8 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     /**
-     * This method helps to add clearing Near Cache event only from one-partition which matches partitionId of the map name.
+     * This method helps to add clearing Near Cache event only from
+     * one-partition which matches partitionId of the map name.
      */
     protected final void invalidateAllKeysInNearCaches() {
         if (mapContainer.hasInvalidationListener()) {
@@ -335,5 +335,9 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected boolean disableWanReplicationEvent() {
         return false;
+    }
+
+    protected final TxnReservedCapacityCounter wbqCapacityCounter() {
+        return recordStore.getMapDataStore().getTxnReservedCapacityCounter();
     }
 }

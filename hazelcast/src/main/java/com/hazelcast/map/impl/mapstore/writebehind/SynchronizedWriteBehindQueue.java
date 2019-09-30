@@ -50,9 +50,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public void addLast(E e) {
+    public void addLast(E e, boolean capacityReservedBefore) {
         synchronized (mutex) {
-            queue.addLast(e);
+            queue.addLast(e, capacityReservedBefore);
         }
     }
 

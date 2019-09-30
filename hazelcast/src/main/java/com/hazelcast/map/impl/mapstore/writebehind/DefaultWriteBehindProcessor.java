@@ -315,9 +315,10 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         // retry occurred.
         if (k > 0) {
             if (!result) {
-                // List of entries which can not be stored for this round. We will readd these entries
-                // in front of the relevant partition-write-behind-queues and will indefinitely retry to
-                // store them.
+                // List of entries which can not be stored for this round.
+                // We will re-add these failed entries to the front of the
+                // partition-write-behind-queues and will try to re-process
+                // them. This fail and retry cycle will be repeated indefinitely.
                 List failureList = task.failureList();
                 logger.severe("Number of entries which could not be stored is = [" + failureList.size() + "]"
                         + ", Hazelcast will indefinitely retry to store them", exception);

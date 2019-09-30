@@ -37,9 +37,13 @@ public interface WriteBehindQueue<E> {
     /**
      * Inserts to the end of this queue.
      *
-     * @param e element to be offered
+     * @param e                      element to be offered
+     * @param capacityReservedBefore {@code true} if we have previously
+     *                               reserved capacity in
+     *                               {@code WbqCapacityCounter}
+     *                               otherwise {@code false}
      */
-    void addLast(E e);
+    void addLast(E e, boolean capacityReservedBefore);
 
     /**
      * Retrieves, but does not remove, the head of this queue,

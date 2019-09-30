@@ -36,14 +36,18 @@ import java.util.UUID;
 /**
  * An operation to rollback transaction by unlocking the key on key owner.
  */
-public class TxnRollbackOperation extends KeyBasedMapOperation implements BackupAwareOperation, Notifier {
+public class TxnRollbackOperation
+        extends KeyBasedMapOperation implements BackupAwareOperation, Notifier {
 
     private UUID ownerUuid;
+    private UUID transactionId;
 
-    protected TxnRollbackOperation(int partitionId, String name, Data dataKey, UUID ownerUuid) {
+    protected TxnRollbackOperation(int partitionId, String name, Data dataKey,
+                                   UUID ownerUuid, UUID transactionId) {
         super(name, dataKey);
         setPartitionId(partitionId);
         this.ownerUuid = ownerUuid;
+        this.transactionId = transactionId;
     }
 
     public TxnRollbackOperation() {
@@ -51,7 +55,9 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     protected void runInternal() {
-        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), ownerUuid, getThreadId(), getCallId())) {
+        wbqCapacityCounter().decrement(transactionId);
+        if (recordStore.isLocked(getKey())
+                && !recordStore.unlock(getKey(), ownerUuid, getThreadId(), getCallId())) {
             throw new TransactionException("Lock is not owned by the transaction! Owner: "
                     + recordStore.getLockOwnerInfo(getKey()));
         }
@@ -81,7 +87,7 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public final Operation getBackupOperation() {
-        return new TxnRollbackBackupOperation(name, dataKey, ownerUuid, getThreadId());
+        return new TxnRollbackBackupOperation(name, dataKey, ownerUuid, getThreadId(), transactionId);
     }
 
     @Override
@@ -108,12 +114,14 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         UUIDSerializationUtil.writeUUID(out, ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ownerUuid = UUIDSerializationUtil.readUUID(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

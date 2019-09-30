@@ -22,11 +22,18 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.LocalRetryableExecution;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -35,6 +42,7 @@ import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.journal.RingbufferMapEventJournalImpl;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.writebehind.NodeWideUsedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
@@ -69,26 +77,19 @@ import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ConcurrencyUtil;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -100,10 +101,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
+import static com.hazelcast.internal.util.SetUtil.immutablePartitionIdSet;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -114,7 +115,6 @@ import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATIO
 import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
-import static com.hazelcast.internal.util.SetUtil.immutablePartitionIdSet;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -144,18 +144,12 @@ class MapServiceContextImpl implements MapServiceContext {
     private final InternalSerializationService serializationService;
     private final MapClearExpiredRecordsTask clearExpiredRecordsTask;
     private final PartitioningStrategyFactory partitioningStrategyFactory;
+    private final NodeWideUsedCapacityCounter nodeWideUsedCapacityCounter;
     private final ConstructorFunction<String, MapContainer> mapConstructor;
     private final IndexProvider indexProvider = new DefaultIndexProvider();
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final AtomicReference<PartitionIdSet> ownedPartitions = new AtomicReference<>();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
-    /**
-     * Per node global write behind queue item counter.
-     * Creating here because we want to have a counter per node.
-     * This is used by owner and backups together so it should be defined
-     * getting this into account.
-     */
-    private final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
 
     private MapService mapService;
 
@@ -180,6 +174,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
+        this.nodeWideUsedCapacityCounter = new NodeWideUsedCapacityCounter(nodeEngine.getProperties());
         this.logger = nodeEngine.getLogger(getClass());
     }
 
@@ -337,6 +332,24 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public void removeWbqCountersFromMatchingPartitionsWith(Predicate<RecordStore> predicate,
+                                                            int partitionId) {
+
+        PartitionContainer container = partitionContainers[partitionId];
+        if (container == null) {
+            return;
+        }
+
+        Iterator<RecordStore> partitionIterator = container.getMaps().values().iterator();
+        while (partitionIterator.hasNext()) {
+            RecordStore partition = partitionIterator.next();
+            if (predicate.test(partition)) {
+                partition.getMapDataStore().getTxnReservedCapacityCounter().release();
+            }
+        }
+    }
+
+    @Override
     public MapService getService() {
         return mapService;
     }
@@ -473,11 +486,6 @@ class MapServiceContextImpl implements MapServiceContext {
                 return;
             }
         }
-    }
-
-    @Override
-    public AtomicInteger getWriteBehindQueueItemCounter() {
-        return writeBehindQueueItemCounter;
     }
 
     @Override
@@ -841,8 +849,8 @@ class MapServiceContextImpl implements MapServiceContext {
         return ValueComparatorUtil.getValueComparatorOf(inMemoryFormat);
     }
 
-    InternalSerializationService getSerializationService() {
-        return serializationService;
+    public NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter() {
+        return nodeWideUsedCapacityCounter;
     }
 
     // used only for testing purposes

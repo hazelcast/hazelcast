@@ -243,6 +243,7 @@ public class StoreWorker implements Runnable {
                 continue;
             }
             final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
+            // TODO what if capacity is exceeded during addFirst
             queue.addFirst(failures);
         }
     }

@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,17 +42,18 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
 
     private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private CoalescedWriteBehindQueue queue = new CoalescedWriteBehindQueue();
+    boolean capacityReservedBefore = false;
 
     @Test
     public void test_addFirst() throws Exception {
-        queue.addFirst(Collections.<DelayedEntry>singletonList(newEntry(1)));
+        queue.addFirst(Collections.singletonList(newEntry(1)));
 
         assertEquals(1, queue.size());
     }
 
     @Test
     public void test_addLast() throws Exception {
-        queue.addLast(newEntry(1));
+        queue.addLast(newEntry(1), capacityReservedBefore);
 
         assertEquals(1, queue.size());
     }
@@ -60,7 +61,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void test_removeFirstOccurrence() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1);
-        queue.addLast(entry);
+        queue.addLast(entry, capacityReservedBefore);
         queue.removeFirstOccurrence(entry);
 
         assertEquals(0, queue.size());
@@ -70,7 +71,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     public void test_removeFirstOccurrence_whenSequenceNumberLower() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1, 10);
         entry.setSequence(1);
-        queue.addLast(entry);
+        queue.addLast(entry, capacityReservedBefore);
         DelayedEntry<Data, Object> entry2 = newEntry(1, 10); // sequence is 0
         assertFalse(queue.removeFirstOccurrence(entry2));
 
@@ -80,7 +81,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void test_contains() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1);
-        queue.addLast(entry);
+        queue.addLast(entry, capacityReservedBefore);
 
         assertTrue(queue.contains(entry));
     }
@@ -88,9 +89,9 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void test_size() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1);
-        queue.addLast(entry);
-        queue.addLast(entry);
-        queue.addLast(entry);
+        queue.addLast(entry, capacityReservedBefore);
+        queue.addLast(entry, capacityReservedBefore);
+        queue.addLast(entry, capacityReservedBefore);
 
         assertEquals(1, queue.size());
     }
@@ -98,7 +99,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void test_clear() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1);
-        queue.addLast(entry);
+        queue.addLast(entry, capacityReservedBefore);
 
         queue.clear();
         assertEquals(0, queue.size());

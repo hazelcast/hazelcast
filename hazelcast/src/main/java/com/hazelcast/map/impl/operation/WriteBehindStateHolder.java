@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -31,18 +33,21 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
  * Holder for write-behind-specific state.
@@ -56,10 +61,12 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
      * @see WriteBehindStore#flushSequences
      */
     private Map<String, Queue<WriteBehindStore.Sequence>> flushSequences;
+    private Map<String, Map<UUID, Long>> reservationsByTxnIdPerMap;
 
     /**
-     * This constructor exists solely for instantiation by {@code MapDataSerializerHook}. The object is not ready to use
-     * unless {@code mapReplicationOperation} is set.
+     * This constructor exists solely for instantiation by
+     * {@code MapDataSerializerHook}. The object is not ready
+     * to use unless {@code mapReplicationOperation} is set.
      */
     public WriteBehindStateHolder() {
     }
@@ -73,6 +80,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
 
         flushSequences = createHashMap(size);
         delayedEntries = createHashMap(size);
+        reservationsByTxnIdPerMap = createHashMap(size);
 
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
@@ -90,18 +98,29 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
             }
 
             WriteBehindStore mapDataStore = (WriteBehindStore) recordStore.getMapDataStore();
+            reservationsByTxnIdPerMap.put(mapName,
+                    mapDataStore.getTxnReservedCapacityCounter().getReservedCapacityCountPerTxnId());
+
             WriteBehindQueue<DelayedEntry> writeBehindQueue = mapDataStore.getWriteBehindQueue();
             List<DelayedEntry> entries = writeBehindQueue.asList();
             if (entries == null || entries.isEmpty()) {
                 continue;
             }
-
             delayedEntries.put(mapName, entries);
             flushSequences.put(mapName, new ArrayDeque<>(mapDataStore.getFlushSequences()));
         }
+
     }
 
     void applyState() {
+        for (Map.Entry<String, Map<UUID, Long>> entry : reservationsByTxnIdPerMap.entrySet()) {
+            String mapName = entry.getKey();
+            Map<UUID, Long> reservationsByTxnId = entry.getValue();
+            RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
+            WriteBehindStore mapDataStore = (WriteBehindStore) recordStore.getMapDataStore();
+            mapDataStore.getTxnReservedCapacityCounter().copy(reservationsByTxnId);
+        }
+
         for (Map.Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
             String mapName = entry.getKey();
             RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
@@ -112,7 +131,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
 
             Collection<DelayedEntry> replicatedEntries = entry.getValue();
             for (DelayedEntry delayedEntry : replicatedEntries) {
-                mapDataStore.add(delayedEntry);
+                mapDataStore.addForcibly(delayedEntry);
                 mapDataStore.setSequence(delayedEntry.getSequence());
             }
         }
@@ -153,6 +172,17 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
                 out.writeBoolean(sequence.isFullFlush());
             }
         }
+
+        out.writeInt(reservationsByTxnIdPerMap.size());
+        for (Map.Entry<String, Map<UUID, Long>> entry : reservationsByTxnIdPerMap.entrySet()) {
+            out.writeUTF(entry.getKey());
+            Map<UUID, Long> reservationsByTxnId = entry.getValue();
+            out.writeInt(reservationsByTxnId.size());
+            for (Map.Entry<UUID, Long> counterByTxnId : reservationsByTxnId.entrySet()) {
+                writeUUID(out, counterByTxnId.getKey());
+                out.writeLong(counterByTxnId.getValue());
+            }
+        }
     }
 
     @Override
@@ -191,6 +221,18 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
                 queue.add(new WriteBehindStore.Sequence(in.readLong(), in.readBoolean()));
             }
             flushSequences.put(mapName, queue);
+        }
+
+        int mapCount = in.readInt();
+        reservationsByTxnIdPerMap = mapCount == 0 ? Collections.emptyMap() : new HashMap<>(mapCount);
+        for (int i = 0; i < mapCount; i++) {
+            String mapName = in.readUTF();
+            int numOfCounters = in.readInt();
+            Map<UUID, Long> counterByTxnId = createHashMap(numOfCounters);
+            for (int j = 0; j < numOfCounters; j++) {
+                counterByTxnId.put(readUUID(in), in.readLong());
+            }
+            reservationsByTxnIdPerMap.put(mapName, counterByTxnId);
         }
     }
 
