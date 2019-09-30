@@ -48,7 +48,7 @@ import static com.hazelcast.aws.utility.MetadataUtil.IAM_SECURITY_CREDENTIALS_UR
 import static com.hazelcast.aws.utility.MetadataUtil.INSTANCE_METADATA_URI;
 import static com.hazelcast.aws.utility.StringUtil.isEmpty;
 import static com.hazelcast.aws.utility.StringUtil.isNotEmpty;
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 /**
  * See http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
