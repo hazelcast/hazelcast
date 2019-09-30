@@ -141,7 +141,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[normal]", level = MANDATORY)
+    @Probe(name = "responses.normalCount", level = MANDATORY)
     long responsesNormal() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -150,7 +150,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[timeout]", level = MANDATORY)
+    @Probe(name = "responses.timeoutCount", level = MANDATORY)
     long responsesTimeout() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -159,7 +159,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[backup]", level = MANDATORY)
+    @Probe(name = "responses.backupCount", level = MANDATORY)
     long responsesBackup() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -168,7 +168,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[error]", level = MANDATORY)
+    @Probe(name = "responses.errorCount", level = MANDATORY)
     long responsesError() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -177,7 +177,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[missing]", level = MANDATORY)
+    @Probe(name = "responses.missingCount", level = MANDATORY)
     long responsesMissing() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
