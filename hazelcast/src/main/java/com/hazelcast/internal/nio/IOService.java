@@ -119,5 +119,5 @@ public interface IOService {
 
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
 
-    AuditlogService getEventLogService();
+    AuditlogService getAuditLogService();
 }

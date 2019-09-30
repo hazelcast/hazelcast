@@ -407,7 +407,7 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public AuditlogService getEventLogService() {
+    public AuditlogService getAuditLogService() {
         return node.getNodeExtension().getAuditlogService();
     }
 }

@@ -89,7 +89,7 @@ public class UnifiedProtocolDecoder
 
             String protocol = loadProtocol();
 
-            ioService.getEventLogService()
+            ioService.getAuditLogService()
                 .eventBuilder(AuditlogTypeIds.CONNECTION_ASKS_PROTOCOL)
                 .message("Protocol bytes received for a connection")
                 .level(Level.DEBUG)

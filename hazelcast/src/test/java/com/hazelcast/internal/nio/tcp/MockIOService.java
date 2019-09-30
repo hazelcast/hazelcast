@@ -384,7 +384,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public AuditlogService getEventLogService() {
+    public AuditlogService getAuditLogService() {
         return NoOpAuditlogService.INSTANCE;
     }
 }
