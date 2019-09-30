@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Reads the recorded metrics starting with the smallest sequence number
  * greater or equals to the sequence number set in fromSequence.
  */
-@Generated("1e04e7f21e0e3f80706ae2f5143472fc")
+@Generated("581a2528fca5dfdd0b4a3730e48bb0c0")
 public final class MetricsReadMetricsCodec {
     //hex: 0x270100
     public static final int REQUEST_MESSAGE_TYPE = 2556160;
@@ -105,10 +106,10 @@ public final class MetricsReadMetricsCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeLong(initialFrame.content, RESPONSE_NEXT_SEQUENCE_FIELD_OFFSET, nextSequence);
         clientMessage.add(initialFrame);
 
-        encodeLong(initialFrame.content, RESPONSE_NEXT_SEQUENCE_FIELD_OFFSET, nextSequence);
-        MapLongByteArrayCodec.encode(clientMessage, elements);
+        EntryListLongByteArrayCodec.encode(clientMessage, elements);
         return clientMessage;
     }
 
@@ -117,7 +118,7 @@ public final class MetricsReadMetricsCodec {
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.nextSequence = decodeLong(initialFrame.content, RESPONSE_NEXT_SEQUENCE_FIELD_OFFSET);
-        response.elements = MapLongByteArrayCodec.decode(iterator);
+        response.elements = EntryListLongByteArrayCodec.decode(iterator);
         return response;
     }
 

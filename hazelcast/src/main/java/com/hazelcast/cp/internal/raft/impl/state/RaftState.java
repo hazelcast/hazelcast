@@ -131,7 +131,7 @@ public class RaftState {
     }
 
     public String name() {
-        return groupId.name();
+        return groupId.getName();
     }
 
     public CPGroupId groupId() {

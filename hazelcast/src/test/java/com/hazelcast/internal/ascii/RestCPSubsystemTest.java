@@ -524,7 +524,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         RaftGroupId id1 = (RaftGroupId) cpGroup1.id();
         RaftGroupId id2 = (RaftGroupId) cpGroup2.id();
 
-        assertTrue(id2.seed() > id1.seed());
+        assertTrue(id2.getSeed() > id1.getSeed());
     }
 
     @Test

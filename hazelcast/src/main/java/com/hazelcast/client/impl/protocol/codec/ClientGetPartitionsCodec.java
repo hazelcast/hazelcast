@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("0ccb1892929a81cc5e15fa585be10c9c")
+@Generated("19ea515cc00d9f9f66d4d4e794c47c19")
 public final class ClientGetPartitionsCodec {
     //hex: 0x000800
     public static final int REQUEST_MESSAGE_TYPE = 2048;
@@ -89,10 +90,10 @@ public final class ClientGetPartitionsCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET, partitionStateVersion);
         clientMessage.add(initialFrame);
 
-        encodeInt(initialFrame.content, RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET, partitionStateVersion);
-        MapCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
+        EntryListCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
         return clientMessage;
     }
 
@@ -101,7 +102,7 @@ public final class ClientGetPartitionsCodec {
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.partitionStateVersion = decodeInt(initialFrame.content, RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET);
-        response.partitions = MapCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
+        response.partitions = EntryListCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
         return response;
     }
 

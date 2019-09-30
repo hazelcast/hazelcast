@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("9601c4da8fea9239f1ff68451b58b6d4")
+@Generated("601ab31ed995ab42345d856c5448654e")
 public final class CachePutAllCodec {
     //hex: 0x151C00
     public static final int REQUEST_MESSAGE_TYPE = 1383424;
@@ -84,7 +85,7 @@ public final class CachePutAllCodec {
         encodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET, completionId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        MapCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
+        EntryListCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, expiryPolicy, DataCodec::encode);
         return clientMessage;
     }
@@ -95,7 +96,7 @@ public final class CachePutAllCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.completionId = decodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.entries = MapCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        request.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         request.expiryPolicy = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         return request;
     }

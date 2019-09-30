@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
+import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.nio.Bits;
 
 import java.util.UUID;
@@ -33,6 +35,14 @@ public final class FixedSizeTypesCodec {
 
     public static void encodeInt(byte[] buffer, int pos, int value) {
         Bits.writeIntL(buffer, pos, value);
+    }
+
+    public static void encodeInt(byte[] buffer, int pos, CacheEventType cacheEventType) {
+        encodeInt(buffer, pos, cacheEventType.getType());
+    }
+
+    public static void encodeInt(byte[] buffer, int pos, IndexType indexType) {
+        encodeInt(buffer, pos, indexType.getId());
     }
 
     public static int decodeInt(byte[] buffer, int pos) {

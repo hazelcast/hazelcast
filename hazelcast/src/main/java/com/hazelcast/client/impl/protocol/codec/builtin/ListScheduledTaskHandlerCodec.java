@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.custom.ScheduledTaskHandlerCodec;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 
 import java.util.Collection;

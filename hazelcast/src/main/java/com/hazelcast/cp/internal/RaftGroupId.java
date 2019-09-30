@@ -48,16 +48,16 @@ public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable,
     }
 
     @Override
-    public String name() {
+    public String getName() {
         return name;
     }
 
-    public long seed() {
+    public long getSeed() {
         return seed;
     }
 
     @Override
-    public long id() {
+    public long getId() {
         return commitIndex;
     }
 

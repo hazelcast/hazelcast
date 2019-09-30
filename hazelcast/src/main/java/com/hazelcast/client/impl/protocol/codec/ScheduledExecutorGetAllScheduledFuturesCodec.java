@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("4a6960ffecad831a5c3bf004703d6ac5")
+@Generated("22824abd169fb3d01343492372f06b9e")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     //hex: 0x1D0400
     public static final int REQUEST_MESSAGE_TYPE = 1901568;
@@ -92,7 +93,7 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapCodec.encode(clientMessage, handlers, MemberCodec::encode, ListScheduledTaskHandlerCodec::encode);
+        EntryListCodec.encode(clientMessage, handlers, MemberCodec::encode, ListScheduledTaskHandlerCodec::encode);
         return clientMessage;
     }
 
@@ -101,7 +102,7 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.handlers = MapCodec.decode(iterator, MemberCodec::decode, ListScheduledTaskHandlerCodec::decode);
+        response.handlers = EntryListCodec.decode(iterator, MemberCodec::decode, ListScheduledTaskHandlerCodec::decode);
         return response;
     }
 

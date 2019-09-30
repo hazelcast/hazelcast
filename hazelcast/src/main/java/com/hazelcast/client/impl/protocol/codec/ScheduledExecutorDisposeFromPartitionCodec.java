@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Dispose the task from the scheduler
  */
-@Generated("36b5b3c7c97aec225331c42266c2ce3e")
+@Generated("0525b3ad4687d373b2cac9862aeb4117")
 public final class ScheduledExecutorDisposeFromPartitionCodec {
     //hex: 0x1D1100
     public static final int REQUEST_MESSAGE_TYPE = 1904896;

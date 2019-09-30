@@ -355,7 +355,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
             }
         });
 
-        getRaftService(instances[0]).forceDestroyCPGroup(groupId.name()).get();
+        getRaftService(instances[0]).forceDestroyCPGroup(groupId.getName()).get();
 
         group = getRaftInvocationManager(instances[0]).<CPGroupInfo>query(getMetadataGroupId(instances[0]),
                 new GetRaftGroupOp(groupId), LINEARIZABLE).get();
@@ -396,7 +396,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         factory.getInstance(groupMembers[1].getAddress()).getLifecycleService().terminate();
 
         HazelcastInstance runningInstance = factory.getInstance(groupMembers[2].getAddress());
-        getRaftService(runningInstance).forceDestroyCPGroup(groupId.name()).get();
+        getRaftService(runningInstance).forceDestroyCPGroup(groupId.getName()).get();
 
         group = getRaftInvocationManager(runningInstance).<CPGroupInfo>query(getMetadataGroupId(runningInstance),
                 new GetRaftGroupOp(groupId), LINEARIZABLE).get();

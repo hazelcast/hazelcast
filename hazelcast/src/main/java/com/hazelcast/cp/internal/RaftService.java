@@ -858,7 +858,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
 
-        invocationManager.getRaftInvocationContext().setMembers(latestMetadataGroupId.seed(), membersCommitIndex, members);
+        invocationManager.getRaftInvocationContext().setMembers(latestMetadataGroupId.getSeed(), membersCommitIndex, members);
 
         CPMemberInfo localMember = getLocalCPMember();
         if (localMember != null && !members.contains(localMember) && nodeEngine.getNode().isRunning()) {
@@ -873,7 +873,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         RaftGroupId metadataGroupId = getMetadataGroupId();
 
-        if (latestMetadataGroupId.seed() < metadataGroupId.seed() || metadataGroupId.equals(latestMetadataGroupId)) {
+        if (latestMetadataGroupId.getSeed() < metadataGroupId.getSeed() || metadataGroupId.equals(latestMetadataGroupId)) {
             return;
         }
 
@@ -910,8 +910,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     public static int getCPGroupPartitionId(CPGroupId groupId, int partitionCount) {
-        assert groupId.id() >= 0 : "Invalid groupId: " + groupId;
-        return (int) (groupId.id() % partitionCount);
+        assert groupId.getId() >= 0 : "Invalid groupId: " + groupId;
+        return (int) (groupId.getId() % partitionCount);
     }
 
     public long nextUnsafeModeCommitIndex() {

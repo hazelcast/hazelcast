@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -42,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("c4ce53b0f4e950c6a86c13ec90ecbe85")
+@Generated("702fdefb1c89ecdc3bea64cdaad3e6c4")
 public final class PNCounterGetCodec {
     //hex: 0x200100
     public static final int REQUEST_MESSAGE_TYPE = 2097408;
@@ -84,7 +85,7 @@ public final class PNCounterGetCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        MapUUIDLongCodec.encode(clientMessage, replicaTimestamps);
+        EntryListUUIDLongCodec.encode(clientMessage, replicaTimestamps);
         AddressCodec.encode(clientMessage, targetReplica);
         return clientMessage;
     }
@@ -95,7 +96,7 @@ public final class PNCounterGetCodec {
         //empty initial frame
         iterator.next();
         request.name = StringCodec.decode(iterator);
-        request.replicaTimestamps = MapUUIDLongCodec.decode(iterator);
+        request.replicaTimestamps = EntryListUUIDLongCodec.decode(iterator);
         request.targetReplica = AddressCodec.decode(iterator);
         return request;
     }
@@ -123,11 +124,11 @@ public final class PNCounterGetCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.add(initialFrame);
-
         encodeLong(initialFrame.content, RESPONSE_VALUE_FIELD_OFFSET, value);
         encodeInt(initialFrame.content, RESPONSE_REPLICA_COUNT_FIELD_OFFSET, replicaCount);
-        MapUUIDLongCodec.encode(clientMessage, replicaTimestamps);
+        clientMessage.add(initialFrame);
+
+        EntryListUUIDLongCodec.encode(clientMessage, replicaTimestamps);
         return clientMessage;
     }
 
@@ -137,7 +138,7 @@ public final class PNCounterGetCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         response.value = decodeLong(initialFrame.content, RESPONSE_VALUE_FIELD_OFFSET);
         response.replicaCount = decodeInt(initialFrame.content, RESPONSE_REPLICA_COUNT_FIELD_OFFSET);
-        response.replicaTimestamps = MapUUIDLongCodec.decode(iterator);
+        response.replicaTimestamps = EntryListUUIDLongCodec.decode(iterator);
         return response;
     }
 

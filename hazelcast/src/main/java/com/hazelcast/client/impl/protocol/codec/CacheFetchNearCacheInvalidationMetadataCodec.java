@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import java.util.ListIterator;
 
@@ -35,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated("8809f845b4f70befc3f7f86bd1bf3c1f")
+@Generated("f6eecc80768dde8eacae16352e2cdd1a")
 public final class CacheFetchNearCacheInvalidationMetadataCodec {
     //hex: 0x151F00
     public static final int REQUEST_MESSAGE_TYPE = 1384192;
@@ -104,8 +105,8 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapCodec.encode(clientMessage, namePartitionSequenceList, StringCodec::encode, MapIntegerLongCodec::encode);
-        MapIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
+        EntryListCodec.encode(clientMessage, namePartitionSequenceList, StringCodec::encode, EntryListIntegerLongCodec::encode);
+        EntryListIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
         return clientMessage;
     }
 
@@ -114,8 +115,8 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.namePartitionSequenceList = MapCodec.decode(iterator, StringCodec::decode, MapIntegerLongCodec::decode);
-        response.partitionUuidList = MapIntegerUUIDCodec.decode(iterator);
+        response.namePartitionSequenceList = EntryListCodec.decode(iterator, StringCodec::decode, EntryListIntegerLongCodec::decode);
+        response.partitionUuidList = EntryListIntegerUUIDCodec.decode(iterator);
         return response;
     }
 

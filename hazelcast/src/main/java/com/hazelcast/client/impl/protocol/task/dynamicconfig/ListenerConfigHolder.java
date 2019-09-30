@@ -50,24 +50,17 @@ public class ListenerConfigHolder {
     private final int listenerType;
 
     public ListenerConfigHolder(int listenerType, String className) {
-        this(listenerType, className, true, false);
+        this(listenerType, null, className, true, false);
     }
 
     public ListenerConfigHolder(int listenerType, Data listenerImplementation) {
-        this(listenerType, listenerImplementation, true, false);
+        this(listenerType, listenerImplementation, null, true, false);
     }
 
-    public ListenerConfigHolder(int listenerType, String className, boolean includeValue, boolean local) {
+    public ListenerConfigHolder(int listenerType, Data listenerImplementation, String className,
+                                boolean includeValue, boolean local) {
         this.listenerType = listenerType;
         this.className = className;
-        this.listenerImplementation = null;
-        this.includeValue = includeValue;
-        this.local = local;
-    }
-
-    public ListenerConfigHolder(int listenerType, Data listenerImplementation, boolean includeValue, boolean local) {
-        this.listenerType = listenerType;
-        this.className = null;
         this.listenerImplementation = listenerImplementation;
         this.includeValue = includeValue;
         this.local = local;
@@ -155,14 +148,12 @@ public class ListenerConfigHolder {
 
     public static ListenerConfigHolder of(ListenerConfig config, SerializationService serializationService) {
         int listenerType = listenerTypeOf(config);
-        if (config.getClassName() != null) {
-            return new ListenerConfigHolder(listenerType, config.getClassName(), config.isIncludeValue(),
-                    config.isLocal());
-        } else {
-            Data implementationData = serializationService.toData(config.getImplementation());
-            return  new ListenerConfigHolder(listenerType, implementationData, config.isIncludeValue(),
-                    config.isLocal());
+        Data implementationData = null;
+        if (config.getImplementation() != null) {
+            implementationData = serializationService.toData(config.getImplementation());
         }
+        return new ListenerConfigHolder(listenerType, implementationData, config.getClassName(), config.isIncludeValue(),
+                config.isLocal());
     }
 
     private static int listenerTypeOf(ListenerConfig config) {
