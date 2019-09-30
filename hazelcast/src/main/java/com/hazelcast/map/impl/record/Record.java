@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Metadata;
+import com.hazelcast.query.impl.Metadata;
 
 /**
  * @param <V> the type of value which is in the Record

@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;

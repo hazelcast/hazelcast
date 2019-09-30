@@ -37,7 +37,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Collections;

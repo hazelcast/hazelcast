@@ -18,8 +18,8 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigLocator;
 
-import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
-import static com.hazelcast.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES;
 
 /**
  * A support class for the {@link XmlClientConfigBuilder} to locate the client

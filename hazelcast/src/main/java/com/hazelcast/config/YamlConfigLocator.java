@@ -16,8 +16,8 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
-import static com.hazelcast.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES;
 
 /**
  * Support class for the {@link com.hazelcast.config.YamlConfigBuilder} that locates the YAML configuration:

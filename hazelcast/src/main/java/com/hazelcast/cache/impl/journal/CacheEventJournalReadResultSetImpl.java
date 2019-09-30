@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;

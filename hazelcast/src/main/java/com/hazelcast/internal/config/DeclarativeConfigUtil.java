@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
 import com.hazelcast.core.HazelcastException;
 
@@ -122,7 +122,7 @@ public final class DeclarativeConfigUtil {
      *                            referring to the unaccepted suffix of
      *                            the file referenced by {@code propertyKey}
      */
-    static void throwUnacceptedSuffixInSystemProperty(String propertyKey, String configResource,
+    public static void throwUnacceptedSuffixInSystemProperty(String propertyKey, String configResource,
                                                       Collection<String> acceptedSuffixes) {
 
         String message = String.format("The suffix of the resource \'%s\' referenced in \'%s\' is not in the list of accepted "
@@ -139,7 +139,7 @@ public final class DeclarativeConfigUtil {
      * @return {@code true} if the suffix of the configuration file is in
      * the accepted list, {@code false} otherwise
      */
-    static boolean isAcceptedSuffixConfigured(String configFile, Collection<String> acceptedSuffixes) {
+    public static boolean isAcceptedSuffixConfigured(String configFile, Collection<String> acceptedSuffixes) {
         String configFileLower = configFile.toLowerCase();
         int lastDotIndex = configFileLower.lastIndexOf('.');
         if (lastDotIndex == -1) {

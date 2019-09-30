@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;

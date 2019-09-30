@@ -30,8 +30,8 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
-import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
-import static com.hazelcast.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES_STRING;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES_STRING;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
