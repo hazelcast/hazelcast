@@ -849,10 +849,10 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             try {
                 biConsumer.accept((V) value, throwable);
             } catch (Throwable t) {
-                completeExceptionallyWithPriority(future, throwable, t);
+                completeDependentExceptionally(future, throwable, t);
                 return;
             }
-            completeFuture(future, value, throwable);
+            completeDependent(future, value, throwable);
         });
     }
 
@@ -1444,20 +1444,20 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     // a WaitNode for a BiConsumer<V, T>
     private static final class WhenCompleteNode<V, T extends Throwable> implements Waiter {
         final CompletableFuture<V> future;
-        final BiConsumer<V, T> biFunction;
+        final BiConsumer<V, T> biConsumer;
 
-        WhenCompleteNode(@Nonnull CompletableFuture<V> future, @Nonnull BiConsumer<V, T> biFunction) {
+        WhenCompleteNode(@Nonnull CompletableFuture<V> future, @Nonnull BiConsumer<V, T> biConsumer) {
             this.future = future;
-            this.biFunction = biFunction;
+            this.biConsumer = biConsumer;
         }
 
         public void execute(Executor executor, V value, T throwable) {
             Executor e = (executor == null) ? CALLER_RUNS : executor;
             e.execute(() -> {
                 try {
-                    biFunction.accept(value, throwable);
+                    biConsumer.accept(value, throwable);
                 } catch (Throwable t) {
-                    completeExceptionallyWithPriority(future, throwable, t);
+                    completeDependentExceptionally(future, throwable, t);
                     return;
                 }
                 complete(value, throwable);
@@ -1763,20 +1763,32 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 && (((ExceptionalResult) state).cause instanceof CancellationException));
     }
 
-    private static void completeExceptionallyWithPriority(CompletableFuture future, Throwable first,
-                                                            Throwable second) {
-        if (first == null) {
-            future.completeExceptionally(second);
+    /**
+     * Completes dependent {@code future} exceptionally. When the parent future was completed exceptionally,
+     * then dependent future is also completed exceptionally with a {@link CompletionException} wrapping
+     * {@code exceptionFromParent}. Otherwise, the dependent future is completed exceptionally with
+     * the exception thrown from user action ({@code exceptionFromAction}).
+     */
+    private static void completeDependentExceptionally(CompletableFuture future, Throwable exceptionFromParent,
+                                                       Throwable exceptionFromAction) {
+        assert (exceptionFromParent != null || exceptionFromAction != null);
+        if (exceptionFromParent == null) {
+            future.completeExceptionally(exceptionFromAction);
         } else {
-            future.completeExceptionally(first);
+            future.completeExceptionally(wrapInCompletionException(exceptionFromParent));
         }
     }
 
-    private static <V> void completeFuture(CompletableFuture<V> future, V value, Throwable throwable) {
+    /**
+     * Completes dependent future {@code future} with the given {@code throwable} wrapped in
+     * {@code CompletionException}, if {@code throwable} is not {@code null}, or with the given
+     * {@code value}.
+     */
+    private static <V> void completeDependent(CompletableFuture<V> future, V value, Throwable throwable) {
         if (throwable == null) {
             future.complete(value);
         } else {
-            future.completeExceptionally(throwable);
+            future.completeExceptionally(wrapInCompletionException(throwable));
         }
     }
 
