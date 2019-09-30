@@ -99,7 +99,10 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Override
     protected ICompletableFuture<Void> invokeJoinJob() {
         ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId());
-        return new CancellableFuture<>(invocation(request, masterAddress()).invoke());
+        ClientInvocation invocation = invocation(request, masterAddress());
+        // this invocation should never time out, as the job may be running for a long time
+        invocation.setInvocationTimeoutMillis(Long.MAX_VALUE); // 0 is not supported
+        return new CancellableFuture<>(invocation.invoke());
     }
 
     @Override
