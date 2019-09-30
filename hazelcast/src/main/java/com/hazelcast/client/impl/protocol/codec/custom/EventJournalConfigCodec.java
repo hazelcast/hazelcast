@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("0912d034f284bcf383296a5a30487a0e")
+@Generated("c671e4a4562938ef0142389254a8db50")
 public final class EventJournalConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int CAPACITY_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -37,7 +35,7 @@ public final class EventJournalConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.EventJournalConfig eventJournalConfig) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_FIELD_OFFSET, eventJournalConfig.isEnabled());
@@ -45,10 +43,10 @@ public final class EventJournalConfigCodec {
         encodeInt(initialFrame.content, TIME_TO_LIVE_SECONDS_FIELD_OFFSET, eventJournalConfig.getTimeToLiveSeconds());
         clientMessage.add(initialFrame);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.EventJournalConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.EventJournalConfig decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

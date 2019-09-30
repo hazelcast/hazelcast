@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.nio.Bits;
 
-import java.util.ListIterator;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
@@ -41,7 +40,7 @@ public final class StringCodec {
         encode(clientMessage, expiryPolicyType.name());
     }
 
-    public static String decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static String decode(ClientMessage.FrameIterator iterator) {
         return decode(iterator.next());
     }
 

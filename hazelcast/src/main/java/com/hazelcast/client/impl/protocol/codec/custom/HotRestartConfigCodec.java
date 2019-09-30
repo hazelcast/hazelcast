@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("3447c5c2ce89906cf1f9fba5a8214ba3")
+@Generated("577a9046ebbddb7a2451499ad8a7ba10")
 public final class HotRestartConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int FSYNC_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -36,17 +34,17 @@ public final class HotRestartConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.HotRestartConfig hotRestartConfig) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_FIELD_OFFSET, hotRestartConfig.isEnabled());
         encodeBoolean(initialFrame.content, FSYNC_FIELD_OFFSET, hotRestartConfig.isFsync());
         clientMessage.add(initialFrame);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.HotRestartConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.HotRestartConfig decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

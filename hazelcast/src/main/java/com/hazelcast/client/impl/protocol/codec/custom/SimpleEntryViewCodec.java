@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a71b810c30c2154b9e2e7e219ad0903c")
+@Generated("f9ab7ff372c75c640125b402ffc19bc1")
 public final class SimpleEntryViewCodec {
     private static final int COST_FIELD_OFFSET = 0;
     private static final int CREATION_TIME_FIELD_OFFSET = COST_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -44,7 +42,7 @@ public final class SimpleEntryViewCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> simpleEntryView) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeLong(initialFrame.content, COST_FIELD_OFFSET, simpleEntryView.getCost());
@@ -62,10 +60,11 @@ public final class SimpleEntryViewCodec {
         DataCodec.encode(clientMessage, simpleEntryView.getKey());
         DataCodec.encode(clientMessage, simpleEntryView.getValue());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> decode(
+            ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

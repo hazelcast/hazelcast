@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("fd61381467fc970e31a36316c67a462f")
+@Generated("3d31fa7a91d6a17ad4db0da6656a0c34")
 public final class MergePolicyConfigCodec {
     private static final int BATCH_SIZE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -35,7 +33,7 @@ public final class MergePolicyConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.MergePolicyConfig mergePolicyConfig) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, BATCH_SIZE_FIELD_OFFSET, mergePolicyConfig.getBatchSize());
@@ -43,10 +41,10 @@ public final class MergePolicyConfigCodec {
 
         StringCodec.encode(clientMessage, mergePolicyConfig.getPolicy());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.MergePolicyConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.MergePolicyConfig decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

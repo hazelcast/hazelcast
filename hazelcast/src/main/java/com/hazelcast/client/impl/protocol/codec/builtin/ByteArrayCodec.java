@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-import java.util.ListIterator;
-
 public final class ByteArrayCodec {
 
     private ByteArrayCodec() {
@@ -33,7 +31,7 @@ public final class ByteArrayCodec {
         return frame.content;
     }
 
-    public static byte[] decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static byte[] decode(ClientMessage.FrameIterator iterator) {
         return decode(iterator.next());
     }
 }

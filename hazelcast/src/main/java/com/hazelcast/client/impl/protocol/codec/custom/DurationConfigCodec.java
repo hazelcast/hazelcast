@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("7f78e8a7c2f2b051057bbfc1b17c012b")
+@Generated("d91f511269c3b5a6f46d5f05ab4da466")
 public final class DurationConfigCodec {
     private static final int DURATION_AMOUNT_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = DURATION_AMOUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -35,7 +33,7 @@ public final class DurationConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig durationConfig) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeLong(initialFrame.content, DURATION_AMOUNT_FIELD_OFFSET, durationConfig.getDurationAmount());
@@ -43,10 +41,11 @@ public final class DurationConfigCodec {
 
         StringCodec.encode(clientMessage, durationConfig.getTimeUnit());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig decode(
+            ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

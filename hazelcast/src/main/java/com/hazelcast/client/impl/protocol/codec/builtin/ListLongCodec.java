@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
@@ -43,7 +42,7 @@ public final class ListLongCodec {
         clientMessage.add(frame);
     }
 
-    public static List<Long> decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static List<Long> decode(ClientMessage.FrameIterator iterator) {
         return decode(iterator.next());
     }
 

@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
@@ -44,7 +43,7 @@ public final class ListUUIDCodec {
         clientMessage.add(frame);
     }
 
-    public static List<UUID> decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static List<UUID> decode(ClientMessage.FrameIterator iterator) {
         return decode(iterator.next());
     }
 

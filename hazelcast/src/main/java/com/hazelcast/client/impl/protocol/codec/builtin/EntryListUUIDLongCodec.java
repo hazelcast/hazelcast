@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -53,7 +52,7 @@ public final class EntryListUUIDLongCodec {
         clientMessage.add(frame);
     }
 
-    public static List<Map.Entry<UUID, Long>> decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static List<Map.Entry<UUID, Long>> decode(ClientMessage.FrameIterator iterator) {
         ClientMessage.Frame frame = iterator.next();
         int itemCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
         List<Map.Entry<UUID, Long>> result = new LinkedList<>();

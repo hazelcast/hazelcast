@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("52e33282dc4eb74299182fce9a4d3777")
+@Generated("036b9048ed044249cda441dd0288a373")
 public final class MemberCodec {
     private static final int UUID_FIELD_OFFSET = 0;
     private static final int LITE_MEMBER_FIELD_OFFSET = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
@@ -36,7 +34,7 @@ public final class MemberCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.cluster.Member member) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeUUID(initialFrame.content, UUID_FIELD_OFFSET, member.getUuid());
@@ -46,10 +44,10 @@ public final class MemberCodec {
         AddressCodec.encode(clientMessage, member.getAddress());
         MapCodec.encode(clientMessage, member.getAttributes(), StringCodec::encode, StringCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.MemberImpl decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.client.impl.MemberImpl decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

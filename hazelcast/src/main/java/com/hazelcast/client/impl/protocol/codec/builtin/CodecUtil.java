@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-import java.util.ListIterator;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -29,7 +28,7 @@ public final class CodecUtil {
     private CodecUtil() {
     }
 
-    public static void fastForwardToEndFrame(ListIterator<ClientMessage.Frame> iterator) {
+    public static void fastForwardToEndFrame(ClientMessage.FrameIterator iterator) {
         // We are starting from 1 because of the BEGIN_FRAME we read
         // in the beginning of the decode method
         int numberOfExpectedEndFrames = 1;
@@ -46,28 +45,24 @@ public final class CodecUtil {
 
     public static <T> void encodeNullable(ClientMessage clientMessage, T value, BiConsumer<ClientMessage, T> encode) {
         if (value == null) {
-            clientMessage.add(NULL_FRAME);
+            clientMessage.add(NULL_FRAME.copy());
         } else {
             encode.accept(clientMessage, value);
         }
     }
 
-    public static <T> T decodeNullable(ListIterator<ClientMessage.Frame> iterator, Function<ListIterator<ClientMessage.Frame>, T> decode) {
+    public static <T> T decodeNullable(ClientMessage.FrameIterator iterator, Function<ClientMessage.FrameIterator, T> decode) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode.apply(iterator);
     }
 
-    public static boolean nextFrameIsDataStructureEndFrame(ListIterator<ClientMessage.Frame> iterator) {
-        try {
-            return iterator.next().isEndFrame();
-        } finally {
-            iterator.previous();
-        }
+    public static boolean nextFrameIsDataStructureEndFrame(ClientMessage.FrameIterator iterator) {
+        return iterator.peekNext().isEndFrame();
     }
 
-    public static boolean nextFrameIsNullEndFrame(ListIterator<ClientMessage.Frame> iterator) {
-        boolean isNull = iterator.next().isNullFrame();
-        if (!isNull) {
-            iterator.previous();
+    public static boolean nextFrameIsNullEndFrame(ClientMessage.FrameIterator iterator) {
+        boolean isNull = iterator.peekNext().isNullFrame();
+        if (isNull) {
+            iterator.next();
         }
         return isNull;
     }

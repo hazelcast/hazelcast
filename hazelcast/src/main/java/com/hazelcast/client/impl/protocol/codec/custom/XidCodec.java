@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("77c7fc028bdcc5bf47cd512d275e5773")
+@Generated("9fc910bca6ba1639a1bc34af0448aad7")
 public final class XidCodec {
     private static final int FORMAT_ID_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = FORMAT_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -35,7 +33,7 @@ public final class XidCodec {
     }
 
     public static void encode(ClientMessage clientMessage, javax.transaction.xa.Xid xid) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, FORMAT_ID_FIELD_OFFSET, xid.getFormatId());
@@ -44,10 +42,10 @@ public final class XidCodec {
         ByteArrayCodec.encode(clientMessage, xid.getGlobalTransactionId());
         ByteArrayCodec.encode(clientMessage, xid.getBranchQualifier());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.transaction.impl.xa.SerializableXID decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.transaction.impl.xa.SerializableXID decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

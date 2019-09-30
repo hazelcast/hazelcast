@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("81db9696c080b1565d1b364db0695546")
+@Generated("48f2b238129d9ffef4918def5e45d8aa")
 public final class StackTraceElementCodec {
     private static final int LINE_NUMBER_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = LINE_NUMBER_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -35,7 +33,7 @@ public final class StackTraceElementCodec {
     }
 
     public static void encode(ClientMessage clientMessage, java.lang.StackTraceElement stackTraceElement) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, LINE_NUMBER_FIELD_OFFSET, stackTraceElement.getLineNumber());
@@ -45,10 +43,10 @@ public final class StackTraceElementCodec {
         StringCodec.encode(clientMessage, stackTraceElement.getMethodName());
         CodecUtil.encodeNullable(clientMessage, stackTraceElement.getFileName(), StringCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static java.lang.StackTraceElement decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static java.lang.StackTraceElement decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

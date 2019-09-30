@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("68ddea4f5fd5f46fb14b9bcbc384fd7f")
+@Generated("9d1039c0e7a891d9fdecc8deacef0e93")
 public final class CacheConfigHolderCodec {
     private static final int BACKUP_COUNT_FIELD_OFFSET = 0;
     private static final int ASYNC_BACKUP_COUNT_FIELD_OFFSET = BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -42,7 +40,7 @@ public final class CacheConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder cacheConfigHolder) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, BACKUP_COUNT_FIELD_OFFSET, cacheConfigHolder.getBackupCount());
@@ -73,10 +71,10 @@ public final class CacheConfigHolderCodec {
         MergePolicyConfigCodec.encode(clientMessage, cacheConfigHolder.getMergePolicyConfig());
         ListMultiFrameCodec.encodeNullable(clientMessage, cacheConfigHolder.getCachePartitionLostListenerConfigs(), ListenerConfigHolderCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

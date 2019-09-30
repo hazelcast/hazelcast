@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("30662a8402dfe023dbd24920e709fa1c")
+@Generated("301be4ae65e42f7378358d179bcbe00c")
 public final class CacheEventDataCodec {
     private static final int CACHE_EVENT_TYPE_FIELD_OFFSET = 0;
     private static final int OLD_VALUE_AVAILABLE_FIELD_OFFSET = CACHE_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -36,7 +34,7 @@ public final class CacheEventDataCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.cache.impl.CacheEventData cacheEventData) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, CACHE_EVENT_TYPE_FIELD_OFFSET, cacheEventData.getCacheEventType());
@@ -48,10 +46,10 @@ public final class CacheEventDataCodec {
         CodecUtil.encodeNullable(clientMessage, cacheEventData.getDataValue(), DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, cacheEventData.getDataOldValue(), DataCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.cache.impl.CacheEventDataImpl decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.cache.impl.CacheEventDataImpl decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

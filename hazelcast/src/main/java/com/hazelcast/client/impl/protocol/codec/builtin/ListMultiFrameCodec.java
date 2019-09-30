@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -38,37 +37,37 @@ public final class ListMultiFrameCodec {
 
     public static <T> void encode(ClientMessage clientMessage, Collection<T> collection,
                                   BiConsumer<ClientMessage, T> encodeFunction) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
         for (T item : collection) {
             encodeFunction.accept(clientMessage, item);
         }
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
     public static <T> void encodeContainsNullable(ClientMessage clientMessage, Collection<T> collection,
                                                   BiConsumer<ClientMessage, T> encodeFunction) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
         for (T item : collection) {
             if (item == null) {
-                clientMessage.add(NULL_FRAME);
+                clientMessage.add(NULL_FRAME.copy());
             } else {
                 encodeFunction.accept(clientMessage, item);
             }
         }
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
     public static <T> void encodeNullable(ClientMessage clientMessage, Collection<T> collection,
                                           BiConsumer<ClientMessage, T> encodeFunction) {
         if (collection == null) {
-            clientMessage.add(NULL_FRAME);
+            clientMessage.add(NULL_FRAME.copy());
         } else {
             encode(clientMessage, collection, encodeFunction);
         }
     }
 
-    public static <T> List<T> decode(ListIterator<ClientMessage.Frame> iterator,
-                                     Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {
+    public static <T> List<T> decode(ClientMessage.FrameIterator iterator,
+                                     Function<ClientMessage.FrameIterator, T> decodeFunction) {
         List<T> result = new LinkedList<>();
         //begin frame, list
         iterator.next();
@@ -80,8 +79,8 @@ public final class ListMultiFrameCodec {
         return result;
     }
 
-    public static <T> List<T> decodeContainsNullable(ListIterator<ClientMessage.Frame> iterator,
-                                     Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {
+    public static <T> List<T> decodeContainsNullable(ClientMessage.FrameIterator iterator,
+                                                     Function<ClientMessage.FrameIterator, T> decodeFunction) {
         List<T> result = new LinkedList<>();
         //begin frame, list
         iterator.next();
@@ -93,9 +92,8 @@ public final class ListMultiFrameCodec {
         return result;
     }
 
-
-    public static <T> List<T> decodeNullable(ListIterator<ClientMessage.Frame> iterator,
-                                             Function<ListIterator<ClientMessage.Frame>, T> decodeFunction) {
+    public static <T> List<T> decodeNullable(ClientMessage.FrameIterator iterator,
+                                             Function<ClientMessage.FrameIterator, T> decodeFunction) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator, decodeFunction);
     }
 }

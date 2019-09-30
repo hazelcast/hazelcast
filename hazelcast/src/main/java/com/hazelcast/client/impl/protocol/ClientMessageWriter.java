@@ -25,21 +25,23 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LEN
 
 public class ClientMessageWriter {
 
-    private transient int writeIndex;
+    private transient ClientMessage.Frame currentFrame;
     //-1 means length is not written yet
     private transient int writeOffset = -1;
 
     public boolean writeTo(ByteBuffer dst, ClientMessage clientMessage) {
+        if (currentFrame == null) {
+            currentFrame = clientMessage.startFrame;
+        }
         for (; ; ) {
-            ClientMessage.Frame frame = clientMessage.get(writeIndex);
-            boolean isLastFrame = writeIndex == clientMessage.size() - 1;
-            if (writeFrame(dst, frame, isLastFrame)) {
+            boolean isLastFrame = currentFrame.next == null;
+            if (writeFrame(dst, currentFrame, isLastFrame)) {
                 writeOffset = -1;
                 if (isLastFrame) {
-                    writeIndex = 0;
+                    currentFrame = null;
                     return true;
                 }
-                writeIndex++;
+                currentFrame = currentFrame.next;
             } else {
                 return false;
             }

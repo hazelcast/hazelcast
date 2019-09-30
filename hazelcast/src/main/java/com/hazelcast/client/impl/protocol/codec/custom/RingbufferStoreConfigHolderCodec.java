@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("44d4ebc3bc11cfbda78ac2c925fc9f42")
+@Generated("34ef983cad0e56a43b275eb85383988b")
 public final class RingbufferStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -35,7 +33,7 @@ public final class RingbufferStoreConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder ringbufferStoreConfigHolder) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_FIELD_OFFSET, ringbufferStoreConfigHolder.isEnabled());
@@ -47,10 +45,11 @@ public final class RingbufferStoreConfigHolderCodec {
         CodecUtil.encodeNullable(clientMessage, ringbufferStoreConfigHolder.getFactoryImplementation(), DataCodec::encode);
         MapCodec.encodeNullable(clientMessage, ringbufferStoreConfigHolder.getProperties(), StringCodec::encode, StringCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder decode(
+            ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

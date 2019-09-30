@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("7fc73cf9dcb7905b16b8ab64177b918e")
+@Generated("6cc4f79f2325666391eff33877533a05")
 public final class CacheSimpleEntryListenerConfigCodec {
     private static final int OLD_VALUE_REQUIRED_FIELD_OFFSET = 0;
     private static final int SYNCHRONOUS_FIELD_OFFSET = OLD_VALUE_REQUIRED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -36,7 +34,7 @@ public final class CacheSimpleEntryListenerConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.CacheSimpleEntryListenerConfig cacheSimpleEntryListenerConfig) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, OLD_VALUE_REQUIRED_FIELD_OFFSET, cacheSimpleEntryListenerConfig.isOldValueRequired());
@@ -46,10 +44,10 @@ public final class CacheSimpleEntryListenerConfigCodec {
         CodecUtil.encodeNullable(clientMessage, cacheSimpleEntryListenerConfig.getCacheEntryListenerFactory(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, cacheSimpleEntryListenerConfig.getCacheEntryEventFilterFactory(), StringCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.CacheSimpleEntryListenerConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.CacheSimpleEntryListenerConfig decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

@@ -20,28 +20,26 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("f42dda8a05e1066bdd8f37f2ef80caef")
+@Generated("99fb572584975adf4404474c64f07a00")
 public final class DistributedObjectInfoCodec {
 
     private DistributedObjectInfoCodec() {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.client.impl.client.DistributedObjectInfo distributedObjectInfo) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         StringCodec.encode(clientMessage, distributedObjectInfo.getServiceName());
         StringCodec.encode(clientMessage, distributedObjectInfo.getName());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.client.DistributedObjectInfo decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.client.impl.client.DistributedObjectInfo decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

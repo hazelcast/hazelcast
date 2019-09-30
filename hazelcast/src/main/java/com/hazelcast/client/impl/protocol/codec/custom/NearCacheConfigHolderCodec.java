@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("f9a9bf7414a0247a0552cf392d25d851")
+@Generated("ac999602f2a8640b792566335f9a47f4")
 public final class NearCacheConfigHolderCodec {
     private static final int SERIALIZE_KEYS_FIELD_OFFSET = 0;
     private static final int INVALIDATE_ON_CHANGE_FIELD_OFFSET = SERIALIZE_KEYS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -39,7 +37,7 @@ public final class NearCacheConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfigHolder) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, SERIALIZE_KEYS_FIELD_OFFSET, nearCacheConfigHolder.isSerializeKeys());
@@ -55,10 +53,11 @@ public final class NearCacheConfigHolderCodec {
         StringCodec.encode(clientMessage, nearCacheConfigHolder.getLocalUpdatePolicy());
         CodecUtil.encodeNullable(clientMessage, nearCacheConfigHolder.getPreloaderConfig(), NearCachePreloaderConfigCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder decode(
+            ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

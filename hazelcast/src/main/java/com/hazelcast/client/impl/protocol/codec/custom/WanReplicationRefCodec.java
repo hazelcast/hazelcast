@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("9965e02b6fb8e76904d376d8d614ade9")
+@Generated("aa1dc71f34dabe7406aa81f7ba3bf80e")
 public final class WanReplicationRefCodec {
     private static final int REPUBLISHING_ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = REPUBLISHING_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -35,7 +33,7 @@ public final class WanReplicationRefCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.WanReplicationRef wanReplicationRef) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, REPUBLISHING_ENABLED_FIELD_OFFSET, wanReplicationRef.isRepublishingEnabled());
@@ -45,10 +43,10 @@ public final class WanReplicationRefCodec {
         StringCodec.encode(clientMessage, wanReplicationRef.getMergePolicy());
         ListMultiFrameCodec.encodeNullable(clientMessage, wanReplicationRef.getFilters(), StringCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.WanReplicationRef decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.WanReplicationRef decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

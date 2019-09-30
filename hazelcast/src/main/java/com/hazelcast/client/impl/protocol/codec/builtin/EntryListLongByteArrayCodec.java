@@ -22,7 +22,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
@@ -35,16 +34,16 @@ public final class EntryListLongByteArrayCodec {
 
     public static void encode(ClientMessage clientMessage, Collection<Map.Entry<Long, byte[]>> collection) {
         List<Long> valueList = new ArrayList<>(collection.size());
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
         for (Map.Entry<Long, byte[]> entry : collection) {
             valueList.add(entry.getKey());
             ByteArrayCodec.encode(clientMessage, entry.getValue());
         }
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
         ListLongCodec.encode(clientMessage, valueList);
     }
 
-    public static List<Map.Entry<Long, byte[]>> decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static List<Map.Entry<Long, byte[]>> decode(ClientMessage.FrameIterator iterator) {
         List<byte[]> listV = ListMultiFrameCodec.decode(iterator, ByteArrayCodec::decode);
         List<Long> listK = ListLongCodec.decode(iterator);
 

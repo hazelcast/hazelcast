@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-import java.util.ListIterator;
-
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 
 public final class LongArrayCodec {
 
@@ -45,7 +45,7 @@ public final class LongArrayCodec {
         return result;
     }
 
-    public static long[] decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static long[] decode(ClientMessage.FrameIterator iterator) {
         return decode(iterator.next());
     }
 

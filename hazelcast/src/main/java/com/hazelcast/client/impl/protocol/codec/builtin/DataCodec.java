@@ -20,8 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.ListIterator;
-
 public final class DataCodec {
 
     private DataCodec() {
@@ -35,7 +33,7 @@ public final class DataCodec {
         return new HeapData(frame.content);
     }
 
-    public static Data decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static Data decode(ClientMessage.FrameIterator iterator) {
         return decode(iterator.next());
     }
 

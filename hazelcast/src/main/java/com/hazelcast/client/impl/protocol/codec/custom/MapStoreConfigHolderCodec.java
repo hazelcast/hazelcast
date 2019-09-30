@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("9b6d43836cfb1cb4ca058a01e8acd392")
+@Generated("339bcab41255639dbf135f06df2475bf")
 public final class MapStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int WRITE_COALESCING_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -38,7 +36,7 @@ public final class MapStoreConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfigHolder) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_FIELD_OFFSET, mapStoreConfigHolder.isEnabled());
@@ -54,10 +52,11 @@ public final class MapStoreConfigHolderCodec {
         MapCodec.encodeNullable(clientMessage, mapStoreConfigHolder.getProperties(), StringCodec::encode, StringCodec::encode);
         StringCodec.encode(clientMessage, mapStoreConfigHolder.getInitialLoadMode());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder decode(
+            ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

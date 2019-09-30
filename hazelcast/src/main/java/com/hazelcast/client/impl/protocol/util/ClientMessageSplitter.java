@@ -23,7 +23,6 @@ import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAGMENT_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAGMENT_FLAG;
@@ -55,7 +54,7 @@ public final class ClientMessageSplitter {
         }
         long fragmentId = FRAGMENT_ID_SEQUENCE.next();
         LinkedList<ClientMessage> fragments = new LinkedList<>();
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.FrameIterator iterator = clientMessage.frameIterator();
 
         ReadState state = ReadState.BEGINNING;
         int length = 0;
@@ -70,7 +69,7 @@ public final class ClientMessageSplitter {
                     fragments.add(fragment);
                 }
                 fragment = createFragment(fragmentId);
-                fragment.add(frame);
+                fragment.add(frame.copy());
                 fragments.add(fragment);
                 state = ReadState.BEGINNING;
                 length = 0;
@@ -78,7 +77,7 @@ public final class ClientMessageSplitter {
                 if (state == ReadState.BEGINNING) {
                     fragment = createFragment(fragmentId);
                 }
-                fragment.add(frame);
+                fragment.add(frame.copy());
                 state = ReadState.MIDDLE;
             } else {
                 assert state == ReadState.MIDDLE;
@@ -91,8 +90,8 @@ public final class ClientMessageSplitter {
         if (state == ReadState.MIDDLE) {
             fragments.add(fragment);
         }
-        fragments.getFirst().getFirst().flags |= BEGIN_FRAGMENT_FLAG;
-        fragments.getLast().getFirst().flags |= END_FRAGMENT_FLAG;
+        fragments.getFirst().getStartFrame().flags |= BEGIN_FRAGMENT_FLAG;
+        fragments.getLast().getStartFrame().flags |= END_FRAGMENT_FLAG;
         return fragments;
     }
 

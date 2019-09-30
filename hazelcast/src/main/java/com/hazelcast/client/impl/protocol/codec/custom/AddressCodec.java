@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("78d19da5ab1854e91aa718bc980ffa37")
+@Generated("0e338cf2c85912b1bdb0cff5568670ca")
 public final class AddressCodec {
     private static final int PORT_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = PORT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -35,7 +33,7 @@ public final class AddressCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.nio.Address address) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, PORT_FIELD_OFFSET, address.getPort());
@@ -43,10 +41,10 @@ public final class AddressCodec {
 
         StringCodec.encode(clientMessage, address.getHost());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.nio.Address decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.nio.Address decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

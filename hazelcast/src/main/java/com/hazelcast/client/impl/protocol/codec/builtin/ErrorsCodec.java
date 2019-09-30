@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.custom.ErrorHolderCodec;
 import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 
 import java.util.List;
-import java.util.ListIterator;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.RESPONSE_BACKUP_ACKS_FIELD_OFFSET;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
@@ -48,7 +47,7 @@ public final class ErrorsCodec {
     }
 
     public static List<ErrorHolder> decode(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.FrameIterator iterator = clientMessage.frameIterator();
         //initial frame
         iterator.next();
         return ListMultiFrameCodec.decode(iterator, ErrorHolderCodec::decode);

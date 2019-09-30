@@ -20,28 +20,26 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a0baafbcd7cc4d755db47dd37b353087")
+@Generated("a8f6c84eabd47d7e30ee76083ed1316a")
 public final class AttributeConfigCodec {
 
     private AttributeConfigCodec() {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.AttributeConfig attributeConfig) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         StringCodec.encode(clientMessage, attributeConfig.getName());
         StringCodec.encode(clientMessage, attributeConfig.getExtractorClassName());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.AttributeConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.AttributeConfig decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

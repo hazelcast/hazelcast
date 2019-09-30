@@ -22,7 +22,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.Objects;
 
 /**
@@ -99,7 +98,7 @@ import java.util.Objects;
  */
 @SuppressWarnings("checkstyle:MagicNumber")
 @BinaryInterface
-public final class ClientMessage extends LinkedList<ClientMessage.Frame> implements OutboundFrame {
+public final class ClientMessage implements OutboundFrame {
 
     // All offsets here are offset of frame.content byte[]
     // Note that frames have frame length and flags before this byte[] content
@@ -132,6 +131,9 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
 
     private static final long serialVersionUID = 1L;
 
+    transient Frame startFrame;
+    transient Frame endFrame;
+
     private transient boolean isRetryable;
     private transient boolean acquiresResource;
     private transient String operationName;
@@ -141,33 +143,59 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
 
     }
 
-    private ClientMessage(LinkedList<Frame> frames) {
-        super(frames);
+    private ClientMessage(Frame startFrame) {
+        this.startFrame = startFrame;
+        endFrame = startFrame;
+        while (endFrame.next != null) {
+            endFrame = endFrame.next;
+        }
     }
 
     public static ClientMessage createForEncode() {
         return new ClientMessage();
     }
 
-    public static ClientMessage createForDecode(LinkedList<Frame> frames) {
-        return new ClientMessage(frames);
+    public static ClientMessage createForDecode(Frame startFrame) {
+        return new ClientMessage(startFrame);
+    }
+
+    public Frame getStartFrame() {
+        return startFrame;
+    }
+
+    public ClientMessage add(Frame frame) {
+        frame.next = null;
+        if (startFrame == null) {
+            startFrame = frame;
+            endFrame = frame;
+            return this;
+        }
+
+        endFrame.next = frame;
+        frame.previous = endFrame;
+        endFrame = frame;
+        return this;
+    }
+
+    public FrameIterator frameIterator() {
+        return new FrameIterator(startFrame);
     }
 
     public int getMessageType() {
-        return Bits.readIntL(get(0).content, ClientMessage.TYPE_FIELD_OFFSET);
+        return Bits.readIntL(startFrame.content, ClientMessage.TYPE_FIELD_OFFSET);
     }
 
     public ClientMessage setMessageType(int messageType) {
-        Bits.writeIntL(get(0).content, TYPE_FIELD_OFFSET, messageType);
+        Bits.writeIntL(startFrame.content, TYPE_FIELD_OFFSET, messageType);
         return this;
     }
 
     public long getCorrelationId() {
-        return Bits.readLongL(get(0).content, CORRELATION_ID_FIELD_OFFSET);
+        return Bits.readLongL(startFrame.content, CORRELATION_ID_FIELD_OFFSET);
     }
 
     public ClientMessage setCorrelationId(long correlationId) {
-        Bits.writeLongL(get(0).content, CORRELATION_ID_FIELD_OFFSET, correlationId);
+        Bits.writeLongL(startFrame.content, CORRELATION_ID_FIELD_OFFSET, correlationId);
         return this;
     }
 
@@ -190,16 +218,16 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
     }
 
     public int getPartitionId() {
-        return Bits.readIntL(get(0).content, PARTITION_ID_FIELD_OFFSET);
+        return Bits.readIntL(startFrame.content, PARTITION_ID_FIELD_OFFSET);
     }
 
     public ClientMessage setPartitionId(int partitionId) {
-        Bits.writeIntL(get(0).content, PARTITION_ID_FIELD_OFFSET, partitionId);
+        Bits.writeIntL(startFrame.content, PARTITION_ID_FIELD_OFFSET, partitionId);
         return this;
     }
 
     public int getHeaderFlags() {
-        return get(0).flags;
+        return startFrame.flags;
     }
 
     public boolean isRetryable() {
@@ -241,8 +269,10 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
 
     public int getFrameLength() {
         int frameLength = 0;
-        for (Frame frame : this) {
-            frameLength += frame.getSize();
+        Frame currentFrame = startFrame;
+        while (currentFrame != null) {
+            frameLength += currentFrame.getSize();
+            currentFrame = currentFrame.next;
         }
         return frameLength;
     }
@@ -251,18 +281,28 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
         return false;
     }
 
+    public void merge(ClientMessage fragment) {
+        // ignore the first frame of the fragment since first frame marks the fragment
+        Frame fragmentMessageStartFrame = fragment.startFrame.next;
+        this.endFrame.next = fragmentMessageStartFrame;
+        fragmentMessageStartFrame.previous = this.endFrame;
+        while (endFrame.next != null) {
+            endFrame = endFrame.next;
+        }
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientMessage{");
         sb.append("connection=").append(connection);
-        if (size() > 0) {
+        if (startFrame != null) {
             sb.append(", length=").append(getFrameLength());
             sb.append(", correlationId=").append(getCorrelationId());
             sb.append(", operation=").append(getOperationName());
             sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
             sb.append(", isRetryable=").append(isRetryable());
-            sb.append(", isEvent=").append(isFlagSet(get(0).flags, IS_EVENT_FLAG));
-            sb.append(", isFragmented=").append(!isFlagSet(get(0).flags, UNFRAGMENTED_MESSAGE));
+            sb.append(", isEvent=").append(isFlagSet(startFrame.flags, IS_EVENT_FLAG));
+            sb.append(", isFragmented=").append(!isFlagSet(startFrame.flags, UNFRAGMENTED_MESSAGE));
         }
         sb.append('}');
         return sb.toString();
@@ -276,10 +316,9 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
      * @return the copy message
      */
     public ClientMessage copyWithNewCorrelationId(long correlationId) {
-        ClientMessage newMessage = new ClientMessage(this);
 
-        Frame initialFrameCopy = newMessage.get(0).copy();
-        newMessage.set(0, initialFrameCopy);
+        Frame initialFrameCopy = startFrame.deepCopy();
+        ClientMessage newMessage = new ClientMessage(initialFrameCopy);
 
         newMessage.setCorrelationId(correlationId);
 
@@ -326,11 +365,45 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
         return result;
     }
 
+    public static final class FrameIterator {
+        private Frame nextFrame;
+
+        private FrameIterator(Frame start) {
+            nextFrame = start;
+        }
+
+        public Frame next() {
+            Frame result = nextFrame;
+            if (nextFrame != null) {
+                nextFrame = nextFrame.next;
+            }
+            return result;
+        }
+
+        public boolean hasNext() {
+            return nextFrame != null;
+        }
+
+        public Frame peekNext() {
+            return nextFrame;
+        }
+
+        public void previous() {
+            if (nextFrame == null) {
+                return;
+            }
+            nextFrame = nextFrame.previous;
+        }
+    }
+
     @SuppressWarnings("checkstyle:VisibilityModifier")
     public static class Frame {
         public final byte[] content;
         //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserverd
         public int flags;
+
+        Frame next;
+        Frame previous;
 
         public Frame(byte[] content) {
             this(content, DEFAULT_FLAGS);
@@ -342,9 +415,21 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
             this.flags = flags;
         }
 
+        // Shares the content bytes
         public Frame copy() {
+            Frame frame = new Frame(content, flags);
+            frame.next = this.next;
+            frame.previous = this.previous;
+            return frame;
+        }
+
+        // Copies the content bytes
+        public Frame deepCopy() {
             byte[] newContent = Arrays.copyOf(content, content.length);
-            return new Frame(newContent, flags);
+            Frame frame = new Frame(newContent, flags);
+            frame.next = this.next;
+            frame.previous = this.previous;
+            return frame;
         }
 
         public boolean isEndFrame() {

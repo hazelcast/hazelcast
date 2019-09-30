@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("73ca852f619b28cd2b951c648593840d")
+@Generated("9b392a58a8541df3387edc9a13ed7c5c")
 public final class QueueStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -35,7 +33,7 @@ public final class QueueStoreConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfigHolder) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_FIELD_OFFSET, queueStoreConfigHolder.isEnabled());
@@ -47,10 +45,11 @@ public final class QueueStoreConfigHolderCodec {
         CodecUtil.encodeNullable(clientMessage, queueStoreConfigHolder.getFactoryImplementation(), DataCodec::encode);
         MapCodec.encodeNullable(clientMessage, queueStoreConfigHolder.getProperties(), StringCodec::encode, StringCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder decode(
+            ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

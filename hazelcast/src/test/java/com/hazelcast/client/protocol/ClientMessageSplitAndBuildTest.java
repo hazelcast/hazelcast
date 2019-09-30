@@ -36,7 +36,6 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -107,7 +106,7 @@ public class ClientMessageSplitAndBuildTest {
         decoder.src(buffer);
         decoder.onRead();
 
-        assertEquals(clientMessage1.size(), resultingMessage.get().size());
+        assertEquals(getNumberOfFrames(clientMessage1), getNumberOfFrames(resultingMessage.get()));
         assertEquals(clientMessage1.getFrameLength(), resultingMessage.get().getFrameLength());
     }
 
@@ -185,12 +184,24 @@ public class ClientMessageSplitAndBuildTest {
         //these flags related to framing and can differ between two semantically equal messages
         int mask = ~(ClientMessage.UNFRAGMENTED_MESSAGE | ClientMessage.IS_FINAL_FLAG);
 
-        ListIterator<ClientMessage.Frame> actualIterator = actual.listIterator();
-        for (ClientMessage.Frame expectedFrame : expected) {
+        ClientMessage.FrameIterator actualIterator = actual.frameIterator();
+        ClientMessage.FrameIterator expectedFrameIterator = expected.frameIterator();
+        while (expectedFrameIterator.hasNext()) {
             ClientMessage.Frame actualFrame = actualIterator.next();
+            ClientMessage.Frame expectedFrame = expectedFrameIterator.next();
             assertEquals(actualFrame.getSize(), expectedFrame.getSize());
             assertEquals(actualFrame.flags & mask, expectedFrame.flags & mask);
             Assert.assertArrayEquals(expectedFrame.content, actualFrame.content);
         }
+    }
+
+    private int getNumberOfFrames(ClientMessage message) {
+        int size = 0;
+        ClientMessage.FrameIterator frameIterator = message.frameIterator();
+        while (frameIterator.hasNext()) {
+            frameIterator.next();
+            ++size;
+        }
+        return size;
     }
 }

@@ -31,7 +31,6 @@ import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getFragments;
@@ -71,7 +70,7 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     @Test
     public void testGetSubFrames() {
         List<ClientMessage> fragments = getFragments(128, clientMessage);
-        ListIterator<ClientMessage.Frame> originalIterator = clientMessage.listIterator();
+        ClientMessage.FrameIterator originalIterator = clientMessage.frameIterator();
         assertEquals(18, fragments.size());
 
         assertFragments(fragments, originalIterator);
@@ -81,14 +80,14 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     @RequireAssertEnabled
     public void testGetSubFrame_whenFrameSizeGreaterThanFrameLength_thenReturnOriginalMessage() {
         List<ClientMessage> fragments = getFragments(4000, clientMessage);
-        ListIterator<ClientMessage.Frame> originalIterator = clientMessage.listIterator();
+        ClientMessage.FrameIterator originalIterator = clientMessage.frameIterator();
 
         assertFragments(fragments, originalIterator);
     }
 
-    private void assertFragments(List<ClientMessage> fragments, ListIterator<ClientMessage.Frame> originalIterator) {
+    private void assertFragments(List<ClientMessage> fragments, ClientMessage.FrameIterator originalIterator) {
         for (ClientMessage fragment : fragments) {
-            ListIterator<ClientMessage.Frame> iterator = fragment.listIterator();
+            ClientMessage.FrameIterator iterator = fragment.frameIterator();
             //skip fragmentation header
             iterator.next();
             while (iterator.hasNext()) {

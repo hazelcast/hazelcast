@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.HashMap;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -38,27 +37,27 @@ public final class MapCodec {
     public static <K, V> void encode(ClientMessage clientMessage, Map<K, V> map,
                                      BiConsumer<ClientMessage, K> encodeKeyFunc,
                                      BiConsumer<ClientMessage, V> encodeValueFunc) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
         for (Map.Entry<K, V> entry : map.entrySet()) {
             encodeKeyFunc.accept(clientMessage, entry.getKey());
             encodeValueFunc.accept(clientMessage, entry.getValue());
         }
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
     public static <K, V> void encodeNullable(ClientMessage clientMessage, Map<K, V> map,
                                              BiConsumer<ClientMessage, K> encodeKeyFunc,
                                              BiConsumer<ClientMessage, V> encodeValueFunc) {
         if (map == null) {
-            clientMessage.add(NULL_FRAME);
+            clientMessage.add(NULL_FRAME.copy());
         } else {
             encode(clientMessage, map, encodeKeyFunc, encodeValueFunc);
         }
     }
 
-    public static <K, V> Map<K, V> decode(ListIterator<ClientMessage.Frame> iterator,
-                                          Function<ListIterator<ClientMessage.Frame>, K> decodeKeyFunc,
-                                          Function<ListIterator<ClientMessage.Frame>, V> decodeValueFunc) {
+    public static <K, V> Map<K, V> decode(ClientMessage.FrameIterator iterator,
+                                          Function<ClientMessage.FrameIterator, K> decodeKeyFunc,
+                                          Function<ClientMessage.FrameIterator, V> decodeValueFunc) {
         Map<K, V> result = new HashMap<>();
         //begin frame, map
         iterator.next();
@@ -72,9 +71,9 @@ public final class MapCodec {
         return result;
     }
 
-    public static <K, V> Map<K, V> decodeNullable(ListIterator<ClientMessage.Frame> iterator,
-                                                  Function<ListIterator<ClientMessage.Frame>, K> decodeKeyFunc,
-                                                  Function<ListIterator<ClientMessage.Frame>, V> decodeValueFunc) {
+    public static <K, V> Map<K, V> decodeNullable(ClientMessage.FrameIterator iterator,
+                                                  Function<ClientMessage.FrameIterator, K> decodeKeyFunc,
+                                                  Function<ClientMessage.FrameIterator, V> decodeValueFunc) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator, decodeKeyFunc, decodeValueFunc);
     }
 }

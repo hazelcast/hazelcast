@@ -20,28 +20,27 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("32c218d143cf9724455de4858f77fa50")
+@Generated("8255283442170b6f709462763baa13af")
 public final class TimedExpiryPolicyFactoryConfigCodec {
 
     private TimedExpiryPolicyFactoryConfigCodec() {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         StringCodec.encode(clientMessage, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
         DurationConfigCodec.encode(clientMessage, timedExpiryPolicyFactoryConfig.getDurationConfig());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig decode(
+            ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

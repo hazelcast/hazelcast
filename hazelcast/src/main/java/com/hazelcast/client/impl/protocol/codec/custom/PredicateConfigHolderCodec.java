@@ -20,29 +20,28 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("233c97a0c22f6f0f763a7177a044dffc")
+@Generated("c443f2a799f3d5f3441b203be8ee1096")
 public final class PredicateConfigHolderCodec {
 
     private PredicateConfigHolderCodec() {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.client.impl.protocol.task.dynamicconfig.PredicateConfigHolder predicateConfigHolder) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         CodecUtil.encodeNullable(clientMessage, predicateConfigHolder.getClassName(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, predicateConfigHolder.getSql(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, predicateConfigHolder.getImplementation(), DataCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.PredicateConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.PredicateConfigHolder decode(
+            ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

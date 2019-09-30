@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("9c044e2cf06c1071c6c84167530af25e")
+@Generated("83c153b59ea97319fc26b8488f4d99c5")
 public final class MerkleTreeConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int DEPTH_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -36,17 +34,17 @@ public final class MerkleTreeConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.MerkleTreeConfig merkleTreeConfig) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_FIELD_OFFSET, merkleTreeConfig.isEnabled());
         encodeInt(initialFrame.content, DEPTH_FIELD_OFFSET, merkleTreeConfig.getDepth());
         clientMessage.add(initialFrame);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.MerkleTreeConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.MerkleTreeConfig decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

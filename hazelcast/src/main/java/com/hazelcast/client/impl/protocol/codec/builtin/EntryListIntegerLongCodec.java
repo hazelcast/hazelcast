@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
@@ -52,7 +51,7 @@ public final class EntryListIntegerLongCodec {
         clientMessage.add(frame);
     }
 
-    public static List<Map.Entry<Integer, Long>> decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static List<Map.Entry<Integer, Long>> decode(ClientMessage.FrameIterator iterator) {
         ClientMessage.Frame frame = iterator.next();
         int itemCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
         List<Map.Entry<Integer, Long>> result = new LinkedList<>();

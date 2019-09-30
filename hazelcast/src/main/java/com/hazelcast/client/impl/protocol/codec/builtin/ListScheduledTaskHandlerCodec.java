@@ -22,7 +22,6 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.ListIterator;
 
 public final class ListScheduledTaskHandlerCodec {
 
@@ -33,7 +32,7 @@ public final class ListScheduledTaskHandlerCodec {
         ListMultiFrameCodec.encode(clientMessage, collection, ScheduledTaskHandlerCodec::encode);
     }
 
-    public static List<ScheduledTaskHandler> decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static List<ScheduledTaskHandler> decode(ClientMessage.FrameIterator iterator) {
         return ListMultiFrameCodec.decode(iterator, ScheduledTaskHandlerCodec::decode);
     }
 }
