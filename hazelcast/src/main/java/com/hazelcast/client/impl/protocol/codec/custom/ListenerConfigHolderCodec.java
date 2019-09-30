@@ -49,8 +49,7 @@ public final class ListenerConfigHolderCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder decode(
-            ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

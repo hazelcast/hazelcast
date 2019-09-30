@@ -48,8 +48,7 @@ public final class RingbufferStoreConfigHolderCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder decode(
-            ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

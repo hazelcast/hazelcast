@@ -59,8 +59,7 @@ public final class QueryCacheConfigHolderCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder decode(
-            ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

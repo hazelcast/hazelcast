@@ -39,8 +39,7 @@ public final class TimedExpiryPolicyFactoryConfigCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig decode(
-            ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

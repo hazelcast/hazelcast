@@ -49,8 +49,7 @@ public final class QueryCacheEventDataCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData decode(
-            ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

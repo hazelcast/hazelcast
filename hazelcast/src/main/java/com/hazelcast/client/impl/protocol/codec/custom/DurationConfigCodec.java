@@ -44,8 +44,7 @@ public final class DurationConfigCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig decode(
-            ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 

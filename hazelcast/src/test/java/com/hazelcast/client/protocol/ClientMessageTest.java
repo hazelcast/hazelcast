@@ -58,14 +58,14 @@ public class ClientMessageTest {
     @Test
     public void testFastForwardToEndFrame_whenCustomTypeIsExtendedWithCustomTypeField() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         // New custom-typed parameter with its own begin and end frames
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
         clientMessage.add(new ClientMessage.Frame(new byte[0]));
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
 
         ClientMessage.FrameIterator iterator = clientMessage.frameIterator();
         // begin frame

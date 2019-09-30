@@ -63,8 +63,7 @@ public final class SimpleEntryViewCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> decode(
-            ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> decode(ClientMessage.FrameIterator iterator) {
         // begin frame
         iterator.next();
 
