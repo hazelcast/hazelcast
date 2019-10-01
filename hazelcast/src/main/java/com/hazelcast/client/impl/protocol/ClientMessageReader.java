@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.StageLatencyMonitor;
 import com.hazelcast.internal.nio.Bits;
 
 import java.nio.ByteBuffer;
@@ -27,14 +28,27 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LEN
 public class ClientMessageReader {
 
     private static final int INT_MASK = 0xffff;
+    private final StageLatencyMonitor stageLatencyMonitor;
     private int readIndex;
     private int readOffset = -1;
     private LinkedList<ClientMessage.Frame> frames = new LinkedList<>();
+    private boolean started = false;
+    private long startNanos;
+
+    public ClientMessageReader(StageLatencyMonitor stageLatencyMonitor) {
+        this.stageLatencyMonitor = stageLatencyMonitor;
+    }
 
     public boolean readFrom(ByteBuffer src) {
+        if (!started) {
+            started = true;
+            startNanos = System.nanoTime();
+        }
+
         for (; ; ) {
             if (readFrame(src)) {
                 if (ClientMessage.isFlagSet(frames.get(readIndex).flags, IS_FINAL_FLAG)) {
+                    stageLatencyMonitor.record(startNanos);
                     return true;
                 }
                 readIndex++;

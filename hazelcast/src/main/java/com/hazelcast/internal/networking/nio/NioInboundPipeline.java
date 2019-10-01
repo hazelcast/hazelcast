@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.StageLatencyMonitor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
@@ -63,6 +64,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     private volatile long normalFramesReadLastPublish;
     private volatile long priorityFramesReadLastPublish;
     private volatile long processCountLastPublish;
+    private final StageLatencyMonitor monitor = StageLatencyMonitor.newInstance("pipeline.inbound");
 
     NioInboundPipeline(NioChannel channel,
                        NioThread owner,
@@ -105,61 +107,66 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
 
     @Override
     void process() throws Exception {
-        processCount.inc();
-        // we are going to set the timestamp even if the channel is going to fail reading. In that case
-        // the connection is going to be closed anyway.
-        lastReadTime = currentTimeMillis();
+        long startNanos = System.nanoTime();
+        try {
+            processCount.inc();
+            // we are going to set the timestamp even if the channel is going to fail reading. In that case
+            // the connection is going to be closed anyway.
+            lastReadTime = currentTimeMillis();
 
-        int readBytes = socketChannel.read(receiveBuffer);
+            int readBytes = socketChannel.read(receiveBuffer);
 
-        if (readBytes == -1) {
-            throw new EOFException("Remote socket closed!");
-        }
-
-        bytesRead.inc(readBytes);
-
-        // currently the whole pipeline is retried when one of the handlers is dirty; but only the dirty handler
-        // and the remaining sequence should need to retry.
-        InboundHandler[] localHandlers = handlers;
-        boolean cleanPipeline;
-        boolean unregisterRead;
-        do {
-            cleanPipeline = true;
-            unregisterRead = false;
-            for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
-                InboundHandler handler = localHandlers[handlerIndex];
-                HandlerStatus handlerStatus = handler.onRead();
-                if (localHandlers != handlers) {
-                    // change in the pipeline detected, restarting loop
-                    handlerIndex = -1;
-                    localHandlers = handlers;
-                    continue;
-                }
-
-                switch (handlerStatus) {
-                    case CLEAN:
-                        break;
-                    case DIRTY:
-                        cleanPipeline = false;
-                        break;
-                    case BLOCKED:
-                        // setting cleanPipeline to true keep flushing everything downstream, but not upstream.
-                        cleanPipeline = true;
-                        unregisterRead = true;
-                        break;
-                    default:
-                        throw new IllegalStateException();
-                }
+            if (readBytes == -1) {
+                throw new EOFException("Remote socket closed!");
             }
-        } while (!cleanPipeline);
 
-        if (migrationRequested()) {
-            startMigration();
-            return;
-        }
+            bytesRead.inc(readBytes);
 
-        if (unregisterRead) {
-            unregisterOp(OP_READ);
+            // currently the whole pipeline is retried when one of the handlers is dirty; but only the dirty handler
+            // and the remaining sequence should need to retry.
+            InboundHandler[] localHandlers = handlers;
+            boolean cleanPipeline;
+            boolean unregisterRead;
+            do {
+                cleanPipeline = true;
+                unregisterRead = false;
+                for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
+                    InboundHandler handler = localHandlers[handlerIndex];
+                    HandlerStatus handlerStatus = handler.onRead();
+                    if (localHandlers != handlers) {
+                        // change in the pipeline detected, restarting loop
+                        handlerIndex = -1;
+                        localHandlers = handlers;
+                        continue;
+                    }
+
+                    switch (handlerStatus) {
+                        case CLEAN:
+                            break;
+                        case DIRTY:
+                            cleanPipeline = false;
+                            break;
+                        case BLOCKED:
+                            // setting cleanPipeline to true keep flushing everything downstream, but not upstream.
+                            cleanPipeline = true;
+                            unregisterRead = true;
+                            break;
+                        default:
+                            throw new IllegalStateException();
+                    }
+                }
+            } while (!cleanPipeline);
+
+            if (migrationRequested()) {
+                startMigration();
+                return;
+            }
+
+            if (unregisterRead) {
+                unregisterOp(OP_READ);
+            }
+        }finally {
+            monitor.record(startNanos);
         }
     }
 

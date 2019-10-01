@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
+import com.hazelcast.StageLatencyMonitor;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageWriter;
 import com.hazelcast.internal.networking.HandlerStatus;
@@ -35,7 +36,8 @@ public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage
 
     private ClientMessage message;
     private final ClientMessageWriter clientMessageWriter = new ClientMessageWriter();
-
+    private final StageLatencyMonitor stageLatencyMonitor = StageLatencyMonitor.newInstance("clientMessageEncoder");
+    private long startNanos = System.nanoTime();
     @Override
     public void handlerAdded() {
         initDstBuffer();
@@ -44,7 +46,7 @@ public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage
     @Override
     public HandlerStatus onWrite() {
         compactOrClear(dst);
-        try {
+         try {
             for (; ; ) {
                 if (message == null) {
                     message = src.get();
@@ -53,11 +55,13 @@ public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage
                         // everything is processed, so we are done
                         return CLEAN;
                     }
+                    startNanos = System.nanoTime();
                 }
 
                 if (clientMessageWriter.writeTo(dst, message)) {
                     // message got written, lets see if another message can be written
                     message = null;
+                    stageLatencyMonitor.record(startNanos);
                 } else {
                     // the message didn't get written completely, so we are done.
                     return DIRTY;

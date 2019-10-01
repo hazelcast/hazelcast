@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.StageLatencyMonitor;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.util.ConcurrencyDetection;
@@ -163,6 +164,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private class ResponseThread extends Thread {
         private final BlockingQueue<ClientMessage> responseQueue;
         private final AtomicBoolean started = new AtomicBoolean();
+        private final StageLatencyMonitor stageLatencyMonitor = StageLatencyMonitor.newInstance("response");
 
         ResponseThread(String name) {
             super(name);
@@ -190,7 +192,9 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
                 } catch (InterruptedException e) {
                     continue;
                 }
+                long startNanos = System.nanoTime();
                 process(response);
+                stageLatencyMonitor.record(startNanos);
             }
         }
 

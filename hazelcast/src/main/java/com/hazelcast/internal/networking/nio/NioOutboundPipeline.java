@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.StageLatencyMonitor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
@@ -119,6 +120,8 @@ public final class NioOutboundPipeline
     private final ConcurrencyDetection concurrencyDetection;
     private final boolean writeThroughEnabled;
     private final boolean selectionKeyWakeupEnabled;
+
+    private final StageLatencyMonitor monitor = StageLatencyMonitor.newInstance("pipeline.outbound");
 
     NioOutboundPipeline(NioChannel channel,
                         NioThread owner,
@@ -277,50 +280,55 @@ public final class NioOutboundPipeline
     @Override
     @SuppressWarnings("unchecked")
     public void process() throws Exception {
-        processCount.inc();
+        long startNanos = System.nanoTime();
+        try {
+            processCount.inc();
 
-        OutboundHandler[] localHandlers = handlers;
-        HandlerStatus pipelineStatus = CLEAN;
-        for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
-            OutboundHandler handler = localHandlers[handlerIndex];
+            OutboundHandler[] localHandlers = handlers;
+            HandlerStatus pipelineStatus = CLEAN;
+            for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
+                OutboundHandler handler = localHandlers[handlerIndex];
 
-            HandlerStatus handlerStatus = handler.onWrite();
+                HandlerStatus handlerStatus = handler.onWrite();
 
-            if (localHandlers != handlers) {
-                // change in the pipeline detected, therefor the loop is restarted.
-                localHandlers = handlers;
-                pipelineStatus = CLEAN;
-                handlerIndex = -1;
-            } else if (handlerStatus != CLEAN) {
-                pipelineStatus = handlerStatus;
+                if (localHandlers != handlers) {
+                    // change in the pipeline detected, therefor the loop is restarted.
+                    localHandlers = handlers;
+                    pipelineStatus = CLEAN;
+                    handlerIndex = -1;
+                } else if (handlerStatus != CLEAN) {
+                    pipelineStatus = handlerStatus;
+                }
             }
-        }
 
-        flushToSocket();
+            flushToSocket();
 
-        if (migrationRequested()) {
-            startMigration();
-            // we leave this method and the NioOutboundPipeline remains scheduled.
-            // So we don't need to worry about write-through
-            return;
-        }
+            if (migrationRequested()) {
+                startMigration();
+                // we leave this method and the NioOutboundPipeline remains scheduled.
+                // So we don't need to worry about write-through
+                return;
+            }
 
-        if (sendBuffer.remaining() > 0) {
-            pipelineStatus = DIRTY;
-        }
+            if (sendBuffer.remaining() > 0) {
+                pipelineStatus = DIRTY;
+            }
 
-        switch (pipelineStatus) {
-            case CLEAN:
-                postProcessClean();
-                break;
-            case DIRTY:
-                postProcessDirty();
-                break;
-            case BLOCKED:
-                postProcessBlocked();
-                break;
-            default:
-                throw new IllegalStateException();
+            switch (pipelineStatus) {
+                case CLEAN:
+                    postProcessClean();
+                    break;
+                case DIRTY:
+                    postProcessDirty();
+                    break;
+                case BLOCKED:
+                    postProcessBlocked();
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+        }finally {
+            monitor.record(startNanos);
         }
     }
 

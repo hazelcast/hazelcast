@@ -16,17 +16,19 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+import com.hazelcast.StageLatencyMonitor;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.internal.util.executor.HazelcastManagedThread;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
@@ -97,6 +99,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     @Override
     public final void run() {
+        StageLatencyMonitor monitor = this instanceof Partition ? StageLatencyMonitor.newInstance("operation") : null;
         nodeExtension.onThreadStart(this);
         try {
             while (!shutdown) {
@@ -106,8 +109,9 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
                 } catch (InterruptedException e) {
                     continue;
                 }
-
+                long startNanos = System.nanoTime();
                 process(task);
+                if (monitor != null) monitor.record(startNanos);
             }
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);

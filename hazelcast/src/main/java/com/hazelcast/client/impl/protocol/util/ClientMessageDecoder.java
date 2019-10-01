@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
+import com.hazelcast.StageLatencyMonitor;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.internal.networking.HandlerStatus;
@@ -44,7 +45,8 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
 
     private final Connection connection;
     private final Long2ObjectHashMap<ClientMessageReader> builderBySessionIdMap = new Long2ObjectHashMap<>();
-    private ClientMessageReader activeReader = new ClientMessageReader();
+    private final StageLatencyMonitor stageLatencyMonitor = StageLatencyMonitor.newInstance("clientMessageDecoder");
+    private ClientMessageReader activeReader = new ClientMessageReader(stageLatencyMonitor);
 
     public ClientMessageDecoder(Connection connection, Consumer<ClientMessage> dst) {
         dst(dst);
@@ -87,7 +89,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                     }
                 }
 
-                activeReader = new ClientMessageReader();
+                activeReader = new ClientMessageReader(stageLatencyMonitor);
             }
 
             return CLEAN;
