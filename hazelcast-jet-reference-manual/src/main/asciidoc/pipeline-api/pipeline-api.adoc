@@ -58,6 +58,7 @@ contents and their event journal as an infinite source
 - a directory on the filesystem, both as a batch source of the current
   file contents and an infinite source of append events to the files
 - Apache Avro files (batch)
+- Amazon AWS S3 (batch)
 - any source/sink you create on your own by using the
 {jet-javadoc}/pipeline/SourceBuilder.html[`SourceBuilder`] and the
 {jet-javadoc}/pipeline/SinkBuilder.html[`SinkBuilder`].
@@ -66,7 +67,8 @@ You can access most of these via the
 {jet-javadoc}/pipeline/Sources.html[`Sources`] and
 {jet-javadoc}/pipeline/Sinks.html[`Sinks`] utility classes.
 {jet-javadoc}/kafka/KafkaSources.html[Kafka],
-{jet-javadoc}/hadoop/HdfsSources.html[HDFS] and
+{jet-javadoc}/hadoop/HdfsSources.html[HDFS],
+{jet-javadoc}/s3/S3Sources.html[S3] and
 {jet-javadoc}/avro/AvroSources.html[Avro] connectors are in their
 separate modules. The
 {jet-javadoc}/pipeline/SourceBuilder.html#batch-java.lang.String-com.hazelcast.jet.function.FunctionEx-[source]

@@ -313,6 +313,19 @@ Topic Sink image:check-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
+|<<amazon-aws-s3>>
+|{jet-javadoc}/s3/S3Sources.html#s3-java.util.List-java.lang.String-java.nio.charset.Charset-com.hazelcast.jet.function.SupplierEx-com.hazelcast.jet.function.BiFunctionEx-[Source]
+
+{jet-javadoc}/s3/S3Sinks.html#s3-java.lang.String-java.lang.String-java.nio.charset.Charset-com.hazelcast.jet.function.SupplierEx-com.hazelcast.jet.function.FunctionEx-[Sink]
+|{jet-samples}/files/src/main/java/com/hazelcast/jet/examples/files/s3/S3WordCount.java[Source Sample]
+
+{jet-samples}/files/src/main/java/com/hazelcast/jet/examples/files/s3/S3WordCount.java[Sink Sample]
+|image:cross-mark.png[X,16,16]
+|image:check-mark.png[X,16,16]
+|image:cross-mark.png[X,16,16]
+|image:check-mark.png[X,16,16]
+|image:cross-mark.png[X,16,16]
+
 |Application Log
 |{jet-javadoc}/pipeline/Sinks.html#logger-com.hazelcast.jet.function.FunctionEx-[Sink]
 |{jet-samples}/enrichment/src/main/java/Enrichment.java[Sink]
