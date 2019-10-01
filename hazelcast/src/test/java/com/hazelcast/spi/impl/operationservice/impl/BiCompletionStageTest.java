@@ -47,7 +47,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests for InvocationCompletionStage methods operating on two
+ * Tests for InvocationFuture methods operating on two
  * CompletionStages.
  */
 @RunWith(Parameterized.class)
