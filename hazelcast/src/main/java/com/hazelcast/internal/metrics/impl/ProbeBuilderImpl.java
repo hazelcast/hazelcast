@@ -55,6 +55,10 @@ public class ProbeBuilderImpl implements ProbeBuilder {
                 metricNamePrefix);
     }
 
+    private ProbeBuilderImpl withMetricTag(String metricName) {
+        return withTag("metric", metricNamePrefix != null ? metricNamePrefix + '.' + metricName : metricName);
+    }
+
     @Override
     public String metricName() {
         return keyPrefix + ']';
@@ -70,7 +74,7 @@ public class ProbeBuilderImpl implements ProbeBuilder {
     ) {
         String name = this
                 .withTag("unit", unit.name().toLowerCase())
-                .withTag("metric", prefixedMetricName(metricName))
+                .withMetricTag(metricName)
                 .metricName();
         metricsRegistry.register(source, name, level, probe);
     }
@@ -85,13 +89,13 @@ public class ProbeBuilderImpl implements ProbeBuilder {
     ) {
         String name = this
                 .withTag("unit", unit.name().toLowerCase())
-                .withTag("metric", prefixedMetricName(metricName))
+                .withMetricTag(metricName)
                 .metricName();
         metricsRegistry.register(source, name, level, probe);
     }
 
     <S> void register(S source, String metricName, ProbeLevel level, ProbeFunction probe) {
-        metricsRegistry.registerInternal(source, withTag("metric", prefixedMetricName(metricName)).metricName(), level, probe);
+        metricsRegistry.registerInternal(source, withMetricTag(metricName).metricName(), level, probe);
     }
 
     @Override
@@ -104,12 +108,5 @@ public class ProbeBuilderImpl implements ProbeBuilder {
         for (MethodProbe method : metadata.methods()) {
             method.register(this, source);
         }
-    }
-
-    private String prefixedMetricName(String metricName) {
-        if (metricNamePrefix != null) {
-            return metricNamePrefix + '.' + metricName;
-        }
-        return metricName;
     }
 }
