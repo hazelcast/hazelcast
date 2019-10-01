@@ -456,9 +456,11 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     public Map<String, LocalMultiMapStats> getStats() {
         Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
         for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
-            for (String name : partitionContainer.containerMap.keySet()) {
-                if (!multiMapStats.containsKey(name)) {
-                    multiMapStats.put(name, createStats(name));
+            if (partitionContainer != null) {
+                for (String name : partitionContainer.containerMap.keySet()) {
+                    if (!multiMapStats.containsKey(name)) {
+                        multiMapStats.put(name, createStats(name));
+                    }
                 }
             }
         }
