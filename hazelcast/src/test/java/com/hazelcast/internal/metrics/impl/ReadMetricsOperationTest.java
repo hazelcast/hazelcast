@@ -78,7 +78,7 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
                 Iterator<Metric> metricIterator = decompressingIterator(entry.getValue());
                 while (metricIterator.hasNext()) {
                     Metric metric = metricIterator.next();
-                    mapMetric |= metric.key().contains("map[");
+                    mapMetric |= metric.key().contains("name=map") & metric.key().contains("map.");
                 }
             }
             assertTrue(mapMetric);

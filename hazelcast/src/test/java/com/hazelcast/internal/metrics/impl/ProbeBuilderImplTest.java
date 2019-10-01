@@ -51,30 +51,50 @@ public class ProbeBuilderImplTest {
 
     @Test
     public void test_scanAndRegister() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        registry.newProbeBuilder()
-          .withTag("tag1", "value1")
-          .scanAndRegister(this);
+        testScanAndRegister(null);
+    }
 
-        assertProbes(registry);
+    @Test
+    public void test_scanAndRegisterWithPrefix() {
+        testScanAndRegister("testProbe");
     }
 
     @Test
     public void test_register() {
+        testRegister(null);
+    }
+
+    @Test
+    public void test_registerWithPrefix() {
+        testRegister("test.prefix");
+    }
+
+    private void testScanAndRegister(String prefix) {
         MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        ProbeBuilder builder = registry.newProbeBuilder()
-                                       .withTag("tag1", "value1");
+        ProbeBuilder builder = prefix != null ? registry.newProbeBuilder(prefix) : registry.newProbeBuilder();
+        builder
+                .withTag("tag1", "value1")
+                .scanAndRegister(this);
+
+        assertProbes(registry, prefix);
+    }
+
+    private void testRegister(String prefix) {
+        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
+        ProbeBuilder builder = prefix != null ? registry.newProbeBuilder(prefix) : registry.newProbeBuilder();
+        builder = builder.withTag("tag1", "value1");
         builder.register(this, "probe1", ProbeLevel.INFO, ProbeUnit.COUNT,
                 (LongProbeFunction<ProbeBuilderImplTest>) source -> source.probe1);
         builder.register(this, "secondProbe", ProbeLevel.INFO, ProbeUnit.BYTES,
                 (LongProbeFunction<ProbeBuilderImplTest>) source -> source.probe2);
 
-        assertProbes(registry);
+        assertProbes(registry, prefix);
     }
 
-    private void assertProbes(MetricsRegistryImpl registry) {
-        final String p1Name = "[tag1=value1,unit=count,metric=probe1]";
-        final String p2Name = "[tag1=value1,unit=bytes,metric=secondProbe]";
+    private void assertProbes(MetricsRegistryImpl registry, String prefix) {
+        prefix = prefix != null ? prefix + "." : "";
+        final String p1Name = "[tag1=value1,unit=count,metric=" + prefix + "probe1]";
+        final String p2Name = "[tag1=value1,unit=bytes,metric=" + prefix + "secondProbe]";
         assertEquals(new HashSet<>(asList(p1Name, p2Name)), registry.getNames());
 
         registry.render(new ProbeRenderer() {

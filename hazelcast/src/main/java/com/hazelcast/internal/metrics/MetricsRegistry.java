@@ -204,4 +204,14 @@ public interface MetricsRegistry {
      * Creates a new {@link ProbeBuilder}.
      */
     ProbeBuilder newProbeBuilder();
+
+    /**
+     * Creates a new {@link ProbeBuilder} with the given metric name prefix.
+     * This prefix will be appended to "metric" tag names for all Probes
+     * created with the ProbeBuilder.
+     *
+     * @param namePrefix the name prefix.
+     * @return the created builder.
+     */
+    ProbeBuilder newProbeBuilder(String namePrefix);
 }
