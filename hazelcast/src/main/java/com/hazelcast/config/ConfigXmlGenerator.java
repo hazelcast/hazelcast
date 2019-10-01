@@ -19,19 +19,19 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
-import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.internal.util.CollectionUtil;
-import com.hazelcast.internal.util.MapUtil;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -1266,7 +1266,7 @@ public class ConfigXmlGenerator {
     }
 
     private void commonSymmetricEncInterceptorConfigXmlBodyGenerator(XmlGenerator gen,
-                                                                     AbstractBasicSymmetricEncryptionConfig sec) {
+                                                                     AbstractSymmetricEncryptionConfig sec) {
         if (sec == null) {
             return;
         }
