@@ -18,7 +18,6 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.nio.Address;

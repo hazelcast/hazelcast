@@ -17,11 +17,11 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.test.ExpectedRuntimeException;
-import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastMillis;
 
 public class CompletableFutureTest extends CompletableFutureAbstractTest {
@@ -31,7 +31,7 @@ public class CompletableFutureTest extends CompletableFutureAbstractTest {
         CompletableFuture<Object> future = incompleteFuture();
         Executor completionExecutor;
         if (completeAfterMillis <= 0) {
-            completionExecutor = ConcurrencyUtil.CALLER_RUNS;
+            completionExecutor = CALLER_RUNS;
         } else {
             completionExecutor = command -> new Thread(() -> {
                 sleepAtLeastMillis(completeAfterMillis);

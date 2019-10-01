@@ -54,19 +54,15 @@ public class CacheCreateConfigMessageTask
         CacheConfig cacheConfig = parameters.cacheConfig.asCacheConfig(serializationService);
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
 
-        if (cacheConfig != null) {
-            SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
-        checkCacheConfig(cacheConfig, mergePolicyProvider);
+        SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
+    checkCacheConfig(cacheConfig, mergePolicyProvider);
 
-        Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicyConfig().getPolicy());
-        checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(), true, logger);
+    Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicyConfig().getPolicy());
+    checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(), true, logger);
 
-            InternalCompletableFuture future =
-                    cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
-            future.whenCompleteAsync(this);
-        } else {
-            sendResponse(null);
-        }
+        InternalCompletableFuture future =
+                cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
+        future.whenCompleteAsync(this);
     }
 
     @Override
