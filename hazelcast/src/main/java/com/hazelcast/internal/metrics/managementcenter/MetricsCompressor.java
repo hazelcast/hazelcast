@@ -226,7 +226,7 @@ public class MetricsCompressor {
 
     private enum ValueType {
 
-        // Note: Do not change order of values, as their .ordinal() values are used in serialization
+        // Note: Do not change the order, as .ordinal() values are used for serialization
         LONG, DOUBLE;
 
         private static final ValueType[] VALUE_TYPES;
@@ -236,7 +236,11 @@ public class MetricsCompressor {
         }
 
         public static ValueType valueOf(int ordinal) {
-            return VALUE_TYPES[ordinal];
+            try {
+                return VALUE_TYPES[ordinal];
+            } catch (IndexOutOfBoundsException e) {
+                throw new IllegalArgumentException("Unexpected ordinal value for ValueType: " + ordinal);
+            }
         }
 
     }
