@@ -23,6 +23,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.managementcenter.Metric;
+import com.hazelcast.internal.metrics.managementcenter.MetricConsumer;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.Address;
@@ -83,9 +84,11 @@ public class ReadMetricsTest extends HazelcastTestSupport {
             boolean operationMetricFound = false;
             byte[] blob = result.collections().get(0).getValue();
             Iterator<Metric> metricIterator = decompressingIterator(blob);
+            MetricKeyConsumer metricConsumer = new MetricKeyConsumer();
             while (metricIterator.hasNext()) {
                 Metric metric = metricIterator.next();
-                operationMetricFound |= metric.key().equals("[metric=operation.queueSize]");
+                metric.provide(metricConsumer);
+                operationMetricFound |= metricConsumer.key.equals("[metric=operation.queueSize]");
             }
             assertTrue(operationMetricFound);
         });
@@ -112,5 +115,20 @@ public class ReadMetricsTest extends HazelcastTestSupport {
 
         exception.expectCause(Matchers.instanceOf(IllegalArgumentException.class));
         client.readMetricsAsync(instance.getCluster().getLocalMember(), 0).get();
+    }
+
+    private static class MetricKeyConsumer implements MetricConsumer {
+
+        String key;
+
+        @Override
+        public void consumeLong(String key, long value) {
+            this.key = key;
+        }
+
+        @Override
+        public void consumeDouble(String key, double value) {
+            this.key = key;
+        }
     }
 }

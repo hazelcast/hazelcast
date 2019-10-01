@@ -16,21 +16,10 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
-public class DoubleMetric extends Metric {
+public interface MetricConsumer {
 
-    private final double value;
+    void consumeLong(String key, long value);
 
-    DoubleMetric(String key, double value) {
-        super(key);
-        this.value = value;
-    }
+    void consumeDouble(String key, double value);
 
-    public double value() {
-        return value;
-    }
-
-    @Override
-    public String toString() {
-        return key() + "=" + value;
-    }
 }

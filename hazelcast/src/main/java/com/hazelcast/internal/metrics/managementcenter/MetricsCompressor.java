@@ -204,9 +204,9 @@ public class MetricsCompressor {
                 ValueType type = ValueType.valueOf(dis.readByte());
                 switch (type) {
                     case LONG:
-                        return new LongMetric(lastName, dis.readLong());
+                        return new Metric(lastName, type, dis.readLong());
                     case DOUBLE:
-                        return new DoubleMetric(lastName, dis.readDouble());
+                        return new Metric(lastName, type, dis.readDouble());
                     default:
                         throw new IllegalStateException("Unexpected metric value type: " + type);
                 }
@@ -224,7 +224,7 @@ public class MetricsCompressor {
         }
     }
 
-    private enum ValueType {
+    enum ValueType {
 
         // Note: Do not change the order, as .ordinal() values are used for serialization
         LONG, DOUBLE;

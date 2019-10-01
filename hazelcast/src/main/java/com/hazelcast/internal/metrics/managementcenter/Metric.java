@@ -16,15 +16,37 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
-public abstract class Metric {
+import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.ValueType;
+
+public final class Metric {
 
     private final String key;
+    private final ValueType type;
+    private long longValue;
+    private double doubleValue;
 
-    public Metric(String key) {
+    Metric(String key, ValueType type, long value) {
         this.key = key;
+        this.type = type;
+        this.longValue = value;
     }
 
-    public String key() {
-        return key;
+    Metric(String key, ValueType type, double value) {
+        this.key = key;
+        this.type = type;
+        this.doubleValue = value;
+    }
+
+    public void provide(MetricConsumer consumer) {
+        switch (type) {
+            case LONG:
+                consumer.consumeLong(key, longValue);
+                break;
+            case DOUBLE:
+                consumer.consumeDouble(key, doubleValue);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected metric value type: " + type);
+        }
     }
 }
