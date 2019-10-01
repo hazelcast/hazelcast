@@ -16,13 +16,13 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.model.ModelGenerator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,28 +30,34 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
+/**
+ * Basic test for replicated map.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlTest extends SqlTestSupport {
-    protected HazelcastInstance member;
+public class ReplicatedMapTest extends SqlTestSupport {
+    private HazelcastInstance member;
+    private HazelcastInstance liteMember;
 
     @Before
     public void before() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         member = nodeFactory.newHazelcastInstance();
-        nodeFactory.newHazelcastInstance();
+        liteMember = nodeFactory.newHazelcastInstance(new Config().setLiteMember(true));
 
         ModelGenerator.generatePerson(member);
     }
 
     @Test
-    public void testJoin() {
-        List<SqlRow> res = getQueryRows(
+    public void testReplicatedProject() {
+        List<SqlRow> rows = getQueryRows(
             member,
-            "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
+            "SELECT name FROM city"
         );
 
-        Assert.assertEquals(ModelGenerator.PERSON_CNT, res.size());
+        assertEquals(ModelGenerator.CITY_CNT, rows.size());
     }
 }
