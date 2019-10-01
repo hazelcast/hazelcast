@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.impl.securestore;
 
-import com.hazelcast.nio.Disposable;
-
 import javax.annotation.Nonnull;
 import java.util.List;
 
@@ -25,7 +23,7 @@ import java.util.List;
  * A Secure Store abstraction for interacting with systems that manage symmetric
  * encryption keys.
  */
-public interface SecureStore extends Disposable {
+public interface SecureStore {
 
     /**
      * Returns a list of encryption keys, where the first item represents the current

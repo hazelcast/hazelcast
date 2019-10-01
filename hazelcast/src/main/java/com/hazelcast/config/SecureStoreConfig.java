@@ -18,6 +18,14 @@ package com.hazelcast.config;
 
 /**
  * Abstract Secure Store configuration class.
+ * <p/>
+ * A Secure Store represents an abstraction for interacting
+ * with systems that manage symmetric encryption keys. Different
+ * types of Secure Stores are configured by means of corresponding
+ * {@link SecureStoreConfig} sub-classes.
+ *
+ * @see JavaKeyStoreSecureStoreConfig
+ * @see VaultSecureStoreConfig
  */
 public abstract class SecureStoreConfig {
 }
