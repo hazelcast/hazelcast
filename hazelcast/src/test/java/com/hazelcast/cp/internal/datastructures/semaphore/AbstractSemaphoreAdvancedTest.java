@@ -414,6 +414,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
             NodeEngineImpl nodeEngine = getNodeEngineImpl(primaryInstance);
             SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
             Map<BiTuple<String, UUID>, BiTuple<Long, Long>> waitTimeouts = registry.getWaitTimeouts();
             assertEquals(1, waitTimeouts.size());
             acquireWaitTimeoutKeyRef[0] = waitTimeouts.keySet().iterator().next();

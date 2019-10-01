@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -422,6 +423,7 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
             HazelcastInstance leader = leaderInstanceOf(groupId);
             SemaphoreService service = getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
 
