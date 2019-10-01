@@ -54,17 +54,18 @@ public final class ClientMessageSplitter {
         }
         long fragmentId = FRAGMENT_ID_SEQUENCE.next();
         LinkedList<ClientMessage> fragments = new LinkedList<>();
-        ClientMessage.FrameIterator iterator = clientMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
 
         ReadState state = ReadState.BEGINNING;
         int length = 0;
         ClientMessage fragment = null;
         while (iterator.hasNext()) {
-            ClientMessage.Frame frame = iterator.next();
+            ClientMessage.Frame frame = iterator.peekNext();
             int frameSize = frame.getSize();
             length += frameSize;
 
             if (frameSize > maxFrameSize) {
+                iterator.next();
                 if (state == ReadState.MIDDLE) {
                     fragments.add(fragment);
                 }
@@ -74,6 +75,7 @@ public final class ClientMessageSplitter {
                 state = ReadState.BEGINNING;
                 length = 0;
             } else if (length <= maxFrameSize) {
+                iterator.next();
                 if (state == ReadState.BEGINNING) {
                     fragment = createFragment(fragmentId);
                 }
@@ -84,7 +86,6 @@ public final class ClientMessageSplitter {
                 fragments.add(fragment);
                 state = ReadState.BEGINNING;
                 length = 0;
-                iterator.previous();
             }
         }
         if (state == ReadState.MIDDLE) {

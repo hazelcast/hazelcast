@@ -28,7 +28,7 @@ public final class CodecUtil {
     private CodecUtil() {
     }
 
-    public static void fastForwardToEndFrame(ClientMessage.FrameIterator iterator) {
+    public static void fastForwardToEndFrame(ClientMessage.ForwardFrameIterator iterator) {
         // We are starting from 1 because of the BEGIN_FRAME we read
         // in the beginning of the decode method
         int numberOfExpectedEndFrames = 1;
@@ -51,15 +51,15 @@ public final class CodecUtil {
         }
     }
 
-    public static <T> T decodeNullable(ClientMessage.FrameIterator iterator, Function<ClientMessage.FrameIterator, T> decode) {
+    public static <T> T decodeNullable(ClientMessage.ForwardFrameIterator iterator, Function<ClientMessage.ForwardFrameIterator, T> decode) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode.apply(iterator);
     }
 
-    public static boolean nextFrameIsDataStructureEndFrame(ClientMessage.FrameIterator iterator) {
+    public static boolean nextFrameIsDataStructureEndFrame(ClientMessage.ForwardFrameIterator iterator) {
         return iterator.peekNext().isEndFrame();
     }
 
-    public static boolean nextFrameIsNullEndFrame(ClientMessage.FrameIterator iterator) {
+    public static boolean nextFrameIsNullEndFrame(ClientMessage.ForwardFrameIterator iterator) {
         boolean isNull = iterator.peekNext().isNullFrame();
         if (isNull) {
             iterator.next();

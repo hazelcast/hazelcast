@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("d91f511269c3b5a6f46d5f05ab4da466")
+@Generated("90fef85f84a90dd33b5fef9f784bc227")
 public final class DurationConfigCodec {
     private static final int DURATION_AMOUNT_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = DURATION_AMOUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -44,7 +44,7 @@ public final class DurationConfigCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

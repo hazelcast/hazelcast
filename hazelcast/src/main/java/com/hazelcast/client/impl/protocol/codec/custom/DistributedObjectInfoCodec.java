@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("99fb572584975adf4404474c64f07a00")
+@Generated("4068938db0a6e1b434f0286214d0bf6c")
 public final class DistributedObjectInfoCodec {
 
     private DistributedObjectInfoCodec() {
@@ -39,7 +39,7 @@ public final class DistributedObjectInfoCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.client.DistributedObjectInfo decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.client.impl.client.DistributedObjectInfo decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

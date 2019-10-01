@@ -33,7 +33,7 @@ public final class DataCodec {
         return new HeapData(frame.content);
     }
 
-    public static Data decode(ClientMessage.FrameIterator iterator) {
+    public static Data decode(ClientMessage.ForwardFrameIterator iterator) {
         return decode(iterator.next());
     }
 

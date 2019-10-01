@@ -40,7 +40,7 @@ public final class StringCodec {
         encode(clientMessage, expiryPolicyType.name());
     }
 
-    public static String decode(ClientMessage.FrameIterator iterator) {
+    public static String decode(ClientMessage.ForwardFrameIterator iterator) {
         return decode(iterator.next());
     }
 

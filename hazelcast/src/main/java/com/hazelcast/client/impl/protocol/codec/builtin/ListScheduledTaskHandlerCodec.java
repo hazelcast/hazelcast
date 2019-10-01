@@ -32,7 +32,7 @@ public final class ListScheduledTaskHandlerCodec {
         ListMultiFrameCodec.encode(clientMessage, collection, ScheduledTaskHandlerCodec::encode);
     }
 
-    public static List<ScheduledTaskHandler> decode(ClientMessage.FrameIterator iterator) {
+    public static List<ScheduledTaskHandler> decode(ClientMessage.ForwardFrameIterator iterator) {
         return ListMultiFrameCodec.decode(iterator, ScheduledTaskHandlerCodec::decode);
     }
 }

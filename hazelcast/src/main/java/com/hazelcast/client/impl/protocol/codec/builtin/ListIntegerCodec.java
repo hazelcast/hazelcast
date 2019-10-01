@@ -42,7 +42,7 @@ public final class ListIntegerCodec {
         clientMessage.add(frame);
     }
 
-    public static List<Integer> decode(ClientMessage.FrameIterator iterator) {
+    public static List<Integer> decode(ClientMessage.ForwardFrameIterator iterator) {
         return decode(iterator.next());
     }
 

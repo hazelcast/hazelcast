@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("339bcab41255639dbf135f06df2475bf")
+@Generated("2ea61ee15bf4fddcc389a73f8c767313")
 public final class MapStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int WRITE_COALESCING_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -55,7 +55,7 @@ public final class MapStoreConfigHolderCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

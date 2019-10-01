@@ -75,7 +75,7 @@ public final class LongRegisterAddAndGetCodec {
     }
 
     public static LongRegisterAddAndGetCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.FrameIterator iterator = clientMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.delta = decodeLong(initialFrame.content, REQUEST_DELTA_FIELD_OFFSET);
@@ -103,7 +103,7 @@ public final class LongRegisterAddAndGetCodec {
     }
 
     public static LongRegisterAddAndGetCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.FrameIterator iterator = clientMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);

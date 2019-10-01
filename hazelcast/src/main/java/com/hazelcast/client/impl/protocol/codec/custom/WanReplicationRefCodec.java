@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("aa1dc71f34dabe7406aa81f7ba3bf80e")
+@Generated("8629644303b63ded181a2ecede9b644e")
 public final class WanReplicationRefCodec {
     private static final int REPUBLISHING_ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = REPUBLISHING_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -46,7 +46,7 @@ public final class WanReplicationRefCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.WanReplicationRef decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.config.WanReplicationRef decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

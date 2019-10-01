@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("fcb5d6f21b2ca7cb2e6d99e3c2e017d4")
+@Generated("a2c6108c7a74732d7bfa8170ae7b7fad")
 public final class ScheduledTaskHandlerCodec {
     private static final int PARTITION_ID_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -46,7 +46,7 @@ public final class ScheduledTaskHandlerCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

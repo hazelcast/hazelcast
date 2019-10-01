@@ -51,7 +51,7 @@ public final class EntryListIntegerLongCodec {
         clientMessage.add(frame);
     }
 
-    public static List<Map.Entry<Integer, Long>> decode(ClientMessage.FrameIterator iterator) {
+    public static List<Map.Entry<Integer, Long>> decode(ClientMessage.ForwardFrameIterator iterator) {
         ClientMessage.Frame frame = iterator.next();
         int itemCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
         List<Map.Entry<Integer, Long>> result = new LinkedList<>();

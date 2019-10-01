@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("577a9046ebbddb7a2451499ad8a7ba10")
+@Generated("3324b15c688183432483e57b6e1bba43")
 public final class HotRestartConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int FSYNC_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -44,7 +44,7 @@ public final class HotRestartConfigCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.HotRestartConfig decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.config.HotRestartConfig decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

@@ -55,9 +55,9 @@ public final class MapCodec {
         }
     }
 
-    public static <K, V> Map<K, V> decode(ClientMessage.FrameIterator iterator,
-                                          Function<ClientMessage.FrameIterator, K> decodeKeyFunc,
-                                          Function<ClientMessage.FrameIterator, V> decodeValueFunc) {
+    public static <K, V> Map<K, V> decode(ClientMessage.ForwardFrameIterator iterator,
+                                          Function<ClientMessage.ForwardFrameIterator, K> decodeKeyFunc,
+                                          Function<ClientMessage.ForwardFrameIterator, V> decodeValueFunc) {
         Map<K, V> result = new HashMap<>();
         //begin frame, map
         iterator.next();
@@ -71,9 +71,9 @@ public final class MapCodec {
         return result;
     }
 
-    public static <K, V> Map<K, V> decodeNullable(ClientMessage.FrameIterator iterator,
-                                                  Function<ClientMessage.FrameIterator, K> decodeKeyFunc,
-                                                  Function<ClientMessage.FrameIterator, V> decodeValueFunc) {
+    public static <K, V> Map<K, V> decodeNullable(ClientMessage.ForwardFrameIterator iterator,
+                                                  Function<ClientMessage.ForwardFrameIterator, K> decodeKeyFunc,
+                                                  Function<ClientMessage.ForwardFrameIterator, V> decodeValueFunc) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator, decodeKeyFunc, decodeValueFunc);
     }
 }

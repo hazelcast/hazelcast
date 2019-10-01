@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("036b9048ed044249cda441dd0288a373")
+@Generated("0942e59447035e180ad445dd12533e48")
 public final class MemberCodec {
     private static final int UUID_FIELD_OFFSET = 0;
     private static final int LITE_MEMBER_FIELD_OFFSET = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
@@ -47,7 +47,7 @@ public final class MemberCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.MemberImpl decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.client.impl.MemberImpl decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

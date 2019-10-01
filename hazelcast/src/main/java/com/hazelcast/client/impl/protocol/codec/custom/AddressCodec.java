@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("0e338cf2c85912b1bdb0cff5568670ca")
+@Generated("aa2be30522a42edca679223d559f5721")
 public final class AddressCodec {
     private static final int PORT_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = PORT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -44,7 +44,7 @@ public final class AddressCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.nio.Address decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.nio.Address decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

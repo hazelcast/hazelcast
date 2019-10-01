@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("9b392a58a8541df3387edc9a13ed7c5c")
+@Generated("dd909c2616abfef0990845c18399f5c7")
 public final class QueueStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -48,7 +48,7 @@ public final class QueueStoreConfigHolderCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

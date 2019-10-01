@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("c671e4a4562938ef0142389254a8db50")
+@Generated("56e7367d5e3d630029fa1e5173092791")
 public final class EventJournalConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int CAPACITY_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -46,7 +46,7 @@ public final class EventJournalConfigCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.EventJournalConfig decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.config.EventJournalConfig decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

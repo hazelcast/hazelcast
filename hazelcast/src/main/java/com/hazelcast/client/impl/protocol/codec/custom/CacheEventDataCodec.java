@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("301be4ae65e42f7378358d179bcbe00c")
+@Generated("282e93f22afcfa00409312ef12e2b2e3")
 public final class CacheEventDataCodec {
     private static final int CACHE_EVENT_TYPE_FIELD_OFFSET = 0;
     private static final int OLD_VALUE_AVAILABLE_FIELD_OFFSET = CACHE_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -49,7 +49,7 @@ public final class CacheEventDataCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.cache.impl.CacheEventDataImpl decode(ClientMessage.FrameIterator iterator) {
+    public static com.hazelcast.cache.impl.CacheEventDataImpl decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 

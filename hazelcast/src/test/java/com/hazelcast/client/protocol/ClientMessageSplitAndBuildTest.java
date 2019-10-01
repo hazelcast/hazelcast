@@ -184,8 +184,8 @@ public class ClientMessageSplitAndBuildTest {
         //these flags related to framing and can differ between two semantically equal messages
         int mask = ~(ClientMessage.UNFRAGMENTED_MESSAGE | ClientMessage.IS_FINAL_FLAG);
 
-        ClientMessage.FrameIterator actualIterator = actual.frameIterator();
-        ClientMessage.FrameIterator expectedFrameIterator = expected.frameIterator();
+        ClientMessage.ForwardFrameIterator actualIterator = actual.frameIterator();
+        ClientMessage.ForwardFrameIterator expectedFrameIterator = expected.frameIterator();
         while (expectedFrameIterator.hasNext()) {
             ClientMessage.Frame actualFrame = actualIterator.next();
             ClientMessage.Frame expectedFrame = expectedFrameIterator.next();
@@ -197,7 +197,7 @@ public class ClientMessageSplitAndBuildTest {
 
     private int getNumberOfFrames(ClientMessage message) {
         int size = 0;
-        ClientMessage.FrameIterator frameIterator = message.frameIterator();
+        ClientMessage.ForwardFrameIterator frameIterator = message.frameIterator();
         while (frameIterator.hasNext()) {
             frameIterator.next();
             ++size;

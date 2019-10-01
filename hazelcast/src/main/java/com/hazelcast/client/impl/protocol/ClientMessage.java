@@ -172,13 +172,12 @@ public final class ClientMessage implements OutboundFrame {
         }
 
         endFrame.next = frame;
-        frame.previous = endFrame;
         endFrame = frame;
         return this;
     }
 
-    public FrameIterator frameIterator() {
-        return new FrameIterator(startFrame);
+    public ForwardFrameIterator frameIterator() {
+        return new ForwardFrameIterator(startFrame);
     }
 
     public int getMessageType() {
@@ -285,7 +284,6 @@ public final class ClientMessage implements OutboundFrame {
         // ignore the first frame of the fragment since first frame marks the fragment
         Frame fragmentMessageStartFrame = fragment.startFrame.next;
         this.endFrame.next = fragmentMessageStartFrame;
-        fragmentMessageStartFrame.previous = this.endFrame;
         while (endFrame.next != null) {
             endFrame = endFrame.next;
         }
@@ -365,10 +363,10 @@ public final class ClientMessage implements OutboundFrame {
         return result;
     }
 
-    public static final class FrameIterator {
+    public static final class ForwardFrameIterator {
         private Frame nextFrame;
 
-        private FrameIterator(Frame start) {
+        private ForwardFrameIterator(Frame start) {
             nextFrame = start;
         }
 
@@ -388,12 +386,6 @@ public final class ClientMessage implements OutboundFrame {
             return nextFrame;
         }
 
-        public void previous() {
-            if (nextFrame == null) {
-                return;
-            }
-            nextFrame = nextFrame.previous;
-        }
     }
 
     @SuppressWarnings("checkstyle:VisibilityModifier")
@@ -403,7 +395,6 @@ public final class ClientMessage implements OutboundFrame {
         public int flags;
 
         Frame next;
-        Frame previous;
 
         public Frame(byte[] content) {
             this(content, DEFAULT_FLAGS);
@@ -419,7 +410,6 @@ public final class ClientMessage implements OutboundFrame {
         public Frame copy() {
             Frame frame = new Frame(content, flags);
             frame.next = this.next;
-            frame.previous = this.previous;
             return frame;
         }
 
@@ -428,7 +418,6 @@ public final class ClientMessage implements OutboundFrame {
             byte[] newContent = Arrays.copyOf(content, content.length);
             Frame frame = new Frame(newContent, flags);
             frame.next = this.next;
-            frame.previous = this.previous;
             return frame;
         }
 

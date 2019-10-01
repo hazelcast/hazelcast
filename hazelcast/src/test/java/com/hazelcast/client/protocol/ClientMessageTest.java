@@ -67,7 +67,7 @@ public class ClientMessageTest {
 
         clientMessage.add(END_FRAME.copy());
 
-        ClientMessage.FrameIterator iterator = clientMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         // begin frame
         iterator.next();
         CodecUtil.fastForwardToEndFrame(iterator);
@@ -98,9 +98,9 @@ public class ClientMessageTest {
         ClientMessage copyMessage = clientMessage.copyWithNewCorrelationId(newCorrelationId);
         assertEquals(clientMessage.getMessageType(), copyMessage.getMessageType());
         // get the frame after the start frame for comparison
-        ClientMessage.FrameIterator originalIterator = clientMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator originalIterator = clientMessage.frameIterator();
         originalIterator.next();
-        ClientMessage.FrameIterator copyIterator = copyMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator copyIterator = copyMessage.frameIterator();
         copyIterator.next();
         ClientMessage.Frame originalFrame = originalIterator.next();
         ClientMessage.Frame copyFrame = copyIterator.next();

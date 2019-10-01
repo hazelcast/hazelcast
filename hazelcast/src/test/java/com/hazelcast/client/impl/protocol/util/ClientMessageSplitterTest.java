@@ -70,7 +70,7 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     @Test
     public void testGetSubFrames() {
         List<ClientMessage> fragments = getFragments(128, clientMessage);
-        ClientMessage.FrameIterator originalIterator = clientMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator originalIterator = clientMessage.frameIterator();
         assertEquals(18, fragments.size());
 
         assertFragments(fragments, originalIterator);
@@ -80,14 +80,14 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     @RequireAssertEnabled
     public void testGetSubFrame_whenFrameSizeGreaterThanFrameLength_thenReturnOriginalMessage() {
         List<ClientMessage> fragments = getFragments(4000, clientMessage);
-        ClientMessage.FrameIterator originalIterator = clientMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator originalIterator = clientMessage.frameIterator();
 
         assertFragments(fragments, originalIterator);
     }
 
-    private void assertFragments(List<ClientMessage> fragments, ClientMessage.FrameIterator originalIterator) {
+    private void assertFragments(List<ClientMessage> fragments, ClientMessage.ForwardFrameIterator originalIterator) {
         for (ClientMessage fragment : fragments) {
-            ClientMessage.FrameIterator iterator = fragment.frameIterator();
+            ClientMessage.ForwardFrameIterator iterator = fragment.frameIterator();
             //skip fragmentation header
             iterator.next();
             while (iterator.hasNext()) {

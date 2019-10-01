@@ -58,9 +58,9 @@ public final class EntryListCodec {
         }
     }
 
-    public static <K, V> List<Map.Entry<K, V>> decode(ClientMessage.FrameIterator iterator,
-                                                      Function<ClientMessage.FrameIterator, K> decodeKeyFunc,
-                                                      Function<ClientMessage.FrameIterator, V> decodeValueFunc) {
+    public static <K, V> List<Map.Entry<K, V>> decode(ClientMessage.ForwardFrameIterator iterator,
+                                                      Function<ClientMessage.ForwardFrameIterator, K> decodeKeyFunc,
+                                                      Function<ClientMessage.ForwardFrameIterator, V> decodeValueFunc) {
         List<Map.Entry<K, V>> result = new ArrayList<>();
         //begin frame, map
         iterator.next();
@@ -74,9 +74,9 @@ public final class EntryListCodec {
         return result;
     }
 
-    public static <K, V> List<Map.Entry<K, V>> decodeNullable(ClientMessage.FrameIterator iterator,
-                                                              Function<ClientMessage.FrameIterator, K> decodeKeyFunc,
-                                                              Function<ClientMessage.FrameIterator, V> decodeValueFunc) {
+    public static <K, V> List<Map.Entry<K, V>> decodeNullable(ClientMessage.ForwardFrameIterator iterator,
+                                                              Function<ClientMessage.ForwardFrameIterator, K> decodeKeyFunc,
+                                                              Function<ClientMessage.ForwardFrameIterator, V> decodeValueFunc) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator, decodeKeyFunc, decodeValueFunc);
     }
 }

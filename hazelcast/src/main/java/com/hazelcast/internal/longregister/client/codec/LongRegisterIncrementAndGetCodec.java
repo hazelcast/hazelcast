@@ -68,7 +68,7 @@ public final class LongRegisterIncrementAndGetCodec {
     }
 
     public static LongRegisterIncrementAndGetCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.FrameIterator iterator = clientMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -96,7 +96,7 @@ public final class LongRegisterIncrementAndGetCodec {
     }
 
     public static LongRegisterIncrementAndGetCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.FrameIterator iterator = clientMessage.frameIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);

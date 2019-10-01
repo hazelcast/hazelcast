@@ -87,7 +87,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                 if (ClientMessage.isFlagSet(flags, UNFRAGMENTED_MESSAGE)) {
                     handleMessage(activeReader.getClientMessage());
                 } else {
-                    ClientMessage.FrameIterator frameIterator = activeReader.getClientMessage().frameIterator();
+                    ClientMessage.ForwardFrameIterator frameIterator = activeReader.getClientMessage().frameIterator();
                     //ignore the fragmentationFrame
                     frameIterator.next();
                     ClientMessage.Frame startFrame = frameIterator.next();
