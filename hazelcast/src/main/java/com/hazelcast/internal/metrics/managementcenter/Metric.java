@@ -18,6 +18,9 @@ package com.hazelcast.internal.metrics.managementcenter;
 
 import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.ValueType;
 
+/**
+ * Represents a metric data point (key and value).
+ */
 public final class Metric {
 
     private final String key;
@@ -37,6 +40,11 @@ public final class Metric {
         this.doubleValue = value;
     }
 
+    /**
+     * Consumes the Metric with the given {@link MetricConsumer}.
+     *
+     * @param consumer metric consumer
+     */
     public void provide(MetricConsumer consumer) {
         switch (type) {
             case LONG:
