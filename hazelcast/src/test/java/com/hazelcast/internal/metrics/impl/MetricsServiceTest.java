@@ -24,6 +24,8 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
+import com.hazelcast.internal.metrics.managementcenter.DoubleMetric;
+import com.hazelcast.internal.metrics.managementcenter.LongMetric;
 import com.hazelcast.internal.metrics.managementcenter.Metric;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
@@ -290,10 +292,10 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         metricsResultSet.collections().forEach(entry -> {
             Iterator<Metric> metricIterator = decompressingIterator(entry.getValue());
             metricIterator.forEachRemaining(metric -> {
-                if (metric.key().contains("test.longValue")) {
-                    metricConsumer.consumeLong(metric.value());
-                } else if (metric.key().contains("test.doubleValue")) {
-                    metricConsumer.consumeDouble(metric.value() / 10_000D);
+                if (metric instanceof LongMetric) {
+                    metricConsumer.consumeLong(((LongMetric) metric).value());
+                } else if (metric instanceof DoubleMetric) {
+                    metricConsumer.consumeDouble(((DoubleMetric) metric).value());
                 }
             });
         });

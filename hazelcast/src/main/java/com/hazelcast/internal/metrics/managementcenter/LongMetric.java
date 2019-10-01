@@ -16,15 +16,21 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
-public abstract class Metric {
+public class LongMetric extends Metric {
 
-    private final String key;
+    private final long value;
 
-    public Metric(String key) {
-        this.key = key;
+    LongMetric(String key, long value) {
+        super(key);
+        this.value = value;
     }
 
-    public String key() {
-        return key;
+    public long value() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return key() + "=" + value;
     }
 }

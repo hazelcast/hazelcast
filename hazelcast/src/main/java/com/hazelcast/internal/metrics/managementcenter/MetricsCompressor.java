@@ -58,10 +58,6 @@ public class MetricsCompressor {
     private static final int BYTE_MASK = 0xff;
 
     private static final short SHORT_BITS = BITS_IN_BYTE * Bits.SHORT_SIZE_IN_BYTES;
-    // required precision after the decimal point for doubles
-    private static final int CONVERSION_PRECISION = 4;
-    // coefficient for converting doubles to long
-    private static final double DOUBLE_TO_LONG = Math.pow(10, CONVERSION_PRECISION);
 
     private static final short BINARY_FORMAT_VERSION = 1;
 
@@ -77,6 +73,7 @@ public class MetricsCompressor {
     public void addLong(String name, long value) {
         try {
             writeName(name);
+            dos.writeByte(ValueType.LONG.ordinal());
             dos.writeLong(value);
         } catch (IOException e) {
             // should never be thrown
@@ -87,8 +84,8 @@ public class MetricsCompressor {
     public void addDouble(String name, double value) {
         try {
             writeName(name);
-            // convert to long with specified precision
-            dos.writeLong(Math.round(value * DOUBLE_TO_LONG));
+            dos.writeByte(ValueType.DOUBLE.ordinal());
+            dos.writeDouble(value);
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
@@ -196,10 +193,22 @@ public class MetricsCompressor {
                         return;
                     }
                     lastName = lastName.substring(0, equalPrefixLen) + dis.readUTF();
-                    next = new Metric(lastName, dis.readLong());
+                    next = readNextMetric();
                 } catch (IOException e) {
                     // unexpected EOFException can occur here
                     throw new RuntimeException(e);
+                }
+            }
+
+            private Metric readNextMetric() throws IOException {
+                ValueType type = ValueType.valueOf(dis.readByte());
+                switch (type) {
+                    case LONG:
+                        return new LongMetric(lastName, dis.readLong());
+                    case DOUBLE:
+                        return new DoubleMetric(lastName, dis.readDouble());
+                    default:
+                        throw new IllegalStateException("Unexpected metric value type: " + type);
                 }
             }
         };
@@ -213,6 +222,23 @@ public class MetricsCompressor {
         int capacity() {
             return buf.length;
         }
+    }
+
+    private enum ValueType {
+
+        // Note: Do not change order of values, as their .ordinal() values are used in serialization
+        LONG, DOUBLE;
+
+        private static final ValueType[] VALUE_TYPES;
+
+        static {
+            VALUE_TYPES = ValueType.values();
+        }
+
+        public static ValueType valueOf(int ordinal) {
+            return VALUE_TYPES[ordinal];
+        }
+
     }
 
 }
