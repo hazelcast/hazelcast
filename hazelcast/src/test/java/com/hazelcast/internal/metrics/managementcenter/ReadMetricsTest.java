@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.metrics;
+package com.hazelcast.internal.metrics.managementcenter;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -22,9 +22,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.metrics.managementcenter.Metric;
-import com.hazelcast.internal.metrics.managementcenter.MetricConsumer;
-import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
