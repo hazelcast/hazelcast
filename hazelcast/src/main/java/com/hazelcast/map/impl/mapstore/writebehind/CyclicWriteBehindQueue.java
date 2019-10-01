@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.util.MutableInteger;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -75,7 +75,7 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     }
 
     @Override
-    public void addLast(DelayedEntry entry, boolean capacityReservedBefore) {
+    public void addLast(DelayedEntry entry, boolean addWithoutCapacityCheck) {
         deque.addLast(entry);
         addCountIndex(entry);
     }
@@ -165,6 +165,14 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
                 break;
             }
         }
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (this.getClass().isAssignableFrom(clazz)) {
+            return (T) this;
+        }
+        return null;
     }
 
     private void addCountIndex(DelayedEntry entry) {

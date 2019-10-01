@@ -57,6 +57,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.core.Is.isA;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -98,7 +99,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
     public void commit_step_does_not_throw_reached_max_size_exception_when_two_phase() {
         String mapName = "map";
         long maxWbqCapacity = 10;
-        int keySpace = 100;
+        int keySpace = 10;
 
         Config config = getConfig(mapName, maxWbqCapacity);
         HazelcastInstance node = createHazelcastInstance(config);
@@ -115,10 +116,8 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         try {
             context.commitTransaction();
         } catch (TransactionException e) {
-            context.rollbackTransaction();
+            fail("no txn exception is expected here...");
         }
-
-        sleepSeconds(10);
 
         assertEquals(0, node.getMap(mapName).size());
         assertWriteBehindQueuesEmpty(mapName, Collections.singletonList(node));
@@ -150,7 +149,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
             }
 
             context.commitTransaction();
-        } catch (Exception e) {
+        } catch (TransactionException e) {
             context.rollbackTransaction();
         }
 
@@ -210,7 +209,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.toString(),
                 String.valueOf(maxWbqCapacity));
         config.getMapConfig(mapName)
-                .setBackupCount(0)
+                .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .getMapStoreConfig()
                 .setEnabled(true)

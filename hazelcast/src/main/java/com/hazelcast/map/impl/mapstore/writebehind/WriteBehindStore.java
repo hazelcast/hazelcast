@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
@@ -52,6 +51,8 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter.EMPTY_COUNTER;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createBoundedWriteBehindQueue;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
+import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.newAddedDelayedEntry;
+import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.newDeletedEntry;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
@@ -81,57 +82,68 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final InMemoryFormat inMemoryFormat;
     private final OperationService operationService;
     /**
-     * Holds the sequences according to insertion order at which {@link IMap#flush()} was called.
+     * Holds the sequences according to insertion
+     * order at which {@link IMap#flush()} was called.
      * <p>
-     * Upon end of a store operation, these sequences are used to find whether there is any flush request
-     * waiting for the stored sequence, and if there is any, {@link NotifyMapFlushOperation} is send to notify
-     * {@link com.hazelcast.map.impl.operation.AwaitMapFlushOperation AwaitMapFlushOperation}
+     * Upon end of a store operation, these sequences are used
+     * to find whether there is any flush request waiting
+     * for the stored sequence, and if there is any, {@link
+     * NotifyMapFlushOperation} is send to notify {@link
+     * com.hazelcast.map.impl.operation.AwaitMapFlushOperation
+     * AwaitMapFlushOperation}
      *
      * @see WriteBehindStore#notifyFlush
      */
     private final Queue<Sequence> flushSequences = new ConcurrentLinkedQueue<>();
     /**
-     * {@code stagingArea} is a temporary living space for evicted data if we are using a write-behind map store.
-     * Every eviction triggers a map store flush, and in write-behind mode this flush operation
-     * should not cause any inconsistencies, such as reading a stale value from map store.
-     * To prevent reading stale values when the time of a non-existent key is requested, before loading it from map-store
-     * we search for an evicted entry in this space. If the entry is not there,
-     * we ask map store to load it. All read operations use this staging area
-     * to return the last set value on a specific key, since there is a possibility that
-     * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue} may contain more than one waiting operations
-     * on a specific key.
+     * {@code stagingArea} is a temporary living space for evicted
+     * data if we are using a write-behind map store. Every eviction
+     * triggers a map store flush, and in write-behind mode this flush
+     * operation should not cause any inconsistencies, such as reading
+     * a stale value from map store. To prevent reading stale values
+     * when the time of a non-existent key is requested, before loading
+     * it from map-store we search for an evicted entry in this space.
+     * If the entry is not there, we ask map store to load it. All read
+     * operations use this staging area to return the last set value
+     * on a specific key, since there is a possibility that {@link
+     * com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue}
+     * may contain more than one waiting operations on a specific key.
      * <p>
-     * This space is also used to control any waiting delete operations on a key or any transiently put entries to {@code IMap}.
-     * Values of any transiently put entries should not be added to this area upon eviction, otherwise subsequent
+     * This space is also used to control any waiting delete
+     * operations on a key or any transiently put entries to {@code
+     * IMap}. Values of any transiently put entries should not
+     * be added to this area upon eviction, otherwise subsequent
      * {@code IMap#get} operations may return stale values.
      * <p>
-     * NOTE: In case of eviction we do not want to make a huge database load by flushing entries uncontrollably.
-     * We also do not want to make duplicate map-store calls for a key. This is why we use the staging area instead of the
-     * direct flushing option to map-store.
+     * NOTE: In case of eviction we do not want to make a huge database
+     * load by flushing entries uncontrollably. We also do not want to
+     * make duplicate map-store calls for a key. This is why we use the
+     * staging area instead of the direct flushing option to map-store.
      */
     private final ConcurrentMap<Data, DelayedEntry> stagingArea = new ConcurrentHashMap<>();
-
     private final TxnReservedCapacityCounter txnReservedCapacityCounter;
-    private final NodeWideUsedCapacityCounter nodeWideUsedCapacityCounter;
+
     private WriteBehindProcessor writeBehindProcessor;
     private WriteBehindQueue<DelayedEntry> writeBehindQueue;
 
     public WriteBehindStore(MapStoreContext mapStoreContext, int partitionId,
                             WriteBehindProcessor writeBehindProcessor) {
         super(mapStoreContext);
-        MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
         this.partitionId = partitionId;
         this.inMemoryFormat = getInMemoryFormat(mapStoreContext);
-        this.coalesce = mapStoreConfig.isWriteCoalescing();
+        this.coalesce = mapStoreContext.getMapStoreConfig().isWriteCoalescing();
         this.mapName = mapStoreContext.getMapName();
         this.operationService = nodeEngine.getOperationService();
-        this.nodeWideUsedCapacityCounter = mapStoreContext
-                .getMapServiceContext().getNodeWideUsedCapacityCounter();
-        this.txnReservedCapacityCounter = coalesce ? EMPTY_COUNTER
-                : new TxnReservedCapacityCounterImpl(nodeWideUsedCapacityCounter);
         this.writeBehindQueue = coalesce ? createDefaultWriteBehindQueue()
-                : createBoundedWriteBehindQueue(nodeWideUsedCapacityCounter);
+                : createBoundedWriteBehindQueue(mapStoreContext);
         this.writeBehindProcessor = writeBehindProcessor;
+        this.txnReservedCapacityCounter = initTxnReservedCapacityCounter();
+    }
+
+    private TxnReservedCapacityCounter initTxnReservedCapacityCounter() {
+        BoundedWriteBehindQueue<DelayedEntry> unwrapped
+                = writeBehindQueue.unwrap(BoundedWriteBehindQueue.class);
+        return unwrapped != null ? unwrapped.getTxnReservedCapacityCounter() : EMPTY_COUNTER;
     }
 
     @Override
@@ -142,49 +154,42 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     @Override
     public Object add(Data key, Object value,
                       long expirationTime, long now, UUID transactionId) {
-        // When using format InMemoryFormat.NATIVE, just copy key & value to heap.
+        // When using format InMemoryFormat.NATIVE,
+        // just copy key & value to heap.
         if (NATIVE == inMemoryFormat) {
             value = toHeapData(value);
             key = toHeapData(key);
         }
 
-        // This note describes the problem when we want to persist all states of an entry (means write-coalescing is off)
+        // This note describes the problem when we want to persist
+        // all states of an entry (means write-coalescing is off)
         // by using both EntryProcessor + OBJECT in-memory-format:
         //
-        // If in-memory-format is OBJECT, there is a possibility that a previous state of an entry can be overwritten
-        // by a subsequent write operation while both are waiting in the write-behind-queue, this is because they are referencing
-        // to the same entry-value. To prevent such a problem, we are taking snapshot of the value by serializing it,
-        // this means an extra serialization and additional latency for operations like map#put but it is needed,
-        // otherwise we can lost a state.
+        // If in-memory-format is OBJECT, there is a possibility that a previous
+        // state of an entry can be overwritten by a subsequent write operation
+        // while both are waiting in the write-behind-queue, this is because
+        // they are referencing to the same entry-value. To prevent such a
+        // problem, we are taking snapshot of the value by serializing it, this
+        // means an extra serialization and additional latency for operations
+        // like map#put but it is needed, otherwise we can lost a state.
         if (!coalesce && OBJECT == inMemoryFormat) {
             value = toHeapData(value);
         }
         expirationTime = getUserExpirationTime(expirationTime);
-        DelayedEntry<Data, Object> delayedEntry
-                = DelayedEntries.createDefault(key, value, expirationTime, now, partitionId);
-
-        add(delayedEntry, transactionId);
-
+        add(DelayedEntries.newAddedDelayedEntry(key, value, expirationTime, now, partitionId, transactionId));
         return value;
     }
 
     @Override
     public void addForcibly(DelayedEntry<Data, Object> delayedEntry) {
-        nodeWideUsedCapacityCounter.add(1L);
         writeBehindQueue.addLast(delayedEntry, true);
         stagingArea.put(delayedEntry.getKey(), delayedEntry);
 
         delayedEntry.setSequence(sequence.incrementAndGet());
     }
 
-    public void add(DelayedEntry<Data, Object> delayedEntry, UUID transactionId) {
-        boolean capacityReserved = txnReservedCapacityCounter.hasReservedCapacity(transactionId);
-
-        writeBehindQueue.addLast(delayedEntry, capacityReserved);
-
-        if (capacityReserved) {
-            txnReservedCapacityCounter.decrementOnlyReserved(transactionId);
-        }
+    public void add(DelayedEntry<Data, Object> delayedEntry) {
+        writeBehindQueue.addLast(delayedEntry, false);
 
         stagingArea.put(delayedEntry.getKey(), delayedEntry);
 
@@ -214,11 +219,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         if (NATIVE == inMemoryFormat) {
             key = toHeapData(key);
         }
-
-        DelayedEntry<Data, Object> delayedEntry
-                = DelayedEntries.createDeletedEntry(key, now, partitionId);
-
-        add(delayedEntry, transactionId);
+        add(newDeletedEntry(key, now, partitionId, transactionId));
     }
 
     @Override
@@ -232,7 +233,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         stagingArea.clear();
         sequence.set(0);
         flushSequences.clear();
-        txnReservedCapacityCounter.release();
     }
 
     @Override
@@ -295,7 +295,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             key = toHeapData(key);
         }
 
-        return !writeBehindQueue.contains(DelayedEntries.createDefault(key));
+        return !writeBehindQueue.contains(newAddedDelayedEntry(key));
     }
 
     @Override
@@ -317,7 +317,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         }
 
         if (writeBehindQueue.size() == 0
-                || !writeBehindQueue.contains(DelayedEntries.createNullEntry(key))) {
+                || !writeBehindQueue.contains(DelayedEntries.newNullEntry(key))) {
             return null;
         }
 
@@ -451,8 +451,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         this.flushSequences.addAll(flushSequences);
     }
 
-    private static InMemoryFormat getInMemoryFormat(MapStoreContext
-                                                            mapStoreContext) {
+    private static InMemoryFormat getInMemoryFormat(MapStoreContext mapStoreContext) {
         MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -26,32 +27,32 @@ final class EmptyTxnReservedCapacityCounter implements TxnReservedCapacityCounte
     }
 
     @Override
-    public void increment(UUID txnId, boolean backup) {
+    public void increment(@Nonnull UUID txnId, boolean backup) {
 
     }
 
     @Override
-    public void decrement(UUID txnId) {
+    public void decrement(@Nonnull UUID txnId) {
 
     }
 
     @Override
-    public void decrementOnlyReserved(UUID txnId) {
+    public void decrementOnlyReserved(@Nonnull UUID txnId) {
 
     }
 
     @Override
-    public void copy(Map<UUID, Long> reservedCapacityPerTxnId) {
+    public void putAll(@Nonnull Map<UUID, Long> reservedCapacityPerTxnId) {
 
     }
 
     @Override
-    public boolean hasReservedCapacity(UUID txnId) {
+    public boolean hasReservedCapacity(@Nonnull UUID txnId) {
         return false;
     }
 
     @Override
-    public void release() {
+    public void releaseAllReservations() {
 
     }
 

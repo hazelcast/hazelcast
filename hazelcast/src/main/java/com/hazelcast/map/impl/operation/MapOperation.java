@@ -43,10 +43,10 @@ import java.util.List;
 import java.util.logging.Level;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
@@ -130,7 +130,8 @@ public abstract class MapOperation extends AbstractNamedOperation
             return;
         }
 
-        assert mapContainer.getMapConfig().getInMemoryFormat() != NATIVE || getPartitionId() != GENERIC_PARTITION_ID
+        assert mapContainer.getMapConfig().getInMemoryFormat() != NATIVE
+                || getPartitionId() != GENERIC_PARTITION_ID
                 : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
     }
 

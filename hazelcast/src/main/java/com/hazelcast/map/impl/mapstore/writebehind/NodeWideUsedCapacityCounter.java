@@ -24,14 +24,16 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 
+/**
+ * Holds sum of all current write-behind-queue sizes(including
+ * backup partitions) of all maps on this node. This value is useful
+ * to put a higher limit on total number of entries that can exist
+ * in all write-behind-queues to prevent OOME.
+ *
+ * There is only one counter instance per node.
+ */
 public class NodeWideUsedCapacityCounter {
-
     private final long maxPerNodeCapacity;
-    /**
-     * Holds current count of queued entries in
-     * write-behind-queues(including backup partitions) of all maps
-     * on this node. There is only one counter instance per node.
-     */
     private final AtomicLong nodeWideUsedCapacityCounter = new AtomicLong(0);
 
     public NodeWideUsedCapacityCounter(HazelcastProperties properties) {
@@ -46,7 +48,7 @@ public class NodeWideUsedCapacityCounter {
      * @param delta capacity to be added or subtracted.
      * @throws ReachedMaxSizeException
      */
-    public void addCapacityOrThrowException(int delta) {
+    public void checkAndAddCapacityOrThrowException(int delta) {
         if (delta == 0) {
             return;
         }

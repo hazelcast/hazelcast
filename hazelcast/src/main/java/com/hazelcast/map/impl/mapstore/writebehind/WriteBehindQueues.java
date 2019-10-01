@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 
 /**
@@ -26,24 +27,22 @@ public final class WriteBehindQueues {
     private WriteBehindQueues() {
     }
 
-    public static WriteBehindQueue<DelayedEntry> createBoundedWriteBehindQueue(NodeWideUsedCapacityCounter counter) {
-        final WriteBehindQueue<DelayedEntry> queue = createCyclicWriteBehindQueue();
-        final WriteBehindQueue<DelayedEntry> boundedQueue = createBoundedWriteBehindQueue(queue, counter);
-        return createSynchronizedWriteBehindQueue(boundedQueue);
+    public static WriteBehindQueue<DelayedEntry> createDefaultWriteBehindQueue() {
+        return createSynchronizedWriteBehindQueue(createCoalescedWriteBehindQueue());
     }
 
-    public static WriteBehindQueue<DelayedEntry> createDefaultWriteBehindQueue() {
-        final WriteBehindQueue<DelayedEntry> queue = createCoalescedWriteBehindQueue();
-        return createSynchronizedWriteBehindQueue(queue);
+    public static WriteBehindQueue<DelayedEntry> createBoundedWriteBehindQueue(MapStoreContext mapStoreContext) {
+        NodeWideUsedCapacityCounter counter = mapStoreContext.getMapServiceContext().getNodeWideUsedCapacityCounter();
+        return createSynchronizedWriteBehindQueue(createBoundedWriteBehindQueue(createCyclicWriteBehindQueue(), counter));
     }
 
     static WriteBehindQueue<DelayedEntry> createCoalescedWriteBehindQueue() {
         return new CoalescedWriteBehindQueue();
     }
 
-    static <T> WriteBehindQueue<T> createBoundedWriteBehindQueue(WriteBehindQueue<T> queue,
-                                                                 NodeWideUsedCapacityCounter nodeWideUsedCapacityCounter) {
-        return new BoundedWriteBehindQueue<>(queue, nodeWideUsedCapacityCounter);
+    static <T extends DelayedEntry> WriteBehindQueue<T> createBoundedWriteBehindQueue(WriteBehindQueue<T> queue,
+                                                                                      NodeWideUsedCapacityCounter counter) {
+        return new BoundedWriteBehindQueue<>(queue, counter);
     }
 
     private static <T> WriteBehindQueue<T> createSynchronizedWriteBehindQueue(WriteBehindQueue<T> queue) {

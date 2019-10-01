@@ -48,7 +48,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Only one {@link StoreWorker} task is created for a map on a member.
  */
 public class StoreWorker implements Runnable {
-
     private final String mapName;
     private final MapServiceContext mapServiceContext;
     private final IPartitionService partitionService;

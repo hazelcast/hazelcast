@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.UUID;
 
@@ -53,44 +54,40 @@ public interface TxnReservedCapacityCounter {
      *               operation is on a backup partition,
      *               otherwise set {@code false}
      */
-    void increment(UUID txnId, boolean backup);
-
-    /**
-     * Increments capacity count for a transaction.
-     *
-     * @param txnId id of transaction
-     */
-    void decrement(UUID txnId);
+    void increment(@Nonnull UUID txnId, boolean backup);
 
     /**
      * Decrements capacity count for a transaction.
      *
      * @param txnId id of transaction
      */
-    void decrementOnlyReserved(UUID txnId);
+    void decrement(@Nonnull UUID txnId);
 
     /**
-     * Copies supplied transactions capacity counts fto this counter.
+     * Decrements capacity count for a transaction.
      *
-     * @param reservedCapacityPerTxnId reserved capacities per
-     *                                 txnId
+     * @param txnId id of transaction
      */
-    void copy(Map<UUID, Long> reservedCapacityPerTxnId);
+    void decrementOnlyReserved(@Nonnull UUID txnId);
 
     /**
-     * Check to see whether or not a
-     * transaction has a reserved capacity.
+     * Puts all supplied transactions capacity counts into this counter.
      *
-     * @param txnId id of transaction @return {@code
-     *              true} if txnId has a reserved capacity in
-     *              the given partition, otherwise returns {@code false}.
+     * @param reservedCapacityPerTxnId reserved capacity counts per txnId
      */
-    boolean hasReservedCapacity(UUID txnId);
+    void putAll(@Nonnull Map<UUID, Long> reservedCapacityPerTxnId);
+
+    /**
+     * @param txnId id of transaction
+     * @return {@code true} if txnId has reserved
+     * capacity, otherwise return {@code false}
+     */
+    boolean hasReservedCapacity(@Nonnull UUID txnId);
 
     /**
      * Releases all reserved capacity info on this counter.
      */
-    void release();
+    void releaseAllReservations();
 
     /**
      * Returns reserved capacity counts of all

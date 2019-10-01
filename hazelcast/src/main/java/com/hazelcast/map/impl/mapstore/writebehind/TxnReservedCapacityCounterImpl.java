@@ -18,12 +18,11 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.ReachedMaxSizeException;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 
 /**
  * This class represents capacity counters for write behind
@@ -60,38 +59,39 @@ public class TxnReservedCapacityCounterImpl implements TxnReservedCapacityCounte
      * @throws ReachedMaxSizeException (only when backup is false)
      */
     @Override
-    public void increment(UUID txnId, boolean backup) {
+    public void increment(@Nonnull UUID txnId, boolean backup) {
         reservedCapacityCountByTxId.compute(txnId, (ignored, currentCapacityCount) -> {
             if (backup) {
                 nodeWideUsedCapacityCounter.add(1L);
             } else {
-                nodeWideUsedCapacityCounter.addCapacityOrThrowException(1);
+                nodeWideUsedCapacityCounter.checkAndAddCapacityOrThrowException(1);
             }
             return currentCapacityCount == null ? 1L : (currentCapacityCount + 1L);
         });
     }
 
     /**
-     * Increments 2 counters with reserved capacities per
-     * txnId. One is record-store's reserved capacity
-     * counter and other one is node-wide capacity counter.
+     * Increments 2 counters with supplied txn reserved capacity counts.
+     *
+     * One is record-store's reserved capacity counter
+     * and other one is node-wide capacity counter.
      *
      * Note that this method is only used with migrations
      * and it doesn't throw ReachedMaxSizeException.
      *
-     * @param reservedCapacityPerTxnId reserved capacities per
-     *                                 txnId
+     * @param reservedCapacityPerTxnId reserved capacities per txnId
      */
     @Override
-    public void copy(Map<UUID, Long> reservedCapacityPerTxnId) {
-        if (isNullOrEmpty(reservedCapacityPerTxnId)) {
-            return;
-        }
-
+    public void putAll(@Nonnull Map<UUID, Long> reservedCapacityPerTxnId) {
         for (Long count : reservedCapacityPerTxnId.values()) {
             nodeWideUsedCapacityCounter.add(count);
         }
         reservedCapacityCountByTxId.putAll(reservedCapacityPerTxnId);
+    }
+
+    @Override
+    public boolean hasReservedCapacity(@Nonnull UUID txnId) {
+        return reservedCapacityCountByTxId.containsKey(txnId);
     }
 
     /**
@@ -102,7 +102,7 @@ public class TxnReservedCapacityCounterImpl implements TxnReservedCapacityCounte
      * @param txnId id of transaction
      */
     @Override
-    public void decrement(UUID txnId) {
+    public void decrement(@Nonnull UUID txnId) {
         decrement0(txnId, true);
     }
 
@@ -116,21 +116,12 @@ public class TxnReservedCapacityCounterImpl implements TxnReservedCapacityCounte
     }
 
     @Override
-    public void decrementOnlyReserved(UUID txnId) {
+    public void decrementOnlyReserved(@Nonnull UUID txnId) {
         decrement0(txnId, false);
     }
 
     @Override
-    public boolean hasReservedCapacity(UUID txnId) {
-        if (txnId == null) {
-            return false;
-        }
-
-        return reservedCapacityCountByTxId.containsKey(txnId);
-    }
-
-    @Override
-    public void release() {
+    public void releaseAllReservations() {
         for (Long counter : reservedCapacityCountByTxId.values()) {
             nodeWideUsedCapacityCounter.add(-counter);
         }

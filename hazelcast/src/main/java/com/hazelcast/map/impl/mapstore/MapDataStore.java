@@ -41,6 +41,9 @@ public interface MapDataStore<K, V> {
 
     V addBackup(K key, V value, long expirationTime, long now, UUID transactionId);
 
+    /**
+     * Adds delayed-entry without doing capacity checks.
+     */
     void addForcibly(DelayedEntry<Data, Object> delayedEntry);
 
     void addTransient(K key, long now);

@@ -32,7 +32,6 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -89,7 +88,7 @@ public class TxnReservedCapacityCounterImplTest {
     }
 
     @Test
-    public void copy() {
+    public void putAll() {
         UUID txnId1 = UuidUtil.newSecureUUID();
         UUID txnId2 = UuidUtil.newSecureUUID();
         UUID txnId3 = UuidUtil.newSecureUUID();
@@ -100,7 +99,7 @@ public class TxnReservedCapacityCounterImplTest {
         givenCountPerTxnId.put(txnId3, 13L);
 
         // batch increment with a map of counts.
-        counter.copy(givenCountPerTxnId);
+        counter.putAll(givenCountPerTxnId);
 
         Map<UUID, Long> countPerTxnId = counter.getReservedCapacityCountPerTxnId();
         long count1 = countPerTxnId.get(txnId1);
@@ -114,22 +113,12 @@ public class TxnReservedCapacityCounterImplTest {
     }
 
     @Test
-    public void hasReservedCapacity() {
+    public void releaseAllReservations() {
         UUID txnId = UuidUtil.newSecureUUID();
         for (int i = 0; i < 11; i++) {
             counter.increment(txnId, false);
         }
-
-        assertTrue(counter.hasReservedCapacity(txnId));
-    }
-
-    @Test
-    public void release() {
-        UUID txnId = UuidUtil.newSecureUUID();
-        for (int i = 0; i < 11; i++) {
-            counter.increment(txnId, false);
-        }
-        counter.release();
+        counter.releaseAllReservations();
 
         Map<UUID, Long> countPerTxnId = counter.getReservedCapacityCountPerTxnId();
         assertNull(countPerTxnId.get(txnId));

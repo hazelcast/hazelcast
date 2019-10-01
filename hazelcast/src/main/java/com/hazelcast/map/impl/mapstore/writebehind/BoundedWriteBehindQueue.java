@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -30,15 +32,18 @@ import java.util.List;
  *
  * @see SynchronizedWriteBehindQueue
  */
-class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
+class BoundedWriteBehindQueue<E extends DelayedEntry> implements WriteBehindQueue<E> {
 
-    final WriteBehindQueue<E> queue;
     final NodeWideUsedCapacityCounter nodeWideUsedCapacityCounter;
+
+    private final WriteBehindQueue<E> queue;
+    private final TxnReservedCapacityCounter txnReservedCapacityCounter;
 
     BoundedWriteBehindQueue(WriteBehindQueue<E> queue,
                             NodeWideUsedCapacityCounter nodeWideUsedCapacityCounter) {
         this.queue = queue;
         this.nodeWideUsedCapacityCounter = nodeWideUsedCapacityCounter;
+        this.txnReservedCapacityCounter = new TxnReservedCapacityCounterImpl(nodeWideUsedCapacityCounter);
     }
 
     /**
@@ -55,18 +60,19 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         queue.addFirst(collection);
     }
 
-    /**
-     * Inserts to the end of this queue.
-     *
-     * @param e                      element to be offered
-     * @param capacityReservedBefore
-     */
     @Override
-    public void addLast(E e, boolean capacityReservedBefore) {
-        if (!capacityReservedBefore) {
-            addCapacity(1);
+    public void addLast(E e, boolean addWithoutCapacityCheck) {
+        if (e.getTxnId() != null && txnReservedCapacityCounter.hasReservedCapacity(e.getTxnId())) {
+            txnReservedCapacityCounter.decrementOnlyReserved(e.getTxnId());
+        } else {
+            if (addWithoutCapacityCheck) {
+                nodeWideUsedCapacityCounter.add(1);
+            } else {
+                nodeWideUsedCapacityCounter.checkAndAddCapacityOrThrowException(1);
+            }
         }
-        queue.addLast(e, capacityReservedBefore);
+
+        queue.addLast(e, addWithoutCapacityCheck);
     }
 
     @Override
@@ -133,6 +139,7 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         int size = size();
         queue.clear();
         addCapacity(-size);
+        txnReservedCapacityCounter.releaseAllReservations();
     }
 
     /**
@@ -150,7 +157,19 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         queue.filter(predicate, collection);
     }
 
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (this.getClass().isAssignableFrom(clazz)) {
+            return (T) this;
+        }
+        return queue.unwrap(clazz);
+    }
+
+    public TxnReservedCapacityCounter getTxnReservedCapacityCounter() {
+        return txnReservedCapacityCounter;
+    }
+
     private void addCapacity(int capacity) {
-        nodeWideUsedCapacityCounter.addCapacityOrThrowException(capacity);
+        nodeWideUsedCapacityCounter.checkAndAddCapacityOrThrowException(capacity);
     }
 }

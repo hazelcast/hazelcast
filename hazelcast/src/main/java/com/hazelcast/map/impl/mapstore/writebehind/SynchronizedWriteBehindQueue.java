@@ -50,9 +50,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public void addLast(E e, boolean capacityReservedBefore) {
+    public void addLast(E e, boolean addWithoutCapacityCheck) {
         synchronized (mutex) {
-            queue.addLast(e, capacityReservedBefore);
+            queue.addLast(e, addWithoutCapacityCheck);
         }
     }
 
@@ -119,4 +119,10 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         }
     }
 
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        synchronized (mutex) {
+            return queue.unwrap(clazz);
+        }
+    }
 }

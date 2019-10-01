@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -26,7 +27,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
-import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
@@ -48,6 +48,7 @@ import java.util.UUID;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
+import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.newAddedDelayedEntry;
 
 /**
  * Holder for write-behind-specific state.
@@ -118,7 +119,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
             Map<UUID, Long> reservationsByTxnId = entry.getValue();
             RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
             WriteBehindStore mapDataStore = (WriteBehindStore) recordStore.getMapDataStore();
-            mapDataStore.getTxnReservedCapacityCounter().copy(reservationsByTxnId);
+            mapDataStore.getTxnReservedCapacityCounter().putAll(reservationsByTxnId);
         }
 
         for (Map.Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
@@ -159,6 +160,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
                 out.writeLong(e.getStoreTime());
                 out.writeInt(e.getPartitionId());
                 out.writeLong(e.getSequence());
+                UUIDSerializationUtil.writeUUID(out, e.getTxnId());
             }
         }
 
@@ -202,8 +204,10 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
                 long storeTime = in.readLong();
                 int partitionId = in.readInt();
                 long sequence = in.readLong();
+                UUID txnId = UUIDSerializationUtil.readUUID(in);
 
-                DelayedEntry<Data, Data> entry = DelayedEntries.createDefault(key, value, expirationTime, storeTime, partitionId);
+                DelayedEntry<Data, Data> entry
+                        = newAddedDelayedEntry(key, value, expirationTime, storeTime, partitionId, txnId);
                 entry.setSequence(sequence);
                 delayedEntriesList.add(entry);
             }

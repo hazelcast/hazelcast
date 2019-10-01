@@ -52,7 +52,7 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public void addForcibly(DelayedEntry delayedEntry) {
-
+        throw new IllegalStateException("No addForcibly call is expected from a write-through store!");
     }
 
     @Override

@@ -212,7 +212,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         SerializationService ss1 = new DefaultSerializationServiceBuilder().build();
         long storeTime = Clock.currentTimeMillis();
         for (int i = 0; i < numberOfEntriesToCreate; i++) {
-            final DelayedEntry<Data, Object> e = DelayedEntries.createDeletedEntry(ss1.toData(i), storeTime, i);
+            final DelayedEntry<Data, Object> e = DelayedEntries.newDeletedEntry(ss1.toData(i), storeTime, i, null);
             list.add(e);
         }
         return list;

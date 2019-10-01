@@ -344,7 +344,7 @@ class MapServiceContextImpl implements MapServiceContext {
         while (partitionIterator.hasNext()) {
             RecordStore partition = partitionIterator.next();
             if (predicate.test(partition)) {
-                partition.getMapDataStore().getTxnReservedCapacityCounter().release();
+                partition.getMapDataStore().getTxnReservedCapacityCounter().releaseAllReservations();
             }
         }
     }
