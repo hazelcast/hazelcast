@@ -142,7 +142,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
             sendRequest(remoteOp, address);
         }
 
-        return new QueryHandle(queryId, consumer);
+        return new QueryHandle(queryId, plan, consumer);
     }
 
     @Override

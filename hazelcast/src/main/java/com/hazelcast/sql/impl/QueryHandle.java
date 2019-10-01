@@ -23,11 +23,15 @@ public class QueryHandle {
     /** Query ID. */
     private final QueryId queryId;
 
+    /** Plan. */
+    private final QueryPlan plan;
+
     /** Consumer. */
     private final QueryResultConsumer consumer;
 
-    public QueryHandle(QueryId queryId, QueryResultConsumer consumer) {
+    public QueryHandle(QueryId queryId, QueryPlan plan, QueryResultConsumer consumer) {
         this.queryId = queryId;
+        this.plan = plan;
         this.consumer = consumer;
     }
 
@@ -36,6 +40,13 @@ public class QueryHandle {
      */
     public QueryId getQueryId() {
         return queryId;
+    }
+
+    /**
+     * @return Plan which is used for this query run.
+     */
+    public QueryPlan getPlan() {
+        return plan;
     }
 
     /**

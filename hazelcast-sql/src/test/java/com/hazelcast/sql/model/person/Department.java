@@ -14,36 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql.model.person;
 
-import com.hazelcast.sql.SqlCursor;
-import com.hazelcast.sql.SqlRow;
+import java.io.Serializable;
 
-import javax.annotation.Nonnull;
-import java.util.Iterator;
+public class Department implements Serializable {
+    private static final long serialVersionUID = -6484590695330740654L;
 
-/**
- * Cursor implementation.
- */
-public class SqlCursorImpl implements SqlCursor {
-    /** Handle. */
-    private final QueryHandle handle;
+    private String title;
 
-    public SqlCursorImpl(QueryHandle handle) {
-        this.handle = handle;
+    public Department() {
+        // No-op.
     }
 
-    @Override @Nonnull
-    public Iterator<SqlRow> iterator() {
-        return handle.getConsumer().iterator();
+    public Department(String title) {
+        this.title = title;
     }
 
-    @Override
-    public void close() {
-        handle.close();
-    }
-
-    public QueryHandle getHandle() {
-        return handle;
+    public String getTitle() {
+        return title;
     }
 }

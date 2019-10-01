@@ -23,9 +23,8 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
-import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.sql.model.ModelGenerator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -38,18 +37,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@SuppressWarnings({"serial", "FieldCanBeLocal"})
 public class SqlTest extends HazelcastTestSupport {
-    private static final int CITY_CNT = 2;
-    private static final int DEPARTMENT_CNT = 2;
-    private static final int PERSON_CNT = 10;
-
     private HazelcastInstance member;
     private HazelcastInstance liteMember;
 
@@ -83,33 +76,7 @@ public class SqlTest extends HazelcastTestSupport {
 
         liteMember = nodeFactory.newHazelcastInstance(cfg.setLiteMember(true));
 
-        ReplicatedMap<Long, City> cityMap = member.getReplicatedMap("city");
-        IMap<Long, Department> departmentMap = member.getMap("department");
-        IMap<PersonKey, Person> personMap = member.getMap("person");
-
-        for (int i = 0; i < CITY_CNT; i++) {
-            cityMap.put((long) i, new City("city-" + i));
-        }
-
-        for (int i = 0; i < DEPARTMENT_CNT; i++) {
-            departmentMap.put((long) i, new Department("department-" + i));
-        }
-
-        int age = 40;
-        long salary = 1000;
-
-        for (int i = 0; i < PERSON_CNT; i++) {
-            PersonKey key = new PersonKey(i, i % DEPARTMENT_CNT);
-
-            Person val = new Person(
-                "person-" + i,
-                age++ % 80,
-                salary * (i + 1),
-                i % CITY_CNT
-            );
-
-            personMap.put(key, val);
-        }
+        ModelGenerator.generatePerson(member);
 
         System.out.println(">>> DATA LOAD COMPLETED");
     }
@@ -137,7 +104,7 @@ public class SqlTest extends HazelcastTestSupport {
             "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
         );
 
-        Assert.assertEquals(PERSON_CNT, res.size());
+        Assert.assertEquals(ModelGenerator.PERSON_CNT, res.size());
     }
 
     private List<SqlRow> doQuery(HazelcastInstance target, String sql) {
@@ -159,62 +126,6 @@ public class SqlTest extends HazelcastTestSupport {
 
         for (SqlRow row : rows) {
             System.out.println(">>>\t" + row);
-        }
-    }
-
-    private static class City implements Serializable {
-        private String name;
-
-        City() {
-            // No-op.
-        }
-
-        City(String name) {
-            this.name = name;
-        }
-    }
-
-    private static class Department implements Serializable {
-        private String title;
-
-        Department() {
-            // No-op.
-        }
-
-        Department(String title) {
-            this.title = title;
-        }
-    }
-
-    private static class PersonKey implements Serializable {
-        private long id;
-        private long deptId;
-
-        PersonKey() {
-            // No-op.
-        }
-
-        PersonKey(long id, long deptId) {
-            this.id = id;
-            this.deptId = deptId;
-        }
-    }
-
-    private static class Person implements Serializable {
-        private String name;
-        private int age;
-        private long salary;
-        private long cityId;
-
-        Person() {
-            // No-op.
-        }
-
-        Person(String name, int age, long salary, long cityId) {
-            this.name = name;
-            this.age = age;
-            this.salary = salary;
-            this.cityId = cityId;
         }
     }
 }

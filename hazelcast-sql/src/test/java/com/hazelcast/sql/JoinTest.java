@@ -14,36 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
-
-import com.hazelcast.sql.SqlCursor;
-import com.hazelcast.sql.SqlRow;
-
-import javax.annotation.Nonnull;
-import java.util.Iterator;
+package com.hazelcast.sql;
 
 /**
- * Cursor implementation.
+ * Common test cases for joins.
  */
-public class SqlCursorImpl implements SqlCursor {
-    /** Handle. */
-    private final QueryHandle handle;
-
-    public SqlCursorImpl(QueryHandle handle) {
-        this.handle = handle;
-    }
-
-    @Override @Nonnull
-    public Iterator<SqlRow> iterator() {
-        return handle.getConsumer().iterator();
-    }
-
-    @Override
-    public void close() {
-        handle.close();
-    }
-
-    public QueryHandle getHandle() {
-        return handle;
-    }
+public class JoinTest {
 }
