@@ -2,7 +2,7 @@
 #include <netinet/in.h>
 #include "icmp_helper.h"
 
-JNIEXPORT jboolean JNICALL Java_com_hazelcast_util_ICMPHelper_isRawSocketPermitted0
+JNIEXPORT jboolean JNICALL Java_com_hazelcast_internal_util_ICMPHelper_isRawSocketPermitted0
         (JNIEnv *env, jobject obj)
 {
     jint fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
