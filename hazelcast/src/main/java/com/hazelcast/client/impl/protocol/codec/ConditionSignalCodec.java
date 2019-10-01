@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * document this precondition and any actions taken if the lock is not held. Typically, an exception such as
  * ILLEGAL_MONITOR_STATE will be thrown.
  */
-@Generated("5bad3d10f63f2963fac2ac9c65a5b1ed")
+@Generated("f224039f53d25101339030781a855cda")
 public final class ConditionSignalCodec {
     //hex: 0x080300
     public static final int REQUEST_MESSAGE_TYPE = 525056;
@@ -48,7 +48,7 @@ public final class ConditionSignalCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 525057;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ConditionSignalCodec() {
     }

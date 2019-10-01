@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * For every entry in the key set, the following are called: any registered CacheEntryRemovedListeners if the cache
  * is a write-through cache, the CacheWriter. If the key set is empty, the CacheWriter is not called.
  */
-@Generated("1c75d065e7b8e80aeab440068d60b2b3")
+@Generated("b6d3edf5e5350150e655b9a8494c4c08")
 public final class CacheRemoveAllKeysCodec {
     //hex: 0x150400
     public static final int REQUEST_MESSAGE_TYPE = 1377280;
@@ -46,7 +46,7 @@ public final class CacheRemoveAllKeysCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1377281;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CacheRemoveAllKeysCodec() {
     }

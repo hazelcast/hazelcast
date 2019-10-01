@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("81ed4aadeb5ae2e3cd99c2d2e4e3d049")
+@Generated("8868ccaf6806d50ea0b3991577325bd4")
 public final class FlakeIdGeneratorNewIdBatchCodec {
     //hex: 0x1F0100
     public static final int REQUEST_MESSAGE_TYPE = 2031872;
@@ -44,7 +44,7 @@ public final class FlakeIdGeneratorNewIdBatchCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 2031873;
     private static final int REQUEST_BATCH_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_BASE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_BASE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INCREMENT_FIELD_OFFSET = RESPONSE_BASE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_BATCH_SIZE_FIELD_OFFSET = RESPONSE_INCREMENT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

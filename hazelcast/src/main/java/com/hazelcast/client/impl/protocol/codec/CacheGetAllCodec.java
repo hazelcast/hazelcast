@@ -39,14 +39,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * configured javax.cache.integration.CacheLoader might be called to retrieve the values of the keys from any kind
  * of external resource.
  */
-@Generated("f7666a345ad022c8204a124e49794635")
+@Generated("42ef4bba1de013aa0afb20a9960a0e3e")
 public final class CacheGetAllCodec {
     //hex: 0x150A00
     public static final int REQUEST_MESSAGE_TYPE = 1378816;
     //hex: 0x150A01
     public static final int RESPONSE_MESSAGE_TYPE = 1378817;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CacheGetAllCodec() {
     }

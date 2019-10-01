@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks whether a task is done.
  * @see {@link java.util.concurrent.Future#cancel(boolean)}
  */
-@Generated("a7363b15a9e85ce4aa232b533791455f")
+@Generated("2f99934ac76f88b5e6b11ed2fe600e42")
 public final class ScheduledExecutorIsDoneFromAddressCodec {
     //hex: 0x1D0E00
     public static final int REQUEST_MESSAGE_TYPE = 1904128;
     //hex: 0x1D0E01
     public static final int RESPONSE_MESSAGE_TYPE = 1904129;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private ScheduledExecutorIsDoneFromAddressCodec() {

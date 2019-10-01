@@ -184,14 +184,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * nc.hz/StatICacheName.lastPersistenceWrittenBytes=0,nc.hz/StatICacheName.misses=1,nc.hz/StatICacheName.ownedEntryCount=1,
  * nc.hz/StatICacheName.expirations=0,nc.hz/StatICacheName.ownedEntryMemoryCost=140
  */
-@Generated("20661da74b5268a866d0fc19a35df4ac")
+@Generated("3d0a3cfadc9fb9504b55e61439219a29")
 public final class ClientStatisticsCodec {
     //hex: 0x001000
     public static final int REQUEST_MESSAGE_TYPE = 4096;
     //hex: 0x001001
     public static final int RESPONSE_MESSAGE_TYPE = 4097;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientStatisticsCodec() {
     }

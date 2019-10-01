@@ -96,14 +96,14 @@ public class ScheduledExecutorTaskGetResultFromAddressMessageTask
     /**
      * Exceptions may be wrapped in ExecutionExceptionDecorator, the wrapped ExecutionException should be sent to
      * the client.
+     *
      * @param throwable
      */
     @Override
-    protected void sendClientMessage(Throwable throwable) {
+    protected Throwable peelIfNeeded(Throwable throwable) {
         if (throwable instanceof ScheduledTaskResult.ExecutionExceptionDecorator) {
-            super.sendClientMessage(throwable.getCause());
-        } else {
-            super.sendClientMessage(throwable);
+            throwable = throwable.getCause();
         }
+        return super.peelIfNeeded(throwable);
     }
 }

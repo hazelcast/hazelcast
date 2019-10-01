@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.properties;
 
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -215,6 +216,22 @@ public final class ClientProperty {
      */
     public static final HazelcastProperty HAZELCAST_CLOUD_DISCOVERY_TOKEN =
             new HazelcastProperty("hazelcast.client.cloud.discovery.token");
+
+    /**
+     * If an operation has backups, this property specifies how long the invocation will wait for acks from the backup replicas.
+     * If acks are not received from some backups, there will not be any rollback on other successful replicas.
+     */
+    public static final HazelcastProperty OPERATION_BACKUP_TIMEOUT_MILLIS
+            = new HazelcastProperty("hazelcast.client.operation.backup.timeout.millis", 5000, MILLISECONDS);
+
+    /**
+     * When this configuration is enabled, if an operation has sync backups and acks are not received from backup replicas
+     * in time, or the member which owns primary replica of the target partition leaves the cluster, then the invocation fails
+     * with {@link IndeterminateOperationStateException}. However, even if the invocation fails,
+     * there will not be any rollback on other successful replicas.
+     */
+    public static final HazelcastProperty FAIL_ON_INDETERMINATE_OPERATION_STATE
+            = new HazelcastProperty("hazelcast.client.operation.fail.on.indeterminate.state", false);
 
     private ClientProperty() {
     }

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Releases the lock regardless of the lock owner. It always successfully unlocks, never blocks,
  * and returns immediately.
  */
-@Generated("7586997e0bf4093e2b888b50f2b6846a")
+@Generated("29b002bf4008aaa65aec93f73b25cce6")
 public final class LockForceUnlockCodec {
     //hex: 0x070700
     public static final int REQUEST_MESSAGE_TYPE = 460544;
@@ -45,7 +45,7 @@ public final class LockForceUnlockCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 460545;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private LockForceUnlockCodec() {
     }

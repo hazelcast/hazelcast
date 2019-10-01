@@ -434,6 +434,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
             proxyManager.init(config, clientContext);
             listenerService.start();
+            if (invocationService instanceof SmartClientInvocationService) {
+                ((SmartClientInvocationService) invocationService).addBackupListener();
+            }
             loadBalancer.init(getCluster(), config);
             partitionService.start();
             statistics.start();

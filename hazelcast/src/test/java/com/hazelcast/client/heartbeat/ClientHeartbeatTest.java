@@ -17,9 +17,9 @@
 package com.hazelcast.client.heartbeat;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
@@ -32,14 +32,14 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.map.IMap;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -60,7 +60,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -174,7 +173,6 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         blockMessagesFromInstance(instance2, client);
 
         expectedException.expect(TargetDisconnectedException.class);
-        expectedException.expectMessage(containsString("Heartbeat"));
         map.put(keyOwnedByInstance2, randomString());
     }
 
@@ -192,7 +190,6 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         blockMessagesFromInstance(instance2, client);
 
         expectedException.expect(TargetDisconnectedException.class);
-        expectedException.expectMessage(containsString("Heartbeat"));
         try {
             map.putAsync(keyOwnedByInstance2, randomString()).get();
         } catch (ExecutionException e) {

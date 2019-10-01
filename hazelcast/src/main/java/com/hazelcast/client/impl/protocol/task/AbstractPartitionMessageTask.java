@@ -65,6 +65,9 @@ public abstract class AbstractPartitionMessageTask<P> extends AbstractMessageTas
     public final void processMessage() {
         beforeProcess();
         Operation op = prepareOperation();
+        if (ClientMessage.isFlagSet(clientMessage.getHeaderFlags(), ClientMessage.BACKUP_AWARE_FLAG)) {
+            op.setClientCallId(clientMessage.getCorrelationId());
+        }
         op.setCallerUuid(endpoint.getUuid());
         ICompletableFuture f = nodeEngine.getOperationService()
                 .createInvocationBuilder(getServiceName(), op, getPartitionId())

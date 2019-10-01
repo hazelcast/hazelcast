@@ -16,21 +16,23 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
+import com.hazelcast.client.impl.ClientBackupService;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
@@ -58,12 +60,17 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
 
     private transient Throwable validationFailure;
     private transient boolean backupOperationInitialized;
+    private long clientCorrelationId;
 
     public Backup() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
+        this(backupOp, originalCaller, replicaVersions, sync, -1);
+    }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync, long clientCorrelationId) {
         this.backupOp = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
@@ -72,10 +79,16 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation: "
                     + backupOp);
         }
+        this.clientCorrelationId = clientCorrelationId;
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync) {
+        this(backupOpData, originalCaller, replicaVersions, sync, -1);
+    }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync, long clientCorrelationId) {
         this.backupOpData = backupOpData;
         this.originalCaller = originalCaller;
         this.sync = sync;
@@ -84,6 +97,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation data: "
                     + backupOpData);
         }
+        this.clientCorrelationId = clientCorrelationId;
     }
 
     public Operation getBackupOp() {
@@ -172,12 +186,17 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         long callId = getCallId();
         OperationServiceImpl operationService = nodeEngine.getOperationService();
 
-        if (nodeEngine.getThisAddress().equals(originalCaller)) {
+        if (clientCorrelationId != -1) {
+            //prevent backup acking to caller if caller is client, instead fire event
+            EventService eventService = getNodeEngine().getEventService();
+            String serviceName = ClientBackupService.SERVICE_NAME;
+            eventService.publishEvent(serviceName, serviceName, clientCorrelationId, -1);
+        } else if (nodeEngine.getThisAddress().equals(originalCaller)) {
             operationService.getBackupHandler().notifyBackupComplete(callId);
         } else {
             operationService.getOutboundResponseHandler()
-                            .sendBackupAck(getConnection().getEndpointManager(),
-                                    originalCaller, callId, backupOp.isUrgent());
+                    .sendBackupAck(getConnection().getEndpointManager(),
+                            originalCaller, callId, backupOp.isUrgent());
         }
     }
 
@@ -259,6 +278,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         }
 
         out.writeBoolean(sync);
+        out.writeLong(clientCorrelationId);
     }
 
     @Override
@@ -281,6 +301,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         }
 
         sync = in.readBoolean();
+        clientCorrelationId = in.readLong();
     }
 
     @Override

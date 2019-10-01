@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("150c79df4a47df10afd9dd30d15e2acd")
+@Generated("dad1d0383a58592e460f738c7b3e6070")
 public final class CacheAssignAndGetUuidsCodec {
     //hex: 0x152000
     public static final int REQUEST_MESSAGE_TYPE = 1384448;
     //hex: 0x152001
     public static final int RESPONSE_MESSAGE_TYPE = 1384449;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CacheAssignAndGetUuidsCodec() {
     }
