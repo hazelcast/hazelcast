@@ -16,21 +16,13 @@
 
 package com.hazelcast.sql;
 
-import com.hazelcast.config.AttributeConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.sql.model.ModelGenerator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,49 +36,15 @@ import java.util.List;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTest extends HazelcastTestSupport {
     private HazelcastInstance member;
-    private HazelcastInstance liteMember;
 
     @Before
     public void before() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
-        Config cfg = new Config();
-
-        ReplicatedMapConfig cityCfg = new ReplicatedMapConfig("city");
-        cityCfg.setAsyncFillup(false);
-
-        MapConfig departmentCfg = new MapConfig("department");
-
-        MapConfig personCfg = new MapConfig("person");
-
-        personCfg.setPartitioningStrategyConfig(
-            new PartitioningStrategyConfig().setPartitioningStrategy(
-                new DeclarativePartitioningStrategy().setField("deptId")
-            )
-        );
-
-        personCfg.addAttributeConfig(new AttributeConfig().setName("deptId").setPath("__key.deptId"));
-
-        cfg.addReplicatedMapConfig(cityCfg);
-        cfg.addMapConfig(departmentCfg);
-        cfg.addMapConfig(personCfg);
-
-        member = nodeFactory.newHazelcastInstance(cfg);
-        nodeFactory.newHazelcastInstance(cfg);
-
-        liteMember = nodeFactory.newHazelcastInstance(cfg.setLiteMember(true));
+        member = nodeFactory.newHazelcastInstance();
+        nodeFactory.newHazelcastInstance();
 
         ModelGenerator.generatePerson(member);
-
-        System.out.println(">>> DATA LOAD COMPLETED");
-    }
-
-    @After
-    public void after() {
-        member = null;
-        liteMember = null;
-
-        Hazelcast.shutdownAll();
     }
 
     @Test(timeout = Long.MAX_VALUE)

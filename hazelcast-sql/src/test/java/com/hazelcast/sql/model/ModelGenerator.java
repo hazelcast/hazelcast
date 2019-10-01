@@ -16,8 +16,13 @@
 
 package com.hazelcast.sql.model;
 
+import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.sql.model.person.City;
 import com.hazelcast.sql.model.person.Department;
@@ -37,6 +42,27 @@ public class ModelGenerator {
     }
 
     public static void generatePerson(HazelcastInstance member) {
+        // Prepare config.
+        ReplicatedMapConfig cityCfg = new ReplicatedMapConfig("city");
+        cityCfg.setAsyncFillup(false);
+
+        MapConfig departmentCfg = new MapConfig("department");
+
+        MapConfig personCfg = new MapConfig("person");
+
+        personCfg.setPartitioningStrategyConfig(
+            new PartitioningStrategyConfig().setPartitioningStrategy(
+                new DeclarativePartitioningStrategy().setField("deptId")
+            )
+        );
+
+        personCfg.addAttributeConfig(new AttributeConfig().setName("deptId").setPath("__key.deptId"));
+
+        member.getConfig().addReplicatedMapConfig(cityCfg);
+        member.getConfig().addMapConfig(departmentCfg);
+        member.getConfig().addMapConfig(personCfg);
+
+        // Populate data.
         ReplicatedMap<Long, City> cityMap = member.getReplicatedMap("city");
         IMap<Long, Department> departmentMap = member.getMap("department");
         IMap<PersonKey, Person> personMap = member.getMap("person");
