@@ -53,7 +53,7 @@ public class QueryHandle {
      * Close the handle.
      */
     public void close() {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        // TODO: Implement me. Should trigger cancel.
     }
 
     public QueryResultConsumer getConsumer() {

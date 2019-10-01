@@ -18,10 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.SqlCursorImpl;
-import com.hazelcast.sql.model.ModelGenerator;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +33,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return (SqlCursorImpl) cursor;
     }
 
-    protected List<SqlRow> getQueryRows(HazelcastInstance target, String sql) {
-        SqlCursor cursor = executeQuery(target, sql);
-
+    protected List<SqlRow> getQueryRows(SqlCursor cursor) {
         List<SqlRow> rows = new ArrayList<>();
 
         for (SqlRow row : cursor) {
@@ -46,5 +41,13 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
 
         return rows;
+    }
+
+    protected List<SqlRow> getQueryRows(HazelcastInstance target, String sql) {
+        try (SqlCursor cursor = executeQuery(target, sql)) {
+            return getQueryRows(cursor);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to execute query and get result set rows: " + sql, e);
+        }
     }
 }

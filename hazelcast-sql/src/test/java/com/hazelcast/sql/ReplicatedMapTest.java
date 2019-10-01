@@ -18,12 +18,15 @@ package com.hazelcast.sql;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.model.ModelGenerator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,11 +56,29 @@ public class ReplicatedMapTest extends SqlTestSupport {
 
     @Test
     public void testReplicatedProject() {
-        List<SqlRow> rows = getQueryRows(
-            member,
-            "SELECT name FROM city"
-        );
+        try (SqlCursorImpl cursor = executeQuery(member, "SELECT name FROM city")) {
+            QueryPlan plan = cursor.getHandle().getPlan();
 
-        assertEquals(ModelGenerator.CITY_CNT, rows.size());
+            assertEquals(1, plan.getFragments().size());
+
+            List<SqlRow> rows = getQueryRows(cursor);
+
+            assertEquals(ModelGenerator.CITY_CNT, rows.size());
+        }
+    }
+
+    @Test
+    @Ignore
+    // TODO: Support replicated map descriptors on lite member?
+    public void testReplicatedProjectLite() {
+        try (SqlCursorImpl cursor = executeQuery(liteMember, "SELECT name FROM city")) {
+            QueryPlan plan = cursor.getHandle().getPlan();
+
+            assertEquals(2, plan.getFragments().size());
+
+            List<SqlRow> rows = getQueryRows(cursor);
+
+            assertEquals(ModelGenerator.CITY_CNT, rows.size());
+        }
     }
 }
