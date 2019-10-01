@@ -692,14 +692,18 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         if (cascadeException(value, future)) {
             return future;
         }
-        executor.execute(() -> {
-            try {
-                consumer.accept((V) value);
-                future.complete(null);
-            } catch (Throwable t) {
-                future.completeExceptionally(t);
-            }
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    consumer.accept((V) value);
+                    future.complete(null);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            future.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
         return future;
     }
 
@@ -792,9 +796,18 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         if (cascadeException(value, future)) {
             return future;
         }
-        executor.execute(() -> {
-            future.complete(function.apply((V) value));
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    U result = function.apply((V) value);
+                    future.complete(result);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            future.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
         return future;
     }
 
@@ -822,14 +835,18 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             value = (V) result;
         }
 
-        executor.execute(() -> {
-            try {
-                U r = fn.apply(value, throwable);
-                future.complete(r);
-            } catch (Throwable t) {
-                future.completeExceptionally(t);
-            }
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    U r = fn.apply(value, throwable);
+                    future.complete(r);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            future.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
     }
 
     protected void unblockWhenComplete(@Nonnull final BiConsumer<? super V, ? super Throwable> biConsumer,
@@ -845,15 +862,20 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             throwable = null;
             value = (V) result;
         }
-        executor.execute(() -> {
-            try {
-                biConsumer.accept((V) value, throwable);
-            } catch (Throwable t) {
-                completeDependentExceptionally(future, throwable, t);
-                return;
-            }
-            completeDependent(future, value, throwable);
-        });
+
+        try {
+            executor.execute(() -> {
+                try {
+                    biConsumer.accept((V) value, throwable);
+                } catch (Throwable t) {
+                    completeDependentExceptionally(future, throwable, t);
+                    return;
+                }
+                completeDependent(future, value, throwable);
+            });
+        } catch (RejectedExecutionException e) {
+            future.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
     }
 
     @Override
@@ -894,20 +916,24 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             return;
         }
         final V res = (V) result;
-        executor.execute(() -> {
-            try {
-                CompletionStage<U> r = function.apply(res);
-                r.whenComplete((v, t) -> {
-                    if (t == null) {
-                        future.complete(v);
-                    } else {
-                        future.completeExceptionally(t);
-                    }
-                });
-            } catch (Throwable t) {
-                future.completeExceptionally(t);
-            }
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    CompletionStage<U> r = function.apply(res);
+                    r.whenComplete((v, t) -> {
+                        if (t == null) {
+                            future.complete(v);
+                        } else {
+                            future.completeExceptionally(t);
+                        }
+                    });
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            future.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
@@ -952,14 +978,18 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             return;
         }
         U otherValue = otherFuture.join();
-        executor.execute(() -> {
-            try {
-                R r = function.apply(value, otherValue);
-                future.complete(r);
-            } catch (Throwable t) {
-                future.completeExceptionally(t);
-            }
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    R r = function.apply(value, otherValue);
+                    future.complete(r);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            future.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
@@ -996,14 +1026,18 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             return;
         }
         U otherValue = otherFuture.join();
-        executor.execute(() -> {
-            try {
-                action.accept((V) value, otherValue);
-                future.complete(null);
-            } catch (Throwable t) {
-                future.completeExceptionally(t);
-            }
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    action.accept((V) value, otherValue);
+                    future.complete(null);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            future.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
     }
 
     private void unblockRunAfterBoth(@Nonnull CompletableFuture<?> otherFuture,
@@ -1200,14 +1234,18 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     private CompletableFuture<Void> runAfter0(@Nonnull CompletableFuture<Void> result,
                                               @Nonnull Runnable action,
                                               @Nonnull Executor executor) {
-        executor.execute(() -> {
-            try {
-                action.run();
-                result.complete(null);
-            } catch (Throwable t) {
-                result.completeExceptionally(t);
-            }
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    action.run();
+                    result.complete(null);
+                } catch (Throwable t) {
+                    result.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            result.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
         return result;
     }
 
@@ -1215,14 +1253,18 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                                                  @Nonnull Consumer<? super V> consumer,
                                                  @Nonnull Executor executor,
                                                  V value) {
-        executor.execute(() -> {
-            try {
-                consumer.accept(value);
-                result.complete(null);
-            } catch (Throwable t) {
-                result.completeExceptionally(t);
-            }
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    consumer.accept(value);
+                    result.complete(null);
+                } catch (Throwable t) {
+                    result.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            result.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
         return result;
     }
 
@@ -1230,13 +1272,17 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                                               @Nonnull Function<? super V, U> consumer,
                                               @Nonnull Executor executor,
                                               V value) {
-        executor.execute(() -> {
-            try {
-                future.complete(consumer.apply(value));
-            } catch (Throwable t) {
-                future.completeExceptionally(t);
-            }
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    future.complete(consumer.apply(value));
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            future.completeExceptionally(wrapToInstanceNotActiveException(e));
+        }
         return future;
     }
 
