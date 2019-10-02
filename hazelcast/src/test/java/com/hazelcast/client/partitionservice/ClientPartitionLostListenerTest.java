@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,7 +33,6 @@ import com.hazelcast.partition.PartitionLostListenerStressTest.EventCollectingPa
 import com.hazelcast.spi.impl.PortablePartitionLostEvent;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -113,7 +113,7 @@ public class ClientPartitionLostListenerTest {
 
         final InternalPartitionServiceImpl partitionService = getNode(instance).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
-        partitionService.onPartitionLost(new IPartitionLostEvent(partitionId, 0, null));
+        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
 
         assertPartitionLostEventEventually(listener, partitionId);
     }
@@ -141,7 +141,7 @@ public class ClientPartitionLostListenerTest {
 
         final InternalPartitionServiceImpl partitionService = getNode(other).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
-        partitionService.onPartitionLost(new IPartitionLostEvent(partitionId, 0, null));
+        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
 
         assertPartitionLostEventEventually(listener, partitionId);
     }

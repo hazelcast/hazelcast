@@ -19,10 +19,11 @@ package com.hazelcast.client.partitionservice;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -95,16 +96,22 @@ public class PartitionServiceProxyTest {
     }
 
     class DumMigrationListener implements MigrationListener {
+
         @Override
-        public void migrationStarted(MigrationEvent migrationEvent) {
+        public void migrationStarted(MigrationState state) {
         }
 
         @Override
-        public void migrationCompleted(MigrationEvent migrationEvent) {
+        public void migrationFinished(MigrationState state) {
         }
 
         @Override
-        public void migrationFailed(MigrationEvent migrationEvent) {
+        public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
+        }
+
+        @Override
+        public void replicaMigrationFailed(ReplicaMigrationEvent event) {
+
         }
     }
 }

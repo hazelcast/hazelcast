@@ -19,7 +19,7 @@ package com.hazelcast.partition;
 /**
  * PartitionEvent is a base interface for partition related events.
  *
- * @see MigrationEvent
+ * @see ReplicaMigrationEvent
  * @see PartitionLostEvent
  */
 public interface PartitionEvent {

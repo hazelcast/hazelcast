@@ -23,6 +23,7 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
@@ -634,7 +635,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ScheduledTaskHandler handler = future.getHandler();
 
         int partitionOwner = handler.getPartitionId();
-        IPartitionLostEvent internalEvent = new IPartitionLostEvent(partitionOwner, replicaLostCount, null);
+        IPartitionLostEvent internalEvent = new PartitionLostEventImpl(partitionOwner, replicaLostCount, null);
         ((InternalPartitionServiceImpl) getNodeEngineImpl(instances[0]).getPartitionService()).onPartitionLost(internalEvent);
 
         assertTrueEventually(() -> {

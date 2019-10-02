@@ -47,7 +47,7 @@ class PublishPartitionRuntimeStateTask implements Runnable {
             }
 
             if (migrationManager.hasOnGoingMigration()) {
-                logger.info("Remaining migration tasks in queue => " + partitionService.getMigrationQueueSize()
+                logger.info("Remaining migration tasks: " + partitionService.getMigrationQueueSize()
                     + ". (" + migrationManager.getStats().formatToString(logger.isFineEnabled()) + ")");
             } else if (node.getState() == NodeState.ACTIVE) {
                 partitionService.checkClusterPartitionRuntimeStates();
