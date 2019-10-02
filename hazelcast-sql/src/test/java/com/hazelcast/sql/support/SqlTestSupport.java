@@ -62,7 +62,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected static void assertPlan(QueryFragment fragment, PhysicalPlanChecker checker) {
+    protected static void assertFragment(QueryFragment fragment, PhysicalPlanChecker checker) {
         checker.checkPlan(fragment.getNode());
     }
 

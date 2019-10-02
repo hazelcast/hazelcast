@@ -79,7 +79,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
 
             assertEquals(1, plan.getFragments().size());
 
-            assertPlan(
+            assertFragment(
                 plan.getFragments().get(0),
                 PhysicalPlanChecker.newBuilder()
                     .addReplicatedMapScan(ModelGenerator.CITY, expressions(keyValueExtractorExpression("name")), null)
@@ -100,7 +100,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
     }
 
     @Test
-    public void testReplicatedFilter() {
+    public void testReplicatedProjectFilter() {
         ReplicatedMap<Long, City> cityMap = member.getReplicatedMap(ModelGenerator.CITY);
 
         Map.Entry<Long, City> city = cityMap.entrySet().iterator().next();
