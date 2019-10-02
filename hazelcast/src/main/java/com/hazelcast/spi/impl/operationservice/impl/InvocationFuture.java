@@ -110,8 +110,6 @@ public final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
                 throw (ExecutionException) cause;
             } else if (cause instanceof InterruptedException) {
                 throw (InterruptedException) cause;
-            } else if (cause instanceof Error) {
-                throw (Error) cause;
             } else {
                 throw new ExecutionException(cause);
             }

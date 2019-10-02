@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.annotation.Nonnull;
@@ -25,6 +26,8 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiConsumer;
+
+import static com.hazelcast.spi.impl.AbstractInvocationFuture.wrapOrPeel;
 
 /**
  * An extension to {@link CompletableFuture} supporting a {@code joinInternal()}
@@ -52,7 +55,7 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
             return join();
         } catch (CompletionException e) {
             Throwable cause = e.getCause();
-            throw AbstractInvocationFuture.wrapOrPeel(cause);
+            throw ExceptionUtil.sneakyThrow(wrapOrPeel(cause));
         }
     }
 

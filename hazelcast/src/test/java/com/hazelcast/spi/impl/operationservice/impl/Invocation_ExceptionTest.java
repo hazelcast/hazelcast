@@ -72,6 +72,9 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                 // CheckedException is wrapped in HazelcastException
                 new Object[] {JOIN_INTERNAL, new Exception("message"), HazelcastException.class,
                               new RootCauseMatcher(Exception.class, "message")},
+                // OOME is wrapped in OOME
+                new Object[] {JOIN_INTERNAL, new OutOfMemoryError("message"), OutOfMemoryError.class,
+                              new RootCauseMatcher(OutOfMemoryError.class, "message")},
 
                 //// join()
                 // RuntimeException with a constructor accepting a Throwable cause
@@ -91,6 +94,9 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                 // CheckedException is wrapped in HazelcastException
                 new Object[] {JOIN, new Exception("message"), CompletionException.class,
                               new RootCauseMatcher(Exception.class, "message")},
+                // OOME is wrapped in OOME
+                new Object[] {JOIN, new OutOfMemoryError("message"), CompletionException.class,
+                              new RootCauseMatcher(OutOfMemoryError.class, "message")},
 
                 //// get()
                 // RuntimeException with a constructor accepting a Throwable cause
@@ -110,6 +116,10 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                 // CheckedException is wrapped in HazelcastException
                 new Object[] {GET, new Exception("message"), ExecutionException.class,
                               new RootCauseMatcher(Exception.class, "message")},
+                // OOME is wrapped in OOME
+                new Object[] {GET, new OutOfMemoryError("message"), ExecutionException.class,
+                              new RootCauseMatcher(OutOfMemoryError.class, "message")},
+
         };
     }
 

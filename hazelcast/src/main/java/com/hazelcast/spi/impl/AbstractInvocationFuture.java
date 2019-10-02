@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.executor.UnblockableThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.WrappableException;
@@ -49,7 +50,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrowIfError;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 import static java.util.concurrent.locks.LockSupport.park;
@@ -567,7 +568,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         if (!(resolved instanceof ExceptionalResult)) {
             return (V) resolved;
         } else {
-            throw ((ExceptionalResult) resolved).wrapForJoinInternal();
+            throw sneakyThrow(((ExceptionalResult) resolved).wrapForJoinInternal());
         }
     }
 
@@ -733,7 +734,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             return (V) resolved;
         }
         Throwable cause = ((ExceptionalResult) resolved).cause;
-        rethrowIfError(cause);
         if (cause instanceof CancellationException) {
             throw (CancellationException) cause;
         } else if (cause instanceof CompletionException) {
@@ -1358,19 +1358,18 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
          *         with a non-null cause, then unwrap and apply the rules for the cause
          *     </li>
          *     <li>
+         *         if cause is an {@link Error}, then it is wrapped in an {@link Error} of the same class
+         *         with a local stack trace.
+         *     </li>
+         *     <li>
          *         otherwise, wrap cause in a {@link HazelcastException} reporting the local stack trace,
          *         while the remote stack trace is reported in its cause exception.
          *     </li>
-         *     TODO consider handling of Error instances
-         *      <li>if {@link cause} is an instance of {@link Error}, then ??? (OutOfMemory and StackOverflowErrors
-         *          no cause-constructor so need to be wrapped in something else -> handlers expecting OutOfMemoryError
-         *          won't find it there... but is it possible that the async side propagates an OutOfMemoryError??)</li>
-         *
          * </ul>
          *
          * @return
          */
-        public RuntimeException wrapForJoinInternal() {
+        public Throwable wrapForJoinInternal() {
             return wrapOrPeel(cause);
         }
 
@@ -1858,9 +1857,9 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         E resolveAndThrowIfException(Object unresolved) throws ExecutionException, InterruptedException;
     }
 
-    static RuntimeException wrapOrPeel(Throwable cause) {
+    static Throwable wrapOrPeel(Throwable cause) {
         if (cause instanceof CancellationException || cause instanceof OperationTimeoutException) {
-            return (RuntimeException) cause;
+            return cause;
         }
         if (cause instanceof RuntimeException) {
             return wrapRuntimeException((RuntimeException) cause);
@@ -1869,6 +1868,12 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 && cause.getCause() != null) {
             return wrapOrPeel(cause.getCause());
         }
+        if (cause instanceof Error) {
+            if (cause instanceof OutOfMemoryError) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) cause);
+            }
+            return wrapError((Error) cause);
+        }
         return new HazelcastException(cause);
     }
 
@@ -1876,25 +1881,35 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         if (cause instanceof WrappableException) {
             return  ((WrappableException) cause).wrap();
         }
+        RuntimeException wrapped = tryWrapInSameClass(cause);
+        return wrapped == null ?  new HazelcastException(cause) : wrapped;
+    }
+
+    private static Error wrapError(Error cause) {
+        Error result = tryWrapInSameClass(cause);
+        return result == null ? cause : result;
+    }
+
+    private static <T extends Throwable> T tryWrapInSameClass(T cause) {
         Class<? extends Throwable> exceptionClass = cause.getClass();
         MethodHandle constructor;
         try {
             constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING_THROWABLE);
-            return (RuntimeException) constructor.invokeWithArguments(cause.getMessage(), cause);
+            return (T) constructor.invokeWithArguments(cause.getMessage(), cause);
         } catch (Throwable ignored) {
         }
         try {
             constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_THROWABLE);
-            return (RuntimeException) constructor.invokeWithArguments(cause);
+            return (T) constructor.invokeWithArguments(cause);
         } catch (Throwable ignored) {
         }
         try {
             constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
-            RuntimeException result = (RuntimeException) constructor.invokeWithArguments(cause.getMessage());
+            T result = (T) constructor.invokeWithArguments(cause.getMessage());
             result.initCause(cause);
             return result;
         } catch (Throwable ignored) {
         }
-        return new HazelcastException(cause);
+        return null;
     }
 }

@@ -35,6 +35,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+
 /**
  * A {@link InternalCompletableFuture} implementation that delegates the real logic to an underlying
  * {@link InternalCompletableFuture} and decorates it with additional behavior:
@@ -121,7 +123,7 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
                 return resolve(future.join());
             } catch (CompletionException e) {
                 Throwable cause = e.getCause();
-                throw AbstractInvocationFuture.wrapOrPeel(cause);
+                throw sneakyThrow(AbstractInvocationFuture.wrapOrPeel(cause));
             }
         }
     }
