@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigRequestCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigRequestCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.ClusterStateHolder;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.MapConfig;
@@ -41,7 +42,7 @@ public class ManagementCenterService {
     public ClientDelegatingFuture<Void> changeClusterState(ClusterState newState) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCChangeClusterStateRequestCodec.encodeRequest(serializationService.toData(newState)),
+                MCChangeClusterStateRequestCodec.encodeRequest(new ClusterStateHolder(newState)),
                 null
         );
         return new ClientDelegatingFuture<>(

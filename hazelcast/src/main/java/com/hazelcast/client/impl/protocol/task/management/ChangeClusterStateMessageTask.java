@@ -55,8 +55,7 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ChangeClusterStateOperation(
-                serializationService.toObject(parameters.newState));
+        return new ChangeClusterStateOperation(parameters.newState.getState());
     }
 
     @Override

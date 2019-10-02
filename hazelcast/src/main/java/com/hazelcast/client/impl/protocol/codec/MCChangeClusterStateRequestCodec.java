@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the state of a cluster.
  */
-@Generated("0ec9262240a5c7a77f71e003f4593a89")
+@Generated("4953785f40708eadbcd603b7b10f5cd3")
 public final class MCChangeClusterStateRequestCodec {
     //hex: 0x280100
     public static final int REQUEST_MESSAGE_TYPE = 2621696;
@@ -54,10 +54,10 @@ public final class MCChangeClusterStateRequestCodec {
         /**
          * New state of the cluster.
          */
-        public com.hazelcast.nio.serialization.Data newState;
+        public com.hazelcast.client.impl.protocol.codec.holder.ClusterStateHolder newState;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.nio.serialization.Data newState) {
+    public static ClientMessage encodeRequest(com.hazelcast.client.impl.protocol.codec.holder.ClusterStateHolder newState) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -65,7 +65,7 @@ public final class MCChangeClusterStateRequestCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
-        DataCodec.encode(clientMessage, newState);
+        ClusterStateHolderCodec.encode(clientMessage, newState);
         return clientMessage;
     }
 
@@ -74,7 +74,7 @@ public final class MCChangeClusterStateRequestCodec {
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.newState = DataCodec.decode(iterator);
+        request.newState = ClusterStateHolderCodec.decode(iterator);
         return request;
     }
 
