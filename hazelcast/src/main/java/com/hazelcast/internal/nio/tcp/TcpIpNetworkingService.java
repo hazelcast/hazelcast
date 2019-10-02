@@ -25,24 +25,24 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
-import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.nio.DefaultAggregateEndpointManager;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.UnifiedAggregateEndpointManager;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -63,7 +63,7 @@ public class TcpIpNetworkingService
 
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
-    private final AtomicBoolean metricsRegistryScheduled = new AtomicBoolean(false);
+    private volatile ScheduledFuture refreshStatsFuture;
     private final ServerSocketRegistry registry;
 
     private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers =
@@ -181,10 +181,7 @@ public class TcpIpNetworkingService
         startAcceptor();
 
         if (unifiedEndpointManager == null) {
-            if (metricsRegistryScheduled.compareAndSet(false, true)) {
-                // TODO use returned future
-                metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
-            }
+            refreshStatsFuture = metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
             aggregateEndpointManager.getInboundNetworkStats().registerMetrics(metricsRegistry, "tcp.bytesReceived");
             aggregateEndpointManager.getOutboundNetworkStats().registerMetrics(metricsRegistry, "tcp.bytesSend");
         }
@@ -199,6 +196,10 @@ public class TcpIpNetworkingService
         logger.finest("Stopping Networking Service");
 
         if (unifiedEndpointManager == null) {
+            if (refreshStatsFuture != null) {
+                refreshStatsFuture.cancel(false);
+                refreshStatsFuture = null;
+            }
             metricsRegistry.deregister(aggregateEndpointManager.getInboundNetworkStats());
             metricsRegistry.deregister(aggregateEndpointManager.getOutboundNetworkStats());
         }
