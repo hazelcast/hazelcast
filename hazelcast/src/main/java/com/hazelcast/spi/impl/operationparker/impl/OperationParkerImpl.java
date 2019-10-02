@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -47,7 +47,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, MetricsProvider {
+public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, StaticMetricsProvider {
 
     private static final long FIRST_WAIT_TIME = 1000;
 
@@ -76,8 +76,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation-parker");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "operation-parker");
     }
 
     @Override

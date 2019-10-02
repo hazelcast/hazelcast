@@ -59,15 +59,12 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testRunWithProblematicProbe() {
-        metricsRegistry.register(this, "broken", MANDATORY, new LongProbeFunction() {
-            @Override
-            public long get(Object source) {
-                throw new RuntimeException("error");
-            }
+        metricsRegistry.registerStaticProbe(this, "broken", MANDATORY, (LongProbeFunction) source -> {
+            throw new RuntimeException("error");
         });
 
         plugin.run(logWriter);
-        assertContains("broken=java.lang.RuntimeException:error");
+        assertContains("[metric=broken]=java.lang.RuntimeException:error");
     }
 
     @Test
@@ -75,7 +72,7 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
         plugin.run(logWriter);
 
         // we just test a few to make sure the metrics are written
-        assertContains("client.endpoint.count=0");
-        assertContains("operation.responseQueueSize=0");
+        assertContains("[unit=count,metric=client.endpoint.count]=0");
+        assertContains("[unit=count,metric=operation.responseQueueSize]=0");
     }
 }

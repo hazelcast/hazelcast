@@ -16,17 +16,19 @@
 
 package com.hazelcast.internal.nio.tcp;
 
-import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.metrics.MetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricsExtractor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.SelectorMode;
+import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.IOService;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -39,9 +41,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
@@ -56,7 +58,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * of the 'client' side of a connection and the {@link TcpIpAcceptor} is the 'server' side of a connection (each connection
  * has a client and server-side
  */
-public class TcpIpAcceptor implements MetricsProvider {
+public class TcpIpAcceptor implements DynamicMetricsProvider {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
     private static final long SELECT_TIMEOUT_MILLIS = SECONDS.toMillis(60);
     private static final int SELECT_IDLE_COUNT_THRESHOLD = 10;
@@ -76,7 +78,7 @@ public class TcpIpAcceptor implements MetricsProvider {
     // last time select returned
     private volatile long lastSelectTimeMs;
 
-    // When true, enables workaround for bug occuring when SelectorImpl.select returns immediately
+    // When true, enables workaround for bug occurring when SelectorImpl.select returns immediately
     // with no channels selected, resulting in 100% CPU usage while doing no progress.
     // See issue: https://github.com/hazelcast/hazelcast/issues/7943
     private final boolean selectorWorkaround = (SelectorMode.getConfiguredValue() == SELECT_WITH_FIX);
@@ -84,8 +86,7 @@ public class TcpIpAcceptor implements MetricsProvider {
     private volatile boolean stop;
     private volatile Selector selector;
 
-    private final Set<SelectionKey> selectionKeys
-            = newSetFromMap(new ConcurrentHashMap<SelectionKey, Boolean>());
+    private final Set<SelectionKey> selectionKeys = newSetFromMap(new ConcurrentHashMap<>());
 
     TcpIpAcceptor(ServerSocketRegistry registry, TcpIpNetworkingService networkingService, IOService ioService) {
         this.registry = registry;
@@ -103,13 +104,6 @@ public class TcpIpAcceptor implements MetricsProvider {
     @Probe
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.newProbeBuilder("tcp.acceptor")
-                .withTag("thread", acceptorThread.getName())
-                .scanAndRegister(this);
     }
 
     public TcpIpAcceptor start() {
@@ -135,6 +129,13 @@ public class TcpIpAcceptor implements MetricsProvider {
             currentThread().interrupt();
             logger.finest(e);
         }
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+        MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.acceptor")
+                                            .withIdTag("thread", acceptorThread.getName());
+        extractor.extractMetrics(tagger, this);
     }
 
     private final class AcceptorIOThread extends Thread {
@@ -301,12 +302,7 @@ public class TcpIpAcceptor implements MetricsProvider {
                 }
                 if (ioService.isSocketInterceptorEnabled(qualifier)) {
                     final TcpIpEndpointManager finalEndpointManager = endpointManager;
-                    ioService.executeAsync(new Runnable() {
-                        @Override
-                        public void run() {
-                            configureAndAssignSocket(finalEndpointManager, theChannel);
-                        }
-                    });
+                    ioService.executeAsync(() -> configureAndAssignSocket(finalEndpointManager, theChannel));
                 } else {
                     configureAndAssignSocket(endpointManager, theChannel);
                 }

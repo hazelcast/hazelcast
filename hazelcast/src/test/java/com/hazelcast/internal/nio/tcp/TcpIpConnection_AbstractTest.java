@@ -17,20 +17,16 @@
 package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.Select_NioNetworkingFactory;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -135,18 +131,14 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         ServerSocketRegistry registry = new ServerSocketRegistry(singletonMap(MEMBER, ioService.serverSocketChannel), true);
 
         final MockIOService finalIoService = ioService;
-        return new TcpIpNetworkingService(null,
+        TcpIpNetworkingService tcpIpNetworkingService = new TcpIpNetworkingService(null,
                 ioService,
                 registry,
                 ioService.loggingService,
                 metricsRegistry,
                 networkingFactory.create(ioService, metricsRegistry),
-                new ChannelInitializerProvider() {
-                    @Override
-                    public ChannelInitializer provide(EndpointQualifier qualifier) {
-                        return new UnifiedChannelInitializer(finalIoService);
-                    }
-                });
+                qualifier -> new UnifiedChannelInitializer(finalIoService));
+        return tcpIpNetworkingService;
     }
 
     // ====================== support ========================================
@@ -158,14 +150,11 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     protected TcpIpConnection connect(final TcpIpNetworkingService service, final Address address) {
         service.getEndpointManager(MEMBER).getOrConnect(address);
 
-        final AtomicReference<TcpIpConnection> ref = new AtomicReference<TcpIpConnection>();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Connection c = service.getEndpointManager(MEMBER).getConnection(address);
-                assertNotNull(c);
-                ref.set((TcpIpConnection) c);
-            }
+        final AtomicReference<TcpIpConnection> ref = new AtomicReference<>();
+        assertTrueEventually(() -> {
+            Connection c = service.getEndpointManager(MEMBER).getConnection(address);
+            assertNotNull(c);
+            ref.set((TcpIpConnection) c);
         });
 
         return ref.get();

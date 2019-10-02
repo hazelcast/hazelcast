@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.connection.nio;
 
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.core.LifecycleService;
@@ -25,11 +25,11 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -189,8 +189,6 @@ public class ClientConnection implements Connection {
         }
 
         connectionManager.onClose(this);
-
-        client.getMetricsRegistry().discardMetrics(this);
     }
 
     private void logClose() {

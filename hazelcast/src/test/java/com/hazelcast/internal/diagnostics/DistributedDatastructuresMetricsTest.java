@@ -25,7 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -161,9 +161,9 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     private void assertHasStatsEventually(final String dsName, final String metricPrefix) {
         final MetricsRegistry registry = getNode(hz).nodeEngine.getMetricsRegistry();
         assertTrueEventually(() -> {
-            final StringProbeRenderer renderer = new StringProbeRenderer(dsName, metricPrefix);
-            registry.render(renderer);
-            assertFalse(renderer.probes.isEmpty());
+            final StringMetricsCollector collector = new StringMetricsCollector(dsName, metricPrefix);
+            registry.collect(collector);
+            assertFalse(collector.probes.isEmpty());
         });
     }
 
@@ -174,11 +174,11 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
     }
 
-    static class StringProbeRenderer implements ProbeRenderer {
+    static class StringMetricsCollector implements MetricsCollector {
         final HashMap<String, Object> probes = new HashMap<>();
         private final Pattern pattern;
 
-        StringProbeRenderer(String dsName, String metricPrefix) {
+        StringMetricsCollector(String dsName, String metricPrefix) {
             this.pattern = Pattern.compile(
                     String.format(
                             "^\\[name=%s,.+,metric=%s.+\\]$",
@@ -189,28 +189,28 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void renderLong(String name, long value) {
+        public void collectLong(String name, long value) {
             if (pattern.matcher(name).matches()) {
                 probes.put(name, value);
             }
         }
 
         @Override
-        public void renderDouble(String name, double value) {
+        public void collectDouble(String name, double value) {
             if (pattern.matcher(name).matches()) {
                 probes.put(name, value);
             }
         }
 
         @Override
-        public void renderException(String name, Exception e) {
+        public void collectException(String name, Exception e) {
             if (pattern.matcher(name).matches()) {
                 probes.put(name, e);
             }
         }
 
         @Override
-        public void renderNoValue(String name) {
+        public void collectNoValue(String name) {
             if (pattern.matcher(name).matches()) {
                 probes.put(name, null);
             }

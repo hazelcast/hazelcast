@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeBuilder;
 
 import java.io.File;
 
@@ -42,10 +42,10 @@ public final class FileMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         File file = new File(System.getProperty("user.home"));
-        ProbeBuilder builder = metricsRegistry.newProbeBuilder("file.partition")
-                                              .withTag("dir", "user.home");
-        builder.register(file, "freeSpace", MANDATORY, BYTES, File::getFreeSpace);
-        builder.register(file, "totalSpace", MANDATORY, BYTES, File::getTotalSpace);
-        builder.register(file, "usableSpace", MANDATORY, BYTES, File::getUsableSpace);
+        MetricTagger builder = metricsRegistry.newMetricTagger("file.partition")
+                                              .withIdTag("dir", "user.home");
+        builder.registerStaticProbe(file, "freeSpace", MANDATORY, BYTES, File::getFreeSpace);
+        builder.registerStaticProbe(file, "totalSpace", MANDATORY, BYTES, File::getTotalSpace);
+        builder.registerStaticProbe(file, "usableSpace", MANDATORY, BYTES, File::getUsableSpace);
     }
 }

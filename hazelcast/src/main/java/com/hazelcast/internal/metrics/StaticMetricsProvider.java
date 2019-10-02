@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.renderers;
+package com.hazelcast.internal.metrics;
 
 /**
- * With the ProbeRenderer the content of the {@link com.hazelcast.internal.metrics.MetricsRegistry} can be rendered.
+ * To be implemented by an object that can provide metrics (so has a bunch of
+ * probes).
  */
-public interface ProbeRenderer {
+public interface StaticMetricsProvider {
 
-    void renderLong(String name, long value);
-
-    void renderDouble(String name, double value);
-
-    void renderException(String name, Exception e);
-
-    void renderNoValue(String name);
-
+    void provideStaticMetrics(MetricsRegistry registry);
 }

@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics;
+package com.hazelcast.internal.metrics.collectors;
+
+import com.hazelcast.internal.metrics.MetricsRegistry;
 
 /**
- * A {@link MetricsProvider} that has the ability to discard to provided metrics.
- * This is useful for dynamic metrics; so metrics that get added and removed during
- * the lifecycle of the MetricsRegistry like a connection.
+ * With the {@link MetricsCollector} the metrics registered in the
+ * {@link MetricsRegistry} can be collected.
  */
-public interface DiscardableMetricsProvider extends MetricsProvider {
+public interface MetricsCollector {
 
-    void discardMetrics(MetricsRegistry registry);
+    void collectLong(String name, long value);
+
+    void collectDouble(String name, double value);
+
+    void collectException(String name, Exception e);
+
+    void collectNoValue(String name);
+
 }

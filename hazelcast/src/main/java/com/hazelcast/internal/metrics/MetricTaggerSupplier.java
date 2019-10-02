@@ -17,10 +17,18 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * To be implemented by an object that can provide metrics (so has a bunch of
- * probes).
+ * Interface used to get a {@link MetricTagger} based on its namespace.
+ *
+ * @see DynamicMetricsProvider#provideDynamicMetrics(MetricTaggerSupplier, MetricsExtractor)
  */
-public interface MetricsProvider {
+@FunctionalInterface
+public interface MetricTaggerSupplier {
 
-    void provideMetrics(MetricsRegistry registry);
+    /**
+     * Gets the {@link MetricTagger} with the given {@code namespace}.
+     *
+     * @param namespace The namespace of the MetricTagger
+     * @return The MetricTagger instance
+     */
+    MetricTagger getMetricTagger(String namespace);
 }
