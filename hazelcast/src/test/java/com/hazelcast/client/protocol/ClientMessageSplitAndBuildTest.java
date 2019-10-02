@@ -68,8 +68,8 @@ public class ClientMessageSplitAndBuildTest {
             labels.add(generateRandomString(1000));
         }
 
-        return ClientAuthenticationCodec.encodeRequest(username, password, uuid, ownerUuid, isOwnerConnection,
-                clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
+        return ClientAuthenticationCodec.encodeRequest(username, password, uuid, clientType,
+                (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
     }
 
     @Before

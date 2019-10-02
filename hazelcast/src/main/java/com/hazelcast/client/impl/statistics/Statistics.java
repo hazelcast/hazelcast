@@ -109,25 +109,32 @@ public class Statistics {
     }
 
     /**
+     * @return the cluster listening connection to the server
+     */
+    private ClientConnection getConnection() {
+        return client.getClusterConnectorService().getClusterConnection();
+    }
+
+    /**
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
         client.getClientExecutionService().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
-                ClientConnection ownerConnection = client.getConnectionManager().getOwnerConnection();
-                if (ownerConnection == null) {
+                ClientConnection mainConnection = getConnection();
+                if (mainConnection == null) {
                     logger.finest("Cannot send client statistics to the server. No owner connection.");
                     return;
                 }
 
                 final StringBuilder stats = new StringBuilder();
 
-                periodicStats.fillMetrics(stats, ownerConnection);
+                periodicStats.fillMetrics(stats, mainConnection);
 
                 addNearCacheStats(stats);
 
-                sendStats(stats.toString(), ownerConnection);
+                sendStats(stats.toString(), mainConnection);
             }
         }, 0, periodSeconds, SECONDS);
     }
@@ -304,34 +311,33 @@ public class Statistics {
 
     class PeriodicStatistics {
         private final Gauge[] allGauges = {
-                    metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
-                    metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
-                    metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
-                    metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
-                    metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
-                    metricsRegistry.newLongGauge("os.processCpuTime"),
-                    metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
-                    metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
-                    metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
-                    metricsRegistry.newLongGauge("runtime.availableProcessors"),
-                    metricsRegistry.newLongGauge("runtime.freeMemory"),
-                    metricsRegistry.newLongGauge("runtime.maxMemory"),
-                    metricsRegistry.newLongGauge("runtime.totalMemory"),
-                    metricsRegistry.newLongGauge("runtime.uptime"),
-                    metricsRegistry.newLongGauge("runtime.usedMemory"),
-                    metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
-                };
+                metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
+                metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
+                metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
+                metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
+                metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
+                metricsRegistry.newLongGauge("os.processCpuTime"),
+                metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
+                metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
+                metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
+                metricsRegistry.newLongGauge("runtime.availableProcessors"),
+                metricsRegistry.newLongGauge("runtime.freeMemory"),
+                metricsRegistry.newLongGauge("runtime.maxMemory"),
+                metricsRegistry.newLongGauge("runtime.totalMemory"),
+                metricsRegistry.newLongGauge("runtime.uptime"),
+                metricsRegistry.newLongGauge("runtime.usedMemory"),
+                metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
+        };
 
-        void fillMetrics(final StringBuilder stats, final ClientConnection ownerConnection) {
+        void fillMetrics(final StringBuilder stats, final ClientConnection mainConnection) {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
             addStat(stats, "enterprise", enterprise);
             addStat(stats, "clientType", ClientType.JAVA.toString());
             addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());
-            addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
+            addStat(stats, "clusterConnectionTimestamp", mainConnection.getStartTime());
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
-                 .append(ownerConnection.getLocalSocketAddress().getAddress().getHostAddress()).append(":")
-                 .append(ownerConnection.getLocalSocketAddress().getPort());
+                    .append(mainConnection.getLocalSocketAddress().getAddress().getHostAddress());
 
             addStat(stats, "clientName", client.getName());
 

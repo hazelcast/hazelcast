@@ -30,7 +30,7 @@ public class NonSmartClientInvocationService extends AbstractClientInvocationSer
 
     @Override
     public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
-        send(invocation, getOwnerConnection());
+        send(invocation, getConnection());
     }
 
     @Override
@@ -42,20 +42,19 @@ public class NonSmartClientInvocationService extends AbstractClientInvocationSer
     @Override
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
         invocation.getClientMessage().setPartitionId(partitionId);
-        send(invocation, getOwnerConnection());
+        send(invocation, getConnection());
     }
 
     @Override
     public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
-        send(invocation, getOwnerConnection());
+        send(invocation, getConnection());
     }
 
-    private ClientConnection getOwnerConnection() throws IOException {
-        Address ownerConnectionAddress = connectionManager.getOwnerConnectionAddress();
-        ClientConnection ownerConnection = (ClientConnection) connectionManager.getActiveConnection(ownerConnectionAddress);
-        if (ownerConnection == null) {
-            throw new IOException("NonSmartClientInvocationService: Owner connection is not available.");
+    private ClientConnection getConnection() throws IOException {
+        ClientConnection connection = connectionManager.getActiveConnections().iterator().next();
+        if (connection == null) {
+            throw new IOException("NonSmartClientInvocationService: No connection is available.");
         }
-        return ownerConnection;
+        return connection;
     }
 }

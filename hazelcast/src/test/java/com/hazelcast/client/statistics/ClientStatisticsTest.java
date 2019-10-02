@@ -101,9 +101,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
         Long connectionTimeStat = Long.valueOf(connStat);
         assertNotNull(format("connectionTimeStat should not be null (%s)", stats), connStat);
 
-        ClientConnection ownerConnection = client.getConnectionManager().getOwnerConnection();
-        String expectedClientAddress = format("%s:%d", ownerConnection.getLocalSocketAddress().getAddress().getHostAddress(),
-                ownerConnection.getLocalSocketAddress().getPort());
+        ClientConnection aConnection = client.getConnectionManager().getActiveConnections().iterator().next();
+        String expectedClientAddress = aConnection.getLocalSocketAddress().getAddress().getHostAddress();
         assertEquals(expectedClientAddress, stats.get("clientAddress"));
         assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), stats.get("clientVersion"));
 
@@ -182,7 +181,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
-    public void testStatisticsClusterReconnect() {
+    public void testStatisticsClusterReconnect() throws InterruptedException {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         HazelcastClientInstanceImpl client = createHazelcastClient();
 
@@ -320,6 +319,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     private static Map<String, String> getStats(HazelcastClientInstanceImpl client, ClientEngineImpl clientEngine) {
         Map<UUID, String> clientStatistics = clientEngine.getClientStatistics();
         assertNotNull("clientStatistics should not be null", clientStatistics);
+        System.out.println("FATAL " + clientStatistics.size());
         assertEquals("clientStatistics.size() should be 1", 1, clientStatistics.size());
         Set<Map.Entry<UUID, String>> entries = clientStatistics.entrySet();
         Map.Entry<UUID, String> statEntry = entries.iterator().next();

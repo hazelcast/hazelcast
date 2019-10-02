@@ -134,7 +134,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID ownerUuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
         ClientMessage message = ClientAuthenticationCodec.encodeRequest("user", "pass",
-                uuid, ownerUuid, true, "JAVA", (byte) 1,
+                uuid, "JAVA", (byte) 1,
                 "1.0", "name", labels, 271, clusterId);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
@@ -169,8 +169,6 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals("user", parameters.username);
         assertEquals("pass", parameters.password);
         assertEquals(uuid, parameters.uuid);
-        assertEquals(ownerUuid, parameters.ownerUuid);
-        assertEquals(true, parameters.isOwnerConnection);
         assertEquals("JAVA", parameters.clientType);
         assertEquals((byte) 1, parameters.serializationVersion);
         assertEquals("1.0", parameters.clientHazelcastVersion);
@@ -192,7 +190,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID clusterId = UUID.randomUUID();
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, ownerUuid, (byte) 1, "3.12", members, 271, clusterId);
+                uuid, (byte) 1, "3.12", 271, clusterId);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -226,10 +224,8 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(2, parameters.status);
         assertEquals(new Address("127.0.0.1", 5701), parameters.address);
         assertEquals(uuid, parameters.uuid);
-        assertEquals(ownerUuid, parameters.ownerUuid);
         assertEquals(1, parameters.serializationVersion);
         assertEquals("3.12", parameters.serverHazelcastVersion);
-        assertArrayEquals(members.toArray(), parameters.clientUnregisteredMembers.toArray());
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
     }

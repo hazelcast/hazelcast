@@ -16,10 +16,8 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.Connection;
@@ -27,7 +25,6 @@ import com.hazelcast.security.SimpleTokenCredentials;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -41,11 +38,6 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
-    protected boolean isOwnerConnection() {
-        return parameters.isOwnerConnection;
-    }
-
-    @Override
     protected String getClientType() {
         return parameters.clientType;
     }
@@ -56,10 +48,8 @@ public class AuthenticationCustomCredentialsMessageTask
         ClientAuthenticationCustomCodec.RequestParameters parameters = ClientAuthenticationCustomCodec
                 .decodeRequest(clientMessage);
         UUID uuid = parameters.uuid;
-        UUID ownerUuid = parameters.ownerUuid;
-        if (uuid != null) {
-            principal = new ClientPrincipal(uuid, ownerUuid);
-        }
+        assert uuid != null;
+        clientUuid = uuid;
         credentials = new SimpleTokenCredentials(parameters.credentials.toByteArray());
         clientSerializationVersion = parameters.serializationVersion;
         clientVersion = parameters.clientHazelcastVersion;
@@ -76,11 +66,11 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
-    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, UUID ownerUuid, byte version,
-                                       List<Member> cleanedUpMembers, int partitionCount, UUID clusterId) {
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
+                                       int partitionCount, UUID clusterId) {
         return ClientAuthenticationCustomCodec
-                .encodeResponse(status, thisAddress, uuid, ownerUuid, version, getMemberBuildInfo().getVersion(),
-                        cleanedUpMembers, partitionCount, clusterId);
+                .encodeResponse(status, thisAddress, uuid, version,
+                        getMemberBuildInfo().getVersion(), partitionCount, clusterId);
     }
 
     @Override

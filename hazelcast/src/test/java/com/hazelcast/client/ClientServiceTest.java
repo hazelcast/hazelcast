@@ -497,7 +497,7 @@ public class ClientServiceTest extends ClientTestSupport {
         //first member is owner connection
         hazelcastFactory.newHazelcastClient();
 
-        config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+        config.setProperty(GroupProperty.CLIENT_CHECK_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
         hazelcastFactory.newHazelcastInstance(config);
         //make sure connected to second one before proceeding
         assertOpenEventually(latch);

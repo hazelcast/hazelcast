@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.Connection;
@@ -25,6 +24,7 @@ import com.hazelcast.internal.nio.ConnectionListenable;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * Responsible for managing {@link ClientConnection} objects.
@@ -57,15 +57,11 @@ public interface ClientConnectionManager extends ConnectionListenable {
      * @return associated connection if available, returns null and triggers new connection creation otherwise
      * @throws IOException if connection is not able to triggered
      */
-    Connection getOrTriggerConnect(Address address, boolean acquiresResource) throws IOException;
+    Connection getOrTriggerConnect(Address address) throws IOException;
 
     Collection<ClientConnection> getActiveConnections();
 
-    Address getOwnerConnectionAddress();
-
-    ClientPrincipal getPrincipal();
-
-    ClientConnection getOwnerConnection();
+    UUID getClientUuid();
 
     void setCandidateClusterContext(CandidateClusterContext context);
 

@@ -16,10 +16,8 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.Connection;
@@ -27,7 +25,6 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -43,9 +40,8 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     protected ClientAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(clientMessage);
         final UUID uuid = parameters.uuid;
-        final UUID ownerUuid = parameters.ownerUuid;
         if (uuid != null) {
-            principal = new ClientPrincipal(uuid, ownerUuid);
+            clientUuid = uuid;
         }
         credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
         clientSerializationVersion = parameters.serializationVersion;
@@ -63,10 +59,10 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     }
 
     @Override
-    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, UUID ownerUuid, byte version,
-                                       List<Member> cleanedUpMembers, int partitionCount, UUID clusterId) {
-        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, ownerUuid, version,
-                getMemberBuildInfo().getVersion(), cleanedUpMembers, partitionCount, clusterId);
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
+                                       int partitionCount, UUID clusterId) {
+        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, version,
+                getMemberBuildInfo().getVersion(), partitionCount, clusterId);
     }
 
     @Override
@@ -87,11 +83,6 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     @Override
     public Object[] getParameters() {
         return null;
-    }
-
-    @Override
-    protected boolean isOwnerConnection() {
-        return parameters.isOwnerConnection;
     }
 
     @Override

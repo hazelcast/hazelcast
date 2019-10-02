@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.Client;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.Credentials;
@@ -75,12 +74,6 @@ public interface ClientEndpoint extends Client {
 
     void removeTransactionContext(UUID txnId);
 
-    /**
-     * Indicates whether this endpoint is the owner connection for that client.
-     * @return {@code true} when this endpoint is the owner connection for the client
-     */
-    boolean isOwnerConnection();
-
     Subject getSubject();
 
     void clearAllListeners();
@@ -89,10 +82,8 @@ public interface ClientEndpoint extends Client {
 
     void setLoginContext(LoginContext lc);
 
-    void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection, String clientVersion,
+    void authenticated(UUID clientUuid, Credentials credentials, String clientVersion,
                        long authCorrelationId, String clientName, Set<String> labels);
-
-    void authenticated(ClientPrincipal principal);
 
     /**
      * @return true if endpoint is authenticated with valid security credentials, returns false otherwise

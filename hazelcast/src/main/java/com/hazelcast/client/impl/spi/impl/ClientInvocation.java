@@ -19,6 +19,9 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.HazelcastClientOfflineException;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.impl.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
@@ -62,6 +65,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private final ClientClusterService clientClusterService;
     private final AbstractClientInvocationService invocationService;
     private final ClientExecutionService executionService;
+    private final ClusterConnectorService clusterConnectorService;
     private volatile ClientMessage clientMessage;
     private final CallIdSequence callIdSequence;
     private final Address address;
@@ -81,6 +85,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                                int partitionId,
                                Address address,
                                Connection connection) {
+        this.clusterConnectorService = client.getClusterConnectorService();
         this.clientClusterService = client.getClientClusterService();
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (AbstractClientInvocationService) client.getInvocationService();
@@ -230,6 +235,11 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             return;
         }
 
+        if (shouldThrowOfflineException(exception)) {
+            clientInvocationFuture.complete(new HazelcastClientOfflineException("Client is offline"));
+            return;
+        }
+
         if (isNotAllowedToRetryOnSelection(exception)) {
             complete(exception);
             return;
@@ -259,6 +269,12 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             complete(new HazelcastClientNotActiveException("Client is shutting down", exception));
         }
 
+    }
+
+    private boolean shouldThrowOfflineException(Throwable exception) {
+        return ClientConnectionStrategyConfig.ReconnectMode.ASYNC.equals(invocationService.getReconnectMode())
+                && exception instanceof IOException
+                && !clusterConnectorService.mainConnectionExists();
     }
 
     private void logException(Throwable exception) {

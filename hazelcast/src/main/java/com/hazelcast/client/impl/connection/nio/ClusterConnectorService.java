@@ -19,8 +19,9 @@ package com.hazelcast.client.impl.connection.nio;
 import java.util.concurrent.Future;
 
 /**
- * Helper to ClientConnectionManager.
- * selecting owner connection, connecting and disconnecting from cluster implemented in this class.
+ * selects a connection to listen cluster state(membership and partition listener),
+ * Keeps those listeners available when connection disconnected by picking a new connection.
+ * Changing cluster is also handled in this class(Blue/green feature)
  */
 public interface ClusterConnectorService {
 
@@ -28,7 +29,12 @@ public interface ClusterConnectorService {
 
     Future<Void> connectToClusterAsync();
 
-    boolean isClusterAvailable();
+    boolean mainConnectionExists();
+
+    /**
+     * @return client connection that is used to listen cluster at the moment
+     */
+    ClientConnection getClusterConnection();
 
     void shutdown();
 

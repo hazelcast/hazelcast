@@ -40,9 +40,8 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
 
     @Override
     protected void processMessage() {
-        String message = "Unrecognized client message received with type: 0x"
-                + Integer.toHexString(clientMessage.getMessageType());
-        logger.warning(message);
+        String message = "Unrecognized client message received with type: 0x" + Integer.toHexString(parameters.getMessageType());
+        logger.finest(message);
         throw new UnsupportedOperationException(message);
     }
 
