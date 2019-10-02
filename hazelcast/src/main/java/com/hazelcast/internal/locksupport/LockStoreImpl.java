@@ -47,9 +47,6 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<>();
 
-    // warning: the namespace field is unreliable if this LockStoreImpl was created for ILock proxy
-    // ObjectNameSpace.getObjectName() can give you a wrong name because LockStoreImpl instances
-    // are shared for ILock proxies. see InternalLockNamespace for details.
     private ObjectNamespace namespace;
     private int backupCount;
     private int asyncBackupCount;

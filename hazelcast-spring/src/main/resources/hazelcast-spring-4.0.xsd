@@ -1790,11 +1790,11 @@
     <xs:element name="lock" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrieve a Hazelcast ILock instance
+                Retrieve a Hazelcast FencedLock instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.cp.lock.ILock"/>
+                    <tool:exports type="com.hazelcast.cp.lock.FencedLock"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
