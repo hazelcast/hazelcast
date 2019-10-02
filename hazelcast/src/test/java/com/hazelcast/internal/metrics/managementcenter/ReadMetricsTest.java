@@ -85,7 +85,7 @@ public class ReadMetricsTest extends HazelcastTestSupport {
             while (metricIterator.hasNext()) {
                 Metric metric = metricIterator.next();
                 metric.provide(metricConsumer);
-                operationMetricFound |= metricConsumer.key.equals("[metric=operation.queueSize]");
+                operationMetricFound |= metricConsumer.key.equals("[unit=count,metric=operation.queueSize]");
             }
             assertTrue(operationMetricFound);
         });

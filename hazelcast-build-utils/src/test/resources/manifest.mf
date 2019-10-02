@@ -272,7 +272,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  nternal.serialization,com.hazelcast.security.permission,com.hazelcast
  .spi";version="3.8.0.SNAPSHOT",com.hazelcast.internal.memory;uses:="com.hazelc
  ast.internal.util";version="3.8.0.SNAPSHOT",com.hazelcast.internal.metrics;use
- s:="com.hazelcast.internal.metrics.renderers";version="3.8.0.SNAPSHOT
+ s:="com.hazelcast.internal.metrics.collectors";version="3.8.0.SNAPSHOT
  ",com.hazelcast.internal.util.sort;uses:="com.hazelcast.internal.memo
  ry,com.hazelcast.nio";version="3.8.0.SNAPSHOT",com.hazelcast.map.impl
  .nearcache;uses:="com.hazelcast.internal.adapter,com.hazelcast.monito
@@ -1446,7 +1446,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  internal.metrics,com.hazelcast.internal.util,com.hazelcast.nio,com.hazelcast.m
  emory,com.hazelcast.spi.impl.operationservice.impl,com.hazelcast.spi,
  com.hazelcast.spi.impl.operationservice,com.hazelcast.core,com.hazelc
- ast.internal.cluster,com.hazelcast.internal.metrics.renderers,com.haz
+ ast.internal.cluster,com.hazelcast.internal.metrics.collectors,com.haz
  elcast.spi.impl.operationservice.impl.operations,com.hazelcast.nio.tc
  p,com.hazelcast.internal.networking.spinning,com.hazelcast.spi.serial
  ization,com.hazelcast.internal.networking,com.hazelcast.internal.netw

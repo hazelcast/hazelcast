@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link com.hazelcast.internal.metrics.renderers.ProbeRenderer} API.
+ * Contains the {@link com.hazelcast.internal.metrics.collectors.MetricsCollector} API.
  */
-package com.hazelcast.internal.metrics.renderers;
+package com.hazelcast.internal.metrics.collectors;

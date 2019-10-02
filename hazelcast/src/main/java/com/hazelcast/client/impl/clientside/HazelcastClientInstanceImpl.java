@@ -329,9 +329,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ThreadMetricSet.register(metricsRegistry);
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
-        metricsRegistry.scanAndRegister(clientExtension.getMemoryStats(), "memory");
-        metricsRegistry.collectMetrics(clientExtension);
-        metricsRegistry.collectMetrics(executionService);
+        metricsRegistry.registerStaticMetrics(clientExtension.getMemoryStats(), "memory");
+        metricsRegistry.provideMetrics(clientExtension);
+        metricsRegistry.provideMetrics(executionService);
     }
 
     private LoadBalancer initLoadBalancer(ClientConfig config) {
@@ -428,7 +428,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                     new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
                             properties));
 
-            metricsRegistry.collectMetrics(listenerService);
+            metricsRegistry.provideMetrics(listenerService);
 
             proxyManager.init(config, clientContext);
             listenerService.start();

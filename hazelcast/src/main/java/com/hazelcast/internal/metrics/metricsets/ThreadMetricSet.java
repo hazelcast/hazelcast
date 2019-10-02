@@ -41,9 +41,10 @@ public final class ThreadMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
-        metricsRegistry.register(mxBean, "thread.threadCount", MANDATORY, ThreadMXBean::getThreadCount);
-        metricsRegistry.register(mxBean, "thread.peakThreadCount", MANDATORY, ThreadMXBean::getPeakThreadCount);
-        metricsRegistry.register(mxBean, "thread.daemonThreadCount", MANDATORY, ThreadMXBean::getDaemonThreadCount);
-        metricsRegistry.register(mxBean, "thread.totalStartedThreadCount", MANDATORY, ThreadMXBean::getTotalStartedThreadCount);
+        metricsRegistry.registerStaticProbe(mxBean, "thread.threadCount", MANDATORY, ThreadMXBean::getThreadCount);
+        metricsRegistry.registerStaticProbe(mxBean, "thread.peakThreadCount", MANDATORY, ThreadMXBean::getPeakThreadCount);
+        metricsRegistry.registerStaticProbe(mxBean, "thread.daemonThreadCount", MANDATORY, ThreadMXBean::getDaemonThreadCount);
+        metricsRegistry.registerStaticProbe(mxBean, "thread.totalStartedThreadCount", MANDATORY,
+                ThreadMXBean::getTotalStartedThreadCount);
     }
 }

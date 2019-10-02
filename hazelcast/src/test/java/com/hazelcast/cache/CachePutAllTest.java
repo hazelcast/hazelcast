@@ -191,7 +191,7 @@ public class CachePutAllTest extends CacheTestSupport {
 
         assertNull(cache.get(key));
         // force collect metrics
-        metricsRegistry.collectMetrics(operationService);
+        metricsRegistry.provideMetrics(operationService);
         assertEquals(0L, OperationServiceAccessor.getFailedBackupsCount(hazelcastInstances[1]).get());
     }
 }

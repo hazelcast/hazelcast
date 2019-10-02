@@ -42,11 +42,13 @@ public final class ClassLoadingMetricSet {
 
         ClassLoadingMXBean mxBean = ManagementFactory.getClassLoadingMXBean();
 
-        metricsRegistry.register(mxBean, "classloading.loadedClassesCount", MANDATORY, ClassLoadingMXBean::getLoadedClassCount);
+        metricsRegistry.registerStaticProbe(mxBean, "classloading.loadedClassesCount", MANDATORY,
+                ClassLoadingMXBean::getLoadedClassCount);
 
-        metricsRegistry.register(mxBean, "classloading.totalLoadedClassesCount", MANDATORY,
+        metricsRegistry.registerStaticProbe(mxBean, "classloading.totalLoadedClassesCount", MANDATORY,
                 ClassLoadingMXBean::getTotalLoadedClassCount);
 
-        metricsRegistry.register(mxBean, "classloading.unloadedClassCount", MANDATORY, ClassLoadingMXBean::getUnloadedClassCount);
+        metricsRegistry.registerStaticProbe(mxBean, "classloading.unloadedClassCount", MANDATORY,
+                ClassLoadingMXBean::getUnloadedClassCount);
     }
 }

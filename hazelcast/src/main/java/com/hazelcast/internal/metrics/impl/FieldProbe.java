@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
@@ -56,17 +57,18 @@ abstract class FieldProbe implements ProbeFunction {
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = namePrefix + '.' + getProbeOrFieldName();
-        metricsRegistry.registerInternal(source, name, probe.level(), this);
+        MetricTagger tagger = metricsRegistry
+                .newMetricTagger(namePrefix)
+                .withMetricTag(getProbeOrFieldName());
+        metricsRegistry.registerInternal(source, tagger, probe.level(), this);
     }
 
-    void register(ProbeBuilderImpl builder, Object source) {
-        builder
-                .withTag("unit", probe.unit().name().toLowerCase())
-                .register(source, getProbeOrFieldName(), probe.level(), this);
+    void register(MetricTaggerImpl tagger, Object source) {
+        tagger.withTag("unit", probe.unit().name().toLowerCase())
+              .registerStaticProbe(source, getProbeOrFieldName(), probe.level(), this);
     }
 
-    private String getProbeOrFieldName() {
+    String getProbeOrFieldName() {
         return probe.name().length() != 0 ? probe.name() : field.getName();
     }
 

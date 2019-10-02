@@ -18,12 +18,11 @@ package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collections;
@@ -39,16 +38,16 @@ class TcpIpUnifiedEndpointManager
 
     TcpIpUnifiedEndpointManager(NetworkingService root, EndpointConfig endpointConfig,
                                 ChannelInitializerProvider channelInitializerProvider,
-                                IOService ioService, LoggingService loggingService, MetricsRegistry metricsRegistry,
+                                IOService ioService, LoggingService loggingService,
                                 HazelcastProperties properties) {
         super(root, endpointConfig, channelInitializerProvider, ioService, loggingService,
-                metricsRegistry, properties, ProtocolType.valuesAsSet());
+                properties, ProtocolType.valuesAsSet());
     }
 
     Set<TcpIpConnection> getRestConnections() {
         Set<TcpIpConnection> connections = activeConnections.isEmpty()
-                ? Collections.<TcpIpConnection>emptySet()
-                : new HashSet<TcpIpConnection>(activeConnections.size());
+                ? Collections.emptySet()
+                : new HashSet<>(activeConnections.size());
 
         for (TcpIpConnection conn : activeConnections) {
             if (conn.isAlive() && conn.getType() == REST_CLIENT) {
@@ -60,8 +59,8 @@ class TcpIpUnifiedEndpointManager
 
     Set<TcpIpConnection> getMemachedConnections() {
         Set<TcpIpConnection> connections = activeConnections.isEmpty()
-                ? Collections.<TcpIpConnection>emptySet()
-                : new HashSet<TcpIpConnection>(activeConnections.size());
+                ? Collections.emptySet()
+                : new HashSet<>(activeConnections.size());
 
         for (TcpIpConnection conn : activeConnections) {
             if (conn.isAlive() && conn.getType() == MEMCACHE_CLIENT) {
@@ -74,8 +73,8 @@ class TcpIpUnifiedEndpointManager
 
     Set<TcpIpConnection> getTextConnections() {
         Set<TcpIpConnection> connections = activeConnections.isEmpty()
-                ? Collections.<TcpIpConnection>emptySet()
-                : new HashSet<TcpIpConnection>(activeConnections.size());
+                ? Collections.emptySet()
+                : new HashSet<>(activeConnections.size());
 
         for (TcpIpConnection conn : activeConnections) {
             if (conn.isAlive() && conn.getType() == REST_CLIENT || conn.getType() == MEMCACHE_CLIENT) {
@@ -87,8 +86,8 @@ class TcpIpUnifiedEndpointManager
 
     Set<TcpIpConnection> getCurrentClientConnections() {
         Set<TcpIpConnection> connections = activeConnections.isEmpty()
-                ? Collections.<TcpIpConnection>emptySet()
-                : new HashSet<TcpIpConnection>(activeConnections.size());
+                ? Collections.emptySet()
+                : new HashSet<>(activeConnections.size());
 
         for (TcpIpConnection conn : activeConnections) {
             if (conn.isAlive() && conn.isClient()) {

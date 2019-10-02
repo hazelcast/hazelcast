@@ -25,9 +25,9 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -88,7 +88,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
+class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvider {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -141,17 +141,17 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
+    public void provideStaticMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
-            registry.newProbeBuilder("operation.partition")
+            registry.newMetricTagger("operation.partition")
                     .withTag("partitionId", String.valueOf(partitionId))
-                    .scanAndRegister(this);
+                    .registerStaticMetrics(this);
         } else if (partitionId == -1) {
-            registry.newProbeBuilder("operation.generic")
+            registry.newMetricTagger("operation.generic")
                     .withTag("genericId", String.valueOf(genericId))
-                    .scanAndRegister(this);
+                    .registerStaticMetrics(this);
         } else {
-            registry.scanAndRegister(this, "operation.adhoc");
+            registry.newMetricTagger("operation.adhoc").registerStaticMetrics(this);
         }
     }
 

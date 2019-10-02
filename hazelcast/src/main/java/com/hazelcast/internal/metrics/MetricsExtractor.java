@@ -17,20 +17,17 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A {@link ProbeFunction} that provides a long value and can be used to create
- * a probe using {@link MetricsRegistry#registerStaticProbe(Object, String, ProbeLevel, LongProbeFunction)}
- *
- * @param <S> the type of the source object.
- * @see DoubleProbeFunction
+ * An interface that extracts the metrics from the objects collected by
+ * the {@link DynamicMetricsProvider} implementations.
  */
-public interface LongProbeFunction<S> extends ProbeFunction {
-
+@FunctionalInterface
+public interface MetricsExtractor {
     /**
-     * Gets the current value of the source object as a long.
+     * Extracts the metrics from the given source and tags them with the
+     * provided tagger.
      *
-     * @param source the source object.
-     * @return the current value of the source object.
-     * @throws Exception if something fails while getting the value.
+     * @param metricTagger The namespace of the source object
+     * @param source       The object that contains the metrics
      */
-    long get(S source) throws Exception;
+    void extractMetrics(MetricTagger metricTagger, Object source);
 }
