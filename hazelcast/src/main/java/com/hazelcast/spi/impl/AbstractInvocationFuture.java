@@ -65,7 +65,12 @@ import static java.util.concurrent.locks.LockSupport.unpark;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public abstract class AbstractInvocationFuture<V> extends InternalCompletableFuture<V> {
 
-    static final Object UNRESOLVED = new Object();
+    static final Object UNRESOLVED = new Object() {
+        @Override
+        public String toString() {
+            return "UNRESOLVED";
+        }
+    };
     private static final Lookup LOOKUP = MethodHandles.publicLookup();
     // new Throwable(String message, Throwable cause)
     private static final MethodType MT_INIT_STRING_THROWABLE = MethodType.methodType(void.class, String.class, Throwable.class);
@@ -537,12 +542,24 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public final V join() {
+        final Object response = registerWaiter(Thread.currentThread(), null);
+        if (response != UNRESOLVED) {
+            return resolveAndThrowWithJoinConvention(response);
+        }
+
+        boolean interrupted = false;
         try {
-            // todo consider whether method ref lambda affects runtime perf / allocation rate
-            return waitForResolution(this::resolveAndThrowWithJoinConvention);
-        } catch (ExecutionException | InterruptedException e) {
-            throw new AssertionError("Value resolution with join() conventions shouldn't throw ExecutionException or "
-                    + "InterruptedException", e);
+            for (; ; ) {
+                park();
+                if (isDone()) {
+                    return resolveAndThrowWithJoinConvention(state);
+                } else if (Thread.interrupted()) {
+                    interrupted = true;
+                    onInterruptDetected();
+                }
+            }
+        } finally {
+            restoreInterrupt(interrupted);
         }
     }
 
@@ -555,11 +572,25 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
      */
     @Override
     public V joinInternal() {
+        final Object response = registerWaiter(Thread.currentThread(), null);
+        if (response != UNRESOLVED) {
+            // no registration was done since a value is available.
+            return resolveAndThrowForJoinInternal(response);
+        }
+
+        boolean interrupted = false;
         try {
-            return waitForResolution(this::resolveAndThrowForJoinInternal);
-        } catch (ExecutionException | InterruptedException e) {
-            throw new AssertionError("Value resolution with joinInternal() conventions shouldn't throw ExecutionException or "
-                    + "InterruptedException", e);
+            for (; ; ) {
+                park();
+                if (isDone()) {
+                    return resolveAndThrowForJoinInternal(state);
+                } else if (Thread.interrupted()) {
+                    interrupted = true;
+                    onInterruptDetected();
+                }
+            }
+        } finally {
+            restoreInterrupt(interrupted);
         }
     }
 
@@ -574,8 +605,26 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public final V get() throws InterruptedException, ExecutionException {
-        // todo consider whether method ref lambda affects runtime perf / allocation rate
-        return waitForResolution(this::resolveAndThrowIfException);
+        Object response = registerWaiter(Thread.currentThread(), null);
+        if (response != UNRESOLVED) {
+            // no registration was done since a value is available.
+            return resolveAndThrowIfException(response);
+        }
+
+        boolean interrupted = false;
+        try {
+            for (; ; ) {
+                park();
+                if (isDone()) {
+                    return resolveAndThrowIfException(state);
+                } else if (Thread.interrupted()) {
+                    interrupted = true;
+                    onInterruptDetected();
+                }
+            }
+        } finally {
+            restoreInterrupt(interrupted);
+        }
     }
 
     @Override
@@ -632,30 +681,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     @Override
     public int getNumberOfDependents() {
         throw new UnsupportedOperationException("implement this");
-    }
-
-    private V waitForResolution(ValueResolver<V> resolver)
-            throws InterruptedException, ExecutionException {
-        Object response = registerWaiter(Thread.currentThread(), null);
-        if (response != UNRESOLVED) {
-            // no registration was done since a value is available.
-            return resolver.resolveAndThrowIfException(response);
-        }
-
-        boolean interrupted = false;
-        try {
-            for (; ; ) {
-                park();
-                if (isDone()) {
-                    return resolver.resolveAndThrowIfException(state);
-                } else if (Thread.interrupted()) {
-                    interrupted = true;
-                    onInterruptDetected();
-                }
-            }
-        } finally {
-            restoreInterrupt(interrupted);
-        }
     }
 
     private void unblockAll(Object waiter, Executor executor) {
@@ -1851,10 +1876,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         if (interrupted) {
             Thread.currentThread().interrupt();
         }
-    }
-
-    interface ValueResolver<E> {
-        E resolveAndThrowIfException(Object unresolved) throws ExecutionException, InterruptedException;
     }
 
     static Throwable wrapOrPeel(Throwable cause) {
