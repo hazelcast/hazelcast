@@ -16,16 +16,21 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeLocalhostResolvesTo_127_0_0_1;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class AddressTest {
 
@@ -38,5 +43,20 @@ public class AddressTest {
     @Test(expected = NullPointerException.class)
     public void newAddress_InetSocketAddress_whenNull() throws UnknownHostException {
         new Address((InetSocketAddress) null);
+    }
+
+    @Test
+    public void testEqualsBasedOnSocksInetAddress() throws UnknownHostException {
+        assumeLocalhostResolvesTo_127_0_0_1();
+        Address address1 = new Address("127.0.0.1", 5701);
+        Address address2 = new Address("localhost", 5701);
+        Address address3 = new Address("localhost", 5702);
+        Address address4 = new Address("foobarx", InetAddress.getByName("127.0.0.1"), 5702);
+        Address address5 = new Address("member.hazelcast.com", InetAddress.getByName("10.0.0.1"), 5701);
+        assertEquals(address1, address2);
+        assertEquals(address3, address4);
+        assertNotEquals(address1, address3);
+        assertNotEquals(address2, address5);
+        assertNotEquals(address3, address5);
     }
 }

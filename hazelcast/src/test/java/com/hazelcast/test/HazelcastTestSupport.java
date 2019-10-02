@@ -78,6 +78,8 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1702,6 +1704,20 @@ public abstract class HazelcastTestSupport {
         ByteOrder configuredByteOrder = serializationService.getByteOrder();
         assumeTrue(format("Assumed configured byte order %s, but was %s", assumedByteOrder, configuredByteOrder),
                 configuredByteOrder.equals(assumedByteOrder));
+    }
+
+    /**
+     * Throws {@link AssumptionViolatedException} if the "localhost" hostname doesn't resolve to 127.0.0.1.
+     */
+    public static void assumeLocalhostResolvesTo_127_0_0_1() {
+        boolean resolvedToLoopback = false;
+        try {
+            InetAddress ia = InetAddress.getByName("localhost");
+            resolvedToLoopback = "127.0.0.1".equals(ia.getHostAddress());
+        } catch (UnknownHostException e) {
+            // OK
+        }
+        assumeTrue("The localhost doesn't resolve to 127.0.0.1. Skipping the test.", resolvedToLoopback);
     }
 
     /**

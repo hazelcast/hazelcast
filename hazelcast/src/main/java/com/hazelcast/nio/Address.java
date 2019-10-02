@@ -47,6 +47,8 @@ public final class Address implements IdentifiedDataSerializable {
     private String scopeId;
     private boolean hostSet;
 
+    private InetSocketAddress socketAddr;
+
     public Address() {
     }
 
@@ -72,7 +74,7 @@ public final class Address implements IdentifiedDataSerializable {
 
     public Address(String hostname, InetAddress inetAddress, int port) {
         checkNotNull(inetAddress, "inetAddress can't be null");
-
+        socketAddr = new InetSocketAddress(inetAddress, port);
         type = (inetAddress instanceof Inet4Address) ? IPV4 : IPV6;
         String[] addressArgs = inetAddress.getHostAddress().split("\\%");
         host = hostname != null ? hostname : addressArgs[0];
@@ -89,6 +91,7 @@ public final class Address implements IdentifiedDataSerializable {
         this.type = address.type;
         this.scopeId = address.scopeId;
         this.hostSet = address.hostSet;
+        this.socketAddr = address.socketAddr;
     }
 
     public String getHost() {
@@ -162,6 +165,7 @@ public final class Address implements IdentifiedDataSerializable {
             byte[] address = new byte[len];
             in.readFully(address);
             host = bytesToString(address);
+            socketAddr = new InetSocketAddress(host, port);
         }
     }
 
@@ -174,14 +178,12 @@ public final class Address implements IdentifiedDataSerializable {
             return false;
         }
         final Address address = (Address) o;
-        return port == address.port && this.type == address.type && this.host.equals(address.host);
+        return this.type == address.type && this.socketAddr.equals(address.socketAddr);
     }
 
     @Override
     public int hashCode() {
-        int result = port;
-        result = 31 * result + host.hashCode();
-        return result;
+        return socketAddr.hashCode();
     }
 
     @Override
