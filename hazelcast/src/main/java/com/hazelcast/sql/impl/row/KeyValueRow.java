@@ -39,7 +39,7 @@ public class KeyValueRow implements Row {
     }
 
     @Override
-    public Object getColumn(int idx) {
+    public <T> T getColumn(int idx) {
         throw new UnsupportedOperationException();
     }
 

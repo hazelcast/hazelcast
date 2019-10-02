@@ -26,7 +26,7 @@ public interface SqlRow {
      * @param idx Index.
      * @return Column value.
      */
-    Object getColumn(int idx);
+    <T> T getColumn(int idx);
 
     /**
      * @return Number of columns in a row.

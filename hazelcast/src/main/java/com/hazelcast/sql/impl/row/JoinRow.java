@@ -41,14 +41,15 @@ public class JoinRow implements Row, DataSerializable {
         this.right = right;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object getColumn(int idx) {
+    public <T> T getColumn(int idx) {
         int leftColumnCount = left.getColumnCount();
 
         if (idx < leftColumnCount) {
-            return left.getColumn(idx);
+            return (T) left.getColumn(idx);
         } else {
-            return right.getColumn(idx - leftColumnCount);
+            return (T) right.getColumn(idx - leftColumnCount);
         }
     }
 
@@ -78,7 +79,9 @@ public class JoinRow implements Row, DataSerializable {
                 res.append(", ");
             }
 
-            res.append(getColumn(i));
+            Object column = getColumn(i);
+
+            res.append(column != null ? column.toString() : "null");
         }
 
         res.append("}");

@@ -38,9 +38,10 @@ public class HeapRow implements Row, DataSerializable {
         this.values = new Object[length];
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object getColumn(int idx) {
-        return values[idx];
+    public <T> T getColumn(int idx) {
+        return (T) values[idx];
     }
 
     @Override

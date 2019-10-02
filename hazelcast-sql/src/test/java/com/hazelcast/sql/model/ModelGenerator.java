@@ -37,18 +37,22 @@ public class ModelGenerator {
     public static final int DEPARTMENT_CNT = 2;
     public static final int PERSON_CNT = 10;
 
+    public static final String CITY = "city";
+    public static final String DEPARTMENT = "department";
+    public static final String PERSON = "person";
+
     private ModelGenerator() {
         // No-op.
     }
 
     public static void generatePerson(HazelcastInstance member) {
         // Prepare config.
-        ReplicatedMapConfig cityCfg = new ReplicatedMapConfig("city");
+        ReplicatedMapConfig cityCfg = new ReplicatedMapConfig(CITY);
         cityCfg.setAsyncFillup(false);
 
-        MapConfig departmentCfg = new MapConfig("department");
+        MapConfig departmentCfg = new MapConfig(DEPARTMENT);
 
-        MapConfig personCfg = new MapConfig("person");
+        MapConfig personCfg = new MapConfig(PERSON);
 
         personCfg.setPartitioningStrategyConfig(
             new PartitioningStrategyConfig().setPartitioningStrategy(
@@ -63,9 +67,9 @@ public class ModelGenerator {
         member.getConfig().addMapConfig(personCfg);
 
         // Populate data.
-        ReplicatedMap<Long, City> cityMap = member.getReplicatedMap("city");
-        IMap<Long, Department> departmentMap = member.getMap("department");
-        IMap<PersonKey, Person> personMap = member.getMap("person");
+        ReplicatedMap<Long, City> cityMap = member.getReplicatedMap(CITY);
+        IMap<Long, Department> departmentMap = member.getMap(DEPARTMENT);
+        IMap<PersonKey, Person> personMap = member.getMap(PERSON);
 
         for (int i = 0; i < CITY_CNT; i++) {
             cityMap.put((long) i, new City("city-" + i));
