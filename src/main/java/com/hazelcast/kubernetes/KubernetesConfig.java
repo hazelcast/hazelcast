@@ -85,7 +85,7 @@ final class KubernetesConfig {
         this.namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
         this.podLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_NAME);
         this.podLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_VALUE);
-        this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, false);
+        this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, true);
         this.useNodeNameAsExternalAddress
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, USE_NODE_NAME_AS_EXTERNAL_ADDRESS, false);
         this.kubernetesApiRetries

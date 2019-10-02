@@ -78,7 +78,7 @@ public class KubernetesConfigTest {
         // then
         assertEquals(DiscoveryMode.KUBERNETES_API, config.getMode());
         assertEquals("default", config.getNamespace());
-        assertEquals(false, config.isResolveNotReadyAddresses());
+        assertEquals(true, config.isResolveNotReadyAddresses());
         assertEquals(false, config.isUseNodeNameAsExternalAddress());
         assertEquals(TEST_API_TOKEN, config.getKubernetesApiToken());
         assertEquals(TEST_CA_CERTIFICATE, config.getKubernetesCaCertificate());
