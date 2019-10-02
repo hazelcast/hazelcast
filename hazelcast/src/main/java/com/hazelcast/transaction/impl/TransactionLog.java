@@ -31,14 +31,17 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 /**
- * The transaction log contains all {@link TransactionLogRecord} for a given transaction.
+ * The transaction log contains all {@link
+ * TransactionLogRecord} for a given transaction.
  *
- * If within a transaction 3 map.puts would be done on different keys and 1 queue.take would be done, than
- * the TransactionLog will contains 4 {@link TransactionLogRecord} instances.
+ * If within a transaction 3 map.puts would be done on different
+ * keys and 1 queue.take would be done, than the TransactionLog
+ * will contains 4 {@link TransactionLogRecord} instances.
  *
- * planned optimization:
- * Most transaction will be small, but an hashmap is created. Instead use an array and do a
- * linear search in that array. When there are too many items added, then enable the hashmap.
+ * Planned optimization:
+ * Most transaction will be small, but an HashMap is created.
+ * Instead use an array and do a linear search in that array.
+ * When there are too many items added, then enable the hashmap.
  */
 public class TransactionLog {
 
@@ -131,7 +134,7 @@ public class TransactionLog {
     }
 
     private void invokeAsync(NodeEngine nodeEngine, ExecutionCallback callback,
-            TransactionLogRecord record, Operation op) {
+                             TransactionLogRecord record, Operation op) {
 
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 

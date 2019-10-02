@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.mapstore;
+package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryLoader;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.mapstore.AbstractMapStoreTest;
+import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -48,7 +50,7 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
         testWriteBehindUsesStoreAllUntilException(new MapStore<Integer, String>());
     }
 
-    private <K, V>  void testWriteBehindUsesStoreAllUntilException(MapStore<K, V> mapStore) throws InterruptedException {
+    private <K, V> void testWriteBehindUsesStoreAllUntilException(MapStore<K, V> mapStore) throws InterruptedException {
         mapStore.setLoadAllKeys(false);
         Config config = newConfig(mapStore, 5);
         config.setProperty("hazelcast.local.localAddress", "127.0.0.1");

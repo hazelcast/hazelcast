@@ -78,7 +78,7 @@ public class WriteBehindItemCounterTest extends HazelcastTestSupport {
     }
 
     @Test(expected = ReachedMaxSizeException.class)
-    public void testCounter_whenMaxCapacityExceeded() throws Exception {
+    public void testCounter_whenMaxCapacityExceeded() {
         final int maxCapacityPerNode = 100;
         final int nodeCount = 1;
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();

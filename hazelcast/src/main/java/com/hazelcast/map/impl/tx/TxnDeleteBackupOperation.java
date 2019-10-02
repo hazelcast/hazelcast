@@ -16,24 +16,48 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
+import java.io.IOException;
+import java.util.UUID;
+
 public class TxnDeleteBackupOperation extends RemoveBackupOperation {
+
+    private UUID transactionId;
 
     public TxnDeleteBackupOperation() {
     }
 
-    public TxnDeleteBackupOperation(String name, Data dataKey) {
+    public TxnDeleteBackupOperation(String name, Data dataKey, UUID transactionId) {
         super(name, dataKey, false);
+        this.transactionId = transactionId;
     }
 
     @Override
     protected void runInternal() {
-        super.runInternal();
-
+        boolean exist = recordStore.existInMemory(dataKey);
+        recordStore.removeBackupTxn(dataKey, getCallerProvenance(), transactionId);
         recordStore.forceUnlock(dataKey);
+        if (!exist) {
+            wbqCapacityCounter().decrement(transactionId);
+        }
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

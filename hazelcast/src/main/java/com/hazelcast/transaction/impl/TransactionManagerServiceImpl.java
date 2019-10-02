@@ -106,7 +106,6 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         checkNotNull(task, "TransactionalTask is required!");
 
-
         TransactionContext context = newTransactionContext(options);
         context.beginTransaction();
         try {
@@ -183,12 +182,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         final UUID uuid = member.getUuid();
         if (nodeEngine.isRunning()) {
             logger.info("Committing/rolling-back live transactions of " + member.getAddress() + ", UUID: " + uuid);
-            nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-                @Override
-                public void run() {
-                    finalizeTransactionsOf(uuid);
-                }
-            });
+            nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, () -> finalizeTransactionsOf(uuid));
         } else if (logger.isFinestEnabled()) {
             logger.finest("Will not commit/roll-back transactions of " + member.getAddress() + ", UUID: " + uuid
                     + " because this member is not running");

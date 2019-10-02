@@ -16,16 +16,18 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.internal.locksupport.LockSupportService;
-import com.hazelcast.internal.locksupport.LockStore;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.locksupport.LockStore;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.MapStoreWrapper;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
@@ -38,12 +40,11 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 
@@ -144,8 +145,10 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return Clock.currentTimeMillis();
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     protected void updateRecord(Data key, Record record, Object value,
-                                long now, boolean countAsAccess, long ttl, long maxIdle, boolean mapStoreOperation) {
+                                long now, boolean countAsAccess, long ttl,
+                                long maxIdle, boolean mapStoreOperation, UUID transactionId) {
         updateStatsOnPut(countAsAccess, now);
         record.onUpdate(now);
         if (countAsAccess) {
@@ -153,23 +156,24 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         }
         setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), true);
         if (mapStoreOperation) {
-            value = runMapStore(record, key, value, now);
+            value = runMapStore(record, key, value, now, transactionId);
         }
         mutationObserver.onUpdateRecord(key, record, value);
         storage.updateRecordValue(key, record, value);
     }
 
-    protected Record putNewRecord(Data key, Object value, long ttlMillis, long maxIdleMillis, long now) {
+    protected Record putNewRecord(Data key, Object value, long ttlMillis,
+                                  long maxIdleMillis, long now, UUID transactionId) {
         Record record = createRecord(key, value, ttlMillis, maxIdleMillis, now);
-        runMapStore(record, key, value, now);
+        runMapStore(record, key, value, now, transactionId);
         storage.put(key, record);
         mutationObserver.onPutRecord(key, record);
         return record;
     }
 
-    protected Object runMapStore(Record record, Data key, Object value, long now) {
+    protected Object runMapStore(Record record, Data key, Object value, long now, UUID transactionId) {
         long expirationTime = record.getExpirationTime();
-        value = mapDataStore.add(key, value, expirationTime, now);
+        value = mapDataStore.add(key, value, expirationTime, now, transactionId);
         if (mapDataStore.isPostProcessingMapStore()) {
             recordFactory.setValue(record, value);
         }
