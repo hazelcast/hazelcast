@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
 import com.hazelcast.query.impl.predicates.PredicateUtils;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.util.ThreadUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
@@ -202,6 +203,53 @@ public class Indexes {
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public InternalIndex[] getIndexes() {
         return indexes;
+    }
+
+    /**
+     * Returns known and populated indexes for the given partition. If no
+     * indexes are known or populated, empty array is returned.
+     * <p>
+     * Must be called on partition threads only.
+     */
+    public InternalIndex[] getPopulatedIndexes(int partitionId) {
+        ThreadUtil.assertRunningOnPartitionThread();
+
+        InternalIndex[] indexes = getIndexes();
+
+        int populatedCount = 0;
+        for (InternalIndex index : indexes) {
+            if (index.hasPartitionIndexed(partitionId)) {
+                ++populatedCount;
+            }
+        }
+
+        if (populatedCount == indexes.length) {
+            return indexes;
+        }
+        if (populatedCount == 0) {
+            return EMPTY_INDEXES;
+        }
+
+        // The code below handles a rare case which may happen during indexes
+        // creation/population. E.g., see MapProxySupport.initializeIndexes:
+        // indexes are added one by one, for every index AddIndexOperation is
+        // issued on all partitions. Individual add index operations may
+        // interleave in any order with any operations including add index
+        // operations issued by other members. So for a global index only some
+        // of its associated partitions might be indexed, but that should not
+        // happen for partitioned HD indexes: all known indexes must be either
+        // populated or not populated for a partition in question.
+
+        assert isGlobal();
+        InternalIndex[] populated = new InternalIndex[populatedCount];
+        int counter = 0;
+        for (InternalIndex index : indexes) {
+            if (index.hasPartitionIndexed(partitionId)) {
+                populated[counter++] = index;
+            }
+        }
+        assert counter == populatedCount;
+        return populated;
     }
 
     /**

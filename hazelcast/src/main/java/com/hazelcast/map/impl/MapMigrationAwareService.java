@@ -81,7 +81,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         if (isLocalPromotion(event)) {
             // It's a local partition promotion. We need to populate non-global indexes here since
             // there is no map replication performed in this case. Global indexes are populated
-            // during promotion finalization phase.
+            // during promotion finalization/commit phase.
 
             // 1. Defensively clear possible stale leftovers from the previous failed promotion attempt.
             clearNonGlobalIndexes(event);
@@ -148,13 +148,16 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
-        if (event.getMigrationEndpoint() == DESTINATION) {
-            populateIndexes(event, TargetIndexes.GLOBAL);
-        } else {
+        if (isLocalDemotion(event)) {
+            // if a primary was demoted to backup, depopulate its indexes
             depopulateIndexes(event);
+        } else if (event.getMigrationEndpoint() == DESTINATION) {
+            populateIndexes(event, TargetIndexes.GLOBAL);
         }
 
         if (SOURCE == event.getMigrationEndpoint()) {
+            // Also removes record stores and depopulates indexes for migrated
+            // partitions (new replica index = -1).
             removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
 
@@ -284,14 +287,11 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void depopulateIndexes(PartitionMigrationEvent event) {
         assert event.getMigrationEndpoint() == SOURCE;
-        assert event.getNewReplicaIndex() != 0 : "Invalid migration event: " + event;
-
-        if (event.getCurrentReplicaIndex() != 0) {
-            // backup partitions have no indexes to depopulate
-            return;
-        }
+        assert event.getCurrentReplicaIndex() == 0;
+        assert event.getNewReplicaIndex() > 0;
 
         final long now = getNow();
 
@@ -305,16 +305,28 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 continue;
             }
 
-            final InternalIndex[] indexesSnapshot = indexes.getIndexes();
-            final Iterator<Record> iterator = recordStore.iterator(now, false);
-            while (iterator.hasNext()) {
-                final Record record = iterator.next();
-                final Data key = record.getKey();
-
-                final Object value = Records.getValueOrCachedValue(record, serializationService);
-                indexes.removeEntry(key, value, Index.OperationSource.SYSTEM);
+            final InternalIndex[] populatedIndexes = indexes.getPopulatedIndexes(event.getPartitionId());
+            if (populatedIndexes.length == 0) {
+                // no populated indexes
+                continue;
             }
-            Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
+
+            if (indexes.isGlobal()) {
+                final Iterator<Record> iterator = recordStore.iterator(now, false);
+                while (iterator.hasNext()) {
+                    final Record record = iterator.next();
+                    final Data key = record.getKey();
+
+                    final Object value = Records.getValueOrCachedValue(record, serializationService);
+                    for (InternalIndex index : populatedIndexes) {
+                        index.removeEntry(key, value, Index.OperationSource.SYSTEM);
+                    }
+                }
+                Indexes.markPartitionAsUnindexed(event.getPartitionId(), populatedIndexes);
+            } else {
+                // also marks indexes as not populated
+                indexes.clearAll();
+            }
         }
     }
 
@@ -325,6 +337,10 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     private static boolean isLocalPromotion(PartitionMigrationEvent event) {
         return event.getMigrationEndpoint() == DESTINATION && event.getCurrentReplicaIndex() > 0
                 && event.getNewReplicaIndex() == 0;
+    }
+
+    private static boolean isLocalDemotion(PartitionMigrationEvent event) {
+        return event.getCurrentReplicaIndex() == 0 && event.getNewReplicaIndex() > 0;
     }
 
     protected long getNow() {
