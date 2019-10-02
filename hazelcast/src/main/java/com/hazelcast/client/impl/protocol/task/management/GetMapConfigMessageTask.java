@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigRequestCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigRequestCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.nio.Connection;
@@ -52,7 +54,7 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCGetMapConfigRequestCodec.encodeResponse(serializationService.toData(response));
+        return MCGetMapConfigRequestCodec.encodeResponse(MapConfigHolder.of((MapConfig) response));
     }
 
     @Override

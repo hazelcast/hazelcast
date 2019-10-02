@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map.
  */
-@Generated("5e3ff27316d8acc25a29163894fd1e70")
+@Generated("44187685dcbb677558b9a9a1ffd1bc35")
 public final class MCGetMapConfigRequestCodec {
     //hex: 0x280200
     public static final int REQUEST_MESSAGE_TYPE = 2621952;
@@ -84,16 +84,16 @@ public final class MCGetMapConfigRequestCodec {
         /**
          * The config of the map.
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, DataCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, response, MapConfigHolderCodec::encode);
         return clientMessage;
     }
 
@@ -102,7 +102,7 @@ public final class MCGetMapConfigRequestCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        response.response = CodecUtil.decodeNullable(iterator, MapConfigHolderCodec::decode);
         return response;
     }
 

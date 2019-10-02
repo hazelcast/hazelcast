@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigRequestCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigRequestCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.ClusterStateHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.MapConfig;
@@ -55,7 +56,7 @@ public class ManagementCenterService {
         );
     }
 
-    public ClientDelegatingFuture<MapConfig> getMapConfig(String map) {
+    public ClientDelegatingFuture<MapConfigHolder> getMapConfig(String map) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCGetMapConfigRequestCodec.encodeRequest(map),

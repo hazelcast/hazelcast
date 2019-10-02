@@ -19,6 +19,7 @@ package com.hazelcast.client.management;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.management.ManagementCenterService;
+import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -74,9 +75,9 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     @Test
     public void getMapConfig() throws Exception {
-        ClientDelegatingFuture<MapConfig> future = managementCenterService.getMapConfig("map-1");
-        MapConfig mapConfig = future.get();
-        assertEquals("default", mapConfig.getName());
+        ClientDelegatingFuture<MapConfigHolder> future = managementCenterService.getMapConfig("map-1");
+        MapConfigHolder mapConfig = future.get();
+        assertEquals(1, mapConfig.getBackupCount());
     }
 
     @Test
@@ -87,7 +88,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         managementCenterService.updateMapConfig("map-1", mapConfig);
 
         assertTrueEventually(() -> {
-            MapConfig retrievedConfig = managementCenterService.getMapConfig("map-1").get();
+            MapConfigHolder retrievedConfig = managementCenterService.getMapConfig("map-1").get();
             assertEquals(27, retrievedConfig.getMaxIdleSeconds());
         });
     }
