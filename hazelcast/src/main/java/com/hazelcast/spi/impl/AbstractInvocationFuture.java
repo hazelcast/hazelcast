@@ -718,33 +718,14 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             return;
         }
         Object value = resolve(state);
-        if (waiter instanceof AcceptNode) {
-            AcceptNode acceptNode = (AcceptNode) waiter;
-            acceptNode.execute(executor, value);
-        } else if (waiter instanceof ApplyNode) {
-            ApplyNode applyNode = (ApplyNode) waiter;
-            applyNode.execute(executor, value);
-        } else if (waiter instanceof RunNode) {
-            RunNode runNode = (RunNode) waiter;
-            runNode.execute(executor, value);
-        } else if (waiter instanceof AbstractInvocationFuture.WhenCompleteNode) {
-            WhenCompleteNode whenCompleteNode = (WhenCompleteNode) waiter;
+        if (waiter instanceof UniWaiter) {
+            ((UniWaiter) waiter).execute(executor, value);
+        } else if (waiter instanceof BiWaiter) {
             Throwable t = (value instanceof ExceptionalResult) ? ((ExceptionalResult) value).cause : null;
             value = (value instanceof ExceptionalResult) ? null : value;
-            whenCompleteNode.execute(executor, value, t);
-        } else if (waiter instanceof HandleNode) {
-            HandleNode handleNode = (HandleNode) waiter;
-            Throwable t = (value instanceof ExceptionalResult) ? ((ExceptionalResult) value).cause : null;
-            value = (value instanceof ExceptionalResult) ? null : value;
-            handleNode.execute(executor, value, t);
+            ((BiWaiter) waiter).execute(executor, value, t);
         } else if (waiter instanceof ExceptionallyNode) {
             ((ExceptionallyNode) waiter).execute(value);
-        } else if (waiter instanceof ComposeNode) {
-            ((ComposeNode) waiter).execute(executor, value);
-        } else if (waiter instanceof AbstractBiNode) {
-            ((AbstractBiNode) waiter).execute(executor, value);
-        } else if (waiter instanceof AbstractEitherNode) {
-            ((AbstractEitherNode) waiter).execute(executor, value);
         }
     }
 
@@ -1413,11 +1394,28 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
      * for monitoring & debugging.
      */
     interface Waiter extends AsynchronousCompletionTask {
+    }
 
+    /**
+     * Interface for dependent stages registered on a yet incomplete future
+     * which perform some action ({@code Function}, {@code Consumer}...) on this
+     * future's resolved value.
+     */
+    interface UniWaiter extends Waiter {
+        void execute(Executor executor, Object value);
+    }
+
+    /**
+     * Interface for dependent stages registered on a yet incomplete future
+     * which perform some action ({@code BiFunction}, {@code BiConsumer}..)
+     * on the normal or exceptional completion value.
+     */
+    interface BiWaiter<V, T extends Throwable> extends Waiter {
+        void execute(Executor executor, V value, T throwable);
     }
 
     // a WaitNode for a Function<V, R>
-    protected static final class ApplyNode<V, R> implements Waiter {
+    protected static final class ApplyNode<V, R> implements UniWaiter {
         final CompletableFuture<R> future;
         final Function<V, R> function;
 
@@ -1426,15 +1424,16 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             this.function = function;
         }
 
-        public void execute(Executor executor, V value) {
+        @Override
+        public void execute(Executor executor, Object value) {
             if (cascadeException(value, future)) {
                 return;
             }
             if (executor == null) {
-                future.complete(function.apply(value));
+                future.complete(function.apply((V) value));
             } else {
                 executor.execute(() -> {
-                    future.complete(function.apply(value));
+                    future.complete(function.apply((V) value));
                 });
             }
         }
@@ -1445,7 +1444,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         final CompletableFuture<R> future;
         final Function<Throwable, ? extends R> function;
 
-        public ExceptionallyNode(CompletableFuture<R> future, Function<Throwable, ? extends R> function) {
+        ExceptionallyNode(CompletableFuture<R> future, Function<Throwable, ? extends R> function) {
             this.future = future;
             this.function = function;
         }
@@ -1465,17 +1464,18 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
     }
 
-    // a WaitNode for a BiFunction<V, T, R>
-    private static final class HandleNode<V, T, R> implements Waiter {
+    // a WaitNode for a BiFunction<V, Throwable, R>
+    private static final class HandleNode<V, R> implements BiWaiter<V, Throwable> {
         final CompletableFuture<R> future;
-        final BiFunction<V, T, R> biFunction;
+        final BiFunction<V, Throwable, R> biFunction;
 
-        HandleNode(CompletableFuture<R> future, BiFunction<V, T, R> biFunction) {
+        HandleNode(CompletableFuture<R> future, BiFunction<V, Throwable, R> biFunction) {
             this.future = future;
             this.biFunction = biFunction;
         }
 
-        public void execute(Executor executor, V value, T throwable) {
+        @Override
+        public void execute(Executor executor, V value, Throwable throwable) {
             Executor e = (executor == null) ? CALLER_RUNS : executor;
             e.execute(() -> {
                 try {
@@ -1488,7 +1488,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     // a WaitNode for a BiConsumer<V, T>
-    private static final class WhenCompleteNode<V, T extends Throwable> implements Waiter {
+    private static final class WhenCompleteNode<V, T extends Throwable> implements BiWaiter<V, T> {
         final CompletableFuture<V> future;
         final BiConsumer<V, T> biConsumer;
 
@@ -1497,6 +1497,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             this.biConsumer = biConsumer;
         }
 
+        @Override
         public void execute(Executor executor, V value, T throwable) {
             Executor e = (executor == null) ? CALLER_RUNS : executor;
             e.execute(() -> {
@@ -1520,7 +1521,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     // a WaitNode for a Consumer<? super V>
-    private static final class AcceptNode<T> implements Waiter {
+    private static final class AcceptNode<T> implements UniWaiter {
         final CompletableFuture<Void> future;
         final Consumer<T> consumer;
 
@@ -1529,6 +1530,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             this.consumer = consumer;
         }
 
+        @Override
         public void execute(Executor executor, Object value) {
             if (cascadeException(value, future)) {
                 return;
@@ -1546,7 +1548,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     // a WaitNode for a Runnable
-    protected static final class RunNode implements Waiter {
+    protected static final class RunNode implements UniWaiter {
         final CompletableFuture<Void> future;
         final Runnable runnable;
 
@@ -1555,6 +1557,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             this.runnable = runnable;
         }
 
+        @Override
         public void execute(Executor executor, Object resolved) {
             if (cascadeException(resolved, future)) {
                 return;
@@ -1571,7 +1574,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
     }
 
-    protected static final class ComposeNode<T, U> implements Waiter {
+    protected static final class ComposeNode<T, U> implements UniWaiter {
         final CompletableFuture<U> future;
         final Function<? super T, ? extends CompletionStage<U>> function;
 
@@ -1580,6 +1583,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             this.function = function;
         }
 
+        @Override
         public void execute(Executor executor, Object resolved) {
             if (cascadeException(resolved, future)) {
                 return;
@@ -1603,7 +1607,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     // common superclass of waiters for two futures (combine, acceptBoth, runAfterBoth)
-    protected abstract static class AbstractBiNode<T, U, R> implements Waiter {
+    protected abstract static class AbstractBiNode<T, U, R> implements UniWaiter {
         final CompletableFuture<R> result;
         final CompletableFuture<? extends U> otherFuture;
         final AtomicBoolean executed;
@@ -1615,6 +1619,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             this.executed = new AtomicBoolean();
         }
 
+        @Override
         @SuppressWarnings("checkstyle:npathcomplexity")
         public void execute(Executor executor, Object resolved) {
             if (cascadeException(resolved, result)) {
@@ -1714,7 +1719,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     // common superclass of waiters for either of two futures (applyEither, acceptEither, runAfterEither)
-    protected abstract static class AbstractEitherNode<T, R> implements Waiter, BiConsumer<T, Throwable> {
+    protected abstract static class AbstractEitherNode<T, R> implements UniWaiter, BiConsumer<T, Throwable> {
         final CompletableFuture<R> result;
         final AtomicBoolean executed;
 
@@ -1723,6 +1728,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             this.executed = new AtomicBoolean();
         }
 
+        @Override
         public void execute(Executor executor, Object resolved) {
             if (!executed.compareAndSet(false, true)) {
                 return;
