@@ -112,12 +112,12 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
         });
 
         assertTrueEventually(() -> {
-            RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
+            LockService service = getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
             assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
         });
 
         assertTrueAllTheTime(() -> {
-            RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
+            LockService service = getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
             assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
         }, callTimeoutSeconds + 5);
 

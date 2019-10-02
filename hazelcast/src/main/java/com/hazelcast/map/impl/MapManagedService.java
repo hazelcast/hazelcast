@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreInfo;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockStoreInfo;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ObjectNamespace;
@@ -40,7 +40,7 @@ public class MapManagedService implements ManagedService {
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        final LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
+        final LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService != null) {
             lockService.registerLockStoreConstructor(MapService.SERVICE_NAME,
                     new ObjectNamespaceLockStoreInfoConstructorFunction());

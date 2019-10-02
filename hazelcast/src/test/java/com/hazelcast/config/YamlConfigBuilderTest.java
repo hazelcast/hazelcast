@@ -652,24 +652,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readLockConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  lock:\n"
-                + "    default:\n"
-                + "      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes\n"
-                + "    custom:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n";
-
-        Config config = buildConfig(yaml);
-        LockConfig defaultConfig = config.getLockConfig("default");
-        LockConfig customConfig = config.getLockConfig("custom");
-        assertEquals("splitBrainProtectionRuleWithThreeNodes", defaultConfig.getSplitBrainProtectionName());
-        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
     public void readReliableTopic() {
         String yaml = ""
                 + "hazelcast:\n"

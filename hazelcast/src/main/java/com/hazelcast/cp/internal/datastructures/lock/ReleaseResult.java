@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.lock;
 import java.util.Collection;
 import java.util.Collections;
 
-import static com.hazelcast.cp.internal.datastructures.lock.RaftLockOwnershipState.NOT_LOCKED;
+import static com.hazelcast.cp.internal.datastructures.lock.LockOwnershipState.NOT_LOCKED;
 import static java.util.Collections.unmodifiableCollection;
 
 /**
@@ -36,10 +36,10 @@ class ReleaseResult {
 
     /**
      * If the unlock() request is successful, represents new state of the lock ownership.
-     * It can be {@link RaftLockOwnershipState#NOT_LOCKED} if the lock has no new owner after successful release.
-     * It is {@link RaftLockOwnershipState#NOT_LOCKED} if the unlock() request is failed.
+     * It can be {@link LockOwnershipState#NOT_LOCKED} if the lock has no new owner after successful release.
+     * It is {@link LockOwnershipState#NOT_LOCKED} if the unlock() request is failed.
      */
-    private final RaftLockOwnershipState ownership;
+    private final LockOwnershipState ownership;
 
     /**
      * If the unlock() request is successful and ownership is given to some other endpoint, contains its wait keys.
@@ -47,17 +47,17 @@ class ReleaseResult {
      */
     private final Collection<LockInvocationKey> completedWaitKeys;
 
-    ReleaseResult(boolean success, RaftLockOwnershipState ownership, Collection<LockInvocationKey> completedWaitKeys) {
+    ReleaseResult(boolean success, LockOwnershipState ownership, Collection<LockInvocationKey> completedWaitKeys) {
         this.success = success;
         this.ownership = ownership;
         this.completedWaitKeys = unmodifiableCollection(completedWaitKeys);
     }
 
-    static ReleaseResult successful(RaftLockOwnershipState ownership) {
+    static ReleaseResult successful(LockOwnershipState ownership) {
         return new ReleaseResult(true, ownership, Collections.emptyList());
     }
 
-    static ReleaseResult successful(RaftLockOwnershipState ownership, Collection<LockInvocationKey> notifications) {
+    static ReleaseResult successful(LockOwnershipState ownership, Collection<LockInvocationKey> notifications) {
         return new ReleaseResult(true, ownership, notifications);
     }
 
@@ -69,7 +69,7 @@ class ReleaseResult {
         return success;
     }
 
-    public RaftLockOwnershipState ownership() {
+    public LockOwnershipState ownership() {
         return ownership;
     }
 

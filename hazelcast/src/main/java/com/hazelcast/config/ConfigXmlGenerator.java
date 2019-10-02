@@ -140,7 +140,6 @@ public class ConfigXmlGenerator {
         collectionXmlGenerator(gen, "list", config.getListConfigs().values());
         collectionXmlGenerator(gen, "set", config.getSetConfigs().values());
         topicXmlGenerator(gen, config);
-        lockXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
         executorXmlGenerator(gen, config);
         durableExecutorXmlGenerator(gen, config);
@@ -562,14 +561,6 @@ public class ConfigXmlGenerator {
             MergePolicyConfig mergePolicyConfig = q.getMergePolicyConfig();
             gen.node("split-brain-protection-ref", q.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
-                    .close();
-        }
-    }
-
-    private static void lockXmlGenerator(XmlGenerator gen, Config config) {
-        for (LockConfig c : config.getLockConfigs().values()) {
-            gen.open("lock", "name", c.getName())
-                    .node("split-brain-protection-ref", c.getSplitBrainProtectionName())
                     .close();
         }
     }

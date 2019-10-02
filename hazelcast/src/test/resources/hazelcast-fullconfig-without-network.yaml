@@ -447,10 +447,6 @@ hazelcast:
       message-listeners:
         - com.hazelcast.examples.MessageListener
 
-  lock:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-
   ringbuffer:
     default:
       capacity: 25311

@@ -96,7 +96,7 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
 
         assertTrueEventually(() -> {
             HazelcastInstance leader = getLeaderInstance(instances, groupId);
-            RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
+            LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
             ResourceRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
@@ -110,7 +110,7 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
                 assertTrue(snapshotEntry.index() > 0);
                 List<RestoreSnapshotOp> ops = (List<RestoreSnapshotOp>) snapshotEntry.operation();
                 for (RestoreSnapshotOp op : ops) {
-                    if (op.getServiceName().equals(RaftLockService.SERVICE_NAME)) {
+                    if (op.getServiceName().equals(LockService.SERVICE_NAME)) {
                         ResourceRegistry registry = (ResourceRegistry) op.getSnapshot();
                         assertFalse(registry.getWaitTimeouts().isEmpty());
                         return;
@@ -131,11 +131,11 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
             assertNotNull(raftNode);
             assertTrue(getSnapshotEntry(raftNode).index() > 0);
 
-            RaftLockService service = getNodeEngineImpl(newInstance).getService(RaftLockService.SERVICE_NAME);
-            RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+            LockService service = getNodeEngineImpl(newInstance).getService(LockService.SERVICE_NAME);
+            LockRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
-            RaftLockOwnershipState ownership = registry.getLockOwnershipState(objectName);
+            LockOwnershipState ownership = registry.getLockOwnershipState(objectName);
             assertTrue(ownership.isLocked());
             assertTrue(ownership.getLockCount() > 0);
             assertEquals(fence, ownership.getFence());

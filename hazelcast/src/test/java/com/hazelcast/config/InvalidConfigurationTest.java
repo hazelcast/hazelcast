@@ -480,10 +480,6 @@ public class InvalidConfigurationTest {
                 + "<backup-count>${set-backup-count}</backup-count>\n"
                 + "</set>\n"
 
-                + "<lock name=\"default\">\n"
-                + "<split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>\n"
-                + "</lock>"
-
                 + "    <ringbuffer name=\"default\">\n"
                 + "        <capacity>10000</capacity>\n"
                 + "        <time-to-live-seconds>30</time-to-live-seconds>\n"

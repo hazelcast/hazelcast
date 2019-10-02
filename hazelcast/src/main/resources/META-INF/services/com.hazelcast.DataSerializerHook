@@ -25,7 +25,7 @@ com.hazelcast.collection.impl.collection.CollectionDataSerializerHook
 com.hazelcast.topic.impl.TopicDataSerializerHook
 com.hazelcast.executor.impl.ExecutorDataSerializerHook
 com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook
-com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook
+com.hazelcast.internal.locksupport.LockDataSerializerHook
 com.hazelcast.internal.longregister.LongRegisterDataSerializerHook
 com.hazelcast.transaction.impl.TransactionDataSerializerHook
 com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook
@@ -51,7 +51,7 @@ com.hazelcast.cp.internal.RaftServiceDataSerializerHook
 com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook
 com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongDataSerializerHook
 com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook
-com.hazelcast.cp.internal.datastructures.lock.RaftLockDataSerializerHook
+com.hazelcast.cp.internal.datastructures.lock.LockDataSerializerHook
 com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook
 com.hazelcast.cp.internal.datastructures.RaftDataServiceDataSerializerHook
 com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerializerHook

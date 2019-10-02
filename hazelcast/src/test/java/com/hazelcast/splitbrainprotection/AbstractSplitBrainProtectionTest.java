@@ -27,7 +27,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -39,7 +38,6 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.map.IMap;
@@ -139,12 +137,6 @@ public abstract class AbstractSplitBrainProtectionTest {
         return config;
     }
 
-    protected static LockConfig newLockConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
-        LockConfig config = new LockConfig(LOCK_NAME + splitBrainProtectionOn.name());
-        config.setSplitBrainProtectionName(splitBrainProtectionName);
-        return config;
-    }
-
     protected static MapConfig newMapConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
         MapConfig config = new MapConfig(MAP_NAME + splitBrainProtectionOn.name());
         config.setSplitBrainProtectionName(splitBrainProtectionName);
@@ -221,7 +213,6 @@ public abstract class AbstractSplitBrainProtectionTest {
             config.addCacheConfig(newCacheConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addCardinalityEstimatorConfig(newEstimatorConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addListConfig(newListConfig(splitBrainProtectionOn, splitBrainProtectionName));
-            config.addLockConfig(newLockConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addMapConfig(newMapConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addMultiMapConfig(newMultiMapConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addQueueConfig(newQueueConfig(splitBrainProtectionOn, splitBrainProtectionName));
@@ -278,10 +269,6 @@ public abstract class AbstractSplitBrainProtectionTest {
 
     protected IList list(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
         return cluster.instance[index].getList(LIST_NAME + splitBrainProtectionOn.name());
-    }
-
-    protected ILock lock(int index, SplitBrainProtectionOn splitBrainProtectionOn) {
-        return cluster.instance[index].getLock(LOCK_NAME + splitBrainProtectionOn.name());
     }
 
     protected IMap map(int index, SplitBrainProtectionOn splitBrainProtectionOn) {

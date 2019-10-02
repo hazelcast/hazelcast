@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
+import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -67,9 +67,9 @@ public class NodeEngineTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("deprecation")
     public void getServiceOrNull_whenExistingService() {
-        Object sharedService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
+        Object sharedService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         assertNotNull(sharedService);
-        assertTrue(sharedService instanceof LockService);
+        assertTrue(sharedService instanceof LockSupportService);
     }
 
     @Test(expected = NullPointerException.class)
@@ -84,8 +84,8 @@ public class NodeEngineTest extends HazelcastTestSupport {
 
     @Test
     public void getService_whenExistingService() {
-        Object sharedService = nodeEngine.getService(LockService.SERVICE_NAME);
-        assertInstanceOf(LockService.class, sharedService);
+        Object sharedService = nodeEngine.getService(LockSupportService.SERVICE_NAME);
+        assertInstanceOf(LockSupportService.class, sharedService);
     }
 
     @Test

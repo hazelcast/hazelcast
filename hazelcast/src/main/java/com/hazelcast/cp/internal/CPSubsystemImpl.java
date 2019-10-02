@@ -28,7 +28,7 @@ import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.session.RaftSessionService;
@@ -81,7 +81,7 @@ public class CPSubsystemImpl implements CPSubsystem {
     @Override
     public FencedLock getLock(String name) {
         checkNotNull(name, "Retrieving an fenced lock instance with a null name is not allowed!");
-        return createProxy(RaftLockService.SERVICE_NAME, name);
+        return createProxy(LockService.SERVICE_NAME, name);
     }
 
     @Override

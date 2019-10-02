@@ -54,7 +54,6 @@ import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -115,7 +114,7 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.lock.ILock;
+import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
@@ -233,7 +232,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private ISemaphore semaphore;
 
     @Resource(name = "lock")
-    private ILock lock;
+    private FencedLock lock;
 
     @Resource(name = "dummyMapStore")
     private MapStore dummyMapStore;
@@ -508,14 +507,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         QueueStoreConfig storeConfig4 = queueWithStore4.getQueueStoreConfig();
         assertNotNull(storeConfig4);
         assertEquals(dummyQueueStoreFactory, storeConfig4.getFactoryImplementation());
-    }
-
-    @Test
-    public void testLockConfig() {
-        LockConfig lockConfig = config.getLockConfig("lock");
-        assertNotNull(lockConfig);
-        assertEquals("lock", lockConfig.getName());
-        assertEquals("my-split-brain-protection", lockConfig.getSplitBrainProtectionName());
     }
 
     @Test

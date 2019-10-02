@@ -454,10 +454,6 @@
         </message-listeners>
     </reliable-topic>
 
-    <lock name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-    </lock>
-
     <ringbuffer name="default">
         <capacity>25311</capacity>
         <backup-count>2</backup-count>

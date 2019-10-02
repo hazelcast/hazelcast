@@ -24,8 +24,6 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -108,23 +106,6 @@ final class MBeans {
             @Override
             public String getServiceName() {
                 return ListService.SERVICE_NAME;
-            }
-        },
-
-        LOCK {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new LockMBean((ILock) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "ILock";
-            }
-
-            @Override
-            public String getServiceName() {
-                return LockService.SERVICE_NAME;
             }
         },
 

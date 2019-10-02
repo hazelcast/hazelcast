@@ -57,7 +57,7 @@ public class UnsafeSessionlessSemaphoreClientBasicTest extends UnsafeSessionless
 
     @Override
     protected CPGroupId getGroupId(ISemaphore semaphore) {
-        return ((RaftSessionlessSemaphoreProxy) semaphore).getGroupId();
+        return ((SessionlessSemaphoreProxy) semaphore).getGroupId();
     }
 
     @Test
