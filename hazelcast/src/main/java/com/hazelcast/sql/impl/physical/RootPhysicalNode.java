@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Root physical node. Performs final collection of results.
@@ -55,5 +56,30 @@ public class RootPhysicalNode implements PhysicalNode {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         upstream = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        RootPhysicalNode that = (RootPhysicalNode) o;
+
+        return upstream.equals(that.upstream);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(upstream);
+    }
+
+    @Override
+    public String toString() {
+        return "RootPhysicalNode{upstream=" + upstream + '}';
     }
 }

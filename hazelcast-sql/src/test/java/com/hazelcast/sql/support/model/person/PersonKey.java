@@ -14,24 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.model.person;
+package com.hazelcast.sql.support.model.person;
 
 import java.io.Serializable;
 
-public class City implements Serializable {
-    private static final long serialVersionUID = 2283430403620498655L;
+public class PersonKey implements Serializable {
+    private static final long serialVersionUID = -5213552088903336752L;
 
-    private String name;
+    private long id;
+    private long deptId;
 
-    public City() {
+    public PersonKey() {
         // No-op.
     }
 
-    public City(String name) {
-        this.name = name;
+    public PersonKey(long id, long deptId) {
+        this.id = id;
+        this.deptId = deptId;
     }
 
-    public String getName() {
-        return name;
+    public long getId() {
+        return id;
+    }
+
+    public long getDeptId() {
+        return deptId;
     }
 }

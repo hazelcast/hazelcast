@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Base class to scan a map.
@@ -70,5 +71,33 @@ public abstract class AbstractMapScanPhysicalNode implements PhysicalNode {
         mapName = in.readUTF();
         projections = in.readObject();
         filter = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AbstractMapScanPhysicalNode that = (AbstractMapScanPhysicalNode) o;
+
+        return mapName.equals(that.mapName)
+            && Objects.equals(projections, that.projections)
+            && Objects.equals(filter, that.filter);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mapName, projections, filter);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{mapName=" + mapName + ", projections=" + projections
+            + ", filter=" + filter + '}';
     }
 }

@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Specialized expression type which extract a value from the key-value pair.
@@ -42,6 +43,8 @@ public class KeyValueExtractorExpression<T> implements Expression<T> {
     }
 
     public KeyValueExtractorExpression(String path) {
+        assert path != null;
+
         this.path = path;
     }
 
@@ -74,5 +77,30 @@ public class KeyValueExtractorExpression<T> implements Expression<T> {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         path = in.readUTF();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        KeyValueExtractorExpression<?> that = (KeyValueExtractorExpression<?>) o;
+
+        return path.equals(that.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(path);
+    }
+
+    @Override
+    public String toString() {
+        return "KeyValueExtractorExpression{path=" + path + '}';
     }
 }

@@ -17,7 +17,8 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.model.ModelGenerator;
+import com.hazelcast.sql.support.ModelGenerator;
+import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;

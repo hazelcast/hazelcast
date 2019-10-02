@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.model.person;
+package com.hazelcast.sql.support.model.person;
 
 import java.io.Serializable;
 

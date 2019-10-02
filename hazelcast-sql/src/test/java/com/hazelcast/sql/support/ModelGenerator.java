@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.model;
+package com.hazelcast.sql.support;
 
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
@@ -24,10 +24,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.sql.model.person.City;
-import com.hazelcast.sql.model.person.Department;
-import com.hazelcast.sql.model.person.Person;
-import com.hazelcast.sql.model.person.PersonKey;
+import com.hazelcast.sql.support.model.person.City;
+import com.hazelcast.sql.support.model.person.Department;
+import com.hazelcast.sql.support.model.person.Person;
+import com.hazelcast.sql.support.model.person.PersonKey;
 
 /**
  * Utility class which generate models for test cases.
