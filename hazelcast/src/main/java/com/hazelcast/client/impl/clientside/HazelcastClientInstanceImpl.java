@@ -171,17 +171,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
 
-    private final ClientMessageDecoder<MetricsResultSet> decodeMetricsResponse = new ClientMessageDecoder<MetricsResultSet>() {
-
-        @Override
-        public MetricsResultSet decodeClientMessage(ClientMessage clientMessage) {
-
-            MetricsReadMetricsCodec.ResponseParameters response = serializationService
-                    .toObject(MetricsReadMetricsCodec.decodeResponse(clientMessage));
-            return new MetricsResultSet(response.nextSequence, response.elements);
-        }
-    };
-
     private final ConcurrencyDetection concurrencyDetection;
     private final HazelcastProperties properties;
     private final int id = CLIENT_ID.getAndIncrement();
