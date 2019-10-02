@@ -157,10 +157,10 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         readMetrics(metricsService, 0, metricConsumerMock);
 
-        inOrder.verify(metricConsumerMock).consumeDouble("test.doubleValue", 1.5D);
-        inOrder.verify(metricConsumerMock).consumeLong("test.longValue", 1);
-        inOrder.verify(metricConsumerMock).consumeDouble("test.doubleValue", 5.5D);
-        inOrder.verify(metricConsumerMock).consumeLong("test.longValue", 2);
+        inOrder.verify(metricConsumerMock).consumeDouble("[metric=test.doubleValue]", 1.5D);
+        inOrder.verify(metricConsumerMock).consumeLong("[metric=test.longValue]", 1);
+        inOrder.verify(metricConsumerMock).consumeDouble("[metric=test.doubleValue]", 5.5D);
+        inOrder.verify(metricConsumerMock).consumeLong("[metric=test.longValue]", 2);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -186,8 +186,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         readMetrics(metricsService, 0, metricConsumerMock);
 
-        inOrder.verify(metricConsumerMock).consumeDouble("test.doubleValue", 5.5D);
-        inOrder.verify(metricConsumerMock).consumeLong("test.longValue", 2);
+        inOrder.verify(metricConsumerMock).consumeDouble("[metric=test.doubleValue]", 5.5D);
+        inOrder.verify(metricConsumerMock).consumeLong("[metric=test.longValue]", 2);
         inOrder.verifyNoMoreInteractions();
     }
 
