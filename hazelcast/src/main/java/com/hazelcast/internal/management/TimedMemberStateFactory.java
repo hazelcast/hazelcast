@@ -19,28 +19,27 @@ package com.hazelcast.internal.management;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.client.Client;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.client.Client;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPMember;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
-import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
@@ -64,7 +63,6 @@ import com.hazelcast.monitor.impl.NodeStateImpl;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;
@@ -208,10 +206,6 @@ public class TimedMemberStateFactory {
         createWanSyncState(memberState);
 
         memberState.setClientStats(node.clientEngine.getClientStatistics());
-
-        AggregateEndpointManager aggregateEndpointManager = node.getNetworkingService().getAggregateEndpointManager();
-        memberState.setInboundNetworkStats(new AdvancedNetworkStatsDTO(aggregateEndpointManager.getInboundNetworkStats()));
-        memberState.setOutboundNetworkStats(new AdvancedNetworkStatsDTO(aggregateEndpointManager.getOutboundNetworkStats()));
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {

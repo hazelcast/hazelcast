@@ -36,7 +36,7 @@ public final class AdvancedNetworkStats {
     private final EnumMap<ProtocolType, AtomicLong> bytesTransceived;
 
     public AdvancedNetworkStats() {
-        bytesTransceived = new EnumMap<ProtocolType, AtomicLong>(ProtocolType.class);
+        bytesTransceived = new EnumMap<>(ProtocolType.class);
         for (ProtocolType type : ProtocolType.valuesAsSet()) {
             bytesTransceived.put(type, new AtomicLong());
         }
@@ -60,12 +60,7 @@ public final class AdvancedNetworkStats {
     public void registerMetrics(MetricsRegistry metricsRegistry, String prefix) {
         for (final ProtocolType type : ProtocolType.valuesAsSet()) {
             metricsRegistry.register(this, prefix + "." + type.name(), ProbeLevel.INFO,
-                    new LongProbeFunction<AdvancedNetworkStats>() {
-                        @Override
-                        public long get(AdvancedNetworkStats source) {
-                            return bytesTransceived.get(type).get();
-                        }
-                    });
+                    (LongProbeFunction<AdvancedNetworkStats>) source -> bytesTransceived.get(type).get());
         }
     }
 

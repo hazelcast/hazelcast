@@ -28,8 +28,6 @@ import java.util.Set;
  * configuration uses a single server socket to listen for all kinds of protocol
  * types configured, while {@link com.hazelcast.config.AdvancedNetworkConfig} allows
  * configuration of multiple server sockets.
- * <p>
- * Note: names of this enum are used for stats sent to Management Center, do not rename.
  *
  * @see com.hazelcast.config.NetworkConfig
  * @see com.hazelcast.config.AdvancedNetworkConfig
@@ -37,9 +35,11 @@ import java.util.Set;
  */
 public enum ProtocolType {
 
-    /**
+    /*
      * Ordinals of this enum are used for IDS inside {@link EndpointQualifier}.
      * Do not re-arrange, only append new values at end.
+     *
+     * Note: names of this enum are used for metrics sent to Management Center, do not rename.
      */
     MEMBER(1, Protocols.CLUSTER),
     CLIENT(1, Protocols.CLIENT_BINARY_NEW),
