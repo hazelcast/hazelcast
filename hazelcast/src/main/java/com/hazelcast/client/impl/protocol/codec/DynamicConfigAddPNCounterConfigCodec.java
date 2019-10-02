@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a PN counter configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("6e405ff9571fc8e7f22c611df9275f92")
+@Generated("836cb0f3ef08ea57ad8be4ea3e99ef46")
 public final class DynamicConfigAddPNCounterConfigCodec {
     //hex: 0x1E1600
     public static final int REQUEST_MESSAGE_TYPE = 1971712;
@@ -47,7 +47,7 @@ public final class DynamicConfigAddPNCounterConfigCodec {
     private static final int REQUEST_REPLICA_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_REPLICA_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private DynamicConfigAddPNCounterConfigCodec() {
     }

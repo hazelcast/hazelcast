@@ -104,7 +104,8 @@ public class ClientQueryCacheDestroyResourcesTest extends HazelcastTestSupport {
         Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> registrations
                 = smartListenerService.getRegistrations();
 
-        assertEquals(registrations.toString(), 0, registrations.size());
+        //we expect at least 1 for backup listener.
+        assertEquals(registrations.toString(), 1, registrations.size());
     }
 
     protected SmartClientListenerService getSmartListenerService() {

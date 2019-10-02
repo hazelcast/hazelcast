@@ -105,10 +105,12 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
     // Note that frames have frame length and flags before this byte[] content
     public static final int TYPE_FIELD_OFFSET = 0;
     public static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    //backup acks field offset is used by response messages
+    public static final int RESPONSE_BACKUP_ACKS_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    //partition id field offset used by request and event messages
+    public static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     //offset valid for fragmentation frames only
     public static final int FRAGMENTATION_ID_OFFSET = 0;
-    //optional fixed partition id field offset
-    public static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
 
     public static final int DEFAULT_FLAGS = 0;
     public static final int BEGIN_FRAGMENT_FLAG = 1 << 15;
@@ -119,6 +121,8 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
     public static final int END_DATA_STRUCTURE_FLAG = 1 << 11;
     public static final int IS_NULL_FLAG = 1 << 10;
     public static final int IS_EVENT_FLAG = 1 << 9;
+    public static final int BACKUP_AWARE_FLAG = 1 << 8;
+    public static final int BACKUP_EVENT_FLAG = 1 << 7;
 
     //frame length + flags
     public static final int SIZE_OF_FRAME_LENGTH_AND_FLAGS = Bits.INT_SIZE_IN_BYTES + Bits.SHORT_SIZE_IN_BYTES;
@@ -164,6 +168,24 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
 
     public ClientMessage setCorrelationId(long correlationId) {
         Bits.writeLongL(get(0).content, CORRELATION_ID_FIELD_OFFSET, correlationId);
+        return this;
+    }
+
+    /**
+     * @return the number of acks will be send for a request
+     */
+    public int getNumberOfBackupAcks() {
+        return Bits.readIntL(get(0).content, RESPONSE_BACKUP_ACKS_FIELD_OFFSET);
+    }
+
+    /**
+     * Sets the setNumberOfAcks field.
+     *
+     * @param numberOfAcks The value to set in the setNumberOfAcks field.
+     * @return The ClientMessage with the new dataOffset field value.
+     */
+    public ClientMessage setNumberOfBackupAcks(final int numberOfAcks) {
+        Bits.writeIntL(get(0).content, RESPONSE_BACKUP_ACKS_FIELD_OFFSET, numberOfAcks);
         return this;
     }
 

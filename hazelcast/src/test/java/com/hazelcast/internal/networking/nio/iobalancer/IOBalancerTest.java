@@ -20,7 +20,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

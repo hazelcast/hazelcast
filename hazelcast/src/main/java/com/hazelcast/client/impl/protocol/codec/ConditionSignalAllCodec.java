@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If any threads are waiting on this condition then they are all woken up. Each thread must re-acquire the lock
  * before it can return from
  */
-@Generated("be5b5350164be820d090cfdd8e0201ab")
+@Generated("3b0eba8ec42b18459006bddbfe5b6749")
 public final class ConditionSignalAllCodec {
     //hex: 0x080400
     public static final int REQUEST_MESSAGE_TYPE = 525312;
@@ -45,7 +45,7 @@ public final class ConditionSignalAllCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 525313;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ConditionSignalAllCodec() {
     }

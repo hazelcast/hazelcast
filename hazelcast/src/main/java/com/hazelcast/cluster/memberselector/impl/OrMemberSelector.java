@@ -14,31 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster.memberselector;
+package com.hazelcast.cluster.memberselector.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 
 /**
- * Selects a member only if all of the sub-selectors succeed
+ * Selects a member if one of the sub-selectors succeed
  */
-class AndMemberSelector
-        implements MemberSelector {
+public class OrMemberSelector implements MemberSelector {
 
     private final MemberSelector[] selectors;
 
-    AndMemberSelector(MemberSelector... selectors) {
+    public OrMemberSelector(MemberSelector... selectors) {
         this.selectors = selectors;
     }
 
     @Override
     public boolean select(Member member) {
         for (MemberSelector selector : selectors) {
-            if (!selector.select(member)) {
-                return false;
+            if (selector.select(member)) {
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 }

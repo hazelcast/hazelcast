@@ -98,6 +98,7 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
             HazelcastInstance leader = getLeaderInstance(instances, groupId);
             RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
             ResourceRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
 

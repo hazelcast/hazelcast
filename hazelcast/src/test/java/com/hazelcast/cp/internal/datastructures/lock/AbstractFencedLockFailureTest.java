@@ -357,7 +357,9 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> {
             RaftLockService service = getNodeEngineImpl(primaryInstance).getService(RaftLockService.SERVICE_NAME);
-            assertFalse(service.getRegistryOrNull(groupId).getWaitTimeouts().isEmpty());
+            RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
+            assertFalse(registry.getWaitTimeouts().isEmpty());
         });
 
         unlockLatch.countDown();
@@ -538,6 +540,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> {
             RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
             Map<BiTuple<String, UUID>, BiTuple<Long, Long>> waitTimeouts = registry.getWaitTimeouts();
             assertEquals(1, waitTimeouts.size());
             lockWaitTimeoutKeyRef[0] = waitTimeouts.keySet().iterator().next();
@@ -547,7 +550,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
                 .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, SECONDS.toMillis(300)));
 
         assertTrueEventually(() -> {
-            RaftService raftService = getNodeEngineImpl(primaryInstance).getService(RaftService.SERVICE_NAME);
+            RaftService raftService = nodeEngine.getService(RaftService.SERVICE_NAME);
             int partitionId = raftService.getCPGroupPartitionId(groupId);
             RaftLockRegistry registry = service.getRegistryOrNull(groupId);
             boolean[] verified = new boolean[1];

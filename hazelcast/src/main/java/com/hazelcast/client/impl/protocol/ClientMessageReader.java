@@ -16,7 +16,10 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.internal.nio.Bits;
+
+import static java.lang.String.format;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
@@ -24,16 +27,22 @@ import java.util.LinkedList;
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 
-public class ClientMessageReader {
+public final class ClientMessageReader {
 
     private static final int INT_MASK = 0xffff;
     private int readIndex;
     private int readOffset = -1;
+    private int sumUntrustedMessageLength;
+    private final int maxMessageLength;
     private LinkedList<ClientMessage.Frame> frames = new LinkedList<>();
 
-    public boolean readFrom(ByteBuffer src) {
+    public ClientMessageReader(int maxMessageLenth) {
+        this.maxMessageLength = maxMessageLenth > 0 ? maxMessageLenth : Integer.MAX_VALUE;
+    }
+
+    public boolean readFrom(ByteBuffer src, boolean trusted) {
         for (; ; ) {
-            if (readFrame(src)) {
+            if (readFrame(src, trusted)) {
                 if (ClientMessage.isFlagSet(frames.get(readIndex).flags, IS_FINAL_FLAG)) {
                     return true;
                 }
@@ -50,13 +59,7 @@ public class ClientMessageReader {
         return frames;
     }
 
-    public void reset() {
-        readIndex = 0;
-        readOffset = -1;
-        frames = new LinkedList<>();
-    }
-
-    private boolean readFrame(ByteBuffer src) {
+    private boolean readFrame(ByteBuffer src, boolean trusted) {
         // init internal buffer
         int remaining = src.remaining();
         if (remaining < SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
@@ -65,6 +68,22 @@ public class ClientMessageReader {
         }
         if (readOffset == -1) {
             int frameLength = Bits.readIntL(src, src.position());
+            if (frameLength < SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
+                throw new IllegalArgumentException(format(
+                        "The client message frame reported illegal length (%d bytes)."
+                                + " Minimal length is the size of frame header (%d bytes).",
+                        frameLength, SIZE_OF_FRAME_LENGTH_AND_FLAGS));
+            }
+            if (!trusted) {
+                // check the message size overflow and message size limit
+                if (Integer.MAX_VALUE - frameLength < sumUntrustedMessageLength
+                        || sumUntrustedMessageLength + frameLength > maxMessageLength) {
+                    throw new MaxMessageSizeExceeded(
+                            format("The client message size (%d + %d) exceededs the maximum allowed length (%d)",
+                                    sumUntrustedMessageLength, frameLength, maxMessageLength));
+                }
+                sumUntrustedMessageLength += frameLength;
+            }
             src.position(src.position() + Bits.INT_SIZE_IN_BYTES);
             int flags = Bits.readShortL(src, src.position()) & INT_MASK;
             src.position(src.position() + Bits.SHORT_SIZE_IN_BYTES);

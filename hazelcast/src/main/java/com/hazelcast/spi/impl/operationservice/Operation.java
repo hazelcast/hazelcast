@@ -66,6 +66,7 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
+    static final int BITMASK_CLIENT_CALL_ID_SET = 1 << 7;
 
     private static final AtomicLongFieldUpdater<Operation> CALL_ID =
             AtomicLongFieldUpdater.newUpdater(Operation.class, "callId");
@@ -87,10 +88,20 @@ public abstract class Operation implements DataSerializable {
     private transient Address callerAddress;
     private transient Connection connection;
     private transient OperationResponseHandler responseHandler;
+    private transient long clientCallId = -1;
 
     protected Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
+    }
+
+    public void setClientCallId(long clientCallId) {
+        this.clientCallId = clientCallId;
+        setFlag(this.clientCallId != -1, BITMASK_CLIENT_CALL_ID_SET);
+    }
+
+    public long getClientCallId() {
+        return clientCallId;
     }
 
     /**
@@ -111,7 +122,7 @@ public abstract class Operation implements DataSerializable {
     /**
      * The beforeRun is called before either the {@link #run()} or the {@link #call()} method is called.
      *
-     *  runs before wait-support
+     * runs before wait-support
      */
     public void beforeRun() throws Exception {
     }
@@ -686,6 +697,10 @@ public abstract class Operation implements DataSerializable {
             UUIDSerializationUtil.writeUUID(out, callerUuid);
         }
 
+        if (isFlagSet(BITMASK_CLIENT_CALL_ID_SET)) {
+            out.writeLong(clientCallId);
+        }
+
         writeInternal(out);
     }
 
@@ -726,6 +741,10 @@ public abstract class Operation implements DataSerializable {
 
         if (isFlagSet(BITMASK_CALLER_UUID_SET)) {
             callerUuid = UUIDSerializationUtil.readUUID(in);
+        }
+
+        if (isFlagSet(BITMASK_CLIENT_CALL_ID_SET)) {
+            clientCallId = in.readLong();
         }
 
         readInternal(in);

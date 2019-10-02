@@ -1085,6 +1085,14 @@ public final class GroupProperty {
     public static final HazelcastProperty MOBY_NAMING_ENABLED
             = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
 
+    /**
+     * Client protocol message size limit (in bytes) for unverified connections (i.e. maximal length of authentication message).
+     */
+    public static final HazelcastProperty CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES =
+            new HazelcastProperty("hazelcast.client.protocol.max.message.bytes", 1024);
+
+    public static final HazelcastProperty AUDIT_LOG_ENABLED = new HazelcastProperty("hazelcast.auditlog.enabled", false);
+
     private GroupProperty() {
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.auditlog.AuditlogService;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
@@ -117,4 +118,6 @@ public interface IOService {
     InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
 
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
+
+    AuditlogService getAuditLogService();
 }

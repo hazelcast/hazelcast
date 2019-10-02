@@ -43,8 +43,9 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -84,7 +85,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             map.removeAsync(key);
         }
 
-        assertHasStatsEventually("map[" + MAP_NAME + "]");
+        assertHasStatsEventually(MAP_NAME, "map.");
     }
 
     @Test
@@ -107,7 +108,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         latch.await();
 
-        assertHasStatsEventually("executor[" + EXECUTOR_NAME + "]");
+        assertHasStatsEventually(EXECUTOR_NAME, "executor.");
     }
 
     @Test
@@ -119,7 +120,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         q.poll();
 
-        assertHasStatsEventually("queue[" + QUEUE_NAME + "]");
+        assertHasStatsEventually(QUEUE_NAME, "queue.");
     }
 
     @Test
@@ -131,7 +132,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
         replicatedMap.remove(0);
 
-        assertHasStatsEventually("replicatedMap[" + REPLICATED_MAP_NAME + "]");
+        assertHasStatsEventually(REPLICATED_MAP_NAME, "replicatedMap.");
     }
 
     @Test
@@ -142,7 +143,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             topic.publish(i);
         }
 
-        assertHasStatsEventually("topic[" + TOPIC_NAME + "]");
+        assertHasStatsEventually(TOPIC_NAME, "topic.");
     }
 
     @Test
@@ -154,15 +155,15 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        assertHasStatsEventually("map[" + NEAR_CACHE_MAP_NAME + "].nearcache");
+        assertHasStatsEventually(NEAR_CACHE_MAP_NAME, "map.nearcache");
     }
 
-    private void assertHasStatsEventually(final String prefix) {
+    private void assertHasStatsEventually(final String dsName, final String metricPrefix) {
         final MetricsRegistry registry = getNode(hz).nodeEngine.getMetricsRegistry();
         assertTrueEventually(() -> {
-            final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
+            final StringProbeRenderer renderer = new StringProbeRenderer(dsName, metricPrefix);
             registry.render(renderer);
-            assertTrue(!renderer.probes.isEmpty());
+            assertFalse(renderer.probes.isEmpty());
         });
     }
 
@@ -175,36 +176,42 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
 
     static class StringProbeRenderer implements ProbeRenderer {
         final HashMap<String, Object> probes = new HashMap<>();
-        private final String prefix;
+        private final Pattern pattern;
 
-        StringProbeRenderer(String prefix) {
-            this.prefix = prefix;
+        StringProbeRenderer(String dsName, String metricPrefix) {
+            this.pattern = Pattern.compile(
+                    String.format(
+                            "^\\[name=%s,.+,metric=%s.+\\]$",
+                            dsName.replace(".", "\\."),
+                            metricPrefix.replace(".", "\\.")
+                    )
+            );
         }
 
         @Override
         public void renderLong(String name, long value) {
-            if (name.startsWith(prefix)) {
+            if (pattern.matcher(name).matches()) {
                 probes.put(name, value);
             }
         }
 
         @Override
         public void renderDouble(String name, double value) {
-            if (name.startsWith(prefix)) {
+            if (pattern.matcher(name).matches()) {
                 probes.put(name, value);
             }
         }
 
         @Override
         public void renderException(String name, Exception e) {
-            if (name.startsWith(prefix)) {
+            if (pattern.matcher(name).matches()) {
                 probes.put(name, e);
             }
         }
 
         @Override
         public void renderNoValue(String name) {
-            if (name.startsWith(prefix)) {
+            if (pattern.matcher(name).matches()) {
                 probes.put(name, null);
             }
         }

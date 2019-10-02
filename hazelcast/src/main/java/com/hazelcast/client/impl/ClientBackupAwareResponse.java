@@ -14,30 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster.memberselector;
-
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberSelector;
+package com.hazelcast.client.impl;
 
 /**
- * Selects a member if one of the sub-selectors succeed
+ * Response of Invocations when client is backup aware
+ * Carries number of backups which will be delegated to clients
  */
-class OrMemberSelector implements MemberSelector {
+public class ClientBackupAwareResponse {
+    private final int numberOfBackups;
+    private final Object response;
 
-    private final MemberSelector[] selectors;
-
-    OrMemberSelector(MemberSelector... selectors) {
-        this.selectors = selectors;
+    public ClientBackupAwareResponse(int numberOfBackups, Object response) {
+        this.numberOfBackups = numberOfBackups;
+        this.response = response;
     }
 
-    @Override
-    public boolean select(Member member) {
-        for (MemberSelector selector : selectors) {
-            if (selector.select(member)) {
-                return true;
-            }
-        }
+    public int getNumberOfBackups() {
+        return numberOfBackups;
+    }
 
-        return false;
+    public Object getResponse() {
+        return response;
     }
 }

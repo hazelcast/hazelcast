@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
@@ -136,9 +137,15 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     }
 
     private void handleResponse(ClientMessage message) {
+        if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.BACKUP_EVENT_FLAG)) {
+            AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
+            listenerService.handleEventMessageOnCallingThread(message);
+            return;
+        }
+
         long correlationId = message.getCorrelationId();
 
-        ClientInvocation future = invocationService.deregisterInvocation(correlationId);
+        ClientInvocation future = invocationService.getInvocation(correlationId);
         if (future == null) {
             logger.warning("No call for callId: " + correlationId + ", response: " + message);
             return;

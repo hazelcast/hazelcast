@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.query.Metadata;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;

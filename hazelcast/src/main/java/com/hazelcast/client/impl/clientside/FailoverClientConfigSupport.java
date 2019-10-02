@@ -33,9 +33,9 @@ import com.hazelcast.core.HazelcastException;
 
 import java.util.List;
 
-import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
-import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
-import static com.hazelcast.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 
 /**
  * Static methods to resolve and validate multiple client configs for blue green feature

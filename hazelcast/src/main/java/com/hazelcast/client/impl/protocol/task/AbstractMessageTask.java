@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.ClientBackupAwareResponse;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEndpointManager;
@@ -36,6 +37,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.lang.reflect.Field;
 import java.security.Permission;
@@ -63,7 +65,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected final ILogger logger;
     protected final ClientEngine clientEngine;
     protected P parameters;
-    final ClientEndpointManager endpointManager;
+    private final ClientEndpointManager endpointManager;
     private final Node node;
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -187,7 +189,21 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     protected void sendResponse(Object response) {
         try {
-            ClientMessage clientMessage = encodeResponse(response);
+            int numberOfBackups = 0;
+            if (response instanceof ClientBackupAwareResponse) {
+                ClientBackupAwareResponse backupAwareResponse = (ClientBackupAwareResponse) response;
+                response = backupAwareResponse.getResponse();
+                numberOfBackups = backupAwareResponse.getNumberOfBackups();
+            } else if (response instanceof NormalResponse) {
+                response = ((NormalResponse) response).getValue();
+            }
+            ClientMessage clientMessage;
+            if (response instanceof Throwable) {
+                clientMessage = encodeException((Throwable) response);
+            } else {
+                clientMessage = encodeResponse(response);
+            }
+            clientMessage.setNumberOfBackupAcks(numberOfBackups);
             sendClientMessage(clientMessage);
         } catch (Exception e) {
             handleProcessingFailure(e);
@@ -209,10 +225,14 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         sendClientMessage(resultClientMessage);
     }
 
-    protected void sendClientMessage(Throwable throwable) {
+    private void sendClientMessage(Throwable throwable) {
+        ClientMessage message = encodeException(throwable);
+        sendClientMessage(message);
+    }
+
+    private ClientMessage encodeException(Throwable throwable) {
         ClientExceptions exceptionFactory = clientEngine.getClientExceptions();
-        ClientMessage exception = exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
-        sendClientMessage(exception);
+        return exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
     }
 
     public abstract String getServiceName();
@@ -271,7 +291,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 + "Use ClientEngine.memberAddressOf to translate addresses while decoding this client message.";
     }
 
-    private Throwable peelIfNeeded(Throwable t) {
+    protected Throwable peelIfNeeded(Throwable t) {
         if (t == null) {
             return null;
         }

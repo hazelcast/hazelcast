@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -61,7 +63,9 @@ public class ClientIndeterminateOperationStateExceptionTest extends HazelcastTes
 
         instance1 = factory.newHazelcastInstance(config);
         instance2 = factory.newHazelcastInstance(config);
-        client = factory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE.getName(), String.valueOf(true));
+        client = factory.newHazelcastClient(clientConfig);
 
         warmUpPartitions(instance1, instance2);
     }

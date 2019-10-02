@@ -22,6 +22,8 @@ import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.auditlog.AuditlogService;
+import com.hazelcast.internal.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -269,5 +271,10 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public boolean isClientFailoverSupported() {
         return false;
+    }
+
+    @Override
+    public AuditlogService getAuditlogService() {
+        return NoOpAuditlogService.INSTANCE;
     }
 }

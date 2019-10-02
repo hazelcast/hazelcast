@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns whether this lock is locked or not.
  */
-@Generated("e91e72d406798ee34236f1d71f662000")
+@Generated("510c61f1cac3130d8c2f3cb7b2761416")
 public final class LockIsLockedCodec {
     //hex: 0x070100
     public static final int REQUEST_MESSAGE_TYPE = 459008;
     //hex: 0x070101
     public static final int RESPONSE_MESSAGE_TYPE = 459009;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private LockIsLockedCodec() {

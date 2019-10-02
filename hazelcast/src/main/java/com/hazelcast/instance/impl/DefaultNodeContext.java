@@ -27,7 +27,7 @@ import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.util.InstantiationUtils;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.NodeIOService;

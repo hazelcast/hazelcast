@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Metadata;
+import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;

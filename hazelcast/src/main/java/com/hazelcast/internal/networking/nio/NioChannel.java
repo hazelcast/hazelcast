@@ -96,9 +96,13 @@ public final class NioChannel extends AbstractChannel {
 
     @Override
     public void start() {
-        String metricsId = localSocketAddress() + "->" + remoteSocketAddress();
-        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
-        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
+        String pipelineId = localSocketAddress() + "->" + remoteSocketAddress();
+        metricsRegistry.newProbeBuilder("tcp.connection.out")
+                       .withTag("pipelineId", pipelineId)
+                       .scanAndRegister(outboundPipeline);
+        metricsRegistry.newProbeBuilder("tcp.connection.in")
+                       .withTag("pipelineId", pipelineId)
+                       .scanAndRegister(inboundPipeline);
 
         try {
             // before starting the channel, the socketChannel need to be put in

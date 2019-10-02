@@ -23,9 +23,9 @@ import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import java.util.List;
 import java.util.ListIterator;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.CORRELATION_ID_FIELD_OFFSET;
+import static com.hazelcast.client.impl.protocol.ClientMessage.RESPONSE_BACKUP_ACKS_FIELD_OFFSET;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
 
 public final class ErrorsCodec {
 
@@ -33,7 +33,7 @@ public final class ErrorsCodec {
     // So, it is safe to supply a custom message type for exceptions in
     // the range 0x000000 - 0x0000FF
     public static final int EXCEPTION_MESSAGE_TYPE = 0;
-    private static final int INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ErrorsCodec() {
     }

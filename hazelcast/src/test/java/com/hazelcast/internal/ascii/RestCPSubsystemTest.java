@@ -22,10 +22,10 @@ import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.CPGroupInfo;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -57,6 +57,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.HazelcastRaftTestSupport.waitUntilCPDiscoveryCompleted;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -417,7 +418,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember("invalid_uid", clusterName, groupPassword);
+        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(newUnsecureUuidString(), clusterName, groupPassword);
 
         assertEquals(400, response.responseCode);
     }

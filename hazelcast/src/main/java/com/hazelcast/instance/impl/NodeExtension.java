@@ -21,6 +21,7 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.auditlog.AuditlogService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -329,4 +330,9 @@ public interface NodeExtension {
      * @return true if client failover feature is supported
      */
     boolean isClientFailoverSupported();
+
+    /**
+     * @return not-{@code null} {@link AuditlogService} instance
+     */
+    AuditlogService getAuditlogService();
 }

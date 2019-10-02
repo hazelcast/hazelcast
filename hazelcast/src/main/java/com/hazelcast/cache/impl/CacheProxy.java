@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
 import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.config.CacheConfigReadOnly;

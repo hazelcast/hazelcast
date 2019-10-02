@@ -128,7 +128,9 @@ public class TcpIpEndpointManager
         if (endpointQualifier == null) {
             metricsRegistry.scanAndRegister(this, "tcp.connection");
         } else {
-            metricsRegistry.scanAndRegister(this, endpointQualifier.toMetricsPrefixString() + ".tcp.connection");
+            metricsRegistry.newProbeBuilder("tcp.connection")
+                           .withTag("endpoint", endpointQualifier.toMetricsPrefixString())
+                           .scanAndRegister(this);
         }
     }
 

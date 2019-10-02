@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value
  */
-@Generated("d08a99b549e81fa338996238a581ff70")
+@Generated("d6a925a02a7ba743d6dfecd161fb59b3")
 public final class AtomicRefSetCodec {
     //hex: 0x0B0600
     public static final int REQUEST_MESSAGE_TYPE = 722432;
@@ -44,7 +44,7 @@ public final class AtomicRefSetCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 722433;
     private static final int REQUEST_RETURN_OLD_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_RETURN_OLD_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private AtomicRefSetCodec() {
     }
