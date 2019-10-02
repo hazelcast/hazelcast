@@ -63,7 +63,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
     }
 
     @Test
-    public void testReplicatedProject() {
+    public void testProject() {
         ReplicatedMap<Long, City> cityMap = member.getReplicatedMap(ModelGenerator.CITY);
 
         int expSize = cityMap.size();
@@ -100,7 +100,44 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
     }
 
     @Test
-    public void testReplicatedProjectFilter() {
+    public void testProjectProject() {
+        ReplicatedMap<Long, City> cityMap = member.getReplicatedMap(ModelGenerator.CITY);
+
+        int expSize = cityMap.size();
+
+        Set<String> expNames = new HashSet<>();
+
+        for (City city : cityMap.values()) {
+            expNames.add(city.getName());
+        }
+
+        try (SqlCursorImpl cursor = executeQuery(member, "SELECT name FROM (SELECT name FROM city)")) {
+            QueryPlan plan = cursor.getHandle().getPlan();
+
+            assertEquals(1, plan.getFragments().size());
+
+            assertFragment(
+                plan.getFragments().get(0),
+                PhysicalPlanChecker.newBuilder()
+                    .addReplicatedMapScan(ModelGenerator.CITY, expressions(keyValueExtractorExpression("name")), null)
+                    .addRoot()
+                    .build()
+            );
+
+            List<SqlRow> rows = getQueryRows(cursor);
+
+            assertEquals(expSize, rows.size());
+
+            for (SqlRow row : rows) {
+                String name = row.getColumn(0);
+
+                assertTrue(expNames.contains(name));
+            }
+        }
+    }
+
+    @Test
+    public void testProjectFilter() {
         ReplicatedMap<Long, City> cityMap = member.getReplicatedMap(ModelGenerator.CITY);
 
         Map.Entry<Long, City> city = cityMap.entrySet().iterator().next();
@@ -118,6 +155,10 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
             assertEquals(name, rows.get(0).getColumn(0));
         }
     }
+
+    // TODO: Tests for interleaved project and filter (need filter pushdown rule).
+    // TODO: Tests for aggregations
+    // TODO: Tests for joins
 
     @Test
     @Ignore
