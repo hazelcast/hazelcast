@@ -26,7 +26,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("dc0aa970e2c40a30fe00714280ea342c")
+@Generated("a711faf8c1ff5426f8f1f741f6a075e1")
 public final class MapConfigHolderCodec {
     private static final int BACKUP_COUNT_FIELD_OFFSET = 0;
     private static final int ASYNC_BACKUP_COUNT_FIELD_OFFSET = BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -51,10 +51,10 @@ public final class MapConfigHolderCodec {
         encodeBoolean(initialFrame.content, READ_BACKUP_DATA_FIELD_OFFSET, mapConfigHolder.isReadBackupData());
         clientMessage.add(initialFrame);
 
-        StringCodec.encode(clientMessage, mapConfigHolder.getInMemoryFormat());
+        CodecUtil.encodeNullable(clientMessage, mapConfigHolder.getInMemoryFormat(), StringCodec::encode);
         StringCodec.encode(clientMessage, mapConfigHolder.getMaxSizePolicy());
         StringCodec.encode(clientMessage, mapConfigHolder.getEvictionPolicy());
-        StringCodec.encode(clientMessage, mapConfigHolder.getMergePolicy());
+        CodecUtil.encodeNullable(clientMessage, mapConfigHolder.getMergePolicy(), StringCodec::encode);
 
         clientMessage.add(END_FRAME);
     }
@@ -71,10 +71,10 @@ public final class MapConfigHolderCodec {
         int maxSize = decodeInt(initialFrame.content, MAX_SIZE_FIELD_OFFSET);
         boolean readBackupData = decodeBoolean(initialFrame.content, READ_BACKUP_DATA_FIELD_OFFSET);
 
-        java.lang.String inMemoryFormat = StringCodec.decode(iterator);
+        java.lang.String inMemoryFormat = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String maxSizePolicy = StringCodec.decode(iterator);
         java.lang.String evictionPolicy = StringCodec.decode(iterator);
-        java.lang.String mergePolicy = StringCodec.decode(iterator);
+        java.lang.String mergePolicy = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.management.ManagementCenterService;
 import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -83,13 +83,16 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     @Test
     public void updateMapConfig() {
         hazelcastInstances[0].getMap("map-1").put(1, 1);
-        MapConfig mapConfig = new MapConfig("map-1");
-        mapConfig.setMaxIdleSeconds(27);
+        MapConfigHolder mapConfig = new MapConfigHolder(null, -1, -1, 27, 29, 35, "PER_NODE", false,
+                EvictionPolicy.LRU.name(), null);
         managementCenterService.updateMapConfig("map-1", mapConfig);
 
         assertTrueEventually(() -> {
             MapConfigHolder retrievedConfig = managementCenterService.getMapConfig("map-1").get();
-            assertEquals(27, retrievedConfig.getMaxIdleSeconds());
+            assertEquals(27, retrievedConfig.getTimeToLiveSeconds());
+            assertEquals(29, retrievedConfig.getMaxIdleSeconds());
+            assertEquals(35, retrievedConfig.getMaxSize());
+            assertEquals("PER_NODE", retrievedConfig.getMaxSizePolicy());
         });
     }
 }

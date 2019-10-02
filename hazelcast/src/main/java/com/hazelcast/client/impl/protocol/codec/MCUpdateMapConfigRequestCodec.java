@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the config of a map.
  */
-@Generated("a9e2a2fcb6af282d67c969dd1813e009")
+@Generated("ff39980fcca98444c0e014e2d2fb890b")
 public final class MCUpdateMapConfigRequestCodec {
     //hex: 0x280300
     public static final int REQUEST_MESSAGE_TYPE = 2622208;
@@ -59,10 +59,10 @@ public final class MCUpdateMapConfigRequestCodec {
         /**
          * New config for the map.
          */
-        public com.hazelcast.nio.serialization.Data newMapConfig;
+        public com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder newMapConfig;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String mapName, com.hazelcast.nio.serialization.Data newMapConfig) {
+    public static ClientMessage encodeRequest(java.lang.String mapName, com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder newMapConfig) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -71,7 +71,7 @@ public final class MCUpdateMapConfigRequestCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, mapName);
-        DataCodec.encode(clientMessage, newMapConfig);
+        MapConfigHolderCodec.encode(clientMessage, newMapConfig);
         return clientMessage;
     }
 
@@ -81,7 +81,7 @@ public final class MCUpdateMapConfigRequestCodec {
         //empty initial frame
         iterator.next();
         request.mapName = StringCodec.decode(iterator);
-        request.newMapConfig = DataCodec.decode(iterator);
+        request.newMapConfig = MapConfigHolderCodec.decode(iterator);
         return request;
     }
 

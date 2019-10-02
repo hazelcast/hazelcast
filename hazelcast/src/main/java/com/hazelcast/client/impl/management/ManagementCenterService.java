@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.protocol.codec.holder.ClusterStateHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 
 public class ManagementCenterService {
@@ -70,10 +69,10 @@ public class ManagementCenterService {
         );
     }
 
-    public ClientDelegatingFuture<Void> updateMapConfig(String map, MapConfig newMapConfig) {
+    public ClientDelegatingFuture<Void> updateMapConfig(String map, MapConfigHolder newMapConfig) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCUpdateMapConfigRequestCodec.encodeRequest(map, serializationService.toData(newMapConfig)),
+                MCUpdateMapConfigRequestCodec.encodeRequest(map, newMapConfig),
                 null
         );
         return new ClientDelegatingFuture<>(

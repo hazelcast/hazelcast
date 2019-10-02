@@ -44,7 +44,7 @@ public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<Re
     protected Operation prepareOperation() {
         return new UpdateMapConfigOperation(
                 parameters.mapName,
-                serializationService.toObject(parameters.newMapConfig));
+                parameters.newMapConfig.asMapConfig());
     }
 
     @Override

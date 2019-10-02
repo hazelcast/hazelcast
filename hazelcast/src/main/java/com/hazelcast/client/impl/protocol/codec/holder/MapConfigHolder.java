@@ -16,7 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec.holder;
 
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 
 public class MapConfigHolder {
     private String inMemoryFormat;
@@ -92,5 +95,15 @@ public class MapConfigHolder {
                 mapConfig.getMaxIdleSeconds(), mapConfig.getMaxSizeConfig().getSize(),
                 mapConfig.getMaxSizeConfig().getMaxSizePolicy().name(), mapConfig.isReadBackupData(),
                 mapConfig.getEvictionPolicy().name(), mapConfig.getMergePolicyConfig().getPolicy());
+    }
+
+    public MapConfig asMapConfig() {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setTimeToLiveSeconds(timeToLiveSeconds);
+        mapConfig.setMaxIdleSeconds(maxIdleSeconds);
+        mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(evictionPolicy));
+        mapConfig.setReadBackupData(readBackupData);
+        mapConfig.setMaxSizeConfig(new MaxSizeConfig(maxSize, MaxSizePolicy.valueOf(maxSizePolicy)));
+        return mapConfig;
     }
 }
