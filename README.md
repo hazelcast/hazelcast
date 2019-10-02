@@ -12,7 +12,9 @@ You can use it in your project deployed on Kubernetes in order to make the embed
 
 ## Embedded mode
 
-To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml` as presented below or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
+To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. 
+Then, when you provide `hazelcast.yaml` as presented below or an equivalent Java-based configuration, your Hazelcast 
+instances discover themselves automatically.
 
 #### Maven
 
@@ -96,20 +98,18 @@ spec:
 
 #### Hazelcast Configuration
 
-The second step is to configure the discovery plugin inside `hazelcast.xml` or an equivalent Java-based configuration.
+The second step is to configure the discovery plugin inside `hazelcast.yaml` or an equivalent Java-based configuration.
 
-```xml
-<hazelcast>        
-  <network>
-    <join>
-      <multicast enabled="false"/>
-      <kubernetes enabled="true">
-        <namespace>MY-KUBERNETES-NAMESPACE</namespace>
-        <service-name>MY-SERVICE-NAME</service-name>
-      </kubernetes>
-    </join>
-  </network>
-</hazelcast>
+```yaml
+hazelcast:
+  network:
+    join:
+      multicast:
+        enabled: false
+      kubernetes:
+        enabled: true
+        namespace: MY-KUBERNETES-NAMESPACE
+        service-name: MY-SERVICE-NAME
 ```
 
 ```java
@@ -162,17 +162,15 @@ spec:
 
 The Hazelcast configuration to use DNS Lookup looks as follows.
 
-```xml
-<hazelcast>
-  <network>
-    <join>
-      <multicast enabled="false"/>
-      <kubernetes enabled="true">
-        <service-dns>MY-SERVICE-DNS-NAME</service-dns>
-      </kubernetes>
-    </join>
-  </network>
-</hazelcast>
+```yaml
+hazelcast:
+  network:
+    join:
+      multicast:
+        enabled: false
+      kubernetes:
+        enabled: true
+        service-dns: MY-SERVICE-DNS-NAME
 ```
 
 ```java
@@ -185,7 +183,8 @@ There are 2 properties to configure the plugin:
  * `service-dns` (required): service DNS, usually in the form of `SERVICE-NAME.NAMESPACE.svc.cluster.local`
  * `service-dns-timeout` (optional): custom time for how long the DNS Lookup is checked
 
-**Note**: In this README, only XML configurations are presented, however you can achieve exactly the same effect using Java-based configurations.
+**Note**: In this README, only YAML configurations are presented, however you can achieve exactly the same effect using 
+XML or Java-based configurations.
 
 ### Zone Aware
 
@@ -193,10 +192,12 @@ When using `ZONE_AWARE` configuration, backups are created in the other availabi
 
 **Note**: Your Kubernetes cluster must orchestrate Hazelcast Member PODs equally between the availability zones, otherwise Zone Aware feature may not work correctly.
 
-#### XML Configuration
+#### YAML Configuration
 
-```xml
-<partition-group enabled="true" group-type="ZONE_AWARE" />
+```yaml
+partition-group:
+  enabled: true
+  group-type: ZONE_AWARE
 ```
 
 #### Java-based Configuration
@@ -233,15 +234,13 @@ If you have a Hazelcast cluster deployed on Kubernetes and you want to configure
 
 Here's an example in case of the **Kubernetes API** mode.
 
-```xml
-<hazelcast-client>
-  <network>
-    <kubernetes enabled="true">
-      <namespace>MY-KUBERNETES-NAMESPACE</namespace>
-      <service-name>MY-SERVICE-NAME</service-name>
-    </kubernetes>
-  </network>
-</hazelcast-client>
+```yaml
+hazelcast-client:
+  network:
+    kubernetes:
+      enabled: true
+      namespace: MY-KUBERNETES-NAMESPACE
+      service-name: MY-SERVICE-NAME
 ```
 
 ```java
@@ -261,39 +260,36 @@ To configure **Hazelcast Smart Client**, you need to perform the following steps
 * Configure ServiceAccount with ClusterRole having at least `get` and `list` permissions to the following resources: `endpoints`, `pods`, `nodes`, `services`
 * Use credentials from the created ServiceAccount in the Hazelcast Client configuration (credentials can be fetched with `kubectl get secret <sevice-account-secret> -o jsonpath={.data.token} | base64 --decode` and `kubectl get secret <sevice-account-secret> -o jsonpath={.data.ca\\.crt} | base64 --decode`)
 
-```xml
-<hazelcast-client>
-    <network>
-        <kubernetes enabled="true">
-            <namespace>MY-KUBERNETES-NAMESPACE</namespace>
-            <service-name>MY-SERVICE-NAME</service-name>
-            <use-public-ip>true</use-public-ip>
-            <kubernetes-master>https://35.226.182.228</kubernetes-master>
-            <api-token>eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InNhbXBsZS1zZXJ2aWNlLWFjY291bnQtdG9rZW4tNnM5NGgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoic2FtcGxlLXNlcnZpY2UtYWNjb3VudCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjI5OTI1NzBmLTI1NDQtMTFlOS1iNjg3LTQyMDEwYTgwMDI4YiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OnNhbXBsZS1zZXJ2aWNlLWFjY291bnQifQ.o-j4e-ducrMmQc23xYDnPr6TIyzlAs3pLNAmGLqPe9Vq1mwsxOh3ujcVKR90HAdkfHIF_Sw66qC9hXIDvxfqN_rLXlOKbvTX3gjDrAnyY_93Y3MpmSBj8yR9yHMb4O29a9UIwN5F2_VoCsc0IGumScU_EhPYc9mvEXlwp2bATQOEU-SVAGYPqvVPs9h5wjWZ7WUQa_-RBLMF6KRc9EP2i3c7dPSRVL9ZQ6k6OyUUOVEaPa1tqIxP7vOgx9Tg2C1KmYF5RDrlzrWkhEcjd4BLTiYDKEyaoBff9RqdPYlPwu0YcEH-F7yU8tTDN74KX5jvah3amg_zTiXeNoe5ZFcVdg</api-token>
-            <ca-certificate>
-                -----BEGIN CERTIFICATE-----
-                MIIDCzCCAfOgAwIBAgIQVcTHv3jK6g1l7Ph9Xyd9DTANBgkqhkiG9w0BAQsFADAv
-                MS0wKwYDVQQDEyQ4YjRhNjgwMS04NzJhLTQ2NDEtYjIwOC0zYjEyNDEwYWVkMTcw
-                HhcNMTkwMTMxMDcyNDMxWhcNMjQwMTMwMDgyNDMxWjAvMS0wKwYDVQQDEyQ4YjRh
-                NjgwMS04NzJhLTQ2NDEtYjIwOC0zYjEyNDEwYWVkMTcwggEiMA0GCSqGSIb3DQEB
-                AQUAA4IBDwAwggEKAoIBAQCaty8l9aHeWE1r9yLWKJMa3YQotVclYoEHegB8y6Ke
-                +zKqa06JKKrz3Qony97VdWR/NMpRYXouSF0owDv9BIoLTC682wlQtNB1c4pTVW7a
-                AikoNtyNIT8gtA5w0MyjFrbNslUblXvuo0HIeSmJREUmT7BC3VaKgkg64mVdf0DJ
-                NyrcL+qyCs1m03mi12hgzI72O3qgEtP91tu/oCUdOh39u13TB0fj5tgWURMFgkxo
-                T0xiNfPueV3pe8uYxBntzFn/74ibiizLRP6d/hsuRdS7IA+bvRLKG/paYwyZuMFb
-                BDA+kXXAIkOvCpIQCkAKMpyyDz9lBVCtl3eRSAJQLBefAgMBAAGjIzAhMA4GA1Ud
-                DwEB/wQEAwICBDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBP
-                TBRY1IbkFJuboMKLW9tdpIzW7hf2qsTLOhtlaJbMXrWaXCTrl8qUgBUZ1sWAW9Uk
-                qETwRoCMl1Ht7PhbnXEGDNt3Sw3Y3feR4PsffhcgWH0BK8pZVY0Q1zbZ6dVNbU82
-                EUrrcnV0uiB/JFsJ3rg8qJurutro3uIzAhb9ixYRqYnXUR4q0bxahO04iSUHvtYQ
-                JmWp1GCb/ny9MyeTkwh2Q+WIQBHsX4LfrKjPwJd6qZME7BmwryYBTkGa0FinmhRg
-                SdSPEQKmuXmghPU5GLudiI2ooOaqOXIjVPfM/cw4uU9FCGM49qufccOOt6utk0SM
-                DwupAKLLiaYs47a8JgUa
-                -----END CERTIFICATE-----
-            </ca-certificate>
-        </kubernetes>
-    </network>
-</hazelcast-client>
+```yaml
+hazelcast-client:
+  network:
+    kubernetes:
+      enabled: true
+      namespace: MY-KUBERNETES-NAMESPACE
+      service-name: MY-SERVICE-NAME
+      use-public-ip: true
+      kubernetes-master: https://35.226.182.228
+      api-token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InNhbXBsZS1zZXJ2aWNlLWFjY291bnQtdG9rZW4tNnM5NGgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoic2FtcGxlLXNlcnZpY2UtYWNjb3VudCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjI5OTI1NzBmLTI1NDQtMTFlOS1iNjg3LTQyMDEwYTgwMDI4YiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OnNhbXBsZS1zZXJ2aWNlLWFjY291bnQifQ.o-j4e-ducrMmQc23xYDnPr6TIyzlAs3pLNAmGLqPe9Vq1mwsxOh3ujcVKR90HAdkfHIF_Sw66qC9hXIDvxfqN_rLXlOKbvTX3gjDrAnyY_93Y3MpmSBj8yR9yHMb4O29a9UIwN5F2_VoCsc0IGumScU_EhPYc9mvEXlwp2bATQOEU-SVAGYPqvVPs9h5wjWZ7WUQa_-RBLMF6KRc9EP2i3c7dPSRVL9ZQ6k6OyUUOVEaPa1tqIxP7vOgx9Tg2C1KmYF5RDrlzrWkhEcjd4BLTiYDKEyaoBff9RqdPYlPwu0YcEH-F7yU8tTDN74KX5jvah3amg_zTiXeNoe5ZFcVdg
+      ca-certificate: |
+        -----BEGIN CERTIFICATE-----
+        MIIDCzCCAfOgAwIBAgIQVcTHv3jK6g1l7Ph9Xyd9DTANBgkqhkiG9w0BAQsFADAv
+        MS0wKwYDVQQDEyQ4YjRhNjgwMS04NzJhLTQ2NDEtYjIwOC0zYjEyNDEwYWVkMTcw
+        HhcNMTkwMTMxMDcyNDMxWhcNMjQwMTMwMDgyNDMxWjAvMS0wKwYDVQQDEyQ4YjRh
+        NjgwMS04NzJhLTQ2NDEtYjIwOC0zYjEyNDEwYWVkMTcwggEiMA0GCSqGSIb3DQEB
+        AQUAA4IBDwAwggEKAoIBAQCaty8l9aHeWE1r9yLWKJMa3YQotVclYoEHegB8y6Ke
+        +zKqa06JKKrz3Qony97VdWR/NMpRYXouSF0owDv9BIoLTC682wlQtNB1c4pTVW7a
+        AikoNtyNIT8gtA5w0MyjFrbNslUblXvuo0HIeSmJREUmT7BC3VaKgkg64mVdf0DJ
+        NyrcL+qyCs1m03mi12hgzI72O3qgEtP91tu/oCUdOh39u13TB0fj5tgWURMFgkxo
+        T0xiNfPueV3pe8uYxBntzFn/74ibiizLRP6d/hsuRdS7IA+bvRLKG/paYwyZuMFb
+        BDA+kXXAIkOvCpIQCkAKMpyyDz9lBVCtl3eRSAJQLBefAgMBAAGjIzAhMA4GA1Ud
+        DwEB/wQEAwICBDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBP
+        TBRY1IbkFJuboMKLW9tdpIzW7hf2qsTLOhtlaJbMXrWaXCTrl8qUgBUZ1sWAW9Uk
+        qETwRoCMl1Ht7PhbnXEGDNt3Sw3Y3feR4PsffhcgWH0BK8pZVY0Q1zbZ6dVNbU82
+        EUrrcnV0uiB/JFsJ3rg8qJurutro3uIzAhb9ixYRqYnXUR4q0bxahO04iSUHvtYQ
+        JmWp1GCb/ny9MyeTkwh2Q+WIQBHsX4LfrKjPwJd6qZME7BmwryYBTkGa0FinmhRg
+        SdSPEQKmuXmghPU5GLudiI2ooOaqOXIjVPfM/cw4uU9FCGM49qufccOOt6utk0SM
+        DwupAKLLiaYs47a8JgUa
+        -----END CERTIFICATE-----
 ```
 
 **Note:** Hazelcast Client outside Kubernetes cluster works only in the **Kubernetes API** mode (it does not work in the **DNS Lookup** mode).
