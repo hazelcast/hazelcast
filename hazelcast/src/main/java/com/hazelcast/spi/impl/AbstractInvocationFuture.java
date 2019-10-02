@@ -97,10 +97,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     protected final ILogger logger;
 
-    // todo since we are using FJP.commonPool by default (under conditions), remove this field
-    //  so an instance can fit in 64 bytes
-    private final Executor defaultExecutor;
-
     /**
      * This field contains the state of the future. If the future is not
      * complete, the state can be:
@@ -124,14 +120,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     protected volatile Object state = UNRESOLVED;
 
     protected AbstractInvocationFuture(@Nonnull ILogger logger) {
-        this.defaultExecutor = DEFAULT_ASYNC_EXECUTOR;
-        this.logger = logger;
-    }
-
-    // for testing only
-    AbstractInvocationFuture(@Nonnull Executor defaultExecutor,
-                                       @Nonnull ILogger logger) {
-        this.defaultExecutor = defaultExecutor;
         this.logger = logger;
     }
 
@@ -151,7 +139,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public <U> CompletableFuture<U> thenApplyAsync(@Nonnull Function<? super V, ? extends U> fn) {
-        return thenApplyAsync(fn, defaultExecutor);
+        return thenApplyAsync(fn, defaultExecutor());
     }
 
     @Override
@@ -177,7 +165,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public CompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super V> action) {
-        return thenAcceptAsync(action, defaultExecutor);
+        return thenAcceptAsync(action, defaultExecutor());
     }
 
     @Override
@@ -204,7 +192,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public CompletableFuture<Void> thenRunAsync(@Nonnull Runnable action) {
-        return thenRunAsync(action, defaultExecutor);
+        return thenRunAsync(action, defaultExecutor());
     }
 
     @Override
@@ -230,7 +218,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public <U> CompletableFuture<U> handleAsync(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn) {
-        return handleAsync(fn, defaultExecutor);
+        return handleAsync(fn, defaultExecutor());
     }
 
     @Override
@@ -257,7 +245,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public CompletableFuture<V> whenCompleteAsync(@Nonnull BiConsumer<? super V, ? super Throwable> action) {
-        return whenCompleteAsync(action, defaultExecutor);
+        return whenCompleteAsync(action, defaultExecutor());
     }
 
     @Override
@@ -284,7 +272,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public <U> CompletableFuture<U> thenComposeAsync(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn) {
-        return thenComposeAsync(fn, defaultExecutor);
+        return thenComposeAsync(fn, defaultExecutor());
     }
 
     @Override
@@ -313,7 +301,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     @Override
     public <U, R> CompletableFuture<R> thenCombineAsync(@Nonnull CompletionStage<? extends U> other,
                                                         @Nonnull BiFunction<? super V, ? super U, ? extends R> fn) {
-        return thenCombineAsync(other, fn, defaultExecutor);
+        return thenCombineAsync(other, fn, defaultExecutor());
     }
 
     @Override
@@ -344,7 +332,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     @Override
     public <U> CompletableFuture<Void> thenAcceptBothAsync(@Nonnull CompletionStage<? extends U> other,
                                                            @Nonnull BiConsumer<? super V, ? super U> action) {
-        return thenAcceptBothAsync(other, action, defaultExecutor);
+        return thenAcceptBothAsync(other, action, defaultExecutor());
     }
 
     @Override
@@ -375,7 +363,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public CompletableFuture<Void> runAfterBothAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
-        return runAfterBothAsync(other, action, defaultExecutor);
+        return runAfterBothAsync(other, action, defaultExecutor());
     }
 
     @Override
@@ -409,7 +397,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     @Override
     public <U> CompletableFuture<U> applyToEitherAsync(@Nonnull CompletionStage<? extends V> other,
                                                        @Nonnull Function<? super V, U> fn) {
-        return applyToEitherAsync(other, fn, defaultExecutor);
+        return applyToEitherAsync(other, fn, defaultExecutor());
     }
 
     @Override
@@ -447,7 +435,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     @Override
     public CompletableFuture<Void> acceptEitherAsync(@Nonnull CompletionStage<? extends V> other,
                                                      @Nonnull Consumer<? super V> action) {
-        return acceptEitherAsync(other, action, defaultExecutor);
+        return acceptEitherAsync(other, action, defaultExecutor());
     }
 
     @Override
@@ -481,7 +469,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     public CompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
-        return runAfterEitherAsync(other, action, defaultExecutor);
+        return runAfterEitherAsync(other, action, defaultExecutor());
     }
 
     public CompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other,
@@ -887,6 +875,10 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 }
             }
         }
+    }
+
+    protected Executor defaultExecutor() {
+        return DEFAULT_ASYNC_EXECUTOR;
     }
 
     protected <U> void unblockCompose(@Nonnull final Function<? super V, ? extends CompletionStage<U>> function,
