@@ -32,13 +32,14 @@ final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
     private final KubernetesClient client;
     private final EndpointResolver endpointResolver;
+    private KubernetesConfig config;
 
     private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
 
     HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
         super(logger, properties);
 
-        KubernetesConfig config = new KubernetesConfig(properties);
+        config = new KubernetesConfig(properties);
         logger.info(config.toString());
 
         client = buildKubernetesClient(config);
@@ -73,24 +74,32 @@ final class HazelcastKubernetesDiscoveryStrategy
         return memberMetadata;
     }
 
+    /**
+     * Discovers the availability zone in which the current Hazelcast member is running.
+     * <p>
+     * Note: ZONE_AWARE is available only for the Kubernetes API Mode.
+     */
     private String discoverZone() {
-        try {
-            String podName = System.getenv("POD_NAME");
-            if (podName == null) {
-                podName = System.getenv("HOSTNAME");
+        if (DiscoveryMode.KUBERNETES_API.equals(config.getMode())) {
+            try {
+                String podName = System.getenv("POD_NAME");
+                if (podName == null) {
+                    podName = System.getenv("HOSTNAME");
+                }
+                if (podName == null) {
+                    podName = InetAddress.getLocalHost().getHostName();
+                }
+                String zone = client.zone(podName);
+                if (zone != null) {
+                    getLogger().info(String.format("Kubernetes plugin discovered availability zone: %s", zone));
+                    return zone;
+                }
+            } catch (Exception e) {
+                // only log the exception and the message, Hazelcast should still start
+                getLogger().finest(e);
             }
-            if (podName == null) {
-                podName = InetAddress.getLocalHost().getHostName();
-            }
-            String zone = client.zone(podName);
-            if (zone != null) {
-                return zone;
-            }
-        } catch (Exception e) {
-            // only log the exception and the message, Hazelcast should still start
-            getLogger().finest(e);
+            getLogger().warning("Cannot fetch the current zone, ZONE_AWARE feature is disabled");
         }
-        getLogger().warning("Cannot fetch the current zone, ZONE_AWARE feature is disabled");
         return "unknown";
     }
 
