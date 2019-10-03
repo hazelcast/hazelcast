@@ -27,7 +27,6 @@ import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
-import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.WanSyncState;
@@ -106,11 +105,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         Map<UUID, String> clientStats = new HashMap<>();
         clientStats.put(clientUuid, "someStats");
-
-        AdvancedNetworkStats inboundNetworkStats = new AdvancedNetworkStats();
-        inboundNetworkStats.setBytesTransceivedForProtocol(ProtocolType.MEMBER, 42);
-        AdvancedNetworkStats outboundNetworkStats = new AdvancedNetworkStats();
-        outboundNetworkStats.setBytesTransceivedForProtocol(ProtocolType.MEMBER, 24);
 
         Map<EndpointQualifier, Address> endpoints = new HashMap<>();
         endpoints.put(EndpointQualifier.MEMBER, new Address("127.0.0.1", 5701));

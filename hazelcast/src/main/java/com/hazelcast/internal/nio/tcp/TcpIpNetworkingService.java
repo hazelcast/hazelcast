@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
@@ -36,6 +37,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.util.EnumMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,6 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -64,10 +67,10 @@ public class TcpIpNetworkingService
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
     private volatile ScheduledFuture refreshStatsFuture;
+    private final RefreshNetworkStatsTask refreshStatsTask;
     private final ServerSocketRegistry registry;
 
-    private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers =
-            new ConcurrentHashMap<EndpointQualifier, EndpointManager<TcpIpConnection>>();
+    private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers = new ConcurrentHashMap<>();
     private final TcpIpUnifiedEndpointManager unifiedEndpointManager;
     private final AggregateEndpointManager aggregateEndpointManager;
 
@@ -98,6 +101,7 @@ public class TcpIpNetworkingService
         this.ioService = ioService;
         this.networking = networking;
         this.metricsRegistry = metricsRegistry;
+        this.refreshStatsTask = new RefreshNetworkStatsTask();
         this.registry = registry;
         this.logger = loggingService.getLogger(TcpIpNetworkingService.class);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
@@ -181,9 +185,8 @@ public class TcpIpNetworkingService
         startAcceptor();
 
         if (unifiedEndpointManager == null) {
-            refreshStatsFuture = metricsRegistry.scheduleAtFixedRate(new RefreshNetworkStatsTask(), 1, SECONDS, ProbeLevel.INFO);
-            aggregateEndpointManager.getInboundNetworkStats().registerMetrics(metricsRegistry, "tcp.bytesReceived");
-            aggregateEndpointManager.getOutboundNetworkStats().registerMetrics(metricsRegistry, "tcp.bytesSend");
+            refreshStatsFuture = metricsRegistry.scheduleAtFixedRate(refreshStatsTask, 1, SECONDS, ProbeLevel.INFO);
+            refreshStatsTask.registerMetrics();
         }
     }
 
@@ -200,8 +203,7 @@ public class TcpIpNetworkingService
                 refreshStatsFuture.cancel(false);
                 refreshStatsFuture = null;
             }
-            metricsRegistry.deregister(aggregateEndpointManager.getInboundNetworkStats());
-            metricsRegistry.deregister(aggregateEndpointManager.getOutboundNetworkStats());
+            metricsRegistry.deregister(refreshStatsTask);
         }
 
         shutdownAcceptor();
@@ -299,7 +301,37 @@ public class TcpIpNetworkingService
         registry.destroy();
     }
 
+    /**
+     * Responsible for periodical re-calculation of network stats in all EndpointManagers.
+     * Also registers per protocol network stats metrics which are meant to be consumed in Management Center.
+     * <p>
+     * Only used when Advanced Networking is enabled.
+     *
+     * @see EndpointManager#getNetworkStats()
+     * @see AggregateEndpointManager#getNetworkStats()
+     */
     private class RefreshNetworkStatsTask implements Runnable {
+
+        private final EnumMap<ProtocolType, AtomicLong> bytesSentPerProtocol;
+        private final EnumMap<ProtocolType, AtomicLong> bytesReceivedPerProtocol;
+
+        RefreshNetworkStatsTask() {
+            bytesSentPerProtocol = new EnumMap<>(ProtocolType.class);
+            bytesReceivedPerProtocol = new EnumMap<>(ProtocolType.class);
+            for (ProtocolType type : ProtocolType.valuesAsSet()) {
+                bytesSentPerProtocol.put(type, new AtomicLong());
+                bytesReceivedPerProtocol.put(type, new AtomicLong());
+            }
+        }
+
+        void registerMetrics() {
+            for (final ProtocolType type : ProtocolType.valuesAsSet()) {
+                metricsRegistry.register(this, "tcp.bytesSend." + type.name(), ProbeLevel.INFO,
+                        (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesSentPerProtocol.get(type).get());
+                metricsRegistry.register(this, "tcp.bytesReceived." + type.name(), ProbeLevel.INFO,
+                        (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesReceivedPerProtocol.get(type).get());
+            }
+        }
 
         @Override
         public void run() {
@@ -309,14 +341,16 @@ public class TcpIpNetworkingService
 
                 for (EndpointManager endpointManager : endpointManagers.values()) {
                     TcpIpEndpointManager tcpIpEndpointManager = (TcpIpEndpointManager) endpointManager;
+                    tcpIpEndpointManager.refreshNetworkStats();
+
                     if (type == tcpIpEndpointManager.getEndpointQualifier().getType()) {
-                        bytesReceived += tcpIpEndpointManager.calculateBytesReceived();
-                        bytesSent += tcpIpEndpointManager.calculateBytesSent();
+                        bytesReceived += tcpIpEndpointManager.getNetworkStats().getBytesReceived();
+                        bytesSent += tcpIpEndpointManager.getNetworkStats().getBytesSent();
                     }
                 }
 
-                aggregateEndpointManager.getInboundNetworkStats().setBytesTransceivedForProtocol(type, bytesReceived);
-                aggregateEndpointManager.getOutboundNetworkStats().setBytesTransceivedForProtocol(type, bytesSent);
+                bytesReceivedPerProtocol.get(type).lazySet(bytesReceived);
+                bytesSentPerProtocol.get(type).lazySet(bytesSent);
             }
         }
 

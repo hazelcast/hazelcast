@@ -17,8 +17,8 @@
 package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
@@ -30,6 +30,7 @@ import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.Packet;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -195,13 +196,8 @@ public class FirewallingNetworkingService
         }
 
         @Override
-        public AdvancedNetworkStats getInboundNetworkStats() {
-            return null;
-        }
-
-        @Override
-        public AdvancedNetworkStats getOutboundNetworkStats() {
-            return null;
+        public Map<EndpointQualifier, NetworkStats> getNetworkStats() {
+            return delegate.getNetworkStats();
         }
     }
 
@@ -341,5 +337,9 @@ public class FirewallingNetworkingService
             return delegate.registerConnection(address, connection);
         }
 
+        @Override
+        public NetworkStats getNetworkStats() {
+            return delegate.getNetworkStats();
+        }
     }
 }

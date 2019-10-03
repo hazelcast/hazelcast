@@ -18,13 +18,17 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Map;
+import java.util.function.Function;
 
 import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
@@ -50,14 +54,11 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
         instance1 = newHazelcastInstance(config);
         instance2 = startSecondInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(getBytesReceived(instance1, MEMBER) > 0);
-                assertTrue(getBytesSent(instance1, MEMBER) > 0);
-                assertTrue(getBytesReceived(instance2, MEMBER) > 0);
-                assertTrue(getBytesSent(instance2, MEMBER) > 0);
-            }
+        assertTrueEventually(() -> {
+            assertTrue(getBytesReceived(instance1, MEMBER) > 0);
+            assertTrue(getBytesSent(instance1, MEMBER) > 0);
+            assertTrue(getBytesReceived(instance2, MEMBER) > 0);
+            assertTrue(getBytesSent(instance2, MEMBER) > 0);
         });
 
         assertNonMemberNetworkStatsAreZero(instance1);
@@ -76,12 +77,9 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
         instance2.shutdown();
         assertClusterSizeEventually(1, instance1);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(getBytesReceived(instance1, MEMBER) > 0);
-                assertTrue(getBytesSent(instance1, MEMBER) > 0);
-            }
+        assertTrueEventually(() -> {
+            assertTrue(getBytesReceived(instance1, MEMBER) > 0);
+            assertTrue(getBytesSent(instance1, MEMBER) > 0);
         });
 
         assertNonMemberNetworkStatsAreZero(instance1);
@@ -93,12 +91,9 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
         instance2 = newHazelcastInstance(getUnisocketConfig(MEMBER_PORT + 1));
         assertClusterSizeEventually(2, instance1, instance2);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertAllNetworkStatsAreZero(instance1);
-                assertAllNetworkStatsAreZero(instance2);
-            }
+        assertTrueAllTheTime(() -> {
+            assertAllNetworkStatsAreZero(instance1);
+            assertAllNetworkStatsAreZero(instance2);
         }, 30);
     }
 
@@ -128,19 +123,27 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
     }
 
     private long getBytesReceived(HazelcastInstance instance, ProtocolType protocolType) {
-        AdvancedNetworkStats inboundStats = getNode(instance)
-                .getNetworkingService()
-                .getAggregateEndpointManager()
-                .getInboundNetworkStats();
-        return inboundStats != null ? inboundStats.getBytesTransceivedForProtocol(protocolType) : 0;
+        return getBytesTransceived(instance, protocolType, NetworkStats::getBytesReceived);
     }
 
     private long getBytesSent(HazelcastInstance instance, ProtocolType protocolType) {
-        AdvancedNetworkStats outboundStats = getNode(instance)
+        return getBytesTransceived(instance, protocolType, NetworkStats::getBytesSent);
+    }
+
+    private long getBytesTransceived(HazelcastInstance instance, ProtocolType protocolType, Function<NetworkStats, Long> getFn) {
+        Map<EndpointQualifier, NetworkStats> stats = getNode(instance)
                 .getNetworkingService()
                 .getAggregateEndpointManager()
-                .getOutboundNetworkStats();
-        return outboundStats != null ? outboundStats.getBytesTransceivedForProtocol(protocolType) : 0;
+                .getNetworkStats();
+        long bytesTransceived = 0;
+        if (stats != null) {
+            for (Map.Entry<EndpointQualifier, NetworkStats> entry : stats.entrySet()) {
+                if (entry.getKey().getType() == protocolType) {
+                    bytesTransceived += getFn.apply(entry.getValue());
+                }
+            }
+        }
+        return bytesTransceived;
     }
 
     private void enableMetrics(Config config) {

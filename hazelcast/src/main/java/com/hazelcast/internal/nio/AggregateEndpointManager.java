@@ -16,10 +16,12 @@
 
 package com.hazelcast.internal.nio;
 
-import com.hazelcast.internal.networking.nio.AdvancedNetworkStats;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 
 import java.util.Collection;
+import java.util.Map;
 
 public interface AggregateEndpointManager
         extends ConnectionListenable {
@@ -29,17 +31,11 @@ public interface AggregateEndpointManager
     Collection<TcpIpConnection> getActiveConnections();
 
     /**
-     * Gets network stats for incoming traffic. Stats are available only when Advanced Networking is enabled.
+     * Gets network stats for inbound and outbound traffic per {@link EndpointQualifier}.
+     * Stats are available only when Advanced Networking is enabled.
      *
-     * @return network stats for incoming traffic per-protocol or {@code null} if Advanced Networking is disabled
+     * @return network stats per endpoint
      */
-    AdvancedNetworkStats getInboundNetworkStats();
-
-    /**
-     * Gets network stats for outgoing traffic. Stats are available only when Advanced Networking is enabled.
-     *
-     * @return network stats for outgoing traffic per-protocol or {@code null} if Advanced Networking is disabled
-     */
-    AdvancedNetworkStats getOutboundNetworkStats();
+    Map<EndpointQualifier, NetworkStats> getNetworkStats();
 
 }
