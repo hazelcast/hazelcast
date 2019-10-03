@@ -77,6 +77,6 @@ public class MapAddIndexMessageTask
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{parameters.indexConfig};
     }
 }
