@@ -66,7 +66,7 @@ public class TcpIpNetworkingService
 
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
-    private volatile ScheduledFuture refreshStatsFuture;
+    private ScheduledFuture refreshStatsFuture;
     private final RefreshNetworkStatsTask refreshStatsTask;
     private final ServerSocketRegistry registry;
 
@@ -312,24 +312,24 @@ public class TcpIpNetworkingService
      */
     private class RefreshNetworkStatsTask implements Runnable {
 
-        private final EnumMap<ProtocolType, AtomicLong> bytesSentPerProtocol;
         private final EnumMap<ProtocolType, AtomicLong> bytesReceivedPerProtocol;
+        private final EnumMap<ProtocolType, AtomicLong> bytesSentPerProtocol;
 
         RefreshNetworkStatsTask() {
-            bytesSentPerProtocol = new EnumMap<>(ProtocolType.class);
             bytesReceivedPerProtocol = new EnumMap<>(ProtocolType.class);
+            bytesSentPerProtocol = new EnumMap<>(ProtocolType.class);
             for (ProtocolType type : ProtocolType.valuesAsSet()) {
-                bytesSentPerProtocol.put(type, new AtomicLong());
                 bytesReceivedPerProtocol.put(type, new AtomicLong());
+                bytesSentPerProtocol.put(type, new AtomicLong());
             }
         }
 
         void registerMetrics() {
             for (final ProtocolType type : ProtocolType.valuesAsSet()) {
-                metricsRegistry.register(this, "tcp.bytesSend." + type.name(), ProbeLevel.INFO,
-                        (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesSentPerProtocol.get(type).get());
                 metricsRegistry.register(this, "tcp.bytesReceived." + type.name(), ProbeLevel.INFO,
                         (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesReceivedPerProtocol.get(type).get());
+                metricsRegistry.register(this, "tcp.bytesSend." + type.name(), ProbeLevel.INFO,
+                        (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesSentPerProtocol.get(type).get());
             }
         }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.nio.tcp;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -25,12 +24,12 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.Select_NioNetworkingFactory;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -136,7 +135,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         ServerSocketRegistry registry = new ServerSocketRegistry(singletonMap(MEMBER, ioService.serverSocketChannel), true);
 
         final MockIOService finalIoService = ioService;
-        return new TcpIpNetworkingService(new Config(),
+        return new TcpIpNetworkingService(null,
                 ioService,
                 registry,
                 ioService.loggingService,
