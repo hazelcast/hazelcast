@@ -16,36 +16,6 @@
 
 package com.hazelcast.client.protocol;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
-import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-import static com.hazelcast.internal.nio.IOUtil.readFully;
-import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY_NEW;
-import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessage.Frame;
@@ -58,6 +28,33 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
+import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+import static com.hazelcast.internal.nio.IOUtil.readFully;
+import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY_NEW;
+import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
+import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class verifies that client protocol protection is able to filter large and fragmented messages for untrusted
