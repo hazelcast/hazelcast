@@ -16,19 +16,21 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.nio.EndpointManager;
 
 /**
- * Stats per {@link com.hazelcast.internal.nio.EndpointManager} for both directions of
- * network traffic (inbound or outbound).
+ * Stats per {@link EndpointManager} for both directions of network traffic (inbound or outbound).
  * <p>
- * Stores number of bytes sent or received. Works only when Advanced Networking is enabled and
- * {@link com.hazelcast.config.EndpointConfig} is added for the {@link ProtocolType} in question.
+ * Stores number of bytes sent and received. Used only when Advanced Networking is enabled.
+ *
+ * @see EndpointManager#getNetworkStats()
+ * @see AggregateEndpointManager#getNetworkStats()
  */
 public interface NetworkStats {
 
     /**
-     * Gets number of bytes received over all connections (active and closed) managed by
+     * Returns number of bytes received over all connections (active and closed) managed by
      * the EndpointManager. Guaranteed to be monotonically increasing counter, but
      * may not show the latest total.
      *
@@ -37,7 +39,7 @@ public interface NetworkStats {
     long getBytesReceived();
 
     /**
-     * Gets number of bytes sent over all connections (active and closed) managed by
+     * Returns number of bytes sent over all connections (active and closed) managed by
      * the EndpointManager. Guaranteed to be monotonically increasing counter, but
      * may not show the latest total.
      *

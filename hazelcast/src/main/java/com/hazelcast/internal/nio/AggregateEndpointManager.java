@@ -26,12 +26,22 @@ import java.util.Map;
 public interface AggregateEndpointManager
         extends ConnectionListenable {
 
+    /**
+     * Returns all connections that have been successfully established by the underlying EndpointManagers.
+     *
+     * @return active connections
+     */
     Collection<TcpIpConnection> getConnections();
 
+    /**
+     * Returns all active connections from the underlying EndpointManagers.
+     *
+     * @return active connections
+     */
     Collection<TcpIpConnection> getActiveConnections();
 
     /**
-     * Gets network stats for inbound and outbound traffic per {@link EndpointQualifier}.
+     * Returns network stats for inbound and outbound traffic per {@link EndpointQualifier}.
      * Stats are available only when Advanced Networking is enabled.
      *
      * @return network stats per endpoint

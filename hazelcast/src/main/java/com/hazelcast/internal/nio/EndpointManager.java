@@ -113,7 +113,7 @@ public interface EndpointManager<T extends Connection>
     /**
      * Gets network stats for inbound and outbound traffic. Stats are available only when Advanced Networking is enabled.
      *
-     * @return network stats or {@code null} if Advanced Networking is disabled
+     * @return network stats, or {@code null} if Advanced Networking is disabled
      */
     NetworkStats getNetworkStats();
 
