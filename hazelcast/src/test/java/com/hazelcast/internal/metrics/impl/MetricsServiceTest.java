@@ -54,7 +54,9 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.decompressingIterator;
+import static java.util.Collections.EMPTY_SET;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -133,14 +135,14 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         InOrder inOrderLong = inOrder(metricsCollectorMock);
         InOrder inOrderDouble = inOrder(metricsCollectorMock);
 
-        inOrderLong.verify(metricsCollectorMock).collectLong("[unit=count,metric=test.longValue]", 1);
-        inOrderLong.verify(metricsCollectorMock).collectLong("[unit=count,metric=test.longValue]", 2);
-        inOrderLong.verify(metricsCollectorMock, never()).collectLong(eq("[unit=count,metric=test.longValue]"), anyLong());
+        inOrderLong.verify(metricsCollectorMock).collectLong("[unit=count,metric=test.longValue]", 1, EMPTY_SET);
+        inOrderLong.verify(metricsCollectorMock).collectLong("[unit=count,metric=test.longValue]", 2, EMPTY_SET);
+        inOrderLong.verify(metricsCollectorMock, never()).collectLong(eq("[unit=count,metric=test.longValue]"), anyLong(), any());
 
-        inOrderDouble.verify(metricsCollectorMock).collectDouble("[unit=count,metric=test.doubleValue]", 1.5D);
-        inOrderDouble.verify(metricsCollectorMock).collectDouble("[unit=count,metric=test.doubleValue]", 5.5D);
+        inOrderDouble.verify(metricsCollectorMock).collectDouble("[unit=count,metric=test.doubleValue]", 1.5D, EMPTY_SET);
+        inOrderDouble.verify(metricsCollectorMock).collectDouble("[unit=count,metric=test.doubleValue]", 5.5D, EMPTY_SET);
         inOrderDouble.verify(metricsCollectorMock, never()).collectDouble(eq("[unit=count,metric=test.doubleValue]"),
-                anyDouble());
+                anyDouble(), any());
     }
 
     @Test
@@ -245,8 +247,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         metricsService.registerPublisher(nodeEngine -> publisherMock);
 
         assertTrueEventually(() -> {
-            verify(publisherMock, atLeastOnce()).publishDouble(anyString(), anyDouble());
-            verify(publisherMock, atLeastOnce()).publishLong(anyString(), anyLong());
+            verify(publisherMock, atLeastOnce()).publishDouble(anyString(), anyDouble(), any());
+            verify(publisherMock, atLeastOnce()).publishLong(anyString(), anyLong(), any());
         });
     }
 
@@ -276,8 +278,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         metricsService.collectMetrics();
 
-        verify(publisherMock, atLeastOnce()).publishDouble(anyString(), anyDouble());
-        verify(publisherMock, atLeastOnce()).publishLong(anyString(), anyLong());
+        verify(publisherMock, atLeastOnce()).publishDouble(anyString(), anyDouble(), any());
+        verify(publisherMock, atLeastOnce()).publishLong(anyString(), anyLong(), any());
     }
 
     @Test
@@ -291,8 +293,34 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         metricsService.collectMetrics();
 
-        verify(publisherMock, never()).publishDouble(anyString(), anyDouble());
-        verify(publisherMock, never()).publishLong(anyString(), anyLong());
+        verify(publisherMock, never()).publishDouble(anyString(), anyDouble(), any());
+        verify(publisherMock, never()).publishLong(anyString(), anyLong(), any());
+    }
+
+    @Test
+    public void testExclusion() throws Exception {
+        // configure metrics to keep the result only of the last collection cycle
+        config.getMetricsConfig()
+              .setRetentionSeconds(1)
+              .setCollectionIntervalSeconds(5);
+
+        ExclusionProbeSource metricsSource = new ExclusionProbeSource();
+        metricsRegistry.registerStaticMetrics(metricsSource, "testExclusion");
+
+        MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
+        metricsService.init(nodeEngineMock, new Properties());
+
+        metricsSource.update(1, 2, 1.5D, 2.5D);
+        metricsService.collectMetrics();
+
+        MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
+        readMetrics(metricsService, 0, metricConsumerMock);
+
+        verify(metricConsumerMock).consumeLong("[unit=count,metric=testExclusion.notExcludedLong]", 1);
+        verify(metricConsumerMock, never()).consumeLong(eq("[unit=count,metric=testExclusion.excludedLong]"), anyLong());
+
+        verify(metricConsumerMock).consumeDouble("[unit=count,metric=testExclusion.notExcludedDouble]", 1.5D);
+        verify(metricConsumerMock, never()).consumeDouble(eq("[unit=count,metric=testExclusion.excludedDouble]"), anyDouble());
     }
 
     private void readMetrics(MetricsService metricsService, long sequence, MetricConsumer metricConsumer)
@@ -321,5 +349,26 @@ public class MetricsServiceTest extends HazelcastTestSupport {
             this.doubleValue = doubleValue;
         }
 
+    }
+
+    private static class ExclusionProbeSource {
+        @Probe
+        private long notExcludedLong;
+
+        @Probe(excludedTargets = MANAGEMENT_CENTER)
+        private long excludedLong;
+
+        @Probe
+        private double notExcludedDouble;
+
+        @Probe(excludedTargets = MANAGEMENT_CENTER)
+        private double excludedDouble;
+
+        private void update(long notExcludedLong, long excludedLong, double notExcludedDouble, double excludedDouble) {
+            this.notExcludedLong = notExcludedLong;
+            this.excludedLong = excludedLong;
+            this.notExcludedDouble = notExcludedDouble;
+            this.excludedDouble = excludedDouble;
+        }
     }
 }

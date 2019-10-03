@@ -90,4 +90,12 @@ public @interface Probe {
      * Measurement unit of a Probe. Not used on member, becomes a part of the key.
      */
     ProbeUnit unit() default COUNT;
+
+    /**
+     * Returns the targets excluded for this Probe. Used for filtering in
+     * {@link MetricsPublisher}s.
+     *
+     * @return the targets excluded for this Probe
+     */
+    MetricTarget[] excludedTargets() default {};
 }

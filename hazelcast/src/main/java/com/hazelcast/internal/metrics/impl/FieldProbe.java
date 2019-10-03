@@ -21,6 +21,7 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
+import com.hazelcast.internal.metrics.ProbeAware;
 import com.hazelcast.internal.util.counters.Counter;
 
 import java.lang.reflect.Field;
@@ -43,7 +44,7 @@ import static java.lang.String.format;
 /**
  * A FieldProbe is a {@link ProbeFunction} that reads out a field that is annotated with {@link Probe}.
  */
-abstract class FieldProbe implements ProbeFunction {
+abstract class FieldProbe implements ProbeFunction, ProbeAware {
 
     final Probe probe;
     final Field field;
@@ -54,6 +55,11 @@ abstract class FieldProbe implements ProbeFunction {
         this.probe = probe;
         this.type = type;
         field.setAccessible(true);
+    }
+
+    @Override
+    public Probe getProbe() {
+        return probe;
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {

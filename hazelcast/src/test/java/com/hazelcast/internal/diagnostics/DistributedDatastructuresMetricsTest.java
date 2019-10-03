@@ -23,6 +23,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -42,6 +43,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
 
@@ -189,28 +191,28 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void collectLong(String name, long value) {
+        public void collectLong(String name, long value, Set<MetricTarget> excludedMetricTargets) {
             if (pattern.matcher(name).matches()) {
                 probes.put(name, value);
             }
         }
 
         @Override
-        public void collectDouble(String name, double value) {
+        public void collectDouble(String name, double value, Set<MetricTarget> excludedMetricTargets) {
             if (pattern.matcher(name).matches()) {
                 probes.put(name, value);
             }
         }
 
         @Override
-        public void collectException(String name, Exception e) {
+        public void collectException(String name, Exception e, Set<MetricTarget> excludedMetricTargets) {
             if (pattern.matcher(name).matches()) {
                 probes.put(name, e);
             }
         }
 
         @Override
-        public void collectNoValue(String name) {
+        public void collectNoValue(String name, Set<MetricTarget> excludedMetricTargets) {
             if (pattern.matcher(name).matches()) {
                 probes.put(name, null);
             }

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.metrics.jmx;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricsUtil;
 
@@ -32,8 +33,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.metrics.MetricTarget.JMX;
 import static com.hazelcast.internal.util.MapUtil.entry;
 
 /**
@@ -79,16 +82,20 @@ public class JmxPublisher implements MetricsPublisher {
     }
 
     @Override
-    public void publishLong(String metricName, long value) {
-        publishNumber(metricName, value);
+    public void publishLong(String metricName, long value, Set<MetricTarget> excludedTargets) {
+        publishNumber(metricName, value, excludedTargets);
     }
 
     @Override
-    public void publishDouble(String metricName, double value) {
-        publishNumber(metricName, value);
+    public void publishDouble(String metricName, double value, Set<MetricTarget> excludedTargets) {
+        publishNumber(metricName, value, excludedTargets);
     }
 
-    private void publishNumber(String metricName, Number value) {
+    private void publishNumber(String metricName, Number value, Set<MetricTarget> excludedTargets) {
+        if (excludedTargets.contains(JMX)) {
+            return;
+        }
+
         MetricData metricData = metricNameToMetricData.computeIfAbsent(metricName, createMetricDataFunction);
         assert !metricData.wasPresent : "metric '" + metricName + "' was rendered twice";
         metricData.wasPresent = true;

@@ -42,10 +42,10 @@ public final class FileMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         File file = new File(System.getProperty("user.home"));
-        MetricTagger builder = metricsRegistry.newMetricTagger("file.partition")
-                                              .withIdTag("dir", "user.home");
-        builder.registerStaticProbe(file, "freeSpace", MANDATORY, BYTES, File::getFreeSpace);
-        builder.registerStaticProbe(file, "totalSpace", MANDATORY, BYTES, File::getTotalSpace);
-        builder.registerStaticProbe(file, "usableSpace", MANDATORY, BYTES, File::getUsableSpace);
+        MetricTagger tagger = metricsRegistry.newMetricTagger("file.partition")
+                                             .withIdTag("dir", "user.home");
+        tagger.registerStaticProbe(file, "freeSpace", MANDATORY, BYTES, File::getFreeSpace);
+        tagger.registerStaticProbe(file, "totalSpace", MANDATORY, BYTES, File::getTotalSpace);
+        tagger.registerStaticProbe(file, "usableSpace", MANDATORY, BYTES, File::getUsableSpace);
     }
 }
