@@ -3894,28 +3894,6 @@
 
     <xs:element name="secure-store-substitution-group" abstract="true"/>
 
-    <xs:complexType name="keystore-entry">
-        <xs:annotation>
-            <xs:documentation>
-                The key entry stored in a Java KeyStore.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of the entry.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="password" type="xs:string">
-            <xs:annotation>
-                <xs:documentation>
-                    The password to access the entry.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
     <xs:complexType name="keystore">
         <xs:all>
             <xs:element name="path" type="xs:string" minOccurs="1" maxOccurs="1">
