@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -32,6 +33,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertNotContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueAllTheTime;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
@@ -47,7 +49,7 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
     private HazelcastInstance instance2;
 
     @Test
-    public void testStats_advancedNetworkEnabledAndConnectionActive() {
+    public void testStats_advancedNetworkEnabledAndConnectionActive_readFromEMs() {
         Config config = createCompleteMultiSocketConfig();
         configureTcpIpConfig(config);
         enableMetrics(config);
@@ -55,18 +57,37 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
         instance2 = startSecondInstance();
 
         assertTrueEventually(() -> {
-            assertTrue(getBytesReceived(instance1, MEMBER) > 0);
-            assertTrue(getBytesSent(instance1, MEMBER) > 0);
-            assertTrue(getBytesReceived(instance2, MEMBER) > 0);
-            assertTrue(getBytesSent(instance2, MEMBER) > 0);
+            assertTrue(getBytesReceivedFromEMs(instance1, MEMBER) > 0);
+            assertTrue(getBytesSentFromEMs(instance1, MEMBER) > 0);
+            assertTrue(getBytesReceivedFromEMs(instance2, MEMBER) > 0);
+            assertTrue(getBytesSentFromEMs(instance2, MEMBER) > 0);
         });
 
-        assertNonMemberNetworkStatsAreZero(instance1);
-        assertNonMemberNetworkStatsAreZero(instance2);
+        assertNonMemberNetworkStatsAreZeroFromEMs(instance1);
+        assertNonMemberNetworkStatsAreZeroFromEMs(instance2);
     }
 
     @Test
-    public void testStats_advancedNetworkEnabledAndConnectionClosed() {
+    public void testStats_advancedNetworkEnabledAndConnectionActive_readFromMetrics() {
+        Config config = createCompleteMultiSocketConfig();
+        configureTcpIpConfig(config);
+        enableMetrics(config);
+        instance1 = newHazelcastInstance(config);
+        instance2 = startSecondInstance();
+
+        assertTrueEventually(() -> {
+            assertTrue(getBytesReceivedFromMetrics(instance1, MEMBER) > 0);
+            assertTrue(getBytesSentFromMetrics(instance1, MEMBER) > 0);
+            assertTrue(getBytesReceivedFromMetrics(instance2, MEMBER) > 0);
+            assertTrue(getBytesSentFromMetrics(instance2, MEMBER) > 0);
+        });
+
+        assertNonMemberNetworkStatsAreZeroFromMetrics(instance1);
+        assertNonMemberNetworkStatsAreZeroFromMetrics(instance2);
+    }
+
+    @Test
+    public void testStats_advancedNetworkEnabledAndConnectionClosed_readFromEMs() {
         Config config = createCompleteMultiSocketConfig();
         configureTcpIpConfig(config);
         enableMetrics(config);
@@ -78,11 +99,31 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
         assertClusterSizeEventually(1, instance1);
 
         assertTrueEventually(() -> {
-            assertTrue(getBytesReceived(instance1, MEMBER) > 0);
-            assertTrue(getBytesSent(instance1, MEMBER) > 0);
+            assertTrue(getBytesReceivedFromEMs(instance1, MEMBER) > 0);
+            assertTrue(getBytesSentFromEMs(instance1, MEMBER) > 0);
         });
 
-        assertNonMemberNetworkStatsAreZero(instance1);
+        assertNonMemberNetworkStatsAreZeroFromEMs(instance1);
+    }
+
+    @Test
+    public void testStats_advancedNetworkEnabledAndConnectionClosed_readFromMetrics() {
+        Config config = createCompleteMultiSocketConfig();
+        configureTcpIpConfig(config);
+        enableMetrics(config);
+        instance1 = newHazelcastInstance(config);
+        instance2 = startSecondInstance();
+        assertClusterSizeEventually(2, instance1, instance2);
+
+        instance2.shutdown();
+        assertClusterSizeEventually(1, instance1);
+
+        assertTrueEventually(() -> {
+            assertTrue(getBytesReceivedFromMetrics(instance1, MEMBER) > 0);
+            assertTrue(getBytesSentFromMetrics(instance1, MEMBER) > 0);
+        });
+
+        assertNonMemberNetworkStatsAreZeroFromMetrics(instance1);
     }
 
     @Test
@@ -92,8 +133,11 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
         assertClusterSizeEventually(2, instance1, instance2);
 
         assertTrueAllTheTime(() -> {
-            assertAllNetworkStatsAreZero(instance1);
-            assertAllNetworkStatsAreZero(instance2);
+            assertAllNetworkStatsAreZeroFromEMs(instance1);
+            assertAllNetworkStatsAreZeroFromEMs(instance2);
+
+            assertAllNetworkStatsNotRegisteredAsMetrics(instance1);
+            assertAllNetworkStatsNotRegisteredAsMetrics(instance2);
         }, 30);
     }
 
@@ -107,30 +151,30 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
         return config1;
     }
 
-    private void assertAllNetworkStatsAreZero(HazelcastInstance instance) {
-        assertEquals(0, getBytesReceived(instance, MEMBER));
-        assertEquals(0, getBytesSent(instance, MEMBER));
-        assertNonMemberNetworkStatsAreZero(instance);
+    private void assertAllNetworkStatsAreZeroFromEMs(HazelcastInstance instance) {
+        assertEquals(0, getBytesReceivedFromEMs(instance, MEMBER));
+        assertEquals(0, getBytesSentFromEMs(instance, MEMBER));
+        assertNonMemberNetworkStatsAreZeroFromEMs(instance);
     }
 
-    private void assertNonMemberNetworkStatsAreZero(HazelcastInstance instance) {
+    private void assertNonMemberNetworkStatsAreZeroFromEMs(HazelcastInstance instance) {
         for (ProtocolType protocolType : ProtocolType.values()) {
             if (protocolType != MEMBER) {
-                assertEquals(0, getBytesReceived(instance, protocolType));
-                assertEquals(0, getBytesSent(instance, protocolType));
+                assertEquals(0, getBytesReceivedFromEMs(instance, protocolType));
+                assertEquals(0, getBytesSentFromEMs(instance, protocolType));
             }
         }
     }
 
-    private long getBytesReceived(HazelcastInstance instance, ProtocolType protocolType) {
-        return getBytesTransceived(instance, protocolType, NetworkStats::getBytesReceived);
+    private long getBytesReceivedFromEMs(HazelcastInstance instance, ProtocolType protocolType) {
+        return getBytesTransceivedFromEMs(instance, protocolType, NetworkStats::getBytesReceived);
     }
 
-    private long getBytesSent(HazelcastInstance instance, ProtocolType protocolType) {
-        return getBytesTransceived(instance, protocolType, NetworkStats::getBytesSent);
+    private long getBytesSentFromEMs(HazelcastInstance instance, ProtocolType protocolType) {
+        return getBytesTransceivedFromEMs(instance, protocolType, NetworkStats::getBytesSent);
     }
 
-    private long getBytesTransceived(HazelcastInstance instance, ProtocolType protocolType, Function<NetworkStats, Long> getFn) {
+    private long getBytesTransceivedFromEMs(HazelcastInstance instance, ProtocolType protocolType, Function<NetworkStats, Long> getFn) {
         Map<EndpointQualifier, NetworkStats> stats = getNode(instance)
                 .getNetworkingService()
                 .getAggregateEndpointManager()
@@ -146,10 +190,37 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
         return bytesTransceived;
     }
 
+    private void assertNonMemberNetworkStatsAreZeroFromMetrics(HazelcastInstance instance) {
+        for (ProtocolType protocolType : ProtocolType.values()) {
+            if (protocolType != MEMBER) {
+                assertEquals(0, getBytesReceivedFromMetrics(instance, protocolType));
+                assertEquals(0, getBytesSentFromMetrics(instance, protocolType));
+            }
+        }
+    }
+
+    private long getBytesReceivedFromMetrics(HazelcastInstance instance, ProtocolType protocolType) {
+        MetricsRegistry registry = getNode(instance).nodeEngine.getMetricsRegistry();
+        return registry.newLongGauge("tcp.bytesReceived." + protocolType.name()).read();
+    }
+
+    private long getBytesSentFromMetrics(HazelcastInstance instance, ProtocolType protocolType) {
+        MetricsRegistry registry = getNode(instance).nodeEngine.getMetricsRegistry();
+        return registry.newLongGauge("tcp.bytesSend." + protocolType.name()).read();
+    }
+
     private void enableMetrics(Config config) {
         config.setProperty("hazelcast.diagnostics.enabled", "true");
         config.setProperty("hazelcast.diagnostics.metric.level", "Info");
         config.setProperty("hazelcast.diagnostics.metrics.period.seconds", "5");
+    }
+
+    private void assertAllNetworkStatsNotRegisteredAsMetrics(HazelcastInstance instance) {
+        MetricsRegistry registry = getNode(instance).nodeEngine.getMetricsRegistry();
+        for (ProtocolType protocolType : ProtocolType.values()) {
+            assertNotContains(registry.getNames(), "tcp.bytesReceived." + protocolType.name());
+            assertNotContains(registry.getNames(), "tcp.bytesSend." + protocolType.name());
+        }
     }
 
     private HazelcastInstance startSecondInstance() {
