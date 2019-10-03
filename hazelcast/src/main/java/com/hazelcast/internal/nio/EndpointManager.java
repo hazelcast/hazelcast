@@ -111,7 +111,8 @@ public interface EndpointManager<T extends Connection>
     boolean transmit(Packet packet, Address target);
 
     /**
-     * Gets network stats for inbound and outbound traffic. Stats are available only when Advanced Networking is enabled.
+     * Returns network stats for inbound and outbound traffic.
+     * Stats are available only when Advanced Networking is enabled.
      *
      * @return network stats, or {@code null} if Advanced Networking is disabled
      */

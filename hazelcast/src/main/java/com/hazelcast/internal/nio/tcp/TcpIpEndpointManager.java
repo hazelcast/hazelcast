@@ -319,9 +319,6 @@ public class TcpIpEndpointManager
         if (endpointConfig != null) {
             setChannelOptions(channel, endpointConfig);
         }
-        if (endpointQualifier != null) {
-            channel.attributeMap().put(ProtocolType.class, endpointQualifier.getType());
-        }
         acceptedChannels.add(channel);
         return channel;
     }
