@@ -98,6 +98,7 @@ import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
 import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
@@ -137,6 +138,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
@@ -159,7 +161,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
@@ -1431,9 +1432,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public void addIndex(@Nonnull String attribute, boolean ordered) {
-        validateIndexAttribute(attribute);
-        ClientMessage request = MapAddIndexCodec.encodeRequest(name, attribute, ordered);
+    public void addIndex(IndexConfig indexConfig) {
+        checkNotNull(indexConfig, "Index config cannot be null.");
+
+        IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
+
+        ClientMessage request = MapAddIndexCodec.encodeRequest(name, indexConfig0);
         invoke(request);
     }
 

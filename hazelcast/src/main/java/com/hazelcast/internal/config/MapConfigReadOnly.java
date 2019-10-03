@@ -23,8 +23,8 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -92,13 +92,13 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public List<MapIndexConfig> getMapIndexConfigs() {
-        final List<MapIndexConfig> mapIndexConfigs = super.getMapIndexConfigs();
-        final List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
-        for (MapIndexConfig mapIndexConfig : mapIndexConfigs) {
-            readOnlyMapIndexConfigs.add(new MapIndexConfigReadOnly(mapIndexConfig));
+    public List<IndexConfig> getIndexConfigs() {
+        final List<IndexConfig> indexConfigs = super.getIndexConfigs();
+        final List<IndexConfig> readOnlyIndexConfigs = new ArrayList<>(indexConfigs.size());
+        for (IndexConfig indexConfig : indexConfigs) {
+            readOnlyIndexConfigs.add(new IndexConfigReadOnly(indexConfig));
         }
-        return Collections.unmodifiableList(readOnlyMapIndexConfigs);
+        return Collections.unmodifiableList(readOnlyIndexConfigs);
     }
 
     @Override
@@ -260,16 +260,6 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
-        throw throwReadOnly();
-    }
-
-    @Override
     public MapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitioningStrategyConfig) {
         throw throwReadOnly();
     }
@@ -296,6 +286,16 @@ public class MapConfigReadOnly extends MapConfig {
 
     @Override
     public MapConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public MapConfig addIndexConfig(IndexConfig indexConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public MapConfig setIndexConfigs(List<IndexConfig> indexConfigs) {
         throw throwReadOnly();
     }
 

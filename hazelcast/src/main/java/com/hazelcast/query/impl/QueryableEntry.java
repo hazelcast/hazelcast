@@ -174,7 +174,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     }
 
     private static boolean startsWithKeyConstant(String attributeName) {
-        return attributeName.startsWith(KEY_ATTRIBUTE_NAME.value());
+        return attributeName.startsWith(KEY_ATTRIBUTE_NAME.value() + ".");
     }
 
     private static String getAttributeName(boolean isKey, String attributeName) {

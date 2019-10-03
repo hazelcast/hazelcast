@@ -329,10 +329,11 @@ hazelcast:
           republishing-enabled: false
 
       indexes:
-        name:
-          ordered: false
-        age:
-          ordered: true
+        - type: HASH
+          attributes:
+            - "name"
+        - attributes:
+          - "age"
 
       attributes:
         currency:
@@ -368,10 +369,11 @@ hazelcast:
             max-size-policy: ENTRY_COUNT
             size: 10000
           indexes:
-            name:
-              ordered: false
-            age:
-              ordered: true
+            - type: HASH
+              attributes:
+                - "name"
+            - attributes:
+              - "age"
 
   multimap:
     default:

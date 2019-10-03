@@ -672,10 +672,8 @@ hazelcast-client:
   #          - comparator-class-name: The comparator to be used while comparing entries to be evicted.
   #
   # * "indexes":
-  #     You can define indexes for your map using the "indexes" mapping. Each "index" is defined as a mapping under "indexes"
-  #     where the key of the mapping is the name of the index. For the indexes you can define the boolean "ordered" scalar.
-  #     For example, if you will have a ranged query for a field of a map entry, then "ordered" should be set to true. But
-  #     if the field has a boolean value, then it should be set to false. Its default value is false.
+  #     You can define indexes for your map using the "indexes" mapping. Index definition consists of type, optional
+  #     name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
   #
   query-caches:
     query-cache-class-name-predicate:
@@ -699,8 +697,9 @@ hazelcast-client:
         size: 10000
         comparator-class-name: com.hazelcast.examples.MyEvictionComparator
       indexes:
-        name:
-          ordered: false
+        - type: HASH
+          attributes:
+            - "name"
     query-cache-sql-predicate:
       map-name: map-name
       predicate:

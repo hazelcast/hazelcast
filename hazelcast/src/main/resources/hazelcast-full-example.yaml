@@ -1234,10 +1234,8 @@ hazelcast:
   #         com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
   #         the source cache to the target cache unless the incoming entry is not null.
   # * "indexes":
-  # You can define indexes for your map using this element's "index" sub-elements. Each "index" has
-  # only the boolean "ordered" attribute. For example, if you will have a ranged query for a field of a map
-  # entry, then this attribute should be set to true. But if the field has a boolean value, then it should
-  # be set to false. Its default value is false.
+  # You can define indexes for your map using this element's "index" sub-elements. Index definition consists of type,
+  # optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
   # * "attributes":
   # You can define attributes that may be referenced in predicates, queries and indexes using this element's
   # "attribute" sub-elements. Each "attribute" has only the "extractor-class-name" attribute which you should define
@@ -1307,10 +1305,11 @@ hazelcast:
             - com.example.SampleFilter2
           republishing-enabled: false
       indexes:
-        name:
-          ordered: false
-        age:
-          ordered: true
+        - type: HASH
+          attributes:
+            - "name"
+        - attributes:
+          - "age"
       attributes:
         currency:
           extractor-class-name: com.bank.CurrencyExtractor
@@ -1371,8 +1370,8 @@ hazelcast:
             max-size-policy: ENTRY_COUNT
             eviction-policy: LFU
           indexes:
-            "...":
-              ordered: true
+            - attributes:
+              - "name"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #

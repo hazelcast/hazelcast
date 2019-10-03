@@ -492,18 +492,12 @@
                                     <xs:element name="indexes" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                This configuration lets you index the attributes and also order them.
+                                                This configuration lets you define map indexes.
                                             </xs:documentation>
                                         </xs:annotation>
                                         <xs:complexType>
                                             <xs:sequence>
-                                                <xs:element name="index" minOccurs="0" maxOccurs="unbounded">
-                                                    <xs:complexType>
-                                                        <xs:attribute name="attribute" type="xs:string" use="required"/>
-                                                        <xs:attribute name="ordered" type="xs:string" use="optional"
-                                                                      default="false"/>
-                                                    </xs:complexType>
-                                                </xs:element>
+                                                <xs:element name="index" type="index" minOccurs="0" maxOccurs="unbounded"/>
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
@@ -3223,13 +3217,7 @@
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="index" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:attribute name="attribute" type="xs:string" use="required"/>
-                                <xs:attribute name="ordered" type="xs:string" use="optional"
-                                              default="false"/>
-                            </xs:complexType>
-                        </xs:element>
+                        <xs:element name="index" type="index" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -3265,13 +3253,7 @@
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="index" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:attribute name="attribute" type="xs:string" use="required"/>
-                                <xs:attribute name="ordered" type="xs:string" use="optional"
-                                              default="false"/>
-                            </xs:complexType>
-                        </xs:element>
+                        <xs:element name="index" type="index" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -3535,12 +3517,23 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="index">
-        <xs:simpleContent>
-            <xs:extension base="xs:string">
-                <xs:attribute name="ordered" type="parameterized-boolean" use="optional" default="false"/>
-            </xs:extension>
-        </xs:simpleContent>
+        <xs:all>
+            <xs:element name="attributes" type="index-attributes"/>
+        </xs:all>
+        <xs:attribute name="name"/>
+        <xs:attribute name="type" type="index-type" default="SORTED"/>
     </xs:complexType>
+    <xs:complexType name="index-attributes">
+        <xs:sequence>
+            <xs:element name="attribute" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="index-type">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="SORTED"/>
+            <xs:enumeration value="HASH"/>
+        </xs:restriction>
+    </xs:simpleType>
     <xs:complexType name="entry-listeners">
         <xs:sequence>
             <xs:element name="entry-listener" type="entry-listener" minOccurs="0" maxOccurs="unbounded"/>

@@ -18,9 +18,9 @@ package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEventType;
@@ -72,6 +72,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -110,7 +111,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
 import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
@@ -307,10 +307,8 @@ abstract class MapProxySupport<K, V>
     }
 
     private void initializeIndexes() {
-        for (MapIndexConfig index : mapConfig.getMapIndexConfigs()) {
-            if (index.getAttribute() != null) {
-                addIndex(index.getAttribute(), index.isOrdered());
-            }
+        for (IndexConfig index : mapConfig.getIndexConfigs()) {
+            addIndex(index);
         }
     }
 
@@ -1030,7 +1028,7 @@ abstract class MapProxySupport<K, V>
             }
         }
         if (index == 0) {
-            return new SimpleCompletedFuture<>(null);
+            return new SimpleCompletedFuture<>((Void) null);
         }
         // trim partition array to real size
         if (index < size) {
@@ -1049,7 +1047,7 @@ abstract class MapProxySupport<K, V>
             entriesPerPartition[partitionId] = null;
         }
         if (totalSize == 0) {
-            return new SimpleCompletedFuture<>(null);
+            return new SimpleCompletedFuture<>((Void) null);
         }
 
         OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries);
@@ -1327,11 +1325,16 @@ abstract class MapProxySupport<K, V>
     }
 
     @Override
-    public void addIndex(@Nonnull String attribute, boolean ordered) {
-        validateIndexAttribute(attribute);
+    public void addIndex(IndexConfig indexConfig) {
+        checkNotNull(indexConfig, "Index config cannot be null.");
+
+        IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
+
         try {
-            AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
-            operationService.invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
+            AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
+
+            operationService.invokeOnAllPartitions(SERVICE_NAME,
+                new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
         } catch (Throwable t) {
             throw rethrow(t);
         }

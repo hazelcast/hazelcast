@@ -2306,8 +2306,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            - com.example.SampleFilter\n"
                 + "          republishing-enabled: false\n"
                 + "      indexes:\n"
-                + "        age:\n"
-                + "          ordered: true\n"
+                + "        - attributes:\n"
+                + "          - \"age\"\n"
                 + "      attributes:\n"
                 + "        currency:\n"
                 + "          extractor-class-name: com.bank.CurrencyExtractor\n"
@@ -2335,9 +2335,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
         assertTrue(mapConfig.isReadBackupData());
-        assertEquals(1, mapConfig.getMapIndexConfigs().size());
-        assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
-        assertTrue(mapConfig.getMapIndexConfigs().get(0).isOrdered());
+        assertEquals(1, mapConfig.getIndexConfigs().size());
+        assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
+        assertTrue(mapConfig.getIndexConfigs().get(0).getType() == IndexType.SORTED);
         assertEquals(1, mapConfig.getAttributeConfigs().size());
         assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
         assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
@@ -2396,17 +2396,18 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "    people:\n"
                 + "      indexes:\n"
-                + "        name:\n"
-                + "          ordered: false\n"
-                + "        age:\n"
-                + "          ordered: true\n";
+                + "        - type: HASH\n"
+                + "          attributes:\n"
+                + "            - \"name\"\n"
+                + "        - attributes:\n"
+                + "          - \"age\"\n";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getMapIndexConfigs().isEmpty());
-        assertIndexEqual("name", false, mapConfig.getMapIndexConfigs().get(0));
-        assertIndexEqual("age", true, mapConfig.getMapIndexConfigs().get(1));
+        assertFalse(mapConfig.getIndexConfigs().isEmpty());
+        assertIndexEqual("name", false, mapConfig.getIndexConfigs().get(0));
+        assertIndexEqual("age", true, mapConfig.getIndexConfigs().get(1));
     }
 
     @Override
@@ -2506,8 +2507,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          coalesce: false\n"
                 + "          populate: true\n"
                 + "          indexes:\n"
-                + "            name:\n"
-                + "              ordered: false\n"
+                + "            - type: HASH\n"
+                + "              attributes:\n"
+                + "                - \"name\"\n"
                 + "          predicate:\n"
                 + "            class-name: com.hazelcast.examples.SimplePredicate\n"
                 + "          eviction:\n"
@@ -2538,9 +2540,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
-        for (MapIndexConfig mapIndexConfig : queryCacheConfig.getIndexConfigs()) {
-            assertEquals("name", mapIndexConfig.getAttribute());
-            assertFalse(mapIndexConfig.isOrdered());
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
+            assertEquals("name", indexConfig.getAttributes().get(0));
+            assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
     }
 
@@ -2630,9 +2632,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         fail();
     }
 
-    private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, MapIndexConfig indexConfig) {
-        assertEquals(expectedAttribute, indexConfig.getAttribute());
-        assertEquals(expectedOrdered, indexConfig.isOrdered());
+    private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, IndexConfig indexConfig) {
+        assertEquals(expectedAttribute, indexConfig.getAttributes().get(0));
+        assertEquals(expectedOrdered, indexConfig.getType() == IndexType.SORTED);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,16 +28,14 @@ import java.io.IOException;
 
 public class AddIndexBackupOperation extends MapOperation implements BackupOperation {
 
-    private String attributeName;
-    private boolean ordered;
+    private IndexConfig config;
 
     public AddIndexBackupOperation() {
     }
 
-    public AddIndexBackupOperation(String name, String attributeName, boolean ordered) {
+    public AddIndexBackupOperation(String name, IndexConfig config) {
         super(name);
-        this.attributeName = attributeName;
-        this.ordered = ordered;
+        this.config = config;
     }
 
     @Override
@@ -49,7 +48,7 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
         int partitionId = getPartitionId();
 
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        indexes.recordIndexDefinition(attributeName, ordered);
+        indexes.recordIndexDefinition(config);
     }
 
     @Override
@@ -60,20 +59,17 @@ public class AddIndexBackupOperation extends MapOperation implements BackupOpera
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(attributeName);
-        out.writeBoolean(ordered);
+        out.writeObject(config);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        attributeName = in.readUTF();
-        ordered = in.readBoolean();
+        config = in.readObject();
     }
 
     @Override
     public int getClassId() {
         return MapDataSerializerHook.ADD_INDEX_BACKUP;
     }
-
 }

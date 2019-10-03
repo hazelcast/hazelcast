@@ -870,9 +870,7 @@ public class ConfigXmlGeneratorTest {
                 .setSize(10)
                 .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
 
-        MapIndexConfig mapIndexConfig = new MapIndexConfig()
-                .setAttribute("attribute")
-                .setOrdered(true);
+        IndexConfig indexConfig = new IndexConfig().addAttribute("attribute").setType(IndexType.SORTED);
 
         EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.entrylistener", false, false);
 
@@ -900,7 +898,7 @@ public class ConfigXmlGeneratorTest {
                 .setEvictionConfig(evictionConfig)
                 .setIncludeValue(false)
                 .setCoalesce(false)
-                .addIndexConfig(mapIndexConfig);
+                .addIndexConfig(indexConfig);
 
         QueryCacheConfig queryCacheConfig2 = new QueryCacheConfig()
                 .setName("queryCache2")
@@ -914,7 +912,7 @@ public class ConfigXmlGeneratorTest {
                 .setEvictionConfig(evictionConfig)
                 .setIncludeValue(true)
                 .setCoalesce(true)
-                .addIndexConfig(mapIndexConfig);
+                .addIndexConfig(indexConfig);
 
         MapConfig expectedConfig = new MapConfig()
                 .setName("carMap")
@@ -937,7 +935,7 @@ public class ConfigXmlGeneratorTest {
                 .setHotRestartConfig(hotRestartConfig())
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .addEntryListenerConfig(listenerConfig)
-                .setMapIndexConfigs(singletonList(mapIndexConfig))
+                .setIndexConfigs(singletonList(indexConfig))
                 .addAttributeConfig(attrConfig)
                 .setPartitionLostListenerConfigs(singletonList(
                         new MapPartitionLostListenerConfig("partitionLostListener")));

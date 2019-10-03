@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
@@ -97,6 +98,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         @Override
         public String[] getComponents() {
             return delegate.getComponents();
+        }
+
+        @Override
+        public IndexConfig getConfig() {
+            return delegate.getConfig();
         }
 
         @Override

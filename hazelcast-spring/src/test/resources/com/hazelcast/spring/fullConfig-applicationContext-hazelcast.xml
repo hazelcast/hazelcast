@@ -368,8 +368,17 @@
                 </hz:near-cache>
 
                 <hz:indexes>
-                    <hz:index attribute="name"/>
-                    <hz:index attribute="age" ordered="true"/>
+                    <hz:index type="HASH">
+                        <hz:attributes>
+                            <hz:attribute>name</hz:attribute>
+                        </hz:attributes>
+                    </hz:index>
+                    <hz:index name="sortedIndex">
+                        <hz:attributes>
+                            <hz:attribute>age</hz:attribute>
+                            <hz:attribute>name</hz:attribute>
+                        </hz:attributes>
+                    </hz:index>
                 </hz:indexes>
                 <hz:attributes>
                     <hz:attribute name="power" extractor-class-name="com.car.PowerExtractor"/>
@@ -466,7 +475,11 @@
                         <hz:in-memory-format>OBJECT</hz:in-memory-format>
                         <hz:include-value>false</hz:include-value>
                         <hz:indexes>
-                            <hz:index attribute="name" ordered="false"></hz:index>
+                            <hz:index type="HASH">
+                                <hz:attributes>
+                                    <hz:attribute>name</hz:attribute>
+                                </hz:attributes>
+                            </hz:index>
                         </hz:indexes>
                     </hz:query-cache>
                 </hz:query-caches>

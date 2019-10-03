@@ -736,7 +736,7 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getMapStoreConfig(), c2.getMapStoreConfig())
                     && isCompatible(c1.getNearCacheConfig(), c2.getNearCacheConfig())
                     && isCompatible(c1.getWanReplicationRef(), c2.getWanReplicationRef())
-                    && isCollectionCompatible(c1.getMapIndexConfigs(), c2.getMapIndexConfigs(), new MapIndexConfigChecker())
+                    && isCollectionCompatible(c1.getIndexConfigs(), c2.getIndexConfigs(), new IndexConfigChecker())
                     && isCollectionCompatible(c1.getAttributeConfigs(), c2.getAttributeConfigs(),
                     new AttributeConfigChecker())
                     && isCollectionCompatible(c1.getEntryListenerConfigs(), c2.getEntryListenerConfigs(),
@@ -787,12 +787,10 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class MapIndexConfigChecker extends ConfigChecker<MapIndexConfig> {
+    private static class IndexConfigChecker extends ConfigChecker<IndexConfig> {
         @Override
-        boolean check(MapIndexConfig c1, MapIndexConfig c2) {
-            return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getAttribute(), c2.getAttribute())
-                    && nullSafeEqual(c1.isOrdered(), c2.isOrdered());
+        boolean check(IndexConfig c1, IndexConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null) && nullSafeEqual(c1, c2);
         }
     }
 

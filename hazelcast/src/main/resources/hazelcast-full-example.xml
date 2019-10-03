@@ -1249,10 +1249,8 @@
                 com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
                 the source cache to the target cache unless the incoming entry is not null.
         * <indexes>:
-        You can define indexes for your map using this element's <index> sub-elements. Each <index> has
-        only the boolean "ordered" attribute. For example, if you will have a ranged query for a field of a map
-        entry, then this attribute should be set to true. But if the field has a boolean value, then it should
-        be set to false. Its default value is false.
+        You can define indexes for your map using this element's <index> sub-elements. Index definition consists
+        of type, optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
         * <attributes>:
         You can define attributes that may be referenced in predicates, queries and indexes using this element's
         <attribute> sub-elements. Each <attribute> has only the "extractor-class-name" attribute which you should
@@ -1317,8 +1315,16 @@
             <republishing-enabled>false</republishing-enabled>
         </wan-replication-ref>
         <indexes>
-            <index ordered="false">name</index>
-            <index ordered="true">age</index>
+            <index type="HASH">
+                <attributes>
+                    <attribute>name</attribute>
+                </attributes>
+            </index>
+            <index>
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
         </indexes>
         <attributes>
             <attribute extractor-class-name="com.bank.CurrencyExtractor">currency</attribute>
@@ -1377,7 +1383,11 @@
                 <buffer-size>32</buffer-size>
                 <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
                 <indexes>
-                    <index ordered="true">...</index>
+                    <index>
+                        <attributes>
+                            <attribute>name</attribute>
+                        </attributes>
+                    </index>
                 </indexes>
             </query-cache>
         </query-caches>

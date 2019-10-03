@@ -49,6 +49,8 @@ import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.KubernetesConfig;
@@ -56,7 +58,6 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -325,12 +326,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
         assertTrue(testMapConfig.isReadBackupData());
-        assertEquals(2, testMapConfig.getMapIndexConfigs().size());
-        for (MapIndexConfig index : testMapConfig.getMapIndexConfigs()) {
-            if ("name".equals(index.getAttribute())) {
-                assertFalse(index.isOrdered());
-            } else if ("age".equals(index.getAttribute())) {
-                assertTrue(index.isOrdered());
+        assertEquals(2, testMapConfig.getIndexConfigs().size());
+        for (IndexConfig index : testMapConfig.getIndexConfigs()) {
+            if ("name".equals(index.getAttributes().get(0))) {
+                assertEquals(IndexType.HASH, index.getType());
+                assertNull(index.getName());
+            } else if ("age".equals(index.getAttributes().get(0))) {
+                assertEquals(IndexType.SORTED, index.getType());
+                assertEquals("sortedIndex", index.getName());
+                assertEquals("name", index.getAttributes().get(1));
             } else {
                 fail("unknown index!");
             }
@@ -1234,9 +1238,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
-        for (MapIndexConfig mapIndexConfig : queryCacheConfig.getIndexConfigs()) {
-            assertEquals("name", mapIndexConfig.getAttribute());
-            assertFalse(mapIndexConfig.isOrdered());
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
+            assertEquals("name", indexConfig.getAttributes().get(0));
+            assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
     }
 

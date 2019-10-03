@@ -38,7 +38,8 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.AttributeConfig;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
@@ -121,8 +122,8 @@ public class ReferenceObjects {
         if (a instanceof ListenerConfigHolder && b instanceof ListenerConfigHolder) {
             return isEqual((ListenerConfigHolder) a, (ListenerConfigHolder) b);
         }
-        if (a instanceof MapIndexConfig && b instanceof MapIndexConfig) {
-            return isEqual((MapIndexConfig) a, (MapIndexConfig) b);
+        if (a instanceof IndexConfig && b instanceof IndexConfig) {
+            return isEqual((IndexConfig) a, (IndexConfig) b);
         }
         if (a instanceof AttributeConfig && b instanceof AttributeConfig) {
             return isEqual((AttributeConfig) a, (AttributeConfig) b);
@@ -345,7 +346,7 @@ public class ReferenceObjects {
                 : b.getListenerImplementation() == null;
     }
 
-    public static boolean isEqual(MapIndexConfig a, MapIndexConfig that) {
+    public static boolean isEqual(IndexConfig a, IndexConfig that) {
         if (a == that) {
             return true;
         }
@@ -353,11 +354,15 @@ public class ReferenceObjects {
             return false;
         }
 
-        if (a.isOrdered() != that.isOrdered()) {
+        if (a.getType() != that.getType()) {
             return false;
         }
-        return a.getAttribute() != null ? a.getAttribute().equals(that.getAttribute())
-                : that.getAttribute() == null;
+
+        if (a.getName() != null ? !a.getName().equals(that.getName()) : that.getName() != null) {
+            return false;
+        }
+
+        return a.getAttributes() != null ? a.getAttributes().equals(that.getAttributes()) : that.getAttributes() == null;
     }
 
     public static boolean isEqual(AttributeConfig a, AttributeConfig that) {
@@ -688,7 +693,8 @@ public class ReferenceObjects {
     }
     public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(anInt, aData, aString, aBoolean, aBoolean);
     public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
-    public static MapIndexConfig aMapIndexConfig = new MapIndexConfig(aString, aBoolean);
+    public static IndexType anIndexType = IndexConfig.DEFAULT_TYPE;
+    public static IndexConfig anIndexConfig = new IndexConfig().setName(aString).setType(anIndexType).setAttributes(aListOfStrings);
     public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
     public static MerkleTreeConfig aMerkleTreeConfig; static {
@@ -704,7 +710,7 @@ public class ReferenceObjects {
     public static NearCacheConfigHolder aNearCacheConfigHolder = new NearCacheConfigHolder(aString, aString, aBoolean, aBoolean, anInt, anInt, anEvictionConfigHolder, aBoolean, aString, aNearCachePreloaderConfig);
     public static PredicateConfigHolder aPredicateConfigHolder = new PredicateConfigHolder(aString, aString, aData);
     public static List<ListenerConfigHolder> aListOfListenerConfigHolders = Collections.singletonList(aListenerConfigHolder);
-    public static List<MapIndexConfig> aListOfMapIndexConfigs = Collections.singletonList(aMapIndexConfig);
+    public static List<IndexConfig> aListOfMapIndexConfigs = Collections.singletonList(anIndexConfig);
     public static QueryCacheConfigHolder aQueryCacheConfigHolder = new QueryCacheConfigHolder(anInt, anInt, anInt, aBoolean, aBoolean, aBoolean, aString, aString, aPredicateConfigHolder, anEvictionConfigHolder, aListOfListenerConfigHolders, aListOfMapIndexConfigs);
     public static QueueStoreConfigHolder aQueueStoreConfigHolder = new QueueStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
     public static RingbufferStoreConfigHolder aRingbufferStoreConfigHolder = new RingbufferStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);

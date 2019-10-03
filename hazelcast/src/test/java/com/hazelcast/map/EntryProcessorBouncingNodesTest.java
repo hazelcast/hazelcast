@@ -17,8 +17,9 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -141,7 +142,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         MapConfig mapConfig = config.getMapConfig(MAP_NAME);
         mapConfig.setBackupCount(2);
         if (withIndex) {
-            mapConfig.addMapIndexConfig(new MapIndexConfig("__key", true));
+            mapConfig.addIndexConfig(new IndexConfig(IndexType.SORTED, "__key"));
         }
         return config;
     }

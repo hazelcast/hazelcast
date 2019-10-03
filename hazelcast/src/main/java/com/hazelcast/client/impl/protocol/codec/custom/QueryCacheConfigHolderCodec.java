@@ -26,7 +26,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("b0f7cf953880a1bc5321f036270db617")
+@Generated("2ba8d2f9dd28ddcc50302736ac557fc8")
 public final class QueryCacheConfigHolderCodec {
     private static final int BATCH_SIZE_FIELD_OFFSET = 0;
     private static final int BUFFER_SIZE_FIELD_OFFSET = BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -56,7 +56,7 @@ public final class QueryCacheConfigHolderCodec {
         PredicateConfigHolderCodec.encode(clientMessage, queryCacheConfigHolder.getPredicateConfigHolder());
         EvictionConfigHolderCodec.encode(clientMessage, queryCacheConfigHolder.getEvictionConfigHolder());
         ListMultiFrameCodec.encodeNullable(clientMessage, queryCacheConfigHolder.getListenerConfigs(), ListenerConfigHolderCodec::encode);
-        ListMultiFrameCodec.encodeNullable(clientMessage, queryCacheConfigHolder.getIndexConfigs(), MapIndexConfigCodec::encode);
+        ListMultiFrameCodec.encodeNullable(clientMessage, queryCacheConfigHolder.getIndexConfigs(), IndexConfigCodec::encode);
 
         clientMessage.add(END_FRAME);
     }
@@ -78,7 +78,7 @@ public final class QueryCacheConfigHolderCodec {
         com.hazelcast.client.impl.protocol.task.dynamicconfig.PredicateConfigHolder predicateConfigHolder = PredicateConfigHolderCodec.decode(iterator);
         com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfigHolder = EvictionConfigHolderCodec.decode(iterator);
         java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
-        java.util.List<com.hazelcast.config.MapIndexConfig> indexConfigs = ListMultiFrameCodec.decodeNullable(iterator, MapIndexConfigCodec::decode);
+        java.util.List<com.hazelcast.config.IndexConfig> indexConfigs = ListMultiFrameCodec.decodeNullable(iterator, IndexConfigCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

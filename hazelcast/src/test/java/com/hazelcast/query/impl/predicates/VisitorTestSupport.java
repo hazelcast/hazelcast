@@ -20,7 +20,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.ObjectTestUtils;
 
-import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -239,14 +238,15 @@ public abstract class VisitorTestSupport {
     }
 
     private static boolean compositeRangePredicatesAreEqual(CompositeRangePredicate lhs, CompositeRangePredicate rhs) {
-        return ObjectTestUtils.equals(lhs.indexName, rhs.indexName) && Arrays.equals(lhs.components, rhs.components)
-                && lhs.from.equals(rhs.from) && lhs.fromInclusive == rhs.fromInclusive && lhs.to.equals(rhs.to)
-                && lhs.toInclusive == rhs.toInclusive;
+        return ObjectTestUtils.equals(lhs.indexName, rhs.indexName)
+            && ObjectTestUtils.equals(lhs.components, rhs.components)
+            && lhs.from.equals(rhs.from) && lhs.fromInclusive == rhs.fromInclusive && lhs.to.equals(rhs.to)
+            && lhs.toInclusive == rhs.toInclusive;
     }
 
     private static boolean compositeEqualPredicatesAreEqual(CompositeEqualPredicate lhs, CompositeEqualPredicate rhs) {
-        return ObjectTestUtils.equals(lhs.indexName, rhs.indexName) && Arrays.equals(lhs.components, rhs.components)
-                && lhs.value.equals(rhs.value);
+        return ObjectTestUtils.equals(lhs.indexName, rhs.indexName)
+            && ObjectTestUtils.equals(lhs.components, rhs.components) && lhs.value.equals(rhs.value);
     }
 
     private static class ReferencePredicate implements Predicate {

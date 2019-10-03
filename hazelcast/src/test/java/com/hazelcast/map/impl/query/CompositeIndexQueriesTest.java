@@ -18,11 +18,14 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.Extractable;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -73,13 +76,18 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         Config config = getConfig();
         config.getMapConfig("map").setInMemoryFormat(inMemoryFormat);
         map = createHazelcastInstance(config).getMap("map");
-        map.addIndex("name, age", false);
-        map.addIndex("__key, age", true);
-        map.addIndex("height, __key", true);
 
-        indexes.add("name, age");
-        indexes.add("__key, age");
-        indexes.add("height, __key");
+        IndexConfig indexConfig1 = IndexUtils.createTestIndexConfig(IndexType.HASH, "name", "age");
+        IndexConfig indexConfig2 = IndexUtils.createTestIndexConfig(IndexType.SORTED, "__key", "age");
+        IndexConfig indexConfig3 = IndexUtils.createTestIndexConfig(IndexType.SORTED, "height", "__key");
+
+        map.addIndex(indexConfig1);
+        map.addIndex(indexConfig2);
+        map.addIndex(indexConfig3);
+
+        indexes.add(indexConfig1.getName());
+        indexes.add(indexConfig2.getName());
+        indexes.add(indexConfig3.getName());
 
         map.put(-2, new Person(null));
         map.put(-1, new Person(null));

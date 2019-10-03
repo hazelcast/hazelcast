@@ -56,7 +56,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int LRU_EVICTION_POLICY = 14;
     public static final int MAP_STORE_CONFIG = 15;
     public static final int MAP_PARTITION_LOST_LISTENER_CONFIG = 16;
-    public static final int MAP_INDEX_CONFIG = 17;
+    public static final int INDEX_CONFIG = 17;
     public static final int MAP_ATTRIBUTE_CONFIG = 18;
     public static final int QUERY_CACHE_CONFIG = 19;
     public static final int PREDICATE_CONFIG = 20;
@@ -127,7 +127,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[LRU_EVICTION_POLICY] = arg -> new LRUEvictionPolicy();
         constructors[MAP_STORE_CONFIG] = arg -> new MapStoreConfig();
         constructors[MAP_PARTITION_LOST_LISTENER_CONFIG] = arg -> new MapPartitionLostListenerConfig();
-        constructors[MAP_INDEX_CONFIG] = arg -> new MapIndexConfig();
+        constructors[INDEX_CONFIG] = arg -> new IndexConfig();
         constructors[MAP_ATTRIBUTE_CONFIG] = arg -> new AttributeConfig();
         constructors[QUERY_CACHE_CONFIG] = arg -> new QueryCacheConfig();
         constructors[PREDICATE_CONFIG] = arg -> new PredicateConfig();
@@ -173,6 +173,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[AWS_CONFIG] = arg -> new AwsConfig();
         constructors[DISCOVERY_CONFIG] = arg -> new DiscoveryConfig();
         constructors[DISCOVERY_STRATEGY_CONFIG] = arg -> new DiscoveryStrategyConfig();
+
         return new ArrayDataSerializableFactory(constructors);
     }
 }

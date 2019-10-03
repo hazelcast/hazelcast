@@ -26,10 +26,11 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
@@ -242,9 +243,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(InMemoryFormat.BINARY, queryCacheClassPredicateConfig.getInMemoryFormat());
         assertFalse(queryCacheClassPredicateConfig.isCoalesce());
         assertTrue(queryCacheClassPredicateConfig.isPopulate());
-        for (MapIndexConfig mapIndexConfig : queryCacheClassPredicateConfig.getIndexConfigs()) {
-            assertEquals("name", mapIndexConfig.getAttribute());
-            assertFalse(mapIndexConfig.isOrdered());
+        for (IndexConfig indexConfig : queryCacheClassPredicateConfig.getIndexConfigs()) {
+            assertEquals("name", indexConfig.getAttributes().get(0));
+            assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
 
         assertEquals("com.hazelcast.examples.ExamplePredicate",

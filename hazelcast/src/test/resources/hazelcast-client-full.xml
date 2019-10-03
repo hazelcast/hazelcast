@@ -272,7 +272,11 @@
             <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"
                       comparator-class-name="com.hazelcast.examples.MyEvictionComparator"/>
             <indexes>
-                <index ordered="false">name</index>
+                <index type="HASH">
+                    <attributes>
+                        <attribute>name</attribute>
+                    </attributes>
+                </index>
             </indexes>
         </query-cache>
         <query-cache name="query-cache-sql-predicate" mapName="map-name">

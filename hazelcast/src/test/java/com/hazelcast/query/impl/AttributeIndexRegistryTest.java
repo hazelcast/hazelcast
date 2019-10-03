@@ -16,9 +16,10 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.query.impl.AttributeIndexRegistry.FirstComponentDecorator;
 import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
-import com.hazelcast.query.impl.predicates.PredicateUtils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,6 +28,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
@@ -190,14 +193,14 @@ public class AttributeIndexRegistryTest {
     }
 
     private static InternalIndex index(boolean ordered, String... components) {
+        IndexConfig config = IndexUtils.createTestIndexConfig(ordered ? IndexType.SORTED : IndexType.HASH, components);
+
+        config = IndexUtils.validateAndNormalize(UUID.randomUUID().toString(), config);
+
         InternalIndex index = Mockito.mock(InternalIndex.class);
-        if (components.length == 1) {
-            when(index.getName()).thenReturn(components[0]);
-            when(index.getComponents()).thenReturn(null);
-        } else {
-            when(index.getName()).thenReturn(PredicateUtils.constructCanonicalCompositeIndexName(components));
-            when(index.getComponents()).thenReturn(components);
-        }
+
+        when(index.getName()).thenReturn(config.getName());
+        when(index.getComponents()).thenReturn(IndexUtils.getComponents(config));
         when(index.isOrdered()).thenReturn(ordered);
         return index;
     }

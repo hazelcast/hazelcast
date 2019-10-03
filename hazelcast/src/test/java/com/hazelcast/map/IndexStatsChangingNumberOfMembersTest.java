@@ -18,6 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -76,8 +78,8 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         IMap<Integer, Integer> map1 = instance1.getMap(mapName);
         IMap<Integer, Integer> map2 = instance2.getMap(mapName);
 
-        map1.addIndex("this", false);
-        map2.addIndex("this", false);
+        addIndex(map1);
+        addIndex(map2);
 
         for (int i = 0; i < entryCount; ++i) {
             map1.put(i, i);
@@ -120,7 +122,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         // let's add another member
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         IMap<Integer, Integer> map3 = instance3.getMap(mapName);
-        map3.addIndex("this", false);
+        addIndex(map3);
 
         waitAllForSafeState(instance1, instance2, instance3);
 
@@ -227,8 +229,8 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         IMap<Integer, Integer> map1 = instance1.getMap(mapName);
         IMap<Integer, Integer> map2 = instance2.getMap(mapName);
 
-        map1.addIndex("this", false);
-        map2.addIndex("this", false);
+        addIndex(map1);
+        addIndex(map2);
 
         assertEquals(0, valueStats(map1).getInsertCount());
         assertEquals(0, valueStats(map1).getUpdateCount());
@@ -281,7 +283,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         // let's add another member
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         IMap<Integer, Integer> map3 = instance3.getMap(mapName);
-        map3.addIndex("this", false);
+        addIndex(map3);
 
         waitAllForSafeState(instance1, instance2, instance3);
 
@@ -401,6 +403,10 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         } else {
             return (averageHitSelectivity * totalHitCount + initialTotalSelectivityCount) / (totalHitCount + initialHits);
         }
+    }
+
+    protected void addIndex(IMap map) {
+        map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("this"));
     }
 
 }

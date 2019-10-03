@@ -35,12 +35,13 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MergePolicyConfig;
@@ -826,7 +827,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setMaxIdleSeconds(110)
                 .setSplitBrainProtectionName(randomString())
                 .addAttributeConfig(new AttributeConfig("attributeName", "com.attribute.extractor"))
-                .addMapIndexConfig(new MapIndexConfig("attr", true))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "attr"))
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)
                 .setStatisticsEnabled(false);

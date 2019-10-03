@@ -20,7 +20,6 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.util.UUID;
@@ -54,8 +53,6 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
     int removeEntriesOf(int partitionId);
 
     IMap<K, V> getDelegate();
-
-    Indexes getIndexes();
 
     void clear();
 

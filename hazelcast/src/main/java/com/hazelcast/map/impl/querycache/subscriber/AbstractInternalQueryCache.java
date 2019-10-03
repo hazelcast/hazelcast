@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.EvictionListener;
@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -88,8 +89,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
                 queryCacheConfig, getEvictionListener(), extractors);
 
         assert indexes.isGlobal();
-        for (MapIndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
-            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered(), null);
+
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
+            IndexConfig indexConfig0 = getNormalizedIndexConfig(indexConfig);
+
+            indexes.addOrGetIndex(indexConfig0, null);
         }
     }
 
@@ -221,5 +225,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     public void clear() {
         recordStore.clear();
         indexes.destroyIndexes();
+    }
+
+    protected IndexConfig getNormalizedIndexConfig(IndexConfig originalConfig) {
+        String name = delegate.getName() + "_" + cacheName;
+
+        return IndexUtils.validateAndNormalize(name, originalConfig);
     }
 }

@@ -18,8 +18,9 @@ package com.hazelcast.projection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -58,10 +59,10 @@ public class Query2Benchmark {
         MapConfig mapConfig = new MapConfig("map");
         config.setProperty(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f1", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f2", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f3", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f4", false));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f1"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f2"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f3"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f4"));
         config.addMapConfig(mapConfig);
 
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);

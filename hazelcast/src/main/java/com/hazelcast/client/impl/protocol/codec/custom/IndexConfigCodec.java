@@ -26,37 +26,39 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("f7925914d87b2a471b3d28ecbadd4401")
-public final class MapIndexConfigCodec {
-    private static final int ORDERED_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = ORDERED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+@Generated("b4c51350d818570b7f2d9d90c7d50356")
+public final class IndexConfigCodec {
+    private static final int TYPE_FIELD_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MapIndexConfigCodec() {
+    private IndexConfigCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, com.hazelcast.config.MapIndexConfig mapIndexConfig) {
+    public static void encode(ClientMessage clientMessage, com.hazelcast.config.IndexConfig indexConfig) {
         clientMessage.add(BEGIN_FRAME);
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeBoolean(initialFrame.content, ORDERED_FIELD_OFFSET, mapIndexConfig.isOrdered());
+        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, indexConfig.getType());
         clientMessage.add(initialFrame);
 
-        StringCodec.encode(clientMessage, mapIndexConfig.getAttribute());
+        CodecUtil.encodeNullable(clientMessage, indexConfig.getName(), StringCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, indexConfig.getAttributes(), StringCodec::encode);
 
         clientMessage.add(END_FRAME);
     }
 
-    public static com.hazelcast.config.MapIndexConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.IndexConfig decode(ListIterator<ClientMessage.Frame> iterator) {
         // begin frame
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        boolean ordered = decodeBoolean(initialFrame.content, ORDERED_FIELD_OFFSET);
+        int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
 
-        java.lang.String attribute = StringCodec.decode(iterator);
+        java.lang.String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        java.util.List<java.lang.String> attributes = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.config.MapIndexConfig(attribute, ordered);
+        return CustomTypeFactory.createIndexConfig(name, type, attributes);
     }
 }

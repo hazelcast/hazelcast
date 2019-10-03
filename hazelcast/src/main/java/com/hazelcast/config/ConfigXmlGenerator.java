@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
 
@@ -838,7 +839,7 @@ public class ConfigXmlGenerator {
             mapStoreConfigXmlGenerator(gen, m);
             mapNearCacheConfigXmlGenerator(gen, m.getNearCacheConfig());
             wanReplicationConfigXmlGenerator(gen, m.getWanReplicationRef());
-            mapIndexConfigXmlGenerator(gen, m);
+            indexConfigXmlGenerator(gen, m);
             attributeConfigXmlGenerator(gen, m);
             entryListenerConfigXmlGenerator(gen, m);
             mapPartitionLostListenerConfigXmlGenerator(gen, m);
@@ -1000,7 +1001,7 @@ public class ConfigXmlGenerator {
                 gen.node("buffer-size", queryCacheConfig.getBufferSize());
 
                 evictionConfigXmlGenerator(gen, queryCacheConfig.getEvictionConfig());
-                mapIndexConfigXmlGenerator(gen, queryCacheConfig.getIndexConfigs());
+                IndexUtils.generateXml(gen, queryCacheConfig.getIndexConfigs());
                 mapQueryCachePredicateConfigXmlGenerator(gen, queryCacheConfig);
 
                 entryListenerConfigXmlGenerator(gen, queryCacheConfig.getEntryListenerConfigs());
@@ -1047,18 +1048,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void mapIndexConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
-        mapIndexConfigXmlGenerator(gen, m.getMapIndexConfigs());
-    }
-
-    private static void mapIndexConfigXmlGenerator(XmlGenerator gen, List<MapIndexConfig> mapIndexConfigs) {
-        if (!mapIndexConfigs.isEmpty()) {
-            gen.open("indexes");
-            for (MapIndexConfig indexCfg : mapIndexConfigs) {
-                gen.node("index", indexCfg.getAttribute(), "ordered", indexCfg.isOrdered());
-            }
-            gen.close();
-        }
+    private static void indexConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
+        IndexUtils.generateXml(gen, m.getIndexConfigs());
     }
 
     private static void attributeConfigXmlGenerator(XmlGenerator gen, MapConfig m) {

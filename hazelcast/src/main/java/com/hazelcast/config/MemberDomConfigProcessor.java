@@ -30,6 +30,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.w3c.dom.Element;
@@ -1942,10 +1943,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void mapIndexesHandle(Node n, MapConfig mapConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
-                NamedNodeMap attrs = indexNode.getAttributes();
-                boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
-                String attribute = getTextContent(indexNode);
-                mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered));
+                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3);
+
+                mapConfig.addIndexConfig(indexConfig);
             }
         }
     }
@@ -1953,10 +1953,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
-                NamedNodeMap attrs = indexNode.getAttributes();
-                boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
-                String attribute = getTextContent(indexNode);
-                queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
+                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3);
+
+                queryCacheConfig.addIndexConfig(indexConfig);
             }
         }
     }
