@@ -62,6 +62,12 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     protected ClientConfig defaultClientConfig;
 
     @Test
+    public void testBackupAckToClient() {
+        assertFalse(fullClientConfig.isBackupAckToClientEnabled());
+        assertTrue(defaultClientConfig.isBackupAckToClientEnabled());
+    }
+
+    @Test
     public void testNetworkConfig() {
         final ClientNetworkConfig networkConfig = fullClientConfig.getNetworkConfig();
         assertEquals(2, networkConfig.getConnectionAttemptLimit());

@@ -43,6 +43,7 @@ import org.w3c.dom.Node;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.client.config.ClientConfigSections.BACKUP_ACK_TO_CLIENT;
 import static com.hazelcast.client.config.ClientConfigSections.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientConfigSections.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientConfigSections.FLAKE_ID_GENERATOR;
@@ -139,7 +140,14 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleReliableTopic(node);
         } else if (LABELS.isEqual(nodeName)) {
             handleLabels(node);
+        } else if (BACKUP_ACK_TO_CLIENT.isEqual(nodeName)) {
+            handleBackupAckToClient(node);
         }
+    }
+
+    private void handleBackupAckToClient(Node node) {
+        boolean enabled = Boolean.parseBoolean(getTextContent(node));
+        clientConfig.setBackupAckToClientEnabled(enabled);
     }
 
     private void handleLabels(Node node) {

@@ -222,7 +222,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         return invocationService.shouldFailOnIndeterminateOperationState();
     }
 
-    public void notifyException(Throwable exception) {
+    void notifyException(Throwable exception) {
         logException(exception);
 
         if (!lifecycleService.isRunning()) {

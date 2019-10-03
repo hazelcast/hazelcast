@@ -137,6 +137,9 @@ public class TestClientApplicationContext {
     @Resource(name = "client16-name-and-labels")
     private HazelcastClientProxy namedClient;
 
+    @Resource(name = "client17-backupAckToClient")
+    private HazelcastClientProxy backupAckToClient;
+
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
@@ -499,5 +502,10 @@ public class TestClientApplicationContext {
         Set<String> labels = namedClient.getClientConfig().getLabels();
         assertEquals(1, labels.size());
         assertContains(labels, "foo");
+    }
+
+    @Test
+    public void testBackupAckToClient() {
+        assertFalse(backupAckToClient.getClientConfig().isBackupAckToClientEnabled());
     }
 }
