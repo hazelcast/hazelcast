@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.EntryAddedListener;
@@ -59,7 +60,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         final TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(0);
         instance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
 
-        final IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
+        final IPartitionLostEvent internalEvent = new PartitionLostEventImpl(1, 0, null);
 
         MapService mapService = getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
         mapService.onPartitionLost(internalEvent);
@@ -78,7 +79,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         instance1.getMap(getIthMapName(0)).addPartitionLostListener(listener1);
         instance2.getMap(getIthMapName(0)).addPartitionLostListener(listener2);
 
-        final IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
+        final IPartitionLostEvent internalEvent = new PartitionLostEventImpl(1, 0, null);
 
         MapService mapService = getNode(instance1).getNodeEngine().getService(MapService.SERVICE_NAME);
         mapService.onPartitionLost(internalEvent);
@@ -96,7 +97,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         instance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
         instance.getMap(getIthMapName(0)).addEntryListener(mock(EntryAddedListener.class), true);
 
-        final IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
+        final IPartitionLostEvent internalEvent = new PartitionLostEventImpl(1, 0, null);
 
         MapService mapService = getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
         mapService.onPartitionLost(internalEvent);

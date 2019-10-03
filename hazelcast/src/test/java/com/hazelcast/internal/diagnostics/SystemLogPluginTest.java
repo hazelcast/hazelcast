@@ -118,7 +118,6 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
             @Override
             public void run() {
                 plugin.run(logWriter);
-                assertContains("MigrationStarted");
                 assertContains("MigrationCompleted");
             }
         });

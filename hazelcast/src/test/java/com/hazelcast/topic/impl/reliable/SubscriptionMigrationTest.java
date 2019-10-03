@@ -17,11 +17,9 @@
 package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
-import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,6 +28,9 @@ import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -74,11 +75,12 @@ public class SubscriptionMigrationTest extends HazelcastTestSupport {
 
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertEqualsEventually(1, migrationListener.partitionMigrationCount);
+        // 1 primary, 1 backup migration
+        assertEqualsEventually(2, migrationListener.partitionMigrationCount);
 
         instance2.shutdown();
 
-        assertEqualsEventually(2, migrationListener.partitionMigrationCount);
+        assertEqualsEventually(3, migrationListener.partitionMigrationCount);
 
         topic0.publish("itemB");
         topic1.publish("item2");
@@ -113,18 +115,20 @@ public class SubscriptionMigrationTest extends HazelcastTestSupport {
         AtomicInteger partitionMigrationCount = new AtomicInteger();
 
         @Override
-        public void migrationStarted(MigrationEvent migrationEvent) {
-
+        public void migrationStarted(MigrationState state) {
         }
 
         @Override
-        public synchronized void migrationCompleted(MigrationEvent migrationEvent) {
+        public void migrationFinished(MigrationState state) {
+        }
+
+        @Override
+        public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
             partitionMigrationCount.incrementAndGet();
         }
 
         @Override
-        public void migrationFailed(MigrationEvent migrationEvent) {
-
+        public void replicaMigrationFailed(ReplicaMigrationEvent event) {
         }
     }
 

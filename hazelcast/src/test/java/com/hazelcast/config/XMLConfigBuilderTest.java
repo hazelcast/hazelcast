@@ -667,25 +667,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readLockConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "  <lock name=\"default\">"
-                + "        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>"
-                + "  </lock>"
-                + "  <lock name=\"custom\">"
-                + "       <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "  </lock>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        LockConfig defaultConfig = config.getLockConfig("default");
-        LockConfig customConfig = config.getLockConfig("custom");
-        assertEquals("splitBrainProtectionRuleWithThreeNodes", defaultConfig.getSplitBrainProtectionName());
-        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
     public void readReliableTopic() {
         String xml = HAZELCAST_START_TAG
                 + "    <reliable-topic name=\"custom\">"

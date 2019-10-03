@@ -31,7 +31,6 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -112,11 +111,6 @@ class HazelcastOSGiInstanceImpl
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return delegatedInstance.getMultiMap(name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        return delegatedInstance.getLock(key);
     }
 
     @Override

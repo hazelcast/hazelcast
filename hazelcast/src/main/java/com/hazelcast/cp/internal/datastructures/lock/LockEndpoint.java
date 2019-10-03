@@ -55,12 +55,12 @@ public class LockEndpoint implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return RaftLockDataSerializerHook.F_ID;
+        return LockDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return RaftLockDataSerializerHook.LOCK_ENDPOINT;
+        return LockDataSerializerHook.LOCK_ENDPOINT;
     }
 
     @Override

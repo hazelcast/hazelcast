@@ -56,13 +56,26 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     }
 
     @Override
-    public void addLast(DelayedEntry delayedEntry) {
+    public void addLast(DelayedEntry delayedEntry, boolean addWithoutCapacityCheck) {
         if (delayedEntry == null) {
             return;
         }
         calculateStoreTime(delayedEntry);
         Data key = (Data) delayedEntry.getKey();
         map.put(key, delayedEntry);
+    }
+
+    /**
+     * If this is an existing key in this queue, use previously set store time;
+     * since we do not want to shift store time of an existing key on every update.
+     */
+    private void calculateStoreTime(DelayedEntry delayedEntry) {
+        Data key = (Data) delayedEntry.getKey();
+        DelayedEntry currentEntry = map.get(key);
+        if (currentEntry != null) {
+            long currentStoreTime = currentEntry.getStoreTime();
+            delayedEntry.setStoreTime(currentStoreTime);
+        }
     }
 
     @Override
@@ -126,10 +139,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     public int drainTo(Collection<DelayedEntry> collection) {
         checkNotNull(collection, "collection can not be null");
 
-        Collection<DelayedEntry> delayedEntries = map.values();
-        for (DelayedEntry delayedEntry : delayedEntries) {
-            collection.add(delayedEntry);
-        }
+        collection.addAll(map.values());
         map.clear();
         return collection.size();
     }
@@ -152,16 +162,11 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         }
     }
 
-    /**
-     * If this is an existing key in this queue, use previously set store time;
-     * since we do not want to shift store time of an existing key on every update.
-     */
-    private void calculateStoreTime(DelayedEntry delayedEntry) {
-        Data key = (Data) delayedEntry.getKey();
-        DelayedEntry currentEntry = map.get(key);
-        if (currentEntry != null) {
-            long currentStoreTime = currentEntry.getStoreTime();
-            delayedEntry.setStoreTime(currentStoreTime);
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (this.getClass().isAssignableFrom(clazz)) {
+            return (T) this;
         }
+        return null;
     }
 }

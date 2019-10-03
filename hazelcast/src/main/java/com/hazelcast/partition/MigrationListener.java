@@ -19,31 +19,55 @@ package com.hazelcast.partition;
 import java.util.EventListener;
 
 /**
- * MigrationListener provides the ability to listen to partition migration events.
+ * MigrationListener provides the ability to listen to
+ * partition migration process and events.
  *
  * @see Partition
  * @see PartitionService
+ * @see MigrationState
+ * @see ReplicaMigrationEvent
  */
 public interface MigrationListener extends EventListener {
 
     /**
-     * Invoked when a partition migration is started.
+     * Called when the migration process starts.
+     * A migration process consists of a group of partition
+     * replica migrations which are planned together.
+     * <p>
+     * When migration process is completed, {@link #migrationFinished(MigrationState)}
+     * is called.
      *
-     * @param migrationEvent the event for the started partition migration
+     * @param state Plan of the migration process
      */
-    void migrationStarted(MigrationEvent migrationEvent);
+    void migrationStarted(MigrationState state);
 
     /**
-     * Invoked when a partition migration is completed.
+     * Called when the migration process finishes.
+     * This event denotes ending of migration process which is
+     * started by {@link #migrationStarted(MigrationState)}.
+     * <p>
+     * Not all of the planned migrations have to be completed.
+     * Some of them can be skipped because of a newly created migration plan.
+     * <p>
+     * If migration process coordinator member (generally the oldest member in cluster)
+     * crashes before migration process ends, then this method may not be called at all.
      *
-     * @param migrationEvent the event for the completed partition migration
+     * @param state Result of the migration process
      */
-    void migrationCompleted(MigrationEvent migrationEvent);
+    void migrationFinished(MigrationState state);
 
     /**
-     * Invoked when a partition migration is failed.
+     * Called when a partition replica migration is completed successfully.
      *
-     * @param migrationEvent the event for the failed partition migration
+     * @param event the event for the partition replica migration
      */
-    void migrationFailed(MigrationEvent migrationEvent);
+    void replicaMigrationCompleted(ReplicaMigrationEvent event);
+
+    /**
+     * Called when a partition replica migration is failed.
+     *
+     * @param event the event for the partition replica migration
+     */
+    void replicaMigrationFailed(ReplicaMigrationEvent event);
+
 }

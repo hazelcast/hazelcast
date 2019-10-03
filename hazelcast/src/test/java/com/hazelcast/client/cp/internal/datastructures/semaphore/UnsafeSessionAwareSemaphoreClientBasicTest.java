@@ -61,6 +61,6 @@ public class UnsafeSessionAwareSemaphoreClientBasicTest extends UnsafeSessionAwa
 
     @Override
     protected RaftGroupId getGroupId(ISemaphore semaphore) {
-        return (RaftGroupId) ((RaftSessionAwareSemaphoreProxy) semaphore).getGroupId();
+        return (RaftGroupId) ((SessionAwareSemaphoreProxy) semaphore).getGroupId();
     }
 }

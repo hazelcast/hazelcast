@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStore;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ObjectNamespace;
@@ -61,7 +61,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         super(name, service.getNodeEngine());
         this.partitionId = partitionId;
         this.lockNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
-        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();
         this.objectNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
@@ -185,7 +185,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public void destroy() {
-        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, lockNamespace);
         }

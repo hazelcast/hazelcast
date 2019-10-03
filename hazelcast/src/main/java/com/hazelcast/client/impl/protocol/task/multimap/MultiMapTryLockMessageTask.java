@@ -19,8 +19,8 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapTryLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.LockOperation;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.operations.LockOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.internal.nio.Connection;
@@ -62,7 +62,7 @@ public class MultiMapTryLockMessageTask
 
     @Override
     public String getServiceName() {
-        return LockService.SERVICE_NAME;
+        return LockSupportService.SERVICE_NAME;
     }
 
     @Override

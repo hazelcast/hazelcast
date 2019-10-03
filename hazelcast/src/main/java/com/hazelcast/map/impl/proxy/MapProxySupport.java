@@ -29,8 +29,8 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockProxySupport;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
+import com.hazelcast.internal.locksupport.LockProxySupport;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
@@ -223,7 +223,7 @@ abstract class MapProxySupport<K, V>
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(MapService.getObjectNamespace(name),
-                LockServiceImpl.getMaxLeaseTimeInMillis(properties));
+                LockSupportServiceImpl.getMaxLeaseTimeInMillis(properties));
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.operationService = nodeEngine.getOperationService();
         this.serializationService = nodeEngine.getSerializationService();

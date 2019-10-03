@@ -1839,21 +1839,6 @@
     </reliable-topic>
 
     <!--
-    ===== HAZELCAST LOCK CONFIGURATION =====
-
-    Configuration element's name is <lock>. It has the required attribute "name" with which you
-    can specify the name of your Lock. This attribute's default value is "default".
-    It has the following sub-elements:
-    * <split-brain-protection-ref>:
-        Adds the split brain protection for this lock which you configure using the <split-brain-protection> element.
-        You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
--->
-
-    <lock name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-    </lock>
-
-    <!--
         ===== HAZELCAST RINGBUFFER CONFIGURATION =====
 
         Configuration element's name is <ringbuffer>. It has the required attribute "name" with which you

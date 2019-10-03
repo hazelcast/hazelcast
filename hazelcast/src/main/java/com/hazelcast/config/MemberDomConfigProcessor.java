@@ -65,7 +65,6 @@ import static com.hazelcast.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.config.ConfigSections.LIST;
 import static com.hazelcast.config.ConfigSections.LISTENERS;
 import static com.hazelcast.config.ConfigSections.LITE_MEMBER;
-import static com.hazelcast.config.ConfigSections.LOCK;
 import static com.hazelcast.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.config.ConfigSections.MAP;
 import static com.hazelcast.config.ConfigSections.MEMBER_ATTRIBUTES;
@@ -186,8 +185,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleCache(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
             fillNativeMemoryConfig(node, config.getNativeMemoryConfig());
-        } else if (LOCK.isEqual(nodeName)) {
-            handleLock(node);
         } else if (RINGBUFFER.isEqual(nodeName)) {
             handleRingbuffer(node);
         } else if (LISTENERS.isEqual(nodeName)) {
@@ -1338,24 +1335,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 endpointConfig.addOutboundPortDefinition(value);
             }
         }
-    }
-
-    protected void handleLock(Node node) {
-        String name = getAttribute(node, "name");
-        LockConfig lockConfig = new LockConfig();
-        lockConfig.setName(name);
-        handleLockNode(node, lockConfig);
-    }
-
-    void handleLockNode(Node node, LockConfig lockConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("split-brain-protection-ref".equals(nodeName)) {
-                lockConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addLockConfig(lockConfig);
     }
 
     protected void handleQueue(Node node) {

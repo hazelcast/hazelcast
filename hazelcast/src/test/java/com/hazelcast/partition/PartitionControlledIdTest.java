@@ -28,17 +28,11 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.InternalLockNamespace;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStore;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -106,25 +100,6 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     public NodeEngineImpl getNodeEngine(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.nodeEngine;
-    }
-
-    @Test
-    public void testLock() {
-        String partitionKey = "hazelcast";
-        HazelcastInstance hz = getHazelcastInstance(partitionKey);
-
-        ILock lock = hz.getLock("lock@" + partitionKey);
-        lock.lock();
-        assertEquals("lock@" + partitionKey, lock.getName());
-        assertEquals(partitionKey, lock.getPartitionKey());
-
-        Node node = getNode(hz);
-        LockServiceImpl lockService = node.nodeEngine.getService(LockServiceImpl.SERVICE_NAME);
-
-        Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
-        LockStore lockStore = lockService.getLockStore(partition.getPartitionId(), new InternalLockNamespace(lock.getName()));
-        Data key = node.getSerializationService().toData(lock.getName(), StringPartitioningStrategy.INSTANCE);
-        assertTrue(lockStore.isLocked(key));
     }
 
     @Test

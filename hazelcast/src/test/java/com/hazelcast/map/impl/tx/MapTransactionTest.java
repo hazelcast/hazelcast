@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockResource;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
+import com.hazelcast.internal.locksupport.LockResource;
+import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -162,7 +162,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         NodeEngine nodeEngine = getNodeEngineImpl(instance1);
         Data keyData = nodeEngine.toData(keyOwnedByInstance2);
-        LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getService(LockSupportService.SERVICE_NAME);
         for (LockResource lockResource : lockService.getAllLocks()) {
             if (keyData.equals(lockResource.getKey())) {
                 assertEquals(0, lockResource.getLockCount());

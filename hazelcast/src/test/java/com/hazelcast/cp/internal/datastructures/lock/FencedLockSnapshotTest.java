@@ -63,7 +63,7 @@ public class FencedLockSnapshotTest extends AbstractAtomicRegisterSnapshotTest<L
 
     @Override
     protected Long getValue(InternalCompletableFuture<Object> future) {
-        RaftLockOwnershipState state = (RaftLockOwnershipState) future.join();
+        LockOwnershipState state = (LockOwnershipState) future.join();
         return state.getFence();
     }
 }

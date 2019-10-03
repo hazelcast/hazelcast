@@ -54,7 +54,6 @@
                 <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="lock" type="lock" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
@@ -1122,28 +1121,6 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="lock">
-        <xs:all>
-            <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                        You should set the split-brain-protection-ref's value as the split brain protection's name.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="name" use="optional" default="default">
-            <xs:annotation>
-                <xs:documentation>
-                    Name of the lock.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string"/>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
 
     <xs:complexType name="ringbuffer-store">
         <xs:all>
@@ -1817,7 +1794,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="salt" type="xs:string" default="thesalt" minOccurs="0">
+            <xs:element name="salt" type="xs:string" default="thesalt">
                 <xs:annotation>
                     <xs:documentation>
                         Salt value to use when generating the secret key.
@@ -1831,7 +1808,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="iteration-count" type="xs:int" default="19" minOccurs="0">
+            <xs:element name="iteration-count" type="xs:int" default="19">
                 <xs:annotation>
                     <xs:documentation>
                         Iteration count to use when generating the secret key.
@@ -3479,7 +3456,7 @@
 
     <xs:complexType name="user-code-deployment">
         <xs:all>
-            <xs:element name="class-cache-mode" default="ETERNAL" minOccurs="0">
+            <xs:element name="class-cache-mode" default="ETERNAL">
                 <xs:annotation>
                     <xs:documentation>
                         Controls caching of user classes loaded from remote members.
@@ -3497,7 +3474,7 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="provider-mode" default="LOCAL_AND_CACHED_CLASSES" minOccurs="0">
+            <xs:element name="provider-mode" default="LOCAL_AND_CACHED_CLASSES">
                 <xs:annotation>
                     <xs:documentation>
                         Controls how to react on receiving a classloading request from a remote member
@@ -3677,7 +3654,7 @@
 
     <xs:complexType name="hot-restart">
         <xs:all>
-            <xs:element name="fsync" type="xs:boolean" default="false" minOccurs="0">
+            <xs:element name="fsync" type="xs:boolean" default="false">
                 <xs:annotation>
                     <xs:documentation>
                         If set to true, when each update operation on this structure completes,
@@ -4261,7 +4238,7 @@
 
     <xs:complexType name="cp-subsystem">
         <xs:all>
-            <xs:element name="cp-member-count" type="xs:unsignedInt" default="0" minOccurs="0">
+            <xs:element name="cp-member-count" type="xs:unsignedInt" default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Number of CP Members to initialize the CP Subsystem.
@@ -4469,7 +4446,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="jdk-compatible" type="xs:boolean" default="false" minOccurs="0">
+            <xs:element name="jdk-compatible" type="xs:boolean" default="false">
                 <xs:annotation>
                     <xs:documentation>
                         Enables / disables JDK compatibility of the CP ISemaphore.
@@ -4502,7 +4479,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="lock-acquire-limit" type="xs:nonNegativeInteger" default="0" minOccurs="0">
+            <xs:element name="lock-acquire-limit" type="xs:nonNegativeInteger" default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of reentrant lock acquires. Once a caller acquires

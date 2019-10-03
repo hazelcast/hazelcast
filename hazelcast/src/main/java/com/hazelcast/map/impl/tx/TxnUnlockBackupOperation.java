@@ -30,14 +30,16 @@ import java.util.UUID;
 /**
  * An operation to unlock key on the backup owner.
  */
-public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+public class TxnUnlockBackupOperation
+        extends KeyBasedMapOperation implements BackupOperation {
 
     private UUID ownerUuid;
 
     public TxnUnlockBackupOperation() {
     }
 
-    public TxnUnlockBackupOperation(String name, Data dataKey, UUID ownerUuid, long lockThreadId) {
+    public TxnUnlockBackupOperation(String name, Data dataKey,
+                                    UUID ownerUuid, long lockThreadId) {
         super(name, dataKey);
         this.ownerUuid = ownerUuid;
         this.threadId = lockThreadId;

@@ -23,7 +23,6 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -204,52 +203,6 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 QueueConfig dataConfig = hazelcastInstance.getConfig().findQueueConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testLockConfig_Static() {
-        TestCase<LockConfig> testCase = new TestCase<LockConfig>(new LockConfig().setName(STATIC_NAME),
-                new LockConfig().setName(DYNAMIC_NAME), false) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addLockConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addLockConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                LockConfig dataConfig = hazelcastInstance.getConfig().findLockConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
-            }
-        };
-        testTemplate(testCase);
-    }
-
-    @Test
-    public void testLockConfig_Dynamic() {
-        TestCase<LockConfig> testCase = new TestCase<LockConfig>(new LockConfig().setName(STATIC_NAME),
-                new LockConfig().setName(DYNAMIC_NAME), true) {
-            @Override
-            void addStaticConfig(Config config) {
-                config.addLockConfig(this.staticConfig);
-            }
-
-            @Override
-            void addDynamicConfig(HazelcastInstance hazelcastInstance) {
-                hazelcastInstance.getConfig().addLockConfig(this.dynamicConfig);
-            }
-
-            @Override
-            void asserts() {
-                LockConfig dataConfig = hazelcastInstance.getConfig().findLockConfig(DYNAMIC_NAME);
                 assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
             }
         };

@@ -40,7 +40,6 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -156,16 +155,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         CardinalityEstimatorConfig config = new CardinalityEstimatorConfig(name, 4, 2)
                 .setMergePolicyConfig(new MergePolicyConfig("com.hazelcast.spi.merge.DiscardMergePolicy", 20));
         driver.getConfig().addCardinalityEstimatorConfig(config);
-
-        assertConfigurationsEqualsOnAllMembers(config);
-    }
-
-    @Test
-    public void testLockConfig() {
-        LockConfig config = new LockConfig(name);
-        config.setSplitBrainProtectionName(randomString());
-
-        driver.getConfig().addLockConfig(config);
 
         assertConfigurationsEqualsOnAllMembers(config);
     }
@@ -651,14 +640,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         for (HazelcastInstance instance : members) {
             QueueConfig registeredConfig = instance.getConfig().getQueueConfig(name);
             assertEquals(queueConfig, registeredConfig);
-        }
-    }
-
-    private void assertConfigurationsEqualsOnAllMembers(LockConfig lockConfig) {
-        String name = lockConfig.getName();
-        for (HazelcastInstance instance : members) {
-            LockConfig registeredConfig = instance.getConfig().getLockConfig(name);
-            assertEquals(lockConfig, registeredConfig);
         }
     }
 

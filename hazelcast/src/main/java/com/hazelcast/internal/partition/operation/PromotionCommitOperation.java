@@ -18,25 +18,29 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
-import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.internal.partition.impl.PartitionEventManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.CallStatus;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.internal.util.Preconditions;
 
@@ -51,9 +55,16 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeC
 /**
  * Used for committing a promotion on destination. Sent by the master to update the partition table on destination and
  * commit the promotion.
- * The promotion is executed in two stages which are denoted by the {@link #beforeStateCompleted} property. First it invokes
- * {@link BeforePromotionOperation}s for every promoted partition. After all operations return it will reschedule itself
- * and finalize the promotions by sending {@link FinalizePromotionOperation} for every promotion.
+ * The promotion is executed in three stages which are denoted by the {@link #runStage} property.
+ * <ul>
+ *     <li>First it invokes {@link BeforePromotionOperation}s for every promoted partition.
+ *     After all operations return it will reschedule itself with {@link RunStage#FINALIZE_PROMOTION}.</li>
+ *     <li>In {@link RunStage#FINALIZE_PROMOTION} stage, finalize the promotions by sending
+ *     {@link FinalizePromotionOperation} for every promotion. After all complete, it will reschedule
+ *     itself with {@link RunStage#COMPLETE}.</li>
+ *     <li>In last stage, it will fire completion events and return the response.</li>
+ * </ul>
+ *
  */
 public class PromotionCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
@@ -64,9 +75,10 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     private UUID expectedMemberUuid;
 
     private transient boolean success;
+    private transient MigrationStateImpl migrationState;
 
     // Used while PromotionCommitOperation is running to separate before and after phases
-    private transient boolean beforeStateCompleted;
+    private transient RunStage runStage = RunStage.BEFORE_PROMOTION;
 
     public PromotionCommitOperation() {
     }
@@ -81,7 +93,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
     @Override
     public void beforeRun() throws Exception {
-        if (beforeStateCompleted) {
+        if (runStage != RunStage.BEFORE_PROMOTION) {
             return;
         }
 
@@ -103,11 +115,17 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
     @Override
     public CallStatus call() throws Exception {
-        if (!beforeStateCompleted) {
-            return beforePromotion();
-        } else {
-            finalizePromotion();
-            return CallStatus.DONE_RESPONSE;
+        switch (runStage) {
+            case BEFORE_PROMOTION:
+                return beforePromotion();
+            case FINALIZE_PROMOTION:
+                finalizePromotion();
+                return CallStatus.DONE_VOID;
+            case COMPLETE:
+                complete();
+                return CallStatus.DONE_RESPONSE;
+            default:
+                throw new IllegalStateException("Unknown state: " + runStage);
         }
     }
 
@@ -135,7 +153,9 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             return CallStatus.DONE_RESPONSE;
         }
 
+        migrationState = new MigrationStateImpl(Clock.currentTimeMillis(), promotions.size(), 0, 0L);
         partitionService.getMigrationInterceptor().onPromotionStart(MigrationParticipant.DESTINATION, promotions);
+        partitionService.getPartitionEventManager().sendMigrationProcessStartedEvent(migrationState);
 
         if (logger.isFineEnabled()) {
             logger.fine("Submitting BeforePromotionOperations for " + promotions.size() + " promotions. "
@@ -143,13 +163,13 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
                     + ", current partition state version: " + partitionStateVersion);
         }
 
-        Runnable beforePromotionsCallback = new BeforePromotionOperationCallback(this, new AtomicInteger(promotions.size()));
+        PromotionOperationCallback beforePromotionsCallback = new BeforePromotionOperationCallback(this, promotions.size());
 
         for (MigrationInfo promotion : promotions) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Submitting BeforePromotionOperation for promotion: " + promotion);
             }
-            BeforePromotionOperation op = new BeforePromotionOperation(promotion, beforePromotionsCallback);
+            Operation op = new BeforePromotionOperation(promotion, beforePromotionsCallback);
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
             operationService.execute(op);
         }
@@ -176,17 +196,36 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
                     + ". Promotion partition state version: " + partitionState.getVersion()
                     + ", current partition state version: " + partitionService.getPartitionStateVersion());
         }
+
+        PromotionOperationCallback finalizePromotionsCallback = new FinalizePromotionOperationCallback(this, promotions.size());
+
         for (MigrationInfo promotion : promotions) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Submitting FinalizePromotionOperation for promotion: " + promotion + ". Result: " + success);
             }
-            FinalizePromotionOperation op = new FinalizePromotionOperation(promotion, success);
+            Operation op = new FinalizePromotionOperation(promotion, success, finalizePromotionsCallback);
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
             operationService.execute(op);
         }
-        partitionService.getMigrationInterceptor()
-                .onPromotionComplete(MigrationParticipant.DESTINATION, promotions, success);
-        partitionService.getMigrationManager().releasePromotionPermit();
+    }
+
+    private void complete() {
+        InternalPartitionServiceImpl service = getService();
+        service.getMigrationInterceptor().onPromotionComplete(MigrationParticipant.DESTINATION, promotions, success);
+        PartitionEventManager eventManager = service.getPartitionEventManager();
+        MigrationStateImpl ms = migrationState;
+        for (MigrationInfo promotion : promotions) {
+            ms = ms.onComplete(1, 0L);
+            eventManager.sendMigrationEvent(ms, promotion, 0L);
+        }
+        eventManager.sendMigrationProcessCompletedEvent(ms);
+        service.getMigrationManager().releasePromotionPermit();
+    }
+
+    /** Reruns this operation with next {@link #runStage}*/
+    private void scheduleNextRun(RunStage nextState) {
+        runStage = nextState;
+        getNodeEngine().getOperationService().execute(this);
     }
 
     @Override
@@ -196,37 +235,63 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
     /**
      * Checks if all {@link BeforePromotionOperation}s have been executed.
-     * On completion sets the {@link #beforeStateCompleted} to {@code true} and reschedules this {@link PromotionCommitOperation}.
+     * On completion sets the {@link #runStage} to {@link RunStage#FINALIZE_PROMOTION}
+     * and reschedules this {@link PromotionCommitOperation}.
      */
-    private static class BeforePromotionOperationCallback implements Runnable {
+    private static class BeforePromotionOperationCallback implements PromotionOperationCallback {
         private final PromotionCommitOperation promotionCommitOperation;
         private final AtomicInteger tasks;
 
-        BeforePromotionOperationCallback(PromotionCommitOperation promotionCommitOperation, AtomicInteger tasks) {
+        BeforePromotionOperationCallback(PromotionCommitOperation promotionCommitOperation, int tasks) {
             this.promotionCommitOperation = promotionCommitOperation;
-            this.tasks = tasks;
+            this.tasks = new AtomicInteger(tasks);
         }
 
         @Override
-        public void run() {
-            final int remainingTasks = tasks.decrementAndGet();
+        public void onComplete(MigrationInfo promotion) {
+            int remainingTasks = tasks.decrementAndGet();
 
             ILogger logger = promotionCommitOperation.getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest("Remaining before promotion tasks: " + remainingTasks);
+                logger.finest("Completed before stage of " + promotion + ". Remaining before promotion tasks: " + remainingTasks);
             }
 
             if (remainingTasks == 0) {
-                logger.fine("All before promotion tasks are completed.");
-                promotionCommitOperation.onBeforePromotionsComplete();
+                logger.fine("All before promotion tasks are completed. Starting finalize promotion tasks...");
+                promotionCommitOperation.scheduleNextRun(RunStage.FINALIZE_PROMOTION);
             }
         }
     }
 
-    /** Reruns this operation with {@link #beforeStateCompleted} set to {@code true}. */
-    private void onBeforePromotionsComplete() {
-        beforeStateCompleted = true;
-        getNodeEngine().getOperationService().execute(this);
+    /**
+     * Checks if all {@link FinalizePromotionOperation}s have been executed.
+     * On completion sets the {@link #runStage} to {@link RunStage#COMPLETE}
+     * and reschedules this {@link PromotionCommitOperation}.
+     */
+    private static class FinalizePromotionOperationCallback implements PromotionOperationCallback {
+        private final PromotionCommitOperation promotionCommitOperation;
+        private final AtomicInteger tasks;
+
+        FinalizePromotionOperationCallback(PromotionCommitOperation promotionCommitOperation, int tasks) {
+            this.promotionCommitOperation = promotionCommitOperation;
+            this.tasks = new AtomicInteger(tasks);
+        }
+
+        @Override
+        public void onComplete(MigrationInfo promotion) {
+            int remainingTasks = tasks.decrementAndGet();
+
+            ILogger logger = promotionCommitOperation.getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("Completed finalize stage of " + promotion
+                        + ". Remaining finalize promotion tasks: " + remainingTasks);
+            }
+
+            if (remainingTasks == 0) {
+                logger.fine("All finalize promotion tasks are completed.");
+                promotionCommitOperation.scheduleNextRun(RunStage.COMPLETE);
+            }
+        }
     }
 
     @Override
@@ -262,5 +327,13 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         UUIDSerializationUtil.writeUUID(out, expectedMemberUuid);
         out.writeObject(partitionState);
         writeCollection(promotions, out);
+    }
+
+    private enum RunStage {
+        BEFORE_PROMOTION, FINALIZE_PROMOTION, COMPLETE
+    }
+
+    interface PromotionOperationCallback {
+        void onComplete(MigrationInfo promotion);
     }
 }

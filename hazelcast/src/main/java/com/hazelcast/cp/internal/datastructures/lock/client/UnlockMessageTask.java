@@ -17,12 +17,12 @@
 package com.hazelcast.cp.internal.datastructures.lock.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPFencedLockUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockUnlockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.UnlockOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -34,7 +34,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link UnlockOp}
  */
-public class UnlockMessageTask extends AbstractMessageTask<CPFencedLockUnlockCodec.RequestParameters>
+public class UnlockMessageTask extends AbstractMessageTask<FencedLockUnlockCodec.RequestParameters>
         implements ExecutionCallback<Boolean> {
 
     public UnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -49,18 +49,18 @@ public class UnlockMessageTask extends AbstractMessageTask<CPFencedLockUnlockCod
     }
 
     @Override
-    protected CPFencedLockUnlockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPFencedLockUnlockCodec.decodeRequest(clientMessage);
+    protected FencedLockUnlockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return FencedLockUnlockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPFencedLockUnlockCodec.encodeResponse((Boolean) response);
+        return FencedLockUnlockCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftLockService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     @Override

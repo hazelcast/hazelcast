@@ -19,9 +19,9 @@ package com.hazelcast.client.cp.internal.datastructures.proxy;
 import com.hazelcast.client.cp.internal.datastructures.atomiclong.AtomicLongProxy;
 import com.hazelcast.client.cp.internal.datastructures.atomicref.AtomicRefProxy;
 import com.hazelcast.client.cp.internal.datastructures.countdownlatch.CountDownLatchProxy;
-import com.hazelcast.client.cp.internal.datastructures.lock.RaftFencedLockProxy;
-import com.hazelcast.client.cp.internal.datastructures.semaphore.RaftSessionAwareSemaphoreProxy;
-import com.hazelcast.client.cp.internal.datastructures.semaphore.RaftSessionlessSemaphoreProxy;
+import com.hazelcast.client.cp.internal.datastructures.lock.FencedLockProxy;
+import com.hazelcast.client.cp.internal.datastructures.semaphore.SessionAwareSemaphoreProxy;
+import com.hazelcast.client.cp.internal.datastructures.semaphore.SessionlessSemaphoreProxy;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec;
@@ -34,7 +34,7 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
 
@@ -50,8 +50,8 @@ import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
 public class ClientRaftProxyFactory {
 
     private final HazelcastClientInstanceImpl client;
-    private final ConcurrentMap<String, RaftFencedLockProxy> lockProxies
-            = new ConcurrentHashMap<String, RaftFencedLockProxy>();
+    private final ConcurrentMap<String, FencedLockProxy> lockProxies
+            = new ConcurrentHashMap<String, FencedLockProxy>();
     private ClientContext context;
 
     public ClientRaftProxyFactory(HazelcastClientInstanceImpl client) {
@@ -75,7 +75,7 @@ public class ClientRaftProxyFactory {
             return (T) new AtomicRefProxy(context, groupId, proxyName, objectName);
         } else if (serviceName.equals(CountDownLatchService.SERVICE_NAME)) {
             return (T) new CountDownLatchProxy(context, groupId, proxyName, objectName);
-        } else if (serviceName.equals(RaftLockService.SERVICE_NAME)) {
+        } else if (serviceName.equals(LockService.SERVICE_NAME)) {
             return (T) createFencedLock(groupId, proxyName, objectName);
         } else if (serviceName.equals(SemaphoreService.SERVICE_NAME)) {
             return (T) createSemaphore(groupId, proxyName, objectName);
@@ -86,7 +86,7 @@ public class ClientRaftProxyFactory {
 
     private FencedLock createFencedLock(RaftGroupId groupId, String proxyName, String objectName) {
         while (true) {
-            RaftFencedLockProxy proxy = lockProxies.get(proxyName);
+            FencedLockProxy proxy = lockProxies.get(proxyName);
             if (proxy != null) {
                 if (!proxy.getGroupId().equals(groupId)) {
                     lockProxies.remove(proxyName, proxy);
@@ -95,8 +95,8 @@ public class ClientRaftProxyFactory {
                 }
             }
 
-            proxy = new RaftFencedLockProxy(context, groupId, proxyName, objectName);
-            RaftFencedLockProxy existing = lockProxies.putIfAbsent(proxyName, proxy);
+            proxy = new FencedLockProxy(context, groupId, proxyName, objectName);
+            FencedLockProxy existing = lockProxies.putIfAbsent(proxyName, proxy);
             if (existing == null) {
                 return proxy;
             } else if (existing.getGroupId().equals(groupId)) {
@@ -113,8 +113,8 @@ public class ClientRaftProxyFactory {
         boolean jdkCompatible = SemaphoreGetSemaphoreTypeCodec.decodeResponse(response).response;
 
         return jdkCompatible
-                ? new RaftSessionlessSemaphoreProxy(context, groupId, proxyName, objectName)
-                : new RaftSessionAwareSemaphoreProxy(context, groupId, proxyName, objectName);
+                ? new SessionlessSemaphoreProxy(context, groupId, proxyName, objectName)
+                : new SessionAwareSemaphoreProxy(context, groupId, proxyName, objectName);
     }
 
     private RaftGroupId getGroupId(String proxyName, String objectName) {

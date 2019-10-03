@@ -25,7 +25,6 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -102,7 +101,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
     private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
     private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
-    private final ConcurrentMap<String, LockConfig> lockConfigs = new ConcurrentHashMap<String, LockConfig>();
     private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
     private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
     private final ConcurrentMap<String, ReplicatedMapConfig> replicatedMapConfigs =
@@ -130,7 +128,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             multiMapConfigs,
             cardinalityEstimatorConfigs,
             ringbufferConfigs,
-            lockConfigs,
             listConfigs,
             setConfigs,
             replicatedMapConfigs,
@@ -277,9 +274,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof RingbufferConfig) {
             RingbufferConfig ringbufferConfig = (RingbufferConfig) newConfig;
             currentConfig = ringbufferConfigs.putIfAbsent(ringbufferConfig.getName(), ringbufferConfig);
-        } else if (newConfig instanceof LockConfig) {
-            LockConfig lockConfig = (LockConfig) newConfig;
-            currentConfig = lockConfigs.putIfAbsent(lockConfig.getName(), lockConfig);
         } else if (newConfig instanceof ListConfig) {
             ListConfig listConfig = (ListConfig) newConfig;
             currentConfig = listConfigs.putIfAbsent(listConfig.getName(), listConfig);
@@ -442,16 +436,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
-    public LockConfig findLockConfig(String name) {
-        return lookupByPattern(configPatternMatcher, lockConfigs, name);
-    }
-
-    @Override
-    public Map<String, LockConfig> getLockConfigs() {
-        return lockConfigs;
-    }
-
-    @Override
     public ListConfig findListConfig(String name) {
         return lookupByPattern(configPatternMatcher, listConfigs, name);
     }
@@ -564,7 +548,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         configToVersion.put(MultiMapConfig.class, V3_9);
         configToVersion.put(CardinalityEstimatorConfig.class, V3_9);
         configToVersion.put(RingbufferConfig.class, V3_9);
-        configToVersion.put(LockConfig.class, V3_9);
         configToVersion.put(ListConfig.class, V3_9);
         configToVersion.put(SetConfig.class, V3_9);
         configToVersion.put(ReplicatedMapConfig.class, V3_9);

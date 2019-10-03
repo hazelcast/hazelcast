@@ -318,10 +318,6 @@
                 <hz:queue-store enabled="true" factory-implementation="dummyQueueStoreFactory"/>
             </hz:queue>
 
-            <hz:lock name="lock">
-                <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-            </hz:lock>
-
             <hz:ringbuffer name="testRingbuffer"
                            in-memory-format="OBJECT"
                            capacity="100"

@@ -16,34 +16,34 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionEventManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
+import com.hazelcast.internal.partition.operation.PromotionCommitOperation.PromotionOperationCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;
 
 import java.util.Arrays;
 
-import static com.hazelcast.partition.MigrationEvent.MigrationStatus.COMPLETED;
-import static com.hazelcast.partition.MigrationEvent.MigrationStatus.FAILED;
-
 /**
  * Runs locally when the node becomes owner of a partition.
  * Finds the replica indices that are on the sync-waiting state. Those indices represents the lost backups of the partition.
  * Therefore, it publishes {@link IPartitionLostEvent} to listeners and updates the version for the lost replicas to the
  * first available version value after the lost backups, or {@code 0} if N/A.
- * In the end it sends a {@link PartitionMigrationEvent} to notify {@link MigrationAwareService}s and a {@link MigrationEvent}
- * to notify registered listeners of promotion commit or rollback.
+ * In the end it sends a {@link PartitionMigrationEvent} to notify {@link MigrationAwareService}s
+ * and a {@link ReplicaMigrationEvent} to notify registered listeners of promotion commit or rollback.
  */
 final class FinalizePromotionOperation extends AbstractPromotionOperation {
 
     private final boolean success;
+    private PromotionOperationCallback finalizePromotionsCallback;
     private ILogger logger;
 
     /**
@@ -55,9 +55,10 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
         success = false;
     }
 
-    FinalizePromotionOperation(MigrationInfo migrationInfo, boolean success) {
+    FinalizePromotionOperation(MigrationInfo migrationInfo, boolean success, PromotionOperationCallback callback) {
         super(migrationInfo);
         this.success = success;
+        this.finalizePromotionsCallback = callback;
     }
 
     @Override
@@ -72,6 +73,7 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
         }
 
         if (success) {
+            migrationInfo.setStatus(MigrationStatus.SUCCESS);
             shiftUpReplicaVersions();
             commitServices();
         } else {
@@ -85,7 +87,9 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
         PartitionStateManager partitionStateManager = service.getPartitionStateManager();
         partitionStateManager.clearMigratingFlag(getPartitionId());
 
-        sendMigrationEvent(success ? COMPLETED : FAILED);
+        if (finalizePromotionsCallback != null) {
+            finalizePromotionsCallback.onComplete(migrationInfo);
+        }
     }
 
     /**
