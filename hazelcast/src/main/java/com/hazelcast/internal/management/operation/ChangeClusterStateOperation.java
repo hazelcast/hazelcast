@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,6 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.io.IOException;
+import java.util.concurrent.Future;
 
 /**
  * Operation to change a cluster's state via Management Center.
@@ -40,11 +42,24 @@ public class ChangeClusterStateOperation extends AbstractManagementOperation {
 
     @Override
     public void run() {
-        getNodeEngine().getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR,
+        ExecutionService executionService = getNodeEngine().getExecutionService();
+        Future<Void> future = executionService.submit(
+                ExecutionService.ASYNC_EXECUTOR,
                 () -> {
                     getNodeEngine().getClusterService().changeClusterState(newState);
-                    sendResponse(null);
+                    return null;
                 });
+        executionService.asCompletableFuture(future).andThen(new ExecutionCallback<Void>() {
+            @Override
+            public void onResponse(Void response) {
+                sendResponse(null);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                sendResponse(t);
+            }
+        });
     }
 
     @Override

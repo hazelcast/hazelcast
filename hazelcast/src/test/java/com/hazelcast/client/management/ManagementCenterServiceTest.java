@@ -34,7 +34,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.ExecutionException;
+
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
+import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static org.junit.Assert.assertEquals;
 
@@ -71,6 +74,20 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         future.get();
 
         assertClusterState(PASSIVE, hazelcastInstances);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void changeClusterState_exception() throws Throwable {
+        assertTrueEventually(
+                () -> assertEquals(ACTIVE, hazelcastInstances[0].getCluster().getClusterState()));
+        waitClusterForSafeState(hazelcastInstances[0]);
+
+        ClientDelegatingFuture<Void> future = managementCenterService.changeClusterState(IN_TRANSITION);
+        try {
+            future.get();
+        } catch (ExecutionException e) {
+            throw e.getCause();
+        }
     }
 
     @Test
