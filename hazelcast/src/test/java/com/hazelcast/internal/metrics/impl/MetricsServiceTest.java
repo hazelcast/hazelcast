@@ -25,6 +25,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.internal.metrics.managementcenter.Metric;
+import com.hazelcast.internal.metrics.managementcenter.MetricConsumer;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
@@ -156,10 +157,10 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         readMetrics(metricsService, 0, metricConsumerMock);
 
-        inOrder.verify(metricConsumerMock).consumeDouble(1.5D);
-        inOrder.verify(metricConsumerMock).consumeLong(1);
-        inOrder.verify(metricConsumerMock).consumeDouble(5.5D);
-        inOrder.verify(metricConsumerMock).consumeLong(2);
+        inOrder.verify(metricConsumerMock).consumeDouble("[metric=test.doubleValue]", 1.5D);
+        inOrder.verify(metricConsumerMock).consumeLong("[metric=test.longValue]", 1);
+        inOrder.verify(metricConsumerMock).consumeDouble("[metric=test.doubleValue]", 5.5D);
+        inOrder.verify(metricConsumerMock).consumeLong("[metric=test.longValue]", 2);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -185,8 +186,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         readMetrics(metricsService, 0, metricConsumerMock);
 
-        inOrder.verify(metricConsumerMock).consumeDouble(5.5D);
-        inOrder.verify(metricConsumerMock).consumeLong(2);
+        inOrder.verify(metricConsumerMock).consumeDouble("[metric=test.doubleValue]", 5.5D);
+        inOrder.verify(metricConsumerMock).consumeLong("[metric=test.longValue]", 2);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -290,11 +291,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         metricsResultSet.collections().forEach(entry -> {
             Iterator<Metric> metricIterator = decompressingIterator(entry.getValue());
             metricIterator.forEachRemaining(metric -> {
-                if (metric.key().contains("test.longValue")) {
-                    metricConsumer.consumeLong(metric.value());
-                } else if (metric.key().contains("test.doubleValue")) {
-                    metricConsumer.consumeDouble(metric.value() / 10_000D);
-                }
+                metric.provide(metricConsumer);
             });
         });
 
@@ -312,11 +309,5 @@ public class MetricsServiceTest extends HazelcastTestSupport {
             this.doubleValue = doubleValue;
         }
 
-    }
-
-    private interface MetricConsumer {
-        void consumeLong(long value);
-
-        void consumeDouble(double value);
     }
 }

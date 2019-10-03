@@ -16,26 +16,45 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
-public class Metric {
+import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.ValueType;
+
+/**
+ * Represents a metric data point (key and value).
+ */
+public final class Metric {
 
     private final String key;
-    private final long value;
+    private final ValueType type;
+    private long longValue;
+    private double doubleValue;
 
-    Metric(String key, long value) {
+    Metric(String key, ValueType type, long value) {
         this.key = key;
-        this.value = value;
+        this.type = type;
+        this.longValue = value;
     }
 
-    public String key() {
-        return key;
+    Metric(String key, ValueType type, double value) {
+        this.key = key;
+        this.type = type;
+        this.doubleValue = value;
     }
 
-    public long value() {
-        return value;
-    }
-
-    @Override
-    public String toString() {
-        return key + "=" + value;
+    /**
+     * Consumes the Metric with the given {@link MetricConsumer}.
+     *
+     * @param consumer metric consumer
+     */
+    public void provide(MetricConsumer consumer) {
+        switch (type) {
+            case LONG:
+                consumer.consumeLong(key, longValue);
+                break;
+            case DOUBLE:
+                consumer.consumeDouble(key, doubleValue);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected metric value type: " + type);
+        }
     }
 }
