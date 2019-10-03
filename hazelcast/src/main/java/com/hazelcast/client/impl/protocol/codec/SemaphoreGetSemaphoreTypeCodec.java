@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if the semaphore is JDK compatible
  */
-@Generated("f2f808744238135174726b4fe63671d1")
+@Generated("60d8d47e45295bfa4ba8b69e8dcc06bf")
 public final class SemaphoreGetSemaphoreTypeCodec {
-    //hex: 0x0D0700
-    public static final int REQUEST_MESSAGE_TYPE = 853760;
-    //hex: 0x0D0701
-    public static final int RESPONSE_MESSAGE_TYPE = 853761;
+    //hex: 0x0C0700
+    public static final int REQUEST_MESSAGE_TYPE = 788224;
+    //hex: 0x0C0701
+    public static final int RESPONSE_MESSAGE_TYPE = 788225;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

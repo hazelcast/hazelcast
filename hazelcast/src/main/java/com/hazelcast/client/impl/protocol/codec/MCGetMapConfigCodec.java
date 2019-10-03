@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map.
  */
-@Generated("5f25c65ac4e240ff44c58134c860c59d")
+@Generated("5cdc470a5f76c74bd3be97b8a255e4c3")
 public final class MCGetMapConfigCodec {
-    //hex: 0x270300
-    public static final int REQUEST_MESSAGE_TYPE = 2556672;
-    //hex: 0x270301
-    public static final int RESPONSE_MESSAGE_TYPE = 2556673;
+    //hex: 0x200300
+    public static final int REQUEST_MESSAGE_TYPE = 2097920;
+    //hex: 0x200301
+    public static final int RESPONSE_MESSAGE_TYPE = 2097921;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_IN_MEMORY_FORMAT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_BACKUP_COUNT_FIELD_OFFSET = RESPONSE_IN_MEMORY_FORMAT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

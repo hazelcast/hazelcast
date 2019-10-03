@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
  * sub-interface for that event.
  */
-@Generated("5ca26f4a3673a942edf4aab978fa43ad")
+@Generated("58b91c666119a0c33704517d17e1dc4e")
 public final class MapAddEntryListenerToKeyWithPredicateCodec {
-    //hex: 0x011900
-    public static final int REQUEST_MESSAGE_TYPE = 71936;
-    //hex: 0x011901
-    public static final int RESPONSE_MESSAGE_TYPE = 71937;
+    //hex: 0x011600
+    public static final int REQUEST_MESSAGE_TYPE = 71168;
+    //hex: 0x011601
+    public static final int RESPONSE_MESSAGE_TYPE = 71169;
     private static final int REQUEST_INCLUDE_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LISTENER_FLAGS_FIELD_OFFSET = REQUEST_INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LISTENER_FLAGS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -54,8 +54,8 @@ public final class MapAddEntryListenerToKeyWithPredicateCodec {
     private static final int EVENT_ENTRY_UUID_FIELD_OFFSET = EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET = EVENT_ENTRY_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_INITIAL_FRAME_SIZE = EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x011902
-    private static final int EVENT_ENTRY_MESSAGE_TYPE = 71938;
+    //hex: 0x011602
+    private static final int EVENT_ENTRY_MESSAGE_TYPE = 71170;
 
     private MapAddEntryListenerToKeyWithPredicateCodec() {
     }

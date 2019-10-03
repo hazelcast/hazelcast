@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("fcf9994ae5cf3f59776a2e9ef1fe83ee")
+@Generated("2422b478aad26d2da334aa6cc5162419")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
-    //hex: 0x1D0400
-    public static final int REQUEST_MESSAGE_TYPE = 1901568;
-    //hex: 0x1D0401
-    public static final int RESPONSE_MESSAGE_TYPE = 1901569;
+    //hex: 0x1A0400
+    public static final int REQUEST_MESSAGE_TYPE = 1704960;
+    //hex: 0x1A0401
+    public static final int RESPONSE_MESSAGE_TYPE = 1704961;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

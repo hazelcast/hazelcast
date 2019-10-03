@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a new CP group with the given name
  */
-@Generated("e78c2a6fbd7f51e71f78e1106388d386")
+@Generated("743cc736104e71257064c1f98fb47c94")
 public final class CPGroupCreateCPGroupCodec {
-    //hex: 0x210100
-    public static final int REQUEST_MESSAGE_TYPE = 2162944;
-    //hex: 0x210101
-    public static final int RESPONSE_MESSAGE_TYPE = 2162945;
+    //hex: 0x1E0100
+    public static final int REQUEST_MESSAGE_TYPE = 1966336;
+    //hex: 0x1E0101
+    public static final int RESPONSE_MESSAGE_TYPE = 1966337;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

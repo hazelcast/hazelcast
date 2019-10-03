@@ -46,12 +46,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * this id is not the sequence of the item you are about to publish but from a previously published item. So it can't be used
  * to find that item.
  */
-@Generated("0bc8a0bc4da0b2a5b68a1d8225d11cd3")
+@Generated("886ab4c7658aa4e408fb240607b89f24")
 public final class RingbufferAddCodec {
-    //hex: 0x190600
-    public static final int REQUEST_MESSAGE_TYPE = 1639936;
-    //hex: 0x190601
-    public static final int RESPONSE_MESSAGE_TYPE = 1639937;
+    //hex: 0x170600
+    public static final int REQUEST_MESSAGE_TYPE = 1508864;
+    //hex: 0x170601
+    public static final int RESPONSE_MESSAGE_TYPE = 1508865;
     private static final int REQUEST_OVERFLOW_POLICY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_OVERFLOW_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

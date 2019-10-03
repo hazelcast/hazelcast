@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code expiryPolicy} takes precedence for these particular {@code keys} against any cache wide expiry policy.
  * If some keys in {@code keys} do not exist or are already expired, this call has no effect for those.
  */
-@Generated("4ec75ca5b013d69c3e1f2f691951ee8f")
+@Generated("c30d556f8a8a01732d0cb9c846aa5bea")
 public final class CacheSetExpiryPolicyCodec {
-    //hex: 0x152300
-    public static final int REQUEST_MESSAGE_TYPE = 1385216;
-    //hex: 0x152301
-    public static final int RESPONSE_MESSAGE_TYPE = 1385217;
+    //hex: 0x132300
+    public static final int REQUEST_MESSAGE_TYPE = 1254144;
+    //hex: 0x132301
+    public static final int RESPONSE_MESSAGE_TYPE = 1254145;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

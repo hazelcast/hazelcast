@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("3ff09fcc69fa367298d48577da2fa68f")
+@Generated("84bb405c9774904ef9adb8c582795af9")
 public final class CacheAddEntryListenerCodec {
-    //hex: 0x150100
-    public static final int REQUEST_MESSAGE_TYPE = 1376512;
-    //hex: 0x150101
-    public static final int RESPONSE_MESSAGE_TYPE = 1376513;
+    //hex: 0x130100
+    public static final int REQUEST_MESSAGE_TYPE = 1245440;
+    //hex: 0x130101
+    public static final int RESPONSE_MESSAGE_TYPE = 1245441;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -50,8 +50,8 @@ public final class CacheAddEntryListenerCodec {
     private static final int EVENT_CACHE_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_COMPLETION_ID_FIELD_OFFSET = EVENT_CACHE_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INITIAL_FRAME_SIZE = EVENT_CACHE_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x150102
-    private static final int EVENT_CACHE_MESSAGE_TYPE = 1376514;
+    //hex: 0x130102
+    private static final int EVENT_CACHE_MESSAGE_TYPE = 1245442;
 
     private CacheAddEntryListenerCodec() {
     }

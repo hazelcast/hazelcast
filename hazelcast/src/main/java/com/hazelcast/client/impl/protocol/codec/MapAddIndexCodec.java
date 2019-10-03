@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an index to this map with specified configuration.
  */
-@Generated("d4ccf748d2ba075ee5594efc1e4cc277")
+@Generated("74e5034bdefa98c0c0e480dd692fa3cc")
 public final class MapAddIndexCodec {
-    //hex: 0x012D00
-    public static final int REQUEST_MESSAGE_TYPE = 77056;
-    //hex: 0x012D01
-    public static final int RESPONSE_MESSAGE_TYPE = 77057;
+    //hex: 0x012A00
+    public static final int REQUEST_MESSAGE_TYPE = 76288;
+    //hex: 0x012A01
+    public static final int RESPONSE_MESSAGE_TYPE = 76289;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

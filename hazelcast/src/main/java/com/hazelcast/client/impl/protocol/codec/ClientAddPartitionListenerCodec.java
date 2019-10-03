@@ -37,18 +37,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("08199e0b80eb993bedd1c30ccf27d96e")
+@Generated("ddfa92f26796424c93b577943f351729")
 public final class ClientAddPartitionListenerCodec {
-    //hex: 0x001200
-    public static final int REQUEST_MESSAGE_TYPE = 4608;
-    //hex: 0x001201
-    public static final int RESPONSE_MESSAGE_TYPE = 4609;
+    //hex: 0x001000
+    public static final int REQUEST_MESSAGE_TYPE = 4096;
+    //hex: 0x001001
+    public static final int RESPONSE_MESSAGE_TYPE = 4097;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_PARTITIONS_INITIAL_FRAME_SIZE = EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x001202
-    private static final int EVENT_PARTITIONS_MESSAGE_TYPE = 4610;
+    //hex: 0x001002
+    private static final int EVENT_PARTITIONS_MESSAGE_TYPE = 4098;
 
     private ClientAddPartitionListenerCodec() {
     }

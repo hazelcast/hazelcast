@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-@Generated("768a6a0f842c2ff4e8f3826725f122ba")
+@Generated("e531e1548f92f856c665ff373cff57e4")
 public final class ClientDeployClassesCodec {
-    //hex: 0x001100
-    public static final int REQUEST_MESSAGE_TYPE = 4352;
-    //hex: 0x001101
-    public static final int RESPONSE_MESSAGE_TYPE = 4353;
+    //hex: 0x000F00
+    public static final int REQUEST_MESSAGE_TYPE = 3840;
+    //hex: 0x000F01
+    public static final int RESPONSE_MESSAGE_TYPE = 3841;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

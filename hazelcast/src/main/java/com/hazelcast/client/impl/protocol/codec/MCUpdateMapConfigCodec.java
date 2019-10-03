@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the config of a map.
  */
-@Generated("31c37f6d85a5d2dbb7f5a632753c3410")
+@Generated("43306c19c140e0c5628a4eb5dd8e9a88")
 public final class MCUpdateMapConfigCodec {
-    //hex: 0x270400
-    public static final int REQUEST_MESSAGE_TYPE = 2556928;
-    //hex: 0x270401
-    public static final int RESPONSE_MESSAGE_TYPE = 2556929;
+    //hex: 0x200400
+    public static final int REQUEST_MESSAGE_TYPE = 2098176;
+    //hex: 0x200401
+    public static final int RESPONSE_MESSAGE_TYPE = 2098177;
     private static final int REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET = REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_EVICTION_POLICY_FIELD_OFFSET = REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

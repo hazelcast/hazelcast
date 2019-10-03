@@ -41,12 +41,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method returns `false` if the event is not in the buffer of event publisher side. That means recovery is not
  * possible.
  */
-@Generated("9b5480d9718f431c81c6685653844f14")
+@Generated("a3d28e57ba2eb7dfc1108556da1ea0c5")
 public final class ContinuousQuerySetReadCursorCodec {
-    //hex: 0x180500
-    public static final int REQUEST_MESSAGE_TYPE = 1574144;
-    //hex: 0x180501
-    public static final int RESPONSE_MESSAGE_TYPE = 1574145;
+    //hex: 0x160500
+    public static final int REQUEST_MESSAGE_TYPE = 1443072;
+    //hex: 0x160501
+    public static final int RESPONSE_MESSAGE_TYPE = 1443073;
     private static final int REQUEST_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

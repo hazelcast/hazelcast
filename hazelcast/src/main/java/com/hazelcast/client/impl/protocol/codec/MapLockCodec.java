@@ -40,12 +40,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Scope of the lock is this map only. Acquired lock is only for the key in this map. Locks are re-entrant,
  * so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
  */
-@Generated("0347feade4a40c2ac9f2e057cec4eb3f")
+@Generated("74d10d3542c4c68b7fd0f549e7dbfdcd")
 public final class MapLockCodec {
-    //hex: 0x011300
-    public static final int REQUEST_MESSAGE_TYPE = 70400;
-    //hex: 0x011301
-    public static final int RESPONSE_MESSAGE_TYPE = 70401;
+    //hex: 0x011000
+    public static final int REQUEST_MESSAGE_TYPE = 69632;
+    //hex: 0x011001
+    public static final int RESPONSE_MESSAGE_TYPE = 69633;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

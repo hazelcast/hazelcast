@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Remove item from the transactional list
  */
-@Generated("3627dfd4bb464740b94c8d891ee809fc")
+@Generated("384dbec4d6913b5b949d6e94d2d80760")
 public final class TransactionalListRemoveCodec {
-    //hex: 0x130200
-    public static final int REQUEST_MESSAGE_TYPE = 1245696;
-    //hex: 0x130201
-    public static final int RESPONSE_MESSAGE_TYPE = 1245697;
+    //hex: 0x110200
+    public static final int REQUEST_MESSAGE_TYPE = 1114624;
+    //hex: 0x110201
+    public static final int RESPONSE_MESSAGE_TYPE = 1114625;
     private static final int REQUEST_TXN_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_TXN_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

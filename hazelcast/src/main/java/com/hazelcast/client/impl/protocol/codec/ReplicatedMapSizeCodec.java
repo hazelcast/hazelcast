@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of key-value mappings in this map. If the map contains more than Integer.MAX_VALUE elements,
  * returns Integer.MAX_VALUE.
  */
-@Generated("855050a9b6ef64060a24a6108dceaa73")
+@Generated("77dc644424e124611a2758655d05ac7e")
 public final class ReplicatedMapSizeCodec {
-    //hex: 0x0E0200
-    public static final int REQUEST_MESSAGE_TYPE = 918016;
-    //hex: 0x0E0201
-    public static final int RESPONSE_MESSAGE_TYPE = 918017;
+    //hex: 0x0D0200
+    public static final int REQUEST_MESSAGE_TYPE = 852480;
+    //hex: 0x0D0201
+    public static final int RESPONSE_MESSAGE_TYPE = 852481;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

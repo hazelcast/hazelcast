@@ -37,23 +37,23 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("5b8e1f59b3230fbace8f6b8fe8c82544")
+@Generated("89efd940fe8c1f4ca7a8f25b23ebe555")
 public final class ContinuousQueryAddListenerCodec {
-    //hex: 0x180400
-    public static final int REQUEST_MESSAGE_TYPE = 1573888;
-    //hex: 0x180401
-    public static final int RESPONSE_MESSAGE_TYPE = 1573889;
+    //hex: 0x160400
+    public static final int REQUEST_MESSAGE_TYPE = 1442816;
+    //hex: 0x160401
+    public static final int RESPONSE_MESSAGE_TYPE = 1442817;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_QUERY_CACHE_SINGLE_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x180402
-    private static final int EVENT_QUERY_CACHE_SINGLE_MESSAGE_TYPE = 1573890;
+    //hex: 0x160402
+    private static final int EVENT_QUERY_CACHE_SINGLE_MESSAGE_TYPE = 1442818;
     private static final int EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_QUERY_CACHE_BATCH_INITIAL_FRAME_SIZE = EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x180403
-    private static final int EVENT_QUERY_CACHE_BATCH_MESSAGE_TYPE = 1573891;
+    //hex: 0x160403
+    private static final int EVENT_QUERY_CACHE_BATCH_MESSAGE_TYPE = 1442819;
 
     private ContinuousQueryAddListenerCodec() {
     }

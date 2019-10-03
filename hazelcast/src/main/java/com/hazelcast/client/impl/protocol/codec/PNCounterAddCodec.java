@@ -44,12 +44,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("2920258d707e2c3f447c5ea486725174")
+@Generated("ed703b66ef8fc5ae9dd94f3493e6c4cd")
 public final class PNCounterAddCodec {
-    //hex: 0x200200
-    public static final int REQUEST_MESSAGE_TYPE = 2097664;
-    //hex: 0x200201
-    public static final int RESPONSE_MESSAGE_TYPE = 2097665;
+    //hex: 0x1D0200
+    public static final int REQUEST_MESSAGE_TYPE = 1901056;
+    //hex: 0x1D0201
+    public static final int RESPONSE_MESSAGE_TYPE = 1901057;
     private static final int REQUEST_DELTA_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET = REQUEST_DELTA_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

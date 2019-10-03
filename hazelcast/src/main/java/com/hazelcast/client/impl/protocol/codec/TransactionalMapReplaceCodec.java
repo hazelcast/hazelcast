@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the entry for a key only if it is currently mapped to some value. The object to be replaced will be
  * accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("3c9e27cad13c29bb5d8c9f1dcc04b32b")
+@Generated("6c91b2291b123cab3e3fabac2d47b8f6")
 public final class TransactionalMapReplaceCodec {
-    //hex: 0x100900
-    public static final int REQUEST_MESSAGE_TYPE = 1050880;
-    //hex: 0x100901
-    public static final int RESPONSE_MESSAGE_TYPE = 1050881;
+    //hex: 0x0E0900
+    public static final int REQUEST_MESSAGE_TYPE = 919808;
+    //hex: 0x0E0901
+    public static final int RESPONSE_MESSAGE_TYPE = 919809;
     private static final int REQUEST_TXN_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_TXN_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

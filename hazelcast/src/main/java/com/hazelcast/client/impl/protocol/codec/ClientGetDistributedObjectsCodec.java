@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("64cb33af745e07d6a1decd765a54c551")
+@Generated("330dcace5742f0d9ede4a69c05f99bad")
 public final class ClientGetDistributedObjectsCodec {
-    //hex: 0x000C00
-    public static final int REQUEST_MESSAGE_TYPE = 3072;
-    //hex: 0x000C01
-    public static final int RESPONSE_MESSAGE_TYPE = 3073;
+    //hex: 0x000A00
+    public static final int REQUEST_MESSAGE_TYPE = 2560;
+    //hex: 0x000A01
+    public static final int RESPONSE_MESSAGE_TYPE = 2561;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

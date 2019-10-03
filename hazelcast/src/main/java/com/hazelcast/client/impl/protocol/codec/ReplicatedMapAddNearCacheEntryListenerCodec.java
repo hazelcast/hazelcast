@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("03abb2a6e0e4a7d85a9523c8561dcb4d")
+@Generated("6828bef281b3707266a251254c07f499")
 public final class ReplicatedMapAddNearCacheEntryListenerCodec {
-    //hex: 0x0E1200
-    public static final int REQUEST_MESSAGE_TYPE = 922112;
-    //hex: 0x0E1201
-    public static final int RESPONSE_MESSAGE_TYPE = 922113;
+    //hex: 0x0D1200
+    public static final int REQUEST_MESSAGE_TYPE = 856576;
+    //hex: 0x0D1201
+    public static final int RESPONSE_MESSAGE_TYPE = 856577;
     private static final int REQUEST_INCLUDE_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_INCLUDE_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -52,8 +52,8 @@ public final class ReplicatedMapAddNearCacheEntryListenerCodec {
     private static final int EVENT_ENTRY_UUID_FIELD_OFFSET = EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET = EVENT_ENTRY_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_INITIAL_FRAME_SIZE = EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x0E1202
-    private static final int EVENT_ENTRY_MESSAGE_TYPE = 922114;
+    //hex: 0x0D1202
+    private static final int EVENT_ENTRY_MESSAGE_TYPE = 856578;
 
     private ReplicatedMapAddNearCacheEntryListenerCodec() {
     }

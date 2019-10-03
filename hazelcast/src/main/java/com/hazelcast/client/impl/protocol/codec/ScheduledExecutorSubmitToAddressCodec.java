@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to a member for execution, member is provided in the form of an address.
  */
-@Generated("45865c6066e01fca6a1da1656a903f97")
+@Generated("2ade0398d24db8a0b52357f7e1730009")
 public final class ScheduledExecutorSubmitToAddressCodec {
-    //hex: 0x1D0300
-    public static final int REQUEST_MESSAGE_TYPE = 1901312;
-    //hex: 0x1D0301
-    public static final int RESPONSE_MESSAGE_TYPE = 1901313;
+    //hex: 0x1A0300
+    public static final int REQUEST_MESSAGE_TYPE = 1704704;
+    //hex: 0x1A0301
+    public static final int RESPONSE_MESSAGE_TYPE = 1704705;
     private static final int REQUEST_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET = REQUEST_TYPE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET = REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

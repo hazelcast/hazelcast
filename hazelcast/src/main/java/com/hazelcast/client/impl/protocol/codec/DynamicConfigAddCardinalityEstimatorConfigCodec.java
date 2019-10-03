@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cardinality estimator configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("af1580adf59a30b9926dd08c5f861608")
+@Generated("0650461d63996f859c6c41d0a2426a7e")
 public final class DynamicConfigAddCardinalityEstimatorConfigCodec {
-    //hex: 0x1E0300
-    public static final int REQUEST_MESSAGE_TYPE = 1966848;
-    //hex: 0x1E0301
-    public static final int RESPONSE_MESSAGE_TYPE = 1966849;
+    //hex: 0x1B0300
+    public static final int REQUEST_MESSAGE_TYPE = 1770240;
+    //hex: 0x1B0301
+    public static final int RESPONSE_MESSAGE_TYPE = 1770241;
     private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

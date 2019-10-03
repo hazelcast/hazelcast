@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of entries in this map.
  */
-@Generated("97b0003943b2b7e52db156e2b6db7923")
+@Generated("ca632717b68a94ef2ebc2a7f3bd63ff6")
 public final class TransactionalMapSizeCodec {
-    //hex: 0x100400
-    public static final int REQUEST_MESSAGE_TYPE = 1049600;
-    //hex: 0x100401
-    public static final int RESPONSE_MESSAGE_TYPE = 1049601;
+    //hex: 0x0E0400
+    public static final int REQUEST_MESSAGE_TYPE = 918528;
+    //hex: 0x0E0401
+    public static final int RESPONSE_MESSAGE_TYPE = 918529;
     private static final int REQUEST_TXN_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_TXN_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains an entry for the specified value.
  */
-@Generated("128b4a58b9ccc9919a93ad76dc33603f")
+@Generated("1698aa41098f5740da10ca5a61ce4837")
 public final class TransactionalMapContainsValueCodec {
-    //hex: 0x101200
-    public static final int REQUEST_MESSAGE_TYPE = 1053184;
-    //hex: 0x101201
-    public static final int RESPONSE_MESSAGE_TYPE = 1053185;
+    //hex: 0x0E1200
+    public static final int REQUEST_MESSAGE_TYPE = 922112;
+    //hex: 0x0E1201
+    public static final int RESPONSE_MESSAGE_TYPE = 922113;
     private static final int REQUEST_TXN_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_TXN_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the current round. A round completes when the count value
  * reaches to 0 and a new round starts afterwards.
  */
-@Generated("613df1d0787f17100d327e8cd1c9f3cd")
+@Generated("2d2248511b76d5a7041fe18f254ba093")
 public final class CountDownLatchGetRoundCodec {
-    //hex: 0x0C0500
-    public static final int REQUEST_MESSAGE_TYPE = 787712;
-    //hex: 0x0C0501
-    public static final int RESPONSE_MESSAGE_TYPE = 787713;
+    //hex: 0x0B0500
+    public static final int REQUEST_MESSAGE_TYPE = 722176;
+    //hex: 0x0B0501
+    public static final int RESPONSE_MESSAGE_TYPE = 722177;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

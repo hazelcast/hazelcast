@@ -39,12 +39,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * set, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("5bf6f06f5c33ba1204e422ce7938dbde")
+@Generated("db68d8dc3d0195c1b68ec92a1a063e0a")
 public final class TransactionalMapKeySetWithPredicateCodec {
-    //hex: 0x100F00
-    public static final int REQUEST_MESSAGE_TYPE = 1052416;
-    //hex: 0x100F01
-    public static final int RESPONSE_MESSAGE_TYPE = 1052417;
+    //hex: 0x0E0F00
+    public static final int REQUEST_MESSAGE_TYPE = 921344;
+    //hex: 0x0E0F01
+    public static final int RESPONSE_MESSAGE_TYPE = 921345;
     private static final int REQUEST_TXN_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_TXN_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

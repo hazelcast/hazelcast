@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes the given session on the given CP group
  */
-@Generated("b040e6333d163b67e204649da305b307")
+@Generated("956f2fe9f87d4f3bdc8a5abffbe17adf")
 public final class CPSessionCloseSessionCodec {
-    //hex: 0x220200
-    public static final int REQUEST_MESSAGE_TYPE = 2228736;
-    //hex: 0x220201
-    public static final int RESPONSE_MESSAGE_TYPE = 2228737;
+    //hex: 0x1F0200
+    public static final int REQUEST_MESSAGE_TYPE = 2032128;
+    //hex: 0x1F0201
+    public static final int RESPONSE_MESSAGE_TYPE = 2032129;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

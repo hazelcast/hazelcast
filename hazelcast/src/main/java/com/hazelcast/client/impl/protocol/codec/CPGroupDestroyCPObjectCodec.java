@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Destroys the distributed object with the given name on the requested
  * CP group
  */
-@Generated("83489d24a45a3d6ca9b6c0551990ce96")
+@Generated("09ae8204d8fc34d21cd70e74a0bc87aa")
 public final class CPGroupDestroyCPObjectCodec {
-    //hex: 0x210200
-    public static final int REQUEST_MESSAGE_TYPE = 2163200;
-    //hex: 0x210201
-    public static final int RESPONSE_MESSAGE_TYPE = 2163201;
+    //hex: 0x1E0200
+    public static final int REQUEST_MESSAGE_TYPE = 1966592;
+    //hex: 0x1E0201
+    public static final int RESPONSE_MESSAGE_TYPE = 1966593;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

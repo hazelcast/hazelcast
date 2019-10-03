@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified entry listener. Returns silently if there was no such listener added before.
  */
-@Generated("17d4bc024db86feb7ffe91107b146107")
+@Generated("7e97d4bc7c85790e0041aed233d7ce0e")
 public final class ReplicatedMapRemoveEntryListenerCodec {
-    //hex: 0x0E0E00
-    public static final int REQUEST_MESSAGE_TYPE = 921088;
-    //hex: 0x0E0E01
-    public static final int RESPONSE_MESSAGE_TYPE = 921089;
+    //hex: 0x0D0E00
+    public static final int REQUEST_MESSAGE_TYPE = 855552;
+    //hex: 0x0D0E01
+    public static final int RESPONSE_MESSAGE_TYPE = 855553;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

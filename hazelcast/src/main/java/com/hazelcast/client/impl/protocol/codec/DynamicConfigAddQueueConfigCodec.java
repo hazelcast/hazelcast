@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("4ab3c9005033b3012996fcb035a8bff0")
+@Generated("cde179e856ce4d9cc873a339c3b9d61f")
 public final class DynamicConfigAddQueueConfigCodec {
-    //hex: 0x1E0D00
-    public static final int REQUEST_MESSAGE_TYPE = 1969408;
-    //hex: 0x1E0D01
-    public static final int RESPONSE_MESSAGE_TYPE = 1969409;
+    //hex: 0x1B0B00
+    public static final int REQUEST_MESSAGE_TYPE = 1772288;
+    //hex: 0x1B0B01
+    public static final int RESPONSE_MESSAGE_TYPE = 1772289;
     private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

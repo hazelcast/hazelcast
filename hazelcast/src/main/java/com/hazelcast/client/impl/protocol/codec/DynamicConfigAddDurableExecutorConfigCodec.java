@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a durable executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("5257bae8f034cec2506da3cee706d43e")
+@Generated("7368528dfe3b40bb1640a229741549f1")
 public final class DynamicConfigAddDurableExecutorConfigCodec {
-    //hex: 0x1E0A00
-    public static final int REQUEST_MESSAGE_TYPE = 1968640;
-    //hex: 0x1E0A01
-    public static final int RESPONSE_MESSAGE_TYPE = 1968641;
+    //hex: 0x1B0900
+    public static final int REQUEST_MESSAGE_TYPE = 1771776;
+    //hex: 0x1B0901
+    public static final int RESPONSE_MESSAGE_TYPE = 1771777;
     private static final int REQUEST_POOL_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_DURABILITY_FIELD_OFFSET = REQUEST_POOL_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_CAPACITY_FIELD_OFFSET = REQUEST_DURABILITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;

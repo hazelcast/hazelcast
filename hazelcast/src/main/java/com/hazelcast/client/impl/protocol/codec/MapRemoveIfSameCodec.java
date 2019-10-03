@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the mapping for a key from this map if existing value equal to the this value
  */
-@Generated("4545cbaa149bf37676f2931173b76e26")
+@Generated("862e7c965ba4512c0231c692607cc8d6")
 public final class MapRemoveIfSameCodec {
-    //hex: 0x010B00
-    public static final int REQUEST_MESSAGE_TYPE = 68352;
-    //hex: 0x010B01
-    public static final int RESPONSE_MESSAGE_TYPE = 68353;
+    //hex: 0x010800
+    public static final int REQUEST_MESSAGE_TYPE = 67584;
+    //hex: 0x010801
+    public static final int RESPONSE_MESSAGE_TYPE = 67585;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

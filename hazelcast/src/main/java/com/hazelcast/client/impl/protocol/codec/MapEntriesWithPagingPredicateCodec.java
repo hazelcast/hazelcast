@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("438f893711de9fcd44d99ba02085e32f")
+@Generated("2107e3cedd59831698c1f40c05a79b8b")
 public final class MapEntriesWithPagingPredicateCodec {
-    //hex: 0x013A00
-    public static final int REQUEST_MESSAGE_TYPE = 80384;
-    //hex: 0x013A01
-    public static final int RESPONSE_MESSAGE_TYPE = 80385;
+    //hex: 0x013700
+    public static final int REQUEST_MESSAGE_TYPE = 79616;
+    //hex: 0x013701
+    public static final int RESPONSE_MESSAGE_TYPE = 79617;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

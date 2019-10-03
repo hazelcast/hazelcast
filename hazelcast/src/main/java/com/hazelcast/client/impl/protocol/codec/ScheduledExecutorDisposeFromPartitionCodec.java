@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Dispose the task from the scheduler
  */
-@Generated("7d7630e578a88c6d61e490eb2421b246")
+@Generated("ff9e8430ff7a4853e8fb120c200cd28b")
 public final class ScheduledExecutorDisposeFromPartitionCodec {
-    //hex: 0x1D1100
-    public static final int REQUEST_MESSAGE_TYPE = 1904896;
-    //hex: 0x1D1101
-    public static final int RESPONSE_MESSAGE_TYPE = 1904897;
+    //hex: 0x1A1100
+    public static final int REQUEST_MESSAGE_TYPE = 1708288;
+    //hex: 0x1A1101
+    public static final int RESPONSE_MESSAGE_TYPE = 1708289;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

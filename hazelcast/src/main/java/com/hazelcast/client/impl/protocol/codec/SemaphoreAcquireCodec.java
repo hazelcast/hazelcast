@@ -39,12 +39,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * then the current thread becomes disabled for thread scheduling purposes
  * and lies dormant until other threads release enough permits.
  */
-@Generated("da245f5a5a0888c7b111508533e162c6")
+@Generated("b69f89f71070953f5ab818c1dde3e061")
 public final class SemaphoreAcquireCodec {
-    //hex: 0x0D0200
-    public static final int REQUEST_MESSAGE_TYPE = 852480;
-    //hex: 0x0D0201
-    public static final int RESPONSE_MESSAGE_TYPE = 852481;
+    //hex: 0x0C0200
+    public static final int REQUEST_MESSAGE_TYPE = 786944;
+    //hex: 0x0C0201
+    public static final int RESPONSE_MESSAGE_TYPE = 786945;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

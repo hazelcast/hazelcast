@@ -43,12 +43,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
  * The result of the future contains the sequenceId of the last written item
  */
-@Generated("0909cc25867bd3587925b44510e2b4f8")
+@Generated("93c0fccb114d5861aeaba26d7983a05f")
 public final class RingbufferAddAllCodec {
-    //hex: 0x190900
-    public static final int REQUEST_MESSAGE_TYPE = 1640704;
-    //hex: 0x190901
-    public static final int RESPONSE_MESSAGE_TYPE = 1640705;
+    //hex: 0x170800
+    public static final int REQUEST_MESSAGE_TYPE = 1509376;
+    //hex: 0x170801
+    public static final int RESPONSE_MESSAGE_TYPE = 1509377;
     private static final int REQUEST_OVERFLOW_POLICY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_OVERFLOW_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

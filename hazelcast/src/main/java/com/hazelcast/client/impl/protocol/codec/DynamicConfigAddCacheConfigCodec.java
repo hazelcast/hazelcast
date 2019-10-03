@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cache configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("1cfac6194512265ad5875af0236a8b5c")
+@Generated("058f3d7d9104da02d8d37da3a0cd22b3")
 public final class DynamicConfigAddCacheConfigCodec {
-    //hex: 0x1E1000
-    public static final int REQUEST_MESSAGE_TYPE = 1970176;
-    //hex: 0x1E1001
-    public static final int RESPONSE_MESSAGE_TYPE = 1970177;
+    //hex: 0x1B0E00
+    public static final int REQUEST_MESSAGE_TYPE = 1773056;
+    //hex: 0x1B0E01
+    public static final int RESPONSE_MESSAGE_TYPE = 1773057;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MANAGEMENT_ENABLED_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_READ_THROUGH_FIELD_OFFSET = REQUEST_MANAGEMENT_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
