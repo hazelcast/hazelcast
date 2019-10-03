@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -126,7 +127,7 @@ public class ClientMessageProtectionTest {
                 List<ClientMessage> subFrames = ClientMessageSplitter.getFragments(50, clientMessage);
                 assertTrue(subFrames.size() > 1);
                 writeClientMessage(os, subFrames.get(0));
-                expected.expect(EOFException.class);
+                expected.expect(SocketTimeoutException.class);
                 readResponse(is);
             }
         }
@@ -184,7 +185,6 @@ public class ClientMessageProtectionTest {
         ClientMessage clientMessage = createAuthenticationMessage(hz, "");
         InetSocketAddress address = getNode(hz).getLocalMember().getSocketAddress(EndpointQualifier.CLIENT);
         try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
-            socket.setSoTimeout(5000);
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
                 os.write(CLIENT_BINARY_NEW.getBytes(UTF8_CHARSET));
                 // it should be enough to write just the first frame
