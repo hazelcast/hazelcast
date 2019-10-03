@@ -62,7 +62,11 @@ public class ManagementCenterService {
         return new ClientDelegatingFuture<>(invocation.invoke(), serializationService, decoder, false);
     }
 
-    public ClientDelegatingFuture<Void> changeClusterState(ClusterState newState) {
+    /**
+     * Changes the cluster's state.
+     */
+    @Nonnull
+    public ICompletableFuture<Void> changeClusterState(ClusterState newState) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCChangeClusterStateCodec.encodeRequest(newState.name()),
@@ -78,7 +82,11 @@ public class ManagementCenterService {
         );
     }
 
-    public ClientDelegatingFuture<MapConfigHolder> getMapConfig(String map) {
+    /**
+     * Gets the config ƒor a given map.
+     */
+    @Nonnull
+    public ICompletableFuture<MapConfigHolder> getMapConfig(String map) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCGetMapConfigCodec.encodeRequest(map),
@@ -92,7 +100,11 @@ public class ManagementCenterService {
         );
     }
 
-    public ClientDelegatingFuture<Void> updateMapConfig(String map, MapConfigHolder newMapConfig) {
+    /**
+     * Updates the config of a given map.
+     */
+    @Nonnull
+    public ICompletableFuture<Void> updateMapConfig(String map, MapConfigHolder newMapConfig) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCUpdateMapConfigCodec.encodeRequest(map, newMapConfig),
