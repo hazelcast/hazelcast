@@ -20,11 +20,11 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -116,80 +116,85 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     @Override
-    public CompletableFuture<ClientMessage> exceptionally(@Nonnull Function<Throwable, ? extends ClientMessage> fn) {
+    public InternalCompletableFuture<ClientMessage> exceptionally(@Nonnull Function<Throwable, ? extends ClientMessage> fn) {
         return super.exceptionally(new CallIdTrackingFunction(fn));
     }
 
     @Override
-    public CompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super ClientMessage> action, @Nonnull Executor executor) {
+    public InternalCompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super ClientMessage> action,
+                                                           @Nonnull Executor executor) {
         return super.thenAcceptAsync(new CallIdTrackingConsumer(action), executor);
     }
 
     @Override
-    public <U> CompletableFuture<U> thenApplyAsync(@Nonnull Function<? super ClientMessage, ? extends U> fn, Executor executor) {
+    public <U> InternalCompletableFuture<U> thenApplyAsync(@Nonnull Function<? super ClientMessage, ? extends U> fn,
+                                                           Executor executor) {
         return super.thenApplyAsync(new CallIdTrackingFunction(fn), executor);
     }
 
     @Override
-    public CompletableFuture<Void> thenRunAsync(@Nonnull Runnable action, @Nonnull Executor executor) {
+    public InternalCompletableFuture<Void> thenRunAsync(@Nonnull Runnable action,
+                                                        @Nonnull Executor executor) {
         return super.thenRunAsync(new CallIdTrackingRunnable(action), executor);
     }
 
     @Override
-    public <U> CompletableFuture<U> thenComposeAsync(@Nonnull Function<? super ClientMessage, ? extends CompletionStage<U>> fn,
-                                                     @Nonnull Executor executor) {
+    public <U> InternalCompletableFuture<U> thenComposeAsync(
+            @Nonnull Function<? super ClientMessage, ? extends CompletionStage<U>> fn,
+            @Nonnull Executor executor) {
         return super.thenComposeAsync(new CallIdTrackingFunction(fn), executor);
     }
 
     @Override
-    public <U, R> CompletableFuture<R> thenCombineAsync(@Nonnull CompletionStage<? extends U> other,
-                                                        @Nonnull BiFunction<? super ClientMessage, ? super U, ? extends R> fn,
-                                                        @Nonnull Executor executor) {
+    public <U, R> InternalCompletableFuture<R> thenCombineAsync(
+            @Nonnull CompletionStage<? extends U> other,
+            @Nonnull BiFunction<? super ClientMessage, ? super U, ? extends R> fn,
+            @Nonnull Executor executor) {
         return super.thenCombineAsync(other, new CallIdTrackingBiFunction(fn), executor);
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBothAsync(@Nonnull CompletionStage<? extends U> other,
-                                                           @Nonnull BiConsumer<? super ClientMessage, ? super U> action,
-                                                           @Nonnull Executor executor) {
+    public <U> InternalCompletableFuture<Void> thenAcceptBothAsync(@Nonnull CompletionStage<? extends U> other,
+                                                                   @Nonnull BiConsumer<? super ClientMessage, ? super U> action,
+                                                                   @Nonnull Executor executor) {
         return super.thenAcceptBothAsync(other, new CallIdTrackingBiConsumer(action), executor);
     }
 
     @Override
-    public CompletableFuture<Void> runAfterBothAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action,
-                                                     @Nonnull Executor executor) {
+    public InternalCompletableFuture<Void> runAfterBothAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action,
+                                                             @Nonnull Executor executor) {
         return super.runAfterBothAsync(other, new CallIdTrackingRunnable(action), executor);
     }
 
     @Override
-    public <U> CompletableFuture<U> applyToEitherAsync(@Nonnull CompletionStage<? extends ClientMessage> other,
-                                                       @Nonnull Function<? super ClientMessage, U> fn,
-                                                       @Nonnull Executor executor) {
+    public <U> InternalCompletableFuture<U> applyToEitherAsync(@Nonnull CompletionStage<? extends ClientMessage> other,
+                                                               @Nonnull Function<? super ClientMessage, U> fn,
+                                                               @Nonnull Executor executor) {
         return super.applyToEitherAsync(other, new CallIdTrackingFunction(fn), executor);
     }
 
     @Override
-    public CompletableFuture<Void> acceptEitherAsync(@Nonnull CompletionStage<? extends ClientMessage> other,
-                                                     @Nonnull Consumer<? super ClientMessage> action,
-                                                     @Nonnull Executor executor) {
+    public InternalCompletableFuture<Void> acceptEitherAsync(@Nonnull CompletionStage<? extends ClientMessage> other,
+                                                             @Nonnull Consumer<? super ClientMessage> action,
+                                                             @Nonnull Executor executor) {
         return super.acceptEitherAsync(other, new CallIdTrackingConsumer(action), executor);
     }
 
     @Override
-    public CompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action,
-                                                       @Nonnull Executor executor) {
+    public InternalCompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action,
+                                                               @Nonnull Executor executor) {
         return super.runAfterEitherAsync(other, new CallIdTrackingRunnable(action), executor);
     }
 
     @Override
-    public CompletableFuture<ClientMessage> whenCompleteAsync(
+    public InternalCompletableFuture<ClientMessage> whenCompleteAsync(
             @Nonnull BiConsumer<? super ClientMessage, ? super Throwable> action, @Nonnull Executor executor) {
         return super.whenCompleteAsync(new CallIdTrackingBiConsumer(action), executor);
     }
 
     @Override
-    public <U> CompletableFuture<U> handleAsync(@Nonnull BiFunction<? super ClientMessage, Throwable, ? extends U> fn,
-                                                @Nonnull Executor executor) {
+    public <U> InternalCompletableFuture<U> handleAsync(@Nonnull BiFunction<? super ClientMessage, Throwable, ? extends U> fn,
+                                                        @Nonnull Executor executor) {
         return super.handleAsync(new CallIdTrackingBiFunction(fn), executor);
     }
 

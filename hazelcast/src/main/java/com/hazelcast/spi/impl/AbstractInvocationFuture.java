@@ -139,22 +139,22 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     // CompletionStage API implementation
     @Override
-    public <U> CompletableFuture<U> thenApply(@Nonnull Function<? super V, ? extends U> fn) {
+    public <U> InternalCompletableFuture<U> thenApply(@Nonnull Function<? super V, ? extends U> fn) {
         return thenApplyAsync(fn, CALLER_RUNS);
     }
 
     @Override
-    public <U> CompletableFuture<U> thenApplyAsync(@Nonnull Function<? super V, ? extends U> fn) {
+    public <U> InternalCompletableFuture<U> thenApplyAsync(@Nonnull Function<? super V, ? extends U> fn) {
         return thenApplyAsync(fn, defaultExecutor());
     }
 
     @Override
-    public <U> CompletableFuture<U> thenApplyAsync(@Nonnull Function<? super V, ? extends U> fn, Executor executor) {
+    public <U> InternalCompletableFuture<U> thenApplyAsync(@Nonnull Function<? super V, ? extends U> fn, Executor executor) {
         requireNonNull(fn);
         requireNonNull(executor);
-        final CompletableFuture<U> future = newCompletableFuture();
+        final InternalCompletableFuture<U> future = newCompletableFuture();
         if (isDone()) {
-            return unblockApply(fn, executor, future);
+            unblockApply(fn, executor, future);
         } else {
             Object result = registerWaiter(new ApplyNode(future, fn), executor);
             if (result != UNRESOLVED) {
@@ -165,23 +165,23 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public CompletableFuture<Void> thenAccept(@Nonnull Consumer<? super V> action) {
+    public InternalCompletableFuture<Void> thenAccept(@Nonnull Consumer<? super V> action) {
         return thenAcceptAsync(action, CALLER_RUNS);
     }
 
     @Override
-    public CompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super V> action) {
+    public InternalCompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super V> action) {
         return thenAcceptAsync(action, defaultExecutor());
     }
 
     @Override
-    public CompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super V> action,
+    public InternalCompletableFuture<Void> thenAcceptAsync(@Nonnull Consumer<? super V> action,
                                                    @Nonnull Executor executor) {
         requireNonNull(action);
         requireNonNull(executor);
-        final CompletableFuture<Void> future = newCompletableFuture();
+        final InternalCompletableFuture<Void> future = newCompletableFuture();
         if (isDone()) {
-            return unblockAccept(action, executor, future);
+           unblockAccept(action, executor, future);
         } else {
             Object result = registerWaiter(new AcceptNode<>(future, action), executor);
             if (result != UNRESOLVED) {
@@ -192,20 +192,20 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public CompletableFuture<Void> thenRun(@Nonnull Runnable action) {
+    public InternalCompletableFuture<Void> thenRun(@Nonnull Runnable action) {
         return thenRunAsync(action, CALLER_RUNS);
     }
 
     @Override
-    public CompletableFuture<Void> thenRunAsync(@Nonnull Runnable action) {
+    public InternalCompletableFuture<Void> thenRunAsync(@Nonnull Runnable action) {
         return thenRunAsync(action, defaultExecutor());
     }
 
     @Override
-    public CompletableFuture<Void> thenRunAsync(@Nonnull Runnable action, @Nonnull Executor executor) {
+    public InternalCompletableFuture<Void> thenRunAsync(@Nonnull Runnable action, @Nonnull Executor executor) {
         requireNonNull(action);
         requireNonNull(executor);
-        final CompletableFuture<Void> future = newCompletableFuture();
+        final InternalCompletableFuture<Void> future = newCompletableFuture();
         if (isDone()) {
             unblockRun(action, executor, future);
         } else {
@@ -218,21 +218,21 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public <U> CompletableFuture<U> handle(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn) {
+    public <U> InternalCompletableFuture<U> handle(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn) {
         return handleAsync(fn, CALLER_RUNS);
     }
 
     @Override
-    public <U> CompletableFuture<U> handleAsync(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn) {
+    public <U> InternalCompletableFuture<U> handleAsync(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn) {
         return handleAsync(fn, defaultExecutor());
     }
 
     @Override
-    public <U> CompletableFuture<U> handleAsync(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn,
+    public <U> InternalCompletableFuture<U> handleAsync(@Nonnull BiFunction<? super V, Throwable, ? extends U> fn,
                                                 @Nonnull Executor executor) {
         requireNonNull(fn);
         requireNonNull(executor);
-        final CompletableFuture<U> future = newCompletableFuture();
+        final InternalCompletableFuture<U> future = newCompletableFuture();
         if (isDone()) {
             unblockHandle(fn, executor, future);
         } else {
@@ -245,21 +245,21 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public CompletableFuture<V> whenComplete(@Nonnull BiConsumer<? super V, ? super Throwable> action) {
+    public InternalCompletableFuture<V> whenComplete(@Nonnull BiConsumer<? super V, ? super Throwable> action) {
         return whenCompleteAsync(action, CALLER_RUNS);
     }
 
     @Override
-    public CompletableFuture<V> whenCompleteAsync(@Nonnull BiConsumer<? super V, ? super Throwable> action) {
+    public InternalCompletableFuture<V> whenCompleteAsync(@Nonnull BiConsumer<? super V, ? super Throwable> action) {
         return whenCompleteAsync(action, defaultExecutor());
     }
 
     @Override
-    public CompletableFuture<V> whenCompleteAsync(@Nonnull BiConsumer<? super V, ? super Throwable> action,
+    public InternalCompletableFuture<V> whenCompleteAsync(@Nonnull BiConsumer<? super V, ? super Throwable> action,
                                                   @Nonnull Executor executor) {
         requireNonNull(action);
         requireNonNull(executor);
-        final CompletableFuture<V> future = newCompletableFuture();
+        final InternalCompletableFuture<V> future = newCompletableFuture();
         if (isDone()) {
             unblockWhenComplete(action, executor, future);
         } else {
@@ -272,21 +272,21 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public <U> CompletableFuture<U> thenCompose(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn) {
+    public <U> InternalCompletableFuture<U> thenCompose(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn) {
         return thenComposeAsync(fn, CALLER_RUNS);
     }
 
     @Override
-    public <U> CompletableFuture<U> thenComposeAsync(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn) {
+    public <U> InternalCompletableFuture<U> thenComposeAsync(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn) {
         return thenComposeAsync(fn, defaultExecutor());
     }
 
     @Override
-    public <U> CompletableFuture<U> thenComposeAsync(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn,
+    public <U> InternalCompletableFuture<U> thenComposeAsync(@Nonnull Function<? super V, ? extends CompletionStage<U>> fn,
                                                      @Nonnull Executor executor) {
         requireNonNull(fn);
         requireNonNull(executor);
-        final CompletableFuture<U> future = newCompletableFuture();
+        final InternalCompletableFuture<U> future = newCompletableFuture();
         if (isDone()) {
             unblockCompose(fn, executor, future);
         } else {
@@ -299,25 +299,25 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public <U, R> CompletableFuture<R> thenCombine(@Nonnull CompletionStage<? extends U> other,
+    public <U, R> InternalCompletableFuture<R> thenCombine(@Nonnull CompletionStage<? extends U> other,
                                                  @Nonnull BiFunction<? super V, ? super U, ? extends R> fn) {
         return thenCombineAsync(other, fn, CALLER_RUNS);
     }
 
     @Override
-    public <U, R> CompletableFuture<R> thenCombineAsync(@Nonnull CompletionStage<? extends U> other,
+    public <U, R> InternalCompletableFuture<R> thenCombineAsync(@Nonnull CompletionStage<? extends U> other,
                                                         @Nonnull BiFunction<? super V, ? super U, ? extends R> fn) {
         return thenCombineAsync(other, fn, defaultExecutor());
     }
 
     @Override
-    public <U, R> CompletableFuture<R> thenCombineAsync(@Nonnull CompletionStage<? extends U> other,
+    public <U, R> InternalCompletableFuture<R> thenCombineAsync(@Nonnull CompletionStage<? extends U> other,
                                                         @Nonnull BiFunction<? super V, ? super U, ? extends R> fn,
                                                         @Nonnull Executor executor) {
         requireNonNull(other);
         requireNonNull(fn);
         requireNonNull(executor);
-        final CompletableFuture<R> future = newCompletableFuture();
+        final InternalCompletableFuture<R> future = newCompletableFuture();
         if (isDone()) {
             unblockCombine(other, fn, executor, future);
         } else {
@@ -330,24 +330,24 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBoth(@Nonnull CompletionStage<? extends U> other,
+    public <U> InternalCompletableFuture<Void> thenAcceptBoth(@Nonnull CompletionStage<? extends U> other,
                                                       @Nonnull BiConsumer<? super V, ? super U> action) {
         return thenAcceptBothAsync(other, action, CALLER_RUNS);
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBothAsync(@Nonnull CompletionStage<? extends U> other,
+    public <U> InternalCompletableFuture<Void> thenAcceptBothAsync(@Nonnull CompletionStage<? extends U> other,
                                                            @Nonnull BiConsumer<? super V, ? super U> action) {
         return thenAcceptBothAsync(other, action, defaultExecutor());
     }
 
     @Override
-    public <U> CompletableFuture<Void> thenAcceptBothAsync(@Nonnull CompletionStage<? extends U> other,
+    public <U> InternalCompletableFuture<Void> thenAcceptBothAsync(@Nonnull CompletionStage<? extends U> other,
                                                            @Nonnull BiConsumer<? super V, ? super U> action,
                                                            @Nonnull Executor executor) {
         requireNonNull(action);
         requireNonNull(executor);
-        final CompletableFuture<Void> future = newCompletableFuture();
+        final InternalCompletableFuture<Void> future = newCompletableFuture();
         final CompletableFuture<? extends U> otherFuture =
                 (other instanceof CompletableFuture) ? (CompletableFuture<? extends U>) other : other.toCompletableFuture();
 
@@ -363,23 +363,23 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public CompletableFuture<Void> runAfterBoth(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
+    public InternalCompletableFuture<Void> runAfterBoth(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
         return runAfterBothAsync(other, action, CALLER_RUNS);
     }
 
     @Override
-    public CompletableFuture<Void> runAfterBothAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
+    public InternalCompletableFuture<Void> runAfterBothAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
         return runAfterBothAsync(other, action, defaultExecutor());
     }
 
     @Override
-    public CompletableFuture<Void> runAfterBothAsync(@Nonnull CompletionStage<?> other,
+    public InternalCompletableFuture<Void> runAfterBothAsync(@Nonnull CompletionStage<?> other,
                                                      @Nonnull Runnable action,
                                                      @Nonnull Executor executor) {
         requireNonNull(other);
         requireNonNull(action);
         requireNonNull(executor);
-        final CompletableFuture<Void> future = newCompletableFuture();
+        final InternalCompletableFuture<Void> future = newCompletableFuture();
         final CompletableFuture<?> otherFuture =
                 (other instanceof CompletableFuture) ? (CompletableFuture<?>) other : other.toCompletableFuture();
 
@@ -395,25 +395,25 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public <U> CompletableFuture<U> applyToEither(@Nonnull CompletionStage<? extends V> other,
+    public <U> InternalCompletableFuture<U> applyToEither(@Nonnull CompletionStage<? extends V> other,
                                                   @Nonnull Function<? super V, U> fn) {
         return applyToEitherAsync(other, fn, CALLER_RUNS);
     }
 
     @Override
-    public <U> CompletableFuture<U> applyToEitherAsync(@Nonnull CompletionStage<? extends V> other,
+    public <U> InternalCompletableFuture<U> applyToEitherAsync(@Nonnull CompletionStage<? extends V> other,
                                                        @Nonnull Function<? super V, U> fn) {
         return applyToEitherAsync(other, fn, defaultExecutor());
     }
 
     @Override
-    public <U> CompletableFuture<U> applyToEitherAsync(@Nonnull CompletionStage<? extends V> other,
+    public <U> InternalCompletableFuture<U> applyToEitherAsync(@Nonnull CompletionStage<? extends V> other,
                                                        @Nonnull Function<? super V, U> fn,
                                                        @Nonnull Executor executor) {
         requireNonNull(other);
         requireNonNull(fn);
         requireNonNull(executor);
-        final CompletableFuture<U> future = newCompletableFuture();
+        final InternalCompletableFuture<U> future = newCompletableFuture();
         final CompletableFuture<? extends V> otherFuture =
                 (other instanceof CompletableFuture) ? (CompletableFuture<? extends V>) other : other.toCompletableFuture();
 
@@ -433,25 +433,25 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public CompletableFuture<Void> acceptEither(@Nonnull CompletionStage<? extends V> other,
+    public InternalCompletableFuture<Void> acceptEither(@Nonnull CompletionStage<? extends V> other,
                                                 @Nonnull Consumer<? super V> action) {
         return acceptEitherAsync(other, action, CALLER_RUNS);
     }
 
     @Override
-    public CompletableFuture<Void> acceptEitherAsync(@Nonnull CompletionStage<? extends V> other,
+    public InternalCompletableFuture<Void> acceptEitherAsync(@Nonnull CompletionStage<? extends V> other,
                                                      @Nonnull Consumer<? super V> action) {
         return acceptEitherAsync(other, action, defaultExecutor());
     }
 
     @Override
-    public CompletableFuture<Void> acceptEitherAsync(@Nonnull CompletionStage<? extends V> other,
+    public InternalCompletableFuture<Void> acceptEitherAsync(@Nonnull CompletionStage<? extends V> other,
                                                      @Nonnull Consumer<? super V> action,
                                                      @Nonnull Executor executor) {
         requireNonNull(other);
         requireNonNull(action);
         requireNonNull(executor);
-        final CompletableFuture<Void> future = newCompletableFuture();
+        final InternalCompletableFuture<Void> future = newCompletableFuture();
         final CompletableFuture<? extends V> otherFuture =
                 (other instanceof CompletableFuture) ? (CompletableFuture<? extends V>) other : other.toCompletableFuture();
 
@@ -470,22 +470,22 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         return future;
     }
 
-    public CompletableFuture<Void> runAfterEither(CompletionStage<?> other, Runnable action) {
+    public InternalCompletableFuture<Void> runAfterEither(CompletionStage<?> other, Runnable action) {
         return runAfterEitherAsync(other, action, CALLER_RUNS);
     }
 
-    public CompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
+    public InternalCompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
         return runAfterEitherAsync(other, action, defaultExecutor());
     }
 
-    public CompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other,
+    public InternalCompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other,
                                                        @Nonnull Runnable action,
                                                        @Nonnull Executor executor) {
         requireNonNull(other);
         requireNonNull(action);
         requireNonNull(executor);
 
-        final CompletableFuture<Void> future = newCompletableFuture();
+        final InternalCompletableFuture<Void> future = newCompletableFuture();
         final CompletableFuture<?> otherFuture =
                 (other instanceof CompletableFuture) ? (CompletableFuture<?>) other : other.toCompletableFuture();
 
@@ -505,7 +505,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public CompletableFuture<V> toCompletableFuture() {
+    public InternalCompletableFuture<V> toCompletableFuture() {
         return this;
     }
 
@@ -670,17 +670,34 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public void obtrudeValue(V value) {
-        throw new UnsupportedOperationException("implement this");
+        obtrude0(value);
     }
 
     @Override
     public void obtrudeException(Throwable ex) {
-        throw new UnsupportedOperationException("implement this");
+        obtrude0(wrapThrowable(ex));
+    }
+
+    private void obtrude0(Object value) {
+        for (; ; ) {
+            final Object oldState = state;
+            if (compareAndSetState(oldState, value)) {
+                onComplete();
+                unblockAll(oldState, DEFAULT_ASYNC_EXECUTOR);
+                break;
+            }
+        }
     }
 
     @Override
     public int getNumberOfDependents() {
-        throw new UnsupportedOperationException("implement this");
+        int dependents = 0;
+        Object index = state;
+        while (index instanceof WaitNode) {
+            dependents++;
+            index = ((WaitNode) index).next;
+        }
+        return dependents;
     }
 
     private void unblockAll(Object waiter, Executor executor) {
@@ -699,12 +716,12 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
     }
 
-    private CompletableFuture<Void> unblockAccept(@Nonnull final Consumer<? super V> consumer,
+    private void unblockAccept(@Nonnull final Consumer<? super V> consumer,
                                                     @Nonnull Executor executor,
-                                                    @Nonnull CompletableFuture<Void> future) {
+                                                    @Nonnull InternalCompletableFuture<Void> future) {
         final Object value = resolve(state);
         if (cascadeException(value, future)) {
-            return future;
+            return;
         }
         try {
             executor.execute(() -> {
@@ -718,7 +735,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         } catch (RejectedExecutionException e) {
             future.completeExceptionally(wrapToInstanceNotActiveException(e));
         }
-        return future;
     }
 
     /**
@@ -774,12 +790,12 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         return returnOrThrowWithJoinConventions(value);
     }
 
-    protected <U> CompletableFuture<U> unblockApply(@Nonnull final Function<? super V, ? extends U> function,
-                                                    @Nonnull Executor executor,
-                                                    @Nonnull CompletableFuture<U> future) {
+    protected <U> void unblockApply(@Nonnull final Function<? super V, ? extends U> function,
+                                    @Nonnull Executor executor,
+                                    @Nonnull InternalCompletableFuture<U> future) {
         final Object value = resolve(state);
         if (cascadeException(value, future)) {
-            return future;
+            return;
         }
         try {
             executor.execute(() -> {
@@ -793,7 +809,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         } catch (RejectedExecutionException e) {
             future.completeExceptionally(wrapToInstanceNotActiveException(e));
         }
-        return future;
     }
 
     protected void unblockRun(@Nonnull final Runnable runnable,
@@ -864,10 +879,10 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
-    public CompletableFuture<V> exceptionally(@Nonnull Function<Throwable, ? extends V> fn) {
+    public InternalCompletableFuture<V> exceptionally(@Nonnull Function<Throwable, ? extends V> fn) {
         requireNonNull(fn);
         Object result = resolve(state);
-        final CompletableFuture<V> future = newCompletableFuture();
+        final InternalCompletableFuture<V> future = newCompletableFuture();
         for (; ; ) {
             if (result != UNRESOLVED && isDone()) {
                 if (result instanceof ExceptionalResult) {
@@ -929,7 +944,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     protected <U, R> void unblockCombine(@Nonnull CompletionStage<? extends U> other,
                                                          @Nonnull final BiFunction<? super V, ? super U, ? extends R> function,
                                                          @Nonnull Executor executor,
-                                                         @Nonnull CompletableFuture<R> future) {
+                                                         @Nonnull InternalCompletableFuture<R> future) {
         Object result = resolve(state);
         final CompletableFuture<? extends U> otherFuture =
                 (other instanceof CompletableFuture) ? (CompletableFuture<? extends U>) other : other.toCompletableFuture();
@@ -985,7 +1000,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     private <U> void unblockAcceptBoth(@Nonnull CompletableFuture<? extends U> otherFuture,
                                          @Nonnull final BiConsumer<? super V, ? super U> action,
                                          @Nonnull Executor executor,
-                                         @Nonnull CompletableFuture<Void> future) {
+                                         @Nonnull InternalCompletableFuture<Void> future) {
         final Object value = resolve(state);
         // in case this future is completed exceptionally, the result is also exceptionally completed
         // without checking whether otherFuture is completed or not
@@ -1275,7 +1290,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         return future;
     }
 
-    <T> CompletableFuture<T> newCompletableFuture() {
+    <T> InternalCompletableFuture<T> newCompletableFuture() {
         return new InternalCompletableFuture<>();
     }
 
