@@ -66,6 +66,7 @@ public class TcpIpNetworkingService
 
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
+    // accessed only in synchronized methods
     private ScheduledFuture refreshStatsFuture;
     private final RefreshNetworkStatsTask refreshStatsTask;
     private final ServerSocketRegistry registry;
