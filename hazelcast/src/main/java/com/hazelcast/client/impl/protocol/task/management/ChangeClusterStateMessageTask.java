@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeClusterStateOperation;
@@ -55,7 +56,7 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ChangeClusterStateOperation(parameters.newState.getState());
+        return new ChangeClusterStateOperation(ClusterState.valueOf(parameters.newState));
     }
 
     @Override

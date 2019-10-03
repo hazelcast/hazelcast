@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
-import com.hazelcast.client.impl.protocol.codec.holder.ClusterStateHolder;
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
@@ -34,9 +32,9 @@ import com.hazelcast.nio.serialization.Data;
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 
 public final class CustomTypeFactory {
 
@@ -140,10 +138,5 @@ public final class CustomTypeFactory {
 
     public static DurationConfig createDurationConfig(long durationAmount, String timeUnit) {
         return new DurationConfig(durationAmount, TimeUnit.valueOf(timeUnit));
-    }
-
-
-    public static ClusterStateHolder createClusterStateHolder(String state) {
-        return new ClusterStateHolder(ClusterState.valueOf(state));
     }
 }

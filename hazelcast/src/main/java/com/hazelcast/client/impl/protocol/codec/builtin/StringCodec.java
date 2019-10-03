@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.nio.Bits;
 
 import java.util.ListIterator;
@@ -40,10 +39,6 @@ public final class StringCodec {
 
     public static void encode(ClientMessage clientMessage, ExpiryPolicyType expiryPolicyType) {
         encode(clientMessage, expiryPolicyType.name());
-    }
-
-    public static void encode(ClientMessage clientMessage, ClusterState clusterState) {
-        encode(clientMessage, clusterState.name());
     }
 
     public static String decode(ListIterator<ClientMessage.Frame> iterator) {
