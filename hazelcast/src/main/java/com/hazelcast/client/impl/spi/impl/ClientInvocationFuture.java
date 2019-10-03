@@ -63,11 +63,6 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     @Override
-    protected Throwable unwrap(ExceptionalResult result) {
-        return result.getCause();
-    }
-
-    @Override
     protected void onInterruptDetected() {
         completeExceptionallyInternal(new InterruptedException());
     }

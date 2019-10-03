@@ -745,15 +745,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     protected abstract Exception wrapToInstanceNotActiveException(RejectedExecutionException e);
 
-    // this method should not be needed; but there is a difference between client and server how it handles async throwables
-    protected Throwable unwrap(ExceptionalResult result) {
-        Throwable throwable = result.cause;
-        if (throwable instanceof ExecutionException && throwable.getCause() != null) {
-            return throwable.getCause();
-        }
-        return throwable;
-    }
-
     protected V returnOrThrowWithJoinConventions(Object resolved) {
         if (!(resolved instanceof ExceptionalResult)) {
             return (V) resolved;
