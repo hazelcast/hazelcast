@@ -21,7 +21,6 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -40,7 +39,7 @@ import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
  * @see QueryCacheYamlConfigBuilderHelper
  */
 abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfigBuilderHelper {
-    private final boolean domLevel3;
+    protected final boolean domLevel3;
 
     protected AbstractQueryCacheConfigBuilderHelper(boolean domLevel3) {
         this.domLevel3 = domLevel3;
@@ -147,11 +146,4 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
     protected abstract void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig);
 
     protected abstract void queryCacheIndexesHandle(Node childNode, QueryCacheConfig queryCacheConfig);
-
-    protected void handleIndexNode(QueryCacheConfig queryCacheConfig, Node indexNode) {
-        final NamedNodeMap attrs = indexNode.getAttributes();
-        boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
-        String attribute = getTextContent(indexNode);
-        queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
-    }
 }

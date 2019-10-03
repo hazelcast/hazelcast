@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
@@ -91,9 +92,9 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
     public void testViaAccessingInternalIndexes() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(MAP_NAME);
-        map.addIndex("age", false);
-        map.addIndex("active", false);
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "age");
+        map.addIndex(IndexType.HASH, "active");
+        map.addIndex(IndexType.HASH, "name");
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
@@ -114,9 +115,9 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
     public void testIndex_viaQueries() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(MAP_NAME);
-        map.addIndex("age", false);
-        map.addIndex("active", false);
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "age");
+        map.addIndex(IndexType.HASH, "active");
+        map.addIndex(IndexType.HASH, "name");
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
@@ -133,9 +134,9 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
     public void testEntryProcessorChanges_viaQueries() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(MAP_NAME);
-        map.addIndex("age", false);
-        map.addIndex("active", false);
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "age");
+        map.addIndex(IndexType.HASH, "active");
+        map.addIndex(IndexType.HASH, "name");
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
@@ -203,7 +204,16 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
         List<Index> result = new ArrayList<Index>();
         for (int partitionId : mapServiceContext.getOwnedPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
-            result.add(indexes.getIndex(attribute));
+
+            for (InternalIndex index : indexes.getIndexes()) {
+                for (String component : index.getComponents()) {
+                    if (component.equals(IndexUtils.canonicalizeAttribute(attribute))) {
+                        result.add(index);
+
+                        break;
+                    }
+                }
+            }
         }
         return result;
     }

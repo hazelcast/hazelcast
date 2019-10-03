@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockProxySupport;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreInfo;
+import com.hazelcast.internal.locksupport.LockProxySupport;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockStoreInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -129,7 +129,7 @@ public class LockInterceptorServiceTest extends HazelcastTestSupport {
 
         @Override
         public void init(NodeEngine nodeEngine, Properties properties) {
-            final LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
+            final LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
             if (lockService != null) {
                 lockService.registerLockStoreConstructor(SERVICE_NAME, new LockStoreInfoConstructor());
             }

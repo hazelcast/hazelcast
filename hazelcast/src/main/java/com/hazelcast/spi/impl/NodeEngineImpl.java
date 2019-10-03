@@ -38,6 +38,7 @@ import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.StatisticsAwareMetricsSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -50,7 +51,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
@@ -83,10 +83,10 @@ import java.util.LinkedList;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.CONCURRENT_WINDOW_MS;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.CONCURRENT_WINDOW_MS;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -216,11 +216,11 @@ public class NodeEngineImpl implements NodeEngine {
 
         MetricsConfig metricsConfig = node.getConfig().getMetricsConfig();
         if (metricsConfig.isEnabled() && metricsConfig.isMetricsForDataStructuresEnabled()) {
-            new StatisticsAwareMetricsSet(serviceManager, this).register(metricsRegistry);
+            StatisticsAwareMetricsSet.register(serviceManager, metricsRegistry);
         }
 
-        metricsRegistry.scanAndRegister(node.getNodeExtension().getMemoryStats(), "memory");
-        metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
+        metricsRegistry.registerStaticMetrics(node.getNodeExtension().getMemoryStats(), "memory");
+        metricsRegistry.provideMetrics(operationService, proxyService, eventService, operationParker);
 
         serviceManager.start();
         proxyService.init();

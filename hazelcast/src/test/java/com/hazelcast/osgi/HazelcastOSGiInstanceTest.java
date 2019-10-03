@@ -33,7 +33,7 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.lock.ILock;
+import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
@@ -261,15 +261,18 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getLockCalledSuccessfullyOverOSGiInstance() {
-        ILock mockLock = mock(ILock.class);
+        FencedLock mockLock = mock(FencedLock.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getLock("my-lock")).thenReturn(mockLock);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
 
-        assertEquals(mockLock, hazelcastOSGiInstance.getLock("my-lock"));
+        when(cpSubsystem.getLock("my-lock")).thenReturn(mockLock);
 
-        verify(mockHazelcastInstance).getLock("my-lock");
+        assertEquals(mockLock, hazelcastOSGiInstance.getCPSubsystem().getLock("my-lock"));
+
+        verify(cpSubsystem).getLock("my-lock");
     }
 
     @Test

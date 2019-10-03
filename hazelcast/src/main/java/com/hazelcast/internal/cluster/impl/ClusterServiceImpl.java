@@ -149,9 +149,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");
-        metricsRegistry.scanAndRegister(clusterHeartbeatManager, "cluster.heartbeat");
-        metricsRegistry.scanAndRegister(this, "cluster");
+        metricsRegistry.registerStaticMetrics(clusterClock, "cluster.clock");
+        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, "cluster.heartbeat");
+        metricsRegistry.registerStaticMetrics(this, "cluster");
     }
 
     @Override

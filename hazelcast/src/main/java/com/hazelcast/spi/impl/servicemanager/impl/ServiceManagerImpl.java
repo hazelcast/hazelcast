@@ -27,8 +27,8 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
@@ -143,7 +143,7 @@ public final class ServiceManagerImpl implements ServiceManager {
 
         logger.finest("Registering default services...");
         registerService(MapService.SERVICE_NAME, createService(MapService.class));
-        registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
+        registerService(LockSupportService.SERVICE_NAME, new LockSupportServiceImpl(nodeEngine));
         registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
         registerService(TopicService.SERVICE_NAME, new TopicService());
         registerService(ReliableTopicService.SERVICE_NAME, new ReliableTopicService(nodeEngine));

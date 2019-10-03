@@ -19,6 +19,7 @@ package com.hazelcast.client.standalone;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
@@ -47,7 +48,7 @@ public class ClientEntryListenerDisconnectTest {
 
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         IMap<Integer, GenericEvent> map = hazelcastInstance.getMap("test");
-        map.addIndex("userId", false);
+        map.addIndex(IndexType.HASH, "userId");
 
         Hazelcast.newHazelcastInstance(config);
 

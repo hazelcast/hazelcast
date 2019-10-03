@@ -29,7 +29,6 @@ import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -58,7 +57,6 @@ import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
-import com.hazelcast.internal.config.LockConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.internal.config.QueueConfigReadOnly;
@@ -365,42 +363,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setQueueConfigs(Map<String, QueueConfig> queueConfigs) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    public LockConfig findLockConfig(String name) {
-        return new LockConfigReadOnly(getLockConfigInternal(name, "default"));
-    }
-
-    @Override
-    public LockConfig getLockConfig(String name) {
-        return getLockConfigInternal(name, name);
-    }
-
-    private LockConfig getLockConfigInternal(String name, String fallbackName) {
-        return (LockConfig) configSearcher.getConfig(name, fallbackName, supplierFor(LockConfig.class));
-    }
-
-    @Override
-    public Config addLockConfig(LockConfig lockConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getLockConfigs(),
-                lockConfig.getName(), lockConfig);
-        if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(lockConfig);
-        }
-        return this;
-    }
-
-    @Override
-    public Map<String, LockConfig> getLockConfigs() {
-        Map<String, LockConfig> staticLockConfigs = staticConfig.getLockConfigs();
-        Map<String, LockConfig> dynamiclockConfigs = configurationService.getLockConfigs();
-        return aggregate(staticLockConfigs, dynamiclockConfigs);
-    }
-
-    @Override
-    public Config setLockConfigs(Map<String, LockConfig> lockConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

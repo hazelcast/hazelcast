@@ -53,7 +53,7 @@ public class FileMetricSetTest extends HazelcastTestSupport {
         File file = new File(System.getProperty("user.home"));
 
         LongGauge freeSpaceGauge =
-                metricsRegistry.newLongGauge("[dir=user.home,unit=bytes,metric=file.partition.freeSpace]");
+                metricsRegistry.newLongGauge("file.partition[user.home].freeSpace");
 
         assertAlmostEquals(file.getFreeSpace(), freeSpaceGauge.read());
     }
@@ -63,7 +63,7 @@ public class FileMetricSetTest extends HazelcastTestSupport {
         File file = new File(System.getProperty("user.home"));
 
         LongGauge totalSpaceGauge =
-                metricsRegistry.newLongGauge("[dir=user.home,unit=bytes,metric=file.partition.totalSpace]");
+                metricsRegistry.newLongGauge("file.partition[user.home].totalSpace");
 
         assertAlmostEquals(file.getTotalSpace(), totalSpaceGauge.read());
     }
@@ -73,7 +73,7 @@ public class FileMetricSetTest extends HazelcastTestSupport {
         File file = new File(System.getProperty("user.home"));
 
         LongGauge usableSpaceGauge =
-                metricsRegistry.newLongGauge("[dir=user.home,unit=bytes,metric=file.partition.usableSpace]");
+                metricsRegistry.newLongGauge("file.partition[user.home].usableSpace");
 
         assertAlmostEquals(file.getUsableSpace(), usableSpaceGauge.read());
     }

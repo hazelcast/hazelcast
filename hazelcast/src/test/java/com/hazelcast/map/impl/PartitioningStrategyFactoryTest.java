@@ -24,7 +24,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -137,13 +136,8 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
 
         map.destroy();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertFalse("Key should have been removed from cache", partitioningStrategyFactory.cache.containsKey(mapName));
-            }
-        }, 20);
+        assertTrueEventually(() -> assertFalse("Key should have been removed from cache",
+                partitioningStrategyFactory.cache.containsKey(mapName)), 20);
     }
 
     @Override

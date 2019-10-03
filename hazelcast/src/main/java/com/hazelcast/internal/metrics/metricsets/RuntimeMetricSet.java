@@ -44,11 +44,11 @@ public final class RuntimeMetricSet {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
 
-        metricsRegistry.register(runtime, "runtime.freeMemory", MANDATORY, Runtime::freeMemory);
-        metricsRegistry.register(runtime, "runtime.totalMemory", MANDATORY, Runtime::totalMemory);
-        metricsRegistry.register(runtime, "runtime.maxMemory", MANDATORY, Runtime::maxMemory);
-        metricsRegistry.register(runtime, "runtime.usedMemory", MANDATORY, JVMUtil::usedMemory);
-        metricsRegistry.register(runtime, "runtime.availableProcessors", MANDATORY, Runtime::availableProcessors);
-        metricsRegistry.register(mxBean, "runtime.uptime", MANDATORY, RuntimeMXBean::getUptime);
+        metricsRegistry.registerStaticProbe(runtime, "runtime.freeMemory", MANDATORY, Runtime::freeMemory);
+        metricsRegistry.registerStaticProbe(runtime, "runtime.totalMemory", MANDATORY, Runtime::totalMemory);
+        metricsRegistry.registerStaticProbe(runtime, "runtime.maxMemory", MANDATORY, Runtime::maxMemory);
+        metricsRegistry.registerStaticProbe(runtime, "runtime.usedMemory", MANDATORY, JVMUtil::usedMemory);
+        metricsRegistry.registerStaticProbe(runtime, "runtime.availableProcessors", MANDATORY, Runtime::availableProcessors);
+        metricsRegistry.registerStaticProbe(mxBean, "runtime.uptime", MANDATORY, RuntimeMXBean::getUptime);
     }
 }

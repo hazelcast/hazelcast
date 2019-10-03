@@ -19,15 +19,14 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricsExtractor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionListener;
@@ -35,11 +34,15 @@ import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedRunnable;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -55,17 +58,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.setChannelOptions;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableSet;
 
 public class TcpIpEndpointManager
-        implements EndpointManager<TcpIpConnection>, Consumer<Packet> {
+        implements EndpointManager<TcpIpConnection>, Consumer<Packet>, DynamicMetricsProvider {
 
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;
@@ -106,14 +109,14 @@ public class TcpIpEndpointManager
     private final MwCounter closedCount = newMwCounter();
 
     @Probe(name = "acceptedSocketCount", level = MANDATORY)
-    private final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<Channel, Boolean>());
+    private final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<>());
 
     private final EndpointConnectionLifecycleListener connectionLifecycleListener = new EndpointConnectionLifecycleListener();
 
     TcpIpEndpointManager(NetworkingService networkingService, EndpointConfig endpointConfig,
                          ChannelInitializerProvider channelInitializerProvider, IOService ioService,
-                         LoggingService loggingService, MetricsRegistry metricsRegistry,
-                         HazelcastProperties properties, Set<ProtocolType> supportedProtocolTypes) {
+                         LoggingService loggingService, HazelcastProperties properties,
+                         Set<ProtocolType> supportedProtocolTypes) {
         this.networkingService = networkingService;
         this.endpointConfig = endpointConfig;
         this.endpointQualifier = endpointConfig != null ? endpointConfig.getQualifier() : null;
@@ -124,14 +127,6 @@ public class TcpIpEndpointManager
 
         boolean spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
         this.bindHandler = new BindHandler(this, ioService, logger, spoofingChecks, supportedProtocolTypes);
-
-        if (endpointQualifier == null) {
-            metricsRegistry.scanAndRegister(this, "tcp.connection");
-        } else {
-            metricsRegistry.newProbeBuilder("tcp.connection")
-                           .withTag("endpoint", endpointQualifier.toMetricsPrefixString())
-                           .scanAndRegister(this);
-        }
     }
 
     public NetworkingService getNetworkingService() {
@@ -384,6 +379,18 @@ public class TcpIpEndpointManager
     // test support
     int getConnectionListenersCount() {
         return connectionListeners.size();
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+        if (endpointQualifier == null) {
+            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.connection");
+            extractor.extractMetrics(tagger, this);
+        } else {
+            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.connection")
+                                                .withIdTag("endpoint", endpointQualifier.toMetricsPrefixString());
+            extractor.extractMetrics(tagger, this);
+        }
     }
 
     private final class SendTask

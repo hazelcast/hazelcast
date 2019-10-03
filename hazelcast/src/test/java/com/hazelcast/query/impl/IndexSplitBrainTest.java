@@ -17,8 +17,9 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -105,7 +106,7 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
     protected Config config() {
         Config config = super.config();
         MapConfig mapConfig = config.getMapConfig(mapName);
-        mapConfig.addMapIndexConfig(new MapIndexConfig("id", false));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "id"));
         return config;
     }
 

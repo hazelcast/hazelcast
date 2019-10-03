@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
+import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.MapStore;
 
-import com.hazelcast.map.EntryLoader.MetadataAwareValue;
+import java.util.UUID;
 
 /**
  * Represents a candidate entry to be deleted from {@link MapStore}
@@ -32,6 +33,7 @@ class DeletedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     private final int partitionId;
     private long storeTime;
     private long sequence;
+    private UUID txnId;
 
     DeletedDelayedEntry(K key, long storeTime, int partitionId) {
         this.key = key;
@@ -79,6 +81,16 @@ class DeletedDelayedEntry<K, V> implements DelayedEntry<K, V> {
         return sequence;
     }
 
+    @Override
+    public void setTxnId(UUID txnId) {
+        this.txnId = txnId;
+    }
+
+    @Override
+    public UUID getTxnId() {
+        return txnId;
+    }
+
     /**
      * This method is used when we are cleaning processed instances of this class.
      * Caring only reference equality of objects because wanting exactly remove the same instance
@@ -103,6 +115,7 @@ class DeletedDelayedEntry<K, V> implements DelayedEntry<K, V> {
                 + ", partitionId=" + partitionId
                 + ", storeTime=" + storeTime
                 + ", sequence=" + sequence
+                + ", txnId=" + txnId
                 + '}';
     }
 }

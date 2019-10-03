@@ -52,7 +52,8 @@ public abstract class BasePutOperation
 
     private EntryEventType getEventType() {
         if (eventType == null) {
-            eventType = oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
+            eventType = oldValue == null
+                    ? EntryEventType.ADDED : EntryEventType.UPDATED;
         }
         return eventType;
     }

@@ -18,36 +18,28 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
-import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
-import com.hazelcast.spi.impl.operationservice.BlockingOperation;
-import com.hazelcast.spi.impl.operationservice.CallStatus;
-import com.hazelcast.spi.impl.operationservice.Notifier;
-import com.hazelcast.spi.impl.operationservice.Offload;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
-import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -57,11 +49,19 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -88,7 +88,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
+class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvider {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -141,17 +141,17 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
+    public void provideStaticMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
-            registry.newProbeBuilder("operation.partition")
+            registry.newMetricTagger("operation.partition")
                     .withTag("partitionId", String.valueOf(partitionId))
-                    .scanAndRegister(this);
+                    .registerStaticMetrics(this);
         } else if (partitionId == -1) {
-            registry.newProbeBuilder("operation.generic")
+            registry.newMetricTagger("operation.generic")
                     .withTag("genericId", String.valueOf(genericId))
-                    .scanAndRegister(this);
+                    .registerStaticMetrics(this);
         } else {
-            registry.scanAndRegister(this, "operation.adhoc");
+            registry.newMetricTagger("operation.adhoc").registerStaticMetrics(this);
         }
     }
 

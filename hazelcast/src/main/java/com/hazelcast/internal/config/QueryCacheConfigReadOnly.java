@@ -19,7 +19,7 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 
@@ -39,12 +39,10 @@ public class QueryCacheConfigReadOnly extends QueryCacheConfig {
     }
 
     @Override
-    public List<MapIndexConfig> getIndexConfigs() {
-        List<MapIndexConfig> mapIndexConfigs = super.getIndexConfigs();
-        List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
-        for (MapIndexConfig mapIndexConfig : mapIndexConfigs) {
-            readOnlyMapIndexConfigs.add(new MapIndexConfigReadOnly(mapIndexConfig));
-        }
+    public List<IndexConfig> getIndexConfigs() {
+        List<IndexConfig> mapIndexConfigs = super.getIndexConfigs();
+        List<IndexConfig> readOnlyMapIndexConfigs = new ArrayList<>(mapIndexConfigs.size());
+        readOnlyMapIndexConfigs.addAll(mapIndexConfigs);
         return Collections.unmodifiableList(readOnlyMapIndexConfigs);
     }
 
@@ -99,11 +97,6 @@ public class QueryCacheConfigReadOnly extends QueryCacheConfig {
     }
 
     @Override
-    public QueryCacheConfig setIndexConfigs(List<MapIndexConfig> indexConfigs) {
-        throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
-    }
-
-    @Override
     public QueryCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
@@ -125,6 +118,16 @@ public class QueryCacheConfigReadOnly extends QueryCacheConfig {
 
     @Override
     public QueryCacheConfig setCoalesce(boolean coalesce) {
+        throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+    }
+
+    @Override
+    public QueryCacheConfig addIndexConfig(IndexConfig indexConfig) {
+        throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
+    }
+
+    @Override
+    public QueryCacheConfig setIndexConfigs(List<IndexConfig> indexConfigs) {
         throw new UnsupportedOperationException("This config is read-only query cache: " + getName());
     }
 }

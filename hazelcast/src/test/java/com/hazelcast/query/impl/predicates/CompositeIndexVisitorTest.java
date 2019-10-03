@@ -62,24 +62,28 @@ public class CompositeIndexVisitorTest extends VisitorTestSupport {
 
         o123 = mock(InternalIndex.class);
         when(o123.isOrdered()).thenReturn(true);
-        when(o123.getComponents()).thenReturn(new String[]{"a1", "a2", "a3"});
+        when(o123.getComponents()).thenReturn(components("a1", "a2", "a3"));
 
         u321 = mock(InternalIndex.class);
         when(u321.isOrdered()).thenReturn(false);
-        when(u321.getComponents()).thenReturn(new String[]{"a3", "a2", "a1"});
+        when(u321.getComponents()).thenReturn(components("a3", "a2", "a1"));
 
         o567 = mock(InternalIndex.class);
         when(o567.isOrdered()).thenReturn(true);
-        when(o567.getComponents()).thenReturn(new String[]{"a5", "a6", "a7"});
+        when(o567.getComponents()).thenReturn(components("a5", "a6", "a7"));
 
         // needed to test the preference of shorter indexes over longer ones
         InternalIndex o1234 = mock(InternalIndex.class);
         when(o1234.isOrdered()).thenReturn(true);
-        when(o1234.getComponents()).thenReturn(new String[]{"a1", "a2", "a3", "a4"});
+        when(o1234.getComponents()).thenReturn(components("a1", "a2", "a3", "a4"));
 
         when(indexes.getCompositeIndexes()).thenReturn(new InternalIndex[]{o1234, o123, u321, o567});
 
         visitor = new CompositeIndexVisitor();
+    }
+
+    private String[] components(String... names) {
+        return names;
     }
 
     @Test

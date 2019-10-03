@@ -38,6 +38,8 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -79,6 +81,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
@@ -391,6 +394,21 @@ public class TestClientApplicationContext {
         assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
+
+        assertEquals(2, queryCacheConfig.getIndexConfigs().size());
+
+        IndexConfig hashIndex = queryCacheConfig.getIndexConfigs().get(0);
+        assertEquals(IndexType.HASH, hashIndex.getType());
+        assertNull(hashIndex.getName());
+        assertEquals(1, hashIndex.getAttributes().size());
+        assertEquals("name", hashIndex.getAttributes().get(0));
+
+        IndexConfig sortedIndex = queryCacheConfig.getIndexConfigs().get(1);
+        assertEquals(IndexType.SORTED, sortedIndex.getType());
+        assertEquals("sortedIndex", sortedIndex.getName());
+        assertEquals(2, sortedIndex.getAttributes().size());
+        assertEquals("age", sortedIndex.getAttributes().get(0));
+        assertEquals("name", sortedIndex.getAttributes().get(1));
     }
 
     @Test

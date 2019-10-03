@@ -100,7 +100,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
             }
         };
         for (int k = 0; k < 50; k++) {
-            metricsRegistry.register(this, id + k, ProbeLevel.MANDATORY, probe);
+            metricsRegistry.registerStaticProbe(this, id + k, ProbeLevel.MANDATORY, probe);
         }
 
         // we run for some time to make sure we get enough rollovers

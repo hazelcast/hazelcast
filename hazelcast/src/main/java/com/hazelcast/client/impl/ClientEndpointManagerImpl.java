@@ -18,13 +18,13 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
@@ -35,9 +35,9 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.client.impl.ClientEngineImpl.SERVICE_NAME;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.
@@ -58,7 +58,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
         this.eventService = nodeEngine.getEventService();
         MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
-        metricsRegistry.scanAndRegister(this, "client.endpoint");
+        metricsRegistry.registerStaticMetrics(this, "client.endpoint");
     }
 
     @Override

@@ -25,8 +25,9 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.config.NearCacheConfig;
@@ -398,9 +399,9 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                                 //.setComparatorClassName(randomString())
                                 .setSize(randomInt())
                 ).addIndexConfig(
-                new MapIndexConfig()
-                        .setOrdered(true)
-                        .setAttribute(randomString())
+                new IndexConfig()
+                        .setType(IndexType.SORTED)
+                        .addAttribute(randomString())
         ).addEntryListenerConfig(
                 (EntryListenerConfig) new EntryListenerConfig()
                         .setIncludeValue(true)

@@ -20,8 +20,8 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStoreInfo;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockStoreInfo;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.LockInterceptorService;
@@ -136,7 +136,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         for (int partition = 0; partition < partitionCount; partition++) {
             partitionContainers[partition] = new MultiMapPartitionContainer(this, partition);
         }
-        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService != null) {
             lockService.registerLockStoreConstructor(SERVICE_NAME, key -> {
                 String name = key.getObjectName();
@@ -456,9 +456,11 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     public Map<String, LocalMultiMapStats> getStats() {
         Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
         for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
-            for (String name : partitionContainer.containerMap.keySet()) {
-                if (!multiMapStats.containsKey(name)) {
-                    multiMapStats.put(name, createStats(name));
+            if (partitionContainer != null) {
+                for (String name : partitionContainer.containerMap.keySet()) {
+                    if (!multiMapStats.containsKey(name)) {
+                        multiMapStats.put(name, createStats(name));
+                    }
                 }
             }
         }

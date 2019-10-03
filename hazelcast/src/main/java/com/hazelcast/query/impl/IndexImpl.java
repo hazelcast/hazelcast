@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -32,9 +33,14 @@ public class IndexImpl extends AbstractIndex {
 
     private final Set<Integer> indexedPartitions = newSetFromMap(new ConcurrentHashMap<>());
 
-    public IndexImpl(String name, String[] components, boolean ordered, InternalSerializationService ss, Extractors extractors,
-                     IndexCopyBehavior copyBehavior, PerIndexStats stats) {
-        super(name, components, ordered, ss, extractors, copyBehavior, stats, null);
+    public IndexImpl(
+        IndexConfig config,
+        InternalSerializationService ss,
+        Extractors extractors,
+        IndexCopyBehavior copyBehavior,
+        PerIndexStats stats
+    ) {
+        super(config, ss, extractors, copyBehavior, stats, null);
     }
 
     @Override

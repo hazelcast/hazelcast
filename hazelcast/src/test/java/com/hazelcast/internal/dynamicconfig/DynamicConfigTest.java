@@ -35,13 +35,13 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MergePolicyConfig;
@@ -155,16 +155,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         CardinalityEstimatorConfig config = new CardinalityEstimatorConfig(name, 4, 2)
                 .setMergePolicyConfig(new MergePolicyConfig("com.hazelcast.spi.merge.DiscardMergePolicy", 20));
         driver.getConfig().addCardinalityEstimatorConfig(config);
-
-        assertConfigurationsEqualsOnAllMembers(config);
-    }
-
-    @Test
-    public void testLockConfig() {
-        LockConfig config = new LockConfig(name);
-        config.setSplitBrainProtectionName(randomString());
-
-        driver.getConfig().addLockConfig(config);
 
         assertConfigurationsEqualsOnAllMembers(config);
     }
@@ -653,14 +643,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(LockConfig lockConfig) {
-        String name = lockConfig.getName();
-        for (HazelcastInstance instance : members) {
-            LockConfig registeredConfig = instance.getConfig().getLockConfig(name);
-            assertEquals(lockConfig, registeredConfig);
-        }
-    }
-
     private void assertConfigurationsEqualsOnAllMembers(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
         String name = cardinalityEstimatorConfig.getName();
         for (HazelcastInstance instance : members) {
@@ -845,7 +827,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setMaxIdleSeconds(110)
                 .setSplitBrainProtectionName(randomString())
                 .addAttributeConfig(new AttributeConfig("attributeName", "com.attribute.extractor"))
-                .addMapIndexConfig(new MapIndexConfig("attr", true))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "attr"))
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)
                 .setStatisticsEnabled(false);

@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.aggregation.impl.CountAggregator;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -172,7 +173,9 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.keySet(null));
         assertThrowsNPE(m -> m.entrySet(null));
         assertThrowsNPE(m -> m.values(null));
-        assertThrows(IllegalArgumentException.class, m -> m.addIndex(null, true));
+        assertThrows(NullPointerException.class, m -> m.addIndex(null, "attribute"));
+        assertThrows(NullPointerException.class, m -> m.addIndex(IndexType.SORTED, null));
+        assertThrows(NullPointerException.class, m -> m.addIndex(null));
         assertThrowsNPE(m -> m.aggregate(null));
         assertThrowsNPE(m -> m.aggregate(null, samplePredicate));
         assertThrowsNPE(m -> m.aggregate(new CountAggregator<>(), null));

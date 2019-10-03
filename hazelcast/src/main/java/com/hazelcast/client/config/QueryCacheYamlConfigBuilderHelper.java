@@ -17,10 +17,11 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.query.impl.IndexUtils;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -92,15 +93,9 @@ final class QueryCacheYamlConfigBuilderHelper extends AbstractQueryCacheConfigBu
     @Override
     protected void queryCacheIndexesHandle(Node childNode, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(childNode)) {
-            handleIndexNode(queryCacheConfig, indexNode);
-        }
-    }
+            IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3);
 
-    @Override
-    protected void handleIndexNode(QueryCacheConfig queryCacheConfig, Node indexNode) {
-        final NamedNodeMap attrs = indexNode.getAttributes();
-        boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
-        String attribute = indexNode.getNodeName();
-        queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
+            queryCacheConfig.addIndexConfig(indexConfig);
+        }
     }
 }

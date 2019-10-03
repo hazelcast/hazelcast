@@ -19,8 +19,8 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.UnlockOperation;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.operations.UnlockOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.nio.Connection;
@@ -55,7 +55,7 @@ public class MapForceUnlockMessageTask
 
     @Override
     public String getServiceName() {
-        return LockService.SERVICE_NAME;
+        return LockSupportService.SERVICE_NAME;
     }
 
     @Override

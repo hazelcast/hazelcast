@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationservice;
 
 /**
- * A key for a wait notify object e.g. an ICondition.
+ * A key for a wait notify object.
  */
 public interface WaitNotifyKey {
 

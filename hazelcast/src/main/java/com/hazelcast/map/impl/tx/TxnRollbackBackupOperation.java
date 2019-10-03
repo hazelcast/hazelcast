@@ -31,14 +31,18 @@ import java.util.UUID;
 /**
  * An operation to rollback transaction by unlocking the key on key backup owner.
  */
-public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+public class TxnRollbackBackupOperation
+        extends KeyBasedMapOperation implements BackupOperation {
 
     private UUID lockOwner;
+    private UUID transactionId;
 
-    protected TxnRollbackBackupOperation(String name, Data dataKey, UUID lockOwner, long lockThreadId) {
+    protected TxnRollbackBackupOperation(String name, Data dataKey,
+                                         UUID lockOwner, long lockThreadId, UUID transactionId) {
         super(name, dataKey);
         this.lockOwner = lockOwner;
         this.threadId = lockThreadId;
+        this.transactionId = transactionId;
     }
 
     public TxnRollbackBackupOperation() {
@@ -46,7 +50,9 @@ public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements 
 
     @Override
     protected void runInternal() {
-        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), lockOwner, threadId, getCallId())) {
+        wbqCapacityCounter().decrement(transactionId);
+        if (recordStore.isLocked(getKey())
+                && !recordStore.unlock(getKey(), lockOwner, threadId, getCallId())) {
             throw new TransactionException("Lock is not owned by the transaction! Owner: "
                     + recordStore.getLockOwnerInfo(getKey()));
         }
@@ -61,12 +67,14 @@ public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         UUIDSerializationUtil.writeUUID(out, lockOwner);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         lockOwner = UUIDSerializationUtil.readUUID(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

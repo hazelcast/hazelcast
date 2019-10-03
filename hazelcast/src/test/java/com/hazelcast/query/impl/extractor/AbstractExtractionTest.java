@@ -18,9 +18,10 @@ package com.hazelcast.query.impl.extractor;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
@@ -104,10 +105,14 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
      */
     private void setupIndexes(Config config, Query query) {
         if (index != Index.NO_INDEX) {
-            MapIndexConfig mapIndexConfig = new MapIndexConfig();
-            mapIndexConfig.setAttribute(query.expression);
-            mapIndexConfig.setOrdered(index == Index.ORDERED);
-            config.getMapConfig("map").addMapIndexConfig(mapIndexConfig);
+            IndexConfig indexConfig = new IndexConfig();
+
+            for (String column : query.expression.split(",")) {
+                indexConfig.addAttribute(column);
+            }
+
+            indexConfig.setType(index == Index.ORDERED ? IndexType.SORTED : IndexType.HASH);
+            config.getMapConfig("map").addIndexConfig(indexConfig);
         }
     }
 

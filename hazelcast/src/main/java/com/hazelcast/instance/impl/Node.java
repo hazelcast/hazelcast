@@ -250,7 +250,7 @@ public class Node {
             config.setConfigurationService(nodeEngine.getConfigurationService());
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-            metricsRegistry.collectMetrics(nodeExtension);
+            metricsRegistry.provideMetrics(nodeExtension);
 
             networkingService = nodeContext.createNetworkingService(this, serverSocketRegistry);
             healthMonitor = new HealthMonitor(this);

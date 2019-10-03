@@ -62,7 +62,7 @@ public class DoubleGaugeImplTest {
 
     @Test
     public void whenProbeThrowsException() {
-        metricsRegistry.register(this, "foo", MANDATORY,
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
                 (DoubleProbeFunction) o -> {
                     throw new RuntimeException();
                 });
@@ -76,7 +76,7 @@ public class DoubleGaugeImplTest {
 
     @Test
     public void whenDoubleProbe() {
-        metricsRegistry.register(this, "foo", MANDATORY,
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
                 (DoubleProbeFunction) o -> 10);
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo");
 
@@ -87,7 +87,7 @@ public class DoubleGaugeImplTest {
 
     @Test
     public void whenLongProbe() {
-        metricsRegistry.register(this, "foo", MANDATORY,
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
                 (LongProbeFunction) o -> 10);
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo");
 
@@ -99,7 +99,7 @@ public class DoubleGaugeImplTest {
     @Test
     public void whenLongGaugeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.registerStaticMetrics(someObject, "foo");
 
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.longField");
         assertEquals(someObject.longField, gauge.read(), 0.1);
@@ -108,7 +108,7 @@ public class DoubleGaugeImplTest {
     @Test
     public void whenDoubleGaugeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.registerStaticMetrics(someObject, "foo");
 
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.doubleField");
         assertEquals(someObject.doubleField, gauge.read(), 0.1);

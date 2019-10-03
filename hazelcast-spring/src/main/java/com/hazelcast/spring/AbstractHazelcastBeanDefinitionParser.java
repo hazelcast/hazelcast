@@ -25,12 +25,15 @@ import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanReference;
@@ -45,8 +48,10 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
@@ -67,7 +72,7 @@ import static org.springframework.util.Assert.isTrue;
  * <li>{@link HazelcastTypeBeanDefinitionParser}</li>
  * </ul>
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
 public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     /**
@@ -509,6 +514,38 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
             discoveryConfigBuilder.addPropertyValue("discoveryStrategyConfigs", discoveryStrategyConfigs);
             joinConfigBuilder.addPropertyValue("discoveryConfig", discoveryConfigBuilder.getBeanDefinition());
+        }
+
+        protected void handleIndex(ManagedList<BeanDefinition> indexes, Node indexNode) {
+            BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(IndexConfig.class);
+
+            NamedNodeMap attributes = indexNode.getAttributes();
+
+            // Resolve name.
+            String name = getTextContent(attributes.getNamedItem("name"));
+            indexConfBuilder.addPropertyValue("name", name.isEmpty() ? null : name);
+
+            // Resolve type.
+            String typeStr = getTextContent(attributes.getNamedItem("type"));
+            IndexType type = IndexUtils.getIndexTypeFromXmlName(typeStr);
+            indexConfBuilder.addPropertyValue("type", type);
+
+            // Resolve columns.
+            List<String> columns = new ArrayList<>();
+
+            for (Node columnsNode : childElements(indexNode)) {
+                if ("attributes".equals(cleanNodeName(columnsNode))) {
+                    for (Node columnNode : childElements(columnsNode)) {
+                        if ("attribute".equals(cleanNodeName(columnNode))) {
+                            columns.add(getTextContent(columnNode));
+                        }
+                    }
+                }
+            }
+
+            indexConfBuilder.addPropertyValue("attributes", columns);
+
+            indexes.add(indexConfBuilder.getBeanDefinition());
         }
 
         private void handleDiscoveryServiceProvider(Node node, BeanDefinitionBuilder discoveryConfigBuilder) {

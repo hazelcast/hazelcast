@@ -87,7 +87,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
         this.operationBackupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.shouldFailOnIndeterminateOperationState = properties.getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
-        client.getMetricsRegistry().scanAndRegister(this, "invocations");
+        client.getMetricsRegistry().registerStaticMetrics(this, "invocations");
     }
 
     private long initInvocationRetryPauseMillis() {

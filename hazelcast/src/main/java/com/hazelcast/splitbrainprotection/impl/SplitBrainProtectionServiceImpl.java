@@ -267,30 +267,33 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
      * @return the split brain protection
      */
     private SplitBrainProtectionImpl findSplitBrainProtection(Operation op) {
-        if (!isNamedOperation(op) || !isSplitBrainProtectionAware(op)) {
+        if (!isNamedOperation(op)) {
             return null;
         }
-        String splitBrainProtectionName = getSplitBrainProtectionName(op);
+        SplitBrainProtectionAwareService service = getSplitBrainProtectionAwareService(op);
+        if (service == null) {
+            return null;
+        }
+        String name = ((NamedOperation) op).getName();
+        String splitBrainProtectionName = service.getSplitBrainProtectionName(name);
         if (splitBrainProtectionName == null) {
             return null;
         }
         return splitBrainProtections.get(splitBrainProtectionName);
     }
 
-    private String getSplitBrainProtectionName(Operation op) {
-        SplitBrainProtectionAwareService service;
+    private SplitBrainProtectionAwareService getSplitBrainProtectionAwareService(Operation op) {
+        Object service;
         if (op instanceof ServiceNamespaceAware) {
             ServiceNamespace serviceNamespace = ((ServiceNamespaceAware) op).getServiceNamespace();
             service = nodeEngine.getService(serviceNamespace.getServiceName());
         } else {
             service = op.getService();
         }
-        String name = ((NamedOperation) op).getName();
-        return service.getSplitBrainProtectionName(name);
-    }
-
-    private boolean isSplitBrainProtectionAware(Operation op) {
-        return op.getService() instanceof SplitBrainProtectionAwareService;
+        if (service instanceof SplitBrainProtectionAwareService) {
+            return (SplitBrainProtectionAwareService) service;
+        }
+        return null;
     }
 
     private boolean isNamedOperation(Operation op) {

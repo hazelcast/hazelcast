@@ -16,6 +16,7 @@
 
 package com.hazelcast.splitbrainprotection.map;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.TestLoggingEntryProcessor;
 import com.hazelcast.splitbrainprotection.AbstractSplitBrainProtectionTest;
@@ -253,12 +254,12 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
 
     @Test
     public void addIndex_successful_whenSplitBrainProtectionSize_met() {
-        map(0).addIndex("__key", false);
+        map(0).addIndex(IndexType.HASH, "__key");
     }
 
     @Test(expected = SplitBrainProtectionException.class)
     public void addIndex_failing_whenSplitBrainProtectionSize_met() {
-        map(3).addIndex("__key", false);
+        map(3).addIndex(IndexType.HASH, "__key");
     }
 
     @Test

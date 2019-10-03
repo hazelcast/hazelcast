@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -182,7 +183,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testPagingWithFilteringAndComparatorAndIndex() {
-        map.addIndex("this", true);
+        map.addIndex(IndexType.SORTED, "this");
         Predicate<Integer, Integer> lessEqual = Predicates.between("this", 12, 20);
         TestComparator comparator = new TestComparator(false, IterationType.VALUE);
         PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(lessEqual, comparator, pageSize);
@@ -314,7 +315,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testEmptyIndexResultIsNotCausingFullScan() {
-        map.addIndex("this", false);
+        map.addIndex(IndexType.HASH, "this");
         for (int i = 0; i < size; ++i) {
             map.set(i, i);
         }
@@ -413,7 +414,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
     private void mapPagingPredicateEmployeeObjectWithOrderedIndex(int maxEmployee) {
         final IMap<Integer, Employee> map = makeEmployeeMap(maxEmployee);
 
-        map.addIndex("id", true);
+        map.addIndex(IndexType.SORTED, "id");
 
         Predicate innerPredicate = Predicates.lessThan("id", 2);
         PagingPredicate<Integer, Employee> predicate = Predicates.pagingPredicate(innerPredicate, 2);
@@ -491,7 +492,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             map.put(i, new Employee(i));
         }
 
-        map.addIndex("id", true);
+        map.addIndex(IndexType.SORTED, "id");
 
         Predicate<Integer, Employee> innerPredicate = Predicates.between("id", START_ID_FOR_QUERY, FINISH_ID_FOR_QUERY);
 
@@ -521,7 +522,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             map.put(i, new BaseEmployee(i));
         }
 
-        map.addIndex("id", true);
+        map.addIndex(IndexType.SORTED, "id");
 
         Predicate<Integer, BaseEmployee> innerPredicate = Predicates.between("id", START_ID_FOR_QUERY, FINISH_ID_FOR_QUERY);
 

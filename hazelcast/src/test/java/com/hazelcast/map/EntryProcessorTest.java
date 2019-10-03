@@ -18,8 +18,9 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
@@ -202,7 +203,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Test
     public void testIndexAware_Issue_1719() {
         Config cfg = getConfig();
-        cfg.getMapConfig(MAP_NAME).addMapIndexConfig(new MapIndexConfig("attr1", false));
+        cfg.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.HASH, "attr1"));
         HazelcastInstance instance = createHazelcastInstance(cfg);
 
         IMap<String, TestData> map = instance.getMap(MAP_NAME);
@@ -262,7 +263,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Test
     public void testExecuteOnKeysBackupOperationIndexed() {
         Config cfg = getConfig();
-        cfg.getMapConfig(MAP_NAME).setBackupCount(1).addMapIndexConfig(new MapIndexConfig("attr1", false));
+        cfg.getMapConfig(MAP_NAME).setBackupCount(1).addIndexConfig(new IndexConfig(IndexType.HASH, "attr1"));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
@@ -1205,7 +1206,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
@@ -1230,7 +1231,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         IMap<Integer, SampleTestObjects.ObjectWithInteger> map = node.getMap(MAP_NAME);
-        map.addIndex("attribute", true);
+        map.addIndex(IndexType.SORTED, "attribute");
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, new SampleTestObjects.ObjectWithInteger(i));
@@ -1245,7 +1246,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void test_executeOnEntriesWithPredicate_usesIndexes_whenIndexesAvailable() {
         HazelcastInstance node = createHazelcastInstance(getConfig());
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
@@ -1280,7 +1281,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         final IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         map.set(1, 1);
 
@@ -1523,7 +1524,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Config config = getConfig();
         MapConfig testMapConfig = config.getMapConfig(MAP_NAME);
         testMapConfig.setInMemoryFormat(inMemoryFormat);
-        testMapConfig.getMapIndexConfigs().add(new MapIndexConfig("lastValue", true));
+        testMapConfig.addIndexConfig(new IndexConfig(IndexType.SORTED, "lastValue"));
         HazelcastInstance instance = createHazelcastInstance(config);
         return instance.getMap(MAP_NAME);
     }

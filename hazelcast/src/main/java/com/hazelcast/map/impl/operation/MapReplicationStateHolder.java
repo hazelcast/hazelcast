@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.MapContainer;
@@ -30,7 +31,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
@@ -115,23 +115,23 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             loaded.put(mapName, recordStore.isLoaded());
             storesByMapName.put(mapName, recordStore);
 
-            Set<IndexInfo> indexInfos = new HashSet<>();
+            Set<IndexConfig> indexConfigs = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {
                 // global-index
                 for (Index index : mapContainer.getIndexes().getIndexes()) {
-                    indexInfos.add(new IndexInfo(index.getName(), index.isOrdered()));
+                    indexConfigs.add(index.getConfig());
                 }
             } else {
                 // partitioned-index
                 final Indexes indexes = mapContainer.getIndexes(container.getPartitionId());
                 if (indexes != null && indexes.haveAtLeastOneIndex()) {
                     for (Index index : indexes.getIndexes()) {
-                        indexInfos.add(new IndexInfo(index.getName(), index.isOrdered()));
+                        indexConfigs.add(index.getConfig());
                     }
                 }
             }
             MapIndexInfo mapIndexInfo = new MapIndexInfo(mapName);
-            mapIndexInfo.addIndexInfos(indexInfos);
+            mapIndexInfo.addIndexCofigs(indexConfigs);
             mapIndexInfos.add(mapIndexInfo);
         }
     }
@@ -154,10 +154,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 MapContainer mapContainer = recordStore.getMapContainer();
                 PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
                         .getPartitionContainer(operation.getPartitionId());
-                for (Map.Entry<String, Boolean> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
+                for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
                     Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                    indexes.addOrGetIndex(indexDefinition.getKey(), indexDefinition.getValue(),
-                            indexes.isGlobal() ? null : storeAdapter);
+                    indexes.addOrGetIndex(indexDefinition.getValue(), indexes.isGlobal() ? null : storeAdapter);
                 }
 
                 final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
@@ -207,33 +206,33 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     private void applyIndexesState() {
         if (mapIndexInfos != null) {
             for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
-                addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getIndexInfos());
+                addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getIndexConfigs());
             }
         }
     }
 
-    private void addIndexes(String mapName, Collection<IndexInfo> indexInfos) {
-        if (indexInfos == null) {
+    private void addIndexes(String mapName, Collection<IndexConfig> indexConfigs) {
+        if (indexConfigs == null) {
             return;
         }
         RecordStore recordStore = operation.getRecordStore(mapName);
         MapContainer mapContainer = recordStore.getMapContainer();
         if (mapContainer.isGlobalIndexEnabled()) {
             // creating global indexes on partition thread in case they do not exist
-            for (IndexInfo indexInfo : indexInfos) {
+            for (IndexConfig indexConfig : indexConfigs) {
                 Indexes indexes = mapContainer.getIndexes();
                 StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new RecordStoreAdapter(recordStore);
 
                 // optimisation not to synchronize each partition thread on the addOrGetIndex method
-                if (indexes.getIndex(indexInfo.getName()) == null) {
-                    indexes.addOrGetIndex(indexInfo.getName(), indexInfo.isOrdered(), recordStoreAdapter);
+                if (indexes.getIndex(indexConfig.getName()) == null) {
+                    indexes.addOrGetIndex(indexConfig, recordStoreAdapter);
                 }
             }
         } else {
             Indexes indexes = mapContainer.getIndexes(operation.getPartitionId());
             StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new RecordStoreAdapter(recordStore);
-            for (IndexInfo indexInfo : indexInfos) {
-                indexes.addOrGetIndex(indexInfo.getName(), indexInfo.isOrdered(), recordStoreAdapter);
+            for (IndexConfig indexConfig : indexConfigs) {
+                indexes.addOrGetIndex(indexConfig, recordStoreAdapter);
             }
         }
     }

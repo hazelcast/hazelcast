@@ -38,8 +38,6 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.CPSubsystemImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
@@ -211,12 +209,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     public <E> Ringbuffer<E> getRingbuffer(String name) {
         checkNotNull(name, "Retrieving a ringbuffer instance with a null name is not allowed!");
         return getDistributedObject(RingbufferService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        checkNotNull(key, "Retrieving a lock instance with a null key is not allowed!");
-        return getDistributedObject(LockService.SERVICE_NAME, key);
     }
 
     @Override

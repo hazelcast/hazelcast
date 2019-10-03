@@ -28,7 +28,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Annotation that can be placed on a field or a method of an object to indicate
  * that it should be tracked by the MetricsRegistry when the
- * {@link MetricsRegistry#scanAndRegister(Object, String)} is called.
+ * {@link MetricsRegistry#registerStaticMetrics(Object, String)} is called.
  * <p>
  * The MetricsRegistry will automatically scan all interfaces and super classes
  * of an object (recursively). So it is possible to define a Probe on e.g. an

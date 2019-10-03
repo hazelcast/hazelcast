@@ -18,8 +18,8 @@ package com.hazelcast.cp.internal.datastructures.lock.operation;
 
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.datastructures.lock.LockEndpoint;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.lock.LockDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -57,12 +57,12 @@ abstract class AbstractLockOp extends RaftOp implements IdentifiedDataSerializab
 
     @Override
     public final String getServiceName() {
-        return RaftLockService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     @Override
     public int getFactoryId() {
-        return RaftLockDataSerializerHook.F_ID;
+        return LockDataSerializerHook.F_ID;
     }
 
     @Override

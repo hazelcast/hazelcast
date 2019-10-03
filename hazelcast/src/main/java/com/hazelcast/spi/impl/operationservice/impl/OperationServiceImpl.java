@@ -23,7 +23,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -94,7 +94,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @see TargetInvocation
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public final class OperationServiceImpl implements MetricsProvider, LiveOperationsTracker, OperationService {
+public final class OperationServiceImpl implements StaticMetricsProvider, LiveOperationsTracker, OperationService {
 
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
@@ -457,9 +457,9 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
-        registry.collectMetrics(invocationRegistry, invocationMonitor, inboundResponseHandlerSupplier, operationExecutor);
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "operation");
+        registry.provideMetrics(invocationRegistry, invocationMonitor, inboundResponseHandlerSupplier, operationExecutor);
     }
 
     public void start() {

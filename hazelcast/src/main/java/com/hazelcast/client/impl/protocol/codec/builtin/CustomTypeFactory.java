@@ -21,6 +21,8 @@ import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.core.HazelcastException;
@@ -30,6 +32,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
@@ -138,5 +141,11 @@ public final class CustomTypeFactory {
 
     public static DurationConfig createDurationConfig(long durationAmount, String timeUnit) {
         return new DurationConfig(durationAmount, TimeUnit.valueOf(timeUnit));
+    }
+
+    public static IndexConfig createIndexConfig(String name, int type, List<String> attributes) {
+        IndexType type0 = IndexType.getById(type);
+
+        return new IndexConfig().setName(name).setType(type0).setAttributes(attributes);
     }
 }

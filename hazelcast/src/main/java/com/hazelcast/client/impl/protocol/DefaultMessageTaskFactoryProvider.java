@@ -33,6 +33,10 @@ import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetRoundCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockGetLockOwnershipCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockTryLockCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreChangeCodec;
@@ -60,7 +64,6 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDurableExecutorC
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddFlakeIdGeneratorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddListConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddLockConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMultiMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddQueueConfigMessageTask;
@@ -293,48 +296,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.ringbuffer.RingbufferSizeMessageTask(clientMessage, node, connection);
-            }
-        });
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.lock
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockUnlockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockUnlockMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockIsLockedCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockIsLockedMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockForceUnlockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockForceUnlockMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockGetRemainingLeaseTimeCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockGetRemainingLeaseTimeMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockIsLockedByCurrentThreadCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockIsLockedByCurrentThreadMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockLockMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockTryLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockTryLockMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockGetLockCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockGetLockCountMessageTask(clientMessage, node, connection);
             }
         });
 //endregion
@@ -697,28 +658,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.transactionalmultimap.TransactionalMultiMapValueCountMessageTask(clientMessage, node, connection);
-            }
-        });
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.condition
-        factories.put(com.hazelcast.client.impl.protocol.codec.ConditionSignalCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionSignalMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.ConditionBeforeAwaitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionBeforeAwaitMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.ConditionAwaitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionAwaitMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.ConditionSignalAllCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionSignalAllMessageTask(clientMessage, node, connection);
             }
         });
 //endregion
@@ -1955,11 +1894,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new AddRingbufferConfigMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new AddLockConfigMessageTask(clientMessage, node, connection);
-            }
-        });
         factories.put(com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddListConfigMessageTask(clientMessage, node, connection);
@@ -2175,25 +2109,25 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         });
 
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPFencedLockLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(FencedLockLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new LockMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPFencedLockTryLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(FencedLockTryLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new TryLockMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPFencedLockUnlockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(FencedLockUnlockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new UnlockMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPFencedLockGetLockOwnershipCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(FencedLockGetLockOwnershipCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetLockOwnershipStateMessageTask(clientMessage, node, connection);

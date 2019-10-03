@@ -37,7 +37,6 @@ import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -472,9 +471,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedList<BeanDefinition> getIndexes(Node node) {
             ManagedList<BeanDefinition> indexes = new ManagedList<BeanDefinition>();
             for (Node indexNode : childElements(node)) {
-                BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(MapIndexConfig.class);
-                fillAttributeValues(indexNode, indexConfBuilder);
-                indexes.add(indexConfBuilder.getBeanDefinition());
+                handleIndex(indexes, indexNode);
             }
             return indexes;
         }

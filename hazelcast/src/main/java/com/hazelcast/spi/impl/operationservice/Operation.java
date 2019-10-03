@@ -530,9 +530,9 @@ public abstract class Operation implements DataSerializable {
      *
      * Examples:
      * <ol>
-     * <li>in case of ILock.tryLock(10, ms), the wait timeout is 10 ms</li>
-     * <li>in case of ILock.lock(), the wait timeout is -1</li>
-     * <li>in case of ILock.tryLock(), the wait timeout is 0.</li>
+     * <li>in case of IMap.tryLock(10, ms), the wait timeout is 10 ms</li>
+     * <li>in case of IMap.lock(), the wait timeout is -1</li>
+     * <li>in case of IMap.tryLock(), the wait timeout is 0.</li>
      * </ol>
      *
      * The waitTimeout is only relevant for blocking operations. For non

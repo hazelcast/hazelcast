@@ -379,8 +379,8 @@ public class ClientMapTest extends HazelcastTestSupport {
         Map<String, String> tmpMap = new HashMap<>();
         fillMap(tmpMap);
         ICompletableFuture<Void> future = ((ClientMapProxy<String, String>) map).putAllAsync(tmpMap);
-        assertEqualsEventually(map::size, tmpMap.size());
-        assertTrue(future.isDone());
+        assertEqualsEventually(() -> future.isDone(), true);
+        assertEquals(map.size(), tmpMap.size());
         assertEquals(tmpMap, new HashMap<>(map));
     }
 

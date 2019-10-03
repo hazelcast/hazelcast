@@ -21,14 +21,13 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.executionservice.TaskScheduler;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricsExtractor;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.CachedExecutorServiceDelegate;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
@@ -36,6 +35,10 @@ import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.internal.util.executor.NamedThreadPoolExecutor;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -107,12 +110,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 }
             };
 
-
-    private final MetricsRegistry metricsRegistry;
-
     public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.metricsRegistry = nodeEngine.getMetricsRegistry();
 
         Node node = nodeEngine.getNode();
         this.logger = node.getLogger(ExecutionService.class.getName());
@@ -144,6 +143,10 @@ public final class ExecutionServiceImpl implements ExecutionService {
         // register CompletableFuture task
         this.completableFutureTask = new CompletableFutureTask();
         scheduleWithRepetition(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
+
+        // register in metricsRegistry
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(new MetricsProvider(executors, durableExecutors,
+                scheduleDurableExecutors));
     }
 
     // only used in tests
@@ -182,10 +185,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
         }
-
-        metricsRegistry.newProbeBuilder("internal-executor")
-                       .withTag("executor", name)
-                       .scanAndRegister(executor);
 
         return executor;
     }
@@ -366,13 +365,50 @@ public final class ExecutionServiceImpl implements ExecutionService {
     }
 
     private <V> ICompletableFuture<V> registerCompletableFuture(Future<V> future) {
-        CompletableFutureEntry<V> entry = new CompletableFutureEntry<V>(future, nodeEngine);
+        CompletableFutureEntry<V> entry = new CompletableFutureEntry<>(future, nodeEngine);
         completableFutureTask.registerCompletableFutureEntry(entry);
         return entry.completableFuture;
     }
 
     private TaskScheduler getDurableTaskScheduler(String name) {
         return new DelegatingTaskScheduler(scheduledExecutorService, getScheduledDurable(name));
+    }
+
+    private static final class MetricsProvider implements DynamicMetricsProvider {
+
+        private final ConcurrentMap<String, ManagedExecutorService> executors;
+        private final ConcurrentMap<String, ManagedExecutorService> durableExecutors;
+        private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors;
+
+        private MetricsProvider(ConcurrentMap<String, ManagedExecutorService> executors,
+                                ConcurrentMap<String, ManagedExecutorService> durableExecutors,
+                                ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors) {
+
+            this.executors = executors;
+            this.durableExecutors = durableExecutors;
+            this.scheduleDurableExecutors = scheduleDurableExecutors;
+        }
+
+        @Override
+        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+            for (ManagedExecutorService executorService : executors.values()) {
+                MetricTagger tagger = taggerSupplier.getMetricTagger("internal-executor")
+                                                    .withIdTag("executor", executorService.getName());
+                extractor.extractMetrics(tagger, executorService);
+            }
+
+            for (ManagedExecutorService executorService : durableExecutors.values()) {
+                MetricTagger tagger = taggerSupplier.getMetricTagger("durable-executor")
+                                                    .withIdTag("executor", executorService.getName());
+                extractor.extractMetrics(tagger, executorService);
+            }
+
+            for (ManagedExecutorService executorService : scheduleDurableExecutors.values()) {
+                MetricTagger tagger = taggerSupplier.getMetricTagger("scheduled-durable-executor")
+                                                    .withIdTag("executor", executorService.getName());
+                extractor.extractMetrics(tagger, executorService);
+            }
+        }
     }
 
 }

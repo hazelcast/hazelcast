@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -25,7 +26,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.mapstore.MapStoreTest.TestMapStore;
-import com.hazelcast.map.impl.mapstore.MapStoreWriteBehindTest.FailAwareMapStore;
+import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWriteBehindTest.FailAwareMapStore;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -136,7 +137,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         testMapStore.insert("7", employee);
 
         IMap<String, Employee> map = instance.getMap("default");
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "name");
         assertEquals(0, map.size());
         assertEquals(employee, map.get("1"));
         assertEquals(employee, testMapStore.getStore().get("1"));
@@ -190,7 +191,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         Employee employee2 = new Employee("jay", 35, false, 100.00);
         testMapStore.insert("1", employee);
         IMap<String, Employee> map = instance.getMap("default");
-        map.addIndex("name", false);
+        map.addIndex(IndexType.HASH, "name");
         assertEquals(0, map.size());
         assertEquals(employee, map.get("1"));
         assertEquals(employee, testMapStore.getStore().get("1"));
