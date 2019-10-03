@@ -17,8 +17,8 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec;
-import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.impl.Node;
@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-import static com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec.decodeRequest;
+import static com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec.decodeRequest;
 
 public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
@@ -45,7 +45,7 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCChangeClusterStateRequestCodec.encodeResponse();
+        return MCChangeClusterStateCodec.encodeResponse();
     }
 
     @Override

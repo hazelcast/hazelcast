@@ -2176,28 +2176,31 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new ReleasePermitsMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MetricsReadMetricsCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec.REQUEST_MESSAGE_TYPE,
                 new MessageTaskFactory() {
                     @Override
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
                         return new ReadMetricsMessageTask(clientMessage, node, connection);
                     }
                 });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new ChangeClusterStateMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MCGetMapConfigRequestCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new GetMapConfigMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigRequestCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new UpdateMapConfigMessageTask(clientMessage, node, connection);
-            }
-        });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new ChangeClusterStateMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new GetMapConfigMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new UpdateMapConfigMessageTask(clientMessage, node, connection);
+                    }
+                });
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

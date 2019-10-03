@@ -17,14 +17,22 @@
 package com.hazelcast.client.impl.management;
 
 import com.hazelcast.client.impl.ClientDelegatingFuture;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateRequestCodec;
-import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigRequestCodec;
-import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigRequestCodec;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+
+import javax.annotation.Nonnull;
 
 public class ManagementCenterService {
 
@@ -38,17 +46,33 @@ public class ManagementCenterService {
         this.serializationService = serializationService;
     }
 
+    /**
+     * Reads the metrics journal for a given number starting from a specific sequence.
+     */
+    @Nonnull
+    public ICompletableFuture<MetricsResultSet> readMetricsAsync(Member member, long startSequence) {
+        ClientMessage request = MCReadMetricsCodec.encodeRequest(member.getUuid(), startSequence);
+        ClientInvocation invocation = new ClientInvocation(client, request, null, member.getAddress());
+
+        ClientMessageDecoder<MetricsResultSet> decoder = (clientMessage) -> {
+            MCReadMetricsCodec.ResponseParameters response = MCReadMetricsCodec.decodeResponse(clientMessage);
+            return new MetricsResultSet(response.nextSequence, response.elements);
+        };
+
+        return new ClientDelegatingFuture<>(invocation.invoke(), serializationService, decoder, false);
+    }
+
     public ClientDelegatingFuture<Void> changeClusterState(ClusterState newState) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCChangeClusterStateRequestCodec.encodeRequest(newState.name()),
+                MCChangeClusterStateCodec.encodeRequest(newState.name()),
                 null
         );
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> {
-                    MCChangeClusterStateRequestCodec.decodeResponse(clientMessage);
+                    MCChangeClusterStateCodec.decodeResponse(clientMessage);
                     return null;
                 }
         );
@@ -57,13 +81,13 @@ public class ManagementCenterService {
     public ClientDelegatingFuture<MapConfigHolder> getMapConfig(String map) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCGetMapConfigRequestCodec.encodeRequest(map),
+                MCGetMapConfigCodec.encodeRequest(map),
                 map
         );
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
-                clientMessage -> MCGetMapConfigRequestCodec.decodeResponse(clientMessage).response,
+                clientMessage -> MCGetMapConfigCodec.decodeResponse(clientMessage).response,
                 true
         );
     }
@@ -71,14 +95,14 @@ public class ManagementCenterService {
     public ClientDelegatingFuture<Void> updateMapConfig(String map, MapConfigHolder newMapConfig) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCUpdateMapConfigRequestCodec.encodeRequest(map, newMapConfig),
+                MCUpdateMapConfigCodec.encodeRequest(map, newMapConfig),
                 null
         );
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> {
-                    MCUpdateMapConfigRequestCodec.decodeResponse(clientMessage);
+                    MCUpdateMapConfigCodec.decodeResponse(clientMessage);
                     return null;
                 }
         );

@@ -37,8 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Reads the recorded metrics starting with the smallest sequence number
  * greater or equals to the sequence number set in fromSequence.
  */
-@Generated("7cd482fcc01a83ee22bf1b9722fd0dcc")
-public final class MetricsReadMetricsCodec {
+@Generated("d0662684137a572989bb7fd50726f278")
+public final class MCReadMetricsCodec {
     //hex: 0x270100
     public static final int REQUEST_MESSAGE_TYPE = 2556160;
     //hex: 0x270101
@@ -49,7 +49,7 @@ public final class MetricsReadMetricsCodec {
     private static final int RESPONSE_NEXT_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEXT_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-    private MetricsReadMetricsCodec() {
+    private MCReadMetricsCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -70,7 +70,7 @@ public final class MetricsReadMetricsCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
-        clientMessage.setOperationName("Metrics.ReadMetrics");
+        clientMessage.setOperationName("MC.ReadMetrics");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
@@ -79,8 +79,8 @@ public final class MetricsReadMetricsCodec {
         return clientMessage;
     }
 
-    public static MetricsReadMetricsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+    public static MCReadMetricsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+        ListIterator<Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
@@ -113,7 +113,7 @@ public final class MetricsReadMetricsCodec {
         return clientMessage;
     }
 
-    public static MetricsReadMetricsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCReadMetricsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();

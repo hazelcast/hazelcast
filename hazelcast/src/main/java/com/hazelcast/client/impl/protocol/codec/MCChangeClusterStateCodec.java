@@ -34,75 +34,68 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Gets the config of a map.
+ * Changes the state of a cluster.
  */
-@Generated("44187685dcbb677558b9a9a1ffd1bc35")
-public final class MCGetMapConfigRequestCodec {
-    //hex: 0x280200
-    public static final int REQUEST_MESSAGE_TYPE = 2621952;
-    //hex: 0x280201
-    public static final int RESPONSE_MESSAGE_TYPE = 2621953;
+@Generated("99799689b0543d77e17ad64ec00b4a37")
+public final class MCChangeClusterStateCodec {
+    //hex: 0x270200
+    public static final int REQUEST_MESSAGE_TYPE = 2556416;
+    //hex: 0x270201
+    public static final int RESPONSE_MESSAGE_TYPE = 2556417;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCGetMapConfigRequestCodec() {
+    private MCChangeClusterStateCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * Name of the map.
+         * New state of the cluster.
          */
-        public java.lang.String mapName;
+        public java.lang.String newState;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String mapName) {
+    public static ClientMessage encodeRequest(java.lang.String newState) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(true);
+        clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
-        clientMessage.setOperationName("MC.GetMapConfigRequest");
+        clientMessage.setOperationName("MC.ChangeClusterState");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, mapName);
+        StringCodec.encode(clientMessage, newState);
         return clientMessage;
     }
 
-    public static MCGetMapConfigRequestCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+    public static MCChangeClusterStateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+        ListIterator<Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.mapName = StringCodec.decode(iterator);
+        request.newState = StringCodec.decode(iterator);
         return request;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * The config of the map.
-         */
-        public com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder response) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, MapConfigHolderCodec::encode);
         return clientMessage;
     }
 
-    public static MCGetMapConfigRequestCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCChangeClusterStateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, MapConfigHolderCodec::decode);
         return response;
     }
 

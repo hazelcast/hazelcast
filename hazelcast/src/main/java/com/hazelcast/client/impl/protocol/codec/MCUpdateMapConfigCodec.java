@@ -36,16 +36,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the config of a map.
  */
-@Generated("ff39980fcca98444c0e014e2d2fb890b")
-public final class MCUpdateMapConfigRequestCodec {
-    //hex: 0x280300
-    public static final int REQUEST_MESSAGE_TYPE = 2622208;
-    //hex: 0x280301
-    public static final int RESPONSE_MESSAGE_TYPE = 2622209;
+@Generated("4ef7c9f6655683b08f4cd72dc96942ff")
+public final class MCUpdateMapConfigCodec {
+    //hex: 0x270400
+    public static final int REQUEST_MESSAGE_TYPE = 2556928;
+    //hex: 0x270401
+    public static final int RESPONSE_MESSAGE_TYPE = 2556929;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCUpdateMapConfigRequestCodec() {
+    private MCUpdateMapConfigCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -66,7 +66,7 @@ public final class MCUpdateMapConfigRequestCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
-        clientMessage.setOperationName("MC.UpdateMapConfigRequest");
+        clientMessage.setOperationName("MC.UpdateMapConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
@@ -75,8 +75,8 @@ public final class MCUpdateMapConfigRequestCodec {
         return clientMessage;
     }
 
-    public static MCUpdateMapConfigRequestCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+    public static MCUpdateMapConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+        ListIterator<Frame> iterator = clientMessage.listIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -98,7 +98,7 @@ public final class MCUpdateMapConfigRequestCodec {
         return clientMessage;
     }
 
-    public static MCUpdateMapConfigRequestCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCUpdateMapConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
