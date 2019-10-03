@@ -141,7 +141,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     }
 
     private void send0(ClientInvocation invocation, ClientConnection connection) throws IOException {
-        invocation.getClientMessage().getFirst().flags |= ClientMessage.BACKUP_AWARE_FLAG;
+        invocation.getClientMessage().getStartFrame().flags |= ClientMessage.BACKUP_AWARE_FLAG;
         send(invocation, connection);
     }
 

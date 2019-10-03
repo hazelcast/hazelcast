@@ -21,8 +21,6 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -38,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a replicated map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("113e30f9a6063cbb0e6928920612620b")
+@Generated("327efe0b9724db1ce167b7ab579c75ee")
 public final class DynamicConfigAddReplicatedMapConfigCodec {
     //hex: 0x1E0700
     public static final int REQUEST_MESSAGE_TYPE = 1967872;
@@ -123,7 +121,7 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
     }
 
     public static DynamicConfigAddReplicatedMapConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.asyncFillup = decodeBoolean(initialFrame.content, REQUEST_ASYNC_FILLUP_FIELD_OFFSET);
@@ -151,7 +149,7 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
     }
 
     public static DynamicConfigAddReplicatedMapConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

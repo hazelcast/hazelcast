@@ -126,9 +126,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
         return existingMessage;
     }
 
-    private void handleMessage(ClientMessageReader clientMessageReader) {
-        LinkedList<ClientMessage.Frame> frames = clientMessageReader.getFrames();
-        ClientMessage clientMessage = ClientMessage.createForDecode(frames);
+    private void handleMessage(ClientMessage clientMessage) {
         clientMessage.setConnection(connection);
         normalPacketsRead.inc();
         dst.accept(clientMessage);

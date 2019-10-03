@@ -168,7 +168,7 @@ public class ClientMessageProtectionTest {
                 ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 // it should be enough to write just the first frame
-                Frame frame = clientMessage.get(0);
+                Frame frame = clientMessage.getStartFrame();
                 buffer.putInt(Integer.MIN_VALUE);
                 buffer.putShort((short) (frame.flags));
                 buffer.put(frame.content);
@@ -191,13 +191,16 @@ public class ClientMessageProtectionTest {
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
                 os.write(CLIENT_BINARY_NEW.getBytes(UTF8_CHARSET));
                 // it should be enough to write just the first frame
-                byte[] firstFrameBytes = frameAsBytes(clientMessage.get(0), false);
+                byte[] firstFrameBytes = frameAsBytes(clientMessage.getStartFrame(), false);
                 os.write(firstFrameBytes);
                 ByteBuffer buffer = ByteBuffer.allocateDirect(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 // try to cause the size accumulator overflow
                 buffer.putInt(Integer.MAX_VALUE - firstFrameBytes.length + 1);
-                Frame frame = clientMessage.get(1);
+                ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+                // skip start frame
+                iterator.next();
+                Frame frame = iterator.next();
                 buffer.putShort((short) frame.flags);
                 os.write(byteBufferToBytes(buffer));
                 os.flush();
@@ -217,7 +220,7 @@ public class ClientMessageProtectionTest {
     }
 
     private ClientMessage readResponse(InputStream is) throws IOException, EOFException {
-        LinkedList<ClientMessage.Frame> frames = new LinkedList<>();
+        ClientMessage clientMessage = ClientMessage.createForEncode();
         while (true) {
             ByteBuffer frameSizeBuffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
             frameSizeBuffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -226,17 +229,17 @@ public class ClientMessageProtectionTest {
             int flags = frameSizeBuffer.getShort() & 0xffff;
             byte[] content = new byte[frameSize - SIZE_OF_FRAME_LENGTH_AND_FLAGS];
             readFully(is, content);
-            frames.add(new ClientMessage.Frame(content, flags));
+            clientMessage.add(new ClientMessage.Frame(content, flags));
             if (ClientMessage.isFlagSet(flags, IS_FINAL_FLAG)) {
                 break;
             }
         }
-        ClientMessage respMessage = ClientMessage.createForDecode(frames);
+        ClientMessage respMessage = ClientMessage.createForDecode(clientMessage.getStartFrame());
         return respMessage;
     }
 
     private void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
-        for (Iterator<ClientMessage.Frame> it = clientMessage.iterator(); it.hasNext();) {
+        for (ClientMessage.ForwardFrameIterator it = clientMessage.frameIterator(); it.hasNext();) {
             ClientMessage.Frame frame = it.next();
             os.write(frameAsBytes(frame, it.hasNext()));
         }

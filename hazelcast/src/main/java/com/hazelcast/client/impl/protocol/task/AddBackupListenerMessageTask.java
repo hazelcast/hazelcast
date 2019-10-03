@@ -39,7 +39,7 @@ public class AddBackupListenerMessageTask
     public class BackupListener {
         public void onEvent(Long backupId) {
             ClientMessage eventMessage = ClientLocalBackupListenerCodec.encodeBackupEvent(backupId);
-            eventMessage.getFirst().flags |= ClientMessage.BACKUP_EVENT_FLAG;
+            eventMessage.getStartFrame().flags |= ClientMessage.BACKUP_EVENT_FLAG;
             sendClientMessage(eventMessage);
         }
     }
