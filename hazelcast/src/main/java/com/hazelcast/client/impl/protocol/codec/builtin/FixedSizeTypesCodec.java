@@ -53,11 +53,29 @@ public final class FixedSizeTypesCodec {
     }
 
     public static void encodeEnum(byte[] buffer, int pos, ExpiryPolicyType expiryPolicyType) {
-        encodeInt(buffer, pos, expiryPolicyType.getType());
+        encodeInt(buffer, pos, expiryPolicyType.getId());
     }
 
     public static void encodeEnum(byte[] buffer, int pos, TimeUnit timeUnit) {
-        encodeInt(buffer, pos, timeUnit.ordinal());
+        int timeUnitId;
+        if (TimeUnit.NANOSECONDS.equals(timeUnit)) {
+            timeUnitId = 0;
+        } else if (TimeUnit.MICROSECONDS.equals(timeUnit)) {
+            timeUnitId = 1;
+        } else if (TimeUnit.MILLISECONDS.equals(timeUnit)) {
+            timeUnitId = 2;
+        } else if (TimeUnit.SECONDS.equals(timeUnit)) {
+            timeUnitId = 3;
+        } else if (TimeUnit.MINUTES.equals(timeUnit)) {
+            timeUnitId = 4;
+        } else if (TimeUnit.HOURS.equals(timeUnit)) {
+            timeUnitId = 5;
+        } else if (TimeUnit.DAYS.equals(timeUnit)) {
+            timeUnitId = 6;
+        } else {
+            timeUnitId = -1;
+        }
+        encodeInt(buffer, pos, timeUnitId);
     }
 
     public static int decodeEnum(byte[] buffer, int pos) {

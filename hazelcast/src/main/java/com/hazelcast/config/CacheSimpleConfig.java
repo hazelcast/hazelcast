@@ -1060,26 +1060,26 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
                  */
                 ETERNAL(4);
 
-                private static final int MIN_TYPE_ID = CREATED.type;
-                private static final int MAX_TYPE_ID = ETERNAL.type;
+                private static final int MIN_ID = CREATED.id;
+                private static final int MAX_ID = ETERNAL.id;
                 private static final ExpiryPolicyType[] CACHED_VALUES = values();
 
-                private int type;
+                private int id;
 
-                ExpiryPolicyType(int type) {
-                    this.type = type;
+                ExpiryPolicyType(int id) {
+                    this.id = id;
                 }
 
                 /**
                  * @return unique ID for the expiry policy type
                  */
-                public int getType() {
-                    return type;
+                public int getId() {
+                    return id;
                 }
 
-                public static ExpiryPolicyType getByType(int type) {
-                    if (MIN_TYPE_ID <= type && type <= MAX_TYPE_ID) {
-                        return CACHED_VALUES[type];
+                public static ExpiryPolicyType getById(int id) {
+                    if (MIN_ID <= id && id <= MAX_ID) {
+                        return CACHED_VALUES[id];
                     }
                     return null;
                 }

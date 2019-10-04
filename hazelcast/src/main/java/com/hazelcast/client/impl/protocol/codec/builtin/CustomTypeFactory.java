@@ -41,8 +41,6 @@ import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.D
 
 public final class CustomTypeFactory {
 
-    private static final TimeUnit[] CACHED_TIME_UNIT_VALUES = TimeUnit.values();
-
     private CustomTypeFactory() {
     }
 
@@ -62,7 +60,7 @@ public final class CustomTypeFactory {
 
     public static TimedExpiryPolicyFactoryConfig createTimedExpiryPolicyFactoryConfig(int expiryPolicyType,
                                                                                         DurationConfig durationConfig) {
-        return new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.getByType(expiryPolicyType), durationConfig);
+        return new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.getById(expiryPolicyType), durationConfig);
     }
 
     public static CacheSimpleEntryListenerConfig createCacheSimpleEntryListenerConfig(boolean oldValueRequired,
@@ -141,8 +139,26 @@ public final class CustomTypeFactory {
         return eventData;
     }
 
-    public static DurationConfig createDurationConfig(long durationAmount, int timeUnit) {
-        return new DurationConfig(durationAmount, CACHED_TIME_UNIT_VALUES[timeUnit]);
+    public static DurationConfig createDurationConfig(long durationAmount, int timeUnitId) {
+        TimeUnit timeUnit;
+        if (timeUnitId == 0) {
+            timeUnit = TimeUnit.NANOSECONDS;
+        } else if (timeUnitId == 1) {
+            timeUnit = TimeUnit.MICROSECONDS;
+        } else if (timeUnitId == 2) {
+            timeUnit = TimeUnit.MILLISECONDS;
+        } else if (timeUnitId == 3) {
+            timeUnit = TimeUnit.SECONDS;
+        } else if (timeUnitId == 4) {
+            timeUnit = TimeUnit.MINUTES;
+        } else if (timeUnitId == 5) {
+            timeUnit = TimeUnit.HOURS;
+        } else if (timeUnitId == 6) {
+            timeUnit = TimeUnit.DAYS;
+        } else {
+            timeUnit = null;
+        }
+        return new DurationConfig(durationAmount, timeUnit);
     }
 
     public static IndexConfig createIndexConfig(String name, int type, List<String> attributes) {
