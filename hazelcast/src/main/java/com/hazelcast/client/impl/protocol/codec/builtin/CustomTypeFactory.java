@@ -41,6 +41,8 @@ import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.D
 
 public final class CustomTypeFactory {
 
+    private static final TimeUnit[] CACHED_TIME_UNIT_VALUES = TimeUnit.values();
+
     private CustomTypeFactory() {
     }
 
@@ -58,9 +60,9 @@ public final class CustomTypeFactory {
                 dataOldValue, oldValueAvailable);
     }
 
-    public static TimedExpiryPolicyFactoryConfig createTimedExpiryPolicyFactoryConfig(String expiryPolicyType,
+    public static TimedExpiryPolicyFactoryConfig createTimedExpiryPolicyFactoryConfig(int expiryPolicyType,
                                                                                         DurationConfig durationConfig) {
-        return new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.valueOf(expiryPolicyType), durationConfig);
+        return new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.getByType(expiryPolicyType), durationConfig);
     }
 
     public static CacheSimpleEntryListenerConfig createCacheSimpleEntryListenerConfig(boolean oldValueRequired,
@@ -139,8 +141,8 @@ public final class CustomTypeFactory {
         return eventData;
     }
 
-    public static DurationConfig createDurationConfig(long durationAmount, String timeUnit) {
-        return new DurationConfig(durationAmount, TimeUnit.valueOf(timeUnit));
+    public static DurationConfig createDurationConfig(long durationAmount, int timeUnit) {
+        return new DurationConfig(durationAmount, CACHED_TIME_UNIT_VALUES[timeUnit]);
     }
 
     public static IndexConfig createIndexConfig(String name, int type, List<String> attributes) {

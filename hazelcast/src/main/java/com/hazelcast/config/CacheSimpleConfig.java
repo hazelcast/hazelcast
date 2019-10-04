@@ -1042,23 +1042,47 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
                  */
-                CREATED,
+                CREATED(0),
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.ModifiedExpiryPolicy}.
                  */
-                MODIFIED,
+                MODIFIED(1),
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.AccessedExpiryPolicy}.
                  */
-                ACCESSED,
+                ACCESSED(2),
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.TouchedExpiryPolicy}.
                  */
-                TOUCHED,
+                TOUCHED(3),
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.EternalExpiryPolicy}.
                  */
-                ETERNAL
+                ETERNAL(4);
+
+                private static final int MIN_TYPE_ID = CREATED.type;
+                private static final int MAX_TYPE_ID = ETERNAL.type;
+                private static final ExpiryPolicyType[] CACHED_VALUES = values();
+
+                private int type;
+
+                ExpiryPolicyType(int type) {
+                    this.type = type;
+                }
+
+                /**
+                 * @return unique ID for the expiry policy type
+                 */
+                public int getType() {
+                    return type;
+                }
+
+                public static ExpiryPolicyType getByType(int type) {
+                    if (MIN_TYPE_ID <= type && type <= MAX_TYPE_ID) {
+                        return CACHED_VALUES[type];
+                    }
+                    return null;
+                }
             }
 
             @Override
@@ -1074,7 +1098,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
                 if (expiryPolicyType != that.expiryPolicyType) {
                     return false;
                 }
-                return durationConfig != null ? durationConfig.equals(that.durationConfig) : that.durationConfig == null;
+                return Objects.equals(durationConfig, that.durationConfig);
             }
 
             @Override
