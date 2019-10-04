@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
@@ -31,6 +30,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Collection;
 
@@ -101,7 +101,7 @@ public interface RaftNode {
      * Sets node's status to {@link RaftNodeStatus#TERMINATED} unconditionally
      * if it's not terminated or stepped down yet.
      */
-    ICompletableFuture forceSetTerminatedStatus();
+    InternalCompletableFuture forceSetTerminatedStatus();
 
     /**
      * Handles {@link PreVoteRequest} sent by another follower.
@@ -160,7 +160,7 @@ public interface RaftNode {
      * @param operation operation to replicate
      * @return future to get notified about result of the replication
      */
-    ICompletableFuture replicate(Object operation);
+    InternalCompletableFuture replicate(Object operation);
 
     /**
      * Replicates the membership change to the Raft group.
@@ -174,7 +174,7 @@ public interface RaftNode {
      * @param mode   type of membership change
      * @return future to get notified about result of the membership change
      */
-    ICompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode);
+    InternalCompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode);
 
     /**
      * Replicates the membership change to the Raft group, if expected members
@@ -188,7 +188,9 @@ public interface RaftNode {
      * @param groupMembersCommitIndex expected members commit index
      * @return future to get notified about result of the membership change
      */
-    ICompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode, long groupMembersCommitIndex);
+    InternalCompletableFuture replicateMembershipChange(RaftEndpoint member,
+                                                        MembershipChangeMode mode,
+                                                        long groupMembersCommitIndex);
 
     /**
      * Executes the given operation on Raft group depending
@@ -198,7 +200,7 @@ public interface RaftNode {
      * @param queryPolicy query policy to decide where to execute operation
      * @return future to get notified about result of the query
      */
-    ICompletableFuture query(Object operation, QueryPolicy queryPolicy);
+    InternalCompletableFuture query(Object operation, QueryPolicy queryPolicy);
 
     /**
      * Transfers group leadership to the given endpoint, if the local Raft node
@@ -221,5 +223,5 @@ public interface RaftNode {
      *
      * @return future to get notified about result of the leadership transfer
      */
-    ICompletableFuture transferLeadership(RaftEndpoint endpoint);
+    InternalCompletableFuture transferLeadership(RaftEndpoint endpoint);
 }

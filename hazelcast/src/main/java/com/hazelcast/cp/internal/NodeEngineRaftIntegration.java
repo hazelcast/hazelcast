@@ -44,11 +44,11 @@ import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raftop.NotifyTermChangeOp;
 import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
 import com.hazelcast.cp.internal.util.PartitionSpecificRunnableAdaptor;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.executionservice.TaskScheduler;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -58,12 +58,10 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 
 /**
  * The integration point of the Raft algorithm implementation and
@@ -129,9 +127,8 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public SimpleCompletableFuture newCompletableFuture() {
-        Executor executor = nodeEngine.getExecutionService().getExecutor(ASYNC_EXECUTOR);
-        return new SimpleCompletableFuture(executor, nodeEngine.getLogger(getClass()));
+    public InternalCompletableFuture newCompletableFuture() {
+        return new InternalCompletableFuture();
     }
 
     @Override

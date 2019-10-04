@@ -16,24 +16,24 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
-import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -58,6 +58,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -128,8 +129,8 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         try {
             Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
             CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
-            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
-            completableFuture.andThen(callback);
+            InternalCompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            completableFuture.whenCompleteAsync(callback);
 
             callableLatch.countDown();
             assertOpenEventually(callback.getLatch());
@@ -151,9 +152,9 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             CountingDownExecutionCallback<String> callback1 = new CountingDownExecutionCallback<String>(callbackLatch);
             CountingDownExecutionCallback<String> callback2 = new CountingDownExecutionCallback<String>(callbackLatch);
 
-            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
-            completableFuture.andThen(callback1);
-            completableFuture.andThen(callback2);
+            CompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            completableFuture.whenCompleteAsync(callback1);
+            completableFuture.whenCompleteAsync(callback2);
 
             callableLatch.countDown();
             assertOpenEventually(callbackLatch);
@@ -172,12 +173,12 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
             Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
-            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            CompletableFuture<String> completableFuture = es.asCompletableFuture(future);
             callableLatch.countDown();
             future.get();
 
             CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
-            completableFuture.andThen(callback);
+            completableFuture.whenCompleteAsync(callback);
 
             try {
                 assertOpenEventually(callback.getLatch());
@@ -201,14 +202,14 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
             Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
-            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            CompletableFuture<String> completableFuture = es.asCompletableFuture(future);
             callableLatch.countDown();
             future.get();
 
             CountingDownExecutionCallback<String> callback1 = new CountingDownExecutionCallback<String>(callbackLatch);
-            completableFuture.andThen(callback1);
+            completableFuture.whenCompleteAsync(callback1);
             CountingDownExecutionCallback<String> callback2 = new CountingDownExecutionCallback<String>(callbackLatch);
-            completableFuture.andThen(callback2);
+            completableFuture.whenCompleteAsync(callback2);
 
             assertOpenEventually(callbackLatch);
             assertEquals(CountDownLatchAwaitingCallable.RESULT, callback1.getResult());
@@ -230,9 +231,9 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         IExecutorService executorService = instance2.getExecutorService(name);
         ICountDownLatchAwaitCallable task = new ICountDownLatchAwaitCallable("latch");
         String key = generateKeyOwnedBy(instance1);
-        ICompletableFuture<Boolean> future = (ICompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
+        CompletableFuture<Boolean> future = (CompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(1);
-        future.andThen(callback);
+        future.whenCompleteAsync(callback);
         instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
         assertTrue(future.get());
         assertOpenEventually(callback.getLatch());
@@ -247,11 +248,11 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         IExecutorService executorService = instance2.getExecutorService(name);
         BasicTestCallable task = new BasicTestCallable();
         String key = generateKeyOwnedBy(instance1);
-        ICompletableFuture<String> future = (ICompletableFuture<String>) executorService.submitToKeyOwner(task, key);
+        CompletableFuture<String> future = (CompletableFuture<String>) executorService.submitToKeyOwner(task, key);
         assertEquals(BasicTestCallable.RESULT, future.get());
 
         CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
-        future.andThen(callback);
+        future.whenCompleteAsync(callback);
 
         assertOpenEventually(callback.getLatch(), 10);
     }
@@ -268,11 +269,11 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         IExecutorService executorService = instance2.getExecutorService(name);
         ICountDownLatchAwaitCallable task = new ICountDownLatchAwaitCallable("latch");
         String key = generateKeyOwnedBy(instance1);
-        ICompletableFuture<Boolean> future = (ICompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
+        CompletableFuture<Boolean> future = (CompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
         CountDownLatch latch = new CountDownLatch(2);
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(latch);
-        future.andThen(callback);
-        future.andThen(callback);
+        future.whenCompleteAsync(callback);
+        future.whenCompleteAsync(callback);
         instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
         assertTrue(future.get());
         assertOpenEventually(latch, 10);

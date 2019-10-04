@@ -19,12 +19,11 @@ package com.hazelcast.cache.impl.journal;
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.internal.services.ObjectNamespace;
 
 import javax.cache.Cache;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -33,6 +32,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -98,13 +98,13 @@ public class EventJournalCacheDataStructureAdapter<K, V>
 
     @Override
     @SuppressWarnings("unchecked")
-    public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
+    public CompletionStage<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         return ((EventJournalReader<?>) cache).subscribeToEventJournal(partitionId);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+    public <T> CompletionStage<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
             int minSize,
             int maxSize,

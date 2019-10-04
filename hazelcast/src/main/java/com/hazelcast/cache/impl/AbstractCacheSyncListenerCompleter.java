@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.MutableOperation;
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.util.Collection;
@@ -91,7 +91,7 @@ public abstract class AbstractCacheSyncListenerCompleter
         return MutableOperation.IGNORE_COMPLETION;
     }
 
-    public void waitCompletionLatch(Integer countDownLatchId, ICompletableFuture future)
+    public void waitCompletionLatch(Integer countDownLatchId, InternalCompletableFuture future)
             throws ExecutionException {
         if (countDownLatchId != IGNORE_COMPLETION) {
             CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
@@ -119,7 +119,7 @@ public abstract class AbstractCacheSyncListenerCompleter
         }
     }
 
-    protected abstract void awaitLatch(CountDownLatch countDownLatch, ICompletableFuture future)
+    protected abstract void awaitLatch(CountDownLatch countDownLatch, InternalCompletableFuture future)
             throws ExecutionException;
 
     public void putListenerIfAbsent(CacheEntryListenerConfiguration configuration, UUID regId) {

@@ -16,25 +16,25 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.operation.PartitionBackupReplicaAntiEntropyOperation;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
 
@@ -82,7 +82,8 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
     }
 
     final void invokePartitionBackupReplicaAntiEntropyOp(int replicaIndex, PartitionReplica target,
-                                                         Collection<ServiceNamespace> namespaces, ExecutionCallback callback) {
+                                                         Collection<ServiceNamespace> namespaces,
+                                                         BiConsumer<Object, Throwable> callback) {
         if (skipSendingToTarget(target)) {
             return;
         }
@@ -106,10 +107,10 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
 
         if (hasCallback) {
             operationService.createInvocationBuilder(SERVICE_NAME, op, target.address())
-                            .setExecutionCallback(callback)
                             .setTryCount(OPERATION_TRY_COUNT)
                             .setTryPauseMillis(OPERATION_TRY_PAUSE_MILLIS)
-                            .invoke();
+                            .invoke()
+                            .whenCompleteAsync(callback);
         } else {
             operationService.send(op, target.address());
         }

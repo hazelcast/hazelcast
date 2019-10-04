@@ -18,7 +18,7 @@ package com.hazelcast.cp.internal.raft.impl.state;
 
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,7 +64,7 @@ public class QueryState {
     /**
      * Queries waiting to be executed.
      */
-    private final List<BiTuple<Object, SimpleCompletableFuture>> operations = new ArrayList<>();
+    private final List<BiTuple<Object, InternalCompletableFuture>> operations = new ArrayList<>();
 
     /**
      * The set of followers acknowledged the leader in the current heartbeat
@@ -77,7 +77,7 @@ public class QueryState {
      * of queries waiting to be executed. Also updates the minimum commit index
      * that is expected on the leader to execute the queries.
      */
-    public int addQuery(long commitIndex, Object operation, SimpleCompletableFuture resultFuture) {
+    public int addQuery(long commitIndex, Object operation, InternalCompletableFuture resultFuture) {
         if (commitIndex < queryCommitIndex) {
             throw new IllegalArgumentException("Cannot execute query: " + operation + " at commit index because of the current "
                     + this);
@@ -161,7 +161,7 @@ public class QueryState {
     /**
      * Returns the queries waiting to be executed.
      */
-    public Collection<BiTuple<Object, SimpleCompletableFuture>> operations() {
+    public Collection<BiTuple<Object, InternalCompletableFuture>> operations() {
         return operations;
     }
 

@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
@@ -61,12 +62,12 @@ public class PipeliningTest extends HazelcastTestSupport {
     @Test
     public void testInterrupt() throws Exception {
         final Pipelining<String> pipelining = new Pipelining<String>(1);
-        pipelining.add(mock(ICompletableFuture.class));
+        pipelining.add(mock(CompletionStage.class));
 
         TestThread t = new TestThread() {
             @Override
             public void doRun() throws Throwable {
-                pipelining.add(mock(ICompletableFuture.class));
+                pipelining.add(mock(CompletionStage.class));
             }
         };
         t.start();
@@ -77,12 +78,12 @@ public class PipeliningTest extends HazelcastTestSupport {
     @Test
     public void testSpuriousWakeup() throws Exception {
         final Pipelining<String> pipelining = new Pipelining<String>(1);
-        pipelining.add(mock(ICompletableFuture.class));
+        pipelining.add(mock(CompletionStage.class));
 
         TestThread t = new TestThread() {
             @Override
             public void doRun() throws Throwable {
-                pipelining.add(mock(ICompletableFuture.class));
+                pipelining.add(mock(CompletionStage.class));
             }
         };
         t.start();
@@ -100,7 +101,7 @@ public class PipeliningTest extends HazelcastTestSupport {
     public void test() throws Exception {
         IMap map = hz.getMap("map");
         int items = 100000;
-        List<Integer> expected = new ArrayList<Integer>();
+        List<Integer> expected = new ArrayList<>();
         Random random = new Random();
         for (int k = 0; k < items; k++) {
             int item = random.nextInt();
@@ -108,7 +109,7 @@ public class PipeliningTest extends HazelcastTestSupport {
             map.put(k, item);
         }
 
-        Pipelining<String> pipelining = new Pipelining<String>(1);
+        Pipelining<String> pipelining = new Pipelining<>(1);
         for (int k = 0; k < items; k++) {
             pipelining.add(map.getAsync(k));
         }

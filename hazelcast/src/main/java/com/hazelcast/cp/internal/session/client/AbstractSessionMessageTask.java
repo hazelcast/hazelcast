@@ -17,19 +17,17 @@
 package com.hazelcast.cp.internal.session.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.security.Permission;
 
-abstract class AbstractSessionMessageTask<P, R> extends AbstractMessageTask<P>
-        implements ExecutionCallback<R> {
+abstract class AbstractSessionMessageTask<P, R> extends AbstractCPMessageTask<P> {
 
     AbstractSessionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,7 +40,7 @@ abstract class AbstractSessionMessageTask<P, R> extends AbstractMessageTask<P>
         RaftOp raftOp = getRaftOp();
 
         InternalCompletableFuture<R> future = service.getInvocationManager().invoke(groupId, raftOp);
-        future.andThen(this);
+        future.whenCompleteAsync(this);
     }
 
     abstract CPGroupId getGroupId();
@@ -72,15 +70,5 @@ abstract class AbstractSessionMessageTask<P, R> extends AbstractMessageTask<P>
     @Override
     public Object[] getParameters() {
         return new Object[0];
-    }
-
-    @Override
-    public void onResponse(R response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

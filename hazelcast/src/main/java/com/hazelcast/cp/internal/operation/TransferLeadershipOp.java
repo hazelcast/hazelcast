@@ -16,8 +16,6 @@
 
 package com.hazelcast.cp.internal.operation;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -29,18 +27,20 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
+import java.util.function.BiConsumer;
 
 /**
  * Triggers the local CP member to transfer Raft group leadership to given CP
  * member for the given CP group
  */
 public class TransferLeadershipOp extends Operation implements RaftSystemOperation, IdentifiedDataSerializable,
-                                                               ExecutionCallback {
+                                                               BiConsumer<Object, Throwable> {
 
     private CPGroupId groupId;
     private CPMember destination;
@@ -56,19 +56,18 @@ public class TransferLeadershipOp extends Operation implements RaftSystemOperati
     @Override
     public CallStatus call() throws Exception {
         RaftService service = getService();
-        ICompletableFuture future = service.transferLeadership(groupId, (CPMemberInfo) destination);
-        future.andThen(this);
+        InternalCompletableFuture future = service.transferLeadership(groupId, (CPMemberInfo) destination);
+        future.whenCompleteAsync(this);
         return CallStatus.DONE_VOID;
     }
 
     @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        sendResponse(t);
+    public void accept(Object response, Throwable throwable) {
+        if (throwable == null) {
+            sendResponse(response);
+        } else {
+            sendResponse(throwable);
+        }
     }
 
     @Override

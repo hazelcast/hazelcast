@@ -20,8 +20,6 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
@@ -31,6 +29,8 @@ import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -167,7 +167,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                     addOrOverwrite(message);
                     break;
                 case DISCARD_NEWEST:
-                    ringbuffer.addAsync(message, OverflowPolicy.FAIL).get();
+                    ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
                     break;
                 case BLOCK:
                     addWithBackoff(message);
@@ -184,11 +184,11 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     private Long addOrOverwrite(ReliableTopicMessage message) throws Exception {
-        return ringbuffer.addAsync(message, OverflowPolicy.OVERWRITE).get();
+        return ringbuffer.addAsync(message, OverflowPolicy.OVERWRITE).toCompletableFuture().get();
     }
 
     private void addOrFail(ReliableTopicMessage message) throws Exception {
-        long sequenceId = ringbuffer.addAsync(message, OverflowPolicy.FAIL).get();
+        long sequenceId = ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
         if (sequenceId == -1) {
             throw new TopicOverloadException("Failed to publish message: " + message + " on topic:" + getName());
         }
@@ -197,7 +197,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     private void addWithBackoff(ReliableTopicMessage message) throws Exception {
         long timeoutMs = INITIAL_BACKOFF_MS;
         for (; ; ) {
-            long result = ringbuffer.addAsync(message, OverflowPolicy.FAIL).get();
+            long result = ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
             if (result != -1) {
                 break;
             }

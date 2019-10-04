@@ -23,31 +23,30 @@ import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
-import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.CallStatus;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.impl.operationservice.Offload;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.SimpleExecutionCallback;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -59,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 import static java.util.Collections.singleton;
@@ -156,12 +156,12 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         Address target = migrationInfo.getDestinationAddress();
         nodeEngine.getOperationService()
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, target)
-                .setExecutionCallback(new MigrationCallback())
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
                 .setTryCount(InternalPartitionService.MIGRATION_RETRY_COUNT)
                 .setTryPauseMillis(InternalPartitionService.MIGRATION_RETRY_PAUSE)
-                .invoke();
+                .invoke()
+                .whenCompleteAsync(new MigrationCallback());
     }
 
     private void trySendNewFragment() {
@@ -307,13 +307,13 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      * Processes the migration result sent from the migration destination and sends the response to the caller of this operation.
      * A response equal to {@link Boolean#TRUE} indicates successful migration.
      */
-    private final class MigrationCallback extends SimpleExecutionCallback<Object> {
+    private final class MigrationCallback implements BiConsumer<Object, Throwable> {
 
         private MigrationCallback() {
         }
 
         @Override
-        public void notify(Object result) {
+        public void accept(Object result, Throwable throwable) {
             if (Boolean.TRUE.equals(result)) {
                 if (fragmentedMigrationEnabled) {
                     OperationServiceImpl operationService = (OperationServiceImpl) getNodeEngine().getOperationService();

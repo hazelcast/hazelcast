@@ -182,7 +182,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
 
         InvocationFuture f = invocation.future;
         try {
-            f.join();
+            f.joinInternal();
             fail();
         } catch (HazelcastInstanceNotActiveException expected) {
         }

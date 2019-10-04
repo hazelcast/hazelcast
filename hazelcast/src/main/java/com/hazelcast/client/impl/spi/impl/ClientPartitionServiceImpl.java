@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
@@ -46,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
@@ -57,12 +57,12 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
     private static final long BLOCKING_GET_ONCE_SLEEP_MILLIS = 100;
-    private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
+    private final BiConsumer<ClientMessage, Throwable> refreshTaskCallback = new RefreshTaskCallback();
     private final ClientExecutionServiceImpl clientExecutionService;
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
     private final AtomicReference<PartitionTable> partitionTable =
-            new AtomicReference<PartitionTable>(new PartitionTable(null, -1, new Int2ObjectHashMap<Address>()));
+            new AtomicReference<>(new PartitionTable(null, -1, new Int2ObjectHashMap<>()));
     private volatile int partitionCount;
     private volatile long lastCorrelationId = -1;
 
@@ -350,7 +350,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
                 ClientInvocationFuture future =
                         new ClientInvocation(client, requestMessage, null, connection).invokeUrgent();
-                future.andThen(refreshTaskCallback);
+                future.whenCompleteAsync(refreshTaskCallback);
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
                     logger.warning("Error while fetching cluster partition table!", e);
@@ -359,22 +359,21 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private class RefreshTaskCallback implements ExecutionCallback<ClientMessage> {
+    private class RefreshTaskCallback implements BiConsumer<ClientMessage, Throwable> {
 
         @Override
-        public void onResponse(ClientMessage responseMessage) {
-            if (responseMessage == null) {
-                return;
-            }
-            Connection connection = responseMessage.getConnection();
-            ClientGetPartitionsCodec.ResponseParameters response = ClientGetPartitionsCodec.decodeResponse(responseMessage);
-            processPartitionResponse(connection, response.partitions, response.partitionStateVersion);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            if (client.getLifecycleService().isRunning()) {
-                logger.warning("Error while fetching cluster partition table!", t);
+        public void accept(ClientMessage responseMessage, Throwable throwable) {
+            if (throwable == null) {
+                if (responseMessage == null) {
+                    return;
+                }
+                Connection connection = responseMessage.getConnection();
+                ClientGetPartitionsCodec.ResponseParameters response = ClientGetPartitionsCodec.decodeResponse(responseMessage);
+                processPartitionResponse(connection, response.partitions, response.partitionStateVersion);
+            } else {
+                if (client.getLifecycleService().isRunning()) {
+                    logger.warning("Error while fetching cluster partition table!", throwable);
+                }
             }
         }
     }

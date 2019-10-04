@@ -112,11 +112,11 @@ public abstract class AbstractEventJournalBounceTest {
 
         for (int i = 1; i < TEST_PARTITION_COUNT; i++) {
             try {
-                final EventJournalInitialSubscriberState state = reader.subscribeToEventJournal(i).get();
+                final EventJournalInitialSubscriberState state = reader.subscribeToEventJournal(i).toCompletableFuture().get();
                 final ReadResultSet<T> partitionEvents = reader.readFromEventJournal(
                         state.getOldestSequence(), 1,
                         (int) (state.getNewestSequence() - state.getOldestSequence() + 1), i,
-                        new TruePredicate<T>(), new IdentityFunction<T>()).get();
+                        new TruePredicate<T>(), new IdentityFunction<T>()).toCompletableFuture().get();
                 for (T event : partitionEvents) {
                     events.add(event);
                 }

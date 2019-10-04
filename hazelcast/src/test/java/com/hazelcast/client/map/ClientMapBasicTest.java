@@ -272,7 +272,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Val";
 
-        Future result = map.putAsync(key, value);
+        Future result = map.putAsync(key, value).toCompletableFuture();
 
         assertNull(result.get());
         assertEquals(value, map.get(key));
@@ -286,7 +286,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String newValue = "Val";
 
         map.put(key, oldValue);
-        Future result = map.putAsync(key, newValue);
+        Future result = map.putAsync(key, newValue).toCompletableFuture();
 
         assertEquals(oldValue, result.get());
         assertEquals(newValue, map.get(key));
@@ -314,7 +314,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Val";
 
-        Future result = map.putAsync(key, value, 5, MINUTES);
+        Future result = map.putAsync(key, value, 5, MINUTES).toCompletableFuture();
 
         assertNull(result.get());
         assertEquals(value, map.get(key));
@@ -328,7 +328,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String newValue = "Val";
 
         map.put(key, oldValue);
-        Future result = map.putAsync(key, newValue, 5, MINUTES);
+        Future result = map.putAsync(key, newValue, 5, MINUTES).toCompletableFuture();
 
         assertEquals(oldValue, result.get());
         assertEquals(newValue, map.get(key));
@@ -340,7 +340,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Val";
 
-        Future result = map.putAsync(key, value, 1, TimeUnit.SECONDS);
+        Future result = map.putAsync(key, value, 1, TimeUnit.SECONDS).toCompletableFuture();
         assertNull(result.get());
         sleepSeconds(2);
         assertNull(map.get(key));
@@ -354,7 +354,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String newValue = "Val";
 
         map.put(key, oldValue);
-        Future result = map.putAsync(key, newValue, 1, TimeUnit.SECONDS);
+        Future result = map.putAsync(key, newValue, 1, TimeUnit.SECONDS).toCompletableFuture();
 
         assertEquals(oldValue, result.get());
         sleepSeconds(2);
@@ -367,7 +367,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Val";
 
-        Future<Void> result = map.setAsync(key, value);
+        Future<Void> result = map.setAsync(key, value).toCompletableFuture();
 
         result.get();
         assertEquals(value, map.get(key));
@@ -395,7 +395,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Val";
 
-        Future<Void> result = map.setAsync(key, value, 5, MINUTES);
+        Future<Void> result = map.setAsync(key, value, 5, MINUTES).toCompletableFuture();
 
         result.get();
         assertEquals(value, map.get(key));
@@ -409,7 +409,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
-        Future<Void> result = map.setAsync(key, value, 1, TimeUnit.SECONDS);
+        Future<Void> result = map.setAsync(key, value, 1, TimeUnit.SECONDS).toCompletableFuture();
         result.get();
         assertOpenEventually(latch);
         assertNull(map.get(key));
@@ -425,7 +425,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         map.addEntryListener((EntryExpiredListener<String, String>) event -> latch.countDown(), true);
 
         map.set(key, oldValue);
-        Future<Void> result = map.setAsync(key, newValue, 1, TimeUnit.SECONDS);
+        Future<Void> result = map.setAsync(key, newValue, 1, TimeUnit.SECONDS).toCompletableFuture();
         result.get();
         assertOpenEventually(latch);
         assertNull(map.get(key));
@@ -673,7 +673,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String val = "Val";
 
         map.put(key, val);
-        Future result = map.getAsync(key);
+        Future result = map.getAsync(key).toCompletableFuture();
         assertEquals(val, result.get());
     }
 
@@ -681,7 +681,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     public void testGetAsync_whenKeyAbsent() throws Exception {
         IMap<String, String> map = client.getMap(randomString());
 
-        Future result = map.getAsync("NOT_THERE");
+        Future result = map.getAsync("NOT_THERE").toCompletableFuture();
         assertNull(result.get());
     }
 
@@ -809,7 +809,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String value = "value";
 
         map.put(key, value);
-        Future result = map.removeAsync(key);
+        Future result = map.removeAsync(key).toCompletableFuture();
 
         assertEquals(value, result.get());
         assertNull(map.get(key));
@@ -819,7 +819,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     public void testRemoveAsync_whenKeyNotPresent() throws Exception {
         IMap<String, String> map = client.getMap(randomString());
 
-        Future result = map.removeAsync("NOT_THERE");
+        Future result = map.removeAsync("NOT_THERE").toCompletableFuture();
         assertNull(result.get());
     }
 

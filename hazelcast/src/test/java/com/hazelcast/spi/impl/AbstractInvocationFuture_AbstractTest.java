@@ -29,6 +29,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationFuture.returnOrThrowWithGetConventions;
+
 public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTestSupport {
 
     protected ILogger logger;
@@ -47,18 +49,27 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
     class TestFuture extends AbstractInvocationFuture {
         volatile boolean interruptDetected;
 
+        private final Executor executor;
+
         TestFuture() {
-            super(AbstractInvocationFuture_AbstractTest.this.executor, AbstractInvocationFuture_AbstractTest.this.logger);
+            super(AbstractInvocationFuture_AbstractTest.this.logger);
+            this.executor = AbstractInvocationFuture_AbstractTest.this.executor;
         }
 
         TestFuture(Executor executor, ILogger logger) {
-            super(executor, logger);
+            super(logger);
+            this.executor = executor;
+        }
+
+        @Override
+        protected Executor defaultExecutor() {
+            return executor;
         }
 
         @Override
         protected void onInterruptDetected() {
             interruptDetected = true;
-            complete(new InterruptedException());
+            completeExceptionally(new InterruptedException());
         }
 
         @Override
@@ -73,18 +84,8 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
 
         @Override
         protected Object resolveAndThrowIfException(Object state) throws ExecutionException, InterruptedException {
-            if (state instanceof Throwable) {
-                if (state instanceof Error) {
-                    throw (Error) state;
-                } else if (state instanceof RuntimeException) {
-                    throw (RuntimeException) state;
-                } else if (state instanceof InterruptedException) {
-                    throw (InterruptedException) state;
-                } else {
-                    throw new ExecutionException((Throwable) state);
-                }
-            }
-            return state;
+            Object value = resolve(state);
+            return returnOrThrowWithGetConventions(value);
         }
 
         @Override

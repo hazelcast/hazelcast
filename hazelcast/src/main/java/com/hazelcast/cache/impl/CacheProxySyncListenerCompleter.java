@@ -17,8 +17,8 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +41,7 @@ class CacheProxySyncListenerCompleter extends AbstractCacheSyncListenerCompleter
     }
 
     @Override
-    protected void awaitLatch(CountDownLatch countDownLatch, ICompletableFuture future) {
+    protected void awaitLatch(CountDownLatch countDownLatch, InternalCompletableFuture future) {
         try {
             long currentTimeoutMs = MAX_COMPLETION_LATCH_WAIT_TIME;
             // Call latch await in small steps to be able to check if node is still active.

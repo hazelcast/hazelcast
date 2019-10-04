@@ -165,7 +165,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         int overflow = 100;
         List<Future> futures = new ArrayList<Future>(maxCapacity + overflow);
         for (int i = 0; i < maxCapacity + overflow; i++) {
-            Future future = map.putAsync(i, i);
+            Future future = map.putAsync(i, i).toCompletableFuture();
             futures.add(future);
         }
 

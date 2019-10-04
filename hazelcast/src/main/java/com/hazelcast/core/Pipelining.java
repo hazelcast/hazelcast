@@ -22,6 +22,7 @@ import com.hazelcast.spi.annotation.Beta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
@@ -80,7 +81,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 public class Pipelining<E> {
 
     private final AtomicInteger permits = new AtomicInteger();
-    private final List<ICompletableFuture<E>> futures = new ArrayList<ICompletableFuture<E>>();
+    private final List<CompletionStage<E>> futures = new ArrayList<>();
     private Thread thread;
 
     /**
@@ -107,8 +108,8 @@ public class Pipelining<E> {
      */
     public List<E> results() throws Exception {
         List<E> result = new ArrayList<E>(futures.size());
-        for (ICompletableFuture<E> f : futures) {
-            result.add(f.get());
+        for (CompletionStage<E> f : futures) {
+            result.add(f.toCompletableFuture().get());
         }
         return result;
     }
@@ -124,23 +125,13 @@ public class Pipelining<E> {
      * @throws InterruptedException if the Thread got interrupted while adding the request to the Pipelining.
      * @throws NullPointerException if future is null.
      */
-    public ICompletableFuture<E> add(ICompletableFuture<E> future) throws InterruptedException {
+    public CompletionStage<E> add(CompletionStage<E> future) throws InterruptedException {
         checkNotNull(future, "future can't be null");
         this.thread = Thread.currentThread();
 
         down();
         futures.add(future);
-        future.andThen(new ExecutionCallback<E>() {
-            @Override
-            public void onResponse(E response) {
-                up();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                up();
-            }
-        }, CALLER_RUNS);
+        future.whenCompleteAsync((response, t) -> up(), CALLER_RUNS);
         return future;
     }
 

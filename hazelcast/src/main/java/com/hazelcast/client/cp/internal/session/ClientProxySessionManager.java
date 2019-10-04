@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cp.internal.session;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -25,13 +26,12 @@ import com.hazelcast.client.impl.protocol.codec.CPSessionGenerateThreadIdCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSessionHeartbeatSessionCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cp.internal.session.SessionResponse;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -63,7 +63,7 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
     @Override
     protected long generateThreadId(RaftGroupId groupId) {
         ClientMessage request = CPSessionGenerateThreadIdCodec.encodeRequest(groupId);
-        ClientMessage response = new ClientInvocation(client, request, "sessionManager").invoke().join();
+        ClientMessage response = new ClientInvocation(client, request, "sessionManager").invoke().joinInternal();
 
         return CPSessionGenerateThreadIdCodec.decodeResponse(response).response;
     }
@@ -71,7 +71,7 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
     @Override
     protected SessionResponse requestNewSession(RaftGroupId groupId) {
         ClientMessage request = CPSessionCreateSessionCodec.encodeRequest(groupId, client.getName());
-        ClientMessage response = new ClientInvocation(client, request, "sessionManager").invoke().join();
+        ClientMessage response = new ClientInvocation(client, request, "sessionManager").invoke().joinInternal();
         CPSessionCreateSessionCodec.ResponseParameters params = CPSessionCreateSessionCodec.decodeResponse(response);
         return new SessionResponse(params.sessionId, params.ttlMillis, params.heartbeatMillis);
     }
@@ -82,21 +82,21 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
     }
 
     @Override
-    protected ICompletableFuture<Object> heartbeat(RaftGroupId groupId, long sessionId) {
+    protected InternalCompletableFuture<Object> heartbeat(RaftGroupId groupId, long sessionId) {
         ClientMessage request = CPSessionHeartbeatSessionCodec.encodeRequest(groupId, sessionId);
         ClientInvocationFuture future = new ClientInvocation(client, request, "sessionManager").invoke();
         return new ClientDelegatingFuture<>(future, client.getSerializationService(), HEARTBEAT_RESPONSE_DECODER);
     }
 
     @Override
-    protected ICompletableFuture<Object> closeSession(RaftGroupId groupId, Long sessionId) {
+    protected InternalCompletableFuture<Object> closeSession(RaftGroupId groupId, Long sessionId) {
         ClientMessage request = CPSessionCloseSessionCodec.encodeRequest(groupId, sessionId);
         ClientInvocationFuture future = new ClientInvocation(client, request, "sessionManager").invoke();
         return new ClientDelegatingFuture<>(future, client.getSerializationService(), CLOSE_SESSION_RESPONSE_DECODER);
     }
 
     public void shutdownAndAwait() {
-        Map<RaftGroupId, ICompletableFuture<Object>> futures = shutdown();
+        Map<RaftGroupId, InternalCompletableFuture<Object>> futures = super.shutdown();
 
         ILogger logger = client.getLoggingService().getLogger(getClass());
 
@@ -105,9 +105,9 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
         while (remainingTimeNanos > 0) {
             int closed = 0;
 
-            for (Entry<RaftGroupId, ICompletableFuture<Object>> entry : futures.entrySet()) {
+            for (Entry<RaftGroupId, InternalCompletableFuture<Object>> entry : futures.entrySet()) {
                 CPGroupId groupId = entry.getKey();
-                ICompletableFuture<Object> f = entry.getValue();
+                InternalCompletableFuture<Object> f = entry.getValue();
                 if (f.isDone()) {
                     closed++;
                     try {

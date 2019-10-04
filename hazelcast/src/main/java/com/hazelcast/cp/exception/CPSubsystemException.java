@@ -18,6 +18,7 @@ package com.hazelcast.cp.exception;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
+import com.hazelcast.spi.impl.operationservice.WrappableException;
 
 import java.util.UUID;
 
@@ -28,7 +29,7 @@ import java.util.UUID;
  * when it's thrown.
  * Leader endpoint can be accessed by {@link #getLeaderUuid()}, if available.
  */
-public class CPSubsystemException extends HazelcastException {
+public class CPSubsystemException extends HazelcastException implements WrappableException<CPSubsystemException> {
 
     private static final long serialVersionUID = 3165333502175586105L;
 
@@ -54,5 +55,9 @@ public class CPSubsystemException extends HazelcastException {
      */
     public UUID getLeaderUuid() {
         return leaderUuid;
+    }
+
+    public CPSubsystemException wrap() {
+        return new CPSubsystemException(getMessage(), this, leaderUuid);
     }
 }

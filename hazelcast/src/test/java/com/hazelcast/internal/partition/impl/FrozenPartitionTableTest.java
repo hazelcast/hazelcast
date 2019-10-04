@@ -17,19 +17,19 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -258,7 +258,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();
 
         try {
-            operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member4PartitionId).join();
+            operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member4PartitionId).joinInternal();
             fail("Invocation to missing member should have failed!");
         } catch (TargetNotMemberException ignored) {
         }

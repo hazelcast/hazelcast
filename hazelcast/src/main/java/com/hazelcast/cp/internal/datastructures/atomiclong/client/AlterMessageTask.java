@@ -18,10 +18,9 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp.AlterResultType;
@@ -35,8 +34,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link AlterOp}
  */
-public class AlterMessageTask extends AbstractMessageTask<AtomicLongAlterCodec.RequestParameters>
-        implements ExecutionCallback<Long> {
+public class AlterMessageTask extends AbstractCPMessageTask<AtomicLongAlterCodec.RequestParameters> {
 
     public AlterMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,7 +47,7 @@ public class AlterMessageTask extends AbstractMessageTask<AtomicLongAlterCodec.R
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                .<Long>invoke(parameters.groupId, new AlterOp(parameters.name, function, resultType))
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
@@ -91,15 +89,5 @@ public class AlterMessageTask extends AbstractMessageTask<AtomicLongAlterCodec.R
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.function};
-    }
-
-    @Override
-    public void onResponse(Long response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

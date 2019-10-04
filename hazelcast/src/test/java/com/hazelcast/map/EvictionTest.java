@@ -287,13 +287,13 @@ public class EvictionTest extends HazelcastTestSupport {
 
         // Prolong 4th round
         startRef = currentTimeMillis();
-        map.putAsync(1, "value4").get();
+        map.putAsync(1, "value4").toCompletableFuture().get();
         endRef = currentTimeMillis();
         sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
         // Prolong 5th round
         startRef = currentTimeMillis();
-        map.setAsync(1, "value5").get();
+        map.setAsync(1, "value5").toCompletableFuture().get();
         endRef = currentTimeMillis();
         sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 

@@ -78,7 +78,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
@@ -126,6 +125,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -829,7 +829,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
      * Reads the metrics journal for a given number starting from a specific sequence.
      */
     @Nonnull
-    public ICompletableFuture<MetricsResultSet> readMetricsAsync(Member member, long startSequence) {
+    public InternalCompletableFuture<MetricsResultSet> readMetricsAsync(Member member, long startSequence) {
         ClientMessage request = MetricsReadMetricsCodec.encodeRequest(member.getUuid(), startSequence);
         ClientInvocation invocation = new ClientInvocation(this, request, null, member.getAddress());
 

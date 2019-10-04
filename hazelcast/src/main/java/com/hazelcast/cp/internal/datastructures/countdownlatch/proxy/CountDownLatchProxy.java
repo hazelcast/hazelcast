@@ -59,23 +59,24 @@ public class CountDownLatchProxy implements ICountDownLatch {
         checkNotNull(unit);
 
         long timeoutMillis = Math.max(0, unit.toMillis(timeout));
-        return invocationManager.<Boolean>invoke(groupId, new AwaitOp(objectName, newUnsecureUUID(), timeoutMillis)).join();
+        return invocationManager.<Boolean>invoke(groupId, new AwaitOp(objectName, newUnsecureUUID(), timeoutMillis))
+                .joinInternal();
     }
 
     @Override
     public void countDown() {
-        int round = invocationManager.<Integer>query(groupId, new GetRoundOp(objectName), LINEARIZABLE).join();
-        invocationManager.invoke(groupId, new CountDownOp(objectName, newUnsecureUUID(), round)).join();
+        int round = invocationManager.<Integer>query(groupId, new GetRoundOp(objectName), LINEARIZABLE).joinInternal();
+        invocationManager.invoke(groupId, new CountDownOp(objectName, newUnsecureUUID(), round)).joinInternal();
     }
 
     @Override
     public int getCount() {
-        return invocationManager.<Integer>query(groupId, new GetCountOp(objectName), LINEARIZABLE).join();
+        return invocationManager.<Integer>query(groupId, new GetCountOp(objectName), LINEARIZABLE).joinInternal();
     }
 
     @Override
     public boolean trySetCount(int count) {
-        return invocationManager.<Boolean>invoke(groupId, new TrySetCountOp(objectName, count)).join();
+        return invocationManager.<Boolean>invoke(groupId, new TrySetCountOp(objectName, count)).joinInternal();
     }
 
     @Override
@@ -95,7 +96,7 @@ public class CountDownLatchProxy implements ICountDownLatch {
 
     @Override
     public void destroy() {
-        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
+        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).joinInternal();
     }
 
     public CPGroupId getGroupId() {

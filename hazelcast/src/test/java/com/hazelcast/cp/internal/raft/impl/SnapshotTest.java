@@ -28,6 +28,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -407,9 +408,9 @@ public class SnapshotTest extends HazelcastTestSupport {
             }
         });
 
-        List<Future> futures = new ArrayList<>();
+        List<InternalCompletableFuture> futures = new ArrayList<>();
         for (int i = 40; i < 45; i++) {
-            Future f = leader.replicate(new ApplyRaftRunnable("isolated" + i));
+            InternalCompletableFuture f = leader.replicate(new ApplyRaftRunnable("isolated" + i));
             futures.add(f);
         }
 
@@ -429,9 +430,9 @@ public class SnapshotTest extends HazelcastTestSupport {
         group.dropMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), AppendRequest.class);
         group.merge();
 
-        for (Future f : futures) {
+        for (InternalCompletableFuture f : futures) {
             try {
-                f.get();
+                f.joinInternal();
                 fail();
             } catch (StaleAppendRequestException ignored) {
             }

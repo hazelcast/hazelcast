@@ -18,15 +18,14 @@ package com.hazelcast.journal;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
 import java.util.Random;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
@@ -91,16 +90,12 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
                                  final AtomicReference<Throwable> exception,
                                  long seq) {
         readFromEventJournal(context.dataAdapter, seq, 128, partitionId, TRUE_PREDICATE,
-                IDENTITY_FUNCTION).andThen(new ExecutionCallback<ReadResultSet<EJ_TYPE>>() {
-            @Override
-            public void onResponse(ReadResultSet<EJ_TYPE> response) {
+                IDENTITY_FUNCTION).whenCompleteAsync((response, t) -> {
+            if (t == null) {
                 readFromJournal(context, exception, response.getNextSequenceToReadFrom());
                 // ignore response
                 LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
+            } else {
                 exception.set(t);
             }
         });
@@ -136,12 +131,12 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
      *                      May be {@code null} in which case the event is returned without being
      *                      projected
      * @param <K>           the data structure entry key type
-     * @param <V>the        data structure entry value type
+     * @param <V>           the data structure entry value type
      * @param <PROJ_TYPE>   the return type of the projection. It is equal to the journal event type
      *                      if the projection is {@code null} or it is the identity projection
      * @return the future with the filtered and projected journal items
      */
-    private <K, V, PROJ_TYPE> ICompletableFuture<ReadResultSet<PROJ_TYPE>> readFromEventJournal(
+    private <K, V, PROJ_TYPE> CompletionStage<ReadResultSet<PROJ_TYPE>> readFromEventJournal(
             EventJournalDataStructureAdapter<K, V, EJ_TYPE> adapter,
             long startSequence,
             int maxSize,

@@ -62,7 +62,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
     @Override
     public boolean init(int permits) {
         checkNotNegative(permits, "Permits must be non-negative!");
-        return invocationManager.<Boolean>invoke(groupId, new InitSemaphoreOp(objectName, permits)).join();
+        return invocationManager.<Boolean>invoke(groupId, new InitSemaphoreOp(objectName, permits)).joinInternal();
     }
 
     @Override
@@ -75,7 +75,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
         checkPositive(permits, "Permits must be positive!");
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, -1L);
-        invocationManager.invoke(groupId, op).join();
+        invocationManager.invoke(groupId, op).joinInternal();
     }
 
     @Override
@@ -99,7 +99,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         long timeoutMs = max(0, unit.toMillis(timeout));
         RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, timeoutMs);
-        return invocationManager.<Boolean>invoke(groupId, op).join();
+        return invocationManager.<Boolean>invoke(groupId, op).joinInternal();
     }
 
     @Override
@@ -112,19 +112,19 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
         checkPositive(permits, "Permits must be positive!");
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new ReleasePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits);
-        invocationManager.invoke(groupId, op).join();
+        invocationManager.invoke(groupId, op).joinInternal();
     }
 
     @Override
     public int availablePermits() {
-        return invocationManager.<Integer>query(groupId, new AvailablePermitsOp(objectName), LINEARIZABLE).join();
+        return invocationManager.<Integer>query(groupId, new AvailablePermitsOp(objectName), LINEARIZABLE).joinInternal();
     }
 
     @Override
     public int drainPermits() {
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new DrainPermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID());
-        return invocationManager.<Integer>invoke(groupId, op).join();
+        return invocationManager.<Integer>invoke(groupId, op).joinInternal();
     }
 
     @Override
@@ -135,7 +135,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
         }
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new ChangePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), -reduction);
-        invocationManager.invoke(groupId, op).join();
+        invocationManager.invoke(groupId, op).joinInternal();
     }
 
     @Override
@@ -146,7 +146,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
         }
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new ChangePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), increase);
-        invocationManager.invoke(groupId, op).join();
+        invocationManager.invoke(groupId, op).joinInternal();
     }
 
     @Override
@@ -166,7 +166,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
 
     @Override
     public void destroy() {
-        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
+        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).joinInternal();
     }
 
 }

@@ -18,7 +18,6 @@ package com.hazelcast.internal.longregister.client;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.internal.longregister.LongRegisterService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,6 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertEquals;
 
@@ -68,16 +69,16 @@ public class ClientLongRegisterTest extends HazelcastTestSupport {
 
     @Test
     public void testAsync() throws Exception {
-        ICompletableFuture<Long> future = longRegister.getAndAddAsync(10);
+        CompletableFuture<Long> future = longRegister.getAndAddAsync(10).toCompletableFuture();
         assertEquals(0, future.get().longValue());
 
-        future = longRegister.getAsync();
+        future = longRegister.getAsync().toCompletableFuture();
         assertEquals(10, future.get().longValue());
 
-        future = longRegister.incrementAndGetAsync();
+        future = longRegister.incrementAndGetAsync().toCompletableFuture();
         assertEquals(11, future.get().longValue());
 
-        future = longRegister.addAndGetAsync(-13);
+        future = longRegister.addAndGetAsync(-13).toCompletableFuture();
         assertEquals(-2, future.get().longValue());
     }
 

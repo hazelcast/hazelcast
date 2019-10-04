@@ -482,14 +482,14 @@ public class ScheduledExecutorServiceProxy
     private @Nonnull
     <V> IScheduledFuture<V> submitOnPartitionSync(String taskName, Operation op, int partitionId) {
         op.setPartitionId(partitionId);
-        invokeOnPartition(op).join();
+        invokeOnPartition(op).joinInternal();
         return createFutureProxy(partitionId, taskName);
     }
 
     private @Nonnull
     <V> IScheduledFuture<V> submitOnMemberSync(String taskName, Operation op, Member member) {
         Address address = member.getAddress();
-        getOperationService().invokeOnTarget(getServiceName(), op, address).join();
+        getOperationService().invokeOnTarget(getServiceName(), op, address).joinInternal();
         return createFutureProxy(address, taskName);
     }
 

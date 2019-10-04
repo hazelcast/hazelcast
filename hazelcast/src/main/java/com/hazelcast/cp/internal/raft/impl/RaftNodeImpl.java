@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.exception.LeaderDemotedException;
@@ -66,9 +65,9 @@ import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.RandomPicker;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -108,7 +107,7 @@ public final class RaftNodeImpl implements RaftNode {
     private final ILogger logger;
     private final RaftState state;
     private final RaftIntegration raftIntegration;
-    private final Long2ObjectHashMap<SimpleCompletableFuture> futures = new Long2ObjectHashMap<SimpleCompletableFuture>();
+    private final Long2ObjectHashMap<InternalCompletableFuture> futures = new Long2ObjectHashMap<>();
 
     private final long heartbeatPeriodInMillis;
     private final int leaderElectionTimeout;
@@ -266,15 +265,14 @@ public final class RaftNodeImpl implements RaftNode {
     }
 
     @Override
-    public ICompletableFuture forceSetTerminatedStatus() {
-        final SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
+    public InternalCompletableFuture forceSetTerminatedStatus() {
+        final InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         if (isTerminatedOrSteppedDown()) {
             resultFuture.complete(null);
             return resultFuture;
         }
 
         execute(() -> {
-            Object result = null;
             try {
                 if (isTerminatedOrSteppedDown()) {
                     resultFuture.complete(null);
@@ -284,18 +282,18 @@ public final class RaftNodeImpl implements RaftNode {
                 invalidateFuturesFrom(state.commitIndex() + 1);
                 LeaderState leaderState = state.leaderState();
                 if (leaderState != null) {
-                    for (BiTuple<Object, SimpleCompletableFuture> t : leaderState.queryState().operations()) {
-                        t.element2.setResult(new LeaderDemotedException(state.localEndpoint(), null));
+                    for (BiTuple<Object, InternalCompletableFuture> t : leaderState.queryState().operations()) {
+                        t.element2.completeExceptionally(new LeaderDemotedException(state.localEndpoint(), null));
                     }
                 }
                 state.completeLeadershipTransfer(new LeaderDemotedException(state.localEndpoint(), null));
                 closeStateStore();
+                setStatus(TERMINATED);
+                resultFuture.complete(null);
             } catch (Exception e) {
                 logger.severe("Failure during force-termination", e);
-                result = e;
-            } finally {
                 setStatus(TERMINATED);
-                resultFuture.complete(result);
+                resultFuture.completeExceptionally(e);
             }
         });
 
@@ -395,37 +393,37 @@ public final class RaftNodeImpl implements RaftNode {
     }
 
     @Override
-    public ICompletableFuture replicate(Object operation) {
-        SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
+    public InternalCompletableFuture replicate(Object operation) {
+        InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         execute(new ReplicateTask(this, operation, resultFuture));
         return resultFuture;
     }
 
     @Override
-    public ICompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode) {
-        SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
+    public InternalCompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode) {
+        InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         execute(new MembershipChangeTask(this, resultFuture, member, mode));
         return resultFuture;
     }
 
     @Override
-    public ICompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode,
+    public InternalCompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode,
                                                         long groupMembersCommitIndex) {
-        SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
+        InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         raftIntegration.execute(new MembershipChangeTask(this, resultFuture, member, mode, groupMembersCommitIndex));
         return resultFuture;
     }
 
     @Override
-    public ICompletableFuture query(Object operation, QueryPolicy queryPolicy) {
-        SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
+    public InternalCompletableFuture query(Object operation, QueryPolicy queryPolicy) {
+        InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         raftIntegration.execute(new QueryTask(this, operation, queryPolicy, resultFuture));
         return resultFuture;
     }
 
     @Override
-    public ICompletableFuture transferLeadership(RaftEndpoint endpoint) {
-        SimpleCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
+    public InternalCompletableFuture transferLeadership(RaftEndpoint endpoint) {
+        InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         raftIntegration.execute(new InitLeadershipTransferTask(this, endpoint, resultFuture));
         return resultFuture;
     }
@@ -836,9 +834,9 @@ public final class RaftNodeImpl implements RaftNode {
     /**
      * Executes query operation sets execution result to the future.
      */
-    public void runQuery(Object operation, SimpleCompletableFuture resultFuture) {
+    public void runQuery(Object operation, InternalCompletableFuture resultFuture) {
         Object result = raftIntegration.runOperation(operation, state.commitIndex());
-        resultFuture.setResult(result);
+        resultFuture.complete(result);
     }
 
     /**
@@ -862,8 +860,8 @@ public final class RaftNodeImpl implements RaftNode {
     /**
      * Registers the future for the appended entry with its {@code entryIndex}.
      */
-    public void registerFuture(long entryIndex, SimpleCompletableFuture future) {
-        SimpleCompletableFuture f = futures.put(entryIndex, future);
+    public void registerFuture(long entryIndex, InternalCompletableFuture future) {
+        InternalCompletableFuture f = futures.put(entryIndex, future);
         assert f == null : "Future object is already registered for entry index: " + entryIndex;
     }
 
@@ -871,9 +869,13 @@ public final class RaftNodeImpl implements RaftNode {
      * Completes the future registered with {@code entryIndex}.
      */
     public void completeFuture(long entryIndex, Object response) {
-        SimpleCompletableFuture f = futures.remove(entryIndex);
+        InternalCompletableFuture f = futures.remove(entryIndex);
         if (f != null) {
-            f.setResult(response);
+            if (response instanceof Throwable) {
+                f.completeExceptionally((Throwable) response);
+            } else {
+                f.complete(response);
+            }
         }
     }
 
@@ -883,12 +885,12 @@ public final class RaftNodeImpl implements RaftNode {
      */
     public void invalidateFuturesFrom(long entryIndex) {
         int count = 0;
-        Iterator<Entry<Long, SimpleCompletableFuture>> iterator = futures.entrySet().iterator();
+        Iterator<Entry<Long, InternalCompletableFuture>> iterator = futures.entrySet().iterator();
         while (iterator.hasNext()) {
-            Entry<Long, SimpleCompletableFuture> entry = iterator.next();
+            Entry<Long, InternalCompletableFuture> entry = iterator.next();
             long index = entry.getKey();
             if (index >= entryIndex) {
-                entry.getValue().setResult(new LeaderDemotedException(state.localEndpoint(), state.leader()));
+                entry.getValue().completeExceptionally(new LeaderDemotedException(state.localEndpoint(), state.leader()));
                 iterator.remove();
                 count++;
             }
@@ -902,14 +904,14 @@ public final class RaftNodeImpl implements RaftNode {
     /**
      * Invalidates futures registered with indexes {@code <= entryIndex}. Note that {@code entryIndex} is inclusive.
      */
-    private void invalidateFuturesUntil(long entryIndex, Object response) {
+    private void invalidateFuturesUntil(long entryIndex, Throwable response) {
         int count = 0;
-        Iterator<Entry<Long, SimpleCompletableFuture>> iterator = futures.entrySet().iterator();
+        Iterator<Entry<Long, InternalCompletableFuture>> iterator = futures.entrySet().iterator();
         while (iterator.hasNext()) {
-            Entry<Long, SimpleCompletableFuture> entry = iterator.next();
+            Entry<Long, InternalCompletableFuture> entry = iterator.next();
             long index = entry.getKey();
             if (index <= entryIndex) {
-                entry.getValue().setResult(response);
+                entry.getValue().completeExceptionally(response);
                 iterator.remove();
                 count++;
             }
@@ -1164,8 +1166,8 @@ public final class RaftNodeImpl implements RaftNode {
     public void toFollower(int term) {
         LeaderState leaderState = state.leaderState();
         if (leaderState != null) {
-            for (BiTuple<Object, SimpleCompletableFuture> t : leaderState.queryState().operations()) {
-                t.element2.complete(new LeaderDemotedException(state.localEndpoint(), null));
+            for (BiTuple<Object, InternalCompletableFuture> t : leaderState.queryState().operations()) {
+                t.element2.completeExceptionally(new LeaderDemotedException(state.localEndpoint(), null));
             }
         }
 
@@ -1278,14 +1280,14 @@ public final class RaftNodeImpl implements RaftNode {
             return true;
         }
 
-        Collection<BiTuple<Object, SimpleCompletableFuture>> operations = queryState.operations();
+        Collection<BiTuple<Object, InternalCompletableFuture>> operations = queryState.operations();
 
         if (logger.isFineEnabled()) {
             logger.fine("Running " + operations.size() + " queries at commit index: " + commitIndex
                     + ", query round: " + queryState.queryRound());
         }
 
-        for (BiTuple<Object, SimpleCompletableFuture> t : operations) {
+        for (BiTuple<Object, InternalCompletableFuture> t : operations) {
             runQuery(t.element1, t.element2);
         }
 

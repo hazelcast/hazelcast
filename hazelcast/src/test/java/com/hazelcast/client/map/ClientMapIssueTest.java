@@ -21,11 +21,9 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicates;
@@ -45,6 +43,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
@@ -100,21 +99,9 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Integer, Integer> map = client.getMap("map");
-        final ICompletableFuture<Integer> future = map.getAsync(1);
+        final CompletionStage<Integer> future = map.getAsync(1);
         final CountDownLatch latch = new CountDownLatch(1);
-        future.andThen(new ExecutionCallback<Integer>() {
-            public void onResponse(Integer response) {
-                try {
-                    future.get();
-                    latch.countDown();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            public void onFailure(Throwable t) {
-            }
-        });
+        future.thenRun(latch::countDown);
         assertOpenEventually(latch, 10);
     }
 

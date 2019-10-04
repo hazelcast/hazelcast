@@ -23,11 +23,10 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.test.bounce.MultiSocketClientDriverFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -45,6 +44,7 @@ import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.client.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
@@ -191,7 +191,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
 
     private class MyRunnable implements Runnable {
 
-        private final ExecutionCallback<Integer> callback = new CountingCallback();
+        private final BiConsumer<Integer, Throwable> callback = new CountingCallback();
         private final AtomicLong backpressureCounter = new AtomicLong();
         private final AtomicLong progressCounter = new AtomicLong();
         private final AtomicLong failureCounter = new AtomicLong();
@@ -208,7 +208,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
         public void run() {
             try {
                 int key = ThreadLocalRandomProvider.get().nextInt();
-                map.getAsync(key).andThen(callback);
+                map.getAsync(key).toCompletableFuture().whenCompleteAsync(callback);
             } catch (HazelcastOverloadException e) {
                 if (backoff != -1) {
                     fail(format("HazelcastOverloadException should not be thrown when backoff is configured (%d ms), but got: %s",
@@ -221,20 +221,20 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
             }
         }
 
-        private class CountingCallback implements ExecutionCallback<Integer> {
-            @Override
-            public void onResponse(Integer response) {
-                long position = progressCounter.incrementAndGet();
-                if (position % 50000 == 0) {
-                    System.out.println("Worker no. " + workerNo + " at " + position);
-                }
-            }
+        private class CountingCallback implements BiConsumer<Integer, Throwable> {
 
             @Override
-            public void onFailure(Throwable t) {
-                long position = failureCounter.incrementAndGet();
-                if (position % 100 == 0) {
-                    System.out.println("Failure Worker no. " + workerNo + " at " + position);
+            public void accept(Integer integer, Throwable throwable) {
+                if (throwable == null) {
+                    long position = progressCounter.incrementAndGet();
+                    if (position % 50000 == 0) {
+                        System.out.println("Worker no. " + workerNo + " at " + position);
+                    }
+                } else {
+                    long position = failureCounter.incrementAndGet();
+                    if (position % 100 == 0) {
+                        System.out.println("Failure Worker no. " + workerNo + " at " + position);
+                    }
                 }
             }
         }

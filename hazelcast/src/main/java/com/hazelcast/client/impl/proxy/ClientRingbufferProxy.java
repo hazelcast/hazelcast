@@ -32,7 +32,6 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -41,7 +40,7 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
-import com.hazelcast.internal.util.executor.CompletedFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -49,13 +48,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.ringbuffer.impl.RingbufferProxy.MAX_BATCH_SIZE;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.ringbuffer.impl.RingbufferProxy.MAX_BATCH_SIZE;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.completedExceptionally;
 import static java.lang.String.format;
 
 /**
@@ -150,7 +150,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     }
 
     @Override
-    public ICompletableFuture<Long> addAsync(@Nonnull E item, @Nonnull OverflowPolicy overflowPolicy) {
+    public InternalCompletableFuture<Long> addAsync(@Nonnull E item, @Nonnull OverflowPolicy overflowPolicy) {
         checkNotNull(item, "item can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
 
@@ -176,7 +176,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     }
 
     @Override
-    public ICompletableFuture<Long> addAllAsync(@Nonnull Collection<? extends E> collection,
+    public InternalCompletableFuture<Long> addAllAsync(@Nonnull Collection<? extends E> collection,
                                                 @Nonnull OverflowPolicy overflowPolicy) {
         checkNotNull(collection, "collection can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
@@ -195,7 +195,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     }
 
     @Override
-    public ICompletableFuture<ReadResultSet<E>> readManyAsync(long startSequence, int minCount,
+    public InternalCompletableFuture<ReadResultSet<E>> readManyAsync(long startSequence, int minCount,
                                                               int maxCount, IFunction<E, Boolean> filter) {
         checkSequence(startSequence);
         checkNotNegative(minCount, "minCount can't be smaller than 0");
@@ -205,9 +205,8 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
             capacity();
         } catch (Throwable e) {
             //in case of exception return the exception via future to behave consistently to member
-            e = new ExecutionException(e);
             ExecutorService userExecutor = getContext().getExecutionService().getUserExecutor();
-            return new CompletedFuture<>(getSerializationService(), e, userExecutor);
+            return completedExceptionally(e, userExecutor);
         }
 
         checkTrue(maxCount <= capacity, "the maxCount should be smaller than or equal to the capacity");

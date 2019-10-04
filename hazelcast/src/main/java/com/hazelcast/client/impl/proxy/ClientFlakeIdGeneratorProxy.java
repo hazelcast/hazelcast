@@ -55,7 +55,7 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
     private IdBatch newIdBatch(int batchSize) {
         ClientMessage requestMsg = FlakeIdGeneratorNewIdBatchCodec.encodeRequest(name, batchSize);
         ClientMessage responseMsg = new ClientInvocation(getClient(), requestMsg, getName())
-                .invoke().join();
+                .invoke().joinInternal();
         ResponseParameters response = FlakeIdGeneratorNewIdBatchCodec.decodeResponse(responseMsg);
         return new IdBatch(response.base, response.increment, response.batchSize);
     }

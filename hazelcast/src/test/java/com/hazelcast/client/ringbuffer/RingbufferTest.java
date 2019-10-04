@@ -23,7 +23,6 @@ import com.hazelcast.client.test.ringbuffer.filter.StartsWithStringFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
@@ -40,6 +39,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
@@ -90,10 +90,10 @@ public class RingbufferTest extends HazelcastTestSupport {
 
     @Test
     public void readManyAsync_whenHitsStale_shouldNotBeBlocked() throws Exception {
-        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 1, 10, null);
+        CompletionStage<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 1, 10, null);
         serverRingbuffer.addAllAsync(asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), OVERWRITE);
         expectedException.expect(new RootCauseMatcher(StaleSequenceException.class));
-        f.get();
+        f.toCompletableFuture().get();
     }
 
     @Test
@@ -161,7 +161,7 @@ public class RingbufferTest extends HazelcastTestSupport {
 
     @Test
     public void addAsync() throws Exception {
-        Future<Long> f = clientRingbuffer.addAsync("foo", OVERWRITE);
+        Future<Long> f = clientRingbuffer.addAsync("foo", OVERWRITE).toCompletableFuture();
         Long result = f.get();
 
         assertEquals(new Long(serverRingbuffer.headSequence()), result);
@@ -172,7 +172,7 @@ public class RingbufferTest extends HazelcastTestSupport {
 
     @Test
     public void addAll() throws Exception {
-        Future<Long> f = clientRingbuffer.addAllAsync(asList("foo", "bar"), OVERWRITE);
+        Future<Long> f = clientRingbuffer.addAllAsync(asList("foo", "bar"), OVERWRITE).toCompletableFuture();
         Long result = f.get();
 
         assertEquals(new Long(serverRingbuffer.tailSequence()), result);
@@ -194,7 +194,7 @@ public class RingbufferTest extends HazelcastTestSupport {
         serverRingbuffer.add("2");
         serverRingbuffer.add("3");
 
-        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, null);
+        Future<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, null).toCompletableFuture();
 
         ReadResultSet rs = f.get();
         assertInstanceOf(PortableReadResultSet.class, rs);
@@ -215,7 +215,7 @@ public class RingbufferTest extends HazelcastTestSupport {
         serverRingbuffer.add("5");
         serverRingbuffer.add("6");
 
-        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, null);
+        Future<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, null).toCompletableFuture();
 
         ReadResultSet rs = f.get();
         assertInstanceOf(PortableReadResultSet.class, rs);
@@ -235,7 +235,8 @@ public class RingbufferTest extends HazelcastTestSupport {
         serverRingbuffer.add("good3");
         serverRingbuffer.add("bad3");
 
-        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, new StartsWithStringFilter("good"));
+        Future<ReadResultSet<String>> f = clientRingbuffer
+                .readManyAsync(0, 3, 3, new StartsWithStringFilter("good")).toCompletableFuture();
 
         ReadResultSet rs = f.get();
         assertInstanceOf(PortableReadResultSet.class, rs);
@@ -259,7 +260,8 @@ public class RingbufferTest extends HazelcastTestSupport {
         serverRingbuffer.add("good4");
         serverRingbuffer.add("bad4");
 
-        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, new StartsWithStringFilter("good"));
+        Future<ReadResultSet<String>> f = clientRingbuffer
+                .readManyAsync(0, 3, 3, new StartsWithStringFilter("good")).toCompletableFuture();
 
         ReadResultSet rs = f.get();
         assertInstanceOf(PortableReadResultSet.class, rs);

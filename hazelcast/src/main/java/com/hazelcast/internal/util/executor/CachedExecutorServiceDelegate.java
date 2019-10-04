@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.util.executor;
 
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
@@ -44,8 +42,6 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public final class CachedExecutorServiceDelegate implements ExecutorService, ManagedExecutorService {
 
-    public static final long TIME = 250;
-
     private static final AtomicLongFieldUpdater<CachedExecutorServiceDelegate> EXECUTED_COUNT =
             newUpdater(CachedExecutorServiceDelegate.class, "executedCount");
 
@@ -53,13 +49,12 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     private final String name;
     private final int maxPoolSize;
     private final ExecutorService cachedExecutor;
-    private final NodeEngine nodeEngine;
     private final BlockingQueue<Runnable> taskQ;
     private final Lock lock = new ReentrantLock();
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private volatile int size;
 
-    public CachedExecutorServiceDelegate(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor,
+    public CachedExecutorServiceDelegate(String name, ExecutorService cachedExecutor,
                                          int maxPoolSize, int queueCapacity) {
         if (maxPoolSize <= 0) {
             throw new IllegalArgumentException("Max pool size must be positive!");
@@ -71,7 +66,6 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         this.maxPoolSize = maxPoolSize;
         this.cachedExecutor = cachedExecutor;
         this.taskQ = new LinkedBlockingQueue<Runnable>(queueCapacity);
-        this.nodeEngine = nodeEngine;
     }
 
     @Override
@@ -118,14 +112,14 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
 
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, getAsyncExecutor());
+        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task);
         execute(rf);
         return rf;
     }
 
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, result, getAsyncExecutor());
+        final RunnableFuture<T> rf = new CompletableFutureTask<>(task, result);
         execute(rf);
         return rf;
     }
@@ -209,10 +203,6 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
         throw new UnsupportedOperationException();
-    }
-
-    private ExecutorService getAsyncExecutor() {
-        return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     private class Worker implements Runnable {

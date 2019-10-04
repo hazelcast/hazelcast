@@ -16,9 +16,10 @@
 
 package com.hazelcast.cp.internal.raft.impl.state;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+
+import static com.hazelcast.spi.impl.InternalCompletableFuture.completingCallback;
 
 /**
  * State maintained by the leader of the Raft group during the leadership
@@ -28,9 +29,9 @@ public class LeadershipTransferState {
 
     private int term;
     private RaftEndpoint endpoint;
-    private SimpleCompletableFuture resultFuture;
+    private InternalCompletableFuture resultFuture;
 
-    LeadershipTransferState(int term, RaftEndpoint endpoint, SimpleCompletableFuture resultFuture) {
+    LeadershipTransferState(int term, RaftEndpoint endpoint, InternalCompletableFuture resultFuture) {
         this.term = term;
         this.endpoint = endpoint;
         this.resultFuture = resultFuture;
@@ -45,24 +46,19 @@ public class LeadershipTransferState {
     }
 
     public boolean complete(Object value) {
-        return resultFuture.setResult(value);
+        if (value instanceof Throwable) {
+            return resultFuture.completeExceptionally((Throwable) value);
+        } else {
+            return resultFuture.complete(value);
+        }
     }
 
-    public void notify(RaftEndpoint targetEndpoint, final SimpleCompletableFuture otherFuture) {
+    public void notify(RaftEndpoint targetEndpoint, final InternalCompletableFuture otherFuture) {
         if (this.endpoint.equals(targetEndpoint)) {
-            resultFuture.andThen(new ExecutionCallback() {
-                @Override
-                public void onResponse(Object response) {
-                    otherFuture.complete(response);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    otherFuture.complete(t);
-                }
-            });
+            resultFuture.whenCompleteAsync(completingCallback(otherFuture));
         } else {
-            otherFuture.setResult(new IllegalStateException("There is an ongoing leadership transfer process to " + endpoint));
+            otherFuture.completeExceptionally(
+                    new IllegalStateException("There is an ongoing leadership transfer process to " + endpoint));
         }
     }
 }

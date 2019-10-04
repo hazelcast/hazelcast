@@ -104,7 +104,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
         RaftNodeImpl follower = group.getAnyFollowerNode();
 
-        follower.query(new QueryRaftRunnable(), QueryPolicy.LEADER_LOCAL).get();
+        follower.query(new QueryRaftRunnable(), QueryPolicy.LEADER_LOCAL).joinInternal();
     }
 
     @Test

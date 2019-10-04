@@ -186,13 +186,10 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
 
         responseConsumer.accept(goodResponse);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                Invocation inv = invocationRegistry.get(callId);
-                System.out.println(inv);
-                assertNull(inv);
-            }
+        assertTrueEventually(() -> {
+            Invocation inv = invocationRegistry.get(callId);
+            System.out.println(inv);
+            assertNull(inv);
         });
     }
 

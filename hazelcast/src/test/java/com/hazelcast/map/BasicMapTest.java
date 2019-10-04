@@ -24,13 +24,15 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,8 +43,6 @@ import com.hazelcast.test.annotation.HeavilyMultiThreadedTestLimiter;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.Preconditions;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -923,12 +923,11 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testGetPutRemoveAsync() {
         IMap<Integer, Object> map = getInstance().getMap("testGetPutRemoveAsync");
-        Future<Object> future = map.putAsync(1, 1);
         try {
-            assertNull(future.get());
-            assertEquals(1, map.putAsync(1, 2).get());
-            assertEquals(2, map.getAsync(1).get());
-            assertEquals(2, map.removeAsync(1).get());
+            assertNull(map.putAsync(1, 1).toCompletableFuture().get());
+            assertEquals(1, map.putAsync(1, 2).toCompletableFuture().get());
+            assertEquals(2, map.getAsync(1).toCompletableFuture().get());
+            assertEquals(2, map.removeAsync(1).toCompletableFuture().get());
             assertEquals(0, map.size());
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -1056,7 +1055,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
-        ICompletableFuture<Void> future = ((MapProxyImpl<Integer, Integer>) map).putAllAsync(mm);
+        InternalCompletableFuture<Void> future = ((MapProxyImpl<Integer, Integer>) map).putAllAsync(mm);
         assertTrueEventually(() -> assertTrue(future.isDone()));
         assertEquals(map.size(), size);
         for (int i = 0; i < size; i++) {

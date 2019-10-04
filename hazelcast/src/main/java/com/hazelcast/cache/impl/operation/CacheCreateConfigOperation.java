@@ -18,20 +18,19 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
-import com.hazelcast.spi.impl.SimpleExecutionCallback;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 /**
  * Used to create cluster wide cache configuration.
@@ -101,15 +100,15 @@ public class CacheCreateConfigOperation
             if (remoteNodeCount > 0) {
                 postponeReturnResponse();
 
-                ExecutionCallback<Object> callback = new CacheConfigCreateCallback(this, remoteNodeCount);
+                BiConsumer<Object, Throwable> callback = new CacheConfigCreateCallback(this, remoteNodeCount);
                 OperationService operationService = nodeEngine.getOperationService();
                 for (Member member : members) {
                     if (!member.localMember()) {
                         CacheCreateConfigOperation op = new CacheCreateConfigOperation(config, false);
                         operationService
                                 .createInvocationBuilder(ICacheService.SERVICE_NAME, op, member.getAddress())
-                                .setExecutionCallback(callback)
-                                .invoke();
+                                .invoke()
+                                .whenCompleteAsync(callback);
                     }
                 }
             }
@@ -129,7 +128,7 @@ public class CacheCreateConfigOperation
         super.onExecutionFailure(e);
     }
 
-    private static class CacheConfigCreateCallback extends SimpleExecutionCallback<Object> {
+    private static class CacheConfigCreateCallback implements BiConsumer<Object, Throwable> {
 
         final AtomicInteger counter;
         final CacheCreateConfigOperation operation;
@@ -140,7 +139,7 @@ public class CacheCreateConfigOperation
         }
 
         @Override
-        public void notify(Object object) {
+        public void accept(Object o, Throwable throwable) {
             if (counter.decrementAndGet() == 0) {
                 operation.sendResponse(null);
             }

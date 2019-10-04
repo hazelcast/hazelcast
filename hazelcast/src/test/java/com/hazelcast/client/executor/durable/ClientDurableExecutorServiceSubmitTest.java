@@ -23,13 +23,12 @@ import com.hazelcast.client.executor.tasks.MapPutRunnable;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.client.test.executor.tasks.AppendCallable;
 import com.hazelcast.client.test.executor.tasks.MapPutPartitionAwareCallable;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -140,14 +139,7 @@ public class ClientDurableExecutorServiceSubmitTest {
         Runnable runnable = new MapPutRunnable(mapName);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable).andThen(new ExecutionCallback() {
-            public void onResponse(Object response) {
-                responseLatch.countDown();
-            }
-
-            public void onFailure(Throwable t) {
-            }
-        });
+        service.submit(runnable).thenRun(() -> responseLatch.countDown());
         IMap map = client.getMap(mapName);
 
         assertOpenEventually("responseLatch", responseLatch);
@@ -163,14 +155,9 @@ public class ClientDurableExecutorServiceSubmitTest {
         final AtomicReference<String> result = new AtomicReference<String>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(callable).andThen(new ExecutionCallback<String>() {
-            public void onResponse(String response) {
-                result.set(response);
-                responseLatch.countDown();
-            }
-
-            public void onFailure(Throwable t) {
-            }
+        service.submit(callable).thenAccept((response) -> {
+            result.set(response);
+            responseLatch.countDown();
         });
 
         assertOpenEventually("responseLatch", responseLatch);
@@ -197,14 +184,7 @@ public class ClientDurableExecutorServiceSubmitTest {
         Runnable runnable = new MapPutRunnable(mapName);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submitToKeyOwner(runnable, "key").andThen(new ExecutionCallback() {
-            public void onResponse(Object response) {
-                responseLatch.countDown();
-            }
-
-            public void onFailure(Throwable t) {
-            }
-        });
+        service.submitToKeyOwner(runnable, "key").thenRun(() -> responseLatch.countDown());
         IMap map = client.getMap(mapName);
 
         assertOpenEventually("responseLatch", responseLatch);
@@ -220,14 +200,9 @@ public class ClientDurableExecutorServiceSubmitTest {
         final CountDownLatch responseLatch = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<String>();
 
-        service.submitToKeyOwner(callable, "key").andThen(new ExecutionCallback<String>() {
-            public void onResponse(String response) {
-                result.set(response);
-                responseLatch.countDown();
-            }
-
-            public void onFailure(Throwable t) {
-            }
+        service.submitToKeyOwner(callable, "key").thenAccept((response) -> {
+            result.set(response);
+            responseLatch.countDown();
         });
 
         assertOpenEventually("responseLatch", responseLatch);
@@ -288,16 +263,7 @@ public class ClientDurableExecutorServiceSubmitTest {
         Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable).andThen(new ExecutionCallback() {
-            @Override
-            public void onResponse(Object response) {
-                responseLatch.countDown();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        });
+        service.submit(runnable).thenRun(() -> responseLatch.countDown());
         IMap map = client.getMap(mapName);
 
         assertOpenEventually("responseLatch", responseLatch);
@@ -334,14 +300,9 @@ public class ClientDurableExecutorServiceSubmitTest {
         final AtomicReference<UUID> result = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(runnable).andThen(new ExecutionCallback<UUID>() {
-            public void onResponse(UUID response) {
-                result.set(response);
-                responseLatch.countDown();
-            }
-
-            public void onFailure(Throwable t) {
-            }
+        service.submit(runnable).thenAccept((response) -> {
+            result.set(response);
+            responseLatch.countDown();
         });
 
         assertOpenEventually("responseLatch", responseLatch);

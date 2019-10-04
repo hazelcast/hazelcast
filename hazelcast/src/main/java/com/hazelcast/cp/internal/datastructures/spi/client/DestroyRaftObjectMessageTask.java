@@ -18,8 +18,7 @@ package com.hazelcast.cp.internal.datastructures.spi.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPGroupDestroyCPObjectCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.instance.impl.Node;
@@ -27,12 +26,10 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-
 /**
  * Client message task for destroying Raft objects
  */
-public class DestroyRaftObjectMessageTask extends AbstractMessageTask<CPGroupDestroyCPObjectCodec.RequestParameters>
-        implements ExecutionCallback<Object> {
+public class DestroyRaftObjectMessageTask extends AbstractCPMessageTask<CPGroupDestroyCPObjectCodec.RequestParameters> {
 
     public DestroyRaftObjectMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,7 +40,7 @@ public class DestroyRaftObjectMessageTask extends AbstractMessageTask<CPGroupDes
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                .invoke(parameters.groupId, new DestroyRaftObjectOp(parameters.serviceName, parameters.objectName))
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
@@ -80,16 +77,5 @@ public class DestroyRaftObjectMessageTask extends AbstractMessageTask<CPGroupDes
     public Object[] getParameters() {
         return new Object[] {parameters.serviceName, parameters.objectName};
     }
-
-    @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
-    }
-
 }
 

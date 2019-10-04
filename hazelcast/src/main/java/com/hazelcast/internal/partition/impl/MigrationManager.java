@@ -18,7 +18,6 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -646,9 +645,8 @@ public class MigrationManager {
             InternalCompletableFuture<Boolean> f
                     = operationService.invokeOnTarget(SERVICE_NAME, operation, member.getAddress());
 
-            f.andThen(new ExecutionCallback<Boolean>() {
-                @Override
-                public void onResponse(Boolean response) {
+            f.whenCompleteAsync((response, t) -> {
+                if (t == null) {
                     if (!Boolean.TRUE.equals(response)) {
                         logger.fine(member + " rejected completed migrations with response " + response);
                         partitionService.sendPartitionRuntimeState(member.getAddress());
@@ -659,10 +657,7 @@ public class MigrationManager {
                         logger.fine("Evicting " + migrations.size() + " completed migrations.");
                         evictCompletedMigrations(migrations);
                     }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
+                } else {
                     logger.fine("Failure while publishing completed migrations to " + member, t);
                     partitionService.sendPartitionRuntimeState(member.getAddress());
                 }

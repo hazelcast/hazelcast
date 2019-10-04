@@ -32,4 +32,13 @@ public class MemberDoesNotExistException extends CPSubsystemException {
     public MemberDoesNotExistException(RaftEndpoint member) {
         super("Member does not exist: " + member, null);
     }
+
+    private MemberDoesNotExistException(String message, Throwable cause) {
+        super(message, cause, null);
+    }
+
+    @Override
+    public MemberDoesNotExistException wrap() {
+        return new MemberDoesNotExistException(getMessage(), this);
+    }
 }

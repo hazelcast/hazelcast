@@ -151,7 +151,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
     public void test_submitToKey_notOffloadable() throws ExecutionException, InterruptedException {
         IMap<String, String> map = getInitializedMap();
 
-        Boolean result = (Boolean) map.submitToKey("key1", new TestNonOffloadableEntryProcessor()).get();
+        Boolean result = (Boolean) map.submitToKey("key1", new TestNonOffloadableEntryProcessor()).toCompletableFuture().get();
 
         assertFalse(result);
     }
@@ -160,7 +160,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
     public void test_submitToKey_Offloadable() throws ExecutionException, InterruptedException {
         IMap<String, String> map = getInitializedMap();
 
-        Boolean result = (Boolean) map.submitToKey("key1", new TestOffloadableEntryProcessor()).get();
+        Boolean result = (Boolean) map.submitToKey("key1", new TestOffloadableEntryProcessor()).toCompletableFuture().get();
 
         assertNull(result);
     }
@@ -169,7 +169,8 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
     public void test_submitToKey_Offloadable_ReadOnly() throws ExecutionException, InterruptedException {
         IMap<String, String> map = getInitializedMap();
 
-        Boolean result = (Boolean) map.submitToKey("key1", new TestOffloadableReadOnlyEntryProcessor()).get();
+        Boolean result = (Boolean) map.submitToKey("key1", new TestOffloadableReadOnlyEntryProcessor())
+                                      .toCompletableFuture().get();
 
         assertNull(result);
     }

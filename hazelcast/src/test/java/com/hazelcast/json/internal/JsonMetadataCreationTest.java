@@ -152,7 +152,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
     @Test
     public void testPutAsyncCreatesMetadataForJson() throws ExecutionException, InterruptedException {
         for (int i = 0; i < ENTRY_COUNT; i++) {
-            map.putAsync(createJsonValue("key", i), createJsonValue("value", i)).get();
+            map.putAsync(createJsonValue("key", i), createJsonValue("value", i)).toCompletableFuture().get();
         }
         assertMetadataCreated(map.getName());
     }
@@ -259,7 +259,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
             map.put(createJsonValue("key", i), "not-json-value");
         }
         for (int i = 0; i < ENTRY_COUNT; i++) {
-            map.setAsync(createJsonValue("key", i), createJsonValue("value", i)).get();
+            map.setAsync(createJsonValue("key", i), createJsonValue("value", i)).toCompletableFuture().get();
         }
         assertMetadataCreated(map.getName());
     }

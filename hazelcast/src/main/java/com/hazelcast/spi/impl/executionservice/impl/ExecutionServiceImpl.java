@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.executionservice.impl;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricTagger;
@@ -36,6 +35,7 @@ import com.hazelcast.internal.util.executor.NamedThreadPoolExecutor;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
@@ -196,7 +196,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
             if (threadFactory != null) {
                 throw new IllegalArgumentException("Cached executor can not be used with external thread factory");
             }
-            executor = new CachedExecutorServiceDelegate(nodeEngine, name, cachedExecutorService, poolSize, queueCapacity);
+            executor = new CachedExecutorServiceDelegate(name, cachedExecutorService, poolSize, queueCapacity);
         } else if (type == ExecutorType.CONCRETE) {
             if (threadFactory == null) {
                 ClassLoader classLoader = nodeEngine.getConfigClassLoader();
@@ -232,12 +232,12 @@ public final class ExecutionServiceImpl implements ExecutionService {
     }
 
     @Override
-    public <V> ICompletableFuture<V> asCompletableFuture(Future<V> future) {
+    public <V> InternalCompletableFuture<V> asCompletableFuture(Future<V> future) {
         if (future == null) {
             throw new IllegalArgumentException("future must not be null");
         }
-        if (future instanceof ICompletableFuture) {
-            return (ICompletableFuture<V>) future;
+        if (future instanceof InternalCompletableFuture) {
+            return (InternalCompletableFuture<V>) future;
         }
         return registerCompletableFuture(future);
     }
@@ -364,8 +364,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
-    private <V> ICompletableFuture<V> registerCompletableFuture(Future<V> future) {
-        CompletableFutureEntry<V> entry = new CompletableFutureEntry<>(future, nodeEngine);
+    private <V> InternalCompletableFuture<V> registerCompletableFuture(Future<V> future) {
+        CompletableFutureEntry<V> entry = new CompletableFutureEntry<>(future);
         completableFutureTask.registerCompletableFutureEntry(entry);
         return entry.completableFuture;
     }

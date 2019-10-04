@@ -37,20 +37,20 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.services.CoreService;
-import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
@@ -62,17 +62,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.Supplier;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.cluster.Versions.V3_11;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
-import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static java.lang.Boolean.getBoolean;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
@@ -202,18 +199,11 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
-        ICompletableFuture<Object> future = broadcastConfigAsync(config);
-        try {
-            future.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            rethrow(e);
-        } catch (ExecutionException e) {
-            rethrow(e);
-        }
+        InternalCompletableFuture<Object> future = broadcastConfigAsync(config);
+        future.joinInternal();
     }
 
-    public ICompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
+    public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
         checkConfigVersion(config);
         // we create a defensive copy as local operation execution might use a fast-path
         // and avoid config serialization altogether.
@@ -526,12 +516,8 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         @Override
         public void run() {
             try {
-                Future<Object> future = invokeOnStableClusterSerial(nodeEngine, new Supplier<Operation>() {
-                    @Override
-                    public Operation get() {
-                        return replicationOperation;
-                    }
-                }, CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+                Future<Object> future = invokeOnStableClusterSerial(nodeEngine,
+                        () -> replicationOperation, CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
                 waitForever(singleton(future), FutureUtil.RETHROW_EVERYTHING);
             } catch (Exception e) {
                 throw new HazelcastException("Error while merging configurations", e);
@@ -541,7 +527,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     private static Map<Class<? extends IdentifiedDataSerializable>, Version> initializeConfigToVersionMap() {
         Map<Class<? extends IdentifiedDataSerializable>, Version> configToVersion =
-                new HashMap<Class<? extends IdentifiedDataSerializable>, Version>();
+                new HashMap<>();
 
         // Since 3.9
         configToVersion.put(MapConfig.class, V3_9);
