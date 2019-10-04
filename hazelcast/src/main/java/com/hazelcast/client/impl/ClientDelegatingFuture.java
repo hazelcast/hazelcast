@@ -50,10 +50,12 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     private static final AtomicReferenceFieldUpdater<ClientDelegatingFuture, Object> DECODED_RESPONSE =
             AtomicReferenceFieldUpdater.newUpdater(ClientDelegatingFuture.class, Object.class, "decodedResponse");
     private static final Object VOID = "VOID";
-    private final ClientInvocationFuture future;
+
+    final boolean deserializeResponse;
+    final ClientInvocationFuture future;
+
     private final SerializationService serializationService;
     private final ClientMessageDecoder clientMessageDecoder;
-    private final boolean deserializeResponse;
     private final V defaultValue;
     private final Executor userExecutor;
     private volatile Object decodedResponse = VOID;
@@ -98,8 +100,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     }
 
     @Override
-    public V get(long timeout, TimeUnit unit) throws InterruptedException,
-            ExecutionException, TimeoutException {
+    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         ClientMessage response = future.get(timeout, unit);
         return (V) resolveResponse(response, deserializeResponse);
     }
@@ -117,7 +118,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     }
 
     @SuppressWarnings("unchecked")
-    private V resolveResponse(ClientMessage clientMessage, boolean deserialize) {
+    protected V resolveResponse(ClientMessage clientMessage, boolean deserialize) {
         if (defaultValue != null) {
             return defaultValue;
         }

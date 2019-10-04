@@ -37,10 +37,9 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletionStage;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**

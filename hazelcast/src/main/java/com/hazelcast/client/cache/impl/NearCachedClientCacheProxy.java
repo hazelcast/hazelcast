@@ -20,8 +20,10 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
+import com.hazelcast.client.impl.ClientInterceptingDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.checkNearCacheConfig;
@@ -180,7 +183,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                                            BiConsumer<V, Throwable> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
         PutAsyncOneShotCallback wrapped = new PutAsyncOneShotCallback(callbackKey, keyData, value, valueData, callback);
-        return super.wrapPutAsyncFuture(key, value, keyData, valueData, invocationFuture, wrapped);
+        ClientDelegatingFuture<V> future = new ClientInterceptingDelegatingFuture<>(invocationFuture,
+                getSerializationService(), message -> CachePutCodec.decodeResponse(message).response, wrapped);
+        future.whenCompleteAsync(wrapped);
+        return future;
     }
 
     @Override
@@ -605,6 +611,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     private final class PutAsyncOneShotCallback implements BiConsumer<V, Throwable> {
 
+        private final AtomicBoolean executed;
         private final Object key;
         private final Data keyData;
         private final V newValue;
@@ -618,10 +625,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             this.newValue = newValue;
             this.newValueData = newValueData;
             this.statsCallback = callback;
+            this.executed = new AtomicBoolean();
         }
 
         @Override
         public void accept(V v, Throwable throwable) {
+            if (!executed.compareAndSet(false, true)) {
+                return;
+            }
             try {
                 if (statsCallback != null) {
                     statsCallback.accept(v, throwable);
