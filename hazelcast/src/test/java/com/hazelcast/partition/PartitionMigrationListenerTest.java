@@ -160,7 +160,9 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     @Test
     public void testMigrationStats_afterPartitionsLost_when_NO_MIGRATION() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance[] instances = factory.newInstances(new Config(), 10);
+        Config config = new Config().setProperty(GroupProperty.PARTITION_COUNT.getName(), "2000");
+        HazelcastInstance[] instances = factory.newInstances(config, 10);
+        assertClusterSizeEventually(instances.length, instances);
         warmUpPartitions(instances);
 
         EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
@@ -222,22 +224,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         assertNotNull(lastProgress);
         assertEquals(migrationResult.getCompletedMigrations(), lastProgress.getCompletedMigrations());
-//        assertEquals(migrationResult.getTotalElapsedTime(), lastProgress.getTotalElapsedTime());
         assertThat(migrationResult.getTotalElapsedTime(), greaterThanOrEqualTo(lastProgress.getTotalElapsedTime()));
-    }
-
-    private void assertPromotionEventsConsistentWithResult(MigrationEventsPack eventsPack) {
-        List<ReplicaMigrationEvent> completedMigrations = eventsPack.migrationsCompleted;
-        MigrationState migrationResult = eventsPack.migrationProcessCompleted;
-        assertEquals(migrationResult.getCompletedMigrations(), completedMigrations.size());
-
-        for (ReplicaMigrationEvent event : completedMigrations) {
-            assertTrue(event.isSuccess());
-            MigrationState progress = event.getMigrationState();
-            assertEquals(migrationResult.getStartTime(), progress.getStartTime());
-            assertEquals(migrationResult.getPlannedMigrations(), progress.getPlannedMigrations());
-            assertEquals(migrationResult.getCompletedMigrations(), progress.getCompletedMigrations());
-        }
     }
 
     @Test
