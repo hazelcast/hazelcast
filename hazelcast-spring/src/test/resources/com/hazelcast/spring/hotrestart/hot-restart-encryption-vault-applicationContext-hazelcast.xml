@@ -24,7 +24,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:hot-restart-persistence enabled="true"
+            <hz:hot-restart-persistence enabled="false"
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"
                                         auto-remove-stale-data="false"

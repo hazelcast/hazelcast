@@ -362,7 +362,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleEncryptionAtRest(BeanDefinitionBuilder hotRestartConfigBuilder, Node node) {
             BeanDefinitionBuilder encryptionAtRestConfigBuilder = createBeanBuilder(EncryptionAtRestConfig.class);
-            fillAttributeValues(node, hotRestartConfigBuilder);
+            fillAttributeValues(node, encryptionAtRestConfigBuilder);
             fillValues(node, encryptionAtRestConfigBuilder, "secureStore");
             Node secureStoreNode = childElementWithName(node, "secure-store");
             for (Node child : childElements(secureStoreNode)) {

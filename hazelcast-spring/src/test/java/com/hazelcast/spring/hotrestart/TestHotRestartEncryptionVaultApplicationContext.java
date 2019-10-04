@@ -65,7 +65,7 @@ public class TestHotRestartEncryptionVaultApplicationContext {
         File hotBackupDir = new File("/mnt/hot-backup/");
         HotRestartPersistenceConfig hotRestartPersistenceConfig = instance.getConfig().getHotRestartPersistenceConfig();
 
-        assertTrue(hotRestartPersistenceConfig.isEnabled());
+        assertFalse(hotRestartPersistenceConfig.isEnabled());
         assertEquals(dir.getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
         assertEquals(hotBackupDir.getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
