@@ -204,7 +204,7 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
         live = false;
         logger.finest("Stopping Networking Service");
 
-        if (unifiedEndpointManager == null && refreshStatsFuture != null) {
+        if (refreshStatsFuture != null) {
             refreshStatsFuture.cancel(false);
             refreshStatsFuture = null;
         }
