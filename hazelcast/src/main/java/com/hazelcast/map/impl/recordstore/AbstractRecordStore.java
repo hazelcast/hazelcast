@@ -89,6 +89,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.storeAdapter = new RecordStoreAdapter(this);
     }
 
+    @Override
+    public InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
+    }
+
     protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
         switch (provenance) {
             case WAN:
@@ -122,6 +127,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
+    public Record createRecord(Record fromRecord, long nowInMillis) {
+        Record newRecord = recordFactory.newRecord(fromRecord.getKey(), fromRecord.getValue());
+        Records.copyMetadata(fromRecord, newRecord);
+        updateStatsOnPut(false, nowInMillis);
+        return newRecord;
+    }
+
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
         return new StorageImpl(recordFactory, memoryFormat, serializationService);
     }
@@ -147,8 +159,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @SuppressWarnings("checkstyle:parameternumber")
     protected void updateRecord(Data key, Record record, Object value,
-                                long now, boolean countAsAccess, long ttl,
-                                long maxIdle, boolean mapStoreOperation, UUID transactionId) {
+                                long now, boolean countAsAccess,
+                                long ttl, long maxIdle, boolean mapStoreOperation, UUID transactionId) {
         updateStatsOnPut(countAsAccess, now);
         record.onUpdate(now);
         if (countAsAccess) {
@@ -266,7 +278,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         }
     }
 
-    protected void updateStatsOnPut(long hits) {
+    protected void updateStatsOnPut(long hits, long now) {
+        stats.setLastUpdateTime(now);
         stats.increaseHits(hits);
     }
 

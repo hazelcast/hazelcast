@@ -56,9 +56,9 @@ public class AdvancedMapJournalTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = super.getConfig()
-                             .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
         config.getMapConfig("default")
-              .setEventJournalConfig(new EventJournalConfig().setEnabled(true));
+                .setEventJournalConfig(new EventJournalConfig().setEnabled(true));
         return config;
     }
 

@@ -19,17 +19,22 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 
-class DataRecordWithStats extends AbstractRecordWithStats<Data> {
-
+public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
     protected volatile Data value;
 
-    DataRecordWithStats() {
+    public DataRecordWithStats() {
     }
 
-    DataRecordWithStats(Data value) {
+    public DataRecordWithStats(Data value) {
         super();
         this.value = value;
+    }
+
+    @Override
+    public byte getMatchingRecordReaderWriterId() {
+        return DATA_RECORD_WITH_STATS_READER_WRITER.getId();
     }
 
     /**
@@ -57,7 +62,6 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
         }
 
         DataRecordWithStats that = (DataRecordWithStats) o;
-
         return value.equals(that.value);
     }
 
@@ -66,5 +70,12 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
         int result = super.hashCode();
         result = 31 * result + value.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "DataRecordWithStats{"
+                + "value=" + value
+                + "} " + super.toString();
     }
 }

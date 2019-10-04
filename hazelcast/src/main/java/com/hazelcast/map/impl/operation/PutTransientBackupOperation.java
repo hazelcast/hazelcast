@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.record.RecordInfo;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
 public class PutTransientBackupOperation extends PutBackupOperation {
@@ -25,9 +25,8 @@ public class PutTransientBackupOperation extends PutBackupOperation {
     public PutTransientBackupOperation() {
     }
 
-    public PutTransientBackupOperation(String name, Data dataKey, Data dataValue,
-                                       RecordInfo recordInfo) {
-        super(name, dataKey, dataValue, recordInfo);
+    public PutTransientBackupOperation(String name, Record<Data> record, Data dataValue) {
+        super(name, record, dataValue);
     }
 
     @Override

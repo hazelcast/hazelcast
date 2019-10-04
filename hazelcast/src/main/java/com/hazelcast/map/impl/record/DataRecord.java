@@ -19,9 +19,9 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
 
 class DataRecord extends AbstractRecord<Data> {
-
     protected volatile Data value;
 
     DataRecord(Data value) {
@@ -32,8 +32,15 @@ class DataRecord extends AbstractRecord<Data> {
     }
 
     @Override
+    public byte getMatchingRecordReaderWriterId() {
+        return DATA_RECORD_READER_WRITER.getId();
+    }
+
+    @Override
     public long getCost() {
-        return super.getCost() + REFERENCE_COST_IN_BYTES + (value == null ? 0 : value.getHeapCost());
+        return super.getCost()
+                + REFERENCE_COST_IN_BYTES
+                + (value == null ? 0 : value.getHeapCost());
     }
 
     @Override
@@ -61,9 +68,7 @@ class DataRecord extends AbstractRecord<Data> {
         }
 
         DataRecord that = (DataRecord) o;
-
         return value.equals(that.value);
-
     }
 
     @Override
@@ -71,5 +76,12 @@ class DataRecord extends AbstractRecord<Data> {
         int result = super.hashCode();
         result = 31 * result + value.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "DataRecord{"
+                + "value=" + value
+                + "} " + super.toString();
     }
 }

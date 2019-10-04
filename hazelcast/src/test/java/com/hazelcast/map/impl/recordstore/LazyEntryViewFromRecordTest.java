@@ -42,7 +42,7 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LazyEntryViewFromRecordTest {
 
-    private static final int ENTRY_VIEW_COST_IN_BYTES = 77 + 4 * REFERENCE_COST_IN_BYTES;
+    private static final int ENTRY_VIEW_COST_IN_BYTES = 73 + 4 * REFERENCE_COST_IN_BYTES;
 
     private final String key = "key";
     private final String value = "value";

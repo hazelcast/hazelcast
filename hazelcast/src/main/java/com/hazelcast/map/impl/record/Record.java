@@ -19,11 +19,38 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Metadata;
 
+import static com.hazelcast.internal.util.TimeUtil.zeroOutMs;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * @param <V> the type of value which is in the Record
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface Record<V> {
+    /**
+     * Base time to be used for storing time values as diffs
+     * (int) rather than full blown epoch based vals (long)
+     * This allows for a space in seconds, of roughly 68 years.
+     *
+     * Reference value (1514764800000) - Monday, January 1, 2018 12:00:00 AM
+     *
+     * The fixed time in the past (instead of {@link
+     * System#currentTimeMillis()} prevents any time discrepancies among nodes,
+     * mis-translated as diffs of -1 ie. {@link Record#NOT_AVAILABLE} values.
+     * (see. https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
+     */
+    long EPOCH_TIME = zeroOutMs(1514764800000L);
+
+    /**
+     * Default TTL value of a record.
+     */
+    long DEFAULT_TTL = -1L;
+
+    /**
+     * Default Max Idle value of a record.
+     */
+    long DEFAULT_MAX_IDLE = -1L;
 
     /**
      * If not a {@link com.hazelcast.map.impl.record.CachedDataRecord}.
@@ -44,7 +71,6 @@ public interface Record<V> {
 
     /**
      * An implementation must be thread safe if the record might be accessed from multiple threads.
-     *
      */
     void onAccessSafe(long now);
 
@@ -104,9 +130,9 @@ public interface Record<V> {
 
     void setCreationTime(long creationTime);
 
-    long getHits();
+    int getHits();
 
-    void setHits(long hits);
+    void setHits(int hits);
 
     long getExpirationTime();
 
@@ -132,4 +158,56 @@ public interface Record<V> {
 
     Metadata getMetadata();
 
+    default long recomputeWithBaseTime(int value) {
+        if (value == NOT_AVAILABLE) {
+            return 0L;
+        }
+
+        long exploded = SECONDS.toMillis(value);
+        return exploded + EPOCH_TIME;
+    }
+
+    default int stripBaseTime(long value) {
+        int diff = NOT_AVAILABLE;
+        if (value > 0) {
+            diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
+        }
+
+        return diff;
+    }
+
+    // Below raw methods are used during serialization of a record.
+    /**
+     * @return record reader writer id to be used
+     * when serializing/de-serializing this record object.
+     */
+    byte getMatchingRecordReaderWriterId();
+
+    int getRawTtl();
+
+    int getRawMaxIdle();
+
+    int getRawCreationTime();
+
+    int getRawLastAccessTime();
+
+    int getRawLastUpdateTime();
+
+    void setRawTtl(int readInt);
+
+    void setRawMaxIdle(int readInt);
+
+    void setRawCreationTime(int readInt);
+
+    void setRawLastAccessTime(int readInt);
+
+    void setRawLastUpdateTime(int readInt);
+
+    int getRawLastStoredTime();
+
+    void setRawLastStoredTime(int time);
+
+    int getRawExpirationTime();
+
+    void setRawExpirationTime(int time);
 }

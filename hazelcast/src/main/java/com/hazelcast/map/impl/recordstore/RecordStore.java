@@ -47,33 +47,24 @@ import java.util.UUID;
  */
 public interface RecordStore<R extends Record> {
 
-    /**
-     * Default TTL value of a record.
-     */
-    long DEFAULT_TTL = -1L;
-
-    /**
-     * Default Max Idle value of a record.
-     */
-    long DEFAULT_MAX_IDLE = -1L;
-
     LocalRecordStoreStats getLocalRecordStoreStats();
 
     String getName();
 
     /**
-     * @return oldValue only if it exists in memory, otherwise just returns
-     * null and doesn't try to load it from {@link MapLoader}
+     * @return old value
      */
     Object set(Data dataKey, Object value, long ttl, long maxIdle);
 
+    /**
+     * @return old value
+     */
     Object setTxn(Data dataKey, Object value, long ttl, long maxIdle, UUID transactionId);
 
     Object removeTxn(Data dataKey, CallerProvenance callerProvenance, UUID transactionId);
 
     /**
-     * @return oldValue if it exists in memory otherwise tries to load oldValue
-     * by using {@link MapLoader}
+     * @return old value
      */
     Object put(Data dataKey, Object dataValue, long ttl, long maxIdle);
 
@@ -99,8 +90,10 @@ public interface RecordStore<R extends Record> {
     R putBackup(Data key, Object value, long ttl, long maxIdle, boolean putTransient,
                 CallerProvenance provenance);
 
-    R putBackupTxn(Data dataKey, Data dataValue, long ttl, long maxIdle, boolean putTransient,
-                   CallerProvenance callerProvenance, UUID transactionId);
+    Record putBackupTxn(Record newRecord, boolean putTransient,
+                        CallerProvenance provenance, UUID transactionId);
+
+    Record putBackup(Record record, boolean putTransient, CallerProvenance provenance);
 
     /**
      * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
@@ -250,11 +243,12 @@ public interface RecordStore<R extends Record> {
      * Puts a data key and a record value to record-store.
      * Used in replication operations.
      *
-     * @param key    the data key to put record store.
-     * @param record the value for record store.
+     * @param record      the value for record store.
+     * @param nowInMillis nowInMillis
+     * @return current record after put
      * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
-    void putRecord(Data key, R record);
+    Record putReplicatedRecord(R record, long nowInMillis);
 
     /**
      * Iterates over record store entries.
@@ -424,6 +418,12 @@ public interface RecordStore<R extends Record> {
 
     Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now);
 
+    /**
+     * Creates a new record from a replicated record
+     * by making memory format related conversions.
+     */
+    Record createRecord(Record fromRecord, long nowInMillis);
+
     Record loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 
     /**
@@ -563,4 +563,6 @@ public interface RecordStore<R extends Record> {
      * Destroys data in this record store.
      */
     void destroy();
+
+    InMemoryFormat getInMemoryFormat();
 }

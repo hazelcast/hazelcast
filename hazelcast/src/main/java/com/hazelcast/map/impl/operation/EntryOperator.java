@@ -35,8 +35,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
@@ -48,8 +48,8 @@ import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
 import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
 /**
@@ -289,7 +289,7 @@ public final class EntryOperator {
                 Record record = recordStore.getRecord(dataKey);
                 newValue = record == null ? null : record.getValue();
             }
-            mapServiceContext.interceptAfterPut(mapName, newValue);
+            mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), newValue);
             stats.incrementPutLatencyNanos(getLatencyNanos(startTimeNanos));
         }
     }
@@ -299,7 +299,7 @@ public final class EntryOperator {
             recordStore.removeBackup(dataKey, NOT_WAN);
         } else {
             recordStore.delete(dataKey, NOT_WAN);
-            mapServiceContext.interceptAfterRemove(mapName, oldValue);
+            mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), oldValue);
             stats.incrementRemoveLatencyNanos(getLatencyNanos(startTimeNanos));
         }
     }

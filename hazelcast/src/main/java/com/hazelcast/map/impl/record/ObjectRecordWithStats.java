@@ -16,8 +16,9 @@
 
 package com.hazelcast.map.impl.record;
 
-class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 
+class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
     private volatile Object value;
 
     ObjectRecordWithStats() {
@@ -26,6 +27,11 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
     ObjectRecordWithStats(Object value) {
         super();
         this.value = value;
+    }
+
+    @Override
+    public byte getMatchingRecordReaderWriterId() {
+        return DATA_RECORD_WITH_STATS_READER_WRITER.getId();
     }
 
     @Override
@@ -50,7 +56,6 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
         }
 
         ObjectRecordWithStats that = (ObjectRecordWithStats) o;
-
         return value.equals(that.value);
     }
 
@@ -59,5 +64,12 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
         int result = super.hashCode();
         result = 31 * result + value.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ObjectRecordWithStats{"
+                + "value=" + value
+                + "} " + super.toString();
     }
 }

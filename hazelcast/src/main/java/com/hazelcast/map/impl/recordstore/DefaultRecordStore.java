@@ -27,6 +27,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
+import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapKeyLoader;
@@ -76,6 +77,8 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static java.util.Collections.emptyList;
 
@@ -114,6 +117,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private boolean loadedOnPreMigration;
 
     private final IPartitionService partitionService;
+    private final InterceptorRegistry interceptorRegistry;
 
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
                               MapKeyLoader keyLoader, ILogger logger) {
@@ -123,6 +127,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.keyLoader = keyLoader;
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        this.interceptorRegistry = mapContainer.getInterceptorRegistry();
     }
 
     @Override
@@ -154,11 +159,29 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void putRecord(Data key, Record record) {
-        markRecordStoreExpirable(record.getTtl(), record.getMaxIdle());
-        storage.put(key, record);
-        mutationObserver.onReplicationPutRecord(key, record);
-        updateStatsOnPut(record.getHits());
+    public Record putReplicatedRecord(Record replicatedRecord, long nowInMillis) {
+        Record newRecord = createRecord(replicatedRecord, nowInMillis);
+        markRecordStoreExpirable(replicatedRecord.getTtl(), replicatedRecord.getMaxIdle());
+        // Note that newRecord may not know its key yet, key assignment
+        // is done after storage put in some cases so better to
+        // use key of replicatedRecord when doing storage.put
+        storage.put(replicatedRecord.getKey(), newRecord);
+        mutationObserver.onReplicationPutRecord(newRecord.getKey(), newRecord);
+        updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
+        return newRecord;
+    }
+
+    @Override
+    public Record putBackup(Record newRecord, boolean putTransient, CallerProvenance provenance) {
+        return putBackup(newRecord.getKey(), newRecord.getValue(),
+                newRecord.getTtl(), newRecord.getMaxIdle(), putTransient, provenance);
+    }
+
+    @Override
+    public Record putBackupTxn(Record newRecord, boolean putTransient,
+                               CallerProvenance provenance, UUID transactionId) {
+        return putBackupInternal(newRecord.getKey(), newRecord.getValue(),
+                newRecord.getTtl(), newRecord.getMaxIdle(), putTransient, provenance, transactionId);
     }
 
     @Override
@@ -170,12 +193,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Record putBackup(Data key, Object value, long ttl, long maxIdle,
                             boolean putTransient, CallerProvenance provenance) {
         return putBackupInternal(key, value, ttl, maxIdle, putTransient, provenance, null);
-    }
-
-    @Override
-    public Record putBackupTxn(Data key, Data value, long ttl, long maxIdle,
-                               boolean putTransient, CallerProvenance provenance, UUID transactionId) {
-        return putBackupInternal(key, value, ttl, maxIdle, putTransient, provenance, transactionId);
     }
 
     private Record putBackupInternal(Data key, Object value, long ttl, long maxIdle,
@@ -440,7 +457,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mutationObserver.onEvictRecord(key, record);
             storage.removeRecord(record);
             if (!backup) {
-                mapServiceContext.interceptRemove(name, value);
+                mapServiceContext.interceptRemove(interceptorRegistry, value);
             }
         }
         return value;
@@ -542,7 +559,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         if (valueComparator.isEqual(testValue, oldValue, serializationService)) {
-            mapServiceContext.interceptRemove(name, oldValue);
+            mapServiceContext.interceptRemove(interceptorRegistry, oldValue);
             mapDataStore.remove(key, now, null);
             if (record != null) {
                 removeIndex(record);
@@ -568,7 +585,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             accessRecord(record, now);
         }
         Object value = record == null ? null : record.getValue();
-        value = mapServiceContext.interceptGet(name, value);
+        value = mapServiceContext.interceptGet(interceptorRegistry, value);
 
         return value;
     }
@@ -593,7 +610,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         Object value = record.getValue();
-        mapServiceContext.interceptAfterGet(name, value);
+        mapServiceContext.interceptAfterGet(interceptorRegistry, value);
         // this serialization step is needed not to expose the object, see issue 1292
         return mapServiceContext.toData(value);
     }
@@ -670,7 +687,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (key == null || value == null) {
             return;
         }
-        value = mapServiceContext.interceptGet(name, value);
+        value = mapServiceContext.interceptGet(interceptorRegistry, value);
         Data dataKey = mapServiceContext.toData(key);
         Data dataValue = mapServiceContext.toData(value);
         mapEntries.add(dataKey, dataValue);
@@ -767,7 +784,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, false);
         Object oldValue = record == null
                 ? (loadFromStore ? mapDataStore.load(key) : null) : record.getValue();
-        value = mapServiceContext.interceptPut(name, oldValue, value);
+        value = mapServiceContext.interceptPut(interceptorRegistry, oldValue, value);
         onStore(record);
 
         if (record == null) {
@@ -858,7 +875,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (oldValue == null) {
             return null;
         }
-        update = mapServiceContext.interceptPut(name, oldValue, update);
+        update = mapServiceContext.interceptPut(interceptorRegistry, oldValue, update);
         if (record == null) {
             record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now, null);
         } else {
@@ -888,7 +905,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (!valueComparator.isEqual(expect, current, serializationService)) {
             return false;
         }
-        update = mapServiceContext.interceptPut(name, current, update);
+        update = mapServiceContext.interceptPut(interceptorRegistry, current, update);
         if (record == null) {
             record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now, null);
         } else {
@@ -911,13 +928,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, false);
         Object oldValue = null;
         if (record == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
+            value = mapServiceContext.interceptPut(interceptorRegistry, null, value);
             record = createRecord(key, value, ttl, maxIdle, now);
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
         } else {
             oldValue = record.getValue();
-            value = mapServiceContext.interceptPut(name, oldValue, value);
+            value = mapServiceContext.interceptPut(interceptorRegistry, oldValue, value);
             updateRecord(key, record, value, now, true, DEFAULT_TTL,
                     DEFAULT_MAX_IDLE, false, null);
             setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), false);
@@ -978,14 +995,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Object oldValue = null;
         EntryEventType entryEventType;
         if (record == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
+            value = mapServiceContext.interceptPut(interceptorRegistry, null, value);
             record = createRecord(key, value, ttl, maxIdle, now);
             storage.put(key, record);
             mutationObserver.onLoadRecord(key, record);
             entryEventType = LOADED;
         } else {
             oldValue = record.getValue();
-            value = mapServiceContext.interceptPut(name, oldValue, value);
+            value = mapServiceContext.interceptPut(interceptorRegistry, oldValue, value);
             updateRecord(key, record, value, now, true,
                     ttl, maxIdle, false, null);
             entryEventType = UPDATED;
@@ -1046,7 +1063,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             oldValue = record.getValue();
         }
         if (oldValue == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
+            value = mapServiceContext.interceptPut(interceptorRegistry, null, value);
             onStore(record);
             record = putNewRecord(key, value, ttl, maxIdle, now, null);
         }
@@ -1058,7 +1075,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   long now, CallerProvenance provenance,
                                   UUID transactionId) {
         Object oldValue = record.getValue();
-        oldValue = mapServiceContext.interceptRemove(name, oldValue);
+        oldValue = mapServiceContext.interceptRemove(interceptorRegistry, oldValue);
         if (oldValue != null) {
             removeIndex(record);
             if (persistenceEnabledFor(provenance)) {
@@ -1077,8 +1094,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return getRecordOrNull(key, now, false);
     }
 
-    protected Record getRecordOrNull(Data key, long now,
-                                     boolean backup) {
+    protected Record getRecordOrNull(Data key, long now, boolean backup) {
         Record record = storage.get(key);
         if (record == null) {
             return null;

@@ -16,28 +16,20 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
-
-import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 /**
  * Replicates all IMap-states of this partition to a repReservedCapacityCounterTestlica partition.
@@ -49,6 +41,7 @@ public class MapReplicationOperation extends Operation
     protected final MapReplicationStateHolder mapReplicationStateHolder = new MapReplicationStateHolder(this);
     protected final WriteBehindStateHolder writeBehindStateHolder = new WriteBehindStateHolder(this);
     protected final MapNearCacheStateHolder mapNearCacheStateHolder = new MapNearCacheStateHolder(this);
+
 
     private transient NativeOutOfMemoryError oome;
 
@@ -101,8 +94,7 @@ public class MapReplicationOperation extends Operation
     }
 
     private void disposePartition() {
-        Map<String, Collection<RecordReplicationInfo>> data = mapReplicationStateHolder.data;
-        for (String mapName : data.keySet()) {
+        for (String mapName : mapReplicationStateHolder.data.keySet()) {
             dispose(mapName);
         }
     }
@@ -140,12 +132,6 @@ public class MapReplicationOperation extends Operation
         mapReplicationStateHolder.readData(in);
         writeBehindStateHolder.readData(in);
         mapNearCacheStateHolder.readData(in);
-    }
-
-    RecordReplicationInfo toReplicationInfo(Record record, SerializationService ss) {
-        RecordInfo info = buildRecordInfo(record);
-        Data dataValue = ss.toData(record.getValue());
-        return new RecordReplicationInfo(record.getKey(), dataValue, info);
     }
 
     RecordStore getRecordStore(String mapName) {
