@@ -1320,15 +1320,14 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                     }
                     raftService.createRaftNode(metadataGroupId, metadataEndpoints, localCPMemberCandidate.toRaftEndpoint());
                 }
-
-                RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers, metadataGroupId.getSeed());
-                raftService.getInvocationManager().invoke(metadataGroupId, op).get();
                 // By default, we use the same member UUID for both AP and CP members.
                 // But it's not guaranteed to be same. For example;
                 // - During a split-brain merge, AP member UUID is renewed but CP member UUID remains the same.
                 // - While promoting a member to CP when Hot Restart is enabled, CP member doesn't use the AP member's UUID
                 // but instead generates a new UUID.
                 localCPMember.set(localCPMemberCandidate);
+                RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers, metadataGroupId.getSeed());
+                raftService.getInvocationManager().invoke(metadataGroupId, op).get();
                 metadataStore.persistLocalCPMember(localCPMemberCandidate);
             } catch (Exception e) {
                 logger.severe("Could not initialize METADATA CP group with CP members: " + metadataMembers, e);
