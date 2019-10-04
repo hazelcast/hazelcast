@@ -16,18 +16,20 @@
 
 package com.hazelcast.internal.locksupport.operations;
 
+import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.locksupport.LockDataSerializerHook;
 import com.hazelcast.internal.locksupport.LockStoreImpl;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
-import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
-import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 public class LockOperation extends AbstractLockOperation implements BlockingOperation, BackupAwareOperation, MutatingOperation {
 
@@ -38,14 +40,20 @@ public class LockOperation extends AbstractLockOperation implements BlockingOper
         super(namespace, key, threadId, leaseTime, timeout);
     }
 
-    public LockOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, long timeout, long referenceId) {
+    public LockOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, long timeout, long referenceId,
+                         boolean isClient) {
         super(namespace, key, threadId, leaseTime, timeout);
+        this.isClient = isClient;
         setReferenceCallId(referenceId);
     }
 
     @Override
     public void run() throws Exception {
         interceptLockOperation();
+        if (isClient) {
+            ClientEngine clientEngine = getNodeEngine().getService(ClientEngineImpl.SERVICE_NAME);
+            clientEngine.onClientAcquiredResource(getCallerUuid());
+        }
         final boolean lockResult = getLockStore().lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime);
         response = lockResult;
 
@@ -63,7 +71,7 @@ public class LockOperation extends AbstractLockOperation implements BlockingOper
 
     @Override
     public Operation getBackupOperation() {
-        LockBackupOperation operation = new LockBackupOperation(namespace, key, threadId, leaseTime, getCallerUuid());
+        LockBackupOperation operation = new LockBackupOperation(namespace, key, threadId, leaseTime, getCallerUuid(), isClient);
         operation.setReferenceCallId(getReferenceCallId());
         return operation;
     }

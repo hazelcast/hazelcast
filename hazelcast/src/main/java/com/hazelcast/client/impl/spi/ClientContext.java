@@ -95,7 +95,7 @@ public class ClientContext {
         this.loggingService = client.getLoggingService();
         this.nearCacheManager = client.getNearCacheManager();
         this.properties = client.getProperties();
-        this.localUuid = client.getLocalEndpoint().getUuid();
+        this.localUuid = clientConnectionManager.getClientUuid();
         this.minimalPartitionService = new ClientMinimalPartitionService();
         this.queryCacheContext = client.getQueryCacheContext();
     }

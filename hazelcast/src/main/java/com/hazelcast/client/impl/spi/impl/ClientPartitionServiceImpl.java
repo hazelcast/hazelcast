@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
@@ -90,17 +89,18 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    public void listenPartitionTable(Connection ownerConnection) throws Exception {
+    public void listenPartitionTable(Connection connection) throws Exception {
         //when we connect to cluster back we need to reset partition state version
         //we are keeping the partition map as is because, user may want its operations run on connected members even if
         //owner connection is gone, and partition table is missing.
         // See @{link ClientProperty#ALLOW_INVOCATIONS_WHEN_DISCONNECTED}
         Int2ObjectHashMap<Address> partitions = getPartitions();
-        partitionTable.set(new PartitionTable(ownerConnection, -1, partitions));
+        partitionTable.set(new PartitionTable(connection, -1, partitions));
 
+        //Servers after 3.9 supports listeners
         ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest();
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
-        invocation.setEventHandler(new PartitionEventHandler(ownerConnection));
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, connection);
+        invocation.setEventHandler(new PartitionEventHandler(connection));
         invocation.invokeUrgent().get();
         lastCorrelationId = clientMessage.getCorrelationId();
     }
@@ -343,13 +343,13 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         @Override
         public void run() {
             try {
-                ClientConnectionManager connectionManager = client.getConnectionManager();
-                Connection connection = connectionManager.getOwnerConnection();
+                Connection connection = ClientPartitionServiceImpl.this.partitionTable.get().connection;
                 if (connection == null) {
                     return;
                 }
                 ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
-                ClientInvocationFuture future = new ClientInvocation(client, requestMessage, null).invokeUrgent();
+                ClientInvocationFuture future =
+                        new ClientInvocation(client, requestMessage, null, connection).invokeUrgent();
                 future.andThen(refreshTaskCallback);
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {

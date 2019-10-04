@@ -62,14 +62,10 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public Set<ClientEndpoint> getEndpoints(UUID clientUuid) {
-        checkNotNull(clientUuid, "clientUuid can't be null");
-
-        Set<ClientEndpoint> endpointSet = createHashSet(endpoints.size());
+    public Set<UUID> getLocalClientUuids() {
+        Set<UUID> endpointSet = createHashSet(endpoints.size());
         for (ClientEndpoint endpoint : endpoints.values()) {
-            if (clientUuid.equals(endpoint.getUuid())) {
-                endpointSet.add(endpoint);
-            }
+            endpointSet.add(endpoint.getUuid());
         }
         return endpointSet;
     }

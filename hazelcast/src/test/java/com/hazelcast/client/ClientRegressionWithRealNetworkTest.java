@@ -257,7 +257,6 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setReconnectMode(reconnectMode);
-        clientConfig.setProperty(ClientProperty.ALLOW_INVOCATIONS_WHEN_DISCONNECTED.getName(), "true");
         final AtomicBoolean waitFlag = new AtomicBoolean();
         final CountDownLatch testFinished = new CountDownLatch(1);
         final AddressProvider addressProvider = new AddressProvider() {
@@ -291,7 +290,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         IMap<Object, Object> clientMap = client.getMap("test");
 
-        //we are closing owner connection and making sure owner connection is not established ever again
+        //we are closing a connection and making sure It is not established ever again
         waitFlag.set(true);
         instance1.shutdown();
 

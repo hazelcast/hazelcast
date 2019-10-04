@@ -42,7 +42,7 @@ public class MapLockMessageTask
     @Override
     protected Operation prepareOperation() {
         return new LockOperation(getNamespace(), parameters.key,
-                parameters.threadId, parameters.ttl, -1, parameters.referenceId);
+                parameters.threadId, parameters.ttl, -1, parameters.referenceId, true);
     }
 
     @Override

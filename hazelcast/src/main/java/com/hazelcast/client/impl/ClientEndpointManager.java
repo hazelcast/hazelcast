@@ -48,11 +48,10 @@ public interface ClientEndpointManager {
     /**
      * Gets all the endpoints for a given client.
      *
-     * @param clientUuid the UUID of the client
      * @return a set of all the endpoints for the client. If no endpoints are found, an empty set is returned.
      * @throws java.lang.NullPointerException if clientUuid is null.
      */
-    Set<ClientEndpoint> getEndpoints(UUID clientUuid);
+    Set<UUID> getLocalClientUuids();
 
     /**
      * Returns the current number of endpoints.

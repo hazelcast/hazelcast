@@ -218,13 +218,18 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.clientengine.blocking.thread.count", -1);
 
     /**
-     * Time after which client connection is removed or owner node of a client is removed from the cluster.
-     * <p>
-     * ClientDisconnectionOperation runs and cleans all resources of a client (listeners are removed, locks/txn are released).
-     * With this property, client has a window to connect back and prevent cleaning up its resources.
+     * Time period to check if a client is still part of the cluster.
      */
-    public static final HazelcastProperty CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS
-            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 60);
+    public static final HazelcastProperty CLIENT_CLEANUP_PERIOD
+            = new HazelcastProperty("hazelcast.client.cleanup.period.millis", 10000, MILLISECONDS);
+
+    /**
+     * Timeout duration to decide if a client is still part of the cluster.
+     * If a member can not find any connection to a client in the cluster, it will clean up local resources that is
+     * owned by that client.
+     */
+    public static final HazelcastProperty CLIENT_CLEANUP_TIMEOUT
+            = new HazelcastProperty("hazelcast.client.cleanup.timeout.millis", 120000, MILLISECONDS);
 
     /**
      * Number of threads for the {@link com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl} executor.

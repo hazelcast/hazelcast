@@ -16,14 +16,16 @@
 
 package com.hazelcast.internal.locksupport.operations;
 
+import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.internal.locksupport.LockDataSerializerHook;
 import com.hazelcast.internal.locksupport.LockStoreImpl;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -35,14 +37,20 @@ public class LockBackupOperation extends AbstractLockOperation implements Backup
     public LockBackupOperation() {
     }
 
-    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, UUID originalCallerUuid) {
+    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, UUID originalCallerUuid
+            , boolean isClient) {
         super(namespace, key, threadId);
         this.leaseTime = leaseTime;
         this.originalCallerUuid = originalCallerUuid;
+        this.isClient = isClient;
     }
 
     @Override
     public void run() throws Exception {
+        if (isClient) {
+            ClientEngine clientEngine = getNodeEngine().getService(ClientEngineImpl.SERVICE_NAME);
+            clientEngine.onClientAcquiredResource(originalCallerUuid);
+        }
         interceptLockOperation();
         LockStoreImpl lockStore = getLockStore();
         response = lockStore.lock(key, originalCallerUuid, threadId, getReferenceCallId(), leaseTime);

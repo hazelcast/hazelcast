@@ -178,8 +178,7 @@ public class ClusterConnectionRetryTest extends ClientTestSupport {
 
         private final LinkedHashSet<Long> attemptTimeStamps = new LinkedHashSet<Long>();
 
-        @Override
-        public void beforeConnectToCluster(Address target) {
+        public void beforeOpenConnection(Address target) {
             attemptTimeStamps.add(System.currentTimeMillis());
             super.beforeOpenConnection(target);
         }
