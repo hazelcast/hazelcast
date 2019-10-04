@@ -23,7 +23,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @param <T> the type of the configuration class
  */
-public abstract class AbstractSymmetricEncryptionConfig<T extends AbstractSymmetricEncryptionConfig> {
+abstract class AbstractSymmetricEncryptionConfig<T extends AbstractSymmetricEncryptionConfig> {
     /**
      * Default symmetric encryption algorithm.
      */
@@ -34,9 +34,9 @@ public abstract class AbstractSymmetricEncryptionConfig<T extends AbstractSymmet
      */
     public static final String DEFAULT_SYMMETRIC_SALT = "thesalt";
 
-    protected boolean enabled;
-    protected String algorithm = DEFAULT_SYMMETRIC_ALGORITHM;
-    protected String salt = DEFAULT_SYMMETRIC_SALT;
+    boolean enabled;
+    String algorithm = DEFAULT_SYMMETRIC_ALGORITHM;
+    String salt = DEFAULT_SYMMETRIC_SALT;
 
     /**
      * Returns if this configuration is enabled.
