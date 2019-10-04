@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.LeaderDemotedException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -26,6 +25,7 @@ import com.hazelcast.cp.internal.raft.impl.dataservice.QueryRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -102,8 +102,8 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
         group.dropMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), AppendRequest.class);
         group.dropMessagesToMember(leader.getLocalMember(), followers[2].getLocalMember(), AppendRequest.class);
 
-        ICompletableFuture replicateFuture = leader.replicate(new ApplyRaftRunnable("value2"));
-        ICompletableFuture queryFuture = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
+        InternalCompletableFuture replicateFuture = leader.replicate(new ApplyRaftRunnable("value2"));
+        InternalCompletableFuture queryFuture = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
 
         group.resetAllRulesFrom(leader.getLocalMember());
 
@@ -124,8 +124,8 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
         group.dropMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), AppendRequest.class);
         group.dropMessagesToMember(leader.getLocalMember(), followers[2].getLocalMember(), AppendRequest.class);
 
-        ICompletableFuture queryFuture1 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
-        ICompletableFuture queryFuture2 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
+        InternalCompletableFuture queryFuture1 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
+        InternalCompletableFuture queryFuture2 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
 
         group.resetAllRulesFrom(leader.getLocalMember());
 
@@ -145,9 +145,9 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
         group.dropMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), AppendRequest.class);
         group.dropMessagesToMember(leader.getLocalMember(), followers[2].getLocalMember(), AppendRequest.class);
 
-        ICompletableFuture replicateFuture = leader.replicate(new ApplyRaftRunnable("value2"));
-        ICompletableFuture queryFuture1 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
-        ICompletableFuture queryFuture2 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
+        InternalCompletableFuture replicateFuture = leader.replicate(new ApplyRaftRunnable("value2"));
+        InternalCompletableFuture queryFuture1 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
+        InternalCompletableFuture queryFuture2 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
 
         group.resetAllRulesFrom(leader.getLocalMember());
 
@@ -163,7 +163,7 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
 
         group.waitUntilLeaderElected();
         try {
-            group.getAnyFollowerNode().query(new QueryRaftRunnable(), LINEARIZABLE).get();
+            group.getAnyFollowerNode().query(new QueryRaftRunnable(), LINEARIZABLE).joinInternal();
             fail();
         } catch (NotLeaderException ignored) {
         }
@@ -183,11 +183,11 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
         group.dropMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), AppendRequest.class);
         group.dropMessagesToMember(leader.getLocalMember(), followers[2].getLocalMember(), AppendRequest.class);
 
-        ICompletableFuture queryFuture1 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
-        ICompletableFuture queryFuture2 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
+        InternalCompletableFuture queryFuture1 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
+        InternalCompletableFuture queryFuture2 = leader.query(new QueryRaftRunnable(), LINEARIZABLE);
 
         try {
-            queryFuture2.get();
+            queryFuture2.joinInternal();
             fail();
         } catch (CannotReplicateException ignored) {
         }
@@ -207,7 +207,7 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
         final int[] split = group.createMajoritySplitIndexes(false);
         group.split(split);
 
-        ICompletableFuture queryFuture = oldLeader.query(new QueryRaftRunnable(), LINEARIZABLE);
+        InternalCompletableFuture queryFuture = oldLeader.query(new QueryRaftRunnable(), LINEARIZABLE);
 
         assertTrueEventually(() -> {
             for (int ix : split) {
@@ -225,7 +225,7 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
 
         assertEquals(oldLeader.getLeader(), newLeader.getLocalMember());
         try {
-            queryFuture.get();
+            queryFuture.joinInternal();
             fail();
         } catch (LeaderDemotedException ignored) {
         }

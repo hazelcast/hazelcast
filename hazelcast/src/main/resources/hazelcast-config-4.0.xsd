@@ -3540,6 +3540,159 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:element name="secure-store-substitution-group" abstract="true"/>
+
+    <xs:complexType name="keystore">
+        <xs:all>
+            <xs:element name="path" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The path of the KeyStore file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="type" type="xs:string" minOccurs="0" maxOccurs="1" default="PKCS12">
+                <xs:annotation>
+                    <xs:documentation>
+                        The type of the KeyStore (PKCS12, JCEKS, etc.).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The password to access the KeyStore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="current-key-alias" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The alias for the current encryption key entry (optional).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="polling-interval" type="xs:int" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The polling interval (in seconds) for checking for changes in the KeyStore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element name="keystore" type="keystore" substitutionGroup="secure-store-substitution-group">
+        <xs:annotation>
+            <xs:documentation>
+                Java KeyStore Secure Store configuration.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:complexType name="vault">
+        <xs:all>
+            <xs:element name="address" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The address of the Vault server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="secret-path" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The Vault secret path.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="token" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The Vault access token.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        SSL/TLS configuration for HTTPS connections.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="polling-interval" type="xs:int" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The polling interval (in seconds) for checking for changes in Vault.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element name="vault" type="vault" substitutionGroup="secure-store-substitution-group">
+        <xs:annotation>
+            <xs:documentation>
+                HashiCorp Vault Secure Store configuration.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:complexType name="secure-store">
+        <xs:sequence>
+            <xs:element ref="secure-store-substitution-group" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="encryption-at-rest">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for hot restart (symmetric) encryption at rest. Encryption is based
+                on Java Cryptography Architecture.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="algorithm" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Encryption algorithm such as AES/CBC/PKCS5Padding, DES/ECB/PKCS5Padding, Blowfish,
+                        or DESede.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="salt" type="xs:string" minOccurs="0" default="thesalt">
+                <xs:annotation>
+                    <xs:documentation>
+                        Salt value to use when generating the secret key.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="key-size" type="xs:int" minOccurs="0" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The key size in bits used when generating encryption keys (optional).
+                        The default value of 0 implies falling back to the cipher-specific
+                        default key size.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="secure-store" type="secure-store">
+                <xs:annotation>
+                    <xs:documentation>
+                        The Secure Store configuration.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable symmetric encryption, false to disable.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="hot-restart-persistence">
         <xs:all>
             <xs:element name="base-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart">
@@ -3610,6 +3763,15 @@
                         When auto-removal of stale Hot Restart data is enabled, while restarting that member,
                         Hot Restart data is automatically removed and it joins the cluster as a completely new member.
                         Otherwise, Hot Restart data should be removed manually.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="encryption-at-rest" type="encryption-at-rest" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies parameters for encryption of Hot Restart data. This includes the encryption algorithm
+                        to be used (such as AES, DESede etc.) and the Secure Store configuration for retrieving the
+                        encryption keys.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

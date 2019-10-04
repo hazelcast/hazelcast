@@ -115,6 +115,7 @@ public class ClientConfig {
     private ClassLoader classLoader;
     private ClientConnectionStrategyConfig connectionStrategyConfig = new ClientConnectionStrategyConfig();
     private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+    private boolean backupAckToClientEnabled = true;
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap;
     private final Set<String> labels;
     private final ConcurrentMap<String, Object> userContext;
@@ -174,6 +175,7 @@ public class ClientConfig {
         classLoader = config.classLoader;
         connectionStrategyConfig = new ClientConnectionStrategyConfig(config.connectionStrategyConfig);
         userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig(config.userCodeDeploymentConfig);
+        backupAckToClientEnabled = config.backupAckToClientEnabled;
         flakeIdGeneratorConfigMap = new ConcurrentHashMap<>();
         for (Entry<String, ClientFlakeIdGeneratorConfig> entry : config.flakeIdGeneratorConfigMap.entrySet()) {
             flakeIdGeneratorConfigMap.put(entry.getKey(), new ClientFlakeIdGeneratorConfig(entry.getValue()));
@@ -189,8 +191,8 @@ public class ClientConfig {
      * By default the {@link MatchingPointConfigPatternMatcher} is used.
      *
      * @param configPatternMatcher the pattern matcher
-     * @throws IllegalArgumentException if the pattern matcher is {@code null}
      * @return this configuration
+     * @throws IllegalArgumentException if the pattern matcher is {@code null}
      */
     public ClientConfig setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         isNotNull(configPatternMatcher, "configPatternMatcher");
@@ -564,6 +566,7 @@ public class ClientConfig {
     /**
      * Sets the cluster name uniquely identifying the hazelcast cluster. This name is
      * used in different scenarios, such as identifying cluster for WAN publisher.
+     *
      * @param clusterName the new cluster name
      * @return this config instance
      * @throws IllegalArgumentException if name is {@code null}
@@ -919,6 +922,30 @@ public class ClientConfig {
         return userContext;
     }
 
+    /**
+     * This feature reduces number of hops and increase performance for smart clients.
+     * It is enabled by default for smart clients.
+     * This config has no effect for unisocket clients.
+     *
+     * @param backupAckToClientEnabled enables client to get backup acknowledgements directly from the member
+     *                                 that backups are applied
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     */
+    public ClientConfig setBackupAckToClientEnabled(boolean backupAckToClientEnabled) {
+        this.backupAckToClientEnabled = backupAckToClientEnabled;
+        return this;
+    }
+
+    /**
+     * Note that backup acks to client can be enabled only for smart client.
+     * This config has no effect for unisocket clients.
+     *
+     * @return true if backup acknowledgements comes to client
+     */
+    public boolean isBackupAckToClientEnabled() {
+        return backupAckToClientEnabled;
+    }
+
     @Override
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:cyclomaticcomplexity",
             "checkstyle:npathcomplexity", "checkstyle:executablestatementcount"})
@@ -990,6 +1017,11 @@ public class ClientConfig {
         if (!userCodeDeploymentConfig.equals(that.userCodeDeploymentConfig)) {
             return false;
         }
+
+        if (backupAckToClientEnabled != that.backupAckToClientEnabled) {
+            return false;
+        }
+
         if (!flakeIdGeneratorConfigMap.equals(that.flakeIdGeneratorConfigMap)) {
             return false;
         }
@@ -1039,6 +1071,7 @@ public class ClientConfig {
         result = 31 * result + (classLoader != null ? classLoader.hashCode() : 0);
         result = 31 * result + connectionStrategyConfig.hashCode();
         result = 31 * result + userCodeDeploymentConfig.hashCode();
+        result = 31 * result + (backupAckToClientEnabled ? 1 : 0);
         result = 31 * result + flakeIdGeneratorConfigMap.hashCode();
         result = 31 * result + labels.hashCode();
         result = 31 * result + userContext.hashCode();
@@ -1066,6 +1099,7 @@ public class ClientConfig {
                 + ", proxyFactoryConfigs=" + proxyFactoryConfigs
                 + ", connectionStrategyConfig=" + connectionStrategyConfig
                 + ", userCodeDeploymentConfig=" + userCodeDeploymentConfig
+                + ", backupAckToClientEnabled=" + backupAckToClientEnabled
                 + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
                 + ", labels=" + labels
                 + ", metricsConfig=" + metricsConfig

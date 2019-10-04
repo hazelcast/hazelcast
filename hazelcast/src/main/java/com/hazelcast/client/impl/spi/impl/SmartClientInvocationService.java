@@ -55,6 +55,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
         }
     };
     private final LoadBalancer loadBalancer;
+    private boolean isBackupAckToClientEnabled;
 
     public SmartClientInvocationService(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
         super(client);
@@ -62,8 +63,11 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     }
 
     public void addBackupListener() {
-        ClientListenerService listenerService = client.getListenerService();
-        listenerService.registerListener(backupListener, new BackupEventHandler());
+        isBackupAckToClientEnabled = client.getClientConfig().isBackupAckToClientEnabled();
+        if (isBackupAckToClientEnabled) {
+            ClientListenerService listenerService = client.getListenerService();
+            listenerService.registerListener(backupListener, new BackupEventHandler());
+        }
     }
 
     public class BackupEventHandler extends ClientLocalBackupListenerCodec.AbstractEventHandler
@@ -103,7 +107,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
             throw new TargetNotMemberException("Partition owner '" + owner + "' is not a member.");
         }
         invocation.getClientMessage().setPartitionId(partitionId);
-        Connection connection = getOrTriggerConnect(owner, invocation.getClientMessage().acquiresResource());
+        Connection connection = getOrTriggerConnect(owner);
         send0(invocation, (ClientConnection) connection);
     }
 
@@ -113,7 +117,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
         if (randomAddress == null) {
             throw new IOException("No address found to invoke");
         }
-        Connection connection = getOrTriggerConnect(randomAddress, invocation.getClientMessage().acquiresResource());
+        Connection connection = getOrTriggerConnect(randomAddress);
         send0(invocation, (ClientConnection) connection);
     }
 
@@ -123,12 +127,12 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
         if (!isMember(target)) {
             throw new TargetNotMemberException("Target '" + target + "' is not a member.");
         }
-        Connection connection = getOrTriggerConnect(target, invocation.getClientMessage().acquiresResource());
+        Connection connection = getOrTriggerConnect(target);
         invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
-    private Connection getOrTriggerConnect(Address target, boolean acquiresResource) throws IOException {
-        Connection connection = connectionManager.getOrTriggerConnect(target, acquiresResource);
+    private Connection getOrTriggerConnect(Address target) throws IOException {
+        Connection connection = connectionManager.getOrTriggerConnect(target);
         if (connection == null) {
             throw new IOException("No available connection to address " + target);
         }
@@ -141,7 +145,9 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     }
 
     private void send0(ClientInvocation invocation, ClientConnection connection) throws IOException {
-        invocation.getClientMessage().getStartFrame().flags |= ClientMessage.BACKUP_AWARE_FLAG;
+        if (isBackupAckToClientEnabled) {
+            invocation.getClientMessage().getStartFrame().flags |= ClientMessage.BACKUP_AWARE_FLAG;
+        }
         send(invocation, connection);
     }
 

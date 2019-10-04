@@ -132,7 +132,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
         for (int i = 0; i < numItems; i++) {
             items.add(i);
         }
-        ringbuffer.addAllAsync(items, OverflowPolicy.OVERWRITE).get();
+        ringbuffer.addAllAsync(items, OverflowPolicy.OVERWRITE).toCompletableFuture().get();
         terminateInstance(instance);
 
         // now read items from the backup
@@ -310,7 +310,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
 
         final HazelcastInstance node = createHazelcastInstance(config);
         final Ringbuffer<Object> ringbuffer = node.getRingbuffer(ringbufferName);
-        ringbuffer.addAllAsync(Arrays.asList(1, 2), OverflowPolicy.OVERWRITE).get();
+        ringbuffer.addAllAsync(Arrays.asList(1, 2), OverflowPolicy.OVERWRITE).toCompletableFuture().get();
     }
 
     @Test(expected = HazelcastException.class)

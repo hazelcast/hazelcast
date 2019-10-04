@@ -22,16 +22,16 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -188,21 +188,12 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
 
     protected abstract AbstractProxySessionManager getSessionManager();
 
-    private SimpleCompletableFuture<Object> completedFuture() {
-        SimpleCompletableFuture<Object> future = new SimpleCompletableFuture<>(new CallerRunsExecutor(), null);
-        future.setResult(null);
-        return future;
+    private InternalCompletableFuture<Object> completedFuture() {
+        return InternalCompletableFuture.newCompletedFuture(null, CALLER_RUNS);
     }
 
     private SessionAccessor getSessionAccessor() {
         return getNodeEngineImpl(members[0]).getService(RaftSessionService.SERVICE_NAME);
-    }
-
-    private static class CallerRunsExecutor implements Executor {
-        @Override
-        public void execute(Runnable command) {
-            command.run();
-        }
     }
 
     @Override

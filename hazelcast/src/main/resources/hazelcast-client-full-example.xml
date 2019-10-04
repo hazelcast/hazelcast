@@ -138,6 +138,13 @@
     </client-labels>
 
     <!--
+     The <client-labels> elements lets you enable/disable backups ack to client.
+     This feature reduces number of hops and increase performance for smart clients.
+     It is enabled by default for smart clients. This config has no effect for unisocket clients.
+    -->
+    <backup-ack-to-client-enabled>true</backup-ack-to-client-enabled>
+
+    <!--
         ===== HAZELCAST NETWORK CONFIGURATION =====
 
         The configuration to build your Hazelcast's network includes configuration for port, interface, discovery
@@ -365,7 +372,7 @@
             <discovery-token>EXAMPLE_TOKEN</discovery-token>
         </hazelcast-cloud>
         <discovery-strategies>
-            <node-filter class="DummyFilterClass" />
+            <node-filter class="DummyFilterClass"/>
             <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
                 <properties>
                     <property name="key-string">foo</property>

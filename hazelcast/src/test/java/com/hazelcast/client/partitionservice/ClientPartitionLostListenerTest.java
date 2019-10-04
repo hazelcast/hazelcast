@@ -17,7 +17,6 @@
 package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
@@ -47,11 +46,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertEquals;
@@ -121,16 +118,11 @@ public class ClientPartitionLostListenerTest {
     @Test
     public void test_partitionLostListener_invoked_fromOtherNode() {
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
-        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         warmUpPartitions(instance1, instance2, client);
-
-        final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        final Address clientOwnerAddress = clientInstanceImpl.getConnectionManager().getOwnerConnectionAddress();
-
-        final HazelcastInstance other = getAddress(instance1).equals(clientOwnerAddress) ? instance2 : instance1;
 
         final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
         client.getPartitionService().addPartitionLostListener(listener);
@@ -139,7 +131,7 @@ public class ClientPartitionLostListenerTest {
         assertRegistrationsSizeEventually(instance1, 7);
         assertRegistrationsSizeEventually(instance2, 7);
 
-        final InternalPartitionServiceImpl partitionService = getNode(other).getNodeEngine().getService(SERVICE_NAME);
+        final InternalPartitionServiceImpl partitionService = getNode(instance2).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
         partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
 

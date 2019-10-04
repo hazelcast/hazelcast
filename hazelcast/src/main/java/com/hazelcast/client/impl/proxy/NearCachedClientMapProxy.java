@@ -28,20 +28,19 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.internal.util.CollectionUtil;
-import com.hazelcast.internal.util.executor.CompletedFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -62,6 +61,7 @@ import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -89,7 +89,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         serializeKeys = nearCacheConfig.isSerializeKeys();
 
         NearCacheManager nearCacheManager = getContext().getNearCacheManager();
-        IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<K, V>(this);
+        IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<>(this);
         nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter);
 
         if (nearCacheConfig.isInvalidateOnChange()) {
@@ -140,14 +140,14 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public ICompletableFuture<V> getAsync(@Nonnull K key) {
+    public InternalCompletableFuture<V> getAsync(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Object ncKey = toNearCacheKey(key);
         Object value = getCachedValue(ncKey, false);
         if (value != NOT_CACHED) {
             ExecutorService executor = getContext().getExecutionService().getUserExecutor();
-            return new CompletedFuture<V>(getSerializationService(), value, executor);
+            return newCompletedFuture(value, getSerializationService(), executor);
         }
 
         Data keyData = toData(ncKey);
@@ -161,15 +161,11 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         if (reservationId != NOT_RESERVED) {
-            invocationFuture.andThen(new ExecutionCallback<ClientMessage>() {
-                @Override
-                public void onResponse(ClientMessage response) {
+            invocationFuture.whenCompleteAsync((response, t) -> {
+                if (t == null) {
                     Object newDecodedResponse = MapGetCodec.decodeResponse(response).response;
                     nearCache.tryPublishReserved(ncKey, newDecodedResponse, reservationId, false);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
+                } else {
                     invalidateNearCache(ncKey);
                 }
             }, getClient().getClientExecutionService());
@@ -223,10 +219,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
+    protected InternalCompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
                                                      Object key, Object value) {
         key = toNearCacheKey(key);
-        ICompletableFuture<V> future;
+        InternalCompletableFuture<V> future;
         try {
             future = super.putAsyncInternal(ttl, timeunit, maxIdle, maxIdleUnit, key, value);
         } finally {
@@ -236,10 +232,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
+    protected InternalCompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
                                                         Object key, Object value) {
         key = toNearCacheKey(key);
-        ICompletableFuture<Void> future;
+        InternalCompletableFuture<Void> future;
         try {
             future = super.setAsyncInternal(ttl, timeunit, maxIdle, maxIdleUnit, key, value);
         } finally {
@@ -249,9 +245,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<V> removeAsyncInternal(Object key) {
+    protected InternalCompletableFuture<V> removeAsyncInternal(Object key) {
         key = toNearCacheKey(key);
-        ICompletableFuture<V> future;
+        InternalCompletableFuture<V> future;
         try {
             future = super.removeAsyncInternal(key);
         } finally {
@@ -403,7 +399,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         if (serializeKeys) {
             fillPartitionToKeyData(keys, partitionToKeyData, keyMap, null);
         }
-        Collection<?> ncKeys = serializeKeys ? keyMap.values() : new LinkedList<K>(keys);
+        Collection<?> ncKeys = serializeKeys ? keyMap.values() : new LinkedList<>(keys);
 
         populateResultFromNearCache(ncKeys, resultingKeyValuePairs);
         if (ncKeys.isEmpty()) {
@@ -499,10 +495,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public <R> ICompletableFuture<R> submitToKeyInternal(Object key,
+    public <R> InternalCompletableFuture<R> submitToKeyInternal(Object key,
                                                          EntryProcessor<K, V, R> entryProcessor) {
         key = toNearCacheKey(key);
-        ICompletableFuture future;
+        InternalCompletableFuture future;
         try {
             future = super.submitToKeyInternal(key, entryProcessor);
         } finally {

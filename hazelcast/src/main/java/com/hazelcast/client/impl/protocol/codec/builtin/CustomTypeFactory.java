@@ -58,9 +58,9 @@ public final class CustomTypeFactory {
                 dataOldValue, oldValueAvailable);
     }
 
-    public static TimedExpiryPolicyFactoryConfig createTimedExpiryPolicyFactoryConfig(String expiryPolicyType,
+    public static TimedExpiryPolicyFactoryConfig createTimedExpiryPolicyFactoryConfig(int expiryPolicyType,
                                                                                         DurationConfig durationConfig) {
-        return new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.valueOf(expiryPolicyType), durationConfig);
+        return new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.getById(expiryPolicyType), durationConfig);
     }
 
     public static CacheSimpleEntryListenerConfig createCacheSimpleEntryListenerConfig(boolean oldValueRequired,
@@ -139,8 +139,26 @@ public final class CustomTypeFactory {
         return eventData;
     }
 
-    public static DurationConfig createDurationConfig(long durationAmount, String timeUnit) {
-        return new DurationConfig(durationAmount, TimeUnit.valueOf(timeUnit));
+    public static DurationConfig createDurationConfig(long durationAmount, int timeUnitId) {
+        TimeUnit timeUnit;
+        if (timeUnitId == 0) {
+            timeUnit = TimeUnit.NANOSECONDS;
+        } else if (timeUnitId == 1) {
+            timeUnit = TimeUnit.MICROSECONDS;
+        } else if (timeUnitId == 2) {
+            timeUnit = TimeUnit.MILLISECONDS;
+        } else if (timeUnitId == 3) {
+            timeUnit = TimeUnit.SECONDS;
+        } else if (timeUnitId == 4) {
+            timeUnit = TimeUnit.MINUTES;
+        } else if (timeUnitId == 5) {
+            timeUnit = TimeUnit.HOURS;
+        } else if (timeUnitId == 6) {
+            timeUnit = TimeUnit.DAYS;
+        } else {
+            timeUnit = null;
+        }
+        return new DurationConfig(durationAmount, timeUnit);
     }
 
     public static IndexConfig createIndexConfig(String name, int type, List<String> attributes) {

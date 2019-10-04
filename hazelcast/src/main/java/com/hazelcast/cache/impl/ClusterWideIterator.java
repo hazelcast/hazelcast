@@ -70,7 +70,7 @@ public class ClusterWideIterator<K, V>
             Operation operation = cacheProxy.operationProvider.createEntryIteratorOperation(lastTableIndex, fetchSize);
             final InternalCompletableFuture<CacheEntryIterationResult> f = operationService
                     .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
-            CacheEntryIterationResult iteratorResult = f.join();
+            CacheEntryIterationResult iteratorResult = f.joinInternal();
             if (iteratorResult != null) {
                 setLastTableIndex(iteratorResult.getEntries(), iteratorResult.getTableIndex());
                 return iteratorResult.getEntries();
@@ -79,7 +79,7 @@ public class ClusterWideIterator<K, V>
             Operation operation = cacheProxy.operationProvider.createKeyIteratorOperation(lastTableIndex, fetchSize);
             final InternalCompletableFuture<CacheKeyIterationResult> f = operationService
                     .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
-            CacheKeyIterationResult iteratorResult = f.join();
+            CacheKeyIterationResult iteratorResult = f.joinInternal();
             if (iteratorResult != null) {
                 setLastTableIndex(iteratorResult.getKeys(), iteratorResult.getTableIndex());
                 return iteratorResult.getKeys();

@@ -21,8 +21,6 @@ import com.hazelcast.version.Version;
 
 import java.io.InputStream;
 
-import static com.hazelcast.version.Version.UNKNOWN;
-
 /**
  * Base class for ObjectDataInput that is VersionAware and allows mutating
  * the version.
@@ -44,7 +42,6 @@ abstract class VersionedObjectDataInput extends InputStream implements ObjectDat
     @Override
     public void setWanProtocolVersion(Version version) {
         this.wanProtocolVersion = version;
-        this.version = UNKNOWN;
     }
 
     /**
@@ -69,6 +66,5 @@ abstract class VersionedObjectDataInput extends InputStream implements ObjectDat
     @Override
     public void setVersion(Version version) {
         this.version = version;
-        this.wanProtocolVersion = UNKNOWN;
     }
 }

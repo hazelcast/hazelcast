@@ -99,7 +99,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
                 null, operation, remoteAddress);
 
         try {
-            invocation.join();
+            invocation.joinInternal();
             fail();
         } catch (TargetNotMemberException e) {
         }
@@ -112,7 +112,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
                 null, operation, getAddress(remote));
 
         try {
-            invocation.join();
+            invocation.joinInternal();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }

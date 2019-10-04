@@ -73,11 +73,6 @@ public class ClientTestSupport extends HazelcastTestSupport {
         return clientProxy.client;
     }
 
-    protected HazelcastInstance getOwnerServer(TestHazelcastFactory factory, HazelcastClientInstanceImpl client) {
-        Address ownerConnectionAddress = client.getConnectionManager().getOwnerConnectionAddress();
-        return factory.getInstance(ownerConnectionAddress);
-    }
-
     protected void makeSureConnectedToServers(final HazelcastInstance client, final int numberOfServers) {
         assertTrueEventually(new AssertTask() {
             @Override

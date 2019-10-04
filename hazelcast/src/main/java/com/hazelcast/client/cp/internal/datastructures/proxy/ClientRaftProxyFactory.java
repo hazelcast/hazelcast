@@ -119,7 +119,7 @@ public class ClientRaftProxyFactory {
 
     private RaftGroupId getGroupId(String proxyName, String objectName) {
         ClientMessage request = CPGroupCreateCPGroupCodec.encodeRequest(proxyName);
-        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().join();
+        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
         return CPGroupCreateCPGroupCodec.decodeResponse(response).groupId;
     }
 

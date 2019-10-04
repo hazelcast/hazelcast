@@ -182,6 +182,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     configBuilder.addPropertyValue("instanceName", getTextContent(node));
                 } else if ("labels".equals(nodeName)) {
                     handleLabels(node);
+                } else if ("backup-ack-to-client-enabled".equals(nodeName)) {
+                    configBuilder.addPropertyValue("backupAckToClientEnabled", getTextContent(node));
                 }
             }
             return configBuilder.getBeanDefinition();

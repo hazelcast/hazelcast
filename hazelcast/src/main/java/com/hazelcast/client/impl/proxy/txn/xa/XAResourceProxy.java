@@ -27,7 +27,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.transaction.impl.xa.XAResourceImpl;
@@ -93,9 +92,6 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     }
 
     private TransactionContext createTransactionContext(Xid xid) {
-        if (getContext().getConnectionManager().getOwnerConnection() == null) {
-            throw new TransactionException("Owner connection needs to be present to begin a transaction");
-        }
         ClientTransactionManagerService transactionManager = getContext().getTransactionManager();
         TransactionContext context = transactionManager.newXATransactionContext(xid, timeoutInSeconds.get());
         getTransaction(context).begin();

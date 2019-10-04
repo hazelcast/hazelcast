@@ -91,6 +91,13 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void backupAckToClient() {
+        clientConfig.setBackupAckToClientEnabled(false);
+        ClientConfig actual = newConfigViaGenerator();
+        assertFalse(actual.isBackupAckToClientEnabled());
+    }
+
+    @Test
     public void instanceName() {
         String instanceName = randomString();
         clientConfig.setInstanceName(instanceName);

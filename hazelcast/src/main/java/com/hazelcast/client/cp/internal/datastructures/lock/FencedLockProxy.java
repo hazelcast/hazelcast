@@ -156,7 +156,7 @@ public class FencedLockProxy extends ClientProxy implements FencedLock {
     @Override
     public void onDestroy() {
         ClientMessage msg = CPGroupDestroyCPObjectCodec.encodeRequest(lock.getGroupId(), getServiceName(), lock.getObjectName());
-        new ClientInvocation(getClient(), msg, name).invoke().join();
+        new ClientInvocation(getClient(), msg, name).invoke().joinInternal();
     }
 
     @Override

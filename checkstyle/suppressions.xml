@@ -147,6 +147,10 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]MemberImpl"/>
     <suppress checks="ClassFanOutComplexity|AnonInnerLength"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]connection[\\/]nio[\\/]ClientConnectionManagerImpl"/>
+    <suppress checks="MagicNumber"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]builtin[\\/]FixedSizeTypesCodec"/>
+    <suppress checks="MagicNumber"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]builtin[\\/]CustomTypeFactory" />
 
     <!-- Client Protocol (auto-generated) -->
     <suppress checks="Header|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity|Whitespace|MethodParamPad"
@@ -178,6 +182,10 @@
 
     <!-- Instance -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]instance[\\/]"/>
+
+    <!-- SPI -->
+    <suppress checks="FileLength"
+              files="com[\\/]hazelcast[\\/]spi[\\/]impl[\\/]AbstractInvocationFuture"/>
 
     <!-- Transaction -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]transaction[\\/]"/>

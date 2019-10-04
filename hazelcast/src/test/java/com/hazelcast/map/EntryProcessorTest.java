@@ -1015,7 +1015,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
         map.put(1, 1);
 
-        Future<Integer> future = map.submitToKey(1, new IncrementorEntryProcessor<>());
+        Future<Integer> future = map.submitToKey(1, new IncrementorEntryProcessor<>()).toCompletableFuture();
         assertEquals(2, (int) future.get());
         assertEquals(2, (int) map.get(1));
     }
@@ -1026,7 +1026,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
 
-        Future<Integer> future = map.submitToKey(11, new IncrementorEntryProcessor<>());
+        Future<Integer> future = map.submitToKey(11, new IncrementorEntryProcessor<>()).toCompletableFuture();
         assertEquals(1, (int) future.get());
         assertEquals(1, (int) map.get(11));
     }
@@ -1547,7 +1547,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         IMap<Long, MyData> testMap = setupImapForEntryProcessorWithIndex();
         testMap.set(1L, new MyData(10));
 
-        testMap.submitToKey(1L, new MyProcessor()).get();
+        testMap.submitToKey(1L, new MyProcessor()).toCompletableFuture().get();
 
         Predicate betweenPredicate = Predicates.between("lastValue", 0, 10);
         Collection<MyData> values = testMap.values(betweenPredicate);

@@ -16,14 +16,16 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.Config;
 import com.hazelcast.cluster.Cluster;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.util.RootCauseMatcher;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
@@ -36,7 +38,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,6 +46,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -129,7 +131,8 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz3));
-        exception.expect(IllegalStateException.class);
+        exception.expect(CompletionException.class);
+        exception.expect(new RootCauseMatcher(IllegalStateException.class));
         future.join();
     }
 
@@ -160,7 +163,8 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz1));
-        exception.expect(IllegalStateException.class);
+        exception.expect(CompletionException.class);
+        exception.expect(new RootCauseMatcher(IllegalStateException.class));
         future.join();
     }
 

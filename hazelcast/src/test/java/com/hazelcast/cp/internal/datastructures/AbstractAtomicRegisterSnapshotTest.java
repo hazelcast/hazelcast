@@ -97,7 +97,7 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
     }
 
     protected T getValue(InternalCompletableFuture<Object> future) {
-        return (T) future.join();
+        return (T) future.joinInternal();
     }
 
     private InternalCompletableFuture<Object> queryLocally(HazelcastInstance instance) {

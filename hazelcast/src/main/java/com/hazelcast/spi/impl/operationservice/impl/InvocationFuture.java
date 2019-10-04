@@ -20,10 +20,10 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IndeterminateOperationState;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.util.concurrent.CancellationException;
@@ -32,12 +32,11 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
-import static com.hazelcast.internal.util.Clock.currentTimeMillis;
-import static com.hazelcast.internal.util.ExceptionUtil.fixAsyncStackTrace;
-import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 /**
  * The InvocationFuture is the {@link InternalCompletableFuture} that waits on the completion
@@ -49,16 +48,29 @@ import static com.hazelcast.internal.util.StringUtil.timeToString;
  *
  * @param <E>
  */
-final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
+public final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
-    volatile boolean interrupted;
     final Invocation invocation;
+    volatile boolean interrupted;
     private final boolean deserialize;
 
     InvocationFuture(Invocation invocation, boolean deserialize) {
-        super(invocation.context.asyncExecutor, invocation.context.logger);
+        super(invocation.context.logger);
         this.invocation = invocation;
         this.deserialize = deserialize;
+    }
+
+    @Override
+    protected void onInterruptDetected() {
+        interrupted = true;
+    }
+
+    @Override
+    public boolean isCompletedExceptionally() {
+        return (state instanceof ExceptionalResult
+            || state == CALL_TIMEOUT
+            || state == HEARTBEAT_TIMEOUT
+            || state == INTERRUPTED);
     }
 
     @Override
@@ -73,11 +85,6 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     }
 
     @Override
-    protected void onInterruptDetected() {
-        interrupted = true;
-    }
-
-    @Override
     protected Exception wrapToInstanceNotActiveException(RejectedExecutionException e) {
         if (!invocation.context.nodeEngine.isRunning()) {
             return new HazelcastInstanceNotActiveException(e.getMessage());
@@ -88,33 +95,39 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     @Override
     protected E resolveAndThrowIfException(Object unresolved) throws ExecutionException, InterruptedException {
         Object value = resolve(unresolved);
+        return returnOrThrowWithGetConventions(value);
+    }
 
-        if (value == null || !(value instanceof Throwable)) {
-            return (E) value;
-        } else if (value instanceof CancellationException) {
-            throw (CancellationException) value;
-        } else if (value instanceof ExecutionException) {
-            throw (ExecutionException) value;
-        } else if (value instanceof InterruptedException) {
-            throw (InterruptedException) value;
-        } else if (value instanceof Error) {
-            throw (Error) value;
+    // public for tests
+    public static <T> T returnOrThrowWithGetConventions(Object resolved) throws ExecutionException, InterruptedException {
+        if (!(resolved instanceof ExceptionalResult)) {
+            return (T) resolved;
         } else {
-            throw new ExecutionException((Throwable) value);
+            Throwable cause = ((ExceptionalResult) resolved).getCause();
+            if (cause instanceof CancellationException) {
+                throw (CancellationException) cause;
+            } else if (cause instanceof ExecutionException) {
+                throw (ExecutionException) cause;
+            } else if (cause instanceof InterruptedException) {
+                throw (InterruptedException) cause;
+            } else {
+                throw new ExecutionException(cause);
+            }
         }
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
     protected Object resolve(Object unresolved) {
         if (unresolved == null) {
             return null;
         } else if (unresolved == INTERRUPTED) {
-            return new InterruptedException(invocation.op.getClass().getSimpleName() + " was interrupted. " + invocation);
+            return new ExceptionalResult(
+                    new InterruptedException(invocation.op.getClass().getSimpleName() + " was interrupted. " + invocation));
         } else if (unresolved == CALL_TIMEOUT) {
-            return newOperationTimeoutException(false);
+            return new ExceptionalResult(newOperationTimeoutException(false));
         } else if (unresolved == HEARTBEAT_TIMEOUT) {
-            return newOperationTimeoutException(true);
+            return new ExceptionalResult(newOperationTimeoutException(true));
         } else if (unresolved.getClass() == Packet.class) {
             NormalResponse response = invocation.context.serializationService.toObject(unresolved);
             unresolved = response.getValue();
@@ -128,20 +141,21 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
             }
         }
 
-        if (invocation.shouldFailOnIndeterminateOperationState() && (value instanceof IndeterminateOperationState)) {
-            value = new IndeterminateOperationStateException("indeterminate operation state", (Throwable) value);
-        }
+        Throwable cause = (value instanceof ExceptionalResult)
+                ? ((ExceptionalResult) value).getCause()
+                : null;
 
-        if (value instanceof Throwable) {
-            Throwable throwable = ((Throwable) value);
-            fixAsyncStackTrace((Throwable) value, Thread.currentThread().getStackTrace());
-            return throwable;
+        if (invocation.shouldFailOnIndeterminateOperationState()
+                && (value instanceof IndeterminateOperationState
+                    || cause instanceof IndeterminateOperationState)) {
+            value = wrapThrowable(new IndeterminateOperationStateException("indeterminate operation state",
+                    cause == null ? (Throwable) value : cause));
         }
 
         return value;
     }
 
-    private Object newOperationTimeoutException(boolean heartbeatTimeout) {
+    private OperationTimeoutException newOperationTimeoutException(boolean heartbeatTimeout) {
         StringBuilder sb = new StringBuilder();
         if (heartbeatTimeout) {
             sb.append(invocation.op.getClass().getSimpleName())
@@ -171,7 +185,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
         sb.append(invocation);
         String msg = sb.toString();
-        return new ExecutionException(msg, new OperationTimeoutException(msg));
+        return new OperationTimeoutException(msg);
     }
 
     private static void appendHeartbeat(StringBuilder sb, long lastHeartbeatMillis) {

@@ -19,7 +19,6 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;
@@ -35,6 +34,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -474,7 +474,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
             groupEndpoints.add(member.toRaftEndpoint());
         }
 
-        ICompletableFuture<CPGroupId> f = raftService.getInvocationManager()
+        InternalCompletableFuture<CPGroupId> f = raftService.getInvocationManager()
                                                      .invoke(getMetadataGroupId(leaderInstance),
                                                              new CreateRaftGroupOp("test", groupEndpoints));
 
@@ -539,19 +539,19 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         factory.getInstance(endpoint.getAddress()).shutdown();
 
         CPGroupId metadataGroupId = getMetadataGroupId(aliveInstance);
-        ICompletableFuture<List<CPMember>> f1 = invocationService.query(metadataGroupId, new GetActiveCPMembersOp(),
+        InternalCompletableFuture<List<CPMember>> f1 = invocationService.query(metadataGroupId, new GetActiveCPMembersOp(),
                 LINEARIZABLE);
 
         List<CPMember> activeEndpoints = f1.get();
         assertThat(activeEndpoints, not(hasItem(endpoint)));
 
-        ICompletableFuture<CPGroup> f2 = invocationService.query(metadataGroupId, new GetRaftGroupOp(metadataGroupId),
+        InternalCompletableFuture<CPGroup> f2 = invocationService.query(metadataGroupId, new GetRaftGroupOp(metadataGroupId),
                 LINEARIZABLE);
 
-        ICompletableFuture<CPGroup> f3 = invocationService.query(metadataGroupId, new GetRaftGroupOp(groupId1),
+        InternalCompletableFuture<CPGroup> f3 = invocationService.query(metadataGroupId, new GetRaftGroupOp(groupId1),
                 LINEARIZABLE);
 
-        ICompletableFuture<CPGroup> f4 = invocationService.query(metadataGroupId, new GetRaftGroupOp(groupId2),
+        InternalCompletableFuture<CPGroup> f4 = invocationService.query(metadataGroupId, new GetRaftGroupOp(groupId2),
                 LINEARIZABLE);
 
         CPGroup metadataGroup = f2.get();

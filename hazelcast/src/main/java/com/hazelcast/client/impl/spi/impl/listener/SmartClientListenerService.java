@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.spi.impl.listener;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.util.EmptyStatement;
@@ -49,7 +49,7 @@ public class SmartClientListenerService extends AbstractClientListenerService  {
                 Collection<Member> memberList = clientClusterService.getMemberList();
                 for (Member member : memberList) {
                     try {
-                        clientConnectionManager.getOrTriggerConnect(member.getAddress(), false);
+                        clientConnectionManager.getOrTriggerConnect(member.getAddress());
                     } catch (IOException e) {
                         EmptyStatement.ignore(e);
                         return;

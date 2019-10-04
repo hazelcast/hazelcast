@@ -19,6 +19,9 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.HazelcastClientOfflineException;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.impl.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
@@ -26,9 +29,9 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -62,6 +65,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private final ClientClusterService clientClusterService;
     private final AbstractClientInvocationService invocationService;
     private final ClientExecutionService executionService;
+    private final ClusterConnectorService clusterConnectorService;
     private volatile ClientMessage clientMessage;
     private final CallIdSequence callIdSequence;
     private final Address address;
@@ -81,6 +85,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                                int partitionId,
                                Address address,
                                Connection connection) {
+        this.clusterConnectorService = client.getClusterConnectorService();
         this.clientClusterService = client.getClientClusterService();
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (AbstractClientInvocationService) client.getInvocationService();
@@ -94,8 +99,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         this.logger = invocationService.invocationLogger;
         this.callIdSequence = invocationService.getCallIdSequence();
-        this.clientInvocationFuture = new ClientInvocationFuture(this, executionService,
-                clientMessage, logger, callIdSequence);
+        this.clientInvocationFuture = new ClientInvocationFuture(this, clientMessage, logger, callIdSequence);
         this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
     }
 
@@ -188,7 +192,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         try {
             invokeOnSelection();
         } catch (Throwable e) {
-            complete(e);
+            completeExceptionally(e);
         }
     }
 
@@ -212,26 +216,37 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         return true;
     }
 
+    @Override
     protected void complete(Object response) {
         clientInvocationFuture.complete(response);
         invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
     }
 
+    @Override
+    protected void completeExceptionally(Throwable t) {
+        clientInvocationFuture.completeExceptionally(t);
+        invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
+    }
 
     protected boolean shouldFailOnIndeterminateOperationState() {
         return invocationService.shouldFailOnIndeterminateOperationState();
     }
 
-    public void notifyException(Throwable exception) {
+    void notifyException(Throwable exception) {
         logException(exception);
 
         if (!lifecycleService.isRunning()) {
-            complete(new HazelcastClientNotActiveException("Client is shutting down", exception));
+            completeExceptionally(new HazelcastClientNotActiveException("Client is shutting down", exception));
+            return;
+        }
+
+        if (shouldThrowOfflineException(exception)) {
+            clientInvocationFuture.complete(new HazelcastClientOfflineException("Client is offline"));
             return;
         }
 
         if (isNotAllowedToRetryOnSelection(exception)) {
-            complete(exception);
+            completeExceptionally(exception);
             return;
         }
 
@@ -239,7 +254,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 || invocationService.isRedoOperation()
                 || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable());
         if (!retry) {
-            complete(exception);
+            completeExceptionally(exception);
             return;
         }
 
@@ -249,16 +264,22 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 logger.finest("Exception will not be retried because invocation timed out", exception);
             }
 
-            complete(newOperationTimeoutException(exception));
+            completeExceptionally(newOperationTimeoutException(exception));
             return;
         }
 
         try {
             execute();
         } catch (RejectedExecutionException e) {
-            complete(new HazelcastClientNotActiveException("Client is shutting down", exception));
+            completeExceptionally(new HazelcastClientNotActiveException("Client is shutting down", exception));
         }
 
+    }
+
+    private boolean shouldThrowOfflineException(Throwable exception) {
+        return ClientConnectionStrategyConfig.ReconnectMode.ASYNC.equals(invocationService.getReconnectMode())
+                && exception instanceof IOException
+                && !clusterConnectorService.mainConnectionExists();
     }
 
     private void logException(Throwable exception) {

@@ -47,8 +47,6 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
         String username = generateRandomString(1000);
         String password = generateRandomString(1000);
         UUID uuid = UUID.randomUUID();
-        UUID ownerUuid = UUID.randomUUID();
-        boolean isOwnerConnection = false;
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);
         String clientName = generateRandomString(1000);
@@ -58,7 +56,7 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
             labels.add(generateRandomString(1000));
         }
 
-        clientMessage = ClientAuthenticationCodec.encodeRequest(username, password, uuid, ownerUuid, isOwnerConnection,
+        clientMessage = ClientAuthenticationCodec.encodeRequest(username, password, uuid,
                 clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
     }
 

@@ -18,9 +18,8 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.AwaitOp;
 import com.hazelcast.instance.impl.Node;
@@ -34,8 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Client message task for {@link AwaitOp}
  */
-public class AwaitMessageTask extends AbstractMessageTask<CountDownLatchAwaitCodec.RequestParameters>
-        implements ExecutionCallback<Boolean> {
+public class AwaitMessageTask extends AbstractCPMessageTask<CountDownLatchAwaitCodec.RequestParameters> {
 
     public AwaitMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,7 +44,7 @@ public class AwaitMessageTask extends AbstractMessageTask<CountDownLatchAwaitCod
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                .<Boolean>invoke(parameters.groupId, new AwaitOp(parameters.name, parameters.invocationUid, parameters.timeoutMs))
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
@@ -82,15 +80,5 @@ public class AwaitMessageTask extends AbstractMessageTask<CountDownLatchAwaitCod
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.timeoutMs, TimeUnit.MILLISECONDS};
-    }
-
-    @Override
-    public void onResponse(Boolean response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

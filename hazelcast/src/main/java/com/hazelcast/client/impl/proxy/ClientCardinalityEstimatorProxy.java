@@ -58,12 +58,12 @@ public class ClientCardinalityEstimatorProxy
 
     @Override
     public void add(Object obj) {
-        addAsync(obj).join();
+        addAsync(obj).joinInternal();
     }
 
     @Override
     public long estimate() {
-        return estimateAsync().join();
+        return estimateAsync().joinInternal();
     }
 
     @Override

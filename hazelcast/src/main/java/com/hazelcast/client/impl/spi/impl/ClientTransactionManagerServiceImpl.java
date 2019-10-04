@@ -36,6 +36,7 @@ import com.hazelcast.transaction.TransactionalTask;
 
 import javax.transaction.xa.Xid;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
@@ -144,11 +145,10 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         return new OperationTimeoutException(msg, e);
     }
 
-    private ClientConnection tryConnectUnisocket() throws IOException {
-        ClientConnection connection = client.getConnectionManager().getOwnerConnection();
-
-        if (connection != null) {
-            return connection;
+    private ClientConnection tryConnectUnisocket() {
+        Iterator<ClientConnection> iterator = client.getConnectionManager().getActiveConnections().iterator();
+        if (iterator.hasNext()) {
+            return iterator.next();
         }
         return throwException(false);
     }

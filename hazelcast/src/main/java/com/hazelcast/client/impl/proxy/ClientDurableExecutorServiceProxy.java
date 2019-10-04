@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DurableExecutorDisposeResultCodec;
@@ -29,14 +30,13 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.DurableExecutorServiceFuture;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.spi.impl.DeserializingCompletableFuture;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -207,7 +207,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
             ClientMessage response = invokeOnPartition(request, partitionId);
             sequence = DurableExecutorSubmitToPartitionCodec.decodeResponse(response).response;
         } catch (Throwable t) {
-            return new ClientDurableExecutorServiceCompletedFuture<T>(t, getUserExecutor());
+            return completedExceptionally(t, getUserExecutor());
         }
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
@@ -242,6 +242,10 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         return getContext().getPartitionService().getPartitionId(key);
     }
 
+    private static <T> DurableExecutorServiceFuture<T> completedExceptionally(Throwable t, Executor executor) {
+        return new ClientDurableExecutorServiceCompletedFuture<>(t, executor);
+    }
+
     private static class ClientDurableExecutorServiceDelegatingFuture<T> extends ClientDelegatingFuture<T>
             implements DurableExecutorServiceFuture<T> {
 
@@ -261,72 +265,17 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         }
     }
 
-    private static final class ClientDurableExecutorServiceCompletedFuture<T> implements DurableExecutorServiceFuture<T> {
+    private static final class ClientDurableExecutorServiceCompletedFuture<T> extends DeserializingCompletableFuture<T>
+            implements DurableExecutorServiceFuture<T> {
 
-        private final Object result;
-        private final Executor executor;
-
-        private ClientDurableExecutorServiceCompletedFuture(Object result, Executor executor) {
-            this.result = result;
-            this.executor = executor;
+        private ClientDurableExecutorServiceCompletedFuture(Throwable throwable, Executor executor) {
+            super(executor);
+            super.completeExceptionally(throwable);
         }
 
         @Override
         public long getTaskId() {
             throw new IllegalStateException("Task failed to execute!");
-        }
-
-        @Override
-        public void andThen(ExecutionCallback<T> callback) {
-            andThen(callback, executor);
-        }
-
-        @Override
-        public void andThen(final ExecutionCallback<T> callback, Executor executor) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    if (result instanceof Throwable) {
-                        callback.onFailure((Throwable) result);
-                    } else {
-                        callback.onResponse((T) result);
-                    }
-                }
-            });
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDone() {
-            return true;
-        }
-
-        @Override
-        public T get() throws InterruptedException, ExecutionException {
-            if (result instanceof Throwable) {
-                if (result instanceof ExecutionException) {
-                    throw (ExecutionException) result;
-                }
-                if (result instanceof InterruptedException) {
-                    throw (InterruptedException) result;
-                }
-                throw new ExecutionException((Throwable) result);
-            }
-            return (T) result;
-        }
-
-        @Override
-        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return get();
         }
     }
 }

@@ -21,7 +21,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 /**
  * Initializes the leadership transfer process, if the local Raft node
@@ -34,9 +34,10 @@ public class InitLeadershipTransferTask implements Runnable {
 
     private final RaftNodeImpl raftNode;
     private final RaftEndpoint targetEndpoint;
-    private final SimpleCompletableFuture resultFuture;
+    private final InternalCompletableFuture resultFuture;
 
-    public InitLeadershipTransferTask(RaftNodeImpl raftNode, RaftEndpoint targetEndpoint, SimpleCompletableFuture resultFuture) {
+    public InitLeadershipTransferTask(RaftNodeImpl raftNode, RaftEndpoint targetEndpoint,
+                                      InternalCompletableFuture resultFuture) {
         this.raftNode = raftNode;
         this.targetEndpoint = targetEndpoint;
         this.resultFuture = resultFuture;
@@ -45,13 +46,13 @@ public class InitLeadershipTransferTask implements Runnable {
     @Override
     public void run() {
         if (!raftNode.getCommittedMembers().contains(targetEndpoint)) {
-            resultFuture.complete(new IllegalArgumentException("Cannot transfer leadership to " + targetEndpoint
+            resultFuture.completeExceptionally(new IllegalArgumentException("Cannot transfer leadership to " + targetEndpoint
                     + " because it is not in the committed group member list!"));
             return;
         }
 
         if (raftNode.getStatus() != RaftNodeStatus.ACTIVE) {
-            resultFuture.complete(new IllegalStateException("Cannot transfer leadership to " + targetEndpoint
+            resultFuture.completeExceptionally(new IllegalStateException("Cannot transfer leadership to " + targetEndpoint
                     + " because the status is " + raftNode.getStatus()));
             return;
         }
@@ -61,7 +62,7 @@ public class InitLeadershipTransferTask implements Runnable {
         LeaderState leaderState = state.leaderState();
 
         if (leaderState == null) {
-            resultFuture.complete(new IllegalStateException("Cannot transfer leadership to " + targetEndpoint
+            resultFuture.completeExceptionally(new IllegalStateException("Cannot transfer leadership to " + targetEndpoint
                     + " because I am not the leader!"));
             return;
         }

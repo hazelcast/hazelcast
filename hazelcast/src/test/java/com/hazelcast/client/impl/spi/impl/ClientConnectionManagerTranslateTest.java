@@ -75,7 +75,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
         };
         clientConnectionManager.beforeClusterSwitch(new CandidateClusterContext(provider, null,
                 factory, null, channelInitializerProvider));
-        clientConnectionManager.getOrConnect(new Address("127.0.0.1", 5701), true);
+        clientConnectionManager.getOrConnect(new Address("127.0.0.1", 5701));
 
         provider.shouldTranslate = true;
 
@@ -123,7 +123,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
     @Test
     public void testTranslatorIsNotUsedOnTriggerConnect() throws Exception {
-        Connection connection = clientConnectionManager.getOrTriggerConnect(privateAddress, false);
+        Connection connection = clientConnectionManager.getOrTriggerConnect(privateAddress);
         assertNotNull(connection);
     }
 

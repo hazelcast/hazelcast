@@ -28,14 +28,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class ClientProperty {
 
     /**
-     * Client disallows doing invocations on client disconnected state. When this property is set to true, even client
-     * is not connected to all cluster, it allows invocations that can go thorough available ones.
-     */
-    public static final HazelcastProperty ALLOW_INVOCATIONS_WHEN_DISCONNECTED
-            = new HazelcastProperty("hazelcast.client.allow.invocations.when.disconnected", false);
-
-
-    /**
      * Client shuffles the given member list to prevent all clients to connect to the same node when
      * this property is set to true. When it is set to false, the client tries to connect to the nodes
      * in the given order.
@@ -165,7 +157,7 @@ public final class ClientProperty {
      * It is disabled by default.
      */
     public static final HazelcastProperty IO_WRITE_THROUGH_ENABLED
-            = new HazelcastProperty("hazelcast.client.io.write.through", false);
+            = new HazelcastProperty("hazelcast.client.io.write.through", true);
 
     /**
      * Property needed for concurrency detection so that write through and dynamic response handling
@@ -209,7 +201,7 @@ public final class ClientProperty {
      * increased performance and reduced memory usage.
      */
     public static final HazelcastProperty RESPONSE_THREAD_DYNAMIC
-            = new HazelcastProperty("hazelcast.client.response.thread.dynamic", false);
+            = new HazelcastProperty("hazelcast.client.response.thread.dynamic", true);
 
     /**
      * Token to use when discovering cluster via hazelcast.cloud

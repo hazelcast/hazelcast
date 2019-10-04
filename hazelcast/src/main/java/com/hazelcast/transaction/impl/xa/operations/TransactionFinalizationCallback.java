@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.transaction.impl.xa.operations;
 
-import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.UUID;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
-public class ReAuthenticationOperationSupplier implements Supplier<Operation> {
+final class TransactionFinalizationCallback<V> implements BiConsumer<V, Throwable> {
+    private final AtomicInteger counter = new AtomicInteger();
+    private final int size;
+    private final Operation operation;
 
-    private final UUID uuid;
-    private final long authCorrelationId;
-
-    public ReAuthenticationOperationSupplier(UUID uuid, long authCorrelationId) {
-        this.uuid = uuid;
-        this.authCorrelationId = authCorrelationId;
+    TransactionFinalizationCallback(Operation operation, int size) {
+        this.operation = operation;
+        this.size = size;
     }
 
     @Override
-    public Operation get() {
-        return new ClientReAuthOperation(uuid, authCorrelationId);
+    public void accept(V v, Throwable throwable) {
+        if (size == counter.incrementAndGet()) {
+            operation.sendResponse(null);
+        }
     }
 }

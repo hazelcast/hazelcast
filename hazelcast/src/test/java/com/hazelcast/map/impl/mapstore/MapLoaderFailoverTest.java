@@ -127,7 +127,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         IMap<Object, Object> map = nodes[0].getMap(mapName);
 
         // trigger loading and pause half way through
-        Future<Object> asyncVal = map.getAsync(1);
+        Future<Object> asyncVal = map.getAsync(1).toCompletableFuture();
         pausingLoader.awaitPause();
 
         hz3.getLifecycleService().terminate();

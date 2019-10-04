@@ -19,11 +19,11 @@ package com.hazelcast.client.cp.internal.session;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManagerTest;
 import com.hazelcast.cp.internal.session.SessionAwareProxy;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -69,10 +69,10 @@ public class ClientSessionManagerTest extends AbstractProxySessionManagerTest {
         SessionProxyImpl proxy = new SessionProxyImpl(sessionManager, groupId);
         proxy.createSession();
 
-        Map<RaftGroupId, ICompletableFuture<Object>> futures = sessionManager.shutdown();
+        Map<RaftGroupId, InternalCompletableFuture<Object>> futures = sessionManager.shutdown();
         assertEquals(1, futures.size());
 
-        Entry<RaftGroupId, ICompletableFuture<Object>> e = futures.entrySet().iterator().next();
+        Entry<RaftGroupId, InternalCompletableFuture<Object>> e = futures.entrySet().iterator().next();
         assertEquals(groupId, e.getKey());
         e.getValue().get();
 

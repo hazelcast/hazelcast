@@ -29,8 +29,8 @@ import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 
@@ -65,7 +65,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
 
         ClientMessage request = SemaphoreInitCodec.encodeRequest(groupId, objectName, permits);
         HazelcastClientInstanceImpl client = getClient();
-        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().join();
+        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
         return SemaphoreInitCodec.decodeResponse(response).response;
     }
 
@@ -84,7 +84,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         ClientMessage request = SemaphoreAcquireCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
                 invocationUid, permits, -1);
         HazelcastClientInstanceImpl client = getClient();
-        new ClientInvocation(client, request, objectName).invoke().join();
+        new ClientInvocation(client, request, objectName).invoke().joinInternal();
     }
 
     @Override
@@ -113,7 +113,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         ClientMessage request = SemaphoreAcquireCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
                 invocationUid, permits, timeoutMs);
         HazelcastClientInstanceImpl client = getClient();
-        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().join();
+        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
         return SemaphoreAcquireCodec.decodeResponse(response).response;
     }
 
@@ -132,14 +132,14 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         ClientMessage request = SemaphoreReleaseCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
                 invocationUid, permits);
         HazelcastClientInstanceImpl client = getClient();
-        new ClientInvocation(client, request, objectName).invoke().join();
+        new ClientInvocation(client, request, objectName).invoke().joinInternal();
     }
 
     @Override
     public int availablePermits() {
         ClientMessage request = SemaphoreAvailablePermitsCodec.encodeRequest(groupId, objectName);
         HazelcastClientInstanceImpl client = getClient();
-        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().join();
+        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
         return SemaphoreAvailablePermitsCodec.decodeResponse(response).response;
     }
 
@@ -151,7 +151,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         ClientMessage request = SemaphoreDrainCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
                 invocationUid);
         HazelcastClientInstanceImpl client = getClient();
-        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().join();
+        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
         return SemaphoreDrainCodec.decodeResponse(response).response;
     }
 
@@ -167,7 +167,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
 
         ClientMessage request = SemaphoreChangeCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
                 invocationUid, -reduction);
-        new ClientInvocation(getClient(), request, objectName).invoke().join();
+        new ClientInvocation(getClient(), request, objectName).invoke().joinInternal();
     }
 
     @Override
@@ -182,7 +182,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
 
         ClientMessage request = SemaphoreChangeCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
                 invocationUid, increase);
-        new ClientInvocation(getClient(), request, objectName).invoke().join();
+        new ClientInvocation(getClient(), request, objectName).invoke().joinInternal();
     }
 
     @Override
@@ -193,7 +193,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
     @Override
     public void onDestroy() {
         ClientMessage request = CPGroupDestroyCPObjectCodec.encodeRequest(groupId, getServiceName(), objectName);
-        new ClientInvocation(getClient(), request, name).invoke().join();
+        new ClientInvocation(getClient(), request, name).invoke().joinInternal();
     }
 
     public CPGroupId getGroupId() {

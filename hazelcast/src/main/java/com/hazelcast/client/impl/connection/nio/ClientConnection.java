@@ -61,7 +61,6 @@ public class ClientConnection implements Connection {
     private final ConcurrentMap attributeMap;
 
     private volatile Address remoteEndpoint;
-    private volatile boolean isAuthenticatedAsOwner;
     @Probe(level = ProbeLevel.DEBUG)
     private final AtomicLong closedTime = new AtomicLong();
 
@@ -243,14 +242,6 @@ public class ClientConnection implements Connection {
         } else {
             responseHandler.accept(message);
         }
-    }
-
-    public boolean isAuthenticatedAsOwner() {
-        return isAuthenticatedAsOwner;
-    }
-
-    public void setIsAuthenticatedAsOwner() {
-        this.isAuthenticatedAsOwner = true;
     }
 
     public long getStartTime() {

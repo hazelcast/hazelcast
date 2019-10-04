@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -32,6 +31,7 @@ import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -339,7 +339,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     private void invokeOnAllMembers(Supplier<Operation> operationSupplier) {
-        ICompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES);
+        InternalCompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES);
         try {
             future.get();
         } catch (InterruptedException e) {

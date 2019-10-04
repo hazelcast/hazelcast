@@ -17,16 +17,14 @@
 package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
@@ -34,7 +32,7 @@ import com.hazelcast.topic.ReliableMessageListener;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-
+import java.util.function.BiConsumer;
 
 /**
  * An {@link com.hazelcast.core.ExecutionCallback} that will try to read an
@@ -44,7 +42,7 @@ import java.util.concurrent.Executor;
  * <p>
  * The runner keeps track of the sequence.
  */
-public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {
+public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<ReliableTopicMessage>, Throwable> {
 
     protected final Ringbuffer<ReliableTopicMessage> ringbuffer;
     protected final ILogger logger;
@@ -89,37 +87,47 @@ public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSe
         if (cancelled) {
             return;
         }
-
-        ICompletableFuture<ReadResultSet<ReliableTopicMessage>> f =
-                ringbuffer.readManyAsync(sequence, 1, batchSze, null);
-        f.andThen(this, executor);
+        ringbuffer.readManyAsync(sequence, 1, batchSze, null)
+                  .whenCompleteAsync(this, executor);
     }
 
-    // This method is called from the provided executor.
     @Override
-    public void onResponse(ReadResultSet<ReliableTopicMessage> result) {
-        // we process all messages in batch. So we don't release the thread and reschedule ourselves;
-        // but we'll process whatever was received in 1 go.
-        for (Object item : result) {
-            ReliableTopicMessage message = (ReliableTopicMessage) item;
+    public void accept(ReadResultSet<ReliableTopicMessage> result, Throwable throwable) {
+        if (throwable == null) {
+            // we process all messages in batch. So we don't release the thread and reschedule ourselves;
+            // but we'll process whatever was received in 1 go.
+            for (Object item : result) {
+                ReliableTopicMessage message = (ReliableTopicMessage) item;
 
+                if (cancelled) {
+                    return;
+                }
+
+                try {
+                    listener.storeSequence(sequence);
+                    process(message);
+                } catch (Throwable t) {
+                    if (terminate(t)) {
+                        cancel();
+                        return;
+                    }
+                }
+
+                sequence++;
+            }
+            next();
+        } else {
             if (cancelled) {
                 return;
             }
 
-            try {
-                listener.storeSequence(sequence);
-                process(message);
-            } catch (Throwable t) {
-                if (terminate(t)) {
-                    cancel();
-                    return;
-                }
+            throwable = adjustThrowable(throwable);
+            if (handleInternalException(throwable)) {
+                next();
+            } else {
+                cancel();
             }
-
-            sequence++;
         }
-        next();
     }
 
     /**
@@ -142,21 +150,6 @@ public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSe
     }
 
     protected abstract Member getMember(ReliableTopicMessage m);
-
-    // This method is called from the provided executor.
-    @Override
-    public void onFailure(Throwable t) {
-        if (cancelled) {
-            return;
-        }
-
-        t = adjustThrowable(t);
-        if (handleInternalException(t)) {
-            next();
-        } else {
-            cancel();
-        }
-    }
 
     /**
      * @param t throwable to check if it is terminal or can be handled so that topic can continue

@@ -75,8 +75,6 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      */
     Address getThisAddress();
 
-    UUID getThisUuid();
-
     ClientEndpointManager getEndpointManager();
 
     ClientExceptions getClientExceptions();
@@ -163,8 +161,6 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      */
     Map<UUID, String> getClientStatistics();
 
-    UUID getOwnerUuid(UUID clientUuid);
-
     /**
      * @param client to check if allowed through current ClientSelector
      * @return true if allowed, false otherwise
@@ -201,4 +197,11 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * @return the client address of the member
      */
     Address clientAddressOf(Address memberAddress);
+
+    /**
+     * Notify client engine that a client with given uuid required a resource (lock) on this member
+     *
+     * @param uuid client uuid
+     */
+    void onClientAcquiredResource(UUID uuid);
 }

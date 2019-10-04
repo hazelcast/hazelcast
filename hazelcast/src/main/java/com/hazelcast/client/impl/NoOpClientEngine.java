@@ -85,11 +85,6 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public UUID getThisUuid() {
-        return null;
-    }
-
-    @Override
     public ClientEndpointManager getEndpointManager() {
         return null;
     }
@@ -125,11 +120,6 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public UUID getOwnerUuid(UUID clientUuid) {
-        return null;
-    }
-
-    @Override
     public boolean isClientAllowed(Client client) {
         return true;
     }
@@ -154,5 +144,10 @@ public class NoOpClientEngine implements ClientEngine {
     public Address clientAddressOf(Address clientAddress) {
         throw new TargetNotMemberException("NoOpClientEngine does not supply translation from member to "
                 + "client address");
+    }
+
+    @Override
+    public void onClientAcquiredResource(UUID uuid) {
+
     }
 }

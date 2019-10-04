@@ -182,7 +182,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         inboundResponseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
 
         try {
-            invocation.future.join();
+            invocation.future.joinInternal();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }
@@ -213,7 +213,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         inboundResponseHandler.notifyCallTimeout(callId, null);
 
         try {
-            assertNull(invocation.future.join());
+            assertNull(invocation.future.joinInternal());
             fail();
         } catch (OperationTimeoutException expected) {
         }

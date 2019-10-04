@@ -110,7 +110,7 @@ class CRDTReplicationTask implements Runnable {
         }
         try {
             logger.finest("Replicating " + service.getName() + " to " + target);
-            operationService.invokeOnTarget(null, replicationOperation.getOperation(), target.getAddress()).join();
+            operationService.invokeOnTarget(null, replicationOperation.getOperation(), target.getAddress()).joinInternal();
             replicationMigrationService.setReplicatedVectorClocks(service.getName(), target.getUuid(),
                     replicationOperation.getVectorClocks());
         } catch (Exception e) {

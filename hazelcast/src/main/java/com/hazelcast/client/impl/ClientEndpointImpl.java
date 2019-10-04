@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
@@ -57,12 +56,10 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final long creationTime;
 
     private LoginContext loginContext;
-    private ClientPrincipal principal;
-    private boolean ownerConnection;
+    private UUID clientUuid;
     private Credentials credentials;
     private volatile boolean authenticated;
     private String clientVersion;
-    private long authenticationCorrelationId;
     private volatile String stats;
     private String clientName;
     private Set<String> labels;
@@ -89,7 +86,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public UUID getUuid() {
-        return principal != null ? principal.getUuid() : null;
+        return clientUuid;
     }
 
     @Override
@@ -107,27 +104,15 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 
-    public boolean isOwnerConnection() {
-        return ownerConnection;
-    }
-
     @Override
-    public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection, String clientVersion,
+    public void authenticated(UUID clientUuid, Credentials credentials, String clientVersion,
                               long authCorrelationId, String clientName, Set<String> labels) {
-        this.principal = principal;
-        this.ownerConnection = firstConnection;
+        this.clientUuid = clientUuid;
         this.credentials = credentials;
         this.authenticated = true;
-        this.authenticationCorrelationId = authCorrelationId;
         this.setClientVersion(clientVersion);
         this.clientName = clientName;
         this.labels = labels;
-    }
-
-    @Override
-    public void authenticated(ClientPrincipal principal) {
-        this.principal = principal;
-        this.authenticated = true;
     }
 
     @Override
@@ -283,16 +268,11 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     public String toString() {
         return "ClientEndpoint{"
                 + "connection=" + connection
-                + ", principal='" + principal
-                + ", ownerConnection=" + ownerConnection
+                + ", clientUuid='" + clientUuid
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersion
                 + ", creationTime=" + creationTime
                 + ", latest statistics=" + stats
                 + '}';
-    }
-
-    public long getAuthenticationCorrelationId() {
-        return authenticationCorrelationId;
     }
 }

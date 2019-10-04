@@ -37,7 +37,17 @@ public class CPGroupDestroyedException extends CPSubsystemException {
         this.groupId = groupId;
     }
 
+    private CPGroupDestroyedException(CPGroupId groupId, Throwable cause) {
+        super(String.valueOf(groupId), cause, null);
+        this.groupId = groupId;
+    }
+
     public CPGroupId getGroupId() {
         return groupId;
+    }
+
+    @Override
+    public CPGroupDestroyedException wrap() {
+        return new CPGroupDestroyedException(groupId, this);
     }
 }

@@ -16,15 +16,15 @@
 
 package com.hazelcast.durableexecutor;
 
-import com.hazelcast.core.ICompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Future;
 
 /**
  * A Future where one can obtain the task ID for tracking the response.
  *
  * @param <V>
- * @since 3.7
  */
-public interface DurableExecutorServiceFuture<V> extends ICompletableFuture<V> {
+public interface DurableExecutorServiceFuture<V> extends CompletionStage<V>, Future<V> {
 
     /**
      * A unique ID for the executing task

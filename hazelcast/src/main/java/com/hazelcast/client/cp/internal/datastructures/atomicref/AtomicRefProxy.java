@@ -98,57 +98,57 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
 
     @Override
     public boolean compareAndSet(T expect, T update) {
-        return compareAndSetAsync(expect, update).join();
+        return compareAndSetAsync(expect, update).joinInternal();
     }
 
     @Override
     public T get() {
-        return getAsync().join();
+        return getAsync().joinInternal();
     }
 
     @Override
     public void set(T newValue) {
-        setAsync(newValue).join();
+        setAsync(newValue).joinInternal();
     }
 
     @Override
     public T getAndSet(T newValue) {
-        return getAndSetAsync(newValue).join();
+        return getAndSetAsync(newValue).joinInternal();
     }
 
     @Override
     public boolean isNull() {
-        return isNullAsync().join();
+        return isNullAsync().joinInternal();
     }
 
     @Override
     public void clear() {
-        clearAsync().join();
+        clearAsync().joinInternal();
     }
 
     @Override
     public boolean contains(T value) {
-        return containsAsync(value).join();
+        return containsAsync(value).joinInternal();
     }
 
     @Override
     public void alter(IFunction<T, T> function) {
-        alterAsync(function).join();
+        alterAsync(function).joinInternal();
     }
 
     @Override
     public T alterAndGet(IFunction<T, T> function) {
-        return alterAndGetAsync(function).join();
+        return alterAndGetAsync(function).joinInternal();
     }
 
     @Override
     public T getAndAlter(IFunction<T, T> function) {
-        return getAndAlterAsync(function).join();
+        return getAndAlterAsync(function).joinInternal();
     }
 
     @Override
     public <R> R apply(IFunction<T, R> function) {
-        return applyAsync(function).join();
+        return applyAsync(function).joinInternal();
     }
 
     @Override
@@ -224,7 +224,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
     @Override
     public void onDestroy() {
         ClientMessage request = CPGroupDestroyCPObjectCodec.encodeRequest(groupId, getServiceName(), objectName);
-        new ClientInvocation(getClient(), request, name).invoke().join();
+        new ClientInvocation(getClient(), request, name).invoke().joinInternal();
     }
 
     @Override

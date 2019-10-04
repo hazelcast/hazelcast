@@ -65,6 +65,8 @@
         <label>foo</label>
     </client-labels>
 
+    <backup-ack-to-client-enabled>false</backup-ack-to-client-enabled>
+
     <network>
         <cluster-members>
             <address>127.0.0.1</address>

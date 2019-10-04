@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
@@ -71,6 +72,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     private final CallIdSequence callIdSequence;
     private final boolean shouldFailOnIndeterminateOperationState;
     private final int operationBackupTimeoutMillis;
+    private final ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
 
     public AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -78,7 +80,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
         this.invocationRetryPauseMillis = initInvocationRetryPauseMillis();
         this.responseHandlerSupplier = new ClientResponseHandlerSupplier(this, client.getConcurrencyDetection());
-
+        this.reconnectMode = client.getClientConfig().getConnectionStrategyConfig().getReconnectMode();
         HazelcastProperties properties = client.getProperties();
         this.callIdSequence = CallIdFactory.newCallIdSequence(
                 properties.getInteger(MAX_CONCURRENT_INVOCATIONS),
@@ -92,6 +94,10 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
     private long initInvocationRetryPauseMillis() {
         return client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+    }
+
+    public ClientConnectionStrategyConfig.ReconnectMode getReconnectMode() {
+        return reconnectMode;
     }
 
     private long initInvocationTimeoutMillis() {

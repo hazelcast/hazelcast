@@ -17,11 +17,14 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.internal.nio.tcp.TcpIpEndpointManager;
 
 import java.util.Collection;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 public class UnifiedAggregateEndpointManager
         implements AggregateEndpointManager {
@@ -57,4 +60,10 @@ public class UnifiedAggregateEndpointManager
     public void addConnectionListener(ConnectionListener listener) {
         unified.addConnectionListener(listener);
     }
+
+    @Override
+    public Map<EndpointQualifier, NetworkStats> getNetworkStats() {
+        return emptyMap();
+    }
+
 }

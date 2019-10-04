@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.spi.impl.AbstractInvocationFuture;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -71,7 +72,7 @@ public abstract class BaseInvocation {
 
         // we are the lucky one since we just managed to complete the last backup for this invocation and since the
         // pendingResponse is set, we can set it on the future
-        complete(pendingResponse);
+        completeWithPendingResponse();
     }
 
     /**
@@ -130,22 +131,32 @@ public abstract class BaseInvocation {
         }
 
         if (shouldFailOnIndeterminateOperationState()) {
-            complete(new IndeterminateOperationStateException(this + " failed because backup acks missed."));
+            completeExceptionally(new IndeterminateOperationStateException(this + " failed because backup acks missed."));
             return true;
         }
 
         if (shouldCompleteWithoutBackups()) {
             // the backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set
-            complete(pendingResponse);
+            completeWithPendingResponse();
             return true;
         }
 
         return false;
     }
 
+    private void completeWithPendingResponse() {
+        if (pendingResponse instanceof AbstractInvocationFuture.ExceptionalResult) {
+            completeExceptionally(((AbstractInvocationFuture.ExceptionalResult) pendingResponse).getCause());
+        } else {
+            complete(pendingResponse);
+        }
+    }
+
     protected abstract boolean shouldCompleteWithoutBackups();
 
     protected abstract void complete(Object value);
+
+    protected abstract void completeExceptionally(Throwable t);
 
     protected abstract boolean shouldFailOnIndeterminateOperationState();
 }

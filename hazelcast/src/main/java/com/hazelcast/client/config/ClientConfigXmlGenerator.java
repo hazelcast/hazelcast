@@ -111,6 +111,8 @@ public final class ClientConfigXmlGenerator {
         if (clientConfig.getExecutorPoolSize() > 0) {
             gen.node("executor-pool-size", clientConfig.getExecutorPoolSize());
         }
+        //Backup Ack To Client
+        gen.node("backup-ack-to-client-enabled", clientConfig.isBackupAckToClientEnabled());
         //Security
         security(gen, clientConfig.getSecurityConfig());
         //Listeners

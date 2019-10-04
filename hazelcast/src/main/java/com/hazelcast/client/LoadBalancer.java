@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 
@@ -24,9 +25,9 @@ import com.hazelcast.cluster.Member;
  * {@link LoadBalancer} allows you to send operations to one of a number of endpoints(Members).
  * It is up to the implementation to use different load balancing policies.
  * <p/>
- * If Client is configured with {@link com.hazelcast.client.config.ClientConfig#isSmartRouting()},
+ * If Client is configured with {@link ClientNetworkConfig#isSmartRouting()},
  * only the operations that are not key based will be router to the endpoint returned by the LoadBalancer. If it is
- * not {@link com.hazelcast.client.config.ClientConfig#isSmartRouting()}, {@link LoadBalancer} will not be used.
+ * not {@link ClientNetworkConfig#isSmartRouting()}, {@link LoadBalancer} will not be used.
  * <p/>
  *
  * For configuration see  {@link com.hazelcast.client.config.ClientConfig#setLoadBalancer(LoadBalancer)}

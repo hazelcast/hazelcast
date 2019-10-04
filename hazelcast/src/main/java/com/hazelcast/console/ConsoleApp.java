@@ -16,6 +16,12 @@
 
 package com.hazelcast.console;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FileSystemXmlConfig;
@@ -24,24 +30,18 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.collection.IList;
-import com.hazelcast.map.IMap;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.ISet;
-import com.hazelcast.collection.ItemEvent;
-import com.hazelcast.collection.ItemListener;
-import com.hazelcast.map.MapEvent;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.partition.Partition;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
@@ -67,11 +67,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
-import static com.hazelcast.memory.MemoryUnit.BYTES;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.trim;
+import static com.hazelcast.memory.MemoryUnit.BYTES;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -675,7 +675,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     protected void handleMapPutAsync(String[] args) {
         try {
-            println(getMap().putAsync(args[1], args[2]).get());
+            println(getMap().putAsync(args[1], args[2]).toCompletableFuture().get());
         } catch (InterruptedException e) {
             currentThread().interrupt();
             e.printStackTrace();
@@ -698,7 +698,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     protected void handleMapGetAsync(String[] args) {
         try {
-            println(getMap().getAsync(args[1]).get());
+            println(getMap().getAsync(args[1]).toCompletableFuture().get());
         } catch (InterruptedException e) {
             currentThread().interrupt();
             e.printStackTrace();

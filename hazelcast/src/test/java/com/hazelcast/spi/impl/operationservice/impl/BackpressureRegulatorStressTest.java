@@ -17,13 +17,12 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -250,20 +249,16 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         private void asyncInvoke(DummyOperation operation) {
             final long expectedResult = operation.result;
 
-            InternalCompletableFuture f = localOperationService.invokeOnPartition(null, operation, partitionId);
-            f.andThen(new ExecutionCallback() {
-                @Override
-                public void onResponse(Object response) {
+            InternalCompletableFuture<Object> f = localOperationService.invokeOnPartition(null, operation, partitionId);
+            f.whenCompleteAsync((response, t) -> {
+                if (t == null) {
                     completedCall.incrementAndGet();
 
                     if (!new Long(expectedResult).equals(response)) {
                         System.out.println("Wrong result received, expecting: " + expectedResult + " but found:" + response);
                         failedOperationCount.incrementAndGet();
                     }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
+                } else {
                     completedCall.incrementAndGet();
                     failedOperationCount.incrementAndGet();
                     t.printStackTrace();

@@ -33,6 +33,7 @@ import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder;
 import com.hazelcast.cp.internal.raft.impl.testing.RaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -315,7 +316,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
         leader.replicateMembershipChange(leavingFollower.getLocalMember(), MembershipChangeMode.REMOVE).get();
 
         try {
-            leader.replicateMembershipChange(leavingFollower.getLocalMember(), MembershipChangeMode.REMOVE).get();
+            leader.replicateMembershipChange(leavingFollower.getLocalMember(), MembershipChangeMode.REMOVE).joinInternal();
             fail();
         } catch (MemberDoesNotExistException ignored) {
         }
@@ -331,7 +332,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
         leader.replicate(new ApplyRaftRunnable("val")).get();
 
         try {
-            leader.replicateMembershipChange(leader.getLocalMember(), MembershipChangeMode.ADD).get();
+            leader.replicateMembershipChange(leader.getLocalMember(), MembershipChangeMode.ADD).joinInternal();
             fail();
         } catch (MemberAlreadyExistsException ignored) {
         }
@@ -347,7 +348,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
         RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         try {
-            leader.replicateMembershipChange(leader.getLocalMember(), MembershipChangeMode.REMOVE).get();
+            leader.replicateMembershipChange(leader.getLocalMember(), MembershipChangeMode.REMOVE).joinInternal();
             fail();
         } catch (CannotReplicateException ignored) {
         }
@@ -526,14 +527,14 @@ public class MembershipChangeTest extends HazelcastTestSupport {
         group.dropMessagesToMember(leader.getLocalMember(), followers[0].getLocalMember(), AppendRequest.class);
         group.dropMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), AppendRequest.class);
 
-        Future f1 = leader.replicateMembershipChange(leader.getLocalMember(), REMOVE);
-        Future f2 = leader.replicate(new PostponedResponseRaftRunnable());
+        InternalCompletableFuture f1 = leader.replicateMembershipChange(leader.getLocalMember(), REMOVE);
+        InternalCompletableFuture f2 = leader.replicate(new PostponedResponseRaftRunnable());
 
         assertFalse(f1.isDone());
         assertTrueEventually(() -> assertTrue(f2.isDone()));
 
         try {
-            f2.get();
+            f2.joinInternal();
             fail();
         } catch (CannotReplicateException ignored) {
         }

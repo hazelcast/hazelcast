@@ -56,8 +56,9 @@ import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
- * Helper to ClientConnectionManager.
- * Implemented in this class: selecting owner connection, connecting and disconnecting from the cluster.
+ * selects a connection to listen cluster state(membership and partition listener),
+ * Keeps those listeners available when connection disconnected by picking a new connection.
+ * Changing cluster is also handled in this class(Blue/green feature)
  */
 public class ClusterConnectorServiceImpl implements ClusterConnectorService, ConnectionListener {
 
@@ -72,8 +73,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
     private final boolean shuffleMemberList;
     private final WaitStrategy waitStrategy;
     private final ClientDiscoveryService discoveryService;
-    private volatile Address ownerConnectionAddress;
-    private volatile Address previousOwnerConnectionAddress;
+    private volatile ClientConnection clusterListeningConnection;
 
     public ClusterConnectorServiceImpl(HazelcastClientInstanceImpl client,
                                        ClientConnectionManagerImpl connectionManager,
@@ -126,46 +126,44 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
     }
 
     @Override
-    public boolean isClusterAvailable() {
-        return getOwnerConnectionAddress() != null;
+    public boolean mainConnectionExists() {
+        return clusterListeningConnection != null;
     }
 
-    public Address getOwnerConnectionAddress() {
-        return ownerConnectionAddress;
+    @Override
+    public ClientConnection getClusterConnection() {
+        return clusterListeningConnection;
     }
 
-    public void setOwnerConnectionAddress(Address ownerConnectionAddress) {
-        if (this.ownerConnectionAddress != null) {
-            this.previousOwnerConnectionAddress = this.ownerConnectionAddress;
-        }
-        this.ownerConnectionAddress = ownerConnectionAddress;
+    private void setClusterConnection(ClientConnection connection) {
+        clusterListeningConnection = connection;
     }
 
-    private Connection connectAsOwner(Address address) {
+    private Connection connect(Address address) {
         Connection connection = null;
         try {
-            logger.info("Trying to connect to " + address + " as owner member");
-            connection = connectionManager.getOrConnect(address, true);
-            setOwnerConnectionAddress(connection.getEndPoint());
+            logger.info("Trying to connect to " + address + " as main member");
+            connection = connectionManager.getOrConnect(address);
+            setClusterConnection((ClientConnection) connection);
             client.onClusterConnect(connection);
             fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onClusterConnect();
         } catch (InvalidConfigurationException e) {
-            setOwnerConnectionAddress(null);
+            setClusterConnection(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
-            setOwnerConnectionAddress(null);
+            setClusterConnection(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw e;
         } catch (Exception e) {
-            setOwnerConnectionAddress(null);
+            setClusterConnection(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
@@ -249,7 +247,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
                 }
                 triedAddresses.add(address);
                 try {
-                    Connection connection = connectAsOwner(address);
+                    Connection connection = connect(address);
                     if (connection != null) {
                         return true;
                     }
@@ -330,14 +328,15 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
         addresses.addAll(providedAddresses);
 
-        if (previousOwnerConnectionAddress != null) {
+        if (clusterListeningConnection != null) {
             /*
-             * Previous owner address is moved to last item in set so that client will not try to connect to same one immediately.
+             * Previous address is moved to last item in set so that client will not try to connect to same one immediately.
              * It could be the case that address is removed because it is healthy(it not responding to heartbeat/pings)
              * In that case, trying other addresses first to upgrade make more sense.
              */
-            addresses.remove(previousOwnerConnectionAddress);
-            addresses.add(previousOwnerConnectionAddress);
+            Address endPoint = clusterListeningConnection.getEndPoint();
+            addresses.remove(endPoint);
+            addresses.add(endPoint);
         }
 
         return addresses;
@@ -361,18 +360,16 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
     @Override
     public void connectionRemoved(Connection connection) {
         final ClientConnection clientConnection = (ClientConnection) connection;
-        if (clientConnection.isAuthenticatedAsOwner()) {
+        // if cluster listening connection is disconnected
+        if (clientConnection == clusterListeningConnection) {
             clusterConnectionExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    Address endpoint = clientConnection.getEndPoint();
-                    // it may be possible that while waiting on executor queue, the client got connected (another connection),
-                    // then we do not need to do anything for cluster disconnect.
-                    if (endpoint == null || !endpoint.equals(ownerConnectionAddress)) {
+                    if (clientConnection != clusterListeningConnection) {
                         return;
                     }
 
-                    setOwnerConnectionAddress(null);
+                    setClusterConnection(null);
                     connectionStrategy.onDisconnectFromCluster();
                     client.onClusterDisconnect();
 

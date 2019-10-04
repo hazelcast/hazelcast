@@ -47,6 +47,7 @@ public abstract class AbstractLockOperation extends Operation
     protected Data key;
     protected long threadId;
     protected long leaseTime = -1L;
+    protected boolean isClient;
     protected transient Object response;
     private volatile long referenceCallId;
     private transient boolean asyncBackup;
@@ -159,6 +160,7 @@ public abstract class AbstractLockOperation extends Operation
         out.writeLong(threadId);
         out.writeLong(leaseTime);
         out.writeLong(referenceCallId);
+        out.writeBoolean(isClient);
     }
 
     @Override
@@ -169,6 +171,7 @@ public abstract class AbstractLockOperation extends Operation
         threadId = in.readLong();
         leaseTime = in.readLong();
         referenceCallId = in.readLong();
+        isClient = in.readBoolean();
     }
 
     @Override

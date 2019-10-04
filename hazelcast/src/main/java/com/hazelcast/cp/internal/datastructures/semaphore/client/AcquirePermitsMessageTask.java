@@ -18,10 +18,9 @@ package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AcquirePermitsOp;
 import com.hazelcast.instance.impl.Node;
@@ -35,8 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Client message task for {@link AcquirePermitsOp}
  */
-public class AcquirePermitsMessageTask extends AbstractMessageTask<SemaphoreAcquireCodec.RequestParameters>
-        implements ExecutionCallback<Boolean> {
+public class AcquirePermitsMessageTask extends AbstractCPMessageTask<SemaphoreAcquireCodec.RequestParameters> {
 
     public AcquirePermitsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,7 +45,7 @@ public class AcquirePermitsMessageTask extends AbstractMessageTask<SemaphoreAcqu
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftOp op = new AcquirePermitsOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid,
                 parameters.permits, parameters.timeoutMs);
-        service.getInvocationManager().<Boolean>invoke(parameters.groupId, op).andThen(this);
+        service.getInvocationManager().<Boolean>invoke(parameters.groupId, op).whenCompleteAsync(this);
     }
 
     @Override
@@ -86,15 +84,5 @@ public class AcquirePermitsMessageTask extends AbstractMessageTask<SemaphoreAcqu
             return new Object[]{parameters.permits, parameters.timeoutMs, TimeUnit.MILLISECONDS};
         }
         return new Object[]{parameters.permits};
-    }
-
-    @Override
-    public void onResponse(Boolean response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

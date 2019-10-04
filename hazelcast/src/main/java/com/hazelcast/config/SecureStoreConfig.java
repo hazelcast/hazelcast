@@ -14,32 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.eviction;
+package com.hazelcast.config;
 
 /**
- * Enum for eviction policy types.
- * @deprecated since 3.9, use {@link com.hazelcast.config.EvictionPolicy} instead
+ * Abstract Secure Store configuration class.
+ * <p/>
+ * A Secure Store represents an abstraction for interacting
+ * with systems that manage symmetric encryption keys. Different
+ * types of Secure Stores are configured by means of corresponding
+ * {@link SecureStoreConfig} sub-classes.
+ *
+ * @see JavaKeyStoreSecureStoreConfig
+ * @see VaultSecureStoreConfig
  */
-@Deprecated
-public enum EvictionPolicyType {
-
-    /**
-     * Least Recently Used
-     */
-    LRU,
-
-    /**
-     * Least Frequently Used
-     */
-    LFU,
-
-    /**
-     * Picks a random entry
-     */
-    RANDOM,
-
-    /**
-     * Doesn't evict entries (will not add new entries to the Near Cache when it's full)
-     */
-    NONE,
+public abstract class SecureStoreConfig {
 }

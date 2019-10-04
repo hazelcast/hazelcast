@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -46,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -73,7 +73,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationServiceImpl(hz);
 
-        Collection<Integer> partitions = new LinkedList<Integer>();
+        Collection<Integer> partitions = new LinkedList<>();
         Collections.addAll(partitions, 1, 2, 3);
         Map<Integer, Object> result = opService.invokeOnPartitions(null, new OperationFactoryImpl(), partitions);
 
@@ -90,7 +90,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationServiceImpl(hz);
 
-        Map<Integer, Object> result = opService.invokeOnPartitions(null, new OperationFactoryImpl(), Collections.EMPTY_LIST);
+        Map<Integer, Object> result = opService.invokeOnPartitions(null, new OperationFactoryImpl(), emptyList());
 
         assertEquals(0, result.size());
     }
@@ -117,7 +117,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationServiceImpl(hz);
 
-        Collection<Integer> partitions = new LinkedList<Integer>();
+        Collection<Integer> partitions = new LinkedList<>();
         Collections.addAll(partitions, 1, 2, 3);
         Future<Map<Integer, Object>> future = opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), partitions);
 
@@ -135,7 +135,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationServiceImpl(hz);
 
-        Future<Map<Integer, Object>> future = opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), Collections.EMPTY_LIST);
+        Future<Map<Integer, Object>> future = opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), emptyList());
 
         Map<Integer, Object> result = future.get();
         assertEquals(0, result.size());
@@ -149,19 +149,12 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
 
         final AtomicReference<Map<Integer, Object>> resultReference = new AtomicReference<Map<Integer, Object>>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
-        ExecutionCallback<Map<Integer, Object>> executionCallback = new ExecutionCallback<Map<Integer, Object>>() {
-            @Override
-            public void onResponse(Map<Integer, Object> response) {
-                resultReference.set(response);
+        opService.invokeOnAllPartitionsAsync(null, new OperationFactoryImpl()).whenComplete((v, t) -> {
+            if (t == null) {
+                resultReference.set(v);
                 responseLatch.countDown();
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        };
-        opService.invokeOnAllPartitionsAsync(null, new OperationFactoryImpl()).andThen(executionCallback);
+        });
 
         assertOpenEventually(responseLatch);
         Map<Integer, Object> result = resultReference.get();
@@ -178,24 +171,17 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationServiceImpl(hz);
 
-        Collection<Integer> partitions = new LinkedList<Integer>();
+        Collection<Integer> partitions = new LinkedList<>();
         Collections.addAll(partitions, 1, 2, 3);
 
-        final AtomicReference<Map<Integer, Object>> resultReference = new AtomicReference<Map<Integer, Object>>();
+        final AtomicReference<Map<Integer, Object>> resultReference = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
-        ExecutionCallback<Map<Integer, Object>> executionCallback = new ExecutionCallback<Map<Integer, Object>>() {
-            @Override
-            public void onResponse(Map<Integer, Object> response) {
-                resultReference.set(response);
+        opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), partitions).whenComplete((v, t) -> {
+            if (t == null) {
+                resultReference.set(v);
                 responseLatch.countDown();
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        };
-        opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), partitions).andThen(executionCallback);
+        });
 
         assertOpenEventually(responseLatch);
         Map<Integer, Object> result = resultReference.get();
@@ -212,21 +198,14 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationServiceImpl(hz);
 
-        final AtomicReference<Map<Integer, Object>> resultReference = new AtomicReference<Map<Integer, Object>>();
+        final AtomicReference<Map<Integer, Object>> resultReference = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
-        ExecutionCallback<Map<Integer, Object>> executionCallback = new ExecutionCallback<Map<Integer, Object>>() {
-            @Override
-            public void onResponse(Map<Integer, Object> response) {
-                resultReference.set(response);
+        opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), emptyList()).whenComplete((v, t) -> {
+            if (t == null) {
+                resultReference.set(v);
                 responseLatch.countDown();
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        };
-        opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), Collections.EMPTY_LIST).andThen(executionCallback);
+        });
 
         assertOpenEventually(responseLatch);
         Map<Integer, Object> result = resultReference.get();

@@ -17,28 +17,25 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.internal.util.executor.CompletedFuture;
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.Iterator;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.IterableUtil.map;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 /**
  * Utility methods for invocations.
@@ -64,13 +61,13 @@ public final class InvocationUtil {
      * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
      * is interrupted and the exception is propagated to the caller.
      */
-    public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
+    public static InternalCompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
                                                                          Supplier<? extends Operation> operationSupplier,
                                                                          int maxRetries) {
 
         ClusterService clusterService = nodeEngine.getClusterService();
         if (!clusterService.isJoined()) {
-            return new CompletedFuture<>(null, null, CALLER_RUNS_EXECUTOR);
+            return newCompletedFuture(null);
         }
 
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
@@ -78,16 +75,12 @@ public final class InvocationUtil {
         // we are going to iterate over all members and invoke an operation on each of them
         InvokeOnMemberFunction invokeOnMemberFunction = new InvokeOnMemberFunction(operationSupplier, nodeEngine,
                 memberIterator);
-        Iterator<ICompletableFuture<Object>> invocationIterator = map(memberIterator, invokeOnMemberFunction);
-
-        ILogger logger = nodeEngine.getLogger(ChainingFuture.class);
-        ExecutionService executionService = nodeEngine.getExecutionService();
-        ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
+        Iterator<InternalCompletableFuture<Object>> invocationIterator = map(memberIterator, invokeOnMemberFunction);
 
         // ChainingFuture uses the iterator to start invocations
         // it invokes on another member only when the previous invocation is completed (so invocations are serial)
         // the future itself completes only when the last invocation completes (or if there is an error)
-        return new ChainingFuture(invocationIterator, executor, memberIterator, logger);
+        return new ChainingFuture(invocationIterator, memberIterator);
     }
 
     /**
@@ -118,7 +111,7 @@ public final class InvocationUtil {
         return execution;
     }
 
-    private static class InvokeOnMemberFunction implements Function<Member, ICompletableFuture<Object>> {
+    private static class InvokeOnMemberFunction implements Function<Member, InternalCompletableFuture<Object>> {
         private final transient Supplier<? extends Operation> operationSupplier;
         private final transient NodeEngine nodeEngine;
         private final transient RestartingMemberIterator memberIterator;
@@ -134,7 +127,7 @@ public final class InvocationUtil {
         }
 
         @Override
-        public ICompletableFuture<Object> apply(final Member member) {
+        public InternalCompletableFuture<Object> apply(final Member member) {
             if (isRetry()) {
                 return invokeOnMemberWithDelay(member);
             }
@@ -150,14 +143,14 @@ public final class InvocationUtil {
             return true;
         }
 
-        private ICompletableFuture<Object> invokeOnMemberWithDelay(Member member) {
-            SimpleCompletableFuture<Object> future = new SimpleCompletableFuture<Object>(nodeEngine);
+        private InternalCompletableFuture<Object> invokeOnMemberWithDelay(Member member) {
+            InternalCompletableFuture<Object> future = new InternalCompletableFuture<>();
             InvokeOnMemberTask task = new InvokeOnMemberTask(member, future);
             nodeEngine.getExecutionService().schedule(task, retryDelayMillis, TimeUnit.MILLISECONDS);
             return future;
         }
 
-        private ICompletableFuture<Object> invokeOnMember(Member member) {
+        private InternalCompletableFuture<Object> invokeOnMember(Member member) {
             Address address = member.getAddress();
             Operation operation = operationSupplier.get();
             String serviceName = operation.getServiceName();
@@ -166,24 +159,20 @@ public final class InvocationUtil {
 
         private class InvokeOnMemberTask implements Runnable {
             private final Member member;
-            private final SimpleCompletableFuture<Object> future;
+            private final CompletableFuture<Object> future;
 
-            InvokeOnMemberTask(Member member, SimpleCompletableFuture<Object> future) {
+            InvokeOnMemberTask(Member member, CompletableFuture<Object> future) {
                 this.member = member;
                 this.future = future;
             }
 
             @Override
             public void run() {
-                invokeOnMember(member).andThen(new ExecutionCallback<Object>() {
-                    @Override
-                    public void onResponse(Object response) {
-                        future.setResult(response);
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        future.setResult(t);
+                invokeOnMember(member).whenCompleteAsync((response, t) -> {
+                    if (t == null) {
+                        future.complete(response);
+                    } else {
+                        future.completeExceptionally(t);
                     }
                 });
             }

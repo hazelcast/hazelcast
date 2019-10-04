@@ -18,10 +18,9 @@ package com.hazelcast.cp.internal.datastructures.lock.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FencedLockTryLockCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.TryLockOp;
 import com.hazelcast.instance.impl.Node;
@@ -35,8 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Client message task for {@link TryLockOp}
  */
-public class TryLockMessageTask extends AbstractMessageTask<FencedLockTryLockCodec.RequestParameters>
-        implements ExecutionCallback<Long> {
+public class TryLockMessageTask extends AbstractCPMessageTask<FencedLockTryLockCodec.RequestParameters> {
 
     public TryLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,7 +45,7 @@ public class TryLockMessageTask extends AbstractMessageTask<FencedLockTryLockCod
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftOp op = new TryLockOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid,
                 parameters.timeoutMs);
-        service.getInvocationManager().<Long>invoke(parameters.groupId, op).andThen(this);
+        service.getInvocationManager().<Long>invoke(parameters.groupId, op).whenCompleteAsync(this);
     }
 
     @Override
@@ -83,15 +81,5 @@ public class TryLockMessageTask extends AbstractMessageTask<FencedLockTryLockCod
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.timeoutMs, TimeUnit.MILLISECONDS};
-    }
-
-    @Override
-    public void onResponse(Long response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

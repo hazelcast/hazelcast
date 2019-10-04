@@ -17,7 +17,6 @@
 package com.hazelcast.client.starter;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -29,6 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 
@@ -101,7 +101,7 @@ public class HazelcastClientStarterTest {
 
             IMap<Integer, Integer> clientMap = clientInstance.getMap("myMap");
             clientMap.put(0, 1);
-            ICompletableFuture<Integer> async = clientMap.getAsync(0);
+            Future<Integer> async = clientMap.getAsync(0).toCompletableFuture();
             int value = async.get();
 
             assertEquals(1, value);

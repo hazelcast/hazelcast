@@ -47,6 +47,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
@@ -63,7 +64,7 @@ import static org.junit.Assert.assertTrue;
  * connections.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ QuickTest.class })
+@Category({QuickTest.class})
 public class ClientMessageProtectionTest {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
@@ -217,8 +218,8 @@ public class ClientMessageProtectionTest {
     }
 
     private ClientMessage createAuthenticationMessage(HazelcastInstance hz, String passwd) {
-        return ClientAuthenticationCodec.encodeRequest(hz.getConfig().getClusterName(), passwd, null, null, true,
-                "FOO", (byte) 1, "abc", "xxx", new ArrayList<>(), -1, null);
+        return ClientAuthenticationCodec.encodeRequest(hz.getConfig().getClusterName(), passwd, UUID.randomUUID(), "FOO",
+                (byte) 1, "abc", "xxx", new ArrayList<>(), -1, null);
     }
 
     private ClientMessage readResponse(InputStream is) throws IOException, EOFException {
@@ -241,7 +242,7 @@ public class ClientMessageProtectionTest {
     }
 
     private void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
-        for (ClientMessage.ForwardFrameIterator it = clientMessage.frameIterator(); it.hasNext();) {
+        for (ClientMessage.ForwardFrameIterator it = clientMessage.frameIterator(); it.hasNext(); ) {
             ClientMessage.Frame frame = it.next();
             os.write(frameAsBytes(frame, it.hasNext()));
         }

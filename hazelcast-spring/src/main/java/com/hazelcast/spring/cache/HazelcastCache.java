@@ -149,7 +149,7 @@ public class HazelcastCache implements Cache {
     private Object lookup(Object key) {
         if (readTimeout > 0) {
             try {
-                return this.map.getAsync(key).get(readTimeout, TimeUnit.MILLISECONDS);
+                return this.map.getAsync(key).toCompletableFuture().get(readTimeout, TimeUnit.MILLISECONDS);
             } catch (TimeoutException te) {
                 throw new OperationTimeoutException(te.getMessage());
             } catch (InterruptedException e) {

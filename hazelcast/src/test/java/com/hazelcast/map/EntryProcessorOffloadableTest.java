@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -51,8 +51,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -716,13 +718,11 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         int count = 100;
 
         // when
-        List<ICompletableFuture> futures = new ArrayList<>();
+        List<Future> futures = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            futures.add(map.submitToKey(key, new IncrementingOffloadableEP()));
+            futures.add(map.submitToKey(key, new IncrementingOffloadableEP()).toCompletableFuture());
         }
-        for (ICompletableFuture future : futures) {
-            future.get();
-        }
+        FutureUtil.waitForever(futures);
 
         // then
         assertEquals(count + 1, map.get(key).i);
@@ -753,9 +753,9 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         CountDownLatch mayStart = new CountDownLatch(1);
         CountDownLatch stopped = new CountDownLatch(1);
-        ICompletableFuture first = map.submitToKey(key, new EntryLatchAwaitingModifying(mayStart, stopped));
+        CompletableFuture first = map.submitToKey(key, new EntryLatchAwaitingModifying(mayStart, stopped)).toCompletableFuture();
         mayStart.countDown();
-        ICompletableFuture second = map.submitToKey(key, new EntryOtherStoppedVerifying(stopped));
+        CompletableFuture second = map.submitToKey(key, new EntryOtherStoppedVerifying(stopped)).toCompletableFuture();
 
         while (!(first.isDone() && second.isDone())) {
             sleepAtLeastMillis(1);

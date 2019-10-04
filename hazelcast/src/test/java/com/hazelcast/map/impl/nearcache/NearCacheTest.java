@@ -485,7 +485,7 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         // populate Near Cache
         for (int i = 0; i < mapSize; i++) {
-            Future future = map.getAsync(i);
+            Future future = map.getAsync(i).toCompletableFuture();
             future.get();
         }
         // generate Near Cache hits
@@ -680,11 +680,11 @@ public class NearCacheTest extends NearCacheTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
 
         IMap<Integer, Integer> map = instance.getMap(mapName);
-        map.getAsync(1).get();
+        map.getAsync(1).toCompletableFuture().get();
 
         sleepMillis(1000);
 
-        assertNull(map.getAsync(1).get());
+        assertNull(map.getAsync(1).toCompletableFuture().get());
     }
 
     /**

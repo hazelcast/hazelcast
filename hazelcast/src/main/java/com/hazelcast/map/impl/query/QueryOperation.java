@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -25,7 +24,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
@@ -40,6 +39,7 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
@@ -161,16 +161,15 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
         public void start() {
             QueryFuture future = new QueryFuture(localPartitions.cardinality());
             getOperationService().executeOnPartitions(new QueryTaskFactory(query, queryRunner, future), localPartitions);
-            future.andThen(new ExecutionCallbackImpl(queryRunner, query));
+            future.whenCompleteAsync(new ExecutionCallbackImpl(queryRunner, query));
         }
     }
 
-    private class QueryFuture extends AbstractCompletableFuture {
+    private class QueryFuture extends InternalCompletableFuture {
         private final AtomicReferenceArray<Result> resultArray = new AtomicReferenceArray<Result>(partitionCount());
         private final AtomicInteger remaining;
 
         QueryFuture(int localPartitionCount) {
-            super(getNodeEngine(), getLogger());
             this.remaining = new AtomicInteger(localPartitionCount);
         }
 
@@ -180,12 +179,8 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
             }
 
             if (remaining.decrementAndGet() == 0) {
-                setResult(resultArray);
+                complete(resultArray);
             }
-        }
-
-        void completeExceptionally(Throwable error) {
-            super.setResult(error);
         }
     }
 
@@ -239,7 +234,7 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
         }
     }
 
-    private class ExecutionCallbackImpl implements ExecutionCallback<AtomicReferenceArray<Result>> {
+    private class ExecutionCallbackImpl implements BiConsumer<AtomicReferenceArray<Result>, Throwable> {
         private final QueryRunner queryRunner;
         private final Query query;
 
@@ -249,14 +244,18 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
         }
 
         @Override
-        public void onResponse(AtomicReferenceArray<Result> response) {
-            try {
-                Result combinedResult = queryRunner.populateEmptyResult(query, Collections.<Integer>emptyList());
-                populateResult(response, combinedResult);
-                QueryOperation.this.sendResponse(combinedResult);
-            } catch (Exception e) {
-                QueryOperation.this.sendResponse(e);
-                throw rethrow(e);
+        public void accept(AtomicReferenceArray<Result> response, Throwable throwable) {
+            if (throwable == null) {
+                try {
+                    Result combinedResult = queryRunner.populateEmptyResult(query, Collections.emptyList());
+                    populateResult(response, combinedResult);
+                    QueryOperation.this.sendResponse(combinedResult);
+                } catch (Exception e) {
+                    QueryOperation.this.sendResponse(e);
+                    throw rethrow(e);
+                }
+            } else {
+                QueryOperation.this.sendResponse(throwable);
             }
         }
 
@@ -267,11 +266,6 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                     combinedResult.combine(partitionResult);
                 }
             }
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            QueryOperation.this.sendResponse(t);
         }
     }
 }

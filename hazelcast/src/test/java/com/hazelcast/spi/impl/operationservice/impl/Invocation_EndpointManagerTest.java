@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.GetOperation;
@@ -121,6 +122,11 @@ public class Invocation_EndpointManagerTest
         @Override
         public void accept(Object o) {
 
+        }
+
+        @Override
+        public NetworkStats getNetworkStats() {
+            return null;
         }
     }
 }

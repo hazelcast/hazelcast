@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
@@ -29,12 +30,10 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListener
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.cache.CacheException;
@@ -45,6 +44,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.cache.CacheEventType.PARTITION_LOST;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -84,11 +84,11 @@ final class ClientCacheProxySupportUtil {
         }
     }
 
-    static <T> void addCallback(ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
+    static <T> void addCallback(ClientDelegatingFuture<T> delegatingFuture, BiConsumer<T, Throwable> callback) {
         if (callback == null) {
             return;
         }
-        delegatingFuture.andThen(callback);
+        delegatingFuture.whenComplete(callback);
     }
 
     static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {

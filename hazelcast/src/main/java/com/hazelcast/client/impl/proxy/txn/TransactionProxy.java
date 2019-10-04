@@ -72,9 +72,6 @@ final class TransactionProxy {
 
     void begin() {
         try {
-            if (client.getConnectionManager().getOwnerConnection() == null) {
-                throw new TransactionException("Owner connection needs to be present to begin a transaction");
-            }
             if (state == ACTIVE) {
                 throw new IllegalStateException("Transaction is already active");
             }

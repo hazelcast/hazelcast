@@ -18,9 +18,8 @@ package com.hazelcast.cp.internal.datastructures.lock.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.LockOp;
 import com.hazelcast.instance.impl.Node;
@@ -33,8 +32,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link LockOp}
  */
-public class LockMessageTask extends AbstractMessageTask<FencedLockLockCodec.RequestParameters>
-        implements ExecutionCallback<Long> {
+public class LockMessageTask extends AbstractCPMessageTask<FencedLockLockCodec.RequestParameters> {
 
     public LockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,7 +44,7 @@ public class LockMessageTask extends AbstractMessageTask<FencedLockLockCodec.Req
         service.getInvocationManager()
                .<Long>invoke(parameters.groupId, new LockOp(parameters.name, parameters.sessionId, parameters.threadId,
                        parameters.invocationUid))
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
@@ -82,15 +80,5 @@ public class LockMessageTask extends AbstractMessageTask<FencedLockLockCodec.Req
     @Override
     public Object[] getParameters() {
         return new Object[0];
-    }
-
-    @Override
-    public void onResponse(Long response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

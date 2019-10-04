@@ -263,7 +263,7 @@ public class PermissionConfig {
         return "PermissionConfig{"
                 + "type=" + type
                 + ", name='" + name + '\''
-                + ", principal='" + principal + '\''
+                + ", clientUuid='" + principal + '\''
                 + ", endpoints=" + endpoints
                 + ", actions=" + actions
                 + '}';

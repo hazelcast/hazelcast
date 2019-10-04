@@ -18,13 +18,14 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.version.Version;
 
 /**
@@ -72,7 +73,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         return getNodeEngine().toData(object);
     }
 
-    protected final <E> InternalCompletableFuture<E> invokeOnPartition(Operation operation) {
+    protected final <E> InvocationFuture<E> invokeOnPartition(Operation operation) {
         return getNodeEngine().getOperationService().invokeOnPartition(operation);
     }
 
