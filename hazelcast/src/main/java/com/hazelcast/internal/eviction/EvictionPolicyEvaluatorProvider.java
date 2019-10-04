@@ -28,7 +28,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
- * Provider to get any kind ({@link EvictionPolicyType}) of {@link EvictionPolicyEvaluator}.
+ * Provider to get any kind ({@link EvictionPolicy}) of {@link EvictionPolicyEvaluator}.
  */
 public final class EvictionPolicyEvaluatorProvider {
 
