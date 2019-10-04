@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static java.util.Collections.EMPTY_SET;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -69,8 +70,8 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectLong("[metric=foo]", 10);
-        verify(renderer).collectLong("[metric=bar]", 20);
+        verify(renderer).collectLong("[metric=foo]", 10, EMPTY_SET);
+        verify(renderer).collectLong("[metric=bar]", 20, EMPTY_SET);
         verifyNoMoreInteractions(renderer);
     }
 
@@ -83,8 +84,8 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectDouble("[metric=foo]", 10);
-        verify(renderer).collectDouble("[metric=bar]", 20);
+        verify(renderer).collectDouble("[metric=foo]", 10, EMPTY_SET);
+        verify(renderer).collectDouble("[metric=bar]", 20, EMPTY_SET);
         verifyNoMoreInteractions(renderer);
     }
 
@@ -101,7 +102,7 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectException("[metric=foo]", ex);
+        verify(renderer).collectException("[metric=foo]", ex, EMPTY_SET);
         verifyNoMoreInteractions(renderer);
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -24,6 +25,9 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.util.Set;
+
+import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -88,23 +92,31 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         private long timeMillis;
 
         @Override
-        public void collectLong(String name, long value) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
+        public void collectLong(String name, long value, Set<MetricTarget> excludedMetricTargets) {
+            if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
+            }
         }
 
         @Override
-        public void collectDouble(String name, double value) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
+        public void collectDouble(String name, double value, Set<MetricTarget> excludedMetricTargets) {
+            if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
+            }
         }
 
         @Override
-        public void collectException(String name, Exception e) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, e.getClass().getName() + ':' + e.getMessage());
+        public void collectException(String name, Exception e, Set<MetricTarget> excludedMetricTargets) {
+            if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, e.getClass().getName() + ':' + e.getMessage());
+            }
         }
 
         @Override
-        public void collectNoValue(String name) {
-            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, "NA");
+        public void collectNoValue(String name, Set<MetricTarget> excludedMetricTargets) {
+            if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, "NA");
+            }
         }
     }
 }
