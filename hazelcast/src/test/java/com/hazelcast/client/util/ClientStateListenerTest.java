@@ -106,7 +106,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         ClientStateListener listener = new ClientStateListener(clientConfig);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
 
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
@@ -145,7 +145,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         final ClientStateListener listener = new ClientStateListener(clientConfig);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
 
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 

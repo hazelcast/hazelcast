@@ -79,8 +79,6 @@
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
         <connection-timeout>60000</connection-timeout>
-        <connection-attempt-period>3000</connection-attempt-period>
-        <connection-attempt-limit>2</connection-attempt-limit>
         <socket-options>
             <tcp-no-delay>false</tcp-no-delay>
             <keep-alive>true</keep-alive>
@@ -287,11 +285,11 @@
     </query-caches>
 
     <connection-strategy async-start="true" reconnect-mode="ASYNC">
-        <connection-retry enabled="true">
+        <connection-retry>
             <initial-backoff-millis>2000</initial-backoff-millis>
             <max-backoff-millis>60000</max-backoff-millis>
             <multiplier>3</multiplier>
-            <fail-on-max-backoff>true</fail-on-max-backoff>
+            <fail-on-max-backoff>false</fail-on-max-backoff>
             <jitter>0.5</jitter>
         </connection-retry>
     </connection-strategy>

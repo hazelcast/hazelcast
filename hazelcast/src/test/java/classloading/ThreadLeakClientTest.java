@@ -65,7 +65,7 @@ public class ThreadLeakClientTest {
     public void testThreadLeak_withoutCluster() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
 
         Set<Thread> testStartThreads = getThreads();
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);

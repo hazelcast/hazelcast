@@ -62,8 +62,6 @@ hazelcast-client:
     smart-routing: true
     redo-operation: true
     connection-timeout: 60000
-    connection-attempt-period: 3000
-    connection-attempt-limit: 2
     socket-options:
       tcp-no-delay: false
       keep-alive: true
@@ -275,11 +273,10 @@ hazelcast-client:
     async-start: true
     reconnect-mode: ASYNC
     connection-retry:
-      enabled: true
       initial-backoff-millis: 2000
       max-backoff-millis: 60000
       multiplier: 3
-      fail-on-max-backoff: true
+      fail-on-max-backoff: false
       jitter: 0.5
 
   reliable-topic:

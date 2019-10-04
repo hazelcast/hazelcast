@@ -121,7 +121,7 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.getMap("test");
@@ -148,7 +148,7 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.getMap("test");

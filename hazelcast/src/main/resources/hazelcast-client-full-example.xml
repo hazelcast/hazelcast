@@ -176,14 +176,6 @@
         * <connection-timeout>:
             Connection timeout is the timeout value in milliseconds for members to accept client connection requests.
             The following are the example configurations. Its default value is 5000.
-        * <connection-attempt-limit>:
-            While the client is trying to connect initially to one of the members in the <cluster-members>, that
-            member might not  be available at that moment. Instead of giving up, throwing an exception and stopping
-            the client, the client retries as many the times configured by this setting. This is also the case
-            when the previously established connection between the client and that member goes down.
-        * <connection-attempt-period>:
-            Connection attempt period is the duration in milliseconds between the connection attempts defined by
-            <connection-attempt-limit>.
         * <socket-options>:
             You can configure the network socket options using this setting. It has the following sub-elements:
             - <tcp-no-delay>: Enables/disables the TCP_NODELAY socket option. Its default value is true.
@@ -299,8 +291,6 @@
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
         <connection-timeout>60000</connection-timeout>
-        <connection-attempt-period>3000</connection-attempt-period>
-        <connection-attempt-limit>2</connection-attempt-limit>
         <socket-options>
             <tcp-no-delay>false</tcp-no-delay>
             <keep-alive>true</keep-alive>
@@ -770,7 +760,7 @@
             * <jitter>: Specifies by how much to randomize backoffs. Its default value is 0.2.
     -->
     <connection-strategy async-start="true" reconnect-mode="ASYNC">
-        <connection-retry enabled="true">
+        <connection-retry>
             <initial-backoff-millis>2000</initial-backoff-millis>
             <max-backoff-millis>60000</max-backoff-millis>
             <multiplier>3</multiplier>

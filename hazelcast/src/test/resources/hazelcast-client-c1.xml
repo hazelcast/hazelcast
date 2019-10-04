@@ -32,7 +32,6 @@
     </network>
 
     <connection-strategy async-start="true" reconnect-mode="OFF">
-        <connection-retry enabled="false"/>
     </connection-strategy>
 
 </hazelcast-client>

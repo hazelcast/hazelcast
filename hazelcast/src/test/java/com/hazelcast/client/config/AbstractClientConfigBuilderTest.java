@@ -71,7 +71,6 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test
     public void testNetworkConfig() {
         final ClientNetworkConfig networkConfig = fullClientConfig.getNetworkConfig();
-        assertEquals(2, networkConfig.getConnectionAttemptLimit());
         assertEquals(2, networkConfig.getAddresses().size());
         assertContains(networkConfig.getAddresses(), "127.0.0.1");
         assertContains(networkConfig.getAddresses(), "127.0.0.2");
@@ -280,8 +279,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig() {
         ClientConnectionStrategyConfig connectionStrategyConfig = fullClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertTrue(exponentialRetryConfig.isEnabled());
-        assertTrue(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertFalse(exponentialRetryConfig.isFailOnMaxBackoff());
         assertEquals(0.5, exponentialRetryConfig.getJitter(), 0);
         assertEquals(2000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(60000, exponentialRetryConfig.getMaxBackoffMillis());
@@ -292,8 +290,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig_defaults() {
         ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertFalse(exponentialRetryConfig.isEnabled());
-        assertFalse(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertTrue(exponentialRetryConfig.isFailOnMaxBackoff());
         assertEquals(0.2, exponentialRetryConfig.getJitter(), 0);
         assertEquals(1000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(30000, exponentialRetryConfig.getMaxBackoffMillis());

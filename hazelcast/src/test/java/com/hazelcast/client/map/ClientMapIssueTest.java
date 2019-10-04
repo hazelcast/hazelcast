@@ -128,7 +128,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         ClientConfig clientConfig = getClientConfig();
         clientConfig.setExecutorPoolSize(1);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -161,7 +161,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         ClientConfig clientConfig = getClientConfig();
         clientConfig.setExecutorPoolSize(1);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);

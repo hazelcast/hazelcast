@@ -252,7 +252,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         final ListenerConfig listenerConfig = new ListenerConfig(listener);
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(listenerConfig);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance hazelcastClient = hazelcastFactory.newHazelcastClient(clientConfig);
 
         hazelcastFactory.shutdownAllMembers();
@@ -456,7 +456,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         final String mapName = randomMapName();
 
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -703,7 +703,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         //Retry all requests
         clientConfig.getNetworkConfig().setRedoOperation(true);
         //retry to connect to cluster forever(never shutdown the client)
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         //Retry all requests forever(until client is shutdown)
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);

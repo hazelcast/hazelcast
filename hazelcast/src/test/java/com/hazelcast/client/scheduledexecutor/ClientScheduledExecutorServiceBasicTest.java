@@ -60,7 +60,7 @@ public class ClientScheduledExecutorServiceBasicTest extends ScheduledExecutorSe
     @Override
     public IScheduledExecutorService getScheduledExecutor(HazelcastInstance[] instances, String name) {
         ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         return factory.newHazelcastClient(config).getScheduledExecutorService(name);
     }
 

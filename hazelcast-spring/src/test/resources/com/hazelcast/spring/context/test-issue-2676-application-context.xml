@@ -50,9 +50,7 @@
 
     <hz:client id="client" lazy-init="true" scope="prototype">
         <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
-        <hz:network connection-attempt-limit="${client.connection.attemptLimit}"
-                    connection-attempt-period="${client.connection.attemptPeriod}"
-                    connection-timeout="1000">
+        <hz:network connection-timeout="1000">
         </hz:network>
     </hz:client>
 

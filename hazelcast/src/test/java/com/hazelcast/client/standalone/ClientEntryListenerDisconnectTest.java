@@ -56,9 +56,8 @@ public class ClientEntryListenerDisconnectTest {
         clientConfig.setClusterName("test").setClusterPassword("test");
         clientConfig.getNetworkConfig()
                 .addAddress("localhost:6701", "localhost:6702")
-                .setConnectionAttemptLimit(100)
                 .setSmartRouting(false);
-
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<Integer, GenericEvent> mapClient = client.getMap("test");
 
