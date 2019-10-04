@@ -78,7 +78,7 @@ public final class MCReadMetricsCodec {
     }
 
     public static MCReadMetricsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
@@ -112,7 +112,7 @@ public final class MCReadMetricsCodec {
     }
 
     public static MCReadMetricsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.nextSequence = decodeLong(initialFrame.content, RESPONSE_NEXT_SEQUENCE_FIELD_OFFSET);
