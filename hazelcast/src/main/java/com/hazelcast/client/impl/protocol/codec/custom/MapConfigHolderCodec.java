@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a711faf8c1ff5426f8f1f741f6a075e1")
+@Generated("2a2ed90f2c34a7057fa5d72af5952e71")
 public final class MapConfigHolderCodec {
     private static final int BACKUP_COUNT_FIELD_OFFSET = 0;
     private static final int ASYNC_BACKUP_COUNT_FIELD_OFFSET = BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -40,7 +38,7 @@ public final class MapConfigHolderCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder mapConfigHolder) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, BACKUP_COUNT_FIELD_OFFSET, mapConfigHolder.getBackupCount());
@@ -56,10 +54,10 @@ public final class MapConfigHolderCodec {
         StringCodec.encode(clientMessage, mapConfigHolder.getEvictionPolicy());
         CodecUtil.encodeNullable(clientMessage, mapConfigHolder.getMergePolicy(), StringCodec::encode);
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
