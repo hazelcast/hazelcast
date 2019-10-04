@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.handler;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.cp.internal.raft.impl.state.CandidateState;
@@ -70,12 +70,12 @@ public class PreVoteResponseHandlerTask extends AbstractResponseHandlerTask {
 
         if (preCandidateState.isMajorityGranted()) {
             logger.info("We have the majority during pre-vote phase. Let's start real election!");
-            new LeaderElectionTask(raftNode).run();
+            new LeaderElectionTask(raftNode, false).run();
         }
     }
 
     @Override
-    protected Endpoint sender() {
+    protected RaftEndpoint sender() {
         return resp.voter();
     }
 }

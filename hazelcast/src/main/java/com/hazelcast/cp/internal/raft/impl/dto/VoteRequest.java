@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.dto;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,22 +35,24 @@ import java.io.IOException;
  */
 public class VoteRequest implements IdentifiedDataSerializable {
 
-    private Endpoint candidate;
+    private RaftEndpoint candidate;
     private int term;
     private int lastLogTerm;
     private long lastLogIndex;
+    private boolean disruptive;
 
     public VoteRequest() {
     }
 
-    public VoteRequest(Endpoint candidate, int term, int lastLogTerm, long lastLogIndex) {
+    public VoteRequest(RaftEndpoint candidate, int term, int lastLogTerm, long lastLogIndex, boolean disruptive) {
         this.term = term;
         this.candidate = candidate;
         this.lastLogTerm = lastLogTerm;
         this.lastLogIndex = lastLogIndex;
+        this.disruptive = disruptive;
     }
 
-    public Endpoint candidate() {
+    public RaftEndpoint candidate() {
         return candidate;
     }
 
@@ -64,6 +66,10 @@ public class VoteRequest implements IdentifiedDataSerializable {
 
     public long lastLogIndex() {
         return lastLogIndex;
+    }
+
+    public boolean isDisruptive() {
+        return disruptive;
     }
 
     @Override
@@ -82,6 +88,7 @@ public class VoteRequest implements IdentifiedDataSerializable {
         out.writeObject(candidate);
         out.writeInt(lastLogTerm);
         out.writeLong(lastLogIndex);
+        out.writeBoolean(disruptive);
     }
 
     @Override
@@ -90,12 +97,13 @@ public class VoteRequest implements IdentifiedDataSerializable {
         candidate = in.readObject();
         lastLogTerm = in.readInt();
         lastLogIndex = in.readLong();
+        disruptive = in.readBoolean();
     }
 
     @Override
     public String toString() {
         return "VoteRequest{" + "candidate=" + candidate + ", term=" + term + ", lastLogTerm=" + lastLogTerm
-                + ", lastLogIndex=" + lastLogIndex + '}';
+                + ", lastLogIndex=" + lastLogIndex + ", disruptive=" + disruptive + '}';
     }
 
 }

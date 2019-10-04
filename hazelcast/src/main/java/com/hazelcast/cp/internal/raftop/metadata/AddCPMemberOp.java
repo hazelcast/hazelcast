@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * A {@link RaftOp} that adds a new CP member to the CP subsystem.
+ * A {@link RaftOp} that adds a new CP member to CP Subsystem.
  * Committed to the Metadata Raft group.
  * Fails with {@link IllegalArgumentException} if the member to be added
  * is already a CP member that is currently being removed.
@@ -52,6 +52,10 @@ public class AddCPMemberOp extends MetadataRaftGroupOp implements IndeterminateO
         }
 
         return PostponedResponse.INSTANCE;
+    }
+
+    public CPMemberInfo getMember() {
+        return member;
     }
 
     @Override

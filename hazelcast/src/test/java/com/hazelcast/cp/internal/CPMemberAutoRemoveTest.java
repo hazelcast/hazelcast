@@ -55,7 +55,7 @@ public class CPMemberAutoRemoveTest extends HazelcastRaftTestSupport {
             Collection<CPMemberInfo> activeMembers = getRaftService(instances[0]).getMetadataGroupManager()
                                                                                  .getActiveMembers();
             assertThat(activeMembers, not(hasItem(terminatedMember)));
-            assertThat(getRaftService(instances[0]).getMissingMembers(), Matchers.<CPMemberInfo>empty());
+            assertThat(getRaftService(instances[0]).getMissingMembers(), Matchers.empty());
         });
     }
 

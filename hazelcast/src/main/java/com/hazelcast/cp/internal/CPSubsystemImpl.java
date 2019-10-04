@@ -40,7 +40,7 @@ import com.hazelcast.logging.ILogger;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Provides access to CP subsystem utilities
+ * Provides access to CP Subsystem utilities
  */
 public class CPSubsystemImpl implements CPSubsystem {
 

@@ -30,6 +30,7 @@ import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftQueryOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -132,7 +133,13 @@ public class RaftInvocationManager {
                 shuffle(members);
                 members.sort(new CPMemberReachabilityComparator());
                 members = members.subList(0, groupSize);
-                invokeCreateRaftGroup(groupName, groupSize, members, resultFuture);
+
+                List<RaftEndpoint> groupEndpoints = new ArrayList<>();
+                for (CPMemberInfo member : members) {
+                    groupEndpoints.add(member.toRaftEndpoint());
+
+                }
+                invokeCreateRaftGroup(groupName, groupSize, groupEndpoints, resultFuture);
             }
 
             @Override
@@ -142,7 +149,7 @@ public class RaftInvocationManager {
         });
     }
 
-    private void invokeCreateRaftGroup(String groupName, int groupSize, List<CPMemberInfo> members,
+    private void invokeCreateRaftGroup(String groupName, int groupSize, List<RaftEndpoint> members,
                                        SimpleCompletableFuture<RaftGroupId> resultFuture) {
         ICompletableFuture<RaftGroupId> f = invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members));
 
@@ -167,7 +174,7 @@ public class RaftInvocationManager {
     }
 
     <T> InternalCompletableFuture<T> changeMembership(CPGroupId groupId, long membersCommitIndex,
-                                                      CPMemberInfo member, MembershipChangeMode membershipChangeMode) {
+                                                      RaftEndpoint member, MembershipChangeMode membershipChangeMode) {
         InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
         if (completedFuture != null) {
             return completedFuture;
@@ -228,6 +235,10 @@ public class RaftInvocationManager {
 
     public RaftInvocationContext getRaftInvocationContext() {
         return raftInvocationContext;
+    }
+
+    public CPMemberInfo getCPMember(RaftEndpoint endpoint) {
+        return endpoint != null ? raftInvocationContext.getCPMember(endpoint.getUuid()) : null;
     }
 
     private class CPMemberReachabilityComparator implements Comparator<CPMemberInfo> {

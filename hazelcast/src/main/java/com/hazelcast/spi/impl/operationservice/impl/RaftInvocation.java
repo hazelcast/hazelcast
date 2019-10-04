@@ -142,7 +142,7 @@ public class RaftInvocation extends Invocation<CPMember> {
 
         MemberCursor cursor = memberCursor;
         if (cursor == null || !cursor.advance()) {
-            cursor = raftInvocationContext.newMemberCursor(groupId);
+            cursor = raftInvocationContext.newMemberCursor();
             if (!cursor.advance()) {
                 return null;
             }

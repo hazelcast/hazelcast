@@ -2767,6 +2767,12 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     cpSubsystemConfig.setMissingCPMemberAutoRemovalSeconds(Integer.parseInt(value));
                 } else if ("fail-on-indeterminate-operation-state".equals(nodeName)) {
                     cpSubsystemConfig.setFailOnIndeterminateOperationState(Boolean.parseBoolean(value));
+                } else if ("persistence-enabled".equals(nodeName)) {
+                    cpSubsystemConfig.setPersistenceEnabled(Boolean.parseBoolean(value));
+                } else if ("base-dir".equals(nodeName)) {
+                    cpSubsystemConfig.setBaseDir(new File(value).getAbsoluteFile());
+                } else if ("data-load-timeout-seconds".equals(nodeName)) {
+                    cpSubsystemConfig.setDataLoadTimeoutSeconds(Integer.parseInt(value));
                 }
             }
         }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal.raft.impl.command;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.command.RaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -34,24 +34,24 @@ import java.util.LinkedHashSet;
  */
 public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements IdentifiedDataSerializable {
 
-    private Collection<Endpoint> members;
-    private Endpoint member;
+    private Collection<RaftEndpoint> members;
+    private RaftEndpoint member;
     private MembershipChangeMode mode;
 
     public UpdateRaftGroupMembersCmd() {
     }
 
-    public UpdateRaftGroupMembersCmd(Collection<Endpoint> members, Endpoint member, MembershipChangeMode mode) {
+    public UpdateRaftGroupMembersCmd(Collection<RaftEndpoint> members, RaftEndpoint member, MembershipChangeMode mode) {
         this.members = members;
         this.member = member;
         this.mode = mode;
     }
 
-    public Collection<Endpoint> getMembers() {
+    public Collection<RaftEndpoint> getMembers() {
         return members;
     }
 
-    public Endpoint getMember() {
+    public RaftEndpoint getMember() {
         return member;
     }
 
@@ -72,7 +72,7 @@ public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements Identifie
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(members.size());
-        for (Endpoint member : members) {
+        for (RaftEndpoint member : members) {
             out.writeObject(member);
         }
         out.writeObject(member);
@@ -82,9 +82,9 @@ public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements Identifie
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int count = in.readInt();
-        Collection<Endpoint> members = new LinkedHashSet<>();
+        Collection<RaftEndpoint> members = new LinkedHashSet<RaftEndpoint>();
         for (int i = 0; i < count; i++) {
-            Endpoint member = in.readObject();
+            RaftEndpoint member = in.readObject();
             members.add(member);
         }
         this.members = members;
@@ -94,6 +94,6 @@ public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements Identifie
 
     @Override
     public String toString() {
-        return "ChangeRaftGroupMembersCmd{" + "members=" + members + ", member=" + member + ", mode=" + mode + '}';
+        return "UpdateRaftGroupMembersCmd{" + "members=" + members + ", member=" + member + ", mode=" + mode + '}';
     }
 }

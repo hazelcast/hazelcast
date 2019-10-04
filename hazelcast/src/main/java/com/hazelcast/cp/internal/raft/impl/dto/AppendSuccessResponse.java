@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl.dto;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,7 +36,7 @@ import java.io.IOException;
  */
 public class AppendSuccessResponse implements IdentifiedDataSerializable {
 
-    private Endpoint follower;
+    private RaftEndpoint follower;
     private int term;
     private long lastLogIndex;
     private long queryRound;
@@ -44,14 +44,14 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
     public AppendSuccessResponse() {
     }
 
-    public AppendSuccessResponse(Endpoint follower, int term, long lastLogIndex, long queryRound) {
+    public AppendSuccessResponse(RaftEndpoint follower, int term, long lastLogIndex, long queryRound) {
         this.follower = follower;
         this.term = term;
         this.lastLogIndex = lastLogIndex;
         this.queryRound = queryRound;
     }
 
-    public Endpoint follower() {
+    public RaftEndpoint follower() {
         return follower;
     }
 

@@ -35,7 +35,7 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
  */
 public final class DirectoryLock {
 
-    private static final String FILE_NAME = "lock";
+    public static final String FILE_NAME = "lock";
 
     private final File dir;
     private final FileChannel channel;

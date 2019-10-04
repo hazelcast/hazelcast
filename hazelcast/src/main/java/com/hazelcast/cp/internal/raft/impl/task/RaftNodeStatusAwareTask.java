@@ -16,9 +16,11 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.cluster.Endpoint;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
+import com.hazelcast.logging.ILogger;
+
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
 
 /**
  * Base class for tasks need to know current {@link RaftNodeImpl}.
@@ -41,6 +43,9 @@ public abstract class RaftNodeStatusAwareTask implements Runnable {
         if (raftNode.isTerminatedOrSteppedDown()) {
             logger.fine("Won't run, since raft node is terminated");
             return;
+        } else if (raftNode.getStatus() == INITIAL) {
+            logger.fine("Won't run, since raft node is not initialized");
+            return;
         }
 
         try {
@@ -50,7 +55,7 @@ public abstract class RaftNodeStatusAwareTask implements Runnable {
         }
     }
 
-    protected final Endpoint localMember() {
+    protected final RaftEndpoint localMember() {
         return raftNode.getLocalMember();
     }
 

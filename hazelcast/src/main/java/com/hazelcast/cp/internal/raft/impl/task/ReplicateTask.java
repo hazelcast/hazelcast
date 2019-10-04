@@ -21,6 +21,7 @@ import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.cp.internal.raft.impl.command.UpdateRaftGroupMembersCmd;
@@ -30,6 +31,11 @@ import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 
+import java.util.UUID;
+
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.UPDATING_GROUP_MEMBER_LIST;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
@@ -97,17 +103,20 @@ public class ReplicateTask implements Runnable {
             raftNode.broadcastAppendRequest();
         } catch (Throwable t) {
             logger.severe(operation + " could not be replicated to leader: " + raftNode.getLocalMember(), t);
-            resultFuture.setResult(new CPSubsystemException("Internal failure", raftNode.getLeader(), t));
+            RaftEndpoint leader = raftNode.getLeader();
+            UUID leaderUuid = leader != null ? leader.getUuid() : null;
+            resultFuture.setResult(new CPSubsystemException("Internal failure", t, leaderUuid));
         }
     }
 
     private boolean verifyRaftNodeStatus() {
-        if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
-            resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
-            logger.fine("Won't run " + operation + ", since raft node is terminated");
+        if (raftNode.getStatus() == INITIAL) {
+            resultFuture.setResult(new CannotReplicateException(null));
             return false;
-        } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
-            logger.fine("Won't run " + operation + ", since raft node is stepped down");
+        } else if (raftNode.getStatus() == TERMINATED) {
+            resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
+            return false;
+        } else if (raftNode.getStatus() == STEPPED_DOWN) {
             resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
             return false;
         }

@@ -787,6 +787,9 @@ hazelcast:
     session-heartbeat-interval-seconds: 5
     missing-cp-member-auto-removal-seconds: 120
     fail-on-indeterminate-operation-state: false
+    persistence-enabled: false
+    base-dir: data
+    data-load-timeout-seconds: 30
     raft-algorithm:
       leader-election-timeout-in-millis: 2000
       leader-heartbeat-period-in-millis: 5000

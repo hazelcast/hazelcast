@@ -21,8 +21,8 @@ import com.hazelcast.core.HazelcastException;
 /**
  * An internal exception thrown when a Raft group is attempted to be created
  * with a Hazelcast node that is not an active CP member. This situation can
- * occur while a CP member is being removed from the CP subsystem. This
- * exception will be handled internally and will not be exposed to the user.
+ * occur while a CP member is being removed from CP Subsystem. This exception
+ * will be handled internally and will not be exposed to the user.
  */
 public class CannotCreateRaftGroupException extends HazelcastException {
     private static final long serialVersionUID = 3849291601278316593L;

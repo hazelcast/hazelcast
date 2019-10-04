@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains implementation of the CP subsystem
+ * Contains implementation of CP Subsystem
  */
 package com.hazelcast.cp.internal;

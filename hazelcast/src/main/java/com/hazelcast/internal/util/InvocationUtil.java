@@ -45,6 +45,11 @@ import static com.hazelcast.internal.util.IterableUtil.map;
  */
 public final class InvocationUtil {
 
+    /**
+     * An executor utility to run callbacks on the caller thread.
+     */
+    public static final Executor CALLER_RUNS_EXECUTOR = new CallerRunsExecutor();
+
     private InvocationUtil() {
     }
 
@@ -65,7 +70,7 @@ public final class InvocationUtil {
 
         ClusterService clusterService = nodeEngine.getClusterService();
         if (!clusterService.isJoined()) {
-            return new CompletedFuture(null, null, new CallerRunsExecutor());
+            return new CompletedFuture<>(null, null, CALLER_RUNS_EXECUTOR);
         }
 
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);

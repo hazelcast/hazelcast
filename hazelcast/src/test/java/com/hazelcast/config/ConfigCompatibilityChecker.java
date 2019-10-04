@@ -541,10 +541,13 @@ public class ConfigCompatibilityChecker {
 
             boolean cpSubsystemConfigValuesEqual =
                     (c1.getCPMemberCount() == c2.getCPMemberCount() && c1.getGroupSize() == c2.getGroupSize()
-                            && c1.getSessionTimeToLiveSeconds() == c2.getSessionTimeToLiveSeconds()
-                            && c1.getSessionHeartbeatIntervalSeconds() == c2.getSessionHeartbeatIntervalSeconds()
-                            && c1.getMissingCPMemberAutoRemovalSeconds() == c2.getMissingCPMemberAutoRemovalSeconds()
-                            && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState());
+                    && c1.getSessionTimeToLiveSeconds() == c2.getSessionTimeToLiveSeconds()
+                    && c1.getSessionHeartbeatIntervalSeconds() == c2.getSessionHeartbeatIntervalSeconds()
+                    && c1.getMissingCPMemberAutoRemovalSeconds() == c2.getMissingCPMemberAutoRemovalSeconds()
+                    && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState())
+                    && c1.isPersistenceEnabled() == c2.isPersistenceEnabled()
+                    && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile())
+                    && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds();
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;
