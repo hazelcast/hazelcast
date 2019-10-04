@@ -17,6 +17,7 @@
 package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.nio.Address;
@@ -29,6 +30,7 @@ import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.Packet;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -192,6 +194,11 @@ public class FirewallingNetworkingService
         public void addConnectionListener(ConnectionListener listener) {
             delegate.addConnectionListener(listener);
         }
+
+        @Override
+        public Map<EndpointQualifier, NetworkStats> getNetworkStats() {
+            return delegate.getNetworkStats();
+        }
     }
 
     public class FirewallingEndpointManager
@@ -330,5 +337,9 @@ public class FirewallingNetworkingService
             return delegate.registerConnection(address, connection);
         }
 
+        @Override
+        public NetworkStats getNetworkStats() {
+            return delegate.getNetworkStats();
+        }
     }
 }

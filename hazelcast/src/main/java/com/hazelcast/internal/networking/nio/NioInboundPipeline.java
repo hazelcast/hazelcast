@@ -163,6 +163,10 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         }
     }
 
+    long bytesRead() {
+        return bytesRead.get();
+    }
+
     @Override
     void publishMetrics() {
         if (currentThread() != owner) {

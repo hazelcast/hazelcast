@@ -19,6 +19,7 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.TestNodeContext;
+import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
@@ -119,6 +120,11 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             @Override
             public void accept(Object o) {
 
+            }
+
+            @Override
+            public NetworkStats getNetworkStats() {
+                return null;
             }
         };
 

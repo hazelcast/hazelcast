@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.nio;
 
+import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;
@@ -108,5 +109,13 @@ public interface EndpointManager<T extends Connection>
      * @see #transmit(Packet, Connection)
      */
     boolean transmit(Packet packet, Address target);
+
+    /**
+     * Returns network stats for inbound and outbound traffic.
+     * Stats are available only when Advanced Networking is enabled.
+     *
+     * @return network stats, or {@code null} if Advanced Networking is disabled
+     */
+    NetworkStats getNetworkStats();
 
 }

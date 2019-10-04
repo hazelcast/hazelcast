@@ -112,7 +112,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     private volatile NioThread[] outputThreads;
     private volatile ScheduledFuture publishFuture;
 
-    // Currently this is a course grained aggregation of the bytes/send received.
+    // Currently this is a coarse grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
     @Probe

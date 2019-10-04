@@ -256,4 +256,20 @@ public interface Channel extends Closeable {
      * @return true if the frame was queued; false if rejected.
      */
     boolean write(OutboundFrame frame);
+
+    /**
+     * Returns current count of bytes read from the Channel.
+     * The read values might not reflect the most recent value.
+     *
+     * @return count of read bytes
+     */
+    long bytesRead();
+
+    /**
+     * Returns current count of bytes written into the Channel.
+     * The read values might not reflect the most recent value.
+     *
+     * @return count of written bytes
+     */
+    long bytesWritten();
 }

@@ -1098,6 +1098,13 @@ public final class GroupProperty {
 
     public static final HazelcastProperty AUDIT_LOG_ENABLED = new HazelcastProperty("hazelcast.auditlog.enabled", false);
 
+    /**
+     * The interval at which network stats (bytes sent and received) are re-calculated and published.
+     * Used only when Advanced Networking is enabled.
+     */
+    public static final HazelcastProperty NETWORK_STATS_REFRESH_INTERVAL_SECONDS
+            = new HazelcastProperty("hazelcast.network.stats.refresh.interval.seconds", 3, SECONDS);
+
     private GroupProperty() {
     }
 }

@@ -137,6 +137,16 @@ public final class NioChannel extends AbstractChannel {
     }
 
     @Override
+    public long bytesRead() {
+        return inboundPipeline.bytesRead();
+    }
+
+    @Override
+    public long bytesWritten() {
+        return outboundPipeline.bytesWritten();
+    }
+
+    @Override
     public String toString() {
         return "NioChannel{" + localSocketAddress() + "->" + remoteSocketAddress() + '}';
     }
