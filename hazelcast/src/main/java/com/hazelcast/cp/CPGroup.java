@@ -21,6 +21,9 @@ import java.util.Collection;
 /**
  * Contains information about a CP group.
  * <p>
+ * A CP group is a set of CP members that run the Raft consensus algorithm
+ * and contain CP data structure instances that are mapped to it.
+ * <p>
  * There can be at most one active CP group with a given name.
  *
  * @see CPSubsystemManagementService

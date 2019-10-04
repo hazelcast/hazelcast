@@ -22,35 +22,41 @@ package com.hazelcast.cp.internal.raft.impl;
  * Initially, a Raft node starts as {@link #ACTIVE}.
  */
 public enum RaftNodeStatus {
+
     /**
-     * Initial state of a node. When {@code ACTIVE} node operates normally.
+     * Initial state of a Raft node before it is started.
+     */
+    INITIAL,
+
+    /**
+     * The normal operation mode of Raft node.
      */
     ACTIVE,
 
     /**
-     * During membership changes, node statuses become
+     * During membership changes, Raft node statuses become
      * {@code UPDATING_GROUP_MEMBER_LIST} and they apply requested change once
      * the entry is appended to the log. Once log is committed, if the related
-     * node is the being removed from group, status becomes
+     * Raft node is the being removed from group, status becomes
      * {@link #STEPPED_DOWN}, otherwise {@link #ACTIVE}.
      */
     UPDATING_GROUP_MEMBER_LIST,
 
     /**
-     * When a node is removed from the cluster after a membership change is
-     * committed, its status becomes {@code STEPPED_DOWN}.
+     * When a Raft node is removed from the cluster after a membership change
+     * is committed, its status becomes {@code STEPPED_DOWN}.
      */
     STEPPED_DOWN,
 
     /**
-     * When a Raft group is being terminated, all nodes' statuses in that group
-     * become {@code TERMINATING}. Once termination process is completed, then
-     * statuses become {@link #TERMINATED}.
+     * When a Raft group is being terminated, all Raft nodes' statuses in that
+     * group become {@code TERMINATING}. Once termination process is completed,
+     * then the statuses become {@link #TERMINATED}.
      */
     TERMINATING,
 
     /**
-     * When a Raft group is terminated completely, all nodes' statuses in
+     * When a Raft group is terminated completely, all Raft nodes' statuses in
      * that group become {@code TERMINATED}.
      */
     TERMINATED

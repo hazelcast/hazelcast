@@ -26,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.DEFAULT_FLAGS;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
@@ -39,9 +38,8 @@ public class ClientMessageWriterTest {
 
     @Test
     public void testWriteAttemptToInsufficientSpaceRemaining() {
-        LinkedList<ClientMessage.Frame> frames = new LinkedList<>();
-        frames.add(new ClientMessage.Frame(new byte[100], DEFAULT_FLAGS));
-        ClientMessage message = createForDecode(frames);
+        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[100], DEFAULT_FLAGS);
+        ClientMessage message = createForDecode(frame);
         ByteBuffer buffer = ByteBuffer.allocate(50);
         ClientMessageWriter clientMessageWriter = new ClientMessageWriter();
 
@@ -51,9 +49,8 @@ public class ClientMessageWriterTest {
 
     @Test
     public void testWriteAttemptToInsufficentSpaceRemaining_spaceLeftIsLessThanFrameLengthAndFlags() {
-        LinkedList<ClientMessage.Frame> frames = new LinkedList<>();
-        frames.add(new ClientMessage.Frame(new byte[100], DEFAULT_FLAGS));
-        ClientMessage message = createForDecode(frames);
+        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[100], DEFAULT_FLAGS);
+        ClientMessage message = createForDecode(frame);
         ByteBuffer buffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS - 1);
         ClientMessageWriter clientMessageWriter = new ClientMessageWriter();
 

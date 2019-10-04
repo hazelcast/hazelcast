@@ -16,9 +16,11 @@
 
 package com.hazelcast.cp.internal.raft.impl.handler;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
+import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.state.FollowerState;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
@@ -36,9 +38,9 @@ import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
  * <i>In Search of an Understandable Consensus Algorithm</i>
  * paper by <i>Diego Ongaro</i> and <i>John Ousterhout</i>.
  *
- * @see com.hazelcast.cp.internal.raft.impl.dto.AppendRequest
- * @see com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse
- * @see com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse
+ * @see AppendRequest
+ * @see AppendSuccessResponse
+ * @see AppendFailureResponse
  */
 public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTask {
 
@@ -104,7 +106,7 @@ public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTas
     }
 
     @Override
-    protected Endpoint sender() {
+    protected RaftEndpoint sender() {
         return resp.follower();
     }
 }

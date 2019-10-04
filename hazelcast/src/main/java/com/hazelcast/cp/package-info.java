@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains public APIs of the CP subsystem
+ * Contains public APIs of CP Subsystem
  */
 package com.hazelcast.cp;

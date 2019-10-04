@@ -21,8 +21,6 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 import com.hazelcast.logging.Logger;
@@ -37,7 +35,7 @@ import com.hazelcast.logging.Logger;
 /**
  * Adds listener for backup acks
  */
-@Generated("b51bb36120c2e38c94a01f0f7ce51cb5")
+@Generated("054cf5dda276cf91bcffb42ddc7365ef")
 public final class ClientLocalBackupListenerCodec {
     //hex: 0x001500
     public static final int REQUEST_MESSAGE_TYPE = 5376;
@@ -70,7 +68,7 @@ public final class ClientLocalBackupListenerCodec {
     }
 
     public static ClientLocalBackupListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -97,7 +95,7 @@ public final class ClientLocalBackupListenerCodec {
     }
 
     public static ClientLocalBackupListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
@@ -119,7 +117,7 @@ public final class ClientLocalBackupListenerCodec {
 
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
-            ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+            ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
             if (messageType == EVENT_BACKUP_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 long sourceInvocationCorrelationId = decodeLong(initialFrame.content, EVENT_BACKUP_SOURCE_INVOCATION_CORRELATION_ID_FIELD_OFFSET);

@@ -21,8 +21,6 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels further execution and scheduling of the task
  */
-@Generated("bc5212154610a4d2ba2a17c64261fbeb")
+@Generated("81f329ed8743d2d8ce50e06d10f39df1")
 public final class ScheduledExecutorCancelFromPartitionCodec {
     //hex: 0x1D0900
     public static final int REQUEST_MESSAGE_TYPE = 1902848;
@@ -84,7 +82,7 @@ public final class ScheduledExecutorCancelFromPartitionCodec {
     }
 
     public static ScheduledExecutorCancelFromPartitionCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.mayInterruptIfRunning = decodeBoolean(initialFrame.content, REQUEST_MAY_INTERRUPT_IF_RUNNING_FIELD_OFFSET);
@@ -113,7 +111,7 @@ public final class ScheduledExecutorCancelFromPartitionCodec {
     }
 
     public static ScheduledExecutorCancelFromPartitionCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);

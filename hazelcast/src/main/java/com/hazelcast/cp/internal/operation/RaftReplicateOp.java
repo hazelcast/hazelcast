@@ -34,6 +34,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
+import static com.hazelcast.internal.util.InvocationUtil.CALLER_RUNS_EXECUTOR;
+
 /**
  * The base class that replicates the given {@link RaftOp}
  * to the target Raft group
@@ -64,12 +66,12 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
             if (service.isRaftGroupDestroyed(groupId)) {
                 sendResponse(new CPGroupDestroyedException(groupId));
             } else {
-                sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+                sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             }
             return;
         } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
             service.stepDownRaftNode(groupId);
-            sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+            sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             return;
         }
 

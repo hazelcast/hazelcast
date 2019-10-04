@@ -16,19 +16,32 @@
 
 package com.hazelcast.cp.internal.raft.impl.testing;
 
-import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
+import java.io.IOException;
 import java.util.UUID;
 
-public class TestRaftMember implements Endpoint {
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
+
+/**
+ * Represents an endpoint that runs the Raft consensus algorithm as a member of
+ * a Raft group.
+ */
+public class TestRaftEndpoint implements RaftEndpoint, DataSerializable {
 
     private UUID uuid;
 
+    // We have port here for logging
     private int port;
 
-    public TestRaftMember(UUID uuid, int port) {
+    public TestRaftEndpoint() {
+    }
+
+    public TestRaftEndpoint(UUID uuid, int port) {
         this.uuid = uuid;
         this.port = port;
     }
@@ -36,11 +49,6 @@ public class TestRaftMember implements Endpoint {
     @Override
     public UUID getUuid() {
         return uuid;
-    }
-
-    @Override
-    public SocketAddress getSocketAddress() {
-        return new InetSocketAddress(port);
     }
 
     public int getPort() {
@@ -56,7 +64,7 @@ public class TestRaftMember implements Endpoint {
             return false;
         }
 
-        TestRaftMember that = (TestRaftMember) o;
+        TestRaftEndpoint that = (TestRaftEndpoint) o;
 
         if (port != that.port) {
             return false;
@@ -73,7 +81,19 @@ public class TestRaftMember implements Endpoint {
 
     @Override
     public String toString() {
-        return "TestRaftMember{" + "uuid='" + uuid + '\'' + ", port=" + port + '}';
+        return "CPEndpoint{" + "uuid='" + uuid + '\'' + ", port=" + port + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        writeUUID(out, uuid);
+        out.writeInt(port);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        uuid = readUUID(in);
+        port = in.readInt();
     }
 
 }

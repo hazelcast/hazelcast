@@ -20,18 +20,21 @@ import com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChang
 import com.hazelcast.cp.internal.operation.ChangeRaftGroupMembershipOp;
 import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.DestroyRaftGroupOp;
+import com.hazelcast.cp.internal.operation.GetLeadedGroupsOp;
 import com.hazelcast.cp.internal.operation.RaftQueryOp;
 import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftBackupOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftQueryOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeSnapshotReplicationOp;
+import com.hazelcast.cp.internal.operation.TransferLeadershipOp;
 import com.hazelcast.cp.internal.operation.integration.AppendFailureResponseOp;
 import com.hazelcast.cp.internal.operation.integration.AppendRequestOp;
 import com.hazelcast.cp.internal.operation.integration.AppendSuccessResponseOp;
 import com.hazelcast.cp.internal.operation.integration.InstallSnapshotOp;
 import com.hazelcast.cp.internal.operation.integration.PreVoteRequestOp;
 import com.hazelcast.cp.internal.operation.integration.PreVoteResponseOp;
+import com.hazelcast.cp.internal.operation.integration.TriggerLeaderElectionOp;
 import com.hazelcast.cp.internal.operation.integration.VoteRequestOp;
 import com.hazelcast.cp.internal.operation.integration.VoteResponseOp;
 import com.hazelcast.cp.internal.raftop.GetInitialRaftGroupMembersIfCurrentGroupMemberOp;
@@ -113,6 +116,11 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int UNSAFE_RAFT_QUERY_OP = 43;
     public static final int UNSAFE_RAFT_BACKUP_OP = 44;
     public static final int UNSAFE_SNAPSHOT_REPLICATE_OP = 45;
+    public static final int CP_ENDPOINT = 46;
+    public static final int CP_GROUP_SUMMARY = 47;
+    public static final int GET_LEADED_GROUPS = 48;
+    public static final int TRANSFER_LEADERSHIP_OP = 49;
+    public static final int TRIGGER_LEADER_ELECTION_OP = 50;
 
     @Override
     public int getFactoryId() {
@@ -213,6 +221,16 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new UnsafeRaftBackupOp();
                 case UNSAFE_SNAPSHOT_REPLICATE_OP:
                     return new UnsafeSnapshotReplicationOp();
+                case CP_ENDPOINT:
+                    return new RaftEndpointImpl();
+                case CP_GROUP_SUMMARY:
+                    return new CPGroupSummary();
+                case GET_LEADED_GROUPS:
+                    return new GetLeadedGroupsOp();
+                case TRANSFER_LEADERSHIP_OP:
+                    return new TransferLeadershipOp();
+                case TRIGGER_LEADER_ELECTION_OP:
+                    return new TriggerLeaderElectionOp();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }
