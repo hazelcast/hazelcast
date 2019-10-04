@@ -27,7 +27,7 @@ import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
 import com.hazelcast.cp.internal.raft.impl.task.InitLeadershipTransferTask;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -562,7 +562,7 @@ public final class RaftState {
      * @return true if the leadership transfer is triggered for the first time,
      *         false if there is an ongoing leadership transfer
      */
-    public boolean initLeadershipTransfer(RaftEndpoint targetEndpoint, SimpleCompletableFuture resultFuture) {
+    public boolean initLeadershipTransfer(RaftEndpoint targetEndpoint, InternalCompletableFuture resultFuture) {
         if (leadershipTransferState == null) {
             leadershipTransferState = new LeadershipTransferState(term, targetEndpoint, resultFuture);
             return true;

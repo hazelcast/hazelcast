@@ -188,7 +188,9 @@ public interface RaftNode {
      * @param groupMembersCommitIndex expected members commit index
      * @return future to get notified about result of the membership change
      */
-    InternalCompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode, long groupMembersCommitIndex);
+    InternalCompletableFuture replicateMembershipChange(RaftEndpoint member,
+                                                        MembershipChangeMode mode,
+                                                        long groupMembersCommitIndex);
 
     /**
      * Executes the given operation on Raft group depending

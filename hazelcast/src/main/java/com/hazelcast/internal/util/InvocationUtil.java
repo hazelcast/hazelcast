@@ -29,6 +29,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -175,6 +176,13 @@ public final class InvocationUtil {
                     }
                 });
             }
+        }
+    }
+
+    private static class CallerRunsExecutor implements Executor {
+        @Override
+        public void execute(Runnable command) {
+            command.run();
         }
     }
 }

@@ -146,7 +146,8 @@ public class MembershipChangeTask implements Runnable {
             case STEPPED_DOWN:
                 logger.severe("Cannot " + membershipChangeMode + " " + member + " with expected members commit index: "
                         + groupMembersCommitIndex + " since raft node is stepped down.");
-                resultFuture.completeExceptionally(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
+                resultFuture.completeExceptionally(
+                        new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
                 return false;
             default:
                 return true;

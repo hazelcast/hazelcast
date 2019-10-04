@@ -18,7 +18,6 @@ package com.hazelcast.cp;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 

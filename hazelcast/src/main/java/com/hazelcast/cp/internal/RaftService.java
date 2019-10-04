@@ -79,12 +79,6 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
-import com.hazelcast.internal.util.SimpleCompletedFuture;
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -108,9 +102,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
@@ -126,8 +120,6 @@ import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 import static java.util.Collections.newSetFromMap;
@@ -340,16 +332,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         // which will attempt to acquire the read lock on nodeLock. In order to prevent it, we first
         // add group ids into destroyedGroupIds to short-cut RaftNodeLifecycleAwareService.onRaftGroupDestroyed()
 
-        List<ICompletableFuture> futures = new ArrayList<>(nodes.size());
+        List<InternalCompletableFuture> futures = new ArrayList<>(nodes.size());
         destroyedGroupIds.addAll(nodes.keySet());
         for (RaftNode node : nodes.values()) {
-            ICompletableFuture f = node.forceSetTerminatedStatus();
+            InternalCompletableFuture f = node.forceSetTerminatedStatus();
             futures.add(f);
         }
 
         nodes.clear();
 
-        for (ICompletableFuture future : futures) {
+        for (InternalCompletableFuture future : futures) {
             try {
                 future.get();
             } catch (Exception e) {
@@ -848,16 +840,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     private void destroyRaftNode(RaftNode node) {
         final RaftGroupId groupId = (RaftGroupId) node.getGroupId();
-        node.forceSetTerminatedStatus().andThen(new ExecutionCallback() {
-            @Override
-            public void onResponse(Object response) {
-                getCPPersistenceService().removeRaftStateStore(groupId);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                getCPPersistenceService().removeRaftStateStore(groupId);
-            }
+        node.forceSetTerminatedStatus().whenCompleteAsync((v, t) -> {
+            getCPPersistenceService().removeRaftStateStore(groupId);
         });
     }
 
@@ -915,10 +899,10 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return new RaftGroupId(groupName, 0, partitionId);
     }
 
-    public InternalCompletableFuture<RaftGroupId> createRaftGroupForProxyAsync(String name) {
+    public InternalCompletableFuture<CPGroupId> createRaftGroupForProxyAsync(String name) {
         String groupName = getGroupNameForProxy(name);
         if (cpSubsystemEnabled) {
-            InternalCompletableFuture<RaftGroupId> future = newCompletableFuture();
+            InternalCompletableFuture<CPGroupId> future = newCompletableFuture();
             InternalCompletableFuture<CPGroupSummary> groupIdFuture = getGroupSummaryForProxy(groupName);
             groupIdFuture.whenCompleteAsync((response, throwable) -> {
                 if (throwable == null) {
@@ -1143,7 +1127,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return groupIds;
     }
 
-    public ICompletableFuture transferLeadership(CPGroupId groupId, CPMemberInfo destination) {
+    public InternalCompletableFuture transferLeadership(CPGroupId groupId, CPMemberInfo destination) {
         RaftNode raftNode = getRaftNode(groupId);
         if (raftNode == null) {
             throw new IllegalStateException("RaftNode does not exist for group: " + groupId);

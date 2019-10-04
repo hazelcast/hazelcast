@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
