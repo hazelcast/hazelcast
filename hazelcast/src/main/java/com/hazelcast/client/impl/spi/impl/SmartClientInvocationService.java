@@ -55,6 +55,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
         }
     };
     private final LoadBalancer loadBalancer;
+    private boolean isBackupAckToClientEnabled;
 
     public SmartClientInvocationService(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
         super(client);
@@ -62,8 +63,11 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     }
 
     public void addBackupListener() {
-        ClientListenerService listenerService = client.getListenerService();
-        listenerService.registerListener(backupListener, new BackupEventHandler());
+        isBackupAckToClientEnabled = client.getClientConfig().isBackupAckToClientEnabled();
+        if (isBackupAckToClientEnabled) {
+            ClientListenerService listenerService = client.getListenerService();
+            listenerService.registerListener(backupListener, new BackupEventHandler());
+        }
     }
 
     public class BackupEventHandler extends ClientLocalBackupListenerCodec.AbstractEventHandler
@@ -141,7 +145,9 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     }
 
     private void send0(ClientInvocation invocation, ClientConnection connection) throws IOException {
-        invocation.getClientMessage().getStartFrame().flags |= ClientMessage.BACKUP_AWARE_FLAG;
+        if (isBackupAckToClientEnabled) {
+            invocation.getClientMessage().getStartFrame().flags |= ClientMessage.BACKUP_AWARE_FLAG;
+        }
         send(invocation, connection);
     }
 

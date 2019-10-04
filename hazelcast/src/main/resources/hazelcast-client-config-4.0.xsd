@@ -28,6 +28,7 @@
                 <xs:element name="config-replacers" type="config-replacers" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cluster" type="cluster" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="executor-pool-size" type="executor-pool-size" minOccurs="0" maxOccurs="1"
@@ -468,6 +469,7 @@
             <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1"/>
             <xs:element name="preloader" type="preloader" minOccurs="0" maxOccurs="1"/>
         </xs:all>

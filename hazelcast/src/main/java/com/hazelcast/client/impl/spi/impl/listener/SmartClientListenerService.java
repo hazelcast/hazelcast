@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.spi.impl.listener;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.util.EmptyStatement;

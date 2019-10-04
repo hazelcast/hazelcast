@@ -66,7 +66,8 @@ public final class FailoverClientConfigSupport {
      *
      * @param clientFailoverConfig provided via {@link HazelcastClient#newHazelcastFailoverClient(ClientFailoverConfig)}
      * @return resolvedConfigs
-     * @throws HazelcastException  if {@code clientFailoverConfig} is {@code null} and no failover configuration is found
+     * @throws HazelcastException            if {@code clientFailoverConfig} is {@code null} and
+     *                                       no failover configuration is found
      * @throws InvalidConfigurationException when given config is not valid
      */
     public static ClientFailoverConfig resolveClientFailoverConfig(ClientFailoverConfig clientFailoverConfig) {
@@ -257,6 +258,9 @@ public final class FailoverClientConfigSupport {
         }
         if (notEqual(mainConfig.getMetricsConfig(), alternativeConfig.getMetricsConfig())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "metricsConfig");
+        }
+        if (mainConfig.isBackupAckToClientEnabled() != alternativeConfig.isBackupAckToClientEnabled()) {
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "isBackupAckToClientEnabled");
         }
     }
 
