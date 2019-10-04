@@ -2359,6 +2359,20 @@ hazelcast:
   #     PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition
   #     table version and successfully restored their data. All other members will leave the cluster and force start themselves.
   #     If no member restores its data successfully, cluster start fails.
+  # * "encryption-at-rest":
+  #     Specifies the (optional) encryption settings for Hot Restart persistence. It has the required attribute "enabled"
+  #     to specify whether encryption is enabled. In addition to that, it specifies the symmetric cipher to use (such as
+  #     AES/CBC/PKCS5Padding), the encryption salt, the key size for generating encryption keys and, in the "secure-store"
+  #     sub-element, the configuration of the Secure Store that it will be used to retrieve the encryption keys.
+  #          * <keystore>:
+  #              Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as
+  #              PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and
+  #              (optionally) a polling interval for checking for changes in the KeyStore.
+  #          * <vault>:
+  #              Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the (optional) secrets
+  #              engine path, the secret path where the encryption key is stored, the access token, the (optional) namespace,
+  #              the (optional) <ssl> configuration for HTTPS support, and an (optional) polling interval for checking for
+  #              changes in Vault.
   #
   hot-restart-persistence:
     enabled: true
@@ -2367,6 +2381,35 @@ hazelcast:
     validation-timeout-seconds: 120
     data-load-timeout-seconds: 900
     cluster-data-recovery-policy: PARTIAL_RECOVERY_MOST_COMPLETE
+    encryption-at-rest:
+      enabled: true
+      algorithm: AES/CBC/PKCS5Padding
+      salt: somesalt
+      key-size: 16
+      secure-store:
+        keystore:
+          path: /path/to/keystore.file
+          type: PKCS12
+          password: password
+          current-key-alias: current
+          polling-interval: 60
+  #     vault:
+  #       address: http://localhost:1234
+  #       secret-path: secret/path
+  #       token: token
+  #       polling-interval: 60
+  #       ssl:
+  #         enabled: false
+  #         factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
+  #         properties:
+  #           protocol: TLS
+  #           mutualAuthentication: REQUIRED
+  #           keyStore: /opt/hazelcast.keystore
+  #           keyStorePassword: secret.97531
+  #           keyStoreType: JKS
+  #           trustStore: /opt/hazelcast.truststore
+  #           trustStorePassword: changeit
+  #           trustStoreType: JKS
 
   #
   # ===== HAZELCAST USER CODE DEPLOYMENT CONFIGURATION =====

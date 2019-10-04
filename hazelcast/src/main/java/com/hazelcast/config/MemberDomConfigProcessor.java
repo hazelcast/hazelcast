@@ -90,7 +90,9 @@ import static com.hazelcast.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.config.ConfigSections.canOccurMultipleTimes;
 import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.childElementsWithName;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.config.DomConfigHelper.firstChildElement;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
@@ -273,7 +275,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setUserCodeDeploymentConfig(dcConfig);
     }
 
-    private void handleHotRestartPersistence(Node hrRoot) {
+    private void handleHotRestartPersistence(Node hrRoot)
+            throws Exception {
         HotRestartPersistenceConfig hrConfig = new HotRestartPersistenceConfig()
                 .setEnabled(getBooleanValue(getAttribute(hrRoot, "enabled")));
 
@@ -285,25 +288,113 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (Node n : childElements(hrRoot)) {
             String name = cleanNodeName(n);
-            String value = getTextContent(n);
-            if ("base-dir".equals(name)) {
-                hrConfig.setBaseDir(new File(value).getAbsoluteFile());
-            } else if ("backup-dir".equals(name)) {
-                hrConfig.setBackupDir(new File(value).getAbsoluteFile());
-            } else if (parallelismName.equals(name)) {
-                hrConfig.setParallelism(getIntegerValue(parallelismName, value));
-            } else if (validationTimeoutName.equals(name)) {
-                hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, value));
-            } else if (dataLoadTimeoutName.equals(name)) {
-                hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, value));
-            } else if (clusterDataRecoveryPolicyName.equals(name)) {
-                hrConfig.setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy
-                        .valueOf(upperCaseInternal(value)));
-            } else if (autoRemoveStaleDataName.equals(name)) {
-                hrConfig.setAutoRemoveStaleData(getBooleanValue(value));
+            if ("encryption-at-rest".equals(name)) {
+                handleEncryptionAtRest(n, hrConfig);
+            } else {
+                String value = getTextContent(n);
+                if ("base-dir".equals(name)) {
+                    hrConfig.setBaseDir(new File(value).getAbsoluteFile());
+                } else if ("backup-dir".equals(name)) {
+                    hrConfig.setBackupDir(new File(value).getAbsoluteFile());
+                } else if (parallelismName.equals(name)) {
+                    hrConfig.setParallelism(getIntegerValue(parallelismName, value));
+                } else if (validationTimeoutName.equals(name)) {
+                    hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, value));
+                } else if (dataLoadTimeoutName.equals(name)) {
+                    hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, value));
+                } else if (clusterDataRecoveryPolicyName.equals(name)) {
+                    hrConfig.setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.valueOf(upperCaseInternal(value)));
+                } else if (autoRemoveStaleDataName.equals(name)) {
+                    hrConfig.setAutoRemoveStaleData(getBooleanValue(value));
+                }
             }
         }
         config.setHotRestartPersistenceConfig(hrConfig);
+    }
+
+    private void handleEncryptionAtRest(Node encryptionAtRestRoot, HotRestartPersistenceConfig hrConfig)
+            throws Exception {
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        handleViaReflection(encryptionAtRestRoot, hrConfig, encryptionAtRestConfig, "secure-store");
+        for (Node secureStore : childElementsWithName(encryptionAtRestRoot, "secure-store")) {
+            handleSecureStore(secureStore, encryptionAtRestConfig);
+        }
+        hrConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+    }
+
+    private void handleSecureStore(Node secureStoreRoot, EncryptionAtRestConfig encryptionAtRestConfig) {
+        Node n = firstChildElement(secureStoreRoot);
+        if (n != null) {
+            String name = cleanNodeName(n);
+            SecureStoreConfig secureStoreConfig;
+            if ("keystore".equals(name)) {
+                secureStoreConfig = handleJavaKeyStore(n);
+            } else if ("vault".equals(name)) {
+                secureStoreConfig = handleVault(n);
+            } else {
+                throw new InvalidConfigurationException("Unrecognized Secure Store type: " + name);
+            }
+            encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+        }
+    }
+
+    private SecureStoreConfig handleJavaKeyStore(Node keyStoreRoot) {
+        File path = null;
+        String password = null;
+        String type = null;
+        String currentKeyAlias = null;
+        int pollingInterval = JavaKeyStoreSecureStoreConfig.DEFAULT_POLLING_INTERVAL;
+        for (Node n : childElements(keyStoreRoot)) {
+            String name = cleanNodeName(n);
+            String value = getTextContent(n);
+            if ("path".equals(name)) {
+                path = new File(value).getAbsoluteFile();
+            } else if ("type".equals(name)) {
+                type = value;
+            } else if ("password".equals(name)) {
+                password = value;
+            } else if ("current-key-alias".equals(name)) {
+                currentKeyAlias = value;
+            } else if ("polling-interval".equals(name)) {
+                pollingInterval = parseInt(value);
+            }
+        }
+        JavaKeyStoreSecureStoreConfig keyStoreSecureStoreConfig = new JavaKeyStoreSecureStoreConfig(path)
+                .setPassword(password)
+                .setPollingInterval(pollingInterval)
+                .setCurrentKeyAlias(currentKeyAlias);
+
+        if (type != null) {
+            keyStoreSecureStoreConfig.setType(type);
+        }
+        return keyStoreSecureStoreConfig;
+    }
+
+    private SecureStoreConfig handleVault(Node vaultRoot) {
+        String address = null;
+        String secretPath = null;
+        String token = null;
+        SSLConfig sslConfig = null;
+        int pollingInterval = VaultSecureStoreConfig.DEFAULT_POLLING_INTERVAL;
+        for (Node n : childElements(vaultRoot)) {
+            String name = cleanNodeName(n);
+            String value = getTextContent(n);
+            if ("address".equals(name)) {
+                address = value;
+            } else if ("secret-path".equals(name)) {
+                secretPath = value;
+            } else if ("token".equals(name)) {
+                token = value;
+            } else if ("ssl".equals(name)) {
+                sslConfig = parseSslConfig(n);
+            } else if ("polling-interval".equals(name)) {
+                pollingInterval = parseInt(value);
+            }
+        }
+        VaultSecureStoreConfig vaultSecureStoreConfig = new VaultSecureStoreConfig(address, secretPath, token)
+                .setSSLConfig(sslConfig)
+                .setPollingInterval(pollingInterval);
+        return vaultSecureStoreConfig;
     }
 
     private void handleCRDTReplication(Node root) {
@@ -981,26 +1072,41 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         handleInterfacesList(node, interfaces);
     }
 
-    protected void handleViaReflection(Node node, Object parent, Object child) throws Exception {
+    protected void handleViaReflection(Node node, Object parent, Object child, String... nodeExclusions) throws Exception {
         NamedNodeMap attributes = node.getAttributes();
         if (attributes != null) {
             for (int a = 0; a < attributes.getLength(); a++) {
                 Node att = attributes.item(a);
-                invokeSetter(child, att, att.getNodeValue());
+                if (!excludeNode(att, nodeExclusions)) {
+                    invokeSetter(child, att, att.getNodeValue());
+                }
             }
         }
         for (Node n : childElements(node)) {
-            if (n instanceof Element) {
+            if (n instanceof Element && !excludeNode(n, nodeExclusions)) {
                 invokeSetter(child, n, getTextContent(n).trim());
             }
         }
         attachChildConfig(parent, child);
     }
 
+    private static boolean excludeNode(Node n, String... nodeExclusions) {
+        if (nodeExclusions.length > 0) {
+            String name = cleanNodeName(n);
+            for (String exclusion : nodeExclusions) {
+                if (name.equals(exclusion)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static void invokeSetter(Object target, Node node, String argument) {
         Method method = getMethod(target, "set" + toPropertyName(cleanNodeName(node)), true);
         if (method == null) {
-            throw new InvalidConfigurationException("Invalid element/attribute name in the configuration: " + node);
+            throw new InvalidConfigurationException("Invalid element/attribute name in the configuration: "
+                    + cleanNodeName(node));
         }
         Class<?> arg = method.getParameterTypes()[0];
         Object coercedArg =

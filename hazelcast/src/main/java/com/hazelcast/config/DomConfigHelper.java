@@ -79,11 +79,25 @@ public final class DomConfigHelper {
     }
 
     public static Iterable<Node> childElements(Node node) {
-        return new IterableNodeList(node, Node.ELEMENT_NODE);
+        return new IterableNodeList(node, Node.ELEMENT_NODE, null);
+    }
+
+    public static Iterable<Node> childElementsWithName(Node node, String nodeName) {
+        return new IterableNodeList(node, Node.ELEMENT_NODE, nodeName);
+    }
+
+    public static Node childElementWithName(Node node, String nodeName) {
+        Iterator<Node> it = childElementsWithName(node, nodeName).iterator();
+        return it.hasNext() ? it.next() : null;
+    }
+
+    public static Node firstChildElement(Node node) {
+        Iterator<Node> it = new IterableNodeList(node, Node.ELEMENT_NODE, null).iterator();
+        return it.hasNext() ? it.next() : null;
     }
 
     public static Iterable<Node> asElementIterable(NodeList list) {
-        return new IterableNodeList(list, Node.ELEMENT_NODE);
+        return new IterableNodeList(list, Node.ELEMENT_NODE, null);
     }
 
     public static String cleanNodeName(final Node node) {
@@ -200,15 +214,17 @@ public final class DomConfigHelper {
         private final NodeList wrapped;
         private final int maximum;
         private final short nodeType;
+        private final String nodeName;
 
-        IterableNodeList(Node parent, short nodeType) {
-            this(parent.getChildNodes(), nodeType);
+        IterableNodeList(Node parent, short nodeType, String nodeName) {
+            this(parent.getChildNodes(), nodeType, nodeName);
         }
 
-        IterableNodeList(NodeList wrapped, short nodeType) {
+        IterableNodeList(NodeList wrapped, short nodeType, String nodeName) {
             this.wrapped = wrapped;
             this.nodeType = nodeType;
             this.maximum = wrapped.getLength();
+            this.nodeName = nodeName;
         }
 
         @Override
@@ -221,7 +237,8 @@ public final class DomConfigHelper {
                     next = null;
                     for (; index < maximum; index++) {
                         final Node item = wrapped.item(index);
-                        if (nodeType == 0 || item.getNodeType() == nodeType) {
+                        if ((nodeType == 0 || item.getNodeType() == nodeType)
+                                && (nodeName == null || nodeName.equals(cleanNodeName(item)))) {
                             next = item;
                             return true;
                         }

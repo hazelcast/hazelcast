@@ -37,6 +37,7 @@ import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.EventJournalConfig;
@@ -97,6 +98,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
@@ -1265,6 +1267,23 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2222, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(PARTIAL_RECOVERY_MOST_COMPLETE, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
         assertFalse(hotRestartPersistenceConfig.isAutoRemoveStaleData());
+        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertNotNull(encryptionAtRestConfig);
+        assertTrue(encryptionAtRestConfig.isEnabled());
+        assertEquals("AES/CBC/PKCS5Padding", encryptionAtRestConfig.getAlgorithm());
+        assertEquals("sugar", encryptionAtRestConfig.getSalt());
+        assertEquals(16, encryptionAtRestConfig.getKeySize());
+        assertTrue(encryptionAtRestConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig);
+        VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) encryptionAtRestConfig.getSecureStoreConfig();
+        assertEquals("http://localhost:1234", vaultConfig.getAddress());
+        assertEquals("secret/path", vaultConfig.getSecretPath());
+        assertEquals("token", vaultConfig.getToken());
+        SSLConfig sslConfig = vaultConfig.getSSLConfig();
+        assertNotNull(sslConfig);
+        assertTrue(sslConfig.isEnabled());
+        assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
+        assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
+        assertEquals(60, vaultConfig.getPollingInterval());
     }
 
     @Test
