@@ -107,7 +107,7 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
         this.ioService = ioService;
         this.networking = networking;
         this.metricsRegistry = metricsRegistry;
-        this.refreshStatsTask = new RefreshNetworkStatsTask();
+        this.refreshStatsTask = new RefreshNetworkStatsTask(endpointManagers);
         this.refreshStatsIntervalSeconds = properties != null ? properties.getInteger(NETWORK_STATS_REFRESH_INTERVAL_SECONDS) : 1;
         this.registry = registry;
         this.logger = loggingService.getLogger(TcpIpNetworkingService.class);
@@ -125,7 +125,7 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
             this.aggregateEndpointManager = new UnifiedAggregateEndpointManager(unifiedEndpointManager, endpointManagers);
         } else {
             this.aggregateEndpointManager = new DefaultAggregateEndpointManager(endpointManagers);
-            refreshStatsTask.registerMetrics();
+            refreshStatsTask.registerMetrics(metricsRegistry);
         }
 
         metricsRegistry.registerDynamicMetricsProvider(new MetricsProvider(acceptorRef, endpointManagers));
@@ -312,12 +312,14 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
      * @see EndpointManager#getNetworkStats()
      * @see AggregateEndpointManager#getNetworkStats()
      */
-    private class RefreshNetworkStatsTask implements Runnable {
+    private static final class RefreshNetworkStatsTask implements Runnable {
 
+        private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers;
         private final EnumMap<ProtocolType, AtomicLong> bytesReceivedPerProtocol;
         private final EnumMap<ProtocolType, AtomicLong> bytesSentPerProtocol;
 
-        RefreshNetworkStatsTask() {
+        RefreshNetworkStatsTask(ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers) {
+            this.endpointManagers = endpointManagers;
             bytesReceivedPerProtocol = new EnumMap<>(ProtocolType.class);
             bytesSentPerProtocol = new EnumMap<>(ProtocolType.class);
             for (ProtocolType type : ProtocolType.valuesAsSet()) {
@@ -326,7 +328,7 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
             }
         }
 
-        void registerMetrics() {
+        void registerMetrics(MetricsRegistry metricsRegistry) {
             for (final ProtocolType type : ProtocolType.valuesAsSet()) {
                 metricsRegistry.registerStaticProbe(this, "tcp.bytesReceived." + type.name(), ProbeLevel.INFO,
                         (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesReceivedPerProtocol.get(type).get());
