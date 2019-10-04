@@ -872,7 +872,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         String groupName = getGroupNameForProxy(name);
         if (cpSubsystemEnabled) {
             try {
-                CPGroupSummary group = getGroupSummaryForProxy(groupName).join();
+                CPGroupSummary group = getGroupSummaryForProxy(groupName).joinInternal();
                 if (group != null) {
                     return (RaftGroupId) group.id();
                 }

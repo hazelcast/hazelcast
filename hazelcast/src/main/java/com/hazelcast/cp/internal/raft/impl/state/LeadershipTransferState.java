@@ -46,7 +46,11 @@ public class LeadershipTransferState {
     }
 
     public boolean complete(Object value) {
-        return resultFuture.complete(value);
+        if (value instanceof Throwable) {
+            return resultFuture.completeExceptionally((Throwable) value);
+        } else {
+            return resultFuture.complete(value);
+        }
     }
 
     public void notify(RaftEndpoint targetEndpoint, final InternalCompletableFuture otherFuture) {
