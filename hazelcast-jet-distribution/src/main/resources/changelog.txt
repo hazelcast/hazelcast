@@ -10,7 +10,7 @@ S3 buckets.
 * IMap sources and sinks have been rewritten to make better use of cooperative
 multi-threading, resulting in significantly increased performance.
 * Various job lifecycle improvements to allow small batch jobs to run with less latency.
-* Updated Hazelcast IMDG version to 3.12.2.
+* Updated Hazelcast IMDG version to 3.12.3.
 
 ** Hazelcast Jet 3.1 **
 

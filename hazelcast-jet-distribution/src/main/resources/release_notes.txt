@@ -24,7 +24,7 @@ The label in the brackets refer to the respective module.
 [core] Support for multigraphs in DAG [#1332]
 [core] Cap number of job results in the cluster to 1,000 and add configuration property [#1495]
 [core] Replace job ID generator with FlakeID [#1488]
-[core] Update Hazelcast to 3.12.2 [#1515]
+[core] Update Hazelcast to 3.12.3 [#1673]
 [core] Add ability to configure both min and max idle time for both cooperative/non-cooperative threads [#1507]
 [core] Make it optional to enable/disable metrics for a specific job [#1509]
 [core] Add extended information to DOT format output [#1526]
