@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
 
 class DataRecord extends AbstractRecord<Data> {
     protected volatile Data value;
@@ -29,11 +28,6 @@ class DataRecord extends AbstractRecord<Data> {
     }
 
     DataRecord() {
-    }
-
-    @Override
-    public byte getMatchingRecordReaderWriterId() {
-        return DATA_RECORD_READER_WRITER.getId();
     }
 
     @Override

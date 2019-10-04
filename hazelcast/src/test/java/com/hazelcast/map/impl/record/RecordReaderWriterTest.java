@@ -40,6 +40,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RecordReaderWriterTest {
+
     InternalSerializationService ss;
 
     @Before
@@ -50,22 +51,22 @@ public class RecordReaderWriterTest {
 
     @Test
     public void data_record_matching_reader_writer_id_is_data_record_reader_writer_id() {
-        assertEquals(DATA_RECORD_READER_WRITER.getId(), new DataRecord().getMatchingRecordReaderWriterId());
+        assertEquals(DATA_RECORD_READER_WRITER, new DataRecord().getMatchingRecordReaderWriter());
     }
 
     @Test
     public void data_record_with_stats_matching_reader_writer_id_is_data_record_with_stats_reader_writer_id() {
-        assertEquals(DATA_RECORD_WITH_STATS_READER_WRITER.getId(), new DataRecordWithStats().getMatchingRecordReaderWriterId());
+        assertEquals(DATA_RECORD_WITH_STATS_READER_WRITER, new DataRecordWithStats().getMatchingRecordReaderWriter());
     }
 
     @Test
     public void object_record_matching_reader_writer_id_is_data_record_reader_writer_id() {
-        assertEquals(DATA_RECORD_READER_WRITER.getId(), new ObjectRecord().getMatchingRecordReaderWriterId());
+        assertEquals(DATA_RECORD_READER_WRITER, new ObjectRecord().getMatchingRecordReaderWriter());
     }
 
     @Test
     public void object_record_with_stats_matching_reader_writer_id_is_data_record_with_stats_reader_writer_id() {
-        assertEquals(DATA_RECORD_WITH_STATS_READER_WRITER.getId(), new ObjectRecordWithStats().getMatchingRecordReaderWriterId());
+        assertEquals(DATA_RECORD_WITH_STATS_READER_WRITER, new ObjectRecordWithStats().getMatchingRecordReaderWriter());
     }
 
     @Test
@@ -120,13 +121,9 @@ public class RecordReaderWriterTest {
     private Record writeReadAndGet(Record expectedRecord, Data dataValue) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ObjectDataOutputStream out = new ObjectDataOutputStream(outputStream, ss);
-
-        RecordReaderWriter readerWriter = RecordReaderWriter.getById(expectedRecord.getMatchingRecordReaderWriterId());
-        readerWriter.writeRecord(out, expectedRecord, dataValue);
-
+        Records.writeRecord(out, expectedRecord, dataValue);
         ObjectDataInputStream in = new ObjectDataInputStream(new ByteArrayInputStream(outputStream.toByteArray()), ss);
-        in.readByte();
-        return readerWriter.readRecord(in);
+        return Records.readRecord(in);
     }
 
     private static Record<Data> asDataRecord(Record fromRecord, Data value) {

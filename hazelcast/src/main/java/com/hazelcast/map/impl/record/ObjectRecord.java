@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.record;
 
-import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
-
 public class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
     private volatile Object value;
 
@@ -28,11 +26,6 @@ public class ObjectRecord extends AbstractRecord<Object> implements Record<Objec
     ObjectRecord(Object value) {
         super();
         this.value = value;
-    }
-
-    @Override
-    public byte getMatchingRecordReaderWriterId() {
-        return DATA_RECORD_READER_WRITER.getId();
     }
 
     // as there is no easy way to calculate the size of

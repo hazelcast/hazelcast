@@ -35,7 +35,8 @@ public final class Records {
     }
 
     public static void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
-        getById(record.getMatchingRecordReaderWriterId()).writeRecord(out, record, dataValue);
+        out.writeByte(record.getMatchingRecordReaderWriter().getId());
+        record.getMatchingRecordReaderWriter().writeRecord(out, record, dataValue);
     }
 
     public static Record readRecord(ObjectDataInput in) throws IOException {

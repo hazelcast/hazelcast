@@ -181,7 +181,7 @@ public interface Record<V> {
      * @return record reader writer id to be used
      * when serializing/de-serializing this record object.
      */
-    byte getMatchingRecordReaderWriterId();
+    RecordReaderWriter getMatchingRecordReaderWriter();
 
     int getRawTtl();
 

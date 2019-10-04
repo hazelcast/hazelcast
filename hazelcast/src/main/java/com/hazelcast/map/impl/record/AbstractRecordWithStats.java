@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.internal.util.Clock;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 
 /**
  * @param <V> type of {@link AbstractRecord}
@@ -94,6 +95,11 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     @Override
     public void setRawExpirationTime(int time) {
         this.expirationTime = time;
+    }
+
+    @Override
+    public RecordReaderWriter getMatchingRecordReaderWriter() {
+        return DATA_RECORD_WITH_STATS_READER_WRITER;
     }
 
     @Override

@@ -31,7 +31,6 @@ public enum RecordReaderWriter {
         @Override
         void writeRecord(ObjectDataOutput out,
                          Record record, Data dataValue) throws IOException {
-            out.writeByte(record.getMatchingRecordReaderWriterId());
             out.writeData(record.getKey());
             out.writeData(dataValue);
             out.writeInt(record.getRawTtl());
@@ -63,7 +62,6 @@ public enum RecordReaderWriter {
         @Override
         void writeRecord(ObjectDataOutput out,
                          Record record, Data dataValue) throws IOException {
-            out.writeByte(record.getMatchingRecordReaderWriterId());
             out.writeData(record.getKey());
             out.writeData(dataValue);
             out.writeInt(record.getRawTtl());

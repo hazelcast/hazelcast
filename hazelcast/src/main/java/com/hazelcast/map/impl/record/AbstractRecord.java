@@ -25,6 +25,7 @@ import java.util.Objects;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -53,6 +54,11 @@ public abstract class AbstractRecord<V> implements Record<V> {
     private transient Metadata metadata;
 
     AbstractRecord() {
+    }
+
+    @Override
+    public RecordReaderWriter getMatchingRecordReaderWriter() {
+        return DATA_RECORD_READER_WRITER;
     }
 
     @Override
