@@ -36,7 +36,7 @@ import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Collection;

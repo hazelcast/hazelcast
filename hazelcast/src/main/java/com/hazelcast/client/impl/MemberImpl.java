@@ -19,7 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.AbstractMember;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.version.MemberVersion;

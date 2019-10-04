@@ -25,7 +25,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.EndpointManager;

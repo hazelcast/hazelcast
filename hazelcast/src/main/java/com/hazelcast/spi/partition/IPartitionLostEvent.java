@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.partition;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * Internal event that is dispatched to {@link PartitionAwareService#onPartitionLost}

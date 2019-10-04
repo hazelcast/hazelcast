@@ -20,7 +20,7 @@ import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngine;

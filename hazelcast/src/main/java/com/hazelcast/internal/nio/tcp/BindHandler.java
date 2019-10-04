@@ -21,7 +21,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.cluster.impl.ExtendedBindMessage;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.IOService;

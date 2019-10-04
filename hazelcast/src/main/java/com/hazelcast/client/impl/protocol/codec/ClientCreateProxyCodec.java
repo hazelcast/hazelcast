@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("d3497063d7cd3d656460951e03180e75")
+@Generated("8a1fc176fd5dac1b8c11a9fe3a91f4ce")
 public final class ClientCreateProxyCodec {
     //hex: 0x000500
     public static final int REQUEST_MESSAGE_TYPE = 1280;
@@ -77,10 +77,10 @@ public final class ClientCreateProxyCodec {
         /**
          * TODO DOC
          */
-        public com.hazelcast.nio.Address target;
+        public com.hazelcast.cluster.Address target;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String serviceName, com.hazelcast.nio.Address target) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String serviceName, com.hazelcast.cluster.Address target) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

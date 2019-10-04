@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.cluster;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;

@@ -18,7 +18,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.ArrayList;

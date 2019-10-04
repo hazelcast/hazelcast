@@ -36,7 +36,7 @@ public class PartitionReplicaConstructor extends AbstractStarterObjectConstructo
             throws Exception {
         ClassLoader classloader = targetClass.getClassLoader();
         Class<?> replicaClass = classloader.loadClass("com.hazelcast.internal.partition.PartitionReplica");
-        Class<?> addressClass = classloader.loadClass("com.hazelcast.nio.Address");
+        Class<?> addressClass = classloader.loadClass("com.hazelcast.cluster.Address");
         Constructor<?> constructor = targetClass.getDeclaredConstructor(addressClass, UUID.class);
 
         Object address = getFieldValueReflectively(delegate, "address");

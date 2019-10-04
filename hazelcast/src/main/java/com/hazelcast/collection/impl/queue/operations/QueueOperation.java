@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.queue.QueueEvent;
 import com.hazelcast.collection.impl.queue.QueueEventFilter;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;

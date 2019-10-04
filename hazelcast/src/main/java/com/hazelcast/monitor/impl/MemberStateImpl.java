@@ -42,7 +42,7 @@ import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.WanSyncState;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.net.UnknownHostException;
 import java.util.Collection;

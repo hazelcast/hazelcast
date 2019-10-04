@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.connection.nio;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.concurrent.RejectedExecutionException;
 

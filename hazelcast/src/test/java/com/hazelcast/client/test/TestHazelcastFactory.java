@@ -29,7 +29,7 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

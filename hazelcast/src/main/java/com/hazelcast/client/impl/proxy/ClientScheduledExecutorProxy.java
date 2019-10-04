@@ -29,7 +29,7 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;

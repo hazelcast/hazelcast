@@ -35,7 +35,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("c4740cf75a41924dfe217d28f0ff9079")
+@Generated("83dfacb586b9ae8fdfcc4b6ec5e76579")
 public final class ClientAddPartitionListenerCodec {
     //hex: 0x001200
     public static final int REQUEST_MESSAGE_TYPE = 4608;
@@ -95,7 +95,7 @@ public final class ClientAddPartitionListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion) {
+    public static ClientMessage encodePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITIONS_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -115,12 +115,12 @@ public final class ClientAddPartitionListenerCodec {
             if (messageType == EVENT_PARTITIONS_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int partitionStateVersion = decodeInt(initialFrame.content, EVENT_PARTITIONS_PARTITION_STATE_VERSION_FIELD_OFFSET);
-                java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions = EntryListCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
+                java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions = EntryListCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
                 handlePartitionsEvent(partitions, partitionStateVersion);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handlePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion);
+        public abstract void handlePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion);
     }
 }

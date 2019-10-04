@@ -18,7 +18,7 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.Map;
 

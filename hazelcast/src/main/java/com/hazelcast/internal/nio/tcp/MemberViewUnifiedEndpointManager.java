@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.internal.networking.NetworkStats;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;

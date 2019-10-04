@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.IOService;
 
 import static java.lang.System.currentTimeMillis;

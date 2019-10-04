@@ -22,7 +22,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.test.HazelcastTestSupport;

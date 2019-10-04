@@ -32,11 +32,11 @@ import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 
 import java.util.ArrayList;
 import java.util.Collection;

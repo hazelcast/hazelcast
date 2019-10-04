@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 

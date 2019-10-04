@@ -17,7 +17,7 @@
 package com.hazelcast.cp.session;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * Represents a CP session.

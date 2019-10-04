@@ -19,7 +19,7 @@ package com.hazelcast.client.splitbrainprotection;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 

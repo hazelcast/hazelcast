@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.connection;
 
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * Provides initial addresses for client to find and connect to a node &

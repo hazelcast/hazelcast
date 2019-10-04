@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.spi;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.io.IOException;
 import java.util.function.Consumer;

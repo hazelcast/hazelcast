@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated("ebaf40b30f167b4000dd00423726aa24")
+@Generated("a130e83890d245136a3bc8b6538cb1b2")
 public final class MapFetchNearCacheInvalidationMetadataCodec {
     //hex: 0x014200
     public static final int REQUEST_MESSAGE_TYPE = 82432;
@@ -57,10 +57,10 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
         /**
          * TODO DOC
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.util.Collection<java.lang.String> names, com.hazelcast.nio.Address address) {
+    public static ClientMessage encodeRequest(java.util.Collection<java.lang.String> names, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

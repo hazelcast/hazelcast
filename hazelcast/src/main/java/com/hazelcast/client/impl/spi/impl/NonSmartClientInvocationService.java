@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.io.IOException;
 
