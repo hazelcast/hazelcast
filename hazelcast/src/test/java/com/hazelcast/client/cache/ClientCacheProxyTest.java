@@ -55,7 +55,7 @@ public class ClientCacheProxyTest extends ClientTestSupport {
     public void clusterRestart_proxyRemainsUsableOnClient() {
         HazelcastInstance instance = factory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
         CachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);

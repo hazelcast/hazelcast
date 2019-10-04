@@ -72,8 +72,7 @@ import static org.springframework.util.Assert.isTrue;
  * <pre>{@code
  *   <hz:client id="client">
  *      <hz:cluster name="${cluster.name}" password="${cluster.password}" />
- *      <hz:network connection-attempt-limit="3"
- *          connection-attempt-period="3000"
+ *      <hz:network
  *          connection-timeout="1000"
  *          redo-operation="true"
  *          smart-routing="true">

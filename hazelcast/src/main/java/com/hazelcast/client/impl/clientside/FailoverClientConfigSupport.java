@@ -289,12 +289,6 @@ public final class FailoverClientConfigSupport {
         if (mainNetworkConfig.getConnectionTimeout() != alternativeNetworkConfig.getConnectionTimeout()) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:connectionTimeout");
         }
-        if (mainNetworkConfig.getConnectionAttemptLimit() != alternativeNetworkConfig.getConnectionAttemptLimit()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:connectionAttemptLimit");
-        }
-        if (mainNetworkConfig.getConnectionAttemptPeriod() != alternativeNetworkConfig.getConnectionAttemptPeriod()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:connectionAttemptPeriod");
-        }
         if (notEqual(mainNetworkConfig.getSocketOptions(), alternativeNetworkConfig.getSocketOptions())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:socketOptions");
         }

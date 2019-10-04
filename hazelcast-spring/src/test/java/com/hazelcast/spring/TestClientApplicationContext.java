@@ -200,9 +200,7 @@ public class TestClientApplicationContext {
 
         ClientConfig config = client.getClientConfig();
         assertEquals("13", config.getProperty("hazelcast.client.retry.count"));
-        assertEquals(3, config.getNetworkConfig().getConnectionAttemptLimit());
         assertEquals(1000, config.getNetworkConfig().getConnectionTimeout());
-        assertEquals(3000, config.getNetworkConfig().getConnectionAttemptPeriod());
 
         ClientConfig config2 = client2.getClientConfig();
         assertEquals(credentials, config2.getSecurityConfig().getCredentials());
@@ -288,7 +286,7 @@ public class TestClientApplicationContext {
         assertNotNull(client5);
 
         ClientConfig config = client5.getClientConfig();
-        assertEquals(0, config.getNetworkConfig().getConnectionAttemptLimit());
+        assertFalse(config.getConnectionStrategyConfig().getConnectionRetryConfig().isFailOnMaxBackoff());
     }
 
     @Test
@@ -464,7 +462,6 @@ public class TestClientApplicationContext {
     public void testConnectionRetry() {
         ConnectionRetryConfig connectionRetryConfig = connectionRetryClient
                 .getClientConfig().getConnectionStrategyConfig().getConnectionRetryConfig();
-        assertTrue(connectionRetryConfig.isEnabled());
         assertTrue(connectionRetryConfig.isFailOnMaxBackoff());
         assertEquals(0.5, connectionRetryConfig.getJitter(), 0);
         assertEquals(2000, connectionRetryConfig.getInitialBackoffMillis());

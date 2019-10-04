@@ -73,7 +73,7 @@ public class ClientTxnMapTest {
     public void setup() {
         hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 

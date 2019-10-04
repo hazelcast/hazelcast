@@ -24,11 +24,18 @@
         <property name="hazelcast.discovery.enabled">true</property>
     </properties>
 
+    <connection-strategy>
+        <connection-retry>
+            <multiplier>2</multiplier>
+            <max-backoff-millis>2000</max-backoff-millis>
+            <initial-backoff-millis>1000</initial-backoff-millis>
+            <jitter>0</jitter>
+            <fail-on-max-backoff>true</fail-on-max-backoff>
+        </connection-retry>
+    </connection-strategy>
     <network>
         <aws enabled="false"/>
         <connection-timeout>5000</connection-timeout>
-        <connection-attempt-period>500</connection-attempt-period>
-        <connection-attempt-limit>1</connection-attempt-limit>
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
         <discovery-strategies>

@@ -61,7 +61,7 @@ public class TxnMapDeserializationTest extends HazelcastTestSupport {
                         return new SampleIdentified();
                     }
                 });
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.getMap("test").put(EXISTING_KEY, EXISTING_VALUE);

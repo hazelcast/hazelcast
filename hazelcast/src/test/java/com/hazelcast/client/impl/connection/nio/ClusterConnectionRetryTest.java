@@ -36,8 +36,6 @@ import org.junit.runner.RunWith;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterConnectionRetryTest extends ClientTestSupport {
@@ -68,7 +66,6 @@ public class ClusterConnectionRetryTest extends ClientTestSupport {
         connectionRetryConfig.setMultiplier(retryTimeoutMultiplier);
         connectionRetryConfig.setInitialBackoffMillis(baseRetryTimeoutMillis);
         connectionRetryConfig.setMaxBackoffMillis(capRetryTimeoutMillis);
-        connectionRetryConfig.setEnabled(true);
 
         ClientStateListener clientStateListener = new ClientStateListener(clientConfig);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -113,7 +110,6 @@ public class ClusterConnectionRetryTest extends ClientTestSupport {
         connectionRetryConfig.setMultiplier(retryTimeoutMultiplier);
         connectionRetryConfig.setInitialBackoffMillis(initialBackoffMillis);
         connectionRetryConfig.setMaxBackoffMillis(capRetryTimeoutMillis);
-        connectionRetryConfig.setEnabled(true);
 
         ClientStateListener clientStateListener = new ClientStateListener(clientConfig);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -135,41 +131,6 @@ public class ClusterConnectionRetryTest extends ClientTestSupport {
             long lowerBound = (long) (currentBackoffMillis - currentBackoffMillis * jitter);
             assertGreaterOrEquals("sleep between attempts", actualSleepBetweenAttempts, lowerBound);
             currentBackoffMillis *= retryTimeoutMultiplier;
-            last = attemptTimeStamp - startPoint;
-        }
-    }
-
-    @Test
-    public void testConnectionDefaultRetryAttempts() throws InterruptedException {
-        int connectionAttemptLimit = 3;
-        int connectionAttemptPeriod = 100;
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress("127.0.0.1:5701");
-        clientConfig.setProperty("hazelcast.client.connection.strategy.classname", RecordingStrategy.class.getName());
-        ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
-        connectionStrategyConfig.setAsyncStart(true);
-
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(connectionAttemptLimit);
-        clientConfig.getNetworkConfig().setConnectionAttemptPeriod(connectionAttemptPeriod);
-
-        ClientStateListener clientStateListener = new ClientStateListener(clientConfig);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
-        ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) clientImpl.getConnectionManager();
-        RecordingStrategy connectionStrategy = (RecordingStrategy) connectionManager.getConnectionStrategy();
-
-        clientStateListener.awaitDisconnected();
-        LinkedHashSet<Long> attemptTimeStamps = connectionStrategy.getAttemptTimeStamps();
-
-        assertEquals(connectionAttemptLimit, attemptTimeStamps.size());
-        Iterator<Long> iterator = attemptTimeStamps.iterator();
-        Long startPoint = iterator.next();
-        Long last = 0L;
-        while (iterator.hasNext()) {
-            Long attemptTimeStamp = iterator.next();
-            long actualSleepBetweenAttempts = attemptTimeStamp - startPoint - last;
-            assertGreaterOrEquals("sleep between attempts", actualSleepBetweenAttempts, connectionAttemptPeriod);
             last = attemptTimeStamp - startPoint;
         }
     }

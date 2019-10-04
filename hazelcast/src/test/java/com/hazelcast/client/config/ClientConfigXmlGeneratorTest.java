@@ -141,8 +141,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         expected.setSmartRouting(false)
                 .setRedoOperation(true)
                 .setConnectionTimeout(randomInt())
-                .setConnectionAttemptPeriod(randomInt())
-                .setConnectionAttemptLimit(randomInt())
                 .addAddress(randomString())
                 .setOutboundPortDefinitions(Collections.singleton(randomString()));
 
@@ -153,8 +151,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertFalse(actual.isSmartRouting());
         assertTrue(actual.isRedoOperation());
         assertEquals(expected.getConnectionTimeout(), actual.getConnectionTimeout());
-        assertEquals(expected.getConnectionAttemptPeriod(), actual.getConnectionAttemptPeriod());
-        assertEquals(expected.getConnectionAttemptLimit(), actual.getConnectionAttemptLimit());
         assertCollection(expected.getAddresses(), actual.getAddresses());
         assertCollection(expected.getOutboundPortDefinitions(), actual.getOutboundPortDefinitions());
     }

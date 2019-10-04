@@ -111,8 +111,6 @@
             <xs:element ref="smart-routing" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="redo-operation" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="connection-timeout" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="connection-attempt-period" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="connection-attempt-limit" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="socket-options" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
@@ -213,20 +211,6 @@
         <xs:simpleType>
             <xs:restriction base="xs:int">
                 <xs:minInclusive value="1"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="connection-attempt-period" default="3000">
-        <xs:simpleType>
-            <xs:restriction base="xs:int">
-                <xs:minInclusive value="1"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="connection-attempt-limit" default="2">
-        <xs:simpleType>
-            <xs:restriction base="xs:int">
-                <xs:minInclusive value="0"/>
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
@@ -400,7 +384,6 @@
             <xs:element name="fail-on-max-backoff" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="jitter" type="xs:double" minOccurs="0" maxOccurs="1" default="0.2"/>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
     </xs:complexType>
 
     <xs:simpleType name="reconnect-mode">

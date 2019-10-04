@@ -57,7 +57,7 @@ public class ClientTimeoutTest {
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         networkConfig.addAddress("8.8.8.8:5701");
         // Do only one connection-attempt
-        networkConfig.setConnectionAttemptLimit(1);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         // Timeout connection-attempt after 1000 millis
         networkConfig.setConnectionTimeout(1000);
 

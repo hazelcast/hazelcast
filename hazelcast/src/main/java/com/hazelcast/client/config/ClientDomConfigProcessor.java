@@ -176,13 +176,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleConnectionRetry(Node node, ClientConnectionStrategyConfig strategyConfig) {
-        Node enabledNode = node.getAttributes().getNamedItem("enabled");
-        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
-        if (!enabled) {
-            LOGGER.warning("Exponential Connection Strategy is not enabled.");
-        }
         ConnectionRetryConfig connectionRetryConfig = new ConnectionRetryConfig();
-        connectionRetryConfig.setEnabled(enabled);
 
         String initialBackoffMillis = "initial-backoff-millis";
         String maxBackoffMillis = "max-backoff-millis";
@@ -386,10 +380,6 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 clientNetworkConfig.setRedoOperation(Boolean.parseBoolean(getTextContent(child)));
             } else if ("connection-timeout".equals(nodeName)) {
                 clientNetworkConfig.setConnectionTimeout(Integer.parseInt(getTextContent(child)));
-            } else if ("connection-attempt-period".equals(nodeName)) {
-                clientNetworkConfig.setConnectionAttemptPeriod(Integer.parseInt(getTextContent(child)));
-            } else if ("connection-attempt-limit".equals(nodeName)) {
-                clientNetworkConfig.setConnectionAttemptLimit(Integer.parseInt(getTextContent(child)));
             } else if ("socket-options".equals(nodeName)) {
                 handleSocketOptions(child, clientNetworkConfig);
             } else if ("socket-interceptor".equals(nodeName)) {

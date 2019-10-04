@@ -287,9 +287,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         ClientConfig config = new ClientConfig();
         config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
-        ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.setConnectionAttemptLimit(1);
-        networkConfig.setConnectionAttemptPeriod(1);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
 
         try {
             HazelcastClient.newHazelcastClient(config);
@@ -311,8 +309,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
             }
         };
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.setConnectionAttemptLimit(1);
-        networkConfig.setConnectionAttemptPeriod(1);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         networkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(new DiscoveryStrategyConfig());
         networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
 
@@ -338,8 +335,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
             }
         };
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.setConnectionAttemptLimit(1);
-        networkConfig.setConnectionAttemptPeriod(1);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(1000);
         networkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(new DiscoveryStrategyConfig());
         networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
 
@@ -359,8 +355,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         clientConfig.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-        networkConfig.setConnectionAttemptLimit(1);
-        networkConfig.setConnectionAttemptPeriod(1);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         networkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(
                 new DiscoveryStrategyConfig(new NoMemberDiscoveryStrategyFactory(), Collections.<String, Comparable>emptyMap()));
 

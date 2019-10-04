@@ -53,7 +53,7 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
     @Test(expected = IllegalStateException.class)
     public void testNoClusterFound() throws Exception {
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptPeriod(1);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         hazelcastFactory.newHazelcastClient(clientConfig);
 
     }

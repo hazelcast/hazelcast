@@ -186,7 +186,6 @@ public class DeclarativeConfigFileHelper {
                 + HAZELCAST_CLIENT_START_TAG
                 + "  <instance-name>" + instanceName + "</instance-name>"
                 + "  <connection-strategy async-start=\"true\" reconnect-mode=\"OFF\">"
-                + "    <connection-retry enabled=\"false\" />"
                 + "  </connection-strategy>"
                 + HAZELCAST_CLIENT_END_TAG;
     }
@@ -213,9 +212,7 @@ public class DeclarativeConfigFileHelper {
                 + "  instance-name: " + instanceName + "\n"
                 + "  connection-strategy:\n"
                 + "    async-start: true\n"
-                + "    reconnect-mode: OFF\n"
-                + "    connection-retry:\n"
-                + "      enabled: false";
+                + "    reconnect-mode: OFF\n";
     }
 
     private String yamlFailoverClientConfig(int tryCount) {
