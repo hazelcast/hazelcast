@@ -30,7 +30,6 @@ import com.hazelcast.cache.impl.operation.CacheClearBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
-import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
@@ -118,7 +117,6 @@ public final class CacheDataSerializerHook
     public static final short KEY_ITERATION_RESULT = 23;
     public static final short ENTRY_PROCESSOR = 24;
     public static final short CLEAR_RESPONSE = 25;
-    public static final short CREATE_CONFIG = 26;
     public static final short GET_CONFIG = 27;
     public static final short MANAGEMENT_CONFIG = 28;
     public static final short LISTENER_REGISTRATION = 29;
@@ -194,7 +192,6 @@ public final class CacheDataSerializerHook
         constructors[KEY_ITERATION_RESULT] = arg -> new CacheKeyIterationResult();
         constructors[ENTRY_PROCESSOR] = arg -> new CacheEntryProcessorOperation();
         constructors[CLEAR_RESPONSE] = arg -> new CacheClearResponse();
-        constructors[CREATE_CONFIG] = arg -> new CacheCreateConfigOperation();
         constructors[GET_CONFIG] = arg -> new CacheGetConfigOperation();
         constructors[MANAGEMENT_CONFIG] = arg -> new CacheManagementConfigOperation();
         constructors[LISTENER_REGISTRATION] = arg -> new CacheListenerRegistrationOperation();
