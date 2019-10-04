@@ -25,7 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartition
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.UUID;

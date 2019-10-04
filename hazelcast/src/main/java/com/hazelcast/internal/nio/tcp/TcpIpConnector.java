@@ -18,7 +18,7 @@ package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.util.AddressUtil;

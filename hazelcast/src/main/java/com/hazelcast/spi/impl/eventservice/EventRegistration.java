@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.UUID;

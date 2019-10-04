@@ -17,7 +17,7 @@
 package com.hazelcast.internal.hotrestart;
 
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.Collections;
 import java.util.Set;

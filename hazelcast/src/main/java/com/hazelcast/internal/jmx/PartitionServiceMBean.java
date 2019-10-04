@@ -18,7 +18,7 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionService;
 
 import java.util.Map;

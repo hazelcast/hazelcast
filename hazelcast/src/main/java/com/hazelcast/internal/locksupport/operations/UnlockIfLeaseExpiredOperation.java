@@ -20,7 +20,7 @@ import com.hazelcast.internal.locksupport.LockDataSerializerHook;
 import com.hazelcast.internal.locksupport.LockStoreImpl;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi.impl.discovery;
 
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -27,7 +27,7 @@ import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

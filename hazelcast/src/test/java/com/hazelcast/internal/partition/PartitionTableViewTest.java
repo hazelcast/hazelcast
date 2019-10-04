@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

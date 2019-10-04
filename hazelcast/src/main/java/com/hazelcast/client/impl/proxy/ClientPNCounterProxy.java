@@ -29,7 +29,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 
 import java.util.ArrayList;

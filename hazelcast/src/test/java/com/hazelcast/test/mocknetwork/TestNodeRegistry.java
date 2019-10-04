@@ -21,7 +21,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeState;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.internal.util.AddressUtil;
 

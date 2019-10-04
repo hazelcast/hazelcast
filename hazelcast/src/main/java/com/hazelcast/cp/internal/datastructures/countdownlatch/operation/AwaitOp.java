@@ -24,7 +24,7 @@ import com.hazelcast.cp.internal.datastructures.countdownlatch.AwaitInvocationKe
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 

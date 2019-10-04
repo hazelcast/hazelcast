@@ -18,7 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.partition.PartitionAwareService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;

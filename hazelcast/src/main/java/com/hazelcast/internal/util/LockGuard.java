@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.UUID;
 

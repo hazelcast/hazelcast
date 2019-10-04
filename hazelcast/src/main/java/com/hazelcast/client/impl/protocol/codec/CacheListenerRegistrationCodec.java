@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("72e41e606020b794abda4ebda611ca89")
+@Generated("f9f459081892d0ea131714f27410c2bf")
 public final class CacheListenerRegistrationCodec {
     //hex: 0x151000
     public static final int REQUEST_MESSAGE_TYPE = 1380352;
@@ -69,10 +69,10 @@ public final class CacheListenerRegistrationCodec {
         /**
          * The address of the member server for which the listener is being registered for.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data listenerConfig, boolean shouldRegister, com.hazelcast.nio.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data listenerConfig, boolean shouldRegister, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

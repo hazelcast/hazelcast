@@ -17,7 +17,7 @@
 package com.hazelcast.spi.partition;
 
 import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionLostListener;

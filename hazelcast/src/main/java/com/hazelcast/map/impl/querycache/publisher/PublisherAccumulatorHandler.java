@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.querycache.accumulator.AccumulatorProcessor;
 import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import javax.annotation.Nonnull;

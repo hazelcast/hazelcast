@@ -20,7 +20,7 @@ import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.spi.impl.discovery;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.internal.util.AddressUtil;
 

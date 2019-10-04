@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("a6a73fa1e9b26ddb1a28a744b7ffe21b")
+@Generated("ae6494a9f06459b13d3e1a147047efcd")
 public final class PNCounterGetCodec {
     //hex: 0x200100
     public static final int REQUEST_MESSAGE_TYPE = 2097408;
@@ -71,10 +71,10 @@ public final class PNCounterGetCodec {
         /**
          * the target replica
          */
-        public com.hazelcast.nio.Address targetReplica;
+        public com.hazelcast.cluster.Address targetReplica;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, com.hazelcast.nio.Address targetReplica) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, com.hazelcast.cluster.Address targetReplica) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);

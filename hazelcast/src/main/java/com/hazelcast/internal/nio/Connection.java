@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

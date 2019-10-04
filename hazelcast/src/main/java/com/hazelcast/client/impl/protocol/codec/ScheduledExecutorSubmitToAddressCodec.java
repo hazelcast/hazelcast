@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to a member for execution, member is provided in the form of an address.
  */
-@Generated("69205f32694eb7fc5c9d737e1a754610")
+@Generated("d558690317b9e7634470e192ce23b55a")
 public final class ScheduledExecutorSubmitToAddressCodec {
     //hex: 0x1D0300
     public static final int REQUEST_MESSAGE_TYPE = 1901312;
@@ -60,7 +60,7 @@ public final class ScheduledExecutorSubmitToAddressCodec {
         /**
          * The address of the member where the task will get scheduled.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
 
         /**
          * type of schedule logic, values 0 for SINGLE_RUN, 1 for AT_FIXED_RATE
@@ -88,7 +88,7 @@ public final class ScheduledExecutorSubmitToAddressCodec {
         public long periodInMillis;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, com.hazelcast.nio.Address address, byte type, java.lang.String taskName, com.hazelcast.nio.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, com.hazelcast.cluster.Address address, byte type, java.lang.String taskName, com.hazelcast.nio.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);

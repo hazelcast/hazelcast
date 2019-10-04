@@ -28,7 +28,7 @@ import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.internal.partition.service.fragment.TestFragmentIncrementOperation;
 import com.hazelcast.internal.partition.service.fragment.TestFragmentedMigrationAwareService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.PartitionMigrationEvent;

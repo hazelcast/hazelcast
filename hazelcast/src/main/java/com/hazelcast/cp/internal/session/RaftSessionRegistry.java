@@ -20,7 +20,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSession.CPSessionOwnerType;
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

@@ -18,7 +18,7 @@ package com.hazelcast.cp;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.cluster.Cluster;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.UUID;
 

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import java.util.function.BiFunction;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;

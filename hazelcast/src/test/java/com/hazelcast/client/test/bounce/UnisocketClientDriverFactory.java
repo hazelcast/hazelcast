@@ -19,7 +19,7 @@ package com.hazelcast.client.test.bounce;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * Creates unisocket clients configured to connect to the cluster's steady member.

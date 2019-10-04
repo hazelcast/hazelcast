@@ -25,7 +25,7 @@ import com.hazelcast.internal.crdt.CRDTDataSerializerHook;
 import com.hazelcast.crdt.TargetNotReplicaException;
 import com.hazelcast.internal.crdt.pncounter.PNCounterImpl;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

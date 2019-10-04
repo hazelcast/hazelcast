@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.internal.services.ListenerWrapperEventFilter;
 import com.hazelcast.internal.services.NotifiableEventListener;

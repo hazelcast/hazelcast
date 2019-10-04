@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Dispose the task from the scheduler
  */
-@Generated("5a7e3eb3698d2fb8860fa6dfbf4c23af")
+@Generated("d4bff1d7c57b9537bc989877d92e9f56")
 public final class ScheduledExecutorDisposeFromAddressCodec {
     //hex: 0x1D1200
     public static final int REQUEST_MESSAGE_TYPE = 1905152;
@@ -62,10 +62,10 @@ public final class ScheduledExecutorDisposeFromAddressCodec {
         /**
          * The address of the member where the task will get scheduled.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.nio.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
