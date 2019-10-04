@@ -52,6 +52,7 @@ import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.spi.properties.GroupProperty.NETWORK_STATS_REFRESH_INTERVAL_SECONDS;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -69,6 +70,7 @@ public class TcpIpNetworkingService
     // accessed only in synchronized methods
     private ScheduledFuture refreshStatsFuture;
     private final RefreshNetworkStatsTask refreshStatsTask;
+    private final int refreshStatsIntervalSeconds;
     private final ServerSocketRegistry registry;
 
     private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers = new ConcurrentHashMap<>();
@@ -103,6 +105,7 @@ public class TcpIpNetworkingService
         this.networking = networking;
         this.metricsRegistry = metricsRegistry;
         this.refreshStatsTask = new RefreshNetworkStatsTask();
+        this.refreshStatsIntervalSeconds = properties.getInteger(NETWORK_STATS_REFRESH_INTERVAL_SECONDS);
         this.registry = registry;
         this.logger = loggingService.getLogger(TcpIpNetworkingService.class);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
@@ -186,7 +189,8 @@ public class TcpIpNetworkingService
         startAcceptor();
 
         if (unifiedEndpointManager == null) {
-            refreshStatsFuture = metricsRegistry.scheduleAtFixedRate(refreshStatsTask, 1, SECONDS, ProbeLevel.INFO);
+            refreshStatsFuture =
+                    metricsRegistry.scheduleAtFixedRate(refreshStatsTask, refreshStatsIntervalSeconds, SECONDS, ProbeLevel.INFO);
             refreshStatsTask.registerMetrics();
         }
     }
