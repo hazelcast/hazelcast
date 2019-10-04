@@ -17,7 +17,8 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
@@ -136,8 +137,8 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
 
         IMap<String, Employee> map = instance.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.HASH, "active");
 
         int size = 500;
         for (int i = 0; i < size; i++) {
@@ -163,8 +164,8 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     public void testQueryWithIndexesWhileMigrating() {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(getTestConfig());
         IMap<String, Employee> map = instance.getMap("employees");
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
         for (int i = 0; i < 500; i++) {
             map.put("e" + i, new Employee("name" + i, i % 50, ((i & 1) == 1), (double) i));
@@ -212,7 +213,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     private Config newConfigWithIndex(String mapName, String attribute) {
         Config config = getTestConfig();
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig(attribute, false));
+        config.getMapConfig(mapName).addIndexConfig(new IndexConfig(IndexType.HASH, attribute));
         return config;
     }
 

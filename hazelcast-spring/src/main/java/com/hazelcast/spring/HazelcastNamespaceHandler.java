@@ -50,6 +50,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
     private static final String PNCOUNTER = "PNCounter";
 
     static {
+        CP_TYPES.add(LOCK);
         CP_TYPES.add(SEMAPHORE);
         CP_TYPES.add(COUNT_DOWN_LATCH);
         CP_TYPES.add(ATOMIC_LONG);

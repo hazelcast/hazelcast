@@ -1234,10 +1234,8 @@ hazelcast:
   #         com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
   #         the source cache to the target cache unless the incoming entry is not null.
   # * "indexes":
-  # You can define indexes for your map using this element's "index" sub-elements. Each "index" has
-  # only the boolean "ordered" attribute. For example, if you will have a ranged query for a field of a map
-  # entry, then this attribute should be set to true. But if the field has a boolean value, then it should
-  # be set to false. Its default value is false.
+  # You can define indexes for your map using this element's "index" sub-elements. Index definition consists of type,
+  # optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
   # * "attributes":
   # You can define attributes that may be referenced in predicates, queries and indexes using this element's
   # "attribute" sub-elements. Each "attribute" has only the "extractor-class-name" attribute which you should define
@@ -1307,10 +1305,11 @@ hazelcast:
             - com.example.SampleFilter2
           republishing-enabled: false
       indexes:
-        name:
-          ordered: false
-        age:
-          ordered: true
+        - type: HASH
+          attributes:
+            - "name"
+        - attributes:
+          - "age"
       attributes:
         currency:
           extractor-class-name: com.bank.CurrencyExtractor
@@ -1371,8 +1370,8 @@ hazelcast:
             max-size-policy: ENTRY_COUNT
             eviction-policy: LFU
           indexes:
-            "...":
-              ordered: true
+            - attributes:
+              - "name"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #
@@ -1828,22 +1827,6 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
-
-  #
-  # ===== HAZELCAST LOCK CONFIGURATION =====
-  #
-  # Configuration element's name is "lock". It has the required attribute "name" with which you
-  # can specify the name of your Lock. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "split-brain-protection-ref":
-  #     Adds the split brain protection for this lock which you configure using the "split-brain-protection" element.
-  #     You should set the "split-brain-protection-ref"'s value
-  #     as the "split-brain-protection"'s name.
-  #
-  lock:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
-
 
   #
   # ===== HAZELCAST RINGBUFFER CONFIGURATION =====
@@ -3034,6 +3017,20 @@ hazelcast:
   #     group, and hence could be committed multiple times. If it is enabled,
   #     the public API call fails with
   #     com.hazelcast.core.IndeterminateOperationStateException
+  # * "persistence-enabled":
+  #     Flag to denote whether or not CP Subsystem Persistence is enabled.
+  #     If enabled, CP members persist their local CP data to stable storage and
+  #     can recover from crashes.
+  # * "base-dir":
+  #    Base directory to store all CP data when persistence-enabled
+  #    is true. This directory can be shared between multiple CP members.
+  #    Each CP member creates a unique directory for itself under the base
+  #    directory. This is especially useful for cloud environments where CP
+  #    members generally use a shared filesystem.
+  # * "data-load-timeout-seconds":
+  #   Timeout duration for CP members to restore their data from disk.
+  #   A CP member fails its startup if it cannot complete its CP data restore
+  #   process in the configured duration.
   #
   # * "raft-algorithm":
   #     These parameters tune specific parameters of Hazelcast’s Raft consensus
@@ -3105,6 +3102,9 @@ hazelcast:
     session-heartbeat-interval-seconds: 5
     missing-cp-member-auto-removal-seconds: 120
     fail-on-indeterminate-operation-state: false
+    persistence-enabled: true
+    base-dir: custom-cp-dir
+    data-load-timeout-seconds: 30
     raft-algorithm:
       leader-election-timeout-in-millis: 2000
       leader-heartbeat-period-in-millis: 5000

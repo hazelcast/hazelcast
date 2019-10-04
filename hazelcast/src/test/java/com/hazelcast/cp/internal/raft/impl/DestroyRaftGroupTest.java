@@ -16,8 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
@@ -29,7 +27,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,7 +36,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getStatus;
-import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newGroupWithService;
+import static com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder.newGroup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -51,10 +48,6 @@ public class DestroyRaftGroupTest extends HazelcastTestSupport {
 
     private LocalRaftGroup group;
 
-    @Before
-    public void init() {
-    }
-
     @After
     public void destroy() {
         if (group != null) {
@@ -64,7 +57,7 @@ public class DestroyRaftGroupTest extends HazelcastTestSupport {
 
     @Test
     public void when_destroyOpIsAppendedButNotCommitted_then_cannotAppendNewEntry() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(2, new RaftAlgorithmConfig());
+        group = newGroup(2);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -83,7 +76,7 @@ public class DestroyRaftGroupTest extends HazelcastTestSupport {
 
     @Test
     public void when_destroyOpIsAppended_then_statusIsTerminating() {
-        group = newGroupWithService(2, new RaftAlgorithmConfig());
+        group = newGroup(2);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -101,7 +94,7 @@ public class DestroyRaftGroupTest extends HazelcastTestSupport {
 
     @Test
     public void when_destroyOpIsCommitted_then_raftNodeIsTerminated() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(2, new RaftAlgorithmConfig());
+        group = newGroup(2);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -132,7 +125,7 @@ public class DestroyRaftGroupTest extends HazelcastTestSupport {
 
     @Test
     public void when_destroyOpIsTruncated_then_statusIsActive() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -146,7 +139,7 @@ public class DestroyRaftGroupTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             for (RaftNodeImpl raftNode : followers) {
-                Endpoint leaderEndpoint = getLeaderMember(raftNode);
+                RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
                 assertNotNull(leaderEndpoint);
                 assertNotEquals(leader.getLocalMember(), leaderEndpoint);
             }

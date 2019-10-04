@@ -28,7 +28,6 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
@@ -43,6 +42,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.security.Credentials;
 
 import javax.xml.transform.OutputKeys;
@@ -382,7 +382,7 @@ public final class ClientConfigXmlGenerator {
                                 "comparator-class-name", queryCache.getEvictionConfig().getComparatorClassName());
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
                 entryListeners(gen, queryCache.getEntryListenerConfigs());
-                indexes(gen, queryCache.getIndexConfigs());
+                IndexUtils.generateXml(gen, queryCache.getIndexConfigs());
                 //close query-cache
                 gen.close();
             }
@@ -424,17 +424,6 @@ public final class ClientConfigXmlGenerator {
                     .node("prefetch-validity-millis", flakeIdGenerator.getPrefetchValidityMillis())
                     .close();
         }
-    }
-
-    private static void indexes(XmlGenerator gen, List<MapIndexConfig> indexes) {
-        if (indexes.isEmpty()) {
-            return;
-        }
-        gen.open("indexes");
-        for (MapIndexConfig index : indexes) {
-            gen.node("index", index.getAttribute(), "ordered", index.isOrdered());
-        }
-        gen.close();
     }
 
     private static void entryListeners(XmlGenerator gen, List<EntryListenerConfig> entryListeners) {

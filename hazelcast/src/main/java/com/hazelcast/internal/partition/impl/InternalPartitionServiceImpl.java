@@ -163,10 +163,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         proxy = new PartitionServiceProxy(nodeEngine, this);
 
         MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(this, "partitions");
-        metricsRegistry.scanAndRegister(partitionStateManager, "partitions");
-        metricsRegistry.scanAndRegister(migrationManager, "partitions");
-        metricsRegistry.scanAndRegister(replicaManager, "partitions");
+        metricsRegistry.registerStaticMetrics(this, "partitions");
+        metricsRegistry.registerStaticMetrics(partitionStateManager, "partitions");
+        metricsRegistry.registerStaticMetrics(migrationManager, "partitions");
+        metricsRegistry.registerStaticMetrics(replicaManager, "partitions");
     }
 
     @Override

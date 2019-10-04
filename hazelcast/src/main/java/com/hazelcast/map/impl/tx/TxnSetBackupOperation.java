@@ -16,25 +16,51 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
+import java.io.IOException;
+import java.util.UUID;
+
+import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
+
 public class TxnSetBackupOperation extends PutBackupOperation {
+    private UUID transactionId;
 
     public TxnSetBackupOperation() {
     }
 
-    public TxnSetBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
+    public TxnSetBackupOperation(String name, Data dataKey, Data dataValue,
+                                 RecordInfo recordInfo, UUID transactionId) {
         super(name, dataKey, dataValue, recordInfo);
+        this.transactionId = transactionId;
     }
 
     @Override
     protected void runInternal() {
-        super.runInternal();
+        Record record = recordStore.putBackupTxn(dataKey, dataValue, recordInfo.getTtl(),
+                recordInfo.getMaxIdle(), isPutTransient(), getCallerProvenance(), transactionId);
 
+        applyRecordInfo(record, recordInfo);
         recordStore.forceUnlock(dataKey);
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

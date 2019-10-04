@@ -16,8 +16,11 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.monitor.impl.GlobalIndexesStats;
 import com.hazelcast.monitor.impl.IndexesStats;
@@ -26,8 +29,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
-import com.hazelcast.query.impl.predicates.PredicateUtils;
-import com.hazelcast.internal.serialization.SerializationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
@@ -54,10 +55,10 @@ public class Indexes {
     private final QueryContextProvider queryContextProvider;
     private final InternalSerializationService serializationService;
 
-    private final Map<String, InternalIndex> indexesByName = new ConcurrentHashMap<String, InternalIndex>(3);
+    private final Map<String, InternalIndex> indexesByName = new ConcurrentHashMap<>(3);
     private final AttributeIndexRegistry attributeIndexRegistry = new AttributeIndexRegistry();
     private final ConverterCache converterCache = new ConverterCache(this);
-    private final Map<String, Boolean> definitions = new ConcurrentHashMap<String, Boolean>();
+    private final Map<String, IndexConfig> definitions = new ConcurrentHashMap<>();
 
     private volatile InternalIndex[] indexes = EMPTY_INDEXES;
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
@@ -108,46 +109,32 @@ public class Indexes {
         return new Builder(ss, indexCopyBehavior);
     }
 
-    /**
-     * Obtains the existing index or creates a new one (if an index doesn't exist
-     * yet) for the given name in this indexes instance.
-     *
-     * @param name    the name of the index; the passed value might not
-     *                represent a canonical index name (as specified by
-     *                {@link Index#getName()}, in this case the method
-     *                canonicalizes it.
-     * @param ordered {@code true} if the new index should be ordered, {@code
-     *                false} otherwise.
-     * @param partitionStoreAdapter the reference to the store adapter. {@code null} if the index is global.
-     * @return the existing or created index.
-     */
-    public synchronized InternalIndex addOrGetIndex(String name, boolean ordered, StoreAdapter partitionStoreAdapter) {
+    public synchronized InternalIndex addOrGetIndex(IndexConfig indexConfig, StoreAdapter partitionStoreAdapter) {
+        String name = indexConfig.getName();
+
+        assert name != null;
+        assert !name.isEmpty();
+
         InternalIndex index = indexesByName.get(name);
         if (index != null) {
             return index;
         }
 
-        String[] components = PredicateUtils.parseOutCompositeIndexComponents(name);
-        if (components == null) {
-            name = PredicateUtils.canonicalizeAttribute(name);
-        } else {
-            name = PredicateUtils.constructCanonicalCompositeIndexName(components);
-        }
-
-        index = indexesByName.get(name);
-        if (index != null) {
-            return index;
-        }
-
-        index = indexProvider.createIndex(name, components, ordered, extractors, serializationService, indexCopyBehavior,
-                stats.createPerIndexStats(ordered, usesCachedQueryableEntries), partitionStoreAdapter);
+        index = indexProvider.createIndex(
+            indexConfig,
+            extractors,
+            serializationService,
+            indexCopyBehavior,
+            stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
+            partitionStoreAdapter
+        );
 
         indexesByName.put(name, index);
         attributeIndexRegistry.register(index);
         converterCache.invalidate(index);
 
         indexes = indexesByName.values().toArray(EMPTY_INDEXES);
-        if (components != null) {
+        if (index.getComponents().length > 1) {
             InternalIndex[] oldCompositeIndexes = compositeIndexes;
             InternalIndex[] newCompositeIndexes = Arrays.copyOf(oldCompositeIndexes, oldCompositeIndexes.length + 1);
             newCompositeIndexes[oldCompositeIndexes.length] = index;
@@ -160,29 +147,18 @@ public class Indexes {
      * Records the given index definition in this indexes without creating an
      * index.
      *
-     * @param name    the name of the index; the passed value might not
-     *                represent a canonical index name (as specified by
-     *                {@link Index#getName()), in this case the method
-     *                canonicalizes it.
-     * @param ordered {@code true} if the new index should be ordered, {@code
-     *                false} otherwise.
+     * @param config Index configuration.
      */
-    public void recordIndexDefinition(String name, boolean ordered) {
+    public void recordIndexDefinition(IndexConfig config) {
+        String name = config.getName();
+
+        assert name != null && !name.isEmpty();
+
         if (definitions.containsKey(name) || indexesByName.containsKey(name)) {
             return;
         }
 
-        String[] components = PredicateUtils.parseOutCompositeIndexComponents(name);
-        if (components == null) {
-            name = PredicateUtils.canonicalizeAttribute(name);
-        } else {
-            name = PredicateUtils.constructCanonicalCompositeIndexName(components);
-        }
-        if (definitions.containsKey(name) || indexesByName.containsKey(name)) {
-            return;
-        }
-
-        definitions.put(name, ordered);
+        definitions.put(name, config);
     }
 
     /**
@@ -190,9 +166,10 @@ public class Indexes {
      * indexes.
      */
     public void createIndexesFromRecordedDefinitions(StoreAdapter partitionStoreAdapter) {
-        for (Map.Entry<String, Boolean> definition : definitions.entrySet()) {
-            addOrGetIndex(definition.getKey(), definition.getValue(), partitionStoreAdapter);
+        for (Map.Entry<String, IndexConfig> definition : definitions.entrySet()) {
+            addOrGetIndex(definition.getValue(), partitionStoreAdapter);
         }
+
         definitions.clear();
     }
 

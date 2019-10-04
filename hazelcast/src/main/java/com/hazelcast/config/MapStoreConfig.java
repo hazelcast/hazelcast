@@ -295,14 +295,17 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Setting {@link #writeCoalescing} is meaningful if you are using write-behind {@link MapStore}.
+     * Setting {@link #writeCoalescing} is meaningful
+     * if you are using write-behind {@link MapStore}.
      * <p>
-     * When {@link #writeCoalescing} is {@code true}, only the latest store operation on a key in the {@link #writeDelaySeconds}
+     * When {@link #writeCoalescing} is {@code true}, only the latest
+     * store operation on a key in the {@link #writeDelaySeconds}
      * time-window will be reflected to {@link MapStore}.
      * <p>
      * Default value is {@value #DEFAULT_WRITE_COALESCING}.
      *
-     * @param writeCoalescing {@code true} to enable write-coalescing, {@code false} otherwise
+     * @param writeCoalescing {@code true} to enable
+     *                        write-coalescing, otherwise {@code false}.
      * @see GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY
      */
     public MapStoreConfig setWriteCoalescing(boolean writeCoalescing) {

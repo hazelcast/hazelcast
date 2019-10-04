@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockWaitNotifyKey;
+import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;

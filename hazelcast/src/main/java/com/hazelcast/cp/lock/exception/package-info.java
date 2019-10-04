@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains exception classes related to the locking API of the CP subsystem
+ * Contains exception classes related to the locking API of CP Subsystem
  */
 package com.hazelcast.cp.lock.exception;

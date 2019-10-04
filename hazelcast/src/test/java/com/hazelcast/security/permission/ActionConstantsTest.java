@@ -24,7 +24,7 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
+import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.map.impl.MapService;
@@ -117,7 +117,7 @@ public class ActionConstantsTest {
 
     @Test
     public void getPermission_Lock() {
-        Permission permission = ActionConstants.getPermission("foo", LockService.SERVICE_NAME);
+        Permission permission = ActionConstants.getPermission("foo", LockSupportService.SERVICE_NAME);
 
         assertNotNull(permission);
         assertTrue(permission instanceof LockPermission);

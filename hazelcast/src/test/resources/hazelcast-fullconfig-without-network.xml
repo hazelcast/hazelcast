@@ -348,8 +348,16 @@
         </wan-replication-ref>
 
         <indexes>
-            <index ordered="false">name</index>
-            <index ordered="true">age</index>
+            <index type="HASH">
+                <attributes>
+                    <attribute>name</attribute>
+                </attributes>
+            </index>
+            <index>
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
         </indexes>
 
         <attributes>
@@ -380,8 +388,16 @@
                 <populate>true</populate>
                 <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"/>
                 <indexes>
-                    <index ordered="false">name</index>
-                    <index ordered="true">age</index>
+                    <index type="HASH">
+                        <attributes>
+                            <attribute>name</attribute>
+                        </attributes>
+                    </index>
+                    <index>
+                        <attributes>
+                            <attribute>age</attribute>
+                        </attributes>
+                    </index>
                 </indexes>
             </query-cache>
         </query-caches>
@@ -453,10 +469,6 @@
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
     </reliable-topic>
-
-    <lock name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-    </lock>
 
     <ringbuffer name="default">
         <capacity>25311</capacity>
@@ -788,6 +800,9 @@
         <session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
         <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>
         <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
+        <persistence-enabled>false</persistence-enabled>
+        <base-dir>data</base-dir>
+        <data-load-timeout-seconds>30</data-load-timeout-seconds>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>

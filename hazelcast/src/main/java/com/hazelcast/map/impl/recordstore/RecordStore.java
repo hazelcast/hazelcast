@@ -67,6 +67,10 @@ public interface RecordStore<R extends Record> {
      */
     Object set(Data dataKey, Object value, long ttl, long maxIdle);
 
+    Object setTxn(Data dataKey, Object value, long ttl, long maxIdle, UUID transactionId);
+
+    Object removeTxn(Data dataKey, CallerProvenance callerProvenance, UUID transactionId);
+
     /**
      * @return oldValue if it exists in memory otherwise tries to load oldValue
      * by using {@link MapLoader}
@@ -92,7 +96,11 @@ public interface RecordStore<R extends Record> {
      * @param provenance   origin of call to this method.
      * @return previous record if exists otherwise null.
      */
-    R putBackup(Data key, Object value, long ttl, long maxIdle, boolean putTransient, CallerProvenance provenance);
+    R putBackup(Data key, Object value, long ttl, long maxIdle, boolean putTransient,
+                CallerProvenance provenance);
+
+    R putBackupTxn(Data dataKey, Data dataValue, long ttl, long maxIdle, boolean putTransient,
+                   CallerProvenance callerProvenance, UUID transactionId);
 
     /**
      * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
@@ -120,6 +128,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Checks whether ttl or maxIdle are set on the record.
+     *
      * @param record the record to be checked
      * @return {@code true} if ttl or maxIdle are defined on the {@code record}, otherwise {@code false}.
      */
@@ -129,17 +138,19 @@ public interface RecordStore<R extends Record> {
      * Callback which is called when the record is being accessed from the record or index store.
      * <p>
      * An implementation is not supposed to be thread safe.
+     *
      * @param record the accessed record
-     * @param now the current time
+     * @param now    the current time
      */
     void accessRecord(Record record, long now);
-
 
     /**
      * Similar to {@link RecordStore#remove(Data, CallerProvenance)}
      * except removeBackup doesn't touch mapstore since it does not return previous value.
      */
     void removeBackup(Data dataKey, CallerProvenance provenance);
+
+    void removeBackupTxn(Data dataKey, CallerProvenance callerProvenance, UUID transactionId);
 
     /**
      * Gets record from {@link RecordStore}.
@@ -395,7 +406,7 @@ public interface RecordStore<R extends Record> {
     R getOrNullIfExpired(R record, long now, boolean backup);
 
 
-   /**
+    /**
      * Evicts entries from this record-store.
      *
      * @param excludedKey this key has lowest priority to be selected for eviction
@@ -465,8 +476,7 @@ public interface RecordStore<R extends Record> {
      */
     boolean isLoaded();
 
-    void checkIfLoaded()
-            throws RetryableHazelcastException;
+    void checkIfLoaded() throws RetryableHazelcastException;
 
     /**
      * Triggers key and value loading if there is no ongoing or completed

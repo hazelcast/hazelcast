@@ -16,41 +16,44 @@
 
 package com.hazelcast.cp.internal.raft.impl.log;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
+import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
+
+import static java.util.Collections.unmodifiableCollection;
 
 /**
  * Represents a snapshot in the {@link RaftLog}.
  * <p>
- * Snapshot entry is sent to followers via
- * {@link com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot} RPC.
+ * Snapshot entry is sent to followers via {@link InstallSnapshot} RPC.
  */
 public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializable {
+
     private long groupMembersLogIndex;
-    private Collection<Endpoint> groupMembers;
+    private Collection<RaftEndpoint> groupMembers;
 
     public SnapshotEntry() {
     }
 
-    public SnapshotEntry(int term, long index, Object operation,
-                         long groupMembersLogIndex, Collection<Endpoint> groupMembers) {
+    public SnapshotEntry(int term, long index, Object operation, long groupMembersLogIndex,
+                         Collection<RaftEndpoint> groupMembers) {
         super(term, index, operation);
         this.groupMembersLogIndex = groupMembersLogIndex;
-        this.groupMembers = groupMembers;
+        this.groupMembers = unmodifiableCollection(new LinkedHashSet<RaftEndpoint>(groupMembers));
     }
 
     public long groupMembersLogIndex() {
         return groupMembersLogIndex;
     }
 
-    public Collection<Endpoint> groupMembers() {
+    public Collection<RaftEndpoint> groupMembers() {
         return groupMembers;
     }
 
@@ -59,7 +62,7 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
         super.writeData(out);
         out.writeLong(groupMembersLogIndex);
         out.writeInt(groupMembers.size());
-        for (Endpoint endpoint : groupMembers) {
+        for (RaftEndpoint endpoint : groupMembers) {
             out.writeObject(endpoint);
         }
     }
@@ -69,11 +72,12 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
         super.readData(in);
         groupMembersLogIndex = in.readLong();
         int count = in.readInt();
-        groupMembers = new HashSet<>(count);
+        groupMembers = new LinkedHashSet<RaftEndpoint>(count);
         for (int i = 0; i < count; i++) {
-            Endpoint endpoint = in.readObject();
+            RaftEndpoint endpoint = in.readObject();
             groupMembers.add(endpoint);
         }
+        groupMembers = unmodifiableCollection(groupMembers);
     }
 
     @Override
@@ -90,5 +94,9 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
     @Override
     public String toString() {
         return toString(false);
+    }
+
+    public static boolean isNonInitial(SnapshotEntry entry) {
+        return entry != null && entry.index() > 0;
     }
 }

@@ -344,12 +344,23 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="index">
-        <xs:simpleContent>
-            <xs:extension base="xs:string">
-                <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
-            </xs:extension>
-        </xs:simpleContent>
+        <xs:all>
+            <xs:element name="attributes" type="index-attributes"/>
+        </xs:all>
+        <xs:attribute name="name"/>
+        <xs:attribute name="type" type="index-type" default="SORTED"/>
     </xs:complexType>
+    <xs:complexType name="index-attributes">
+        <xs:sequence>
+            <xs:element name="attribute" type="xs:string" maxOccurs="255"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="index-type">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="SORTED"/>
+            <xs:enumeration value="HASH"/>
+        </xs:restriction>
+    </xs:simpleType>
     <xs:complexType name="item-listener">
         <xs:simpleContent>
             <xs:extension base="listener-base">

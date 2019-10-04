@@ -33,4 +33,6 @@ public interface MapTxnOperation extends Notifier {
     void setThreadId(long threadId);
 
     void setOwnerUuid(UUID ownerUuid);
+
+    void setTransactionId(UUID transactionId);
 }

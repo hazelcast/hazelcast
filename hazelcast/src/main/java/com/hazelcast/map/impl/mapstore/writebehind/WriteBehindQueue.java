@@ -37,9 +37,12 @@ public interface WriteBehindQueue<E> {
     /**
      * Inserts to the end of this queue.
      *
-     * @param e element to be offered
+     * @param e                       element to be offered
+     * @param addWithoutCapacityCheck if set to {@code true},
+     *                                node-wide-used-capacity limit is checked prior to
+     *                                queueing, otherwise queueing happens w/out capacity check.
      */
-    void addLast(E e);
+    void addLast(E e, boolean addWithoutCapacityCheck);
 
     /**
      * Retrieves, but does not remove, the head of this queue,
@@ -102,5 +105,10 @@ public interface WriteBehindQueue<E> {
      */
     void filter(IPredicate<E> predicate, Collection<E> collection);
 
+    /**
+     * @return internal implementation specific
+     * instance of supplied clazz, otherwise returns null.
+     */
+    <T> T unwrap(Class<T> clazz);
 }
 

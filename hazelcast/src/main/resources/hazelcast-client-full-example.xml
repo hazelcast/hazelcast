@@ -703,10 +703,8 @@
                 - comparator-class-name: The comparator to be used while comparing entries to be evicted.
 
         * <indexes>:
-            You can define indexes for your map using this element's <index> sub-elements. Each <index> has
-            only the boolean "ordered" attribute. For example, if you will have a ranged query for a field of a map
-            entry, then this attribute should be set to true. But if the field has a boolean value, then it should
-            be set to false. Its default value is false.
+            You can define indexes for your map using this element's <index> sub-elements. Index definition consists
+            of type, optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
     -->
     <query-caches>
         <query-cache name="query-cache-class-name-predicate" mapName="map-name">
@@ -724,7 +722,11 @@
             <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"
                       comparator-class-name="com.hazelcast.examples.MyEvictionComparator"/>
             <indexes>
-                <index ordered="false">name</index>
+                <index type="HASH">
+                    <attributes>
+                        <attribute>name</attribute>
+                    </attributes>
+                </index>
             </indexes>
         </query-cache>
         <query-cache name="query-cache-sql-predicate" mapName="map-name">

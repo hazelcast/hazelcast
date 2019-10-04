@@ -31,14 +31,10 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cp.lock.ILock;
-import com.hazelcast.map.IMap;
-import com.hazelcast.topic.ITopic;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
@@ -53,10 +49,12 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -92,34 +90,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     @After
     public void cleanup() {
         hazelcastFactory.terminateAll();
-    }
-
-    /**
-     * Test for issues #267 and #493
-     */
-    @Test
-    public void testIssue493() {
-        final HazelcastInstance hz1 = hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setRedoOperation(true);
-
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        final ILock lock = client.getLock("lock");
-
-        for (int k = 0; k < 10; k++) {
-            lock.lock();
-            try {
-                sleepMillis(100);
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        lock.lock();
-        hz1.shutdown();
-        lock.unlock();
     }
 
     @Test
@@ -512,35 +482,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 assertNull(map.get("a"));
             }
         });
-    }
-
-    @Category(NightlyTest.class)
-    @Test
-    public void testLock_WhenDummyClientAndOwnerNodeDiesTogether() throws Exception {
-        testLock_WhenClientAndOwnerNodeDiesTogether(false);
-    }
-
-    @Category(NightlyTest.class)
-    @Test
-    public void testLock_WhenSmartClientAndOwnerNodeDiesTogether() throws Exception {
-        testLock_WhenClientAndOwnerNodeDiesTogether(true);
-    }
-
-    private void testLock_WhenClientAndOwnerNodeDiesTogether(boolean smart) throws Exception {
-        hazelcastFactory.newHazelcastInstance();
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(smart);
-
-        final int tryCount = 5;
-
-        for (int i = 0; i < tryCount; i++) {
-            final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-            final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-            final ILock lock = client.getLock("lock");
-            assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
-            client.getLifecycleService().terminate(); //with client is dead, lock should be released.
-            instance.getLifecycleService().terminate();
-        }
     }
 
     @Test

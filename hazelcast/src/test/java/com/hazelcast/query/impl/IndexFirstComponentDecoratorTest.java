@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.monitor.impl.PerIndexStats;
@@ -43,11 +44,22 @@ public class IndexFirstComponentDecoratorTest {
     public void before() {
         serializationService = new DefaultSerializationServiceBuilder().build();
         Extractors extractors = Extractors.newBuilder(serializationService).build();
-        expected = new IndexImpl("this", null, true, serializationService, extractors, IndexCopyBehavior.COPY_ON_READ,
-                PerIndexStats.EMPTY);
-        InternalIndex compositeIndex =
-                new IndexImpl("this, __key", new String[]{"this", "__key"}, true, serializationService, extractors,
-                        IndexCopyBehavior.COPY_ON_READ, PerIndexStats.EMPTY);
+        expected = new IndexImpl(
+            IndexUtils.createTestIndexConfig(IndexType.SORTED, "this"),
+            serializationService,
+            extractors,
+            IndexCopyBehavior.COPY_ON_READ,
+            PerIndexStats.EMPTY
+        );
+
+        InternalIndex compositeIndex = new IndexImpl(
+            IndexUtils.createTestIndexConfig(IndexType.SORTED, "this", "__key"),
+            serializationService,
+            extractors,
+            IndexCopyBehavior.COPY_ON_READ,
+            PerIndexStats.EMPTY
+        );
+
         actual = new AttributeIndexRegistry.FirstComponentDecorator(compositeIndex);
 
         for (int i = 0; i < 100; ++i) {

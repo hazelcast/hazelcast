@@ -39,7 +39,7 @@ public class MapAddIndexMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new AddIndexOperationFactory(parameters.name, parameters.attribute, parameters.ordered);
+        return new AddIndexOperationFactory(parameters.name, parameters.indexConfig);
     }
 
     @Override
@@ -77,6 +77,6 @@ public class MapAddIndexMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.attribute, parameters.ordered};
+        return new Object[]{parameters.indexConfig};
     }
 }

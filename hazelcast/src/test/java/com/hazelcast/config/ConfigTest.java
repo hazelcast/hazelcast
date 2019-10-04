@@ -102,12 +102,6 @@ public class ConfigTest extends HazelcastTestSupport {
         assertEquals("default", queueConfig.getName());
     }
 
-    @Test
-    public void testLockConfigReturnDefault_whenThereIsNoMatch() {
-        LockConfig lockConfig = config.findLockConfig("test");
-        assertEquals("default", lockConfig.getName());
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void testConfigThrow_whenConfigPatternMatcherIsNull() {
         config.setConfigPatternMatcher(null);

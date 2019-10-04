@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapRecordKey;
@@ -24,7 +25,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
-import com.hazelcast.internal.util.ThreadUtil;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -35,16 +35,18 @@ import java.util.UUID;
 public class MapTransactionLogRecord implements TransactionLogRecord {
 
     private int partitionId;
+    private long threadId = ThreadUtil.getThreadId();
     private String name;
     private Data key;
-    private long threadId = ThreadUtil.getThreadId();
+    private UUID transactionId;
     private UUID ownerUuid;
     private Operation op;
 
     public MapTransactionLogRecord() {
     }
 
-    public MapTransactionLogRecord(String name, Data key, int partitionId, Operation op, UUID ownerUuid) {
+    public MapTransactionLogRecord(String name, Data key, int partitionId,
+                                   Operation op, UUID ownerUuid, UUID transactionId) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -53,11 +55,12 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         this.op = op;
         this.ownerUuid = ownerUuid;
         this.partitionId = partitionId;
+        this.transactionId = transactionId;
     }
 
     @Override
     public Operation newPrepareOperation() {
-        TxnPrepareOperation operation = new TxnPrepareOperation(partitionId, name, key, ownerUuid);
+        TxnPrepareOperation operation = new TxnPrepareOperation(partitionId, name, key, ownerUuid, transactionId);
         operation.setThreadId(threadId);
         return operation;
     }
@@ -67,13 +70,14 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         MapTxnOperation operation = (MapTxnOperation) op;
         operation.setThreadId(threadId);
         operation.setOwnerUuid(ownerUuid);
+        operation.setTransactionId(transactionId);
         op.setPartitionId(partitionId);
         return op;
     }
 
     @Override
     public Operation newRollbackOperation() {
-        TxnRollbackOperation operation = new TxnRollbackOperation(partitionId, name, key, ownerUuid);
+        TxnRollbackOperation operation = new TxnRollbackOperation(partitionId, name, key, ownerUuid, transactionId);
         operation.setThreadId(threadId);
         return operation;
     }
@@ -89,6 +93,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         }
         out.writeLong(threadId);
         UUIDSerializationUtil.writeUUID(out, ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
         out.writeObject(op);
     }
 
@@ -102,6 +107,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         }
         threadId = in.readLong();
         ownerUuid = UUIDSerializationUtil.readUUID(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
         op = in.readObject();
     }
 
@@ -118,6 +124,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
                 + ", threadId=" + threadId
                 + ", ownerUuid='" + ownerUuid + '\''
                 + ", op=" + op
+                + ", transactionId=" + transactionId
                 + '}';
     }
 

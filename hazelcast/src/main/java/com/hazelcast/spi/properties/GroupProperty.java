@@ -860,7 +860,7 @@ public final class GroupProperty {
      * By default it is configured as 100. With 271 partitions, that would give (271 + 1) * 100 = 27200 concurrent invocations
      * from a single member. The +1 is for generic operations. The reasons why 100 is chosen are:
      * - there can be concurrent operations that touch a lot of partitions which consume more than 1 invocation, and
-     * - certain methods like those from the IExecutor or ILock are also invocations and they can be very long running.
+     * - certain methods like those from the IExecutor are also invocations and they can be very long running.
      * <p>
      * No promise is made for the invocations being tracked per partition, or if there is a general pool of invocations.
      */

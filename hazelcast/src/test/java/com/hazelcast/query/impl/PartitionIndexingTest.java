@@ -18,7 +18,8 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -101,8 +102,8 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
     @Test
     public void testOnPreConfiguredIndexes() {
         Config config = getConfig();
-        config.getMapConfig(MAP_NAME).addMapIndexConfig(new MapIndexConfig("this", false));
-        config.getMapConfig(MAP_NAME).addMapIndexConfig(new MapIndexConfig("__key", true));
+        config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.HASH, "this"));
+        config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.SORTED, "__key"));
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         int expectedPartitions = getPartitionService(instance1).getPartitionCount();
@@ -152,7 +153,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         for (int i = 0; i < ENTRIES; ++i) {
             client1.put(i, i);
         }
-        client1.addIndex("this", false);
+        client1.addIndex(IndexType.HASH, "this");
         assertPartitionsIndexedCorrectly(expectedPartitions, map1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -170,7 +171,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         assertPartitionsIndexedCorrectly(expectedPartitions, map1, map3);
 
         IMap<Integer, Integer> client3 = createClientFor(map3);
-        client3.addIndex("__key", true);
+        client3.addIndex(IndexType.HASH, "__key");
         assertPartitionsIndexedCorrectly(expectedPartitions, map1, map3);
 
         migrationFailingService.fail = true;

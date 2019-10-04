@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains exceptions that can be thrown by APIs of the CP subsystem
+ * Contains exceptions that can be thrown by APIs of CP Subsystem
  */
 package com.hazelcast.cp.exception;

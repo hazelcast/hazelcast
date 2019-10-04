@@ -143,7 +143,7 @@ public class MigrationManager {
         delayedResumeMigrationTrigger = new CoalescingDelayedTrigger(
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, this::resumeMigration);
         this.memberHeartbeatTimeoutMillis = properties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
-        nodeEngine.getMetricsRegistry().scanAndRegister(stats, "partitions");
+        nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, "partitions");
     }
 
     @Probe(name = "migrationActive")

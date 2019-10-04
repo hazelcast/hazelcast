@@ -154,7 +154,6 @@ import com.hazelcast.map.impl.tx.TxnUnlockOperation;
 import com.hazelcast.map.impl.tx.VersionedValue;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.internal.util.ConstructorFunction;
 
@@ -258,7 +257,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ADD_INTERCEPTOR = 90;
     public static final int MAP_REPLICATION = 91;
     public static final int POST_JOIN_MAP_OPERATION = 92;
-    public static final int INDEX_INFO = 93;
     public static final int MAP_INDEX_INFO = 94;
     public static final int INTERCEPTOR_INFO = 95;
     public static final int REMOVE_INTERCEPTOR = 96;
@@ -418,7 +416,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ADD_INTERCEPTOR] = arg -> new AddInterceptorOperation();
         constructors[MAP_REPLICATION] = arg -> new MapReplicationOperation();
         constructors[POST_JOIN_MAP_OPERATION] = arg -> new PostJoinMapOperation();
-        constructors[INDEX_INFO] = arg -> new IndexInfo();
         constructors[MAP_INDEX_INFO] = arg -> new MapIndexInfo();
         constructors[INTERCEPTOR_INFO] = arg -> new PostJoinMapOperation.InterceptorInfo();
         constructors[REMOVE_INTERCEPTOR] = arg -> new RemoveInterceptorOperation();

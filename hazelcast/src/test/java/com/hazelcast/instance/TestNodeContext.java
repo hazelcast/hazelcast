@@ -17,10 +17,12 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.UuidUtil;
@@ -75,6 +77,8 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.isNodeVersionCompatibleWith(any(Version.class))).thenReturn(true);
         when(nodeExtension.getMemoryStats()).thenReturn(new DefaultMemoryStats());
         when(nodeExtension.createMemberUuid()).thenReturn(UuidUtil.newUnsecureUUID());
+        when(nodeExtension.createDynamicConfigListener()).thenReturn(mock(DynamicConfigListener.class));
+        when(nodeExtension.getCPPersistenceService()).thenReturn(new NopCPPersistenceService());
         return nodeExtension;
     }
 

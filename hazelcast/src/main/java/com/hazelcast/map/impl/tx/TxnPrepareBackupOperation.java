@@ -34,12 +34,16 @@ import java.util.UUID;
 public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     private static final long LOCK_TTL_MILLIS = 10000L;
-    private UUID lockOwner;
 
-    protected TxnPrepareBackupOperation(String name, Data dataKey, UUID lockOwner, long lockThreadId) {
+    private UUID lockOwnerUuid;
+    private UUID transactionId;
+
+    protected TxnPrepareBackupOperation(String name, Data dataKey, UUID lockOwnerUuid,
+                                        long lockThreadId, UUID transactionId) {
         super(name, dataKey);
-        this.lockOwner = lockOwner;
+        this.lockOwnerUuid = lockOwnerUuid;
         this.threadId = lockThreadId;
+        this.transactionId = transactionId;
     }
 
     public TxnPrepareBackupOperation() {
@@ -47,8 +51,11 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
 
     @Override
     protected void runInternal() {
-        if (!recordStore.txnLock(getKey(), lockOwner, threadId, getCallId(), LOCK_TTL_MILLIS, true)) {
-            throw new TransactionException("Lock is not owned by the transaction! Caller: " + lockOwner
+        wbqCapacityCounter().increment(transactionId, true);
+
+        if (!recordStore.txnLock(getKey(), lockOwnerUuid, threadId, getCallId(), LOCK_TTL_MILLIS, true)) {
+            wbqCapacityCounter().decrement(transactionId);
+            throw new TransactionException("Lock is not owned by the transaction! Caller: " + lockOwnerUuid
                     + ", Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }
     }
@@ -61,13 +68,15 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        UUIDSerializationUtil.writeUUID(out, lockOwner);
+        UUIDSerializationUtil.writeUUID(out, lockOwnerUuid);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        lockOwner = UUIDSerializationUtil.readUUID(in);
+        lockOwnerUuid = UUIDSerializationUtil.readUUID(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

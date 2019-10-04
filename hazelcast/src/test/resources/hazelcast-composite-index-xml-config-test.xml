@@ -22,7 +22,12 @@
 
     <map name="map">
         <indexes>
-            <index>__key, __key.length</index>
+            <index name="testIndex">
+                <attributes>
+                    <attribute>__key</attribute>
+                    <attribute>__key.length</attribute>
+                </attributes>
+            </index>
         </indexes>
     </map>
 

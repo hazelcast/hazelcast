@@ -17,6 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -28,6 +30,7 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import javax.annotation.Nonnull;
@@ -2554,6 +2557,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     Set<K> localKeySet(@Nonnull Predicate<K, V> predicate);
 
     /**
+     * Convenient method to add an index to this map with the given type and attributes.
+     * Attributes are indexed in ascending order.
+     * <p>
+     * @see #addIndex(IndexConfig)
+     *
+     * @param type Index type.
+     * @param attributes Attributes to be indexed.
+     */
+    default void addIndex(IndexType type, String... attributes) {
+        IndexConfig config = IndexUtils.createIndexConfig(type, attributes);
+
+        addIndex(config);
+    }
+
+    /**
      * Adds an index to this map for the specified entries so
      * that queries can run faster.
      * <p>
@@ -2569,11 +2587,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *   }
      * </pre>
      * If you are querying your values mostly based on age and active then
-     * you should consider indexing these fields.
+     * you may consider indexing these fields.
      * <pre>
      *   IMap imap = Hazelcast.getMap("employees");
-     *   imap.addIndex("age", true);        // ordered, since we have ranged queries for this field
-     *   imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
+     *   imap.addIndex(new IndexConfig(IndexType.SORTED, "age"));  // Sorted index for range queries
+     *   imap.addIndex(new IndexConfig(IndexType.HASH, "active")); // Hash index for equality predicates
      * </pre>
      * Index attribute should either have a getter method or be public.
      * You should also make sure to add the indexes before adding
@@ -2591,11 +2609,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Until the index finishes being created, any searches for the attribute will use a full Map scan,
      * thus avoiding using a partially built index and returning incorrect results.
      *
-     * @param attribute index attribute of value
-     * @param ordered   {@code true} if index should be ordered,
-     *                  {@code false} otherwise.
+     * @param indexConfig Index configuration.
      */
-    void addIndex(@Nonnull String attribute, boolean ordered);
+    void addIndex(IndexConfig indexConfig);
 
     /**
      * Returns LocalMapStats for this map.

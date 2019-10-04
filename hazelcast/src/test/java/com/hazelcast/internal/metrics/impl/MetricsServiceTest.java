@@ -23,10 +23,11 @@ import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.internal.metrics.managementcenter.Metric;
+import com.hazelcast.internal.metrics.managementcenter.MetricConsumer;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -58,6 +59,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -84,7 +86,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     @Mock
     private ILogger loggerMock;
     @Mock
-    private ProbeRenderer probeRendererMock;
+    private MetricsCollector metricsCollectorMock;
 
     private MetricsRegistry metricsRegistry;
     private TestProbeSource testProbeSource;
@@ -114,7 +116,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         testProbeSource = new TestProbeSource();
 
-        metricsRegistry.scanAndRegister(testProbeSource, "test");
+        metricsRegistry.registerStaticMetrics(testProbeSource, "test");
     }
 
     @Test
@@ -123,16 +125,22 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         metricsService.init(nodeEngineMock, new Properties());
 
         testProbeSource.update(1, 1.5D);
-        metricsService.collectMetrics(probeRendererMock);
+        metricsService.collectMetrics(metricsCollectorMock);
 
         testProbeSource.update(2, 5.5D);
-        metricsService.collectMetrics(probeRendererMock);
+        metricsService.collectMetrics(metricsCollectorMock);
 
-        InOrder inOrder = inOrder(probeRendererMock);
-        inOrder.verify(probeRendererMock).renderDouble("test.doubleValue", 1.5D);
-        inOrder.verify(probeRendererMock).renderLong("test.longValue", 1);
-        inOrder.verify(probeRendererMock).renderDouble("test.doubleValue", 5.5D);
-        inOrder.verify(probeRendererMock).renderLong("test.longValue", 2);
+        InOrder inOrderLong = inOrder(metricsCollectorMock);
+        InOrder inOrderDouble = inOrder(metricsCollectorMock);
+
+        inOrderLong.verify(metricsCollectorMock).collectLong("[unit=count,metric=test.longValue]", 1);
+        inOrderLong.verify(metricsCollectorMock).collectLong("[unit=count,metric=test.longValue]", 2);
+        inOrderLong.verify(metricsCollectorMock, never()).collectLong(eq("[unit=count,metric=test.longValue]"), anyLong());
+
+        inOrderDouble.verify(metricsCollectorMock).collectDouble("[unit=count,metric=test.doubleValue]", 1.5D);
+        inOrderDouble.verify(metricsCollectorMock).collectDouble("[unit=count,metric=test.doubleValue]", 5.5D);
+        inOrderDouble.verify(metricsCollectorMock, never()).collectDouble(eq("[unit=count,metric=test.doubleValue]"),
+                anyDouble());
     }
 
     @Test
@@ -152,15 +160,18 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         metricsService.collectMetrics();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        InOrder inOrder = inOrder(metricConsumerMock);
+        InOrder inOrderLong = inOrder(metricConsumerMock);
+        InOrder inOrderDouble = inOrder(metricConsumerMock);
 
         readMetrics(metricsService, 0, metricConsumerMock);
 
-        inOrder.verify(metricConsumerMock).consumeDouble(1.5D);
-        inOrder.verify(metricConsumerMock).consumeLong(1);
-        inOrder.verify(metricConsumerMock).consumeDouble(5.5D);
-        inOrder.verify(metricConsumerMock).consumeLong(2);
-        inOrder.verifyNoMoreInteractions();
+        inOrderLong.verify(metricConsumerMock).consumeLong("[unit=count,metric=test.longValue]", 1);
+        inOrderLong.verify(metricConsumerMock).consumeLong("[unit=count,metric=test.longValue]", 2);
+        inOrderLong.verify(metricConsumerMock, never()).consumeLong(eq("[unit=count,metric=test.longValue]"), anyLong());
+
+        inOrderDouble.verify(metricConsumerMock).consumeDouble("[unit=count,metric=test.doubleValue]", 1.5D);
+        inOrderDouble.verify(metricConsumerMock).consumeDouble("[unit=count,metric=test.doubleValue]", 5.5D);
+        inOrderDouble.verify(metricConsumerMock, never()).consumeDouble(eq("[unit=count,metric=test.doubleValue]"), anyDouble());
     }
 
     @Test
@@ -181,13 +192,17 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         metricsService.collectMetrics();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        InOrder inOrder = inOrder(metricConsumerMock);
 
         readMetrics(metricsService, 0, metricConsumerMock);
 
-        inOrder.verify(metricConsumerMock).consumeDouble(5.5D);
-        inOrder.verify(metricConsumerMock).consumeLong(2);
-        inOrder.verifyNoMoreInteractions();
+        InOrder inOrderLong = inOrder(metricConsumerMock);
+        InOrder inOrderDouble = inOrder(metricConsumerMock);
+
+        inOrderDouble.verify(metricConsumerMock).consumeDouble("[unit=count,metric=test.doubleValue]", 5.5D);
+        inOrderDouble.verify(metricConsumerMock, never()).consumeDouble(eq("[unit=count,metric=test.doubleValue]"), anyDouble());
+
+        inOrderLong.verify(metricConsumerMock).consumeLong("[unit=count,metric=test.longValue]", 2);
+        inOrderLong.verify(metricConsumerMock, never()).consumeLong(eq("[unit=count,metric=test.longValue]"), anyLong());
     }
 
     @Test
@@ -289,13 +304,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         metricsResultSet.collections().forEach(entry -> {
             Iterator<Metric> metricIterator = decompressingIterator(entry.getValue());
-            metricIterator.forEachRemaining(metric -> {
-                if (metric.key().contains("test.longValue")) {
-                    metricConsumer.consumeLong(metric.value());
-                } else if (metric.key().contains("test.doubleValue")) {
-                    metricConsumer.consumeDouble(metric.value() / 10_000D);
-                }
-            });
+            metricIterator.forEachRemaining(metric -> metric.provide(metricConsumer));
         });
 
     }
@@ -312,11 +321,5 @@ public class MetricsServiceTest extends HazelcastTestSupport {
             this.doubleValue = doubleValue;
         }
 
-    }
-
-    private interface MetricConsumer {
-        void consumeLong(long value);
-
-        void consumeDouble(double value);
     }
 }

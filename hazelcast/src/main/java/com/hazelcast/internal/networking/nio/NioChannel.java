@@ -17,7 +17,6 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.AbstractChannel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
@@ -41,18 +40,15 @@ public final class NioChannel extends AbstractChannel {
     NioOutboundPipeline outboundPipeline;
 
     private final Executor closeListenerExecutor;
-    private final MetricsRegistry metricsRegistry;
     private final ChannelInitializer channelInitializer;
     private final NioChannelOptions config;
 
     public NioChannel(SocketChannel socketChannel,
                       boolean clientMode,
                       ChannelInitializer channelInitializer,
-                      MetricsRegistry metricsRegistry,
                       Executor closeListenerExecutor) {
         super(socketChannel, clientMode);
         this.channelInitializer = channelInitializer;
-        this.metricsRegistry = metricsRegistry;
         this.closeListenerExecutor = closeListenerExecutor;
         this.config = new NioChannelOptions(socketChannel.socket());
     }
@@ -96,14 +92,6 @@ public final class NioChannel extends AbstractChannel {
 
     @Override
     public void start() {
-        String pipelineId = localSocketAddress() + "->" + remoteSocketAddress();
-        metricsRegistry.newProbeBuilder("tcp.connection.out")
-                       .withTag("pipelineId", pipelineId)
-                       .scanAndRegister(outboundPipeline);
-        metricsRegistry.newProbeBuilder("tcp.connection.in")
-                       .withTag("pipelineId", pipelineId)
-                       .scanAndRegister(inboundPipeline);
-
         try {
             // before starting the channel, the socketChannel need to be put in
             // non blocking mode since that is mandatory for the NioChannel.

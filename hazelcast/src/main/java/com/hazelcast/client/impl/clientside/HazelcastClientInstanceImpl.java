@@ -82,8 +82,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
@@ -331,9 +329,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ThreadMetricSet.register(metricsRegistry);
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
-        metricsRegistry.scanAndRegister(clientExtension.getMemoryStats(), "memory");
-        metricsRegistry.collectMetrics(clientExtension);
-        metricsRegistry.collectMetrics(executionService);
+        metricsRegistry.registerStaticMetrics(clientExtension.getMemoryStats(), "memory");
+        metricsRegistry.provideMetrics(clientExtension);
+        metricsRegistry.provideMetrics(executionService);
     }
 
     private LoadBalancer initLoadBalancer(ClientConfig config) {
@@ -430,7 +428,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                     new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
                             properties));
 
-            metricsRegistry.collectMetrics(listenerService);
+            metricsRegistry.provideMetrics(listenerService);
 
             proxyManager.init(config, clientContext);
             listenerService.start();
@@ -528,12 +526,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         checkNotNull(name, "Retrieving a replicated map instance with a null name is not allowed!");
         return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        checkNotNull(key, "Retrieving a lock instance with a null key is not allowed!");
-        return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
     }
 
     @Override

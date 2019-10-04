@@ -22,8 +22,10 @@ import com.hazelcast.core.ICompletableFuture;
 import java.util.Collection;
 
 /**
- * The public API for managing CP sessions. CP sessions are used for tracking
- * liveliness of Hazelcast servers and clients that hold CP resources.
+ * This interface offers API for managing CP sessions.
+ * <p>
+ * CP sessions are used for tracking liveliness of Hazelcast servers and clients
+ * that hold CP resources.
  *
  * @see CPSession
  */
@@ -39,8 +41,8 @@ public interface CPSessionManagementService {
      * If a Hazelcast instance that owns a CP session crashes, its CP session
      * is not terminated immediately. Instead, the session is closed after
      * {@link CPSubsystemConfig#getSessionTimeToLiveSeconds()} passes.
-     * If it is known for sure that the session owner is not partitioned and
-     * definitely crashed, this method can be used for closing the session and
+     * If it is known for sure that the session owner is not partitioned away
+     * and actually crashed, this method can be used for closing the session and
      * releasing its resources immediately.
      */
     ICompletableFuture<Boolean> forceCloseSession(String groupName, long sessionId);

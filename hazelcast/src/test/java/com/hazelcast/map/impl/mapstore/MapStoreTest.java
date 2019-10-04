@@ -1055,21 +1055,21 @@ public class MapStoreTest extends AbstractMapStoreTest {
         private boolean loadAllKeys = true;
         private final AtomicLong lastStoreTimestamp = new AtomicLong();
 
-        TestMapStore() {
+        public TestMapStore() {
             this(0, 0, 0, 0, 0, 0);
         }
 
-        TestMapStore(int expectedStore, int expectedDelete, int expectedLoad) {
+        public TestMapStore(int expectedStore, int expectedDelete, int expectedLoad) {
             this(expectedStore, 0, expectedDelete, 0, expectedLoad, 0);
         }
 
-        TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
+        public TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
                      int expectedDeleteAll, int expectedLoad, int expectedLoadAll) {
             this(expectedStore, expectedStoreAll, expectedDelete, expectedDeleteAll,
                     expectedLoad, expectedLoadAll, 0);
         }
 
-        TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
+        public TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
                      int expectedDeleteAll, int expectedLoad, int expectedLoadAll,
                      int expectedLoadAllKeys) {
             latchStore = new CountDownLatch(expectedStore);
@@ -1224,7 +1224,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     public static class SimpleMapStore<K, V> extends MapStoreAdapter<K, V> {
 
-        public final Map<K, V> store;
+        public final ConcurrentMap<K, V> store;
 
         private boolean loadAllKeys = true;
 
@@ -1232,7 +1232,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
             store = new ConcurrentHashMap<>();
         }
 
-        SimpleMapStore(final Map<K, V> store) {
+        SimpleMapStore(final ConcurrentMap<K, V> store) {
             this.store = store;
         }
 
@@ -1318,24 +1318,24 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     public static class MapStoreWithStoreCount extends SimpleMapStore<Object, Object> {
 
-        final CountDownLatch latch;
-        final int waitSecond;
-        final AtomicInteger count = new AtomicInteger(0);
-        final int sleepStoreAllSeconds;
+        public final CountDownLatch latch;
+        public final int waitSecond;
+        public final AtomicInteger count = new AtomicInteger(0);
+        public final int sleepStoreAllSeconds;
 
-        MapStoreWithStoreCount(int expectedStore, int seconds) {
+        public MapStoreWithStoreCount(int expectedStore, int seconds) {
             latch = new CountDownLatch(expectedStore);
             waitSecond = seconds;
             sleepStoreAllSeconds = 0;
         }
 
-        MapStoreWithStoreCount(int expectedStore, int seconds, int sleepStoreAllSeconds) {
+        public MapStoreWithStoreCount(int expectedStore, int seconds, int sleepStoreAllSeconds) {
             latch = new CountDownLatch(expectedStore);
             waitSecond = seconds;
             this.sleepStoreAllSeconds = sleepStoreAllSeconds;
         }
 
-        void awaitStores() {
+        public void awaitStores() {
             assertOpenEventually(latch, waitSecond);
         }
 

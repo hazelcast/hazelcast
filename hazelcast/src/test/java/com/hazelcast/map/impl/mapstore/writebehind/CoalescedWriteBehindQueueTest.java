@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
-import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.createDefault;
+import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.newAddedDelayedEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,14 +45,14 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
 
     @Test
     public void test_addFirst() throws Exception {
-        queue.addFirst(Collections.<DelayedEntry>singletonList(newEntry(1)));
+        queue.addFirst(Collections.singletonList(newEntry(1)));
 
         assertEquals(1, queue.size());
     }
 
     @Test
     public void test_addLast() throws Exception {
-        queue.addLast(newEntry(1));
+        queue.addLast(newEntry(1), false);
 
         assertEquals(1, queue.size());
     }
@@ -60,7 +60,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void test_removeFirstOccurrence() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1);
-        queue.addLast(entry);
+        queue.addLast(entry, false);
         queue.removeFirstOccurrence(entry);
 
         assertEquals(0, queue.size());
@@ -70,7 +70,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     public void test_removeFirstOccurrence_whenSequenceNumberLower() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1, 10);
         entry.setSequence(1);
-        queue.addLast(entry);
+        queue.addLast(entry, false);
         DelayedEntry<Data, Object> entry2 = newEntry(1, 10); // sequence is 0
         assertFalse(queue.removeFirstOccurrence(entry2));
 
@@ -80,7 +80,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void test_contains() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1);
-        queue.addLast(entry);
+        queue.addLast(entry, false);
 
         assertTrue(queue.contains(entry));
     }
@@ -88,9 +88,9 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void test_size() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1);
-        queue.addLast(entry);
-        queue.addLast(entry);
-        queue.addLast(entry);
+        queue.addLast(entry, false);
+        queue.addLast(entry, false);
+        queue.addLast(entry, false);
 
         assertEquals(1, queue.size());
     }
@@ -98,17 +98,18 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void test_clear() throws Exception {
         DelayedEntry<Data, Object> entry = newEntry(1);
-        queue.addLast(entry);
+        queue.addLast(entry, false);
 
         queue.clear();
         assertEquals(0, queue.size());
     }
 
     private DelayedEntry<Data, Object> newEntry(Object key) {
-        return DelayedEntries.createNullEntry(serializationService.toData(key));
+        return DelayedEntries.newNullEntry(serializationService.toData(key));
     }
 
     private DelayedEntry<Data, Object> newEntry(Object key, Object value) {
-        return createDefault(serializationService.toData(key), serializationService.toData(value), 0L, 0L, 0);
+        return newAddedDelayedEntry(serializationService.toData(key),
+                serializationService.toData(value), 0L, 0L, 0, null);
     }
 }

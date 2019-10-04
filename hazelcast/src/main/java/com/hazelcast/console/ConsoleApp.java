@@ -952,7 +952,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
-        Lock lock = hazelcast.getLock(key);
+        Lock lock = hazelcast.getCPSubsystem().getLock(key);
         if (equalsIgnoreCase(lockStr, "lock")) {
             lock.lock();
             println("true");

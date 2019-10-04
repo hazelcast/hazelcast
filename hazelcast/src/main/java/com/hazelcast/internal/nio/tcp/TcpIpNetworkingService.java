@@ -20,7 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricsExtractor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
@@ -46,6 +50,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -56,8 +61,7 @@ import static com.hazelcast.spi.properties.GroupProperty.NETWORK_STATS_REFRESH_I
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class TcpIpNetworkingService
-        implements NetworkingService<TcpIpConnection> {
+public final class TcpIpNetworkingService implements NetworkingService<TcpIpConnection> {
 
     private static final int SCHEDULER_POOL_SIZE = 4;
 
@@ -80,24 +84,23 @@ public class TcpIpNetworkingService
     private final ScheduledExecutorService scheduler;
 
     // accessed only in synchronized block
-    private volatile TcpIpAcceptor acceptor;
+    private final AtomicReference<TcpIpAcceptor> acceptorRef = new AtomicReference<>();
 
     private volatile boolean live;
 
-    public TcpIpNetworkingService(Config config, IOService ioService,
-                                  ServerSocketRegistry registry,
-                                  LoggingService loggingService,
-                                  MetricsRegistry metricsRegistry,
-                                  Networking networking,
-                                  ChannelInitializerProvider channelInitializerProvider) {
+    TcpIpNetworkingService(Config config, IOService ioService,
+                           ServerSocketRegistry registry,
+                           LoggingService loggingService,
+                           MetricsRegistry metricsRegistry,
+                           Networking networking,
+                           ChannelInitializerProvider channelInitializerProvider) {
         this(config, ioService, registry, loggingService, metricsRegistry, networking, channelInitializerProvider, null);
     }
 
     public TcpIpNetworkingService(Config config, IOService ioService,
                                   ServerSocketRegistry registry,
                                   LoggingService loggingService,
-                                  MetricsRegistry metricsRegistry,
-                                  Networking networking,
+                                  MetricsRegistry metricsRegistry, Networking networking,
                                   ChannelInitializerProvider channelInitializerProvider,
                                   HazelcastProperties properties) {
 
@@ -105,31 +108,31 @@ public class TcpIpNetworkingService
         this.networking = networking;
         this.metricsRegistry = metricsRegistry;
         this.refreshStatsTask = new RefreshNetworkStatsTask();
-        this.refreshStatsIntervalSeconds = properties.getInteger(NETWORK_STATS_REFRESH_INTERVAL_SECONDS);
+        this.refreshStatsIntervalSeconds = properties != null ? properties.getInteger(NETWORK_STATS_REFRESH_INTERVAL_SECONDS) : 1;
         this.registry = registry;
         this.logger = loggingService.getLogger(TcpIpNetworkingService.class);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpNetworkingService")));
         if (registry.holdsUnifiedSocket()) {
             unifiedEndpointManager = new TcpIpUnifiedEndpointManager(this, null, channelInitializerProvider,
-                    ioService, loggingService, metricsRegistry, properties);
+                    ioService, loggingService, properties);
         } else {
             unifiedEndpointManager = null;
         }
 
-        initEndpointManager(config, ioService, loggingService, metricsRegistry, channelInitializerProvider, properties);
+        initEndpointManager(config, ioService, loggingService, channelInitializerProvider, properties);
         if (unifiedEndpointManager != null) {
             this.aggregateEndpointManager = new UnifiedAggregateEndpointManager(unifiedEndpointManager, endpointManagers);
         } else {
             this.aggregateEndpointManager = new DefaultAggregateEndpointManager(endpointManagers);
+            refreshStatsTask.registerMetrics();
         }
 
-        metricsRegistry.scanAndRegister(this, "tcp.connection");
+        metricsRegistry.registerDynamicMetricsProvider(new MetricsProvider(acceptorRef, endpointManagers));
     }
 
     private void initEndpointManager(Config config, IOService ioService,
                                      LoggingService loggingService,
-                                     MetricsRegistry metricsRegistry,
                                      ChannelInitializerProvider channelInitializerProvider,
                                      HazelcastProperties properties) {
         if (unifiedEndpointManager != null) {
@@ -141,7 +144,7 @@ public class TcpIpNetworkingService
             for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
                 EndpointQualifier qualifier = endpointConfig.getQualifier();
                 EndpointManager em = newEndpointManager(ioService, endpointConfig, channelInitializerProvider,
-                        loggingService, metricsRegistry, properties, singleton(endpointConfig.getProtocolType()));
+                        loggingService, properties, singleton(endpointConfig.getProtocolType()));
                 endpointManagers.put(qualifier, em);
             }
         }
@@ -151,11 +154,10 @@ public class TcpIpNetworkingService
                                                                 EndpointConfig endpointConfig,
                                                                 ChannelInitializerProvider channelInitializerProvider,
                                                                 LoggingService loggingService,
-                                                                MetricsRegistry metricsRegistry,
                                                                 HazelcastProperties properties,
                                                                 Set<ProtocolType> supportedProtocolTypes) {
         return new TcpIpEndpointManager(this, endpointConfig, channelInitializerProvider, ioService, loggingService,
-                metricsRegistry, properties, supportedProtocolTypes);
+                properties, supportedProtocolTypes);
     }
 
     @Override
@@ -191,7 +193,6 @@ public class TcpIpNetworkingService
         if (unifiedEndpointManager == null) {
             refreshStatsFuture =
                     metricsRegistry.scheduleAtFixedRate(refreshStatsTask, refreshStatsIntervalSeconds, SECONDS, ProbeLevel.INFO);
-            refreshStatsTask.registerMetrics();
         }
     }
 
@@ -203,12 +204,9 @@ public class TcpIpNetworkingService
         live = false;
         logger.finest("Stopping Networking Service");
 
-        if (unifiedEndpointManager == null) {
-            if (refreshStatsFuture != null) {
-                refreshStatsFuture.cancel(false);
-                refreshStatsFuture = null;
-            }
-            metricsRegistry.deregister(refreshStatsTask);
+        if (unifiedEndpointManager == null && refreshStatsFuture != null) {
+            refreshStatsFuture.cancel(false);
+            refreshStatsFuture = null;
         }
 
         shutdownAcceptor();
@@ -282,20 +280,19 @@ public class TcpIpNetworkingService
     }
 
     private void startAcceptor() {
-        if (acceptor != null) {
-            logger.warning("TcpIpAcceptor is already running! Shutting down old acceptor...");
+        if (acceptorRef.get() != null) {
+            logger.warning("TcpIpAcceptor is already running! Shutting down old acceptorRef...");
             shutdownAcceptor();
         }
 
-        acceptor = new TcpIpAcceptor(registry, this, ioService).start();
-        metricsRegistry.collectMetrics(acceptor);
+        acceptorRef.set(new TcpIpAcceptor(registry, this, ioService).start());
     }
 
     private void shutdownAcceptor() {
+        TcpIpAcceptor acceptor = acceptorRef.get();
         if (acceptor != null) {
             acceptor.shutdown();
-            metricsRegistry.deregister(acceptor);
-            acceptor = null;
+            acceptorRef.set(null);
         }
     }
 
@@ -331,9 +328,9 @@ public class TcpIpNetworkingService
 
         void registerMetrics() {
             for (final ProtocolType type : ProtocolType.valuesAsSet()) {
-                metricsRegistry.register(this, "tcp.bytesReceived." + type.name(), ProbeLevel.INFO,
+                metricsRegistry.registerStaticProbe(this, "tcp.bytesReceived." + type.name(), ProbeLevel.INFO,
                         (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesReceivedPerProtocol.get(type).get());
-                metricsRegistry.register(this, "tcp.bytesSend." + type.name(), ProbeLevel.INFO,
+                metricsRegistry.registerStaticProbe(this, "tcp.bytesSend." + type.name(), ProbeLevel.INFO,
                         (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesSentPerProtocol.get(type).get());
             }
         }
@@ -359,6 +356,34 @@ public class TcpIpNetworkingService
             }
         }
 
+    }
+
+    private static final class MetricsProvider implements DynamicMetricsProvider {
+        private final AtomicReference<TcpIpAcceptor> acceptorRef;
+        private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers;
+
+        private MetricsProvider(AtomicReference<TcpIpAcceptor> acceptorRef,
+                                ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers) {
+            this.acceptorRef = acceptorRef;
+            this.endpointManagers = endpointManagers;
+        }
+
+        @Override
+        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp");
+            extractor.extractMetrics(tagger, this);
+
+            TcpIpAcceptor acceptor = this.acceptorRef.get();
+            if (acceptor != null) {
+                acceptor.provideDynamicMetrics(taggerSupplier, extractor);
+            }
+
+            for (EndpointManager<TcpIpConnection> manager : this.endpointManagers.values()) {
+                if (manager instanceof DynamicMetricsProvider) {
+                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(taggerSupplier, extractor);
+                }
+            }
+        }
     }
 
 }

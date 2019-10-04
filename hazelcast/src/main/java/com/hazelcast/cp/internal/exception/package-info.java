@@ -16,6 +16,6 @@
 
 /**
  * Contains internal exceptions that are being used
- * by the CP subsystem implementation
+ * by CP Subsystem implementation
  */
 package com.hazelcast.cp.internal.exception;

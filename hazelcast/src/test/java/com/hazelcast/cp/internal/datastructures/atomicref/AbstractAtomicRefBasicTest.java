@@ -220,7 +220,7 @@ public abstract class AbstractAtomicRefBasicTest extends HazelcastRaftTestSuppor
 
         private String suffix;
 
-        public AppendStringFunction(String suffix) {
+        AppendStringFunction(String suffix) {
             this.suffix = suffix;
         }
 

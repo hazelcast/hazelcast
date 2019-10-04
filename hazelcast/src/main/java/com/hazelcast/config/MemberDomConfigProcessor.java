@@ -30,6 +30,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.w3c.dom.Element;
@@ -64,7 +65,6 @@ import static com.hazelcast.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.config.ConfigSections.LIST;
 import static com.hazelcast.config.ConfigSections.LISTENERS;
 import static com.hazelcast.config.ConfigSections.LITE_MEMBER;
-import static com.hazelcast.config.ConfigSections.LOCK;
 import static com.hazelcast.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.config.ConfigSections.MAP;
 import static com.hazelcast.config.ConfigSections.MEMBER_ATTRIBUTES;
@@ -185,8 +185,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleCache(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
             fillNativeMemoryConfig(node, config.getNativeMemoryConfig());
-        } else if (LOCK.isEqual(nodeName)) {
-            handleLock(node);
         } else if (RINGBUFFER.isEqual(nodeName)) {
             handleRingbuffer(node);
         } else if (LISTENERS.isEqual(nodeName)) {
@@ -1339,24 +1337,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleLock(Node node) {
-        String name = getAttribute(node, "name");
-        LockConfig lockConfig = new LockConfig();
-        lockConfig.setName(name);
-        handleLockNode(node, lockConfig);
-    }
-
-    void handleLockNode(Node node, LockConfig lockConfig) {
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
-            if ("split-brain-protection-ref".equals(nodeName)) {
-                lockConfig.setSplitBrainProtectionName(value);
-            }
-        }
-        config.addLockConfig(lockConfig);
-    }
-
     protected void handleQueue(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
@@ -1963,10 +1943,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void mapIndexesHandle(Node n, MapConfig mapConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
-                NamedNodeMap attrs = indexNode.getAttributes();
-                boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
-                String attribute = getTextContent(indexNode);
-                mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered));
+                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3);
+
+                mapConfig.addIndexConfig(indexConfig);
             }
         }
     }
@@ -1974,10 +1953,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
-                NamedNodeMap attrs = indexNode.getAttributes();
-                boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
-                String attribute = getTextContent(indexNode);
-                queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
+                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3);
+
+                queryCacheConfig.addIndexConfig(indexConfig);
             }
         }
     }
@@ -2789,6 +2767,12 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     cpSubsystemConfig.setMissingCPMemberAutoRemovalSeconds(Integer.parseInt(value));
                 } else if ("fail-on-indeterminate-operation-state".equals(nodeName)) {
                     cpSubsystemConfig.setFailOnIndeterminateOperationState(Boolean.parseBoolean(value));
+                } else if ("persistence-enabled".equals(nodeName)) {
+                    cpSubsystemConfig.setPersistenceEnabled(Boolean.parseBoolean(value));
+                } else if ("base-dir".equals(nodeName)) {
+                    cpSubsystemConfig.setBaseDir(new File(value).getAbsoluteFile());
+                } else if ("data-load-timeout-seconds".equals(nodeName)) {
+                    cpSubsystemConfig.setDataLoadTimeoutSeconds(Integer.parseInt(value));
                 }
             }
         }

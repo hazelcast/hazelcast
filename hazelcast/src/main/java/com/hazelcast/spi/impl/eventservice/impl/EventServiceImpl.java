@@ -19,16 +19,18 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.executor.StripedExecutor;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -40,8 +42,6 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.internal.util.executor.StripedExecutor;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
@@ -60,16 +60,16 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -96,7 +96,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class EventServiceImpl implements EventService, MetricsProvider {
+public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:eventService";
 
@@ -200,8 +200,8 @@ public class EventServiceImpl implements EventService, MetricsProvider {
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "event");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "event");
     }
 
     @Override
@@ -566,9 +566,9 @@ public class EventServiceImpl implements EventService, MetricsProvider {
             if (existingSegment == null) {
                 segment = newSegment;
                 nodeEngine.getMetricsRegistry()
-                          .newProbeBuilder("event")
-                          .withTag("service", service)
-                          .scanAndRegister(newSegment);
+                          .newMetricTagger("event")
+                          .withIdTag("service", service)
+                          .registerStaticMetrics(newSegment);
             } else {
                 segment = existingSegment;
             }

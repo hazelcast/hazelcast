@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.internal.serialization.SerializationService;
 
@@ -40,7 +40,7 @@ public class QueryCacheConfigHolder {
     private PredicateConfigHolder predicateConfigHolder;
     private EvictionConfigHolder evictionConfigHolder;
     private List<ListenerConfigHolder> listenerConfigs;
-    private List<MapIndexConfig> indexConfigs;
+    private List<IndexConfig> indexConfigs;
 
     public QueryCacheConfigHolder() {
     }
@@ -48,7 +48,7 @@ public class QueryCacheConfigHolder {
     public QueryCacheConfigHolder(int batchSize, int bufferSize, int delaySeconds, boolean includeValue,
                                   boolean populate, boolean coalesce, String inMemoryFormat, String name,
                                   PredicateConfigHolder predicateConfigHolder, EvictionConfigHolder evictionConfigHolder,
-                                  List<ListenerConfigHolder> listenerConfigs, List<MapIndexConfig> indexConfigs) {
+                                  List<ListenerConfigHolder> listenerConfigs, List<IndexConfig> indexConfigs) {
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.delaySeconds = delaySeconds;
@@ -151,11 +151,11 @@ public class QueryCacheConfigHolder {
         this.listenerConfigs = listenerConfigs;
     }
 
-    public List<MapIndexConfig> getIndexConfigs() {
+    public List<IndexConfig> getIndexConfigs() {
         return indexConfigs;
     }
 
-    public void setIndexConfigs(List<MapIndexConfig> indexConfigs) {
+    public void setIndexConfigs(List<IndexConfig> indexConfigs) {
         this.indexConfigs = indexConfigs;
     }
 
@@ -195,9 +195,9 @@ public class QueryCacheConfigHolder {
         holder.setInMemoryFormat(config.getInMemoryFormat().toString());
         holder.setName(config.getName());
         if (config.getIndexConfigs() != null && !config.getIndexConfigs().isEmpty()) {
-            List<MapIndexConfig> indexConfigs = new ArrayList<>(config.getIndexConfigs().size());
-            for (MapIndexConfig indexConfig : config.getIndexConfigs()) {
-                indexConfigs.add(new MapIndexConfig(indexConfig));
+            List<IndexConfig> indexConfigs = new ArrayList<>(config.getIndexConfigs().size());
+            for (IndexConfig indexConfig : config.getIndexConfigs()) {
+                indexConfigs.add(new IndexConfig(indexConfig));
             }
             holder.setIndexConfigs(indexConfigs);
         }

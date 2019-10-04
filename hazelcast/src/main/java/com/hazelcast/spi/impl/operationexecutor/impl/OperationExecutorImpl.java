@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.impl.NodeExtension;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -76,7 +76,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor, MetricsProvider {
+public final class OperationExecutorImpl implements OperationExecutor, StaticMetricsProvider {
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
@@ -204,14 +204,14 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "operation");
 
-        registry.collectMetrics((Object[]) genericThreads);
-        registry.collectMetrics((Object[]) partitionThreads);
-        registry.collectMetrics(adHocOperationRunner);
-        registry.collectMetrics((Object[]) genericOperationRunners);
-        registry.collectMetrics((Object[]) partitionOperationRunners);
+        registry.provideMetrics((Object[]) genericThreads);
+        registry.provideMetrics((Object[]) partitionThreads);
+        registry.provideMetrics(adHocOperationRunner);
+        registry.provideMetrics((Object[]) genericOperationRunners);
+        registry.provideMetrics((Object[]) partitionOperationRunners);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.EntryProcessor;
@@ -121,7 +122,7 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         String mapName = "test_executeOnEntriesWithPredicate_usesIndexes_whenIndexesAvailable";
 
         IMap<Integer, Integer> map = client.getMap(mapName);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         for (int i = 0; i < 10; i++) {
             map.put(i, i);

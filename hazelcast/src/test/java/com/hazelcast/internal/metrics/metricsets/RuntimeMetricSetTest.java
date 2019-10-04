@@ -20,7 +20,6 @@ import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -59,47 +58,29 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
     public void freeMemory() {
         final LongGauge gauge = metricsRegistry.newLongGauge("runtime.freeMemory");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(runtime.freeMemory(), gauge.read(), TEN_MB);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(runtime.freeMemory(), gauge.read(), TEN_MB));
     }
 
     @Test
     public void totalMemory() {
         final LongGauge gauge = metricsRegistry.newLongGauge("runtime.totalMemory");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(runtime.totalMemory(), gauge.read(), TEN_MB);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(runtime.totalMemory(), gauge.read(), TEN_MB));
     }
 
     @Test
     public void maxMemory() {
         final LongGauge gauge = metricsRegistry.newLongGauge("runtime.maxMemory");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(runtime.maxMemory(), gauge.read(), TEN_MB);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(runtime.maxMemory(), gauge.read(), TEN_MB));
     }
 
     @Test
     public void usedMemory() {
         final LongGauge gauge = metricsRegistry.newLongGauge("runtime.usedMemory");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                double expected = runtime.totalMemory() - runtime.freeMemory();
-                assertEquals(expected, gauge.read(), TEN_MB);
-            }
+        assertTrueEventually(() -> {
+            double expected = runtime.totalMemory() - runtime.freeMemory();
+            assertEquals(expected, gauge.read(), TEN_MB);
         });
     }
 
@@ -112,12 +93,9 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
     @Test
     public void uptime() {
         final LongGauge gauge = metricsRegistry.newLongGauge("runtime.uptime");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                double expected = ManagementFactory.getRuntimeMXBean().getUptime();
-                assertEquals(expected, gauge.read(), TimeUnit.MINUTES.toMillis(1));
-            }
+        assertTrueEventually(() -> {
+            double expected = ManagementFactory.getRuntimeMXBean().getUptime();
+            assertEquals(expected, gauge.read(), TimeUnit.MINUTES.toMillis(1));
         });
     }
 }

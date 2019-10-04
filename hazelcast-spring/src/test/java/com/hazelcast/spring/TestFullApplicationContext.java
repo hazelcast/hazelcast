@@ -49,15 +49,15 @@ import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -115,7 +115,7 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.lock.ILock;
+import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
@@ -233,7 +233,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private ISemaphore semaphore;
 
     @Resource(name = "lock")
-    private ILock lock;
+    private FencedLock lock;
 
     @Resource(name = "dummyMapStore")
     private MapStore dummyMapStore;
@@ -326,12 +326,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
         assertTrue(testMapConfig.isReadBackupData());
-        assertEquals(2, testMapConfig.getMapIndexConfigs().size());
-        for (MapIndexConfig index : testMapConfig.getMapIndexConfigs()) {
-            if ("name".equals(index.getAttribute())) {
-                assertFalse(index.isOrdered());
-            } else if ("age".equals(index.getAttribute())) {
-                assertTrue(index.isOrdered());
+        assertEquals(2, testMapConfig.getIndexConfigs().size());
+        for (IndexConfig index : testMapConfig.getIndexConfigs()) {
+            if ("name".equals(index.getAttributes().get(0))) {
+                assertEquals(IndexType.HASH, index.getType());
+                assertNull(index.getName());
+            } else if ("age".equals(index.getAttributes().get(0))) {
+                assertEquals(IndexType.SORTED, index.getType());
+                assertEquals("sortedIndex", index.getName());
+                assertEquals("name", index.getAttributes().get(1));
             } else {
                 fail("unknown index!");
             }
@@ -508,14 +511,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         QueueStoreConfig storeConfig4 = queueWithStore4.getQueueStoreConfig();
         assertNotNull(storeConfig4);
         assertEquals(dummyQueueStoreFactory, storeConfig4.getFactoryImplementation());
-    }
-
-    @Test
-    public void testLockConfig() {
-        LockConfig lockConfig = config.getLockConfig("lock");
-        assertNotNull(lockConfig);
-        assertEquals("lock", lockConfig.getName());
-        assertEquals("my-split-brain-protection", lockConfig.getSplitBrainProtectionName());
     }
 
     @Test
@@ -1243,9 +1238,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
-        for (MapIndexConfig mapIndexConfig : queryCacheConfig.getIndexConfigs()) {
-            assertEquals("name", mapIndexConfig.getAttribute());
-            assertFalse(mapIndexConfig.isOrdered());
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
+            assertEquals("name", indexConfig.getAttributes().get(0));
+            assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
     }
 
@@ -1263,7 +1258,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         File hotBackupDir = new File("/mnt/hot-backup/");
         HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
 
-        assertTrue(hotRestartPersistenceConfig.isEnabled());
+        assertFalse(hotRestartPersistenceConfig.isEnabled());
         assertEquals(dir.getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
         assertEquals(hotBackupDir.getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
@@ -1373,7 +1368,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(15, cpSubsystemConfig.getSessionTimeToLiveSeconds());
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
+        assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
+        assertFalse(cpSubsystemConfig.isPersistenceEnabled());
+        assertEquals(new File("/custom-dir"), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());

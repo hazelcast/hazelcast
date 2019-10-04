@@ -329,10 +329,11 @@ hazelcast:
           republishing-enabled: false
 
       indexes:
-        name:
-          ordered: false
-        age:
-          ordered: true
+        - type: HASH
+          attributes:
+            - "name"
+        - attributes:
+          - "age"
 
       attributes:
         currency:
@@ -368,10 +369,11 @@ hazelcast:
             max-size-policy: ENTRY_COUNT
             size: 10000
           indexes:
-            name:
-              ordered: false
-            age:
-              ordered: true
+            - type: HASH
+              attributes:
+                - "name"
+            - attributes:
+              - "age"
 
   multimap:
     default:
@@ -446,10 +448,6 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
-
-  lock:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
 
   ringbuffer:
     default:
@@ -789,6 +787,9 @@ hazelcast:
     session-heartbeat-interval-seconds: 5
     missing-cp-member-auto-removal-seconds: 120
     fail-on-indeterminate-operation-state: false
+    persistence-enabled: false
+    base-dir: data
+    data-load-timeout-seconds: 30
     raft-algorithm:
       leader-election-timeout-in-millis: 2000
       leader-heartbeat-period-in-millis: 5000

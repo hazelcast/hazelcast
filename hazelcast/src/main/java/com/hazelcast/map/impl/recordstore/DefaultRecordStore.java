@@ -19,7 +19,12 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.impl.MapContainer;
@@ -44,19 +49,15 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.CollectionUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,10 +73,10 @@ import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.emptyList;
 
 /**
@@ -166,7 +167,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Record putBackup(Data key, Object value, long ttl, long maxIdle, boolean putTransient, CallerProvenance provenance) {
+    public Record putBackup(Data key, Object value, long ttl, long maxIdle,
+                            boolean putTransient, CallerProvenance provenance) {
+        return putBackupInternal(key, value, ttl, maxIdle, putTransient, provenance, null);
+    }
+
+    @Override
+    public Record putBackupTxn(Data key, Data value, long ttl, long maxIdle,
+                               boolean putTransient, CallerProvenance provenance, UUID transactionId) {
+        return putBackupInternal(key, value, ttl, maxIdle, putTransient, provenance, transactionId);
+    }
+
+    private Record putBackupInternal(Data key, Object value, long ttl, long maxIdle,
+                                     boolean putTransient, CallerProvenance provenance,
+                                     UUID transactionId) {
         long now = getNow();
         markRecordStoreExpirable(ttl, maxIdle);
 
@@ -176,14 +190,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
         } else {
-            updateRecord(key, record, value, now, true, ttl, maxIdle, false);
+            updateRecord(key, record, value, now, true,
+                    ttl, maxIdle, false, transactionId);
         }
 
         if (persistenceEnabledFor(provenance)) {
             if (putTransient) {
                 mapDataStore.addTransient(key, now);
             } else {
-                mapDataStore.addBackup(key, value, record.getExpirationTime(), now);
+                mapDataStore.addBackup(key, value, record.getExpirationTime(), now, transactionId);
             }
         }
         return record;
@@ -443,6 +458,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void removeBackup(Data key, CallerProvenance provenance) {
+        removeBackupInternal(key, provenance, null);
+    }
+
+    @Override
+    public void removeBackupTxn(Data key, CallerProvenance provenance, UUID transactionId) {
+        removeBackupInternal(key, provenance, transactionId);
+    }
+
+    private void removeBackupInternal(Data key, CallerProvenance provenance, UUID transactionId) {
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, true);
@@ -452,7 +476,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mutationObserver.onRemoveRecord(key, record);
         storage.removeRecord(record);
         if (persistenceEnabledFor(provenance)) {
-            mapDataStore.removeBackup(key, now);
+            mapDataStore.removeBackup(key, now, transactionId);
         }
     }
 
@@ -464,16 +488,26 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, false);
         if (record == null) {
             if (persistenceEnabledFor(provenance)) {
-                mapDataStore.remove(key, now);
+                mapDataStore.remove(key, now, null);
             }
         } else {
-            return removeRecord(key, record, now, provenance) != null;
+            return removeRecord(key, record, now, provenance, null) != null;
         }
         return false;
     }
 
     @Override
-    public Object remove(Data key, CallerProvenance provenance) {
+    public Object removeTxn(Data dataKey, CallerProvenance callerProvenance, UUID transactionId) {
+        return removeInternal(dataKey, callerProvenance, transactionId);
+    }
+
+    @Override
+    public Object remove(Data key, CallerProvenance callerProvenance) {
+        return removeInternal(key, callerProvenance, null);
+    }
+
+    private Object removeInternal(Data key, CallerProvenance provenance,
+                                  UUID transactionId) {
         checkIfLoaded();
         long now = getNow();
 
@@ -482,10 +516,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             oldValue = mapDataStore.load(key);
             if (oldValue != null && persistenceEnabledFor(provenance)) {
-                mapDataStore.remove(key, now);
+                mapDataStore.remove(key, now, transactionId);
             }
         } else {
-            oldValue = removeRecord(key, record, now, provenance);
+            oldValue = removeRecord(key, record, now, provenance, transactionId);
         }
         return oldValue;
     }
@@ -509,7 +543,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         if (valueComparator.isEqual(testValue, oldValue, serializationService)) {
             mapServiceContext.interceptRemove(name, oldValue);
-            mapDataStore.remove(key, now);
+            mapDataStore.remove(key, now, null);
             if (record != null) {
                 removeIndex(record);
                 onStore(record);
@@ -700,36 +734,46 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             createRecord(key, existingValue, ttl, DEFAULT_MAX_IDLE, now);
         } else {
-            updateRecord(key, record, existingValue, now, true, ttl, DEFAULT_MAX_IDLE, true);
+            updateRecord(key, record, existingValue, now, true, ttl,
+                    DEFAULT_MAX_IDLE, true, null);
         }
         markRecordStoreExpirable(ttl, DEFAULT_MAX_IDLE);
         return true;
     }
 
+    @Override
     public Object set(Data dataKey, Object value, long ttl, long maxIdle) {
-        return putInternal(dataKey, value, ttl, maxIdle, false, true);
+        return putInternal(dataKey, value, ttl, maxIdle, null, false, true);
+    }
+
+    @Override
+    public Object setTxn(Data dataKey, Object value, long ttl, long maxIdle, UUID transactionId) {
+        return putInternal(dataKey, value, ttl, maxIdle, transactionId, false, true);
     }
 
     @Override
     public Object put(Data key, Object value, long ttl, long maxIdle) {
-        return putInternal(key, value, ttl, maxIdle, true, true);
+        return putInternal(key, value, ttl, maxIdle, null, true, true);
     }
 
-    protected Object putInternal(Data key, Object value, long ttl, long maxIdle, boolean loadFromStore, boolean countAsAccess) {
+    protected Object putInternal(Data key, Object value, long ttl,
+                                 long maxIdle, @Nullable UUID transactionId,
+                                 boolean loadFromStore, boolean countAsAccess) {
         checkIfLoaded();
 
         long now = getNow();
         markRecordStoreExpirable(ttl, maxIdle);
 
         Record record = getRecordOrNull(key, now, false);
-        Object oldValue = record == null ? (loadFromStore ? mapDataStore.load(key) : null) : record.getValue();
+        Object oldValue = record == null
+                ? (loadFromStore ? mapDataStore.load(key) : null) : record.getValue();
         value = mapServiceContext.interceptPut(name, oldValue, value);
         onStore(record);
 
         if (record == null) {
-            record = putNewRecord(key, value, ttl, maxIdle, now);
+            record = putNewRecord(key, value, ttl, maxIdle, now, transactionId);
         } else {
-            updateRecord(key, record, value, now, countAsAccess, ttl, maxIdle, true);
+            updateRecord(key, record, value, now, countAsAccess, ttl, maxIdle, true, transactionId);
         }
 
         saveIndex(record, oldValue);
@@ -764,7 +808,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             record = createRecord(key, newValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
             mergeRecordExpiration(record, mergingEntry);
             newValue = persistenceEnabledFor(provenance)
-                    ? mapDataStore.add(key, newValue, record.getExpirationTime(), now) : newValue;
+                    ? mapDataStore.add(key, newValue, record.getExpirationTime(), now, null) : newValue;
             recordFactory.setValue(record, newValue);
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
@@ -776,7 +820,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (newValue == null) {
                 removeIndex(record);
                 if (persistenceEnabledFor(provenance)) {
-                    mapDataStore.remove(key, now);
+                    mapDataStore.remove(key, now, null);
                 }
                 onStore(record);
                 mutationObserver.onRemoveRecord(key, record);
@@ -790,7 +834,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             newValue = persistenceEnabledFor(provenance)
-                    ? mapDataStore.add(key, newValue, record.getExpirationTime(), now) : newValue;
+                    ? mapDataStore.add(key, newValue, record.getExpirationTime(), now, null) : newValue;
             onStore(record);
             mutationObserver.onUpdateRecord(key, record, newValue);
             storage.updateRecordValue(key, record, newValue);
@@ -816,9 +860,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         update = mapServiceContext.interceptPut(name, oldValue, update);
         if (record == null) {
-            record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+            record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now, null);
         } else {
-            updateRecord(key, record, update, now, true, DEFAULT_TTL, DEFAULT_MAX_IDLE, true);
+            updateRecord(key, record, update, now, true,
+                    DEFAULT_TTL, DEFAULT_MAX_IDLE, true, null);
         }
         onStore(record);
         saveIndex(record, oldValue);
@@ -845,12 +890,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         update = mapServiceContext.interceptPut(name, current, update);
         if (record == null) {
-            record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+            record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now, null);
         } else {
-            updateRecord(key, record, update, now, true, DEFAULT_TTL, DEFAULT_MAX_IDLE, true);
+            updateRecord(key, record, update, now, true,
+                    DEFAULT_TTL, DEFAULT_MAX_IDLE, true, null);
         }
         onStore(record);
-        setExpirationTimes(record.getTtl(), record.getMaxIdle(), record, mapContainer.getMapConfig(), false);
+        setExpirationTimes(record.getTtl(), record.getMaxIdle(), record,
+                mapContainer.getMapConfig(), false);
         saveIndex(record, current);
         return true;
     }
@@ -871,7 +918,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
-            updateRecord(key, record, value, now, true, DEFAULT_TTL, DEFAULT_MAX_IDLE, false);
+            updateRecord(key, record, value, now, true, DEFAULT_TTL,
+                    DEFAULT_MAX_IDLE, false, null);
             setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), false);
         }
         saveIndex(record, oldValue);
@@ -938,7 +986,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
-            updateRecord(key, record, value, now, true, ttl, maxIdle, false);
+            updateRecord(key, record, value, now, true,
+                    ttl, maxIdle, false, null);
             entryEventType = UPDATED;
         }
 
@@ -970,7 +1019,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public boolean setWithUncountedAccess(Data dataKey, Object value, long ttl, long maxIdle) {
-        Object oldValue = putInternal(dataKey, value, ttl, maxIdle, false, false);
+        Object oldValue = putInternal(dataKey, value, ttl, maxIdle,
+                null, false, false);
         return oldValue == null;
     }
 
@@ -998,20 +1048,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (oldValue == null) {
             value = mapServiceContext.interceptPut(name, null, value);
             onStore(record);
-            record = putNewRecord(key, value, ttl, maxIdle, now);
+            record = putNewRecord(key, value, ttl, maxIdle, now, null);
         }
         saveIndex(record, oldValue);
         return oldValue;
     }
 
     protected Object removeRecord(Data key, @Nonnull Record record,
-                                  long now, CallerProvenance provenance) {
+                                  long now, CallerProvenance provenance,
+                                  UUID transactionId) {
         Object oldValue = record.getValue();
         oldValue = mapServiceContext.interceptRemove(name, oldValue);
         if (oldValue != null) {
             removeIndex(record);
             if (persistenceEnabledFor(provenance)) {
-                mapDataStore.remove(key, now);
+                mapDataStore.remove(key, now, transactionId);
             }
             onStore(record);
         }
@@ -1050,7 +1101,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         long now = Clock.currentTimeMillis();
-        WriteBehindQueue<DelayedEntry> writeBehindQueue = ((WriteBehindStore) mapDataStore).getWriteBehindQueue();
+        WriteBehindQueue<DelayedEntry> writeBehindQueue
+                = ((WriteBehindStore) mapDataStore).getWriteBehindQueue();
         List<DelayedEntry> delayedEntries = writeBehindQueue.asList();
         for (DelayedEntry delayedEntry : delayedEntries) {
             Record record = getRecordOrNull(toData(delayedEntry.getKey()), now, false);
@@ -1252,7 +1304,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     private void clearLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService != null) {
             ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);

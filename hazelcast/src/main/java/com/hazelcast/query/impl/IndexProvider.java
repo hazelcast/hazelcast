@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.monitor.impl.PerIndexStats;
@@ -30,12 +31,7 @@ public interface IndexProvider {
     /**
      * Creates a new index with the given name.
      *
-     * @param name         the name of the index to create or {@code null} if
-     *                     the index being created is not composite.
-     * @param components   the components of the index to create.
-     * @param ordered      {@code true} to create an ordered index supporting
-     *                     fast range queries, {@code false} to create an
-     *                     unordered index supporting fast point queries only.
+     * @param config       Index configuration.
      * @param extractors   the extractors to extract values of the given
      *                     name.
      * @param ss           the serialization service to perform the
@@ -46,8 +42,12 @@ public interface IndexProvider {
      * @param storeAdapter the reference to the store adapter. {@code null} if the index is global.
      * @return the created index instance.
      */
-    InternalIndex createIndex(String name, String[] components, boolean ordered, Extractors extractors,
-                              InternalSerializationService ss, IndexCopyBehavior copyBehavior, PerIndexStats stats,
-                              StoreAdapter storeAdapter);
-
+    InternalIndex createIndex(
+        IndexConfig config,
+        Extractors extractors,
+        InternalSerializationService ss,
+        IndexCopyBehavior copyBehavior,
+        PerIndexStats stats,
+        StoreAdapter storeAdapter
+    );
 }

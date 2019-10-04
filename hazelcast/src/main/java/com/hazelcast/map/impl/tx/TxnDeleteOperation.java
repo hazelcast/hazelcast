@@ -37,8 +37,10 @@ public class TxnDeleteOperation
         extends BaseRemoveOperation implements MapTxnOperation {
 
     private long version;
-    private boolean successful;
     private UUID ownerUuid;
+    private UUID transactionId;
+
+    private transient boolean successful;
 
     public TxnDeleteOperation() {
     }
@@ -53,6 +55,7 @@ public class TxnDeleteOperation
         super.innerBeforeRun();
 
         if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
+            wbqCapacityCounter().decrement(transactionId);
             throw new TransactionException("Cannot acquire lock UUID: " + ownerUuid + ", threadId: " + threadId);
         }
     }
@@ -62,8 +65,13 @@ public class TxnDeleteOperation
         recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
         Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()) {
-            dataOldValue = getNodeEngine().toData(recordStore.remove(dataKey, getCallerProvenance()));
+            dataOldValue = getNodeEngine().toData(recordStore.removeTxn(dataKey,
+                    getCallerProvenance(), transactionId));
             successful = dataOldValue != null;
+        }
+
+        if (record == null) {
+            wbqCapacityCounter().decrement(transactionId);
         }
     }
 
@@ -105,8 +113,13 @@ public class TxnDeleteOperation
     }
 
     @Override
+    public boolean shouldBackup() {
+        return true;
+    }
+
+    @Override
     public Operation getBackupOperation() {
-        return new TxnDeleteBackupOperation(name, dataKey);
+        return new TxnDeleteBackupOperation(name, dataKey, transactionId);
     }
 
     @Override
@@ -115,8 +128,8 @@ public class TxnDeleteOperation
     }
 
     @Override
-    public boolean shouldBackup() {
-        return true;
+    public void setTransactionId(UUID transactionId) {
+        this.transactionId = transactionId;
     }
 
     public WaitNotifyKey getNotifiedKey() {
@@ -128,6 +141,7 @@ public class TxnDeleteOperation
         super.writeInternal(out);
         out.writeLong(version);
         UUIDSerializationUtil.writeUUID(out, ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
@@ -135,6 +149,7 @@ public class TxnDeleteOperation
         super.readInternal(in);
         version = in.readLong();
         ownerUuid = UUIDSerializationUtil.readUUID(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -95,7 +96,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
     @Test
     public void verifyIndexedQueryFailureWhileMigrating() {
-        map.addIndex("this", false);
+        map.addIndex(IndexType.HASH, "this");
         Predicate predicate = new EqualPredicate("this", value);
 
         mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
@@ -107,7 +108,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
     @Test
     public void verifyIndexedQueryFailureWhileMigratingInFlight() {
-        map.addIndex("this", false);
+        map.addIndex(IndexType.HASH, "this");
 
         Predicate predicate = new EqualPredicate("this", value) {
             @Override

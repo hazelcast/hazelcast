@@ -21,6 +21,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
@@ -33,7 +35,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -78,7 +79,7 @@ public class ExternalizableDeserializationProtectionTest extends HazelcastTestSu
         Config config = smallInstanceConfig();
         config.getSerializationConfig().setJavaSerializationFilterConfig(javaSerializationFilterConfig);
         // the index will force deserialization
-        config.getMapConfig("test").addMapIndexConfig(new MapIndexConfig("name", false));
+        config.getMapConfig("test").addIndexConfig(new IndexConfig(IndexType.HASH, "name"));
         hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
@@ -116,7 +117,7 @@ public class ExternalizableDeserializationProtectionTest extends HazelcastTestSu
     @Test
     public void testExternalizableUnprotected() {
         Config config = smallInstanceConfig();
-        config.getMapConfig("test").addMapIndexConfig(new MapIndexConfig("name", false));
+        config.getMapConfig("test").addIndexConfig(new IndexConfig(IndexType.HASH, "name"));
         hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();

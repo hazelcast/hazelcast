@@ -33,7 +33,6 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -124,11 +123,6 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return getClient().getReplicatedMap(name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        return getClient().getLock(key);
     }
 
     @Override

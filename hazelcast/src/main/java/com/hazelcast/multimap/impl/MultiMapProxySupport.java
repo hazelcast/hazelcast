@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockProxySupport;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
+import com.hazelcast.internal.locksupport.LockProxySupport;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.impl.operations.CountOperation;
@@ -54,7 +54,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         this.name = name;
 
         lockSupport = new LockProxySupport(new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name),
-                LockServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getProperties()));
+                LockSupportServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getProperties()));
     }
 
     @Override
