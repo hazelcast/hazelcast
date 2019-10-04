@@ -23,7 +23,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @param <T> the type of the configuration class
  */
-abstract class AbstractSymmetricEncryptionConfig<T extends AbstractSymmetricEncryptionConfig> {
+public abstract class AbstractSymmetricEncryptionConfig<T extends AbstractSymmetricEncryptionConfig> {
     /**
      * Default symmetric encryption algorithm.
      */
