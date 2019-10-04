@@ -63,7 +63,8 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public void testBackupAckToClient() {
-        assertFalse(fullClientConfig.isBackupAckToClientEnabled());
+        boolean backupAckToClientEnabled = fullClientConfig.isBackupAckToClientEnabled();
+        assertFalse(backupAckToClientEnabled);
         assertTrue(defaultClientConfig.isBackupAckToClientEnabled());
     }
 

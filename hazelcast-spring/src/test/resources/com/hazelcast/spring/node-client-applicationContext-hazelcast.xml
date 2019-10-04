@@ -378,7 +378,7 @@
     </hz:client>
 
     <hz:client id="client17-backupAckToClient">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+        <hz:cluster name="${cluster.name}"/>
         <hz:network connection-attempt-limit="0">
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>

@@ -50,7 +50,7 @@ hazelcast-client:
     - admin
     - foo
 
-  backup-ack-to-client: false
+  backup-ack-to-client-enabled: false
 
   network:
     cluster-members:

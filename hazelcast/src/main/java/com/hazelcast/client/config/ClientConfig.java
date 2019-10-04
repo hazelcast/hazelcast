@@ -566,6 +566,7 @@ public class ClientConfig {
     /**
      * Sets the cluster name uniquely identifying the hazelcast cluster. This name is
      * used in different scenarios, such as identifying cluster for WAN publisher.
+     *
      * @param clusterName the new cluster name
      * @return this config instance
      * @throws IllegalArgumentException if name is {@code null}
@@ -923,7 +924,8 @@ public class ClientConfig {
 
     /**
      * This feature reduces number of hops and increase performance for smart clients.
-     * It is enabled by default for smart clients. For unisocket clients this feature can not be enabled.
+     * It is enabled by default for smart clients.
+     * This config has no effect for unisocket clients.
      *
      * @param backupAckToClientEnabled enables client to get backup acknowledgements directly from the member
      *                                 that backups are applied
@@ -936,7 +938,7 @@ public class ClientConfig {
 
     /**
      * Note that backup acks to client can be enabled only for smart client.
-     * This method is not applicable for unisocket client
+     * This config has no effect for unisocket clients.
      *
      * @return true if backup acknowledgements comes to client
      */

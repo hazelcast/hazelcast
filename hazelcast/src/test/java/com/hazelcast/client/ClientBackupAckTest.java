@@ -85,12 +85,11 @@ public class ClientBackupAckTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         ClientListenerService listenerService = clientInstanceImpl.getListenerService();
         Collection<EventHandler> values = ((SmartClientListenerService) listenerService).getEventHandlers().values();
-        boolean found = false;
         for (EventHandler value : values) {
             if (value instanceof SmartClientInvocationService.BackupEventHandler) {
-                found = true;
+                return true;
             }
         }
-        return found;
+        return false;
     }
 }

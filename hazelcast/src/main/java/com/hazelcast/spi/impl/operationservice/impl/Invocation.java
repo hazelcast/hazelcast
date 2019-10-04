@@ -455,7 +455,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         return TIMEOUT;
     }
 
-    private boolean shouldCompleteWithoutBackups() {
+    protected boolean shouldCompleteWithoutBackups() {
         boolean targetDead = context.clusterService.getMember(targetAddress) == null;
         if (targetDead) {
             // the target doesn't exist, so we are going to re-invoke this invocation;
