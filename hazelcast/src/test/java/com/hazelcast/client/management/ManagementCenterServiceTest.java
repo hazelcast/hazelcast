@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.management;
 
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.management.ManagementCenterService;
 import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -70,7 +70,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
                 () -> assertEquals(ACTIVE, hazelcastInstances[0].getCluster().getClusterState()));
         waitClusterForSafeState(hazelcastInstances[0]);
 
-        ClientDelegatingFuture<Void> future = managementCenterService.changeClusterState(PASSIVE);
+        ICompletableFuture<Void> future = managementCenterService.changeClusterState(PASSIVE);
         future.get();
 
         assertClusterState(PASSIVE, hazelcastInstances);
@@ -82,7 +82,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
                 () -> assertEquals(ACTIVE, hazelcastInstances[0].getCluster().getClusterState()));
         waitClusterForSafeState(hazelcastInstances[0]);
 
-        ClientDelegatingFuture<Void> future = managementCenterService.changeClusterState(IN_TRANSITION);
+        ICompletableFuture<Void> future = managementCenterService.changeClusterState(IN_TRANSITION);
         try {
             future.get();
         } catch (ExecutionException e) {
@@ -92,7 +92,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     @Test
     public void getMapConfig() throws Exception {
-        ClientDelegatingFuture<MapConfigHolder> future = managementCenterService.getMapConfig("map-1");
+        ICompletableFuture<MapConfigHolder> future = managementCenterService.getMapConfig("map-1");
         MapConfigHolder mapConfig = future.get();
         assertEquals(1, mapConfig.getBackupCount());
     }
