@@ -30,7 +30,7 @@ public class EncryptionAtRestConfig extends AbstractSymmetricEncryptionConfig<En
     private int keySize;
 
     /**
-     * Returns the encryption key size in bits.
+     * Returns the size (in bits) of the Hot Restart Store-level encryption key.
      *
      * @return the encryption key size in bits
      */
@@ -39,8 +39,9 @@ public class EncryptionAtRestConfig extends AbstractSymmetricEncryptionConfig<En
     }
 
     /**
-     * Sets the encryption key size in bits (non-positive value implies falling back
-     * to the cipher-specific default key length).
+     * Sets the size (in bits) of the Hot Restart Store-level encryption key
+     * (non-positive value implies falling back to the cipher-specific default
+     * key length).
      *
      * @param keySize the encryption key size in bits
      * @return the updated config instance
