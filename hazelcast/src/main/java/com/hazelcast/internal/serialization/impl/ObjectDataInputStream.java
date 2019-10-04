@@ -286,9 +286,9 @@ public class ObjectDataInputStream extends VersionedObjectDataInput implements C
         return new String[0];
     }
 
-    @Deprecated
-    public String readLine() throws IOException {
-        return dataInput.readLine();
+    @Override
+    public String readLine() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

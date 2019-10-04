@@ -303,10 +303,9 @@ public class ObjectDataInputStreamFinalMethodsTest {
         assertArrayEquals(new String[]{" "}, bytes);
     }
 
-    @Test
-    public void testReadLine() throws Exception {
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadLine() {
         inMockedDis.readLine();
-        verify(mockedDis).readLine();
     }
 
     @Test
