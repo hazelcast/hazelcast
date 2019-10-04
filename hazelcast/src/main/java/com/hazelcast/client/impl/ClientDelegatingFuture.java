@@ -154,8 +154,6 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
         return future;
     }
 
-
-    //////////
     @Override
     public <U> CompletableFuture<U> thenApply(Function<? super V, ? extends U> fn) {
         return future.thenApply(new DeserializingFunction<>(fn));
