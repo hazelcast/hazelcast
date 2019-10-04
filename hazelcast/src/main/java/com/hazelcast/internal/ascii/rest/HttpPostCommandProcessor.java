@@ -28,11 +28,11 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.SetLicenseOperation;
+import com.hazelcast.internal.util.JsonUtil;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.internal.util.JsonUtil;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -42,10 +42,11 @@ import javax.security.auth.login.LoginException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
-import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
@@ -882,6 +883,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else {
                 res = response(ResponseType.FORBIDDEN);
             }
+        } catch (ExecutionException executionException) {
+            logger.warning("Error occurred while updating the license", executionException.getCause());
+            res = exceptionResponse(executionException.getCause());
         } catch (Throwable throwable) {
             logger.warning("Error occurred while updating the license", throwable);
             res = exceptionResponse(throwable);
