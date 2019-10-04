@@ -220,16 +220,16 @@ public final class GroupProperty {
     /**
      * Time period to check if a client is still part of the cluster.
      */
-    public static final HazelcastProperty CLIENT_CHECK_PERIOD
-            = new HazelcastProperty("hazelcast.client.check.period.millis", 10000, MILLISECONDS);
+    public static final HazelcastProperty CLIENT_CLEANUP_PERIOD
+            = new HazelcastProperty("hazelcast.client.cleanup.period.millis", 10000, MILLISECONDS);
 
     /**
      * Timeout duration to decide if a client is still part of the cluster.
      * If a member can not find any connection to a client in the cluster, it will clean up local resources that is
      * owned by that client.
      */
-    public static final HazelcastProperty CLIENT_CHECK_TIMEOUT
-            = new HazelcastProperty("hazelcast.client.check.timeout.millis", 120000, MILLISECONDS);
+    public static final HazelcastProperty CLIENT_CLEANUP_TIMEOUT
+            = new HazelcastProperty("hazelcast.client.cleanup.timeout.millis", 120000, MILLISECONDS);
 
     /**
      * Number of threads for the {@link com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl} executor.

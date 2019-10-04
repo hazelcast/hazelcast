@@ -194,7 +194,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     public void testClientEndpointsDelaySeconds_whenHeartbeatResumed() throws Exception {
         int delaySeconds = 2;
         Config config = new Config();
-        config.setProperty(GroupProperty.CLIENT_CHECK_TIMEOUT.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(delaySeconds)));
+        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(delaySeconds)));
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());

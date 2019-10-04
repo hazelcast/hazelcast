@@ -126,8 +126,8 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testListenersWhenClientDisconnectedOperationRuns_whenOwnerMemberRemoved() {
         Config config = new Config();
         int endpointDelaySeconds = 2;
-        config.setProperty(GroupProperty.CLIENT_CHECK_TIMEOUT.getName(), String.valueOf(endpointDelaySeconds * 1000));
-        config.setProperty(GroupProperty.CLIENT_CHECK_PERIOD.getName(), String.valueOf(500));
+        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(endpointDelaySeconds * 1000));
+        config.setProperty(GroupProperty.CLIENT_CLEANUP_PERIOD.getName(), String.valueOf(500));
         HazelcastInstance ownerServer = factory.newHazelcastInstance(config);
         client = factory.newHazelcastClient(getSmartClientConfig());
         HazelcastInstance server2 = factory.newHazelcastInstance(config);
@@ -168,8 +168,8 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testListenersWhenClientDisconnectedOperationRuns_whenOwnerConnectionRemoved() {
         Config config = new Config();
         int endpointDelaySeconds = 10;
-        config.setProperty(GroupProperty.CLIENT_CHECK_TIMEOUT.getName(), String.valueOf(endpointDelaySeconds * 1000));
-        config.setProperty(GroupProperty.CLIENT_CHECK_PERIOD.getName(), String.valueOf(1000));
+        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(endpointDelaySeconds * 1000));
+        config.setProperty(GroupProperty.CLIENT_CLEANUP_PERIOD.getName(), String.valueOf(1000));
         config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), "20");
         HazelcastInstance ownerServer = factory.newHazelcastInstance(config);
         ClientConfig smartClientConfig = getSmartClientConfig();
