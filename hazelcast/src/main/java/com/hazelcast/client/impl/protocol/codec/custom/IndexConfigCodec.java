@@ -24,10 +24,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("507ef913a17bfc1fb14319a9e7e8a540")
+@Generated("e999d835cca0d67db67c1b3997c32742")
 public final class IndexConfigCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + ENUM_SIZE_IN_BYTES;
 
     private IndexConfigCodec() {
     }
@@ -36,7 +36,7 @@ public final class IndexConfigCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, indexConfig.getType());
+        encodeEnum(initialFrame.content, TYPE_FIELD_OFFSET, indexConfig.getType());
         clientMessage.add(initialFrame);
 
         CodecUtil.encodeNullable(clientMessage, indexConfig.getName(), StringCodec::encode);
@@ -50,7 +50,7 @@ public final class IndexConfigCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
+        int type = decodeEnum(initialFrame.content, TYPE_FIELD_OFFSET);
 
         java.lang.String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.util.List<java.lang.String> attributes = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
