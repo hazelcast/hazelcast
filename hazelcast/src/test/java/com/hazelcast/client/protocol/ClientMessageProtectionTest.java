@@ -29,6 +29,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -178,7 +179,15 @@ public class ClientMessageProtectionTest {
         }
     }
 
+    private String createPassword(int pwdLength) {
+        return new String(new char[pwdLength]).replace('\0', 'a');
+    }
+
     @Test
+    @Ignore
+    /**
+     * Ignore until issue https://github.com/hazelcast/hazelcast/issues/15658 is resolved
+     */
     public void testAccumulatedMessageSizeOverflow() throws IOException {
         Config config = smallInstanceConfig();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -205,10 +214,6 @@ public class ClientMessageProtectionTest {
                 readResponse(is);
             }
         }
-    }
-
-    private String createPassword(int pwdLength) {
-        return new String(new char[pwdLength]).replace('\0', 'a');
     }
 
     private ClientMessage createAuthenticationMessage(HazelcastInstance hz, String passwd) {
