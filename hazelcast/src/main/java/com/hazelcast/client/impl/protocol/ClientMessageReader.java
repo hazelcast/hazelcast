@@ -22,7 +22,6 @@ import com.hazelcast.internal.nio.Bits;
 import static java.lang.String.format;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
@@ -30,11 +29,10 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LEN
 public final class ClientMessageReader {
 
     private static final int INT_MASK = 0xffff;
-    private int readIndex;
     private int readOffset = -1;
+    private ClientMessage clientMessage;
     private int sumUntrustedMessageLength;
     private final int maxMessageLength;
-    private LinkedList<ClientMessage.Frame> frames = new LinkedList<>();
 
     public ClientMessageReader(int maxMessageLenth) {
         this.maxMessageLength = maxMessageLenth > 0 ? maxMessageLenth : Integer.MAX_VALUE;
@@ -43,10 +41,9 @@ public final class ClientMessageReader {
     public boolean readFrom(ByteBuffer src, boolean trusted) {
         for (; ; ) {
             if (readFrame(src, trusted)) {
-                if (ClientMessage.isFlagSet(frames.get(readIndex).flags, IS_FINAL_FLAG)) {
+                if (ClientMessage.isFlagSet(clientMessage.endFrame.flags, IS_FINAL_FLAG)) {
                     return true;
                 }
-                readIndex++;
                 readOffset = -1;
             } else {
                 return false;
@@ -55,8 +52,13 @@ public final class ClientMessageReader {
         }
     }
 
-    public LinkedList<ClientMessage.Frame> getFrames() {
-        return frames;
+    public ClientMessage getClientMessage() {
+        return clientMessage;
+    }
+
+    public void reset() {
+        readOffset = -1;
+        clientMessage = null;
     }
 
     private boolean readFrame(ByteBuffer src, boolean trusted) {
@@ -84,20 +86,26 @@ public final class ClientMessageReader {
                 }
                 sumUntrustedMessageLength += frameLength;
             }
+
             src.position(src.position() + Bits.INT_SIZE_IN_BYTES);
             int flags = Bits.readShortL(src, src.position()) & INT_MASK;
             src.position(src.position() + Bits.SHORT_SIZE_IN_BYTES);
 
             int size = frameLength - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
             byte[] bytes = new byte[size];
-            frames.add(new ClientMessage.Frame(bytes, flags));
+            ClientMessage.Frame frame = new ClientMessage.Frame(bytes, flags);
+            if (clientMessage == null) {
+                clientMessage = ClientMessage.createForDecode(frame);
+            } else {
+                clientMessage.add(frame);
+            }
             readOffset = 0;
             if (size == 0) {
                 return true;
             }
         }
 
-        ClientMessage.Frame frame = frames.get(readIndex);
+        ClientMessage.Frame frame = clientMessage.endFrame;
         return accumulate(src, frame.content, frame.content.length - readOffset);
     }
 

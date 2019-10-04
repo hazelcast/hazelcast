@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("ecb6250636aa9c5be8e3720ee9516f39")
+@Generated("5f12a95e958d7666f51b2424ad3e24db")
 public final class NearCachePreloaderConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int STORE_INITIAL_DELAY_SECONDS_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -37,7 +35,7 @@ public final class NearCachePreloaderConfigCodec {
     }
 
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.NearCachePreloaderConfig nearCachePreloaderConfig) {
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_FIELD_OFFSET, nearCachePreloaderConfig.isEnabled());
@@ -47,10 +45,10 @@ public final class NearCachePreloaderConfigCodec {
 
         StringCodec.encode(clientMessage, nearCachePreloaderConfig.getDirectory());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.NearCachePreloaderConfig decode(ListIterator<ClientMessage.Frame> iterator) {
+    public static com.hazelcast.config.NearCachePreloaderConfig decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
