@@ -56,7 +56,7 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ChangeClusterStateOperation(ClusterState.valueOf(parameters.newState));
+        return new ChangeClusterStateOperation(ClusterState.values()[parameters.newState]);
     }
 
     @Override

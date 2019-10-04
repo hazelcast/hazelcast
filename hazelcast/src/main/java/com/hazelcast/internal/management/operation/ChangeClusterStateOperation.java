@@ -17,15 +17,18 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
 /**
  * Operation to change a cluster's state via Management Center.
@@ -42,6 +45,7 @@ public class ChangeClusterStateOperation extends AbstractManagementOperation {
 
     @Override
     public void run() {
+        ILogger logger = getNodeEngine().getLogger(getClass());
         ExecutionService executionService = getNodeEngine().getExecutionService();
         Future<Void> future = executionService.submit(
                 ExecutionService.ASYNC_EXECUTOR,
@@ -49,17 +53,11 @@ public class ChangeClusterStateOperation extends AbstractManagementOperation {
                     getNodeEngine().getClusterService().changeClusterState(newState);
                     return null;
                 });
-        executionService.asCompletableFuture(future).andThen(new ExecutionCallback<Void>() {
-            @Override
-            public void onResponse(Void response) {
-                sendResponse(null);
-            }
 
-            @Override
-            public void onFailure(Throwable t) {
-                sendResponse(t);
-            }
-        });
+        executionService.asCompletableFuture(future).whenComplete(
+                withTryCatch(
+                        logger,
+                        (empty, error) -> sendResponse(error != null ? peel(error) : null)));
     }
 
     @Override

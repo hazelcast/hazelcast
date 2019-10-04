@@ -28,9 +28,10 @@ import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+
+import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
 
@@ -50,7 +51,7 @@ public class ManagementCenterService {
      * Reads the metrics journal for a given number starting from a specific sequence.
      */
     @Nonnull
-    public ICompletableFuture<MetricsResultSet> readMetricsAsync(Member member, long startSequence) {
+    public CompletableFuture<MetricsResultSet> readMetricsAsync(Member member, long startSequence) {
         ClientMessage request = MCReadMetricsCodec.encodeRequest(member.getUuid(), startSequence);
         ClientInvocation invocation = new ClientInvocation(client, request, null, member.getAddress());
 
@@ -66,10 +67,10 @@ public class ManagementCenterService {
      * Changes the cluster's state.
      */
     @Nonnull
-    public ICompletableFuture<Void> changeClusterState(ClusterState newState) {
+    public CompletableFuture<Void> changeClusterState(ClusterState newState) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCChangeClusterStateCodec.encodeRequest(newState.name()),
+                MCChangeClusterStateCodec.encodeRequest(newState.ordinal()),
                 null
         );
         return new ClientDelegatingFuture<>(
@@ -86,7 +87,7 @@ public class ManagementCenterService {
      * Gets the config ƒor a given map.
      */
     @Nonnull
-    public ICompletableFuture<MapConfigHolder> getMapConfig(String map) {
+    public CompletableFuture<MapConfigHolder> getMapConfig(String map) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCGetMapConfigCodec.encodeRequest(map),
@@ -104,7 +105,7 @@ public class ManagementCenterService {
      * Updates the config of a given map.
      */
     @Nonnull
-    public ICompletableFuture<Void> updateMapConfig(String map, MapConfigHolder newMapConfig) {
+    public CompletableFuture<Void> updateMapConfig(String map, MapConfigHolder newMapConfig) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCUpdateMapConfigCodec.encodeRequest(map, newMapConfig),

@@ -34,13 +34,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the state of a cluster.
  */
-@Generated("99799689b0543d77e17ad64ec00b4a37")
+@Generated("587b33ef0de32f2aa45f7cfa9c4daf1a")
 public final class MCChangeClusterStateCodec {
     //hex: 0x270200
     public static final int REQUEST_MESSAGE_TYPE = 2556416;
     //hex: 0x270201
     public static final int RESPONSE_MESSAGE_TYPE = 2556417;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_NEW_STATE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NEW_STATE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MCChangeClusterStateCodec() {
@@ -52,27 +53,26 @@ public final class MCChangeClusterStateCodec {
         /**
          * New state of the cluster.
          */
-        public java.lang.String newState;
+        public int newState;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String newState) {
+    public static ClientMessage encodeRequest(int newState) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MC.ChangeClusterState");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET, newState);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, newState);
         return clientMessage;
     }
 
     public static MCChangeClusterStateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        request.newState = StringCodec.decode(iterator);
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.newState = decodeInt(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET);
         return request;
     }
 

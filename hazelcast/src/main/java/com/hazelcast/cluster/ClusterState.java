@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
@@ -58,6 +59,10 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * state of the cluster, that is going to join to the major side,
  * will be changed to {@code FROZEN} automatically before merge
  * and will be set to the state of the new cluster after merge.
+ *
+ * <p>
+ * Note: Do not re-order, as ordinals are used in the client protocol.
+ * See {@link MCChangeClusterStateCodec#encodeRequest(int)}.
  *
  * @see Cluster#getClusterState()
  * @see Cluster#changeClusterState(ClusterState)
