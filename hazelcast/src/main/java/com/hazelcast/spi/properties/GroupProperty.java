@@ -361,7 +361,7 @@ public final class GroupProperty {
      * It is disabled by default.
      */
     public static final HazelcastProperty IO_WRITE_THROUGH_ENABLED
-            = new HazelcastProperty("hazelcast.io.write.through", false);
+            = new HazelcastProperty("hazelcast.io.write.through", true);
 
     /**
      * Property needed for concurrency detection so that write through can be done correctly.
