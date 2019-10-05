@@ -27,8 +27,8 @@ import java.util.Set;
  */
 public enum MetricTarget {
 
-    // Note: ordinals of this enum are used for 32-bit bitset (#bitset);
-    // thus if it ever gets bigger than 32 values, convert it to 64-bit bitset
+    // Note: ordinals of this enum are used for 32-bit bitset (see #bitset);
+    // thus if it ever gets bigger than 32 values, start using 64-bit bitset
     MANAGEMENT_CENTER,
     JMX,
     DIAGNOSTICS;
