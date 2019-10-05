@@ -139,17 +139,7 @@ class MetricsCollectionCycle {
     private Set<MetricTarget> getExcludedTargets(Object object) {
         if (object instanceof ProbeAware) {
             Probe probe = ((ProbeAware) object).getProbe();
-            return getExcludedTargets(probe);
-        }
-
-        return emptySet();
-    }
-
-    private Set<MetricTarget> getExcludedTargets(Probe probe) {
-        MetricTarget[] excludedTargets = probe.excludedTargets();
-
-        if (excludedTargets.length > 0) {
-            return MetricTarget.asSet(excludedTargets);
+            return MetricTarget.asSet(probe.excludedTargets());
         }
 
         return emptySet();

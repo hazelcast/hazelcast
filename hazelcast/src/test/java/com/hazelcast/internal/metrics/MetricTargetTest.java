@@ -56,6 +56,7 @@ public class MetricTargetTest {
 
     @Test
     public void testAsSet_supportsAllCombinations() {
+        assertAsSetContainsAll();
         assertAsSetContainsAll(MANAGEMENT_CENTER);
         assertAsSetContainsAll(JMX);
         assertAsSetContainsAll(DIAGNOSTICS);

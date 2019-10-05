@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
+import static java.util.Collections.emptySet;
+
 /**
  * Enum representing the target platforms of the metrics collection.
  */
@@ -53,6 +55,9 @@ public enum MetricTarget {
      * @return          set containing all items from the input array
      */
     public static Set<MetricTarget> asSet(MetricTarget[] targets) {
+        if (targets.length == 0) {
+            return emptySet();
+        }
         return BITSET_TO_SET_CACHE.get(bitset(targets));
     }
 
