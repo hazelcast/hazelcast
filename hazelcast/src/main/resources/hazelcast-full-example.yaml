@@ -2113,7 +2113,7 @@ hazelcast:
   #     Set to true to enable Hazelcast's security features.
   # * realms:
   #     Defines set of named security realms
-  # * memmber-authentication
+  # * member-authentication
   #     Maps member authentication to a realm name. It has the "realm" attribute.
   # * client-authentication
   #     Maps client authentication to a realm name. It has the "realm" attribute.

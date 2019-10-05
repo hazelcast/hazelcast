@@ -453,4 +453,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testWhitespaceInNonSpaceStrings();
+
+    @Test
+    public abstract void testTokenIdentityConfig();
 }

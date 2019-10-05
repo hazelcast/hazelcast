@@ -68,12 +68,8 @@ hazelcast-client:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
   #
-  # Specifies the name and password for a cluster you connect to.
-  # Cluster configuration allow you to create separate sub-clusters with different names.
-  # The password is only checked when security is enabled on Hazelcast members (Enterprise edition feature).
-  cluster:
-    name: dev
-    password: dev-pass
+  # Specifies the name of the client
+  client-name: dev
   #
   # When Hazelcast instances are created, they are put in a global registry with their creation names.
   # "instance-name" gives you the ability to get a specific Hazelcast instance from this registry
@@ -356,10 +352,10 @@ hazelcast-client:
   #     defined as a mapping where the key is the name of the property.
   # * "username-password":
   #     Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
-  #     username" and "password" attributes.
+  #     "username" and "password" attributes.
   # * "token"
   #     Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
-  #     Content of the element is token value in given encoding (or in plain text).
+  #     Content of the attribute "value" is token value in given encoding (or in plain text).
   #
   security:
     credentials-factory:

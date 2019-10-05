@@ -607,13 +607,17 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                         getAttribute(child, "username"),
                         getAttribute(child, "password"));
             } else if ("token".equals(nodeName)) {
-                clientSecurityConfig.setTokenIdentityConfig(new TokenIdentityConfig(
-                        getTokenEncoding(getAttribute(child, "encoding")), getTextContent(child)));
+                handleTokenIdentity(clientSecurityConfig, child);
             } else if ("credentials-factory".equals(nodeName)) {
                 handleCredentialsFactory(child, clientSecurityConfig);
             }
         }
         clientConfig.setSecurityConfig(clientSecurityConfig);
+    }
+
+    protected void handleTokenIdentity(ClientSecurityConfig clientSecurityConfig, Node node) {
+        clientSecurityConfig.setTokenIdentityConfig(new TokenIdentityConfig(
+                getTokenEncoding(getAttribute(node, "encoding")), getTextContent(node)));
     }
 
     private void handleCredentialsFactory(Node node, ClientSecurityConfig clientSecurityConfig) {
