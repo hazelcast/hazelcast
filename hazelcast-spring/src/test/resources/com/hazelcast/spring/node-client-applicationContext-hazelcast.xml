@@ -415,7 +415,7 @@
     </hz:client>
 
     <hz:client id="client17-backupAckToClient">
-        <hz:cluster name="${cluster.name}"/>
+        <hz:client-name>${cluster.name}</hz:client-name>
         <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>

@@ -40,7 +40,7 @@ public class ClientSecurityConfig {
         if (securityConfig.identityConfig == null) {
             identityConfig = null;
         } else {
-            identityConfig = identityConfig.copy();
+            identityConfig = securityConfig.identityConfig.copy();
         }
     }
 
