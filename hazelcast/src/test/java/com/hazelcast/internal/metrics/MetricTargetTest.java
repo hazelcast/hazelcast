@@ -26,11 +26,9 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
-import static com.hazelcast.internal.metrics.MetricTarget.asSet;
 import static com.hazelcast.test.HazelcastTestSupport.assertContainsAll;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -38,19 +36,21 @@ public class MetricTargetTest {
 
     @Test
     public void testAsSet_returnsSameObjects() {
-        assertTrue("set objects must be cached and reused",
-                asSet(new MetricTarget[]{MANAGEMENT_CENTER}) == asSet(new MetricTarget[]{MANAGEMENT_CENTER}));
+        assertSame(
+                MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER}),
+                MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER})
+        );
     }
 
     @Test
     public void testAsSet_ignoresPermutations() {
-        assertEquals(
-                asSet(new MetricTarget[]{MANAGEMENT_CENTER}),
-                asSet(new MetricTarget[]{MANAGEMENT_CENTER, MANAGEMENT_CENTER})
+        assertSame(
+                MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER}),
+                MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, MANAGEMENT_CENTER})
         );
-        assertEquals(
-                asSet(new MetricTarget[]{JMX, MANAGEMENT_CENTER}),
-                asSet(new MetricTarget[]{MANAGEMENT_CENTER, JMX})
+        assertSame(
+                MetricTarget.asSet(new MetricTarget[]{JMX, MANAGEMENT_CENTER}),
+                MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, JMX})
         );
     }
 
@@ -66,7 +66,7 @@ public class MetricTargetTest {
     }
 
     private void assertAsSetContainsAll(MetricTarget... targets) {
-        assertContainsAll(asSet(targets), asList(targets));
+        assertContainsAll(MetricTarget.asSet(targets), asList(targets));
     }
 
 }
