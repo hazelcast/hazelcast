@@ -62,7 +62,7 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
         }
 
         @Override
-        protected Executor defaultExecutor() {
+        public Executor defaultExecutor() {
             return executor;
         }
 
