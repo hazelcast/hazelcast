@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("46ac91cf45dda3921f8651e9e4c9befb")
+@Generated("ad4fbd7e06c18cd424665530ad4a1c66")
 public final class ExecutorServiceCancelOnAddressCodec {
     //hex: 0x090400
     public static final int REQUEST_MESSAGE_TYPE = 590848;
@@ -60,7 +60,7 @@ public final class ExecutorServiceCancelOnAddressCodec {
         /**
          * Address of the host to execute the request on.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
 
         /**
          * If true, then the thread interrupt call can be used to cancel the thread, otherwise interrupt can not be used.
@@ -68,7 +68,7 @@ public final class ExecutorServiceCancelOnAddressCodec {
         public boolean interrupt;
     }
 
-    public static ClientMessage encodeRequest(java.util.UUID uuid, com.hazelcast.nio.Address address, boolean interrupt) {
+    public static ClientMessage encodeRequest(java.util.UUID uuid, com.hazelcast.cluster.Address address, boolean interrupt) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

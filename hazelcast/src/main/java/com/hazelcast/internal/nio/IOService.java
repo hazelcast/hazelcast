@@ -29,7 +29,7 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.properties.HazelcastProperties;

@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels further execution and scheduling of the task
  */
-@Generated("f21f79ddbb71f0b4506774d9dfc28ec2")
+@Generated("b07e1876b5507e613457e1503495e160")
 public final class ScheduledExecutorCancelFromAddressCodec {
     //hex: 0x1D0A00
     public static final int REQUEST_MESSAGE_TYPE = 1903104;
@@ -64,7 +64,7 @@ public final class ScheduledExecutorCancelFromAddressCodec {
         /**
          * The address of the member where the task will get scheduled.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
 
         /**
          * A boolean flag to indicate whether the task should be interrupted.
@@ -72,7 +72,7 @@ public final class ScheduledExecutorCancelFromAddressCodec {
         public boolean mayInterruptIfRunning;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.nio.Address address, boolean mayInterruptIfRunning) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address, boolean mayInterruptIfRunning) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);

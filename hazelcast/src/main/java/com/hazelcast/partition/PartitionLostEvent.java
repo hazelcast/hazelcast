@@ -16,7 +16,7 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * The event that is fired when a partition lost its owner and all backups.

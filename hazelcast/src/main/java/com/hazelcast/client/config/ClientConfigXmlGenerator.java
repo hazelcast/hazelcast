@@ -207,12 +207,7 @@ public final class ClientConfigXmlGenerator {
         gen.open("network")
                 .node("smart-routing", network.isSmartRouting())
                 .node("redo-operation", network.isRedoOperation())
-                .node("connection-timeout", network.getConnectionTimeout())
-                .node("connection-attempt-period", network.getConnectionAttemptPeriod());
-
-        if (network.getConnectionAttemptLimit() >= 0) {
-            gen.node("connection-attempt-limit", network.getConnectionAttemptLimit());
-        }
+                .node("connection-timeout", network.getConnectionTimeout());
 
         clusterMembers(gen, network.getAddresses());
         socketOptions(gen, network.getSocketOptions());

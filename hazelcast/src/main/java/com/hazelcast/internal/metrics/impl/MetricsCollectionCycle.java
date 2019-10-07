@@ -21,13 +21,21 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeAware;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.function.Function;
+
+import static java.util.Collections.emptySet;
 
 /**
  * Class representing a metrics collection cycle. It collects both static
@@ -94,8 +102,10 @@ class MetricsCollectionCycle {
     }
 
     private void collect(String name, Object source, ProbeFunction function) {
+        Set<MetricTarget> excludedTargets = getExcludedTargets(function);
+
         if (function == null || source == null) {
-            metricsCollector.collectNoValue(name);
+            metricsCollector.collectNoValue(name, excludedTargets);
             return;
         }
 
@@ -108,21 +118,44 @@ class MetricsCollectionCycle {
         }
     }
 
-    private void collectDouble(Object source, String name, DoubleProbeFunction doubleFunction) {
+    private void collectDouble(Object source, String name, DoubleProbeFunction function) {
+        Set<MetricTarget> excludedTargets = getExcludedTargets(function);
         try {
-            double value = doubleFunction.get(source);
-            metricsCollector.collectDouble(name, value);
+            double value = function.get(source);
+            metricsCollector.collectDouble(name, value, excludedTargets);
         } catch (Exception ex) {
-            metricsCollector.collectException(name, ex);
+            metricsCollector.collectException(name, ex, excludedTargets);
         }
     }
 
-    private void collectLong(Object source, String name, LongProbeFunction longFunction) {
+    private void collectLong(Object source, String name, LongProbeFunction function) {
+        Set<MetricTarget> excludedTargets = getExcludedTargets(function);
         try {
-            long value = longFunction.get(source);
-            metricsCollector.collectLong(name, value);
+            long value = function.get(source);
+            metricsCollector.collectLong(name, value, excludedTargets);
         } catch (Exception ex) {
-            metricsCollector.collectException(name, ex);
+            metricsCollector.collectException(name, ex, excludedTargets);
         }
+    }
+
+    private Set<MetricTarget> getExcludedTargets(Object object) {
+        if (object instanceof ProbeAware) {
+            Probe probe = ((ProbeAware) object).getProbe();
+            return getExcludedTargets(probe);
+        }
+
+        return emptySet();
+    }
+
+    private Set<MetricTarget> getExcludedTargets(Probe probe) {
+        MetricTarget[] excludedTargets = probe.excludedTargets();
+
+        if (excludedTargets.length > 0) {
+            EnumSet<MetricTarget> metricTargets = EnumSet.noneOf(MetricTarget.class);
+            Collections.addAll(metricTargets, excludedTargets);
+            return metricTargets;
+        }
+
+        return emptySet();
     }
 }

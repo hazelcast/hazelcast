@@ -19,22 +19,21 @@ package com.hazelcast.client.impl.connection.nio;
 import com.hazelcast.client.ClientNotAllowedInClusterException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
-import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
-import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.ClientDiscoveryService;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
+import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
@@ -61,9 +60,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
  * Changing cluster is also handled in this class(Blue/green feature)
  */
 public class ClusterConnectorServiceImpl implements ClusterConnectorService, ConnectionListener {
-
-    private static final int DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC = 2;
-    private static final int DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC = 20;
 
     private final ILogger logger;
     private final HazelcastClientInstanceImpl client;
@@ -92,28 +88,11 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
     private WaitStrategy initializeWaitStrategy(ClientConfig clientConfig) {
         ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig expoRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        if (expoRetryConfig.isEnabled()) {
-            return new ExponentialWaitStrategy(expoRetryConfig.getInitialBackoffMillis(),
-                    expoRetryConfig.getMaxBackoffMillis(),
-                    expoRetryConfig.getMultiplier(),
-                    expoRetryConfig.isFailOnMaxBackoff(),
-                    expoRetryConfig.getJitter());
-        }
-        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-
-        int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
-
-        boolean isAsync = connectionStrategyConfig.isAsyncStart();
-
-        int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
-        if (connectionAttemptLimit < 0) {
-            connectionAttemptLimit = isAsync ? DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC
-                    : DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC;
-        } else {
-            connectionAttemptLimit = connectionAttemptLimit == 0 ? Integer.MAX_VALUE : connectionAttemptLimit;
-        }
-
-        return new DefaultWaitStrategy(connectionAttemptPeriod, connectionAttemptLimit);
+        return new WaitStrategy(expoRetryConfig.getInitialBackoffMillis(),
+                expoRetryConfig.getMaxBackoffMillis(),
+                expoRetryConfig.getMultiplier(),
+                expoRetryConfig.isFailOnMaxBackoff(),
+                expoRetryConfig.getJitter());
     }
 
     @Override
@@ -382,53 +361,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
     }
 
-    interface WaitStrategy {
 
-        void reset();
-
-        boolean sleep();
-
-    }
-
-    class DefaultWaitStrategy implements WaitStrategy {
-
-        private final int connectionAttemptPeriod;
-        private final int connectionAttemptLimit;
-        private int attempt;
-
-        DefaultWaitStrategy(int connectionAttemptPeriod, int connectionAttemptLimit) {
-            this.connectionAttemptPeriod = connectionAttemptPeriod;
-            this.connectionAttemptLimit = connectionAttemptLimit;
-        }
-
-        @Override
-        public void reset() {
-            attempt = 0;
-        }
-
-        @Override
-        public boolean sleep() {
-            attempt++;
-            if (attempt >= connectionAttemptLimit) {
-                logger.warning(String.format("Unable to get live cluster connection, attempt %d of %d.", attempt,
-                        connectionAttemptLimit));
-                return false;
-            }
-            logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt %d of %d.",
-                    connectionAttemptPeriod, attempt, connectionAttemptLimit));
-
-            try {
-                Thread.sleep(connectionAttemptPeriod);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return false;
-            }
-            return true;
-        }
-
-    }
-
-    class ExponentialWaitStrategy implements WaitStrategy {
+    class WaitStrategy {
 
         private final int initialBackoffMillis;
         private final int maxBackoffMillis;
@@ -439,8 +373,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         private int attempt;
         private int currentBackoffMillis;
 
-        ExponentialWaitStrategy(int initialBackoffMillis, int maxBackoffMillis,
-                                double multiplier, boolean failOnMaxBackoff, double jitter) {
+        WaitStrategy(int initialBackoffMillis, int maxBackoffMillis,
+                     double multiplier, boolean failOnMaxBackoff, double jitter) {
             this.initialBackoffMillis = initialBackoffMillis;
             this.maxBackoffMillis = maxBackoffMillis;
             this.multiplier = multiplier;
@@ -448,13 +382,11 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             this.jitter = jitter;
         }
 
-        @Override
         public void reset() {
             attempt = 0;
             currentBackoffMillis = Math.min(maxBackoffMillis, initialBackoffMillis);
         }
 
-        @Override
         public boolean sleep() {
             attempt++;
             if (failOnMaxBackoff && currentBackoffMillis >= maxBackoffMillis) {

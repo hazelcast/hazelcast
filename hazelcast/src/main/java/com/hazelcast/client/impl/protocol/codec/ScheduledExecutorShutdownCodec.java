@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted.
  * Invocation has no additional effect if already shut down.
  */
-@Generated("df238d65d804cc323d167b0e7ce41bc2")
+@Generated("60eb2874c6ca49832f2cf02d3627625a")
 public final class ScheduledExecutorShutdownCodec {
     //hex: 0x1D0100
     public static final int REQUEST_MESSAGE_TYPE = 1900800;
@@ -58,10 +58,10 @@ public final class ScheduledExecutorShutdownCodec {
         /**
          * The cluster member where the shutdown for this scheduler will be sent.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, com.hazelcast.nio.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

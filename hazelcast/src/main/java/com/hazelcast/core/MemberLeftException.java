@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.version.MemberVersion;
 

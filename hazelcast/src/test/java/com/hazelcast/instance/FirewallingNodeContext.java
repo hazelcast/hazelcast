@@ -19,7 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 

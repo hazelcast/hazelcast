@@ -24,7 +24,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -132,7 +132,7 @@ public class ProxyManagerTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "1");
-        config.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = factory.newHazelcastClient(config);
         instance.shutdown();
         client.getMap("test");

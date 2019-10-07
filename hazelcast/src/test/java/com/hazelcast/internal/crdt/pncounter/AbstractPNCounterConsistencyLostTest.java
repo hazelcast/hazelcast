@@ -20,7 +20,7 @@ import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.instance.impl.TestUtil;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 

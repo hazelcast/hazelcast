@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.internal.networking.NetworkStats;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.Collection;
 import java.util.function.Consumer;

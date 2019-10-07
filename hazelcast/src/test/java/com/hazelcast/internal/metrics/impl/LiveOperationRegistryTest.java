@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.operationservice.CallsPerMember;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;

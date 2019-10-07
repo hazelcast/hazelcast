@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;

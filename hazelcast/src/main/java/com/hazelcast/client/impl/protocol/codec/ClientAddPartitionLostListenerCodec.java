@@ -35,7 +35,7 @@ import com.hazelcast.logging.Logger;
 /**
  * TODO DOC
  */
-@Generated("ddc6cbdea0460776bdb89fab4e6ed271")
+@Generated("dd84010d30b0449e8726748ae94e5467")
 public final class ClientAddPartitionLostListenerCodec {
     //hex: 0x000A00
     public static final int REQUEST_MESSAGE_TYPE = 2560;
@@ -111,7 +111,7 @@ public final class ClientAddPartitionLostListenerCodec {
         return response;
     }
 
-    public static ClientMessage encodePartitionLostEvent(int partitionId, int lostBackupCount, com.hazelcast.nio.Address source) {
+    public static ClientMessage encodePartitionLostEvent(int partitionId, int lostBackupCount, com.hazelcast.cluster.Address source) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITION_LOST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -133,12 +133,12 @@ public final class ClientAddPartitionLostListenerCodec {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int partitionId = decodeInt(initialFrame.content, EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET);
                 int lostBackupCount = decodeInt(initialFrame.content, EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET);
-                com.hazelcast.nio.Address source = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
+                com.hazelcast.cluster.Address source = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
                 handlePartitionLostEvent(partitionId, lostBackupCount, source);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
-        public abstract void handlePartitionLostEvent(int partitionId, int lostBackupCount, com.hazelcast.nio.Address source);
+        public abstract void handlePartitionLostEvent(int partitionId, int lostBackupCount, com.hazelcast.cluster.Address source);
     }
 }

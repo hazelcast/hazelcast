@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks whether a task is done.
  * @see {@link java.util.concurrent.Future#cancel(boolean)}
  */
-@Generated("034f0631f241fdb29b92225c7a4e676f")
+@Generated("2d922148e5c2fb20fb47c0e4c60fd8a4")
 public final class ScheduledExecutorIsDoneFromAddressCodec {
     //hex: 0x1D0E00
     public static final int REQUEST_MESSAGE_TYPE = 1904128;
@@ -64,10 +64,10 @@ public final class ScheduledExecutorIsDoneFromAddressCodec {
         /**
          * The address of the member where the task will get scheduled.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.nio.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);

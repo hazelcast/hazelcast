@@ -67,7 +67,7 @@ public class ClientClusterRestartEventTest {
 
     private ClientConfig newClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         return clientConfig;
     }
 

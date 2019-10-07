@@ -26,7 +26,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.CallsPerMember;
 import com.hazelcast.internal.services.CanCancelOperations;

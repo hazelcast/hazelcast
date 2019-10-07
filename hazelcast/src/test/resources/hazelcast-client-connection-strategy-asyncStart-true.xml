@@ -20,11 +20,8 @@
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd">
 
-<connection-strategy async-start="true" />
+    <connection-strategy async-start="true"/>
 
-<network>
-    <connection-attempt-limit>9999</connection-attempt-limit>
-</network>
     <listeners>
         <listener>com.hazelcast.client.connectionstrategy.ConfiguredBehaviourTestXmlConfig$AsyncStartListener</listener>
     </listeners>

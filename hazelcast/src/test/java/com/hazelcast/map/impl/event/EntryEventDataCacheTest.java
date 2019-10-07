@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;

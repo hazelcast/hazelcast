@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.constructor.test;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;

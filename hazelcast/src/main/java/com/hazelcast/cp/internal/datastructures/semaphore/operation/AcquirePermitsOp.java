@@ -26,7 +26,7 @@ import com.hazelcast.cp.internal.datastructures.semaphore.Semaphore;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 

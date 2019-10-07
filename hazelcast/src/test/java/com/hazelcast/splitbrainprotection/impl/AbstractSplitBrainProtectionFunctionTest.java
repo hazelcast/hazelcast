@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.splitbrainprotection.HeartbeatAware;
 import com.hazelcast.splitbrainprotection.PingAware;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction;

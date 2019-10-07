@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("b3cb3ccd358a9df48a1af1e903db5834")
+@Generated("059bcf4451ea1e8fe0243b69ba8e834d")
 public final class CacheManagementConfigCodec {
     //hex: 0x151200
     public static final int REQUEST_MESSAGE_TYPE = 1380864;
@@ -69,10 +69,10 @@ public final class CacheManagementConfigCodec {
         /**
          * the address of the host to enable.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, boolean isStat, boolean enabled, com.hazelcast.nio.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String name, boolean isStat, boolean enabled, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);

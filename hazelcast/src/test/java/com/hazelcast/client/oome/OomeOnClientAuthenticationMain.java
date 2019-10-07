@@ -34,8 +34,7 @@ public class OomeOnClientAuthenticationMain {
     public static void main(String[] args) {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterPassword("foo");
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(0);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
 
         for (int k = 0; k < 1000000; k++) {
             System.out.println("At:" + k);

@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("0942e59447035e180ad445dd12533e48")
+@Generated("5ba9b3e42fee60fcf448f8a59a2ed831")
 public final class MemberCodec {
     private static final int UUID_FIELD_OFFSET = 0;
     private static final int LITE_MEMBER_FIELD_OFFSET = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
@@ -55,7 +55,7 @@ public final class MemberCodec {
         java.util.UUID uuid = decodeUUID(initialFrame.content, UUID_FIELD_OFFSET);
         boolean liteMember = decodeBoolean(initialFrame.content, LITE_MEMBER_FIELD_OFFSET);
 
-        com.hazelcast.nio.Address address = AddressCodec.decode(iterator);
+        com.hazelcast.cluster.Address address = AddressCodec.decode(iterator);
         java.util.Map<java.lang.String, java.lang.String> attributes = MapCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);

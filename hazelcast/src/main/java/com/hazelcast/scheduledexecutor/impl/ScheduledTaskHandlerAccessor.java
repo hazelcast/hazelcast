@@ -16,7 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 
 public final class ScheduledTaskHandlerAccessor {

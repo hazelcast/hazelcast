@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -31,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -175,7 +177,7 @@ public class MetricTaggerImplTest {
 
         registry.collect(new MetricsCollector() {
             @Override
-            public void collectLong(String name, long value) {
+            public void collectLong(String name, long value, Set<MetricTarget> excludedTargets) {
                 if (p1Name.equals(name)) {
                     assertEquals(probe1, value);
                 } else if (p2Name.equals(name)) {
@@ -186,17 +188,17 @@ public class MetricTaggerImplTest {
             }
 
             @Override
-            public void collectDouble(String name, double value) {
+            public void collectDouble(String name, double value, Set<MetricTarget> excludedTargets) {
                 fail("Unknown metric: " + name);
             }
 
             @Override
-            public void collectException(String name, Exception e) {
+            public void collectException(String name, Exception e, Set<MetricTarget> excludedTargets) {
                 throw new RuntimeException(e);
             }
 
             @Override
-            public void collectNoValue(String name) {
+            public void collectNoValue(String name, Set<MetricTarget> excludedTargets) {
                 fail("Unknown metric: " + name);
             }
         });

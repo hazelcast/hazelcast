@@ -69,9 +69,7 @@
 
     <hz:client id="client"
                credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
             <hz:member>127.0.0.1:5700</hz:member>

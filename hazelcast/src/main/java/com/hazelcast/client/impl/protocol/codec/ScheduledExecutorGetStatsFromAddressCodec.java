@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("7722508a21550af52dc0c13542543811")
+@Generated("c548e18d4da4aa30270916b401bce6d0")
 public final class ScheduledExecutorGetStatsFromAddressCodec {
     //hex: 0x1D0600
     public static final int REQUEST_MESSAGE_TYPE = 1902080;
@@ -67,10 +67,10 @@ public final class ScheduledExecutorGetStatsFromAddressCodec {
         /**
          * The address of the member where the task will get scheduled.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.nio.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);

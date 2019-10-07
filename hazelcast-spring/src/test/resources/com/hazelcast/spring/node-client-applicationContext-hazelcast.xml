@@ -63,9 +63,7 @@
         <hz:properties>
             <hz:property name="hazelcast.client.retry.count">13</hz:property>
         </hz:properties>
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:network connection-timeout="1000"
                     redo-operation="true"
                     smart-routing="true">
             <hz:member>127.0.0.1:5700</hz:member>
@@ -81,9 +79,7 @@
     </hz:client>
 
     <hz:client id="client2" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
 
@@ -99,9 +95,7 @@
 
     <hz:client id="client3"
                credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
             <hz:member>127.0.0.1:5700</hz:member>
@@ -177,9 +171,7 @@
 
     <hz:client id="client4"
                credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
             <hz:member>127.0.0.1:5700</hz:member>
@@ -199,7 +191,12 @@
 
     <hz:client id="client5"
                credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+        <hz:connection-strategy>
+            <hz:connection-retry>
+                <hz:fail-on-max-backoff>false</hz:fail-on-max-backoff>
+            </hz:connection-retry>
+        </hz:connection-strategy>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -208,7 +205,7 @@
 
     <hz:client id="client6"
                credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -246,9 +243,7 @@
     </hz:client>
 
     <hz:client id="client7-empty-serialization-config" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
 
@@ -265,7 +260,7 @@
 
     <hz:client id="client8"
                credentials-ref="credentials">
-        <hz:network connection-attempt-limit="2">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -273,7 +268,7 @@
     </hz:client>
 
     <hz:client id="client9-user-code-deployment-test" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -290,7 +285,7 @@
     </hz:client>
 
     <hz:client id="client10-flakeIdGenerator" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -298,7 +293,7 @@
     </hz:client>
 
     <hz:client id="client11-icmp-ping" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:icmp-ping enabled="false">
@@ -312,7 +307,7 @@
     </hz:client>
 
     <hz:client id="client12-hazelcast-cloud" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:hazelcast-cloud enabled="false">
@@ -322,12 +317,12 @@
     </hz:client>
 
     <hz:client id="client13-exponential-connection-retry" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
         <hz:connection-strategy async-start="true" reconnect-mode="ASYNC">
-            <hz:connection-retry enabled="true">
+            <hz:connection-retry>
                 <hz:initial-backoff-millis>2000</hz:initial-backoff-millis>
                 <hz:max-backoff-millis>60000</hz:max-backoff-millis>
                 <hz:multiplier>3</hz:multiplier>
@@ -338,7 +333,7 @@
     </hz:client>
 
     <hz:client id="client14-reliable-topic" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -351,7 +346,7 @@
 
     <hz:client id="client15-credentials-factory">
         <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -367,7 +362,7 @@
 
     <hz:client id="client16-name-and-labels">
         <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -379,7 +374,7 @@
 
     <hz:client id="client17-backupAckToClient">
         <hz:cluster name="${cluster.name}"/>
-        <hz:network connection-attempt-limit="0">
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>

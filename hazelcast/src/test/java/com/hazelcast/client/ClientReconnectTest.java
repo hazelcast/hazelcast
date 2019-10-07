@@ -25,7 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -59,7 +59,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testClientReconnectOnClusterDown() throws Exception {
         final HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final CountDownLatch connectedLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
@@ -81,7 +81,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         Address localAddress = instance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final CountDownLatch memberRemovedLatch = new CountDownLatch(1);
@@ -112,7 +112,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testClientShutdownIfReconnectionNotPossible() {
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
@@ -133,7 +133,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testRequestShouldFailOnShutdown() {
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> test = client.getMap("test");
@@ -146,7 +146,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testCallbackAfterClientShutdown() {
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> test = client.getMap("test");
@@ -193,8 +193,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testShutdownClient_whenThereIsNoCluster() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
-        clientConfig.getNetworkConfig()
-                .setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         client.shutdown();
     }

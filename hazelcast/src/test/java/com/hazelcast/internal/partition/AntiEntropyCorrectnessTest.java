@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.internal.nio.tcp.OperationPacketFilter;
 import com.hazelcast.internal.nio.tcp.PacketFilter;

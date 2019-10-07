@@ -61,7 +61,7 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "2");
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         HazelcastClientCachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
@@ -77,7 +77,7 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         HazelcastClientCachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
         final CacheManager cacheManager = cachingProvider.getCacheManager();

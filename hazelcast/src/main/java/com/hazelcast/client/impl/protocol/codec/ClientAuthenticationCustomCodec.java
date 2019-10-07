@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("c77539a2a233710ad65e8244b22897e8")
+@Generated("ffadb1b77ad5e7bfc24f22ef5f83918f")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -153,7 +153,7 @@ public final class ClientAuthenticationCustomCodec {
         /**
          * TODO DOC
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
 
         /**
          * Unique string identifying the connected client uniquely.
@@ -183,7 +183,7 @@ public final class ClientAuthenticationCustomCodec {
         public java.util.UUID clusterId;
     }
 
-    public static ClientMessage encodeResponse(byte status, com.hazelcast.nio.Address address, java.util.UUID uuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId) {
+    public static ClientMessage encodeResponse(byte status, com.hazelcast.cluster.Address address, java.util.UUID uuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

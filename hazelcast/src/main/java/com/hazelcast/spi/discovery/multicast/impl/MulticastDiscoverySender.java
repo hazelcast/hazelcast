@@ -17,7 +17,7 @@
 package com.hazelcast.spi.discovery.multicast.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 
 import java.io.ByteArrayOutputStream;
