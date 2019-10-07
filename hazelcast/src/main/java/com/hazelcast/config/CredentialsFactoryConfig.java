@@ -77,18 +77,16 @@ public class CredentialsFactoryConfig implements IdentityConfig {
 
     @Override
     public ICredentialsFactory asCredentialsFactory(ClassLoader cl) {
-        if (implementation != null) {
-            return implementation;
-        } else {
+        if (implementation == null) {
             try {
-                ICredentialsFactory credentialsFactory = ClassLoaderUtil.newInstance(cl, className);
-                credentialsFactory.init(properties);
-                return credentialsFactory;
+                implementation = ClassLoaderUtil.newInstance(cl, className);
+                implementation.init(properties);
             } catch (Exception e) {
                 throw new IllegalArgumentException("Could not create instance of '" + className + "', cause: " + e.getMessage(),
                         e);
             }
         }
+        return implementation;
     }
 
     @Override
