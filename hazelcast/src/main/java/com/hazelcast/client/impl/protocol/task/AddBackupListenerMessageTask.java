@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
@@ -46,14 +47,24 @@ public class AddBackupListenerMessageTask
 
     @Override
     protected Object call() {
-        EventService eventService = clientEngine.getEventService();
-        UUID uuid = endpoint.getUuid();
-        logger.info("Client as adding backup listener. client uuid " + uuid);
-        String serviceName = ClientBackupService.SERVICE_NAME;
-        EventRegistration registration =
-                eventService.registerLocalListener(serviceName, serviceName, new BackupListener());
-        endpoint.addListenerDestroyAction(serviceName, serviceName, registration.getId());
-        return registration.getId();
+        if (clientEngine.isSkipEventQueueForBackups()) {
+            clientEngine.addBackupListener(backupCorrelationId -> {
+                ClientMessage eventMessage = ClientLocalBackupListenerCodec.encodeBackupEvent(backupCorrelationId);
+                eventMessage.getStartFrame().flags |= ClientMessage.BACKUP_EVENT_FLAG;
+                sendClientMessage(eventMessage);
+            });
+
+            return UuidUtil.newUnsecureUUID();
+        } else {
+            EventService eventService = clientEngine.getEventService();
+            UUID uuid = endpoint.getUuid();
+            logger.info("Client as adding backup listener. client uuid " + uuid);
+            String serviceName = ClientBackupService.SERVICE_NAME;
+            EventRegistration registration =
+                    eventService.registerLocalListener(serviceName, serviceName, new BackupListener());
+            endpoint.addListenerDestroyAction(serviceName, serviceName, registration.getId());
+            return registration.getId();
+        }
     }
 
     @Override
