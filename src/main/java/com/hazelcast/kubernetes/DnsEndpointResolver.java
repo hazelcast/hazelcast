@@ -19,7 +19,7 @@ package com.hazelcast.kubernetes;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 
