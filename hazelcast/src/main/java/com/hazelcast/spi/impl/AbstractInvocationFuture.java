@@ -908,7 +908,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
     }
 
-    protected Executor defaultExecutor() {
+    public Executor defaultExecutor() {
         return DEFAULT_ASYNC_EXECUTOR;
     }
 
