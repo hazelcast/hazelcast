@@ -376,13 +376,12 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
 
     @Override
     @Test
-    public void testImportClusterConfigFromClassPath() {
+    public void testImportConfigFromClassPath() {
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"classpath:test-hazelcast.xml\"/>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, null);
         assertEquals("foobar-xml", config.getClusterName());
-        assertEquals("dev-pass", config.getClusterPassword());
     }
 
     @Override
@@ -410,14 +409,12 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        </replacer>\n"
                 + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
                 + "    </config-replacers>\n"
-                + "    <cluster>\n"
-                + "        <name>${java.version} $ID{dev}</name>\n"
-                + "        <password>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</password>\n"
-                + "    </cluster>\n"
+                + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
+                + "    <instance-name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</instance-name>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, System.getProperties());
         assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
-        assertEquals("My very secret secret", config.getClusterPassword());
+        assertEquals("My very secret secret", config.getInstanceName());
     }
 
     @Override
@@ -427,9 +424,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "    <config-replacers>\n"
                 + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'/>\n"
                 + "    </config-replacers>\n"
-                + "    <cluster>\n"
-                + "        <name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</name>\n"
-                + "    </cluster>\n"
+                + "    <cluster-name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</cluster-name>\n"
                 + HAZELCAST_END_TAG;
         buildConfig(xml, System.getProperties());
     }
@@ -438,9 +433,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test
     public void testBadVariableSyntaxIsIgnored() {
         String xml = HAZELCAST_START_TAG
-                + "    <cluster>\n"
-                + "        <name>${noSuchPropertyAvailable]</name>\n"
-                + "    </cluster>\n"
+                + "    <cluster-name>${noSuchPropertyAvailable]</cluster-name>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, System.getProperties());
         assertEquals("${noSuchPropertyAvailable]", config.getClusterName());
@@ -460,9 +453,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "            </properties>\n"
                 + "        </replacer>\n"
                 + "    </config-replacers>\n"
-                + "    <cluster>\n"
-                + "        <name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</name>\n"
-                + "    </cluster>\n"
+                + "    <cluster-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</cluster-name>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, System.getProperties());
         assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
@@ -472,9 +463,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test
     public void testNoConfigReplacersMissingProperties() throws Exception {
         String xml = HAZELCAST_START_TAG
-                + "    <cluster>\n"
-                + "        <name>${noSuchPropertyAvailable}</name>\n"
-                + "    </cluster>\n"
+                + "    <cluster-name>${noSuchPropertyAvailable}</cluster-name>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, System.getProperties());
         assertEquals("${noSuchPropertyAvailable}", config.getClusterName());

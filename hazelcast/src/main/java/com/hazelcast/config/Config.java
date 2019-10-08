@@ -84,11 +84,6 @@ public class Config {
      */
     public static final String DEFAULT_CLUSTER_NAME = "dev";
 
-    /**
-     * Default group password.
-     */
-    public static final String DEFAULT_CLUSTER_PASSWORD = "dev-pass";
-
     private URL configurationUrl;
 
     private File configurationFile;
@@ -100,8 +95,6 @@ public class Config {
     private String instanceName;
 
     private String clusterName = DEFAULT_CLUSTER_NAME;
-
-    private String clusterPassword = DEFAULT_CLUSTER_PASSWORD;
 
     private NetworkConfig networkConfig = new NetworkConfig();
 
@@ -369,34 +362,6 @@ public class Config {
         this.clusterName = isNotNull(clusterName, "clusterName");
         return this;
     }
-
-    /**
-     * Gets the password of the cluster.
-     *
-     * @return the password of the cluster
-     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
-     * {@link SecurityConfig security} is enabled (Enterprise edition only).
-     */
-    @Deprecated
-    public String getClusterPassword() {
-        return clusterPassword;
-    }
-
-    /**
-     * Sets the password for the cluster.
-     *
-     * @param password the password to set for the cluster
-     * @return the updated Config
-     * @throws IllegalArgumentException if password is {@code null}
-     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
-     * {@link SecurityConfig security} is enabled (Enterprise edition only).
-     */
-    @Deprecated
-    public Config setClusterPassword(final String password) {
-        this.clusterPassword = isNotNull(password, "cluster password");
-        return this;
-    }
-
     // TODO (TK) : Inspect usages of NetworkConfig to replace where needed with {@link Config#getActiveMemberNetworkConfig()}
 
     /**

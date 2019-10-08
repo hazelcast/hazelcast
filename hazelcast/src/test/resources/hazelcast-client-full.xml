@@ -46,10 +46,8 @@
         </replacer>
     </config-replacers>
 
-    <cluster>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </cluster>
+    <client-name>dev</client-name>
+
     <instance-name>CLIENT_NAME</instance-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <properties>
@@ -102,7 +100,6 @@
                 <property name="trustStorePassword">secret.123456</property>
                 <property name="trustStoreType">JKS</property>
 
-                <!-- Following properties are only needed when the mutual authentication is used. -->
                 <property name="keyStore">/opt/hazelcast-client.keystore</property>
                 <property name="keyStorePassword">keystorePassword123</property>
                 <property name="keyStoreType">JKS</property>
@@ -127,7 +124,7 @@
             <tenant-id>TENANT_ID</tenant-id>
             <subscription-id>SUB_ID</subscription-id>
             <cluster-id>HZLCAST001</cluster-id>
-            <cluster-name>CLUSTER-NAME</cluster-name>
+            <group-name>RESOURCE-GROUP-NAME</group-name>
         </azure>
         <kubernetes enabled="false">
             <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -160,12 +157,11 @@
             </discovery-strategy>
         </discovery-strategies>
     </network>
+ 
 
     <executor-pool-size>40</executor-pool-size>
 
-
     <security>
-        <credentials>com.hazelcast.security.UsernamePasswordCredentials</credentials>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
             <properties>
                 <property name="property">value</property>

@@ -133,8 +133,7 @@ public class TimedMemberStateFactory {
             timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
         }
         timedMemberState.setMemberState(memberState);
-        Config config = instance.getConfig();
-        timedMemberState.setClusterName(config.getClusterName());
+        timedMemberState.setClusterName(instance.getConfig().getClusterName());
         SSLConfig sslConfig = getActiveMemberNetworkConfig(instance.getConfig()).getSSLConfig();
         timedMemberState.setSslEnabled(sslConfig != null && sslConfig.isEnabled());
         timedMemberState.setLite(instance.node.isLiteMember());

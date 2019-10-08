@@ -425,7 +425,7 @@ public class HTTPCommunicator {
 
         List<NameValuePair> nameValuePairs = new ArrayList<>(params.length);
         for (String param : params) {
-            nameValuePairs.add(new BasicNameValuePair(param, null));
+            nameValuePairs.add(new BasicNameValuePair(param == null ? "" : param, null));
         }
         String data = URLEncodedUtils.format(nameValuePairs, Consts.UTF_8);
 

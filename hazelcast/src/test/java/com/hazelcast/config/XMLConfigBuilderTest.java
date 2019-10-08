@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -121,10 +122,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         file.deleteOnExit();
 
         String xml = HAZELCAST_START_TAG
-                + "    <cluster>\n"
-                + "        <name>foobar</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </cluster>\n"
+                + "  <cluster-name>foobar</cluster-name>\n"
                 + HAZELCAST_END_TAG;
         Writer writer = new PrintWriter(file, "UTF-8");
         writer.write(xml);
@@ -166,35 +164,49 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <interceptor class-name=\"bar\"/>"
                 + "  </security-interceptors>"
                 + "  <client-block-unmapped-actions>false</client-block-unmapped-actions>"
-                + "  <member-credentials-factory class-name=\"MyCredentialsFactory\">\n"
-                + "    <properties>\n"
-                + "      <property name=\"property\">value</property>\n"
-                + "    </properties>\n"
-                + "  </member-credentials-factory>\n"
-                + "  <member-login-modules>\n"
-                + "    <login-module class-name=\"MyRequiredLoginModule\" usage=\"REQUIRED\">\n"
-                + "      <properties>\n"
-                + "        <property name=\"login-property\">login-value</property>\n"
-                + "      </properties>\n"
-                + "    </login-module>\n"
-                + "    <login-module class-name=\"MyRequiredLoginModule2\" usage=\"SUFFICIENT\">\n"
-                + "      <properties>\n"
-                + "        <property name=\"login-property2\">login-value2</property>\n"
-                + "      </properties>\n"
-                + "    </login-module>\n"
-                + "  </member-login-modules>\n"
-                + "  <client-login-modules>\n"
-                + "    <login-module class-name=\"MyOptionalLoginModule\" usage=\"OPTIONAL\">\n"
-                + "      <properties>\n"
-                + "        <property name=\"client-property\">client-value</property>\n"
-                + "      </properties>\n"
-                + "    </login-module>\n"
-                + "    <login-module class-name=\"MyRequiredLoginModule\" usage=\"REQUIRED\">\n"
-                + "      <properties>\n"
-                + "        <property name=\"client-property2\">client-value2</property>\n"
-                + "      </properties>\n"
-                + "    </login-module>\n"
-                + "  </client-login-modules>\n"
+                + "  <realms>"
+                + "    <realm name='mr'>"
+                + "      <authentication>"
+                + "        <jaas>"
+                + "          <login-module class-name=\"MyRequiredLoginModule\" usage=\"REQUIRED\">\n"
+                + "            <properties>\n"
+                + "              <property name=\"login-property\">login-value</property>\n"
+                + "            </properties>\n"
+                + "          </login-module>\n"
+                + "          <login-module class-name=\"MyRequiredLoginModule2\" usage=\"SUFFICIENT\">\n"
+                + "            <properties>\n"
+                + "              <property name=\"login-property2\">login-value2</property>\n"
+                + "            </properties>\n"
+                + "          </login-module>\n"
+                + "        </jaas>"
+                + "      </authentication>"
+                + "      <identity>"
+                + "        <credentials-factory class-name=\"MyCredentialsFactory\">\n"
+                + "          <properties>\n"
+                + "            <property name=\"property\">value</property>\n"
+                + "          </properties>\n"
+                + "        </credentials-factory>\n"
+                + "      </identity>"
+                + "    </realm>"
+                + "    <realm name='cr'>"
+                + "      <authentication>"
+                + "        <jaas>"
+                + "          <login-module class-name=\"MyOptionalLoginModule\" usage=\"OPTIONAL\">\n"
+                + "            <properties>\n"
+                + "              <property name=\"client-property\">client-value</property>\n"
+                + "            </properties>\n"
+                + "          </login-module>\n"
+                + "          <login-module class-name=\"MyRequiredLoginModule\" usage=\"REQUIRED\">\n"
+                + "            <properties>\n"
+                + "              <property name=\"client-property2\">client-value2</property>\n"
+                + "            </properties>\n"
+                + "          </login-module>\n"
+                + "        </jaas>"
+                + "      </authentication>"
+                + "    </realm>"
+                + "  </realms>"
+                + "  <member-authentication realm='mr'/>\n"
+                + "  <client-authentication realm='cr'/>\n"
                 + "  <client-permission-policy class-name=\"MyPermissionPolicy\">\n"
                 + "    <properties>\n"
                 + "      <property name=\"permission-property\">permission-value</property>\n"
@@ -212,14 +224,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("bar", interceptorConfigs.get(1).className);
         assertFalse(securityConfig.getClientBlockUnmappedActions());
 
-        // member-credentials-factory
-        CredentialsFactoryConfig memberCredentialsConfig = securityConfig.getMemberCredentialsConfig();
+        RealmConfig memberRealm = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
+        CredentialsFactoryConfig memberCredentialsConfig = memberRealm.getCredentialsFactoryConfig();
         assertEquals("MyCredentialsFactory", memberCredentialsConfig.getClassName());
         assertEquals(1, memberCredentialsConfig.getProperties().size());
         assertEquals("value", memberCredentialsConfig.getProperties().getProperty("property"));
 
-        // member-login-modules
-        List<LoginModuleConfig> memberLoginModuleConfigs = securityConfig.getMemberLoginModuleConfigs();
+        List<LoginModuleConfig> memberLoginModuleConfigs = memberRealm.getJaasAuthenticationConfig().getLoginModuleConfigs();
         assertEquals(2, memberLoginModuleConfigs.size());
         Iterator<LoginModuleConfig> memberLoginIterator = memberLoginModuleConfigs.iterator();
 
@@ -235,8 +246,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, memberLoginModuleCfg2.getProperties().size());
         assertEquals("login-value2", memberLoginModuleCfg2.getProperties().getProperty("login-property2"));
 
-        // client-login-modules
-        List<LoginModuleConfig> clientLoginModuleConfigs = securityConfig.getClientLoginModuleConfigs();
+        RealmConfig clientRealm = securityConfig.getRealmConfig(securityConfig.getClientRealm());
+        List<LoginModuleConfig> clientLoginModuleConfigs = clientRealm.getJaasAuthenticationConfig().getLoginModuleConfigs();
         assertEquals(2, clientLoginModuleConfigs.size());
         Iterator<LoginModuleConfig> clientLoginIterator = clientLoginModuleConfigs.iterator();
 
@@ -263,10 +274,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void readAwsConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <cluster>\n"
-                + "        <name>dev</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </cluster>\n"
+                + "    <cluster-name>dev</cluster-name>\n"
                 + "    <network>\n"
                 + "        <port auto-increment=\"true\">5701</port>\n"
                 + "        <join>\n"
@@ -405,10 +413,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void readDiscoveryConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <cluster>\n"
-                + "        <name>dev</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </cluster>\n"
+                + "    <cluster-name>dev</cluster-name>\n"
                 + "    <network>\n"
                 + "        <port auto-increment=\"true\">5701</port>\n"
                 + "        <join>\n"

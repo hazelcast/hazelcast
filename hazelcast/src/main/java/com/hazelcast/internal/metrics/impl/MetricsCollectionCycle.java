@@ -30,8 +30,6 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -141,19 +139,7 @@ class MetricsCollectionCycle {
     private Set<MetricTarget> getExcludedTargets(Object object) {
         if (object instanceof ProbeAware) {
             Probe probe = ((ProbeAware) object).getProbe();
-            return getExcludedTargets(probe);
-        }
-
-        return emptySet();
-    }
-
-    private Set<MetricTarget> getExcludedTargets(Probe probe) {
-        MetricTarget[] excludedTargets = probe.excludedTargets();
-
-        if (excludedTargets.length > 0) {
-            EnumSet<MetricTarget> metricTargets = EnumSet.noneOf(MetricTarget.class);
-            Collections.addAll(metricTargets, excludedTargets);
-            return metricTargets;
+            return MetricTarget.asSet(probe.excludedTargets());
         }
 
         return emptySet();

@@ -79,14 +79,10 @@
     </config-replacers>
 
     <!--
-        Specifies the name and password for a cluster you connect to.
-        Cluster configuration allow you to create separate sub-clusters with different names.
-        The password is only checked when security is enabled on Hazelcast members (Enterprise edition feature).
+        Specifies the client name. It's a name used for client authentication to the cluster and its value is
+        the same as cluster name by default.
     -->
-    <cluster>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </cluster>
+    <client-name>dev</client-name>
 
     <!--
         When Hazelcast instances are created, they are put in a global registry with their creation names.
@@ -339,7 +335,7 @@
             <tenant-id>TENANT_ID</tenant-id>
             <subscription-id>SUB_ID</subscription-id>
             <cluster-id>HZLCAST001</cluster-id>
-            <cluster-name>CLUSTER-NAME</cluster-name>
+            <group-name>RESOURCE-GROUP-NAME</group-name>
         </azure>
         <kubernetes enabled="false">
             <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -385,9 +381,7 @@
         ===== HAZELCAST SECURITY CONFIGURATION =====
 
         This feature is available only in Hazelcast Enterprise. Configuration element's name is <security>.
-        It has the following sub-elements:
-        * <credentials>:
-            The name of the class implementing Hazelcast's Credentials interface.
+        It has one of the following sub-elements:
         * <credentials-factory>:
             Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
             interface.
@@ -396,14 +390,23 @@
             With the <properties> sub-element, you can define properties for the factory class. The properties can be
             defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
             "name" used to define the name of the attribute. The value of the property is defined in the body.
+        * <username-password>
+            Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
+             "username" and "password" attributes.
+        * <token>
+            Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
+            Content of the element is token value in given encoding (or in plain text).
     -->
     <security>
-        <credentials>com.hazelcast.security.UsernamePasswordCredentials</credentials>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
             <properties>
                 <property name="property">value</property>
             </properties>
         </credentials-factory>
+        <!-- 
+        <username-password username="client1" password="s3crEt"/>
+        <token encoding="base64">SGF6ZWxjYXN0</token>
+         -->
     </security>
 
     <!--

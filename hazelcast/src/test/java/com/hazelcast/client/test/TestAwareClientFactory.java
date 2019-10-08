@@ -49,7 +49,7 @@ public class TestAwareClientFactory extends TestAwareInstanceFactory {
         if (config == null) {
             config = new ClientConfig();
         }
-        config.setClusterName(getTestMethodName());
+        config.setClientName(getTestMethodName());
         List<HazelcastInstance> members = getOrInitInstances(perMethodMembers);
         if (members.isEmpty()) {
             throw new IllegalStateException("Members have to be created first");

@@ -16,11 +16,13 @@
 
 package com.hazelcast.cp.internal.session;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftNodeLifecycleAwareService;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.TermChangeAwareService;
+import com.hazelcast.cp.internal.datastructures.spi.AbstractCPMigrationAwareService;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
@@ -37,10 +39,8 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
@@ -56,8 +56,10 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
+import static com.hazelcast.cp.internal.RaftService.getCPGroupPartitionId;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.completingCallback;
@@ -82,8 +84,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * be released automatically.
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public class RaftSessionService implements ManagedService, SnapshotAwareService<RaftSessionRegistry>, SessionAccessor,
-                                           TermChangeAwareService, RaftNodeLifecycleAwareService, CPSessionManagementService {
+public class RaftSessionService extends AbstractCPMigrationAwareService
+        implements ManagedService, SnapshotAwareService<RaftSessionRegistry>, SessionAccessor,
+        TermChangeAwareService, RaftNodeLifecycleAwareService, CPSessionManagementService {
 
     public static final String SERVICE_NAME = "hz:core:raftSession";
 
@@ -91,14 +94,13 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
     private static final long CHECK_INACTIVE_SESSIONS_TASK_PERIOD_IN_MILLIS = SECONDS.toMillis(30);
     private static final long COLLECT_INACTIVE_SESSIONS_TASK_TIMEOUT_SECONDS = 5;
 
-    private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private volatile RaftService raftService;
 
     private final Map<CPGroupId, RaftSessionRegistry> registries = new ConcurrentHashMap<>();
 
     public RaftSessionService(NodeEngine nodeEngine) {
-        this.nodeEngine = (NodeEngineImpl) nodeEngine;
+        super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
     }
 
@@ -395,6 +397,26 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
         }
 
         return response;
+    }
+
+    @Override
+    protected int getBackupCount() {
+        return 1;
+    }
+
+    @Override
+    protected Map<CPGroupId, Object> getSnapshotMap(int partitionId) {
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        return registries.keySet().stream()
+                .filter(groupId -> getCPGroupPartitionId(groupId, partitionCount) == partitionId)
+                .distinct()
+                .map(groupId -> BiTuple.of(groupId, takeSnapshot(groupId, 0L)))
+                .collect(Collectors.toMap(tuple -> tuple.element1, tuple -> tuple.element2));
+    }
+
+    @Override
+    protected void clearPartitionReplica(int partitionId) {
+        registries.keySet().removeIf(groupId -> raftService.getCPGroupPartitionId(groupId) == partitionId);
     }
 
     private class CheckSessionsToExpire implements Runnable {

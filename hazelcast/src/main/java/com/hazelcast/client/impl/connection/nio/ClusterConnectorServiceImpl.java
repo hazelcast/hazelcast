@@ -165,7 +165,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
     private void connectToClusterInternal() {
         CandidateClusterContext currentClusterContext = discoveryService.current();
-        logger.info("Trying to connect to cluster with name: " + currentClusterContext.getName());
+        logger.info("Trying to connect to cluster with client name: " + currentClusterContext.getClientName());
         if (connectToCandidate(currentClusterContext)) {
             return;
         }
@@ -176,7 +176,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         while (discoveryService.hasNext() && client.getLifecycleService().isRunning()) {
             CandidateClusterContext candidateClusterContext = discoveryService.next();
             beforeClusterSwitch(candidateClusterContext);
-            logger.info("Trying to connect to next cluster with name: " + candidateClusterContext.getName());
+            logger.info("Trying to connect to next cluster with client name: " + candidateClusterContext.getClientName());
 
             if (connectToCandidate(candidateClusterContext)) {
                 //reset queryCache context, publishes eventLostEvent to all caches
@@ -207,8 +207,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         //non retryable client messages will fail immediately
         //retryable client messages will be retried but they will wait for new partition table
         client.getConnectionManager().beforeClusterSwitch(context);
-        //update logger with new cluster name
-        ((ClientLoggingService) client.getLoggingService()).updateClusterName(context.getName());
+        //update logger with new client name
+        ((ClientLoggingService) client.getLoggingService()).updateClientName(context.getClientName());
     }
 
     private boolean connectToCandidate(CandidateClusterContext context) {
@@ -242,7 +242,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             }
 
         } while (waitStrategy.sleep());
-        logger.warning("Unable to connect to any address for cluster: " + context.getName()
+        logger.warning("Unable to connect to any address for client name: " + context.getClientName()
                 + ". The following addresses were tried: " + triedAddresses);
         return false;
     }

@@ -24,6 +24,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.XMLConfigBuilderTest;
+import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -48,12 +49,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 
 import static com.hazelcast.internal.nio.IOUtil.delete;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -88,10 +92,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     @Test(expected = InvalidConfigurationException.class)
     public void testInvalidRootElement() {
         String xml = "<hazelcast>"
-                + "<cluster>"
-                + "<name>dev</name>"
-                + "<password>clusterpass</password>"
-                + "</cluster>"
+                + "<client-name>dev</client-name>"
                 + "</hazelcast>";
         buildConfig(xml);
     }
@@ -110,10 +111,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     @Test
     public void loadingThroughSystemProperty_existingFile() throws IOException {
         String xml = HAZELCAST_CLIENT_START_TAG
-                + "    <cluster>\n"
-                + "        <name>foobar</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </cluster>\n"
+                + "    <client-name>foobar</client-name>\n"
                 + "</hazelcast-client>";
 
         File file = File.createTempFile("foo", ".xml");
@@ -126,7 +124,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar", config.getClusterName());
+        assertEquals("foobar", config.getClientName());
     }
 
     @Override
@@ -143,7 +141,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar-xml", config.getClusterName());
+        assertEquals("foobar-xml", config.getClientName());
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", config.getNetworkConfig().getSSLConfig().getFactoryClassName());
         assertEquals(128, config.getNetworkConfig().getSocketOptions().getBufferSize());
         assertFalse(config.getNetworkConfig().getSocketOptions().isKeepAlive());
@@ -360,6 +358,20 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 + "<load-balancer type=' \n random \n'/>"
                 + HAZELCAST_CLIENT_END_TAG;
         buildConfig(xml);
+    }
+
+    @Override
+    public void testTokenIdentityConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<security>"
+                + "  <token encoding='base64'>SGF6ZWxjYXN0</token>"
+                + "</security>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        TokenIdentityConfig tokenIdentityConfig = config.getSecurityConfig().getTokenIdentityConfig();
+        assertNotNull(tokenIdentityConfig);
+        assertArrayEquals("Hazelcast".getBytes(StandardCharsets.US_ASCII), tokenIdentityConfig.getToken());
+        assertEquals("SGF6ZWxjYXN0", tokenIdentityConfig.getTokenEncoded());
     }
 
     static ClientConfig buildConfig(String xml, Properties properties) {

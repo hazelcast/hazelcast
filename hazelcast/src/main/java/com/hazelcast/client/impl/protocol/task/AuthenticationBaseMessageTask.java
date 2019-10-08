@@ -118,8 +118,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
             return verifyClusterName(usernamePasswordCredentials);
         } else {
-            logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster "
-                    + "cluster-name and group-password should be used for authentication!\n" + "Current credentials type is: "
+            logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster-name "
+                    + "should be used for authentication!\n" + "Current credentials type is: "
                     + credentials.getClass().getName());
             return CREDENTIALS_FAILED;
         }

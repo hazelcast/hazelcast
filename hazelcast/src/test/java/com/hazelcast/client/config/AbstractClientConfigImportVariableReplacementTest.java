@@ -82,7 +82,7 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
     public abstract void testNoConfigReplacersMissingProperties();
 
     @Test
-    public abstract void testImportClusterConfigFromClassPath();
+    public abstract void testImportConfigFromClassPath();
 
     @Test
     public abstract void testReplaceVariablesUseSystemProperties() throws Exception;

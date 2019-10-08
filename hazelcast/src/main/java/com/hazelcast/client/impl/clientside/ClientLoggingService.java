@@ -48,19 +48,19 @@ public class ClientLoggingService implements LoggingService {
 
     private final LoggerFactory loggerFactory;
     private final BuildInfo buildInfo;
-    private final String clientName;
+    private final String instanceName;
     private volatile String versionMessage;
 
-    public ClientLoggingService(String clusterName, String loggingType, BuildInfo buildInfo, String clientName) {
+    public ClientLoggingService(String clientName, String loggingType, BuildInfo buildInfo, String instanceName) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.buildInfo = buildInfo;
-        this.clientName = clientName;
-        updateClusterName(clusterName);
+        this.instanceName = instanceName;
+        updateClientName(clientName);
     }
 
-    public void updateClusterName(String clusterName) {
+    public void updateClientName(String clientName) {
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        this.versionMessage = clientName + " [" + clusterName + "]"
+        this.versionMessage = instanceName + " [" + clientName + "]"
                 + (jetBuildInfo != null ? " [" + jetBuildInfo.getVersion() + "]" : "")
                 + " [" + buildInfo.getVersion() + "] ";
     }
