@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
@@ -52,10 +53,18 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        MCGetMapConfigCodec.ResponseParameters resp = (MCGetMapConfigCodec.ResponseParameters) response;
-        return MCGetMapConfigCodec.encodeResponse(resp.inMemoryFormat, resp.backupCount,
-                resp.asyncBackupCount, resp.timeToLiveSeconds, resp.maxIdleSeconds, resp.maxSize,
-                resp.maxSizePolicy, resp.readBackupData, resp.evictionPolicy, resp.mergePolicy);
+        MapConfigReadOnly config = (MapConfigReadOnly) response;
+        return MCGetMapConfigCodec.encodeResponse(
+                config.getInMemoryFormat().getId(),
+                config.getBackupCount(),
+                config.getAsyncBackupCount(),
+                config.getTimeToLiveSeconds(),
+                config.getMaxIdleSeconds(),
+                config.getMaxSizeConfig().getSize(),
+                config.getMaxSizeConfig().getMaxSizePolicy().getId(),
+                config.isReadBackupData(),
+                config.getEvictionPolicy().getId(),
+                config.getMergePolicyConfig().getPolicy());
     }
 
     @Override
