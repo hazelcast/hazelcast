@@ -3,9 +3,6 @@ package com.hazelcast.internal.util;
 import net.openhft.affinity.Affinity;
 import net.openhft.affinity.AffinityLock;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,6 +28,7 @@ public class CpuPool {
             cpus = new LinkedList<>();
         }
     }
+
 
     public boolean isDisabled() {
         return cpus.isEmpty();
@@ -99,8 +97,8 @@ public class CpuPool {
         System.out.println("--------------------------------------------");
         String command = "taskset -c " + cpu + " -p " + threadId;
         System.out.println(command);
-        System.out.println(bash(command));
-        System.out.println(bash("taskset -p " + threadId));
+        System.out.println(Bash.bash(command));
+        System.out.println(Bash.bash("taskset -p " + threadId));
     }
 
     private static void taskSetUnlock(String threadId) {
@@ -109,40 +107,11 @@ public class CpuPool {
 
     private synchronized static String getThreadId() {
         System.out.println("================ thread id ======================");
-        String s= bash("echo $PID").trim();
+        String s= Bash.bash("echo $PID").trim();
         System.out.println("Thread:"+Thread.currentThread().getName());
         System.out.println("ThreadId:"+s);
         System.out.println("================ thread id ======================");
         return s;
-    }
-
-    private static String bash(String command) {
-        String[] cmd = {"bash", "-c", command};
-        try {
-            Process process = Runtime.getRuntime().exec(cmd);
-            int result = process.waitFor();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            StringBuilder builder = new StringBuilder();
-            String line;
-            boolean first = true;
-            while ((line = reader.readLine()) != null) {
-                if (first) {
-                    first = false;
-                } else {
-                    builder.append(System.getProperty("line.separator"));
-                }
-                builder.append(line);
-            }
-            if (result != 0) {
-                System.out.println(builder.toString());
-            }
-
-            return builder.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     static List<Integer> parseCpuString(String cpuString) {
