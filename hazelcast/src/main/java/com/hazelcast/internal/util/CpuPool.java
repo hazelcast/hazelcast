@@ -17,6 +17,8 @@ public class CpuPool {
         pool.addAll(cpus);
     }
 
+    public List<Integer> availableCpus(){return cpus;}
+
     public List<Integer> usedCpus(){
         return usedCpus;
     }
