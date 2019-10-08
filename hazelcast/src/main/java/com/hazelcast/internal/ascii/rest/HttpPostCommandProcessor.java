@@ -273,7 +273,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String publisherId = params[3];
         String mapName = params[4];
         UUID uuid = getNode().getNodeEngine().getWanReplicationService()
-                             .syncMap(wanRepName, publisherId, mapName);
+                .syncMap(wanRepName, publisherId, mapName);
         prepareResponse(cmd, response(SUCCESS, "message", "Sync initiated", "uuid", uuid.toString()));
     }
 
@@ -291,7 +291,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final String wanRepName = params[2];
         final String publisherId = params[3];
         UUID uuid = getNode().getNodeEngine().getWanReplicationService()
-                             .syncAllMaps(wanRepName, publisherId);
+                .syncAllMaps(wanRepName, publisherId);
         prepareResponse(cmd, response(SUCCESS, "message", "Sync initiated", "uuid", uuid.toString()));
     }
 
@@ -344,8 +344,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         dto.fromJson(Json.parse(wanConfigJson).asObject());
 
         AddWanConfigResult result = getNode().getNodeEngine()
-                                             .getWanReplicationService()
-                                             .addWanReplicationConfig(dto.getConfig());
+                .getWanReplicationService()
+                .addWanReplicationConfig(dto.getConfig());
         JsonObject res = response(SUCCESS, "message", "WAN configuration added.");
         res.add("addedPublisherIds", Json.array(result.getAddedPublisherIds().toArray(new String[]{})));
         res.add("ignoredPublisherIds", Json.array(result.getIgnoredPublisherIds().toArray(new String[]{})));
@@ -427,16 +427,16 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
 
         getCpSubsystemManagementService().promoteToCPMember()
-                                         .whenCompleteAsync((response, t) -> {
-                                             if (t == null) {
-                                                 command.send200();
-                                                 textCommandService.sendResponse(command);
-                                             } else {
-                                                 logger.warning("Error while promoting CP member.", t);
-                                                 command.send500();
-                                                 textCommandService.sendResponse(command);
-                                             }
-                                         });
+                .whenCompleteAsync((response, t) -> {
+                    if (t == null) {
+                        command.send200();
+                        textCommandService.sendResponse(command);
+                    } else {
+                        logger.warning("Error while promoting CP member.", t);
+                        command.send500();
+                        textCommandService.sendResponse(command);
+                    }
+                });
     }
 
     private void handleRemoveCPMember(final HttpPostCommand command) {
@@ -444,22 +444,22 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String prefix = URI_CP_MEMBERS_URL + "/";
         final UUID cpMemberUid = UUID.fromString(uri.substring(prefix.length(), uri.indexOf('/', prefix.length())).trim());
         getCpSubsystem().getCPSubsystemManagementService()
-                        .removeCPMember(cpMemberUid)
-                        .whenCompleteAsync((respone, t) -> {
-                            if (t == null) {
-                                command.send200();
-                                textCommandService.sendResponse(command);
-                            } else {
-                                logger.warning("Error while removing CP member " + cpMemberUid, t);
-                                if (peel(t) instanceof IllegalArgumentException) {
-                                    command.send400();
-                                } else {
-                                    command.send500();
-                                }
+                .removeCPMember(cpMemberUid)
+                .whenCompleteAsync((respone, t) -> {
+                    if (t == null) {
+                        command.send200();
+                        textCommandService.sendResponse(command);
+                    } else {
+                        logger.warning("Error while removing CP member " + cpMemberUid, t);
+                        if (peel(t) instanceof IllegalArgumentException) {
+                            command.send400();
+                        } else {
+                            command.send500();
+                        }
 
-                                textCommandService.sendResponse(command);
-                            }
-                        });
+                        textCommandService.sendResponse(command);
+                    }
+                });
     }
 
     private void handleCPGroup(HttpPostCommand command) throws UnsupportedEncodingException {
@@ -487,21 +487,21 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         final long sessionId = Long.parseLong(uri.substring(i + suffix.length(), uri.indexOf('/', i + suffix.length())));
 
         getCpSubsystem().getCPSessionManagementService()
-                        .forceCloseSession(groupName, sessionId)
-                        .whenCompleteAsync((response, t) -> {
-                            if (t == null) {
-                                if (response) {
-                                    command.send200();
-                                } else {
-                                    command.send400();
-                                }
-                                textCommandService.sendResponse(command);
-                            } else {
-                                logger.warning("Error while closing CP session", t);
-                                command.send500();
-                                textCommandService.sendResponse(command);
-                            }
-                        });
+                .forceCloseSession(groupName, sessionId)
+                .whenCompleteAsync((response, t) -> {
+                    if (t == null) {
+                        if (response) {
+                            command.send200();
+                        } else {
+                            command.send400();
+                        }
+                        textCommandService.sendResponse(command);
+                    } else {
+                        logger.warning("Error while closing CP session", t);
+                        command.send500();
+                        textCommandService.sendResponse(command);
+                    }
+                });
     }
 
     private void handleForceDestroyCPGroup(final HttpPostCommand command) {
@@ -515,38 +515,38 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
 
         getCpSubsystem().getCPSubsystemManagementService()
-                        .forceDestroyCPGroup(groupName)
-                        .whenCompleteAsync((response, t) -> {
-                            if (t == null) {
-                                command.send200();
-                                textCommandService.sendResponse(command);
-                            } else {
-                                logger.warning("Error while destroying CP group " + groupName, t);
-                                if (peel(t) instanceof IllegalArgumentException) {
-                                    command.send400();
-                                } else {
-                                    command.send500();
-                                }
-                                textCommandService.sendResponse(command);
-                            }
-                        });
+                .forceDestroyCPGroup(groupName)
+                .whenCompleteAsync((response, t) -> {
+                    if (t == null) {
+                        command.send200();
+                        textCommandService.sendResponse(command);
+                    } else {
+                        logger.warning("Error while destroying CP group " + groupName, t);
+                        if (peel(t) instanceof IllegalArgumentException) {
+                            command.send400();
+                        } else {
+                            command.send500();
+                        }
+                        textCommandService.sendResponse(command);
+                    }
+                });
     }
 
     private void handleResetCPSubsystem(final HttpPostCommand command) throws UnsupportedEncodingException {
         decodeParamsAndAuthenticate(command, 2);
 
         getCpSubsystem().getCPSubsystemManagementService()
-                        .reset()
-                        .whenCompleteAsync((response, t) -> {
-                            if (t == null) {
-                                command.send200();
-                                textCommandService.sendResponse(command);
-                            } else {
-                                logger.warning("Error while resetting CP subsystem", t);
-                                command.send500();
-                                textCommandService.sendResponse(command);
-                            }
-                        });
+                .reset()
+                .whenCompleteAsync((response, t) -> {
+                    if (t == null) {
+                        command.send200();
+                        textCommandService.sendResponse(command);
+                    } else {
+                        logger.warning("Error while resetting CP subsystem", t);
+                        command.send500();
+                        textCommandService.sendResponse(command);
+                    }
+                });
     }
 
     private CPSubsystemManagementService getCpSubsystemManagementService() {
