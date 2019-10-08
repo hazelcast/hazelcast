@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static com.hazelcast.internal.util.ThreadAffinity.getTid;
+import static com.hazelcast.internal.util.ThreadAffinity.setThreadAffinity;
+
 /**
  * This class is threadsafe.
  */
@@ -29,6 +32,19 @@ public class CpuPool {
         }
     }
 
+    public void reset(){
+        pool.clear();
+        pool.addAll(cpus);
+    }
+
+    public int take() {
+        Integer cpu = pool.poll();
+        if (cpu == null) {
+            return -1;
+        }
+
+        return cpu;
+    }
 
     public boolean isDisabled() {
         return cpus.isEmpty();
@@ -82,10 +98,9 @@ public class CpuPool {
             return;
         }
 
-        int threadId = ThreadAffinity.getTid(Thread.currentThread());
+        int threadId = getTid(Thread.currentThread());
         System.out.println("threadId: [" + threadId + "]");
-        ThreadAffinity.setThreadAffinity(Thread.currentThread().c);
-        taskSetLock(cpu, threadId);
+        setThreadAffinity(Thread.currentThread(), cpu);
         try {
             r.run();
         } finally {
@@ -93,16 +108,6 @@ public class CpuPool {
             //lock.release();
         }
     }
-
-    private synchronized static void taskSetLock(Integer cpu, String threadId) {
-        System.out.println("--------------------------------------------");
-        String command = "taskset -c " + cpu + " -p " + threadId;
-        System.out.println(command);
-        System.out.println(Bash.bash(command));
-        System.out.println(Bash.bash("taskset -p " + threadId));
-    }
-
-
 
     static List<Integer> parseCpuString(String cpuString) {
         List<Integer> cpus = new ArrayList<>();

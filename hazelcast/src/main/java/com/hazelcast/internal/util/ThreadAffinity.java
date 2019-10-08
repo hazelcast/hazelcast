@@ -11,18 +11,19 @@ public class ThreadAffinity {
     private final static ConcurrentMap<Long, Integer> tids = new ConcurrentReferenceHashMap<>();
 
     public static void main(String[] args) throws InterruptedException {
-        Thread.currentThread().setName("Peter");
-        System.out.println("pid:" + getPid());
-        System.out.println("tid:" + getTid(Thread.currentThread()));
-        System.out.println("original thread affinity:"+getThreadAffinityBitmask(Thread.currentThread()));
+        Thread thread = Thread.currentThread();
+
+         System.out.println("pid:" + getPid());
+        System.out.println("tid:" + getTid(thread));
+        System.out.println("original thread affinity:"+getThreadAffinityBitmask(thread));
 
         System.out.println("Changing thread affinity");
         setThreadAffinity(Thread.currentThread(), 5);
-        System.out.println("Changing affinity:" + getThreadAffinityBitmask(Thread.currentThread()));
+        System.out.println("Changing affinity:" + getThreadAffinityBitmask(thread));
 
         System.out.println("Resetting thread affinity");
         resetThreadAffinity(Thread.currentThread());
-        System.out.println("Reset affinity:" + getThreadAffinityBitmask(Thread.currentThread()));
+        System.out.println("Reset affinity:" + getThreadAffinityBitmask(thread));
 
         //   System.out.println("tid from affinity:"+Affinity.getThreadId());
         Thread.sleep(1000000);
@@ -39,8 +40,12 @@ public class ThreadAffinity {
     }
 
     public static void setThreadAffinity(Thread t, int cpu) {
+        if(cpu==-1){
+            return;
+        }
+
         long bitmask = 1 << cpu;
-        setThreadAffinityBitmask(t, "" + bitmask);
+        setCpusAllowed(t, "" + bitmask);
     }
 
     public static long getThreadAffinityBitmask(Thread t) {
@@ -58,10 +63,10 @@ public class ThreadAffinity {
 
     //todo: how to deal with more than 64 cores??
     public static void resetThreadAffinity(Thread t) {
-        setThreadAffinityBitmask(t, "0xFFFFFFFF");
+        setCpusAllowed(t, "0xFFFFFFFF");
     }
 
-    public static void setThreadAffinityBitmask(Thread t, String bitmask) {
+    public static void setCpusAllowed(Thread t, String bitmask) {
         int tid = getTid(t);
         String command = "taskset -p " + bitmask + " " + tid;
         Bash.bash(command);
@@ -88,7 +93,7 @@ public class ThreadAffinity {
                 return Integer.parseInt(substring, 16);
             }
         }
-        return 1;
+        return -1;
     }
 
     public static int getPid() {

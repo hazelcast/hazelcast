@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.CpuPool;
 import com.hazelcast.internal.util.MutableInteger;
+import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
@@ -118,6 +119,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
         for (ResponseThread responseThread : responseThreads) {
             responseThread.start();
+            ThreadAffinity.setThreadAffinity(responseThread, cpuPool.take());
         }
     }
 
@@ -179,7 +181,6 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         ResponseThread(String name) {
             super(name);
             setContextClassLoader(client.getClientConfig().getClassLoader());
-            setCpuPool(cpuPool);
             this.responseQueue = new MPSCQueue<ClientMessage>(this,
                     getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
         }

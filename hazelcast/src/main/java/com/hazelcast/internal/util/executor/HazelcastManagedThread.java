@@ -17,9 +17,6 @@
 package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.util.CpuPool;
-
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Base class for all Hazelcast threads to manage them from a single point.
@@ -29,8 +26,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * {@link com.hazelcast.internal.util.executor.HazelcastManagedThread#afterRun} methods.
  */
 public class HazelcastManagedThread extends Thread {
-
-    private CpuPool cpuPool = CpuPool.EMPTY_POOL;
 
     public HazelcastManagedThread() {
     }
@@ -45,18 +40,6 @@ public class HazelcastManagedThread extends Thread {
 
     public HazelcastManagedThread(Runnable target, String name) {
         super(target, name);
-    }
-
-    /**
-     * Sets the CPU pool of this HazelcastManagedThread. This can be used for thread affinity.
-     *
-     * This method should be called before the Thread is started.
-     *
-     * @param cpuPool the CpuPool
-     * @throws NullPointerException if cpuPool is null.
-     */
-    public void setCpuPool(CpuPool cpuPool) {
-        this.cpuPool = checkNotNull(cpuPool);
     }
 
     @Override
@@ -89,17 +72,9 @@ public class HazelcastManagedThread extends Thread {
     }
 
     /**
-     * Manages the thread lifecycle.
+     * Manages the thread lifecycle and can be overridden to customize if needed.
      */
-    public final void run() {
-        if (cpuPool.isDisabled()) {
-            run0();
-        } else {
-            cpuPool.run(this::run0);
-        }
-    }
-
-    private void run0() {
+    public void run() {
         try {
             beforeRun();
             executeRun();
