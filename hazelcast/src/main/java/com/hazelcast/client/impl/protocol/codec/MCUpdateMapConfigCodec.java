@@ -34,13 +34,19 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the config of a map.
  */
-@Generated("4ef7c9f6655683b08f4cd72dc96942ff")
+@Generated("d76e1e6ef4f6ba34b91f6b07cb00441c")
 public final class MCUpdateMapConfigCodec {
     //hex: 0x270400
     public static final int REQUEST_MESSAGE_TYPE = 2556928;
     //hex: 0x270401
     public static final int RESPONSE_MESSAGE_TYPE = 2556929;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET = REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_EVICTION_POLICY_FIELD_OFFSET = REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_READ_BACKUP_DATA_FIELD_OFFSET = REQUEST_EVICTION_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_READ_BACKUP_DATA_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET = REQUEST_MAX_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MCUpdateMapConfigCodec() {
@@ -55,31 +61,65 @@ public final class MCUpdateMapConfigCodec {
         public java.lang.String mapName;
 
         /**
-         * New config for the map.
+         * Time to live seconds for the map entries.
          */
-        public com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder newMapConfig;
+        public int timeToLiveSeconds;
+
+        /**
+         * Maximum idle seconds for the map entries.
+         */
+        public int maxIdleSeconds;
+
+        /**
+         * ID value of the eviction policy of the map.
+         */
+        public int evictionPolicy;
+
+        /**
+         * Whether reading from backup data is allowed.
+         */
+        public boolean readBackupData;
+
+        /**
+         * Maximum size of the map.
+         */
+        public int maxSize;
+
+        /**
+         * ID value of the maximum size policy of the map.
+         */
+        public int maxSizePolicy;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String mapName, com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder newMapConfig) {
+    public static ClientMessage encodeRequest(java.lang.String mapName, int timeToLiveSeconds, int maxIdleSeconds, int evictionPolicy, boolean readBackupData, int maxSize, int maxSizePolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MC.UpdateMapConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET, timeToLiveSeconds);
+        encodeInt(initialFrame.content, REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET, maxIdleSeconds);
+        encodeInt(initialFrame.content, REQUEST_EVICTION_POLICY_FIELD_OFFSET, evictionPolicy);
+        encodeBoolean(initialFrame.content, REQUEST_READ_BACKUP_DATA_FIELD_OFFSET, readBackupData);
+        encodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET, maxSize);
+        encodeInt(initialFrame.content, REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET, maxSizePolicy);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, mapName);
-        MapConfigHolderCodec.encode(clientMessage, newMapConfig);
         return clientMessage;
     }
 
     public static MCUpdateMapConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.timeToLiveSeconds = decodeInt(initialFrame.content, REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET);
+        request.maxIdleSeconds = decodeInt(initialFrame.content, REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET);
+        request.evictionPolicy = decodeInt(initialFrame.content, REQUEST_EVICTION_POLICY_FIELD_OFFSET);
+        request.readBackupData = decodeBoolean(initialFrame.content, REQUEST_READ_BACKUP_DATA_FIELD_OFFSET);
+        request.maxSize = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET);
+        request.maxSizePolicy = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET);
         request.mapName = StringCodec.decode(iterator);
-        request.newMapConfig = MapConfigHolderCodec.decode(iterator);
         return request;
     }
 

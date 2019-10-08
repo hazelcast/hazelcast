@@ -44,7 +44,12 @@ public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<Re
     protected Operation prepareOperation() {
         return new UpdateMapConfigOperation(
                 parameters.mapName,
-                parameters.newMapConfig.asMapConfig());
+                parameters.timeToLiveSeconds,
+                parameters.maxIdleSeconds,
+                parameters.maxSize,
+                parameters.maxSizePolicy,
+                parameters.readBackupData,
+                parameters.evictionPolicy);
     }
 
     @Override
@@ -79,6 +84,14 @@ public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<Re
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {parameters.mapName, parameters.newMapConfig};
+        return new Object[] {
+                parameters.mapName,
+                parameters.timeToLiveSeconds,
+                parameters.maxIdleSeconds,
+                parameters.maxSize,
+                parameters.maxSizePolicy,
+                parameters.readBackupData,
+                parameters.evictionPolicy
+        };
     }
 }

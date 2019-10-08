@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -87,7 +86,7 @@ public class ManagementCenterService {
      * Gets the config ƒor a given map.
      */
     @Nonnull
-    public CompletableFuture<MapConfigHolder> getMapConfig(String map) {
+    public CompletableFuture<MCMapConfig> getMapConfig(String map) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCGetMapConfigCodec.encodeRequest(map),
@@ -96,7 +95,11 @@ public class ManagementCenterService {
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
-                clientMessage -> MCGetMapConfigCodec.decodeResponse(clientMessage).response,
+                clientMessage -> {
+                    MCGetMapConfigCodec.ResponseParameters response =
+                            MCGetMapConfigCodec.decodeResponse(clientMessage);
+                    return MCMapConfig.fromResponse(response);
+                },
                 true
         );
     }
@@ -105,10 +108,17 @@ public class ManagementCenterService {
      * Updates the config of a given map.
      */
     @Nonnull
-    public CompletableFuture<Void> updateMapConfig(String map, MapConfigHolder newMapConfig) {
+    public CompletableFuture<Void> updateMapConfig(UpdateMapConfigParameters parameters) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCUpdateMapConfigCodec.encodeRequest(map, newMapConfig),
+                MCUpdateMapConfigCodec.encodeRequest(
+                        parameters.getMap(),
+                        parameters.getTimeToLiveSeconds(),
+                        parameters.getMaxIdleSeconds(),
+                        parameters.getEvictionPolicy().getId(),
+                        parameters.isReadBackupData(),
+                        parameters.getMaxSize(),
+                        parameters.getMaxSizePolicy().getId()),
                 null
         );
         return new ClientDelegatingFuture<>(
@@ -120,4 +130,5 @@ public class ManagementCenterService {
                 }
         );
     }
+
 }

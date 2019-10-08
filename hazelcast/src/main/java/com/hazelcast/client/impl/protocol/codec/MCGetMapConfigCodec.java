@@ -34,14 +34,23 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map.
  */
-@Generated("8172d81312900ac3afdbee22b1c11dcc")
+@Generated("1edc974b3d1d075007ef78b84070c206")
 public final class MCGetMapConfigCodec {
     //hex: 0x270300
     public static final int REQUEST_MESSAGE_TYPE = 2556672;
     //hex: 0x270301
     public static final int RESPONSE_MESSAGE_TYPE = 2556673;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_IN_MEMORY_FORMAT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_BACKUP_COUNT_FIELD_OFFSET = RESPONSE_IN_MEMORY_FORMAT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_ASYNC_BACKUP_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_TIME_TO_LIVE_SECONDS_FIELD_OFFSET = RESPONSE_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_MAX_IDLE_SECONDS_FIELD_OFFSET = RESPONSE_TIME_TO_LIVE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_MAX_SIZE_FIELD_OFFSET = RESPONSE_MAX_IDLE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_MAX_SIZE_POLICY_FIELD_OFFSET = RESPONSE_MAX_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_READ_BACKUP_DATA_FIELD_OFFSET = RESPONSE_MAX_SIZE_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_EVICTION_POLICY_FIELD_OFFSET = RESPONSE_READ_BACKUP_DATA_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_EVICTION_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MCGetMapConfigCodec() {
     }
@@ -80,27 +89,89 @@ public final class MCGetMapConfigCodec {
     public static class ResponseParameters {
 
         /**
-         * The config of the map.
+         * ID value of the in memory storage format of the map.
          */
-        public com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder response;
+        public int inMemoryFormat;
+
+        /**
+         * Backup count of the map.
+         */
+        public int backupCount;
+
+        /**
+         * Async backup count of the map.
+         */
+        public int asyncBackupCount;
+
+        /**
+         * Time to live seconds for the map entries.
+         */
+        public int timeToLiveSeconds;
+
+        /**
+         * Maximum idle seconds for the map entries.
+         */
+        public int maxIdleSeconds;
+
+        /**
+         * Maximum size of the map.
+         */
+        public int maxSize;
+
+        /**
+         * ID value of the maximum size policy of the map.
+         */
+        public int maxSizePolicy;
+
+        /**
+         * Whether reading from backup data is allowed.
+         */
+        public boolean readBackupData;
+
+        /**
+         * ID value of the eviction policy of the map.
+         */
+        public int evictionPolicy;
+
+        /**
+         * Classname of the SplitBrainMergePolicy for the map.
+         */
+        public java.lang.String mergePolicy;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder response) {
+    public static ClientMessage encodeResponse(int inMemoryFormat, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, int maxSize, int maxSizePolicy, boolean readBackupData, int evictionPolicy, java.lang.String mergePolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, RESPONSE_IN_MEMORY_FORMAT_FIELD_OFFSET, inMemoryFormat);
+        encodeInt(initialFrame.content, RESPONSE_BACKUP_COUNT_FIELD_OFFSET, backupCount);
+        encodeInt(initialFrame.content, RESPONSE_ASYNC_BACKUP_COUNT_FIELD_OFFSET, asyncBackupCount);
+        encodeInt(initialFrame.content, RESPONSE_TIME_TO_LIVE_SECONDS_FIELD_OFFSET, timeToLiveSeconds);
+        encodeInt(initialFrame.content, RESPONSE_MAX_IDLE_SECONDS_FIELD_OFFSET, maxIdleSeconds);
+        encodeInt(initialFrame.content, RESPONSE_MAX_SIZE_FIELD_OFFSET, maxSize);
+        encodeInt(initialFrame.content, RESPONSE_MAX_SIZE_POLICY_FIELD_OFFSET, maxSizePolicy);
+        encodeBoolean(initialFrame.content, RESPONSE_READ_BACKUP_DATA_FIELD_OFFSET, readBackupData);
+        encodeInt(initialFrame.content, RESPONSE_EVICTION_POLICY_FIELD_OFFSET, evictionPolicy);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, response, MapConfigHolderCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, mergePolicy, StringCodec::encode);
         return clientMessage;
     }
 
     public static MCGetMapConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, MapConfigHolderCodec::decode);
+        ClientMessage.Frame initialFrame = iterator.next();
+        response.inMemoryFormat = decodeInt(initialFrame.content, RESPONSE_IN_MEMORY_FORMAT_FIELD_OFFSET);
+        response.backupCount = decodeInt(initialFrame.content, RESPONSE_BACKUP_COUNT_FIELD_OFFSET);
+        response.asyncBackupCount = decodeInt(initialFrame.content, RESPONSE_ASYNC_BACKUP_COUNT_FIELD_OFFSET);
+        response.timeToLiveSeconds = decodeInt(initialFrame.content, RESPONSE_TIME_TO_LIVE_SECONDS_FIELD_OFFSET);
+        response.maxIdleSeconds = decodeInt(initialFrame.content, RESPONSE_MAX_IDLE_SECONDS_FIELD_OFFSET);
+        response.maxSize = decodeInt(initialFrame.content, RESPONSE_MAX_SIZE_FIELD_OFFSET);
+        response.maxSizePolicy = decodeInt(initialFrame.content, RESPONSE_MAX_SIZE_POLICY_FIELD_OFFSET);
+        response.readBackupData = decodeBoolean(initialFrame.content, RESPONSE_READ_BACKUP_DATA_FIELD_OFFSET);
+        response.evictionPolicy = decodeInt(initialFrame.content, RESPONSE_EVICTION_POLICY_FIELD_OFFSET);
+        response.mergePolicy = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return response;
     }
 

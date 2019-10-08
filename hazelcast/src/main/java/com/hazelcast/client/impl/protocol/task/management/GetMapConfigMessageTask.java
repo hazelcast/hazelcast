@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.nio.Connection;
@@ -54,7 +52,10 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCGetMapConfigCodec.encodeResponse(MapConfigHolder.of((MapConfig) response));
+        MCGetMapConfigCodec.ResponseParameters resp = (MCGetMapConfigCodec.ResponseParameters) response;
+        return MCGetMapConfigCodec.encodeResponse(resp.inMemoryFormat, resp.backupCount,
+                resp.asyncBackupCount, resp.timeToLiveSeconds, resp.maxIdleSeconds, resp.maxSize,
+                resp.maxSizePolicy, resp.readBackupData, resp.evictionPolicy, resp.mergePolicy);
     }
 
     @Override

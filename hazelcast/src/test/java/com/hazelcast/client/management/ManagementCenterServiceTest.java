@@ -17,8 +17,9 @@
 package com.hazelcast.client.management;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.management.MCMapConfig;
 import com.hazelcast.client.impl.management.ManagementCenterService;
-import com.hazelcast.client.impl.protocol.codec.holder.MapConfigHolder;
+import com.hazelcast.client.impl.management.UpdateMapConfigParameters;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
@@ -39,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -92,24 +94,23 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     @Test
     public void getMapConfig() throws Exception {
-        CompletableFuture<MapConfigHolder> future = managementCenterService.getMapConfig("map-1");
-        MapConfigHolder mapConfig = future.get();
+        CompletableFuture<MCMapConfig> future = managementCenterService.getMapConfig("map-1");
+        MCMapConfig mapConfig = future.get();
         assertEquals(1, mapConfig.getBackupCount());
     }
 
     @Test
     public void updateMapConfig() {
         hazelcastInstances[0].getMap("map-1").put(1, 1);
-        MapConfigHolder mapConfig = new MapConfigHolder(null, -1, -1, 27, 29, 35, "PER_NODE", false,
-                EvictionPolicy.LRU.name(), null);
-        managementCenterService.updateMapConfig("map-1", mapConfig);
+        managementCenterService.updateMapConfig(
+                new UpdateMapConfigParameters("map-1", 27, 29, EvictionPolicy.LRU, false, 35, PER_NODE));
 
         assertTrueEventually(() -> {
-            MapConfigHolder retrievedConfig = managementCenterService.getMapConfig("map-1").get();
+            MCMapConfig retrievedConfig = managementCenterService.getMapConfig("map-1").get();
             assertEquals(27, retrievedConfig.getTimeToLiveSeconds());
             assertEquals(29, retrievedConfig.getMaxIdleSeconds());
             assertEquals(35, retrievedConfig.getMaxSize());
-            assertEquals("PER_NODE", retrievedConfig.getMaxSizePolicy());
+            assertEquals(PER_NODE, retrievedConfig.getMaxSizePolicy());
         });
     }
 }
