@@ -37,6 +37,7 @@ import com.hazelcast.cp.internal.operation.integration.PreVoteResponseOp;
 import com.hazelcast.cp.internal.operation.integration.TriggerLeaderElectionOp;
 import com.hazelcast.cp.internal.operation.integration.VoteRequestOp;
 import com.hazelcast.cp.internal.operation.integration.VoteResponseOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeStateReplicationOp;
 import com.hazelcast.cp.internal.raftop.GetInitialRaftGroupMembersIfCurrentGroupMemberOp;
 import com.hazelcast.cp.internal.raftop.NotifyTermChangeOp;
 import com.hazelcast.cp.internal.raftop.metadata.AddCPMemberOp;
@@ -121,6 +122,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int GET_LEADED_GROUPS = 48;
     public static final int TRANSFER_LEADERSHIP_OP = 49;
     public static final int TRIGGER_LEADER_ELECTION_OP = 50;
+    public static final int UNSAFE_MODE_PARTITION_STATE = 51;
+    public static final int UNSAFE_STATE_REPLICATE_OP = 52;
 
     @Override
     public int getFactoryId() {
@@ -231,6 +234,10 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new TransferLeadershipOp();
                 case TRIGGER_LEADER_ELECTION_OP:
                     return new TriggerLeaderElectionOp();
+                case UNSAFE_MODE_PARTITION_STATE:
+                    return new UnsafeModePartitionState();
+                case UNSAFE_STATE_REPLICATE_OP:
+                    return new UnsafeStateReplicationOp();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }
