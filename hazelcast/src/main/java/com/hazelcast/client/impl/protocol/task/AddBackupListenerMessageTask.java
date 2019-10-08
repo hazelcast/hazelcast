@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.util.UuidUtil;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -49,7 +48,8 @@ public class AddBackupListenerMessageTask extends AbstractCallableMessageTask<Cl
             logger.finest("Client is adding backup listener. client uuid " + uuid);
         }
         clientEngine.addBackupListener(uuid, this);
-        return UuidUtil.newUnsecureUUID();
+        endpoint.addDestroyAction(uuid, () -> clientEngine.deregisterBackupListener(uuid));
+        return uuid;
     }
 
     @Override

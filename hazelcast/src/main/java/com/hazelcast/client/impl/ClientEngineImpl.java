@@ -604,4 +604,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         }
     }
 
+    @Override
+    public boolean deregisterBackupListener(UUID clientUUID) {
+        return backupListeners.remove(clientUUID) != null;
+    }
 }
