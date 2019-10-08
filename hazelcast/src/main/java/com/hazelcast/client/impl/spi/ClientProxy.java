@@ -85,11 +85,6 @@ public abstract class ClientProxy implements DistributedObject {
         return (HazelcastClientInstanceImpl) getContext().getHazelcastInstance();
     }
 
-    @Deprecated
-    public final Object getId() {
-        return name;
-    }
-
     @Nonnull
     @Override
     public final String getName() {
