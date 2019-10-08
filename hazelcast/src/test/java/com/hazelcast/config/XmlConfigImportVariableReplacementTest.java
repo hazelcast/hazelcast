@@ -77,19 +77,24 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     public void readVariables() {
         String xml = HAZELCAST_START_TAG
                 + "    <map name=\"${name}\">\n"
-                + "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n"
+                + "        <backup-count>${async.backup.count}${backup.count}</backup-count>\n"
                 + "    </map>"
                 + HAZELCAST_END_TAG;
 
-        Properties properties = new Properties();
-        properties.setProperty("name", "s");
-
-        properties.setProperty("backupcount.part1", "0");
-        properties.setProperty("backupcount.part2", "6");
+        Properties properties = createMapProperties("map", 0, 6);
         Config config = buildConfig(xml, properties);
-        MapConfig mapConfig = config.getMapConfig("s");
+        MapConfig mapConfig = config.getMapConfig("map");
         assertEquals(6, mapConfig.getBackupCount());
         assertEquals(0, mapConfig.getAsyncBackupCount());
+    }
+
+    private Properties createMapProperties(String name, int asyncBackupCount, int backupCount) {
+        Properties properties = new Properties();
+        properties.setProperty("name", name);
+
+        properties.setProperty("async.backup.count", String.valueOf(asyncBackupCount));
+        properties.setProperty("backup.count", String.valueOf(backupCount));
+        return properties;
     }
 
     @Test
@@ -492,7 +497,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                         + "<properties>"
                         + properties()
                         + "</properties>"
-                        +"</replacer>";
+                        + "</replacer>";
             }
         }
 
