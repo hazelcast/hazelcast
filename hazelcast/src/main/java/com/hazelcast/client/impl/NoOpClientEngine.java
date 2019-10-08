@@ -162,4 +162,8 @@ public class NoOpClientEngine implements ClientEngine {
 
     }
 
+    @Override
+    public boolean deregisterBackupListener(UUID clientUUID) {
+        return false;
+    }
 }
