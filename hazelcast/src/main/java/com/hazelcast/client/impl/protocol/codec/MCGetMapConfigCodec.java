@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map.
  */
-@Generated("1edc974b3d1d075007ef78b84070c206")
+@Generated("0a6dff71dfa90a51096b36ce521a371e")
 public final class MCGetMapConfigCodec {
     //hex: 0x270300
     public static final int REQUEST_MESSAGE_TYPE = 2556672;
@@ -154,7 +154,7 @@ public final class MCGetMapConfigCodec {
         encodeInt(initialFrame.content, RESPONSE_EVICTION_POLICY_FIELD_OFFSET, evictionPolicy);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, mergePolicy, StringCodec::encode);
+        StringCodec.encode(clientMessage, mergePolicy);
         return clientMessage;
     }
 
@@ -171,7 +171,7 @@ public final class MCGetMapConfigCodec {
         response.maxSizePolicy = decodeInt(initialFrame.content, RESPONSE_MAX_SIZE_POLICY_FIELD_OFFSET);
         response.readBackupData = decodeBoolean(initialFrame.content, RESPONSE_READ_BACKUP_DATA_FIELD_OFFSET);
         response.evictionPolicy = decodeInt(initialFrame.content, RESPONSE_EVICTION_POLICY_FIELD_OFFSET);
-        response.mergePolicy = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        response.mergePolicy = StringCodec.decode(iterator);
         return response;
     }
 
