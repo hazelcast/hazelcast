@@ -1,7 +1,5 @@
 package com.hazelcast.internal.util;
 
-import net.openhft.affinity.Affinity;
-
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.Float.parseFloat;
@@ -12,9 +10,17 @@ public class ThreadAffinity {
     private static volatile String javaDir = null;
     private final static ConcurrentMap<Long, Integer> tids = new ConcurrentReferenceHashMap<>();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
+        Thread.currentThread().setName("Peter");
+        System.out.println("pid:" + getPid());
+        System.out.println("tid:" + getTid(Thread.currentThread()));
+        setThreadAffinity(Thread.currentThread(),5);
+        System.out.println("Thread affinity:"+ getThreadAffinityBitmask(Thread.currentThread()));
+        resetThreadAffinity(Thread.currentThread());
+        System.out.println("Thread affinity:"+ getThreadAffinityBitmask(Thread.currentThread()));
 
-        System.out.println(getTid(Thread.currentThread()));
+        //   System.out.println("tid from affinity:"+Affinity.getThreadId());
+        Thread.sleep(1000000);
     }
 
     public static String javaDirectory() {
@@ -27,8 +33,28 @@ public class ThreadAffinity {
         return javaDir;
     }
 
-    public static void setThreadAffinity(Thread t, int cpu) {
-        Affinity.getThreadId();
+    public static void setThreadAffinity(Thread t, int cpu){
+        long bitmask = 1<<cpu;
+        setThreadAffinityBitmask(t, bitmask);
+    }
+
+    public static long getThreadAffinityBitmask(Thread t){
+        int tid = getTid(t);
+        String command = "taskset -p " + tid;
+        String result = Bash.bash(command);
+        String[] s = result.split(":");
+        return Integer.parseInt(s[1].trim());
+    }
+
+    public static void resetThreadAffinity(Thread t){
+        setThreadAffinityBitmask(t, Integer.MAX_VALUE);
+    }
+
+    public static void setThreadAffinityBitmask(Thread t, long bitmask) {
+        int tid = getTid(t);
+        String command = "taskset -p " + bitmask + " " + tid;
+        Bash.bash(command);
+      //  System.out.println(command);
     }
 
     public static int getTid(Thread t) {
@@ -40,12 +66,15 @@ public class ThreadAffinity {
         String result = Bash.bash(javaDirectory() + "bin/jcmd " + getPid() + " Thread.print");
         String[] lines = result.split("\n");
         for (String line : lines) {
+            //todo: we should cache all.
             if (line.startsWith("\"" + t.getName() + "\"")) {
                 int indexOf = line.indexOf("nid=0x") + 5;
                 int end = line.indexOf(" ", indexOf);
-                System.out.println(line);
-                System.out.println();
-                return Integer.parseInt(line.substring(indexOf, end),16);
+//                System.out.println(line);
+//                System.out.println();
+                String substring = line.substring(indexOf + 1, end);
+//                System.out.println(substring);
+                return Integer.parseInt(substring, 16);
             }
         }
         return 1;
