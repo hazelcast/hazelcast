@@ -48,7 +48,7 @@ public class ThreadAffinity {
         String command = "taskset -p " + tid;
         String[] results = Bash.bash(command).split(":");
         String result = results[results.length - 1].trim();
-        System.out.println("result:" + result);
+        //System.out.println("result:" + result);
         return Integer.parseInt(result, 16);
     }
 
@@ -56,6 +56,7 @@ public class ThreadAffinity {
         throw new RuntimeException("Unsupported operation exception");
     }
 
+    //todo: how to deal with more than 64 cores??
     public static void resetThreadAffinity(Thread t) {
         setThreadAffinityBitmask(t, "0xFFFFFFFF");
     }

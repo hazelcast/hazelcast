@@ -82,8 +82,9 @@ public class CpuPool {
             return;
         }
 
-        String threadId = getThreadId();
+        int threadId = ThreadAffinity.getTid(Thread.currentThread());
         System.out.println("threadId: [" + threadId + "]");
+        ThreadAffinity.setThreadAffinity(Thread.currentThread().c);
         taskSetLock(cpu, threadId);
         try {
             r.run();
@@ -101,18 +102,7 @@ public class CpuPool {
         System.out.println(Bash.bash("taskset -p " + threadId));
     }
 
-    private static void taskSetUnlock(String threadId) {
-        // bash(threadId, "taskset -c " + cpu + " -p " + threadId);
-    }
 
-    private synchronized static String getThreadId() {
-        System.out.println("================ thread id ======================");
-        String s= Bash.bash("echo $PID").trim();
-        System.out.println("Thread:"+Thread.currentThread().getName());
-        System.out.println("ThreadId:"+s);
-        System.out.println("================ thread id ======================");
-        return s;
-    }
 
     static List<Integer> parseCpuString(String cpuString) {
         List<Integer> cpus = new ArrayList<>();
