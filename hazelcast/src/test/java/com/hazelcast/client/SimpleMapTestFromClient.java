@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -52,7 +51,6 @@ public class SimpleMapTestFromClient {
 
 
         Config config = new Config();
-        config.setProperty(ClientEngineImpl.SKIP_EVENT_QUEUE_FOR_BACKUPS.getName(), "true");
 
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);

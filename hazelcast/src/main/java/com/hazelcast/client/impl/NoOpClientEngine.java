@@ -153,17 +153,13 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public void addBackupListener(Consumer<Long> backupListener) {
+    public void addBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
 
     }
 
     @Override
-    public void dispatchBackupEvent(long clientCorrelationId) {
+    public void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId) {
 
     }
 
-    @Override
-    public boolean isSkipEventQueueForBackups() {
-        return false;
-    }
 }
