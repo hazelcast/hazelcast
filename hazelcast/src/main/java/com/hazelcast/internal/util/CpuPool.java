@@ -1,8 +1,6 @@
 package com.hazelcast.internal.util;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -12,15 +10,21 @@ public class CpuPool {
 
     private final List<Integer> cpus;
     private final Queue<Integer> pool = new ConcurrentLinkedQueue<>();
+    private final List<Integer> usedCpus = new LinkedList<>();
 
     public CpuPool(String cpuString) {
-        cpus = parseCpuString(cpuString);
+        cpus = Collections.unmodifiableList(parseCpuString(cpuString));
         pool.addAll(cpus);
+    }
+
+    public List<Integer> usedCpus(){
+        return usedCpus;
     }
 
     public void reset() {
         pool.clear();
         pool.addAll(cpus);
+        usedCpus.clear();
     }
 
     public int take() {
@@ -28,7 +32,7 @@ public class CpuPool {
         if (cpu == null) {
             return -1;
         }
-
+        usedCpus.add(cpu);
         return cpu;
     }
 

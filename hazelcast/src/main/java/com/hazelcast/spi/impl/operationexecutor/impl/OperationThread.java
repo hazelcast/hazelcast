@@ -163,10 +163,13 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     }
 
     private void process(Packet packet) throws Exception {
-        currentRunner = operationRunner(packet.getPartitionId());
+        int partitionId = packet.getPartitionId();
+        //todo: if detect
+        currentRunner = operationRunner(partitionId);
         currentRunner.run(packet);
         completedPacketCount.inc();
     }
+
 
     private void process(PartitionSpecificRunnable runnable) {
         currentRunner = operationRunner(runnable.getPartitionId());
