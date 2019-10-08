@@ -33,6 +33,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -149,5 +150,20 @@ public class NoOpClientEngine implements ClientEngine {
     @Override
     public void onClientAcquiredResource(UUID uuid) {
 
+    }
+
+    @Override
+    public void addBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
+
+    }
+
+    @Override
+    public void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId) {
+
+    }
+
+    @Override
+    public boolean deregisterBackupListener(UUID clientUUID) {
+        return false;
     }
 }

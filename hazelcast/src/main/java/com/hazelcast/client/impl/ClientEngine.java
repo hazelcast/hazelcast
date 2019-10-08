@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.impl.protocol.ClientExceptions;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientType;
+import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
@@ -204,4 +204,11 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * @param uuid client uuid
      */
     void onClientAcquiredResource(UUID uuid);
+
+    void addBackupListener(UUID clientUUID, Consumer<Long> backupListener);
+
+    boolean deregisterBackupListener(UUID clientUUID);
+
+    void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId);
+
 }
