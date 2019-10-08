@@ -209,7 +209,6 @@ public class LiteMemberJoinTest {
             public Config create(String name, String pw, boolean liteMember) {
                 Config config = new Config();
                 config.setClusterName(name);
-                config.setClusterPassword(pw);
 
                 config.setLiteMember(liteMember);
 
@@ -229,7 +228,6 @@ public class LiteMemberJoinTest {
             public Config create(String name, String pw, boolean liteMember) {
                 Config config = new Config();
                 config.setClusterName(name);
-                config.setClusterPassword(pw);
 
                 config.setLiteMember(liteMember);
 

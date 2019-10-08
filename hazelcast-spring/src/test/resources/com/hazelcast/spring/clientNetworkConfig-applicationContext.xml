@@ -35,9 +35,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:cluster
-                    name="${cluster.name}"
-                    password="${cluster.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -67,8 +65,7 @@
         </hz:config>
     </hz:hazelcast>
 
-    <hz:client id="client"
-               credentials-ref="credentials">
+    <hz:client id="client">
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
@@ -106,7 +103,7 @@
                       tenant-id="TENANT_ID"
                       subscription-id="SUB_ID"
                       cluster-id="HZLCAST001"
-                      cluster-name="CLUSTER-NAME"/>
+                      group-name="RESOURCE-GROUP-NAME"/>
             <hz:kubernetes enabled="false"
                            namespace="MY-KUBERNETES-NAMESPACE"
                            service-name="MY-SERVICE-NAME"
@@ -148,6 +145,9 @@
             </hz:serializers>
         </hz:serialization>
 
+        <hz:security>
+            <hz:credentials-ref>credentials</hz:credentials-ref>
+        </hz:security>
 
         <hz:proxy-factories>
             <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService"/>
@@ -161,7 +161,6 @@
                        invalidate-on-change="true">
             <hz:eviction eviction-policy="LRU" size="4000"/>
         </hz:near-cache>
-
 
     </hz:client>
 

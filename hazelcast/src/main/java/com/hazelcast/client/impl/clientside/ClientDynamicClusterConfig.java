@@ -83,7 +83,6 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -91,6 +90,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
@@ -418,21 +419,11 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public String getClusterName() {
-        return instance.getClientConfig().getClusterName();
+        return instance.getClientConfig().getClientName();
     }
 
     @Override
     public Config setClusterName(String clusterName) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public String getClusterPassword() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setClusterPassword(final String password) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

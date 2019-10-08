@@ -38,9 +38,7 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:instance-name>test-instance</hz:instance-name>
-            <hz:cluster
-                    name="${cluster.name}"
-                    password="${cluster.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
             <hz:management-center enabled="true" update-interval="2" scripting-enabled="false">
                 <hz:url>myserver:80</hz:url>
@@ -93,7 +91,7 @@
                               tenant-id="TENANT_ID"
                               subscription-id="SUB_ID"
                               cluster-id="HZLCAST001"
-                              cluster-name="CLUSTER-NAME"/>
+                              group-name="RESOURCE-GROUP-NAME"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
                                    service-name="MY-SERVICE-NAME"
@@ -183,7 +181,7 @@
                               tenant-id="TENANT_ID"
                               subscription-id="SUB_ID"
                               cluster-id="HZLCAST001"
-                              cluster-name="CLUSTER-NAME"/>
+                              group-name="RESOURCE-GROUP-NAME"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
                                    service-name="MY-SERVICE-NAME"
@@ -633,6 +631,54 @@
                 <hz:size unit="MEGABYTES" value="256"/>
             </hz:native-memory>
             <hz:security>
+                <hz:realms>
+                    <hz:realm name="r1">
+                        <hz:authentication>
+                            <hz:tls roleAttribute="cn"/>
+                        </hz:authentication>
+                        <hz:identity>
+                            <hz:username-password username="user" password="secret"/>
+                        </hz:identity>
+                    </hz:realm>
+                    <hz:realm name="r2">
+                        <hz:authentication>
+                            <hz:ldap>
+                                <hz:url>ldaps://server.hazelcast.com</hz:url>
+                                <hz:socket-factory-class-name>socketFactoryClassName</hz:socket-factory-class-name>
+                                <hz:parse-dn>true</hz:parse-dn>
+                                <hz:role-context>roleContext</hz:role-context>
+                                <hz:role-filter>roleFilter</hz:role-filter>
+                                <hz:role-mapping-attribute>roleMappingAttribute</hz:role-mapping-attribute>
+                                <hz:role-mapping-mode>reverse</hz:role-mapping-mode>
+                                <hz:role-name-attribute>roleNameAttribute</hz:role-name-attribute>
+                                <hz:role-recursion-max-depth>25</hz:role-recursion-max-depth>
+                                <hz:role-search-scope>object</hz:role-search-scope>
+                                <hz:user-name-attribute>userNameAttribute</hz:user-name-attribute>
+                                <hz:system-user-dn>systemUserDn</hz:system-user-dn>
+                                <hz:system-user-password>systemUserPassword</hz:system-user-password>
+                                <hz:password-attribute>passwordAttribute</hz:password-attribute>
+                                <hz:user-context>userContext</hz:user-context>
+                                <hz:user-filter>userFilter</hz:user-filter>
+                                <hz:user-search-scope>one-level</hz:user-search-scope>
+                            </hz:ldap>
+                        </hz:authentication>
+                        <hz:identity>
+                            <hz:token>token_value</hz:token>
+                        </hz:identity>
+                    </hz:realm>
+                    <hz:realm name="r3">
+                        <hz:authentication>
+                            <hz:jaas>
+                                <hz:login-module class-name="com.example.LoginModule" usage="REQUIRED"/>
+                            </hz:jaas>
+                        </hz:authentication>
+                        <hz:identity>
+                            <hz:token encoding="base64">aGF6ZWxjYXN0</hz:token>
+                        </hz:identity>
+                    </hz:realm>
+                </hz:realms>
+                <hz:member-authentication realm="r1"/>
+                <hz:client-authentication realm="r2"/>
                 <hz:client-permissions on-join-operation="SEND">
                     <hz:pn-counter-permission name="pnCounterPermission">
                         <hz:actions>

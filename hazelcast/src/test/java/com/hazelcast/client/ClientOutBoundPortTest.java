@@ -50,7 +50,7 @@ public class ClientOutBoundPortTest {
         Hazelcast.newHazelcastInstance(config1);
 
         ClientConfig config2 = new ClientConfig();
-        config2.setClusterName("client-out-test");
+        config2.setClientName("client-out-test");
         config2.getNetworkConfig().setOutboundPortDefinitions(Arrays.asList("34700", "34703-34705"));
         HazelcastInstance client = HazelcastClient.newHazelcastClient(config2);
 

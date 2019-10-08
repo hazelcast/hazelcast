@@ -21,7 +21,6 @@ import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientService;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
@@ -160,7 +159,6 @@ import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYN
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
@@ -221,9 +219,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
 
         String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
-        loggingService = new ClientLoggingService(config.getClusterName(),
+        loggingService = new ClientLoggingService(config.getClientName(),
                 loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
-        logGroupPasswordInfo();
         ClassLoader classLoader = config.getClassLoader();
         properties = new HazelcastProperties(config.getProperties());
         concurrencyDetection = initConcurrencyDetection();
@@ -382,16 +379,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private ClientExecutionServiceImpl initExecutionService() {
         return new ClientExecutionServiceImpl(instanceName,
                 config.getClassLoader(), properties, config.getExecutorPoolSize(), loggingService);
-    }
-
-    private void logGroupPasswordInfo() {
-        if (!isNullOrEmpty(config.getClusterPassword())) {
-            ILogger logger = loggingService.getLogger(HazelcastClient.class);
-            logger.info("A non-empty group password is configured for the Hazelcast client."
-                    + " Starting with Hazelcast version 3.11, clients with the same cluster name,"
-                    + " but with different group passwords (that do not use authentication) will be accepted to a cluster."
-                    + " The group password configuration will be removed completely in a future release.");
-        }
     }
 
     public void start() {

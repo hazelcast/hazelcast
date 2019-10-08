@@ -118,7 +118,7 @@ public class TestClientNetworkConfig {
         assertEquals("TENANT_ID", azure.getProperty("tenant-id"));
         assertEquals("SUB_ID", azure.getProperty("subscription-id"));
         assertEquals("HZLCAST001", azure.getProperty("cluster-id"));
-        assertEquals("CLUSTER-NAME", azure.getProperty("cluster-name"));
+        assertEquals("RESOURCE-GROUP-NAME", azure.getProperty("group-name"));
     }
 
     @Test

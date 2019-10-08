@@ -22,6 +22,7 @@ import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
@@ -36,6 +37,7 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.config.security.TokenEncoding.getTokenEncoding;
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 
@@ -277,5 +279,11 @@ class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
         for (Node child : childElements(node)) {
             handleDiscoveryStrategy(child, discoveryConfig);
         }
+    }
+
+    @Override
+    protected void handleTokenIdentity(ClientSecurityConfig clientSecurityConfig, Node node) {
+        clientSecurityConfig.setTokenIdentityConfig(new TokenIdentityConfig(
+                getTokenEncoding(getAttribute(node, "encoding")), getAttribute(node, "value")));
     }
 }

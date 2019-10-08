@@ -23,6 +23,12 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.LdapAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.TlsAuthenticationConfig;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
@@ -119,12 +125,10 @@ public class ConfigXmlGenerator {
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd\">");
-        gen.open("cluster")
-                .node("name", config.getClusterName())
-                .node("password", getOrMaskValue(config.getClusterPassword()))
-                .close()
-                .node("license-key", getOrMaskValue(config.getLicenseKey()))
-                .node("instance-name", config.getInstanceName());
+        gen.node("license-key", getOrMaskValue(config.getLicenseKey()))
+                .node("instance-name", config.getInstanceName())
+                .node("cluster-name", config.getClusterName())
+                ;
 
         manCenterXmlGenerator(gen, config);
         gen.appendProperties(config.getProperties());
@@ -238,7 +242,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void securityXmlGenerator(XmlGenerator gen, Config config) {
+    private void securityXmlGenerator(XmlGenerator gen, Config config) {
         SecurityConfig c = config.getSecurityConfig();
         if (c == null) {
             return;
@@ -254,15 +258,16 @@ public class ConfigXmlGenerator {
                     .close();
         }
 
-        appendLoginModules(gen, "client-login-modules", c.getClientLoginModuleConfigs());
-        appendLoginModules(gen, "member-login-modules", c.getMemberLoginModuleConfigs());
-
-        CredentialsFactoryConfig cfc = c.getMemberCredentialsConfig();
-        if (cfc.getClassName() != null) {
-            gen.open("member-credentials-factory", "class-name", cfc.getClassName())
-                    .appendProperties(cfc.getProperties())
-                    .close();
+        Map<String, RealmConfig> realms = c.getRealmConfigs();
+        if (realms != null && !realms.isEmpty()) {
+            gen.open("realms");
+            for (Map.Entry<String, RealmConfig> realmEntry : realms.entrySet()) {
+                securityRealmGenerator(gen, realmEntry.getKey(), realmEntry.getValue());
+            }
+            gen.close();
         }
+        addRealmReference(gen, "member-authentication", c.getMemberRealm());
+        addRealmReference(gen, "client-authentication", c.getClientRealm());
 
         List<SecurityInterceptorConfig> sic = c.getSecurityInterceptorConfigs();
         if (!sic.isEmpty()) {
@@ -277,6 +282,79 @@ public class ConfigXmlGenerator {
         appendSecurityPermissions(gen, "client-permissions", c.getClientPermissionConfigs(),
                 "on-join-operation", c.getOnJoinPermissionOperation());
         gen.close();
+    }
+
+    private static void addRealmReference(XmlGenerator gen, String refName, String realmName) {
+        if (realmName != null) {
+            gen.node(refName, null, "realm", realmName);
+        }
+    }
+
+    private void securityRealmGenerator(XmlGenerator gen, String name, RealmConfig c) {
+        gen.open("realm", "name", name);
+        if (c.isAuthenticationConfigured()) {
+            gen.open("authentication");
+            jaasAuthenticationGenerator(gen, c.getJaasAuthenticationConfig());
+            tlsAuthenticationGenerator(gen, c.getTlsAuthenticationConfig());
+            ldapAuthenticationGenerator(gen, c.getLdapAuthenticationConfig());
+            gen.close();
+        }
+        if (c.isIdentityConfigured()) {
+            gen.open("identity");
+            CredentialsFactoryConfig cf = c.getCredentialsFactoryConfig();
+            if (cf != null) {
+                gen.open("credentials-factory", "class-name", cf.getClassName()).appendProperties(cf.getProperties()).close();
+            }
+            UsernamePasswordIdentityConfig upi = c.getUsernamePasswordIdentityConfig();
+            if (upi != null) {
+                gen.node("username-password", null, "username", upi.getUsername(), "password", getOrMaskValue(upi.getPassword()));
+            }
+            TokenIdentityConfig ti = c.getTokenIdentityConfig();
+            if (ti != null) {
+                gen.node("token", getOrMaskValue(ti.getTokenEncoded()), "encoding", ti.getEncoding().toString());
+            }
+            gen.close();
+        }
+        gen.close();
+    }
+
+    private static void tlsAuthenticationGenerator(XmlGenerator gen, TlsAuthenticationConfig c) {
+        if (c == null) {
+            return;
+        }
+        gen.node("tls", null, "roleAttribute", c.getRoleAttribute());
+    }
+
+    private static void ldapAuthenticationGenerator(XmlGenerator gen, LdapAuthenticationConfig c) {
+        if (c == null) {
+            return;
+        }
+        gen.open("ldap")
+            .node("url", c.getUrl())
+            .nodeIfContents("socket-factory-class-name", c.getSocketFactoryClassName())
+            .nodeIfContents("parse-dn", c.isParseDn())
+            .nodeIfContents("role-context", c.getRoleContext())
+            .nodeIfContents("role-filter", c.getRoleFilter())
+            .nodeIfContents("role-mapping-attribute", c.getRoleMappingAttribute())
+            .nodeIfContents("role-mapping-mode", c.getRoleMappingMode())
+            .nodeIfContents("role-name-attribute", c.getRoleNameAttribute())
+            .nodeIfContents("role-recursion-max-depth", c.getRoleRecursionMaxDepth())
+            .nodeIfContents("role-search-scope", c.getRoleSearchScope())
+            .nodeIfContents("user-name-attribute", c.getUserNameAttribute())
+            .nodeIfContents("system-user-dn", c.getSystemUserDn())
+            .nodeIfContents("system-user-password", c.getSystemUserPassword())
+            .nodeIfContents("password-attribute", c.getPasswordAttribute())
+            .nodeIfContents("user-context", c.getUserContext())
+            .nodeIfContents("user-filter", c.getUserFilter())
+            .nodeIfContents("user-search-scope", c.getUserSearchScope())
+            .close();
+    }
+
+    private static void jaasAuthenticationGenerator(XmlGenerator gen, JaasAuthenticationConfig c) {
+        if (c == null) {
+            return;
+        }
+        appendLoginModules(gen, "jaas", c.getLoginModuleConfigs());
     }
 
     private static void appendSecurityPermissions(XmlGenerator gen, String tag, Set<PermissionConfig> cpc, Object... attributes) {
@@ -313,23 +391,21 @@ public class ConfigXmlGenerator {
     }
 
     private static void appendLoginModules(XmlGenerator gen, String tag, List<LoginModuleConfig> loginModuleConfigs) {
-        if (!loginModuleConfigs.isEmpty()) {
-            gen.open(tag);
-            for (LoginModuleConfig lm : loginModuleConfigs) {
-                List<String> attrs = new ArrayList<String>();
-                attrs.add("class-name");
-                attrs.add(lm.getClassName());
+        gen.open(tag);
+        for (LoginModuleConfig lm : loginModuleConfigs) {
+            List<String> attrs = new ArrayList<>();
+            attrs.add("class-name");
+            attrs.add(lm.getClassName());
 
-                if (lm.getUsage() != null) {
-                    attrs.add("usage");
-                    attrs.add(lm.getUsage().name());
-                }
-                gen.open("login-module", attrs.toArray())
-                        .appendProperties(lm.getProperties())
-                        .close();
+            if (lm.getUsage() != null) {
+                attrs.add("usage");
+                attrs.add(lm.getUsage().name());
             }
-            gen.close();
+            gen.open("login-module", attrs.toArray())
+                    .appendProperties(lm.getProperties())
+                    .close();
         }
+        gen.close();
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})
@@ -1696,6 +1772,13 @@ public class ConfigXmlGenerator {
 
         public XmlGenerator node(String name, Object contents, Object... attributes) {
             appendNode(xml, name, contents, attributes);
+            return this;
+        }
+
+        public XmlGenerator nodeIfContents(String name, Object contents, Object... attributes) {
+            if (contents != null) {
+                appendNode(xml, name, contents, attributes);
+            }
             return this;
         }
 

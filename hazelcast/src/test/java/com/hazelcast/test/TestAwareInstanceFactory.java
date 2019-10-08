@@ -97,7 +97,7 @@ public class TestAwareInstanceFactory {
     /**
      * Creates new member instance with TCP join configured. Uses
      * {@link com.hazelcast.test.AbstractHazelcastClassRunner#getTestMethodName()}
-     * as the cluster group name.
+     * as the cluster name.
      */
     public HazelcastInstance newHazelcastInstance(Config config, NodeContext nodeCtx) {
         if (config == null) {

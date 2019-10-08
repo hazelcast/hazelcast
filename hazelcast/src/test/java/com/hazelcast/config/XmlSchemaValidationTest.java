@@ -38,14 +38,10 @@ public class XmlSchemaValidationTest {
     public ExpectedException rule = ExpectedException.none();
 
     @Test
-    public void testXmlDeniesDuplicateGroupConfig() {
-        expectDuplicateElementError("cluster");
-        String clusterConfig = ""
-                + "    <cluster>\n"
-                + "        <name>foobar</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </cluster>\n";
-        buildConfig(HAZELCAST_START_TAG + clusterConfig + clusterConfig + HAZELCAST_END_TAG);
+    public void testXmlDeniesDuplicateClusterNameConfig() {
+        expectDuplicateElementError("cluster-name");
+        String clusterName = "<cluster-name>foobar</cluster-name>";
+        buildConfig(HAZELCAST_START_TAG + clusterName + clusterName + HAZELCAST_END_TAG);
     }
 
     @Test

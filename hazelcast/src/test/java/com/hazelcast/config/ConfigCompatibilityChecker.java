@@ -20,6 +20,12 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.LdapAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.TlsAuthenticationConfig;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -71,9 +77,6 @@ public class ConfigCompatibilityChecker {
         }
         if (!nullSafeEqual(c1.getClusterName(), c2.getClusterName())) {
             return false;
-        }
-        if (!nullSafeEqual(c1.getClusterPassword(), c2.getClusterPassword())) {
-            throw new HazelcastException("Incompatible group password");
         }
 
         checkWanConfigs(c1.getWanReplicationConfigs(), c2.getWanReplicationConfigs());
@@ -1354,12 +1357,63 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isEnabled(), c2.isEnabled())
                     && (c1.getOnJoinPermissionOperation() == c2.getOnJoinPermissionOperation())
                     && nullSafeEqual(c1.getClientBlockUnmappedActions(), c2.getClientBlockUnmappedActions())
-                    && isCompatible(c1.getMemberCredentialsConfig(), c2.getMemberCredentialsConfig())
+                    && nullSafeEqual(c1.getClientRealm(), c2.getClientRealm())
+                    && nullSafeEqual(c1.getMemberRealm(), c2.getMemberRealm())
+                    && isCompatible(c1.getRealmConfigs(), c2.getRealmConfigs())
                     && isCompatible(c1.getSecurityInterceptorConfigs(), c2.getSecurityInterceptorConfigs())
                     && isCompatible(c1.getClientPolicyConfig(), c2.getClientPolicyConfig())
                     && isCompatible(c1.getClientPermissionConfigs(), c2.getClientPermissionConfigs())
-                    && isCompatibleLoginModule(c1.getMemberLoginModuleConfigs(), c2.getMemberLoginModuleConfigs())
-                    && isCompatibleLoginModule(c1.getClientLoginModuleConfigs(), c2.getClientLoginModuleConfigs());
+                    ;
+        }
+
+        private static boolean isCompatible(Map<String, RealmConfig> c1, Map<String, RealmConfig> c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null || c1.size() != c2.size()) {
+                return false;
+            }
+            for (String realmName: c1.keySet()) {
+                if (!isCompatible(c1.get(realmName), c2.get(realmName))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static boolean isCompatible(RealmConfig c1, RealmConfig c2) {
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+            return isCompatible(c1.getCredentialsFactoryConfig(), c2.getCredentialsFactoryConfig())
+                    && isCompatible(c1.getJaasAuthenticationConfig(), c2.getJaasAuthenticationConfig())
+                    && isCompatible(c1.getTlsAuthenticationConfig(), c2.getTlsAuthenticationConfig())
+                    && isCompatible(c1.getLdapAuthenticationConfig(), c2.getLdapAuthenticationConfig())
+                    && isCompatible(c1.getUsernamePasswordIdentityConfig(), c2.getUsernamePasswordIdentityConfig())
+                    && isCompatible(c1.getTokenIdentityConfig(), c2.getTokenIdentityConfig())
+                    ;
+        }
+
+        private static boolean isCompatible(UsernamePasswordIdentityConfig c1, UsernamePasswordIdentityConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null && nullSafeEqual(c1.getUsername(), c2.getUsername())
+                    && nullSafeEqual(c1.getPassword(), c2.getPassword()));
+        }
+
+        private static boolean isCompatible(TokenIdentityConfig c1, TokenIdentityConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+        }
+
+        private static boolean isCompatible(TlsAuthenticationConfig c1, TlsAuthenticationConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null && nullSafeEqual(c1.getRoleAttribute(), c2.getRoleAttribute()));
+        }
+
+        private static boolean isCompatible(LdapAuthenticationConfig c1, LdapAuthenticationConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+        }
+
+        private static boolean isCompatible(JaasAuthenticationConfig c1, JaasAuthenticationConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null
+                    && isCompatibleLoginModule(c1.getLoginModuleConfigs(), c2.getLoginModuleConfigs()));
         }
 
         private static boolean isCompatible(CredentialsFactoryConfig c1, CredentialsFactoryConfig c2) {

@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -38,6 +39,9 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -83,10 +87,10 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         //escape xml value
         //escape xml attribute
         NearCacheConfig nearCacheConfig = new NearCacheConfig(toEscape);
-        clientConfig.setClusterName(toEscape).setClusterPassword("pass").addNearCacheConfig(nearCacheConfig);
+        clientConfig.setClientName(toEscape).addNearCacheConfig(nearCacheConfig);
 
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(clientConfig.getClusterName(), actual.getClusterName());
+        assertEquals(clientConfig.getClientName(), actual.getClientName());
         assertEquals(toEscape, actual.getNearCacheConfig(toEscape).getName());
     }
 
@@ -117,11 +121,9 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void cluster() {
         String name = randomString();
-        String pass = randomString();
-        clientConfig.setClusterName(name).setClusterPassword(pass);
+        clientConfig.setClientName(name);
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(name, actual.getClusterName());
-        assertEquals(pass, actual.getClusterPassword());
+        assertEquals(name, actual.getClientName());
     }
 
     @Test
@@ -267,11 +269,29 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void security() {
-        clientConfig.getSecurityConfig().setCredentialsClassname(randomString());
+    public void credentialsFactory() {
+        Properties props = new Properties();
+        props.setProperty("foo", "bar");
+        CredentialsFactoryConfig identityConfig = new CredentialsFactoryConfig("com.test.CFactory");
+        clientConfig.getSecurityConfig().setCredentialsFactoryConfig(identityConfig);
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(clientConfig.getSecurityConfig().getCredentialsClassname(),
-                actual.getSecurityConfig().getCredentialsClassname());
+        assertEquals(identityConfig, actual.getSecurityConfig().getCredentialsFactoryConfig());
+    }
+
+    @Test
+    public void usernamePasswordIdentity() {
+        UsernamePasswordIdentityConfig identityConfig = new UsernamePasswordIdentityConfig("tester", "s3cr3T");
+        clientConfig.getSecurityConfig().setUsernamePasswordIdentityConfig(identityConfig);
+        ClientConfig actual = newConfigViaGenerator();
+        assertEquals(identityConfig, actual.getSecurityConfig().getUsernamePasswordIdentityConfig());
+    }
+
+    @Test
+    public void tokenIdentity() {
+        TokenIdentityConfig identityConfig = new TokenIdentityConfig(TokenEncoding.BASE64, "bmF6ZGFy");
+        clientConfig.getSecurityConfig().setTokenIdentityConfig(identityConfig);
+        ClientConfig actual = newConfigViaGenerator();
+        assertEquals(identityConfig, actual.getSecurityConfig().getTokenIdentityConfig());
     }
 
     @Test

@@ -58,6 +58,7 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.spring.security.DummyCredentialsFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.AfterClass;
@@ -203,7 +204,8 @@ public class TestClientApplicationContext {
         assertEquals(1000, config.getNetworkConfig().getConnectionTimeout());
 
         ClientConfig config2 = client2.getClientConfig();
-        assertEquals(credentials, config2.getSecurityConfig().getCredentials());
+
+        assertEquals(credentials, config2.getSecurityConfig().getCredentialsIdentityConfig().getCredentials());
 
         client.getMap("default").put("Q", "q");
         client2.getMap("default").put("X", "x");
@@ -433,9 +435,7 @@ public class TestClientApplicationContext {
     public void testCredentialsFactory() {
         ClientSecurityConfig securityConfig = credentialsFactory.getClientConfig().getSecurityConfig();
         CredentialsFactoryConfig credentialsFactoryConfig = securityConfig.getCredentialsFactoryConfig();
-        assertEquals("com.hazelcast.examples.MyCredentialsFactory", credentialsFactoryConfig.getClassName());
-        assertEquals("value", credentialsFactoryConfig.getProperties().getProperty("property"));
-        assertNotNull(credentialsFactoryConfig.getImplementation());
+        assertTrue(credentialsFactoryConfig.getImplementation() instanceof DummyCredentialsFactory);
     }
 
     @Test

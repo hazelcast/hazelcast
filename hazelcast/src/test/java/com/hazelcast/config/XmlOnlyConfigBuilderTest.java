@@ -191,10 +191,7 @@ public class XmlOnlyConfigBuilderTest {
     @Test(expected = InvalidConfigurationException.class)
     public void testInvalidRootElement() {
         String xml = "<hazelcast-client>"
-                + "<cluster>"
-                + "<name>dev</name>"
-                + "<password>clusterpass</password>"
-                + "</cluster>"
+                + "<cluster-name>dev</cluster-name>"
                 + "</hazelcast-client>";
         buildConfig(xml);
     }
@@ -225,9 +222,7 @@ public class XmlOnlyConfigBuilderTest {
     }
 
     private static void testConfig2Xml2Config(String fileName) {
-        String pass = "password";
         Config config = new ClasspathXmlConfig(fileName);
-        config.setClusterPassword(pass);
 
         String xml = new ConfigXmlGenerator(true, false).generate(config);
         Config config2 = new InMemoryXmlConfig(xml);
