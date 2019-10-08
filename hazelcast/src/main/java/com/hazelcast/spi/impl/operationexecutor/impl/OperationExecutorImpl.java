@@ -111,6 +111,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
     private final CpuPool cpuPool = new CpuPool(System.getProperty("partitionCpus"));
+    private final boolean rescalingEnabled;
+    private RescaleThread rescaleThread;
 
     public OperationExecutorImpl(HazelcastProperties properties,
                                  LoggingService loggerService,
@@ -127,6 +129,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
         this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
 
+        this.rescalingEnabled = Boolean.parseBoolean(System.getProperty("partitionCpuRescaling", "true"));
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
         this.genericThreads = initGenericThreads(hzName, nodeExtension, configClassLoader);
@@ -508,8 +511,14 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return partitionId % partitionThreads.length;
     }
 
+
     @Override
     public void start() {
+        logger.info("Rescaling enabled:" + rescalingEnabled);
+        if (rescalingEnabled) {
+            rescaleThread = new RescaleThread();
+            rescaleThread.start();
+        }
         logger.info("Starting " + partitionThreads.length + " partition threads and "
                 + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         startAll(partitionThreads);
@@ -527,6 +536,9 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public void shutdown() {
+        if (rescaleThread != null) {
+            rescaleThread.shutdown();
+        }
         shutdownAll(partitionThreads);
         shutdownAll(genericThreads);
         awaitTermination(partitionThreads);
@@ -552,5 +564,27 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Override
     public String toString() {
         return "OperationExecutorImpl{node=" + thisAddress + '}';
+    }
+
+    private class RescaleThread extends Thread {
+        private volatile boolean shutdown;
+
+        @Override
+        public void run() {
+            while (!shutdown) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+
+
+            }
+        }
+
+        public void shutdown() {
+            shutdown = true;
+            interrupt();
+        }
     }
 }

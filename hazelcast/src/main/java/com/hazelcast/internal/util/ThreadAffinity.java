@@ -1,5 +1,8 @@
 package com.hazelcast.internal.util;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.Float.parseFloat;
@@ -13,9 +16,9 @@ public class ThreadAffinity {
     public static void main(String[] args) throws InterruptedException {
         Thread thread = Thread.currentThread();
 
-         System.out.println("pid:" + getPid());
+        System.out.println("pid:" + getPid());
         System.out.println("tid:" + getTid(thread));
-        System.out.println("original thread affinity:"+getThreadAffinityBitmask(thread));
+        System.out.println("original thread affinity:" + getThreadAffinityBitmask(thread));
 
         System.out.println("Changing thread affinity");
         setThreadAffinity(Thread.currentThread(), 5);
@@ -29,6 +32,23 @@ public class ThreadAffinity {
         Thread.sleep(1000000);
     }
 
+    public static String affinityReport() {
+        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+        int cpus = Runtime.getRuntime().availableProcessors();
+
+        Map<Thread,Long> threadAffinityMap = new HashMap<>();
+        for(Thread thread: threadSet){
+            threadAffinityMap.put(thread, getThreadAffinityBitmask(thread));
+        }
+
+        StringBuffer sb = new StringBuffer();
+        for(int cpu=0;cpu<cpus;cpu++){
+
+        }
+
+        return sb.toString();
+    }
+
     public static String javaDirectory() {
         if (javaDir != null) {
             return javaDir;
@@ -40,7 +60,7 @@ public class ThreadAffinity {
     }
 
     public static void setThreadAffinity(Thread t, int cpu) {
-        if(cpu==-1){
+        if (cpu == -1) {
             return;
         }
 
