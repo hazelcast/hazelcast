@@ -10,20 +10,20 @@ public class ThreadAffinity {
 
     private static volatile int pid = 0;
     private static volatile String javaDir = null;
-    private final static ConcurrentMap<Long,Integer> tids = new ConcurrentReferenceHashMap<>();
+    private final static ConcurrentMap<Long, Integer> tids = new ConcurrentReferenceHashMap<>();
 
     public static void main(String[] args) {
 
         System.out.println(getTid(Thread.currentThread()));
     }
 
-    public static String javaDirectory(){
-        if(javaDir!=null){
+    public static String javaDirectory() {
+        if (javaDir != null) {
             return javaDir;
         }
 
         String javaHome = System.getProperty("java.home");
-        javaDir = javaHome.substring(0,javaHome.length()-3);
+        javaDir = javaHome.substring(0, javaHome.length() - 3);
         return javaDir;
     }
 
@@ -33,15 +33,19 @@ public class ThreadAffinity {
 
     public static int getTid(Thread t) {
         Integer tid = tids.get(t.getId());
-        if(tid!=null){
+        if (tid != null) {
             return tid;
         }
 
-        String result = Bash.bash(javaDirectory()+"bin/jcmd "+getPid()+" Thread.print");
+        String result = Bash.bash(javaDirectory() + "bin/jcmd " + getPid() + " Thread.print");
         String[] lines = result.split("\n");
-        for(String line: lines){
-            if(line.startsWith("\""+t.getName()+"\""))
+        for (String line : lines) {
+            if (line.startsWith("\"" + t.getName() + "\"")) {
+                int indexOf = line.indexOf("nid=0x") + 5;
+                int end = line.indexOf(" ", indexOf);
                 System.out.println(line);
+                System.out.println();
+                return Integer.parseInt(line.substring(indexOf, end),16);
             }
         }
         return 1;
