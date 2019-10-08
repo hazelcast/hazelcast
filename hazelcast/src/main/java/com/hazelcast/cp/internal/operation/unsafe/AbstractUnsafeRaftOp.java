@@ -61,7 +61,7 @@ public abstract class AbstractUnsafeRaftOp extends Operation implements Identifi
         if (op instanceof CallerAware) {
             ((CallerAware) op).setCaller(getCallerAddress(), getCallId());
         }
-        long commitIndex = service.nextUnsafeModeCommitIndex();
+        long commitIndex = service.nextUnsafeModeCommitIndex(groupId);
         response = op.setNodeEngine(nodeEngine).run(groupId, commitIndex);
         return handleResponse(commitIndex, response);
     }
