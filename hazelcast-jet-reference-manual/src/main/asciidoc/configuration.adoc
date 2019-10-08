@@ -705,7 +705,7 @@ processor which gives you the ability:
 You need to configure Hazelcast Jet with `<hz:spring-aware/>`
 tag or set `SpringManagedContext` programmatically to enable
 spring-aware objects. Code samples for
-{jet-samples}/integration/spring/src/main/java/jet/spring/XmlConfigurationWithSchemaSample.java[declarative]
+{jet-examples}/spring/src/main/java/com/hazelcast/jet/examples/spring/XmlConfigurationSample.java[declarative]
 and
-{jet-samples}/integration/spring/src/main/java/jet/spring/AnnotationBasedConfigurationSample.java[annotation-based]
+{jet-examples}/spring/src/main/java/com/hazelcast/jet/examples/spring/AnnotationBasedConfigurationSample.java[annotation-based]
 configurations are available at our Code Samples repo.

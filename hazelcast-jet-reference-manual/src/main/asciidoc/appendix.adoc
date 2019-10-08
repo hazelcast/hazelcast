@@ -259,7 +259,7 @@ The following information is sent in a phone home:
 
 == Phone Home Code
 
-The phone home code itself is open source. Please see https://github.com/hazelcast/hazelcast/blob/master/hazelcast/src/main/java/com/hazelcast/util/PhoneHome.java[here].
+The phone home code itself is open source. Please see https://github.com/hazelcast/hazelcast/blob/master/hazelcast/src/main/java/com/hazelcast/internal/util/PhoneHome.java[here].
 
 == Disabling Phone Homes
 

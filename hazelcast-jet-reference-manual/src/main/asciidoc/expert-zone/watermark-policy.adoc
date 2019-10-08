@@ -24,7 +24,7 @@ each observed item and outputs the current watermark value.
 == Predefined Watermark Policy
 
 We provide a simple, data-agnostic watermark policy, the
-{jet-javadoc}/core/WatermarkPolicies.html#limitingLag-long-[`limitingLag()`]
+{jet-javadoc}/core/WatermarkPolicy.html#limitingLag-long-[`limitingLag()`]
 policy. This policy will maintain a watermark that lags behind the
 highest observed event timestamp by a configured amount. In other words,
 each time an event with the highest timestamp so far is encountered,

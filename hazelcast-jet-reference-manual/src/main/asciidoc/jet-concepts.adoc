@@ -596,7 +596,7 @@ Bugfix releases are compatible.
 [[jet-execution-model]]
 == Jet's Execution Model
 
-At the heart of Jet is the {jet-core}/TaskletExecutionService.java[`TaskletExecutionService`].
+At the heart of Jet is the {jet-core}/impl/execution/TaskletExecutionService.java[`TaskletExecutionService`].
 It manages the threads that perform all the computation in a Jet job.
 Although this class is not formally a part of Jet's public API,
 understanding how it schedules code for execution is essential if you

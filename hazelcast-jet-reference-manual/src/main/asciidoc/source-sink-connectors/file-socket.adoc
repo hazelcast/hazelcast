@@ -129,7 +129,7 @@ include::{javasource}/integration/FileAndSocket.java[tag=s4]
 
 
 You can study a comprehensive
-{jet-samples}/sockets/src/main/java/StreamTextSocket.java[code sample]
+{jet-examples}/sockets/src/main/java/com/hazelcast/jet/examples/sockets/StreamTextSocket.java[code sample]
 including a sample socket server using Netty.
 
 === Sink

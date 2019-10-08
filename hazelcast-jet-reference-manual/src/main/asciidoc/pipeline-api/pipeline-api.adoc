@@ -526,7 +526,7 @@ and right). The constraint, as already noted, is that the join condition
 cannot be fully general, but must amount to matching a computed key.
 
 We have a full code sample at our
-{jet-samples}/co-group/src/main/java/BatchCoGroup.java[code samples
+{jet-examples}/co-group/src/main/java/com/hazelcast/jet/examples/cogroup/BatchCoGroup.java[code samples
 repository]. Here we'll show a simple example where we calculate the
 ratio of page visits to add-to-cart actions for each user. We accumulate
 the event counts and then do the maths on them in the end:

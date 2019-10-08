@@ -80,7 +80,7 @@ public final class Assertions {
      * <pre>{@code
      * p.drawFrom(TestSources.items(1, 2, 3, 4))
      *  .apply(Assertions.assertOrderedArrays.asList(1, 2, 3, 4)))
-     *  .drainTo(Sinks.logger())
+     *  .drainTo(Sinks.logger());
      * }</pre>
      *
      * <b>Note:</b> Since Jet jobs are distributed, input from multiple upstream

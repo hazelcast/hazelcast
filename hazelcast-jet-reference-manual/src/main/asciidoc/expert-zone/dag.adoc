@@ -333,7 +333,7 @@ order. Edges with the same priority are consumed without particular
 ordering (as the data arrives).
 
 We can see a prioritized edge in action in the
-{jet-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfCoreApi.java[TF-IDF]
+{jet-code-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfCoreApi.java[TF-IDF]
 example:
 
 [source]

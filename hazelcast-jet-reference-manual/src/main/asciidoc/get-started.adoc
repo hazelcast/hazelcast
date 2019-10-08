@@ -469,7 +469,7 @@ Members {size:2, ver:2} [
 
 For more details about deployment and information on how to submit the
 Hazelcast Jet jobs to your cluster, see the
-{jet-samples}/integration/kubernetes[Kubernetes Integration] code sample.
+https://github.com/hazelcast/hazelcast-jet-docker[Kubernetes Integration] code sample.
 
 == Deployment using Helm
 

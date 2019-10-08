@@ -115,7 +115,7 @@ the hash function specified in their Javadoc.
 
 You can access a full, self-contained Java program with the above DAG
 code at the
-{jet-refman-src}/src/main/java/WordCountCoreApi.java[Hazelcast Jet Reference Manual repository].
+{jet-code-samples}/core-api/wordcount-core-api/src/main/java/WordCountCoreApi.java[Hazelcast Jet Code Samples repository].
 
 == Unbounded Stream DAG
 
@@ -169,7 +169,7 @@ serialization-deserialization is done. In this case we need it because
 the Java 8 `DateTimeFormatter` isn't serializable.
 
 The full code of this sample is in
-{jet-samples}/core-api/sliding-windows-core-api/src/main/java/StockExchangeCoreApi.java[StockExchangeCoreApi.java]
+{jet-code-samples}/core-api/sliding-windows-core-api/src/main/java/StockExchangeCoreApi.java[StockExchangeCoreApi.java]
 and running it you'll get an endless stream of data accumulating on the
 disk. To spare your filesystem we've limited the execution time to 10
 seconds.
@@ -188,9 +188,9 @@ own with minimum boilerplate.
 The full code is available at the `hazelcast-jet-code-samples`
 repository:
 
-{jet-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfJdkStreams.java[TfIdfJdkStreams.java]
+{jet-code-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfJdkStreams.java[TfIdfJdkStreams.java]
 
-{jet-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfCoreApi.java[TfIdfCoreApi.java]
+{jet-code-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfCoreApi.java[TfIdfCoreApi.java]
 
 Let us first introduce the problem. The inverted index is a basic data
 structure in the domain of full-text search. First used in the 1950s, it
@@ -268,7 +268,7 @@ will not affect its score.
 To warm us up, let's see what it takes to build the inverted index with
 just thread parallelism and without the ability to scale out across
 many machines. It is expressible in Java Streams API without too much
-work. The full code is {jet-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfJdkStreams.java[here].
+work. The full code is {jet-code-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfJdkStreams.java[here].
 
 We'll start by preparing a `Stream<Entry<Long, String>> docWords`: a
 stream of all the words found in all the documents. We use `Map.Entry` as
@@ -310,9 +310,9 @@ include::{javasource}/TfIdfJdkStreams.java[tag=s4]
 
 The search function can be implemented with another Streams expression,
 which you can review in the
-{jet-samples}/core-api/tf-idf-core-api/src/main/java/SearchGui.java[SearchGui]
+{jet-code-samples}/core-api/tf-idf-core-api/src/main/java/support/SearchGui.java[SearchGui]
 class. You can also run the
-{jet-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfJdkStreams.java[TfIdfJdkStreams]
+{jet-code-samples}/core-api/tf-idf-core-api/src/main/java/TfIdfJdkStreams.java[TfIdfJdkStreams]
 class and take the inverted index for a spin, making actual searches.
 
 There is one last concept in this model that we haven't mentioned yet:
