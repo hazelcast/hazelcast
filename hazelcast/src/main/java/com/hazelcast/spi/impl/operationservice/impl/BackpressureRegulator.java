@@ -126,6 +126,10 @@ class BackpressureRegulator {
     }
 
     private int getMaxConcurrentInvocations(HazelcastProperties props) {
+        if (disabled) {
+            return Integer.MAX_VALUE;
+        }
+
         int invocationsPerPartition = props.getInteger(BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION);
         if (invocationsPerPartition < 1) {
             throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION
