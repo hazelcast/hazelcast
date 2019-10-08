@@ -29,6 +29,7 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
 import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeStateReplicationOp;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
@@ -80,12 +81,17 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -101,7 +107,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
@@ -133,7 +138,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class RaftService implements ManagedService, SnapshotAwareService<MetadataRaftGroupSnapshot>, GracefulShutdownAwareService,
                                     MembershipAwareService, CPSubsystemManagementService, PreJoinAwareService,
-                                    RaftNodeLifecycleAwareService, DynamicMetricsProvider {
+                                    RaftNodeLifecycleAwareService, MigrationAwareService, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:raft";
 
@@ -157,9 +162,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private final ConcurrentMap<CPMemberInfo, Long> missingMembers = new ConcurrentHashMap<>();
     private final int metricsPeriod;
     private final boolean cpSubsystemEnabled;
-
-    private final AtomicLong unsafeModeCommitIndex = new AtomicLong();
-    private final ConcurrentMap<Long, Operation> unsafeModeWaitingOperations = new ConcurrentHashMap<>();
+    private final UnsafeModePartitionState[] unsafeModeStates;
 
     public RaftService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -170,6 +173,15 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         this.cpSubsystemEnabled = config.getCPMemberCount() > 0;
         this.invocationManager = new RaftInvocationManager(nodeEngine, this);
         this.metadataGroupManager = new MetadataRaftGroupManager(this.nodeEngine, this, config);
+
+        if (cpSubsystemEnabled) {
+            this.unsafeModeStates = null;
+        } else {
+            this.unsafeModeStates = new UnsafeModePartitionState[nodeEngine.getPartitionService().getPartitionCount()];
+            for (int i = 0; i < unsafeModeStates.length; i++) {
+                unsafeModeStates[i] = new UnsafeModePartitionState();
+            }
+        }
 
         MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
         metricsRegistry.registerStaticMetrics(this, "raft");
@@ -1145,14 +1157,19 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return (int) (groupId.getId() % partitionCount);
     }
 
-    public long nextUnsafeModeCommitIndex() {
+    public long nextUnsafeModeCommitIndex(CPGroupId groupId) {
         assert !cpSubsystemEnabled;
-        return unsafeModeCommitIndex.incrementAndGet();
+        int partitionId = getCPGroupPartitionId(groupId);
+        UnsafeModePartitionState unsafeModeState = unsafeModeStates[partitionId];
+        return unsafeModeState.nextCommitIndex();
     }
 
-    public void registerUnsafeWaitingOperation(long commitIndex, Operation op) {
+    public void registerUnsafeWaitingOperation(CPGroupId groupId, long commitIndex, Operation op) {
         assert !cpSubsystemEnabled;
-        if (unsafeModeWaitingOperations.putIfAbsent(commitIndex, op) != null) {
+        int partitionId = getCPGroupPartitionId(groupId);
+        UnsafeModePartitionState unsafeModeState = unsafeModeStates[partitionId];
+        logger.severe("Register op " + groupId + " -> " + commitIndex);
+        if (!unsafeModeState.registerWaitingOp(commitIndex, op)) {
             throw new IllegalArgumentException("Cannot register " + op + " with index " + commitIndex);
         }
     }
@@ -1174,8 +1191,10 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                 raftNode.completeFuture(index, result);
             }
         } else {
+            int partitionId = getCPGroupPartitionId(groupId);
+            UnsafeModePartitionState unsafeModeState = unsafeModeStates[partitionId];
             for (Long index : indices) {
-                Operation op = unsafeModeWaitingOperations.remove(index);
+                Operation op = unsafeModeState.removeWaitingOp(index);
                 if (op != null) {
                     op.sendResponse(result);
                 }
@@ -1202,14 +1221,75 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
             }
         } else {
+            int partitionId = getCPGroupPartitionId(groupId);
+            UnsafeModePartitionState unsafeModeState = unsafeModeStates[partitionId];
             for (Entry<Long, Object> result : results) {
-                Operation op = unsafeModeWaitingOperations.remove(result.getKey());
+                Operation op = unsafeModeState.removeWaitingOp(result.getKey());
                 if (op != null) {
                     op.sendResponse(result.getValue());
                 }
             }
         }
         return true;
+    }
+
+    @Override
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        if (cpSubsystemEnabled) {
+            return null;
+        }
+        if (event.getReplicaIndex() > getBackupCount()) {
+            return null;
+        }
+        return new UnsafeStateReplicationOp(unsafeModeStates[event.getPartitionId()]);
+    }
+
+    @Override
+    public void beforeMigration(PartitionMigrationEvent event) {
+    }
+
+    @Override
+    public void commitMigration(PartitionMigrationEvent event) {
+        if (cpSubsystemEnabled) {
+            return;
+        }
+
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            UnsafeModePartitionState state = unsafeModeStates[event.getPartitionId()];
+            if (event.getCurrentReplicaIndex() == 0) {
+                // Waiting operations are registered only on primary.
+                Object ex = new PartitionMigratingException("Partition " + event.getPartitionId() + " is migrating!");
+                for (Operation op : state.getWaitingOps()) {
+                    op.sendResponse(ex);
+                }
+            }
+            int thresholdReplicaIndex = event.getNewReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > getBackupCount()) {
+                state.reset();
+            }
+        }
+    }
+
+    @Override
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        if (cpSubsystemEnabled) {
+            return;
+        }
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            int thresholdReplicaIndex = event.getCurrentReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > getBackupCount()) {
+                unsafeModeStates[event.getPartitionId()].reset();
+            }
+        }
+    }
+
+    private int getBackupCount() {
+        return 1;
+    }
+
+    public void applyUnsafeModeState(int partitionId, UnsafeModePartitionState state) {
+        assert !cpSubsystemEnabled;
+        unsafeModeStates[partitionId].apply(state);
     }
 
     private class InitializeRaftNodeTask implements Runnable {
