@@ -16,55 +16,40 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.ClientBackupService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.function.Consumer;
 
-public class AddBackupListenerMessageTask
-        extends AbstractCallableMessageTask<ClientLocalBackupListenerCodec.RequestParameters> {
+public class AddBackupListenerMessageTask extends AbstractCallableMessageTask<ClientLocalBackupListenerCodec.RequestParameters>
+        implements Consumer<Long> {
 
 
     public AddBackupListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
-    public class BackupListener {
-        public void onEvent(Long backupId) {
-            ClientMessage eventMessage = ClientLocalBackupListenerCodec.encodeBackupEvent(backupId);
-            eventMessage.getStartFrame().flags |= ClientMessage.BACKUP_EVENT_FLAG;
-            sendClientMessage(eventMessage);
-        }
+    @Override
+    public void accept(Long backupCorrelationId) {
+        ClientMessage eventMessage = ClientLocalBackupListenerCodec.encodeBackupEvent(backupCorrelationId);
+        eventMessage.getStartFrame().flags |= ClientMessage.BACKUP_EVENT_FLAG;
+        sendClientMessage(eventMessage);
     }
 
     @Override
     protected Object call() {
-        if (clientEngine.isSkipEventQueueForBackups()) {
-            clientEngine.addBackupListener(backupCorrelationId -> {
-                ClientMessage eventMessage = ClientLocalBackupListenerCodec.encodeBackupEvent(backupCorrelationId);
-                eventMessage.getStartFrame().flags |= ClientMessage.BACKUP_EVENT_FLAG;
-                sendClientMessage(eventMessage);
-            });
-
-            return UuidUtil.newUnsecureUUID();
-        } else {
-            EventService eventService = clientEngine.getEventService();
-            UUID uuid = endpoint.getUuid();
-            logger.info("Client as adding backup listener. client uuid " + uuid);
-            String serviceName = ClientBackupService.SERVICE_NAME;
-            EventRegistration registration =
-                    eventService.registerLocalListener(serviceName, serviceName, new BackupListener());
-            endpoint.addListenerDestroyAction(serviceName, serviceName, registration.getId());
-            return registration.getId();
+        UUID uuid = endpoint.getUuid();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Client is adding backup listener. client uuid " + uuid);
         }
+        clientEngine.addBackupListener(uuid, this);
+        return UuidUtil.newUnsecureUUID();
     }
 
     @Override

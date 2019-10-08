@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
-import com.hazelcast.client.impl.ClientBackupService;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -34,7 +33,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
@@ -43,6 +41,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -187,17 +186,10 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         long callId = getCallId();
         OperationServiceImpl operationService = nodeEngine.getOperationService();
 
-        if (clientCorrelationId != -1) {
+        if (isCallerClient()) {
             ClientEngine clientEngine = ((NodeEngineImpl) getNodeEngine()).getNode().getClientEngine();
-            //Delete after prototype
-            if (clientEngine.isSkipEventQueueForBackups()) {
-                clientEngine.dispatchBackupEvent(clientCorrelationId);
-            } else {
-                //prevent backup acking to caller if caller is client, instead fire event
-                EventService eventService = getNodeEngine().getEventService();
-                String serviceName = ClientBackupService.SERVICE_NAME;
-                eventService.publishEvent(serviceName, serviceName, clientCorrelationId, -1);
-            }
+            UUID clientUUID = getCallerUuid();
+            clientEngine.dispatchBackupEvent(clientUUID, clientCorrelationId);
         } else if (nodeEngine.getThisAddress().equals(originalCaller)) {
             operationService.getBackupHandler().notifyBackupComplete(callId);
         } else {
@@ -205,6 +197,10 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
                     .sendBackupAck(getConnection().getEndpointManager(),
                             originalCaller, callId, backupOp.isUrgent());
         }
+    }
+
+    private boolean isCallerClient() {
+        return clientCorrelationId != -1;
     }
 
     @Override

@@ -62,13 +62,11 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,9 +94,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
      * Service name to be used in requests.
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
-    //Delete after prototype
-    public static final HazelcastProperty SKIP_EVENT_QUEUE_FOR_BACKUPS
-            = new HazelcastProperty("hazelcast.skip.event.queue.for.backups", true);
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
     private static final int BLOCKING_THREADS_PER_CORE = 20;
     private static final int THREADS_PER_CORE = 1;
@@ -123,16 +118,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ClientPartitionListenerService partitionListenerService;
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
-    private final Set<Consumer<Long>> backupListeners =
-            Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private final boolean skipEventQueueForBackups;
+    private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
         this.node = node;
         this.nodeEngine = node.nodeEngine;
-        //Delete after prototype
-        this.skipEventQueueForBackups = node.getProperties().getBoolean(SKIP_EVENT_QUEUE_FOR_BACKUPS);
         this.endpointManager = new ClientEndpointManagerImpl(nodeEngine);
         this.executor = newClientExecutor();
         this.queryExecutor = newClientQueryExecutor();
@@ -601,19 +592,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public void addBackupListener(Consumer<Long> backupListener) {
-        backupListeners.add(backupListener);
+    public void addBackupListener(UUID clientUuid, Consumer<Long> backupListener) {
+        backupListeners.put(clientUuid, backupListener);
     }
 
     @Override
-    public void dispatchBackupEvent(long clientCorrelationId) {
-        for (Consumer<Long> backupListener : backupListeners) {
+    public void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId) {
+        Consumer<Long> backupListener = backupListeners.get(clientUUID);
+        if (backupListener != null) {
             backupListener.accept(clientCorrelationId);
         }
     }
 
-    //Delete after prototype
-    public boolean isSkipEventQueueForBackups() {
-        return skipEventQueueForBackups;
-    }
 }

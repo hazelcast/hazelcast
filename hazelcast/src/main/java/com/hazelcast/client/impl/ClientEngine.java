@@ -205,10 +205,8 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      */
     void onClientAcquiredResource(UUID uuid);
 
-    void addBackupListener(Consumer<Long>  backupListener);
+    void addBackupListener(UUID clientUUID, Consumer<Long> backupListener);
 
-    void dispatchBackupEvent(long clientCorrelationId);
+    void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId);
 
-    //Delete after prototype
-    boolean isSkipEventQueueForBackups();
 }
