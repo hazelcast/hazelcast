@@ -48,6 +48,41 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     private static final long ONE_MINUTE_IN_MILLIS = MINUTES.toMillis(1);
 
     @Test
+    public void put_without_ttl_after_put_ttl_cancels_previous_ttl() throws InterruptedException {
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        long ttlAfter1stPut = map.getEntryView(1).getTtl();
+
+        map.put(1, 2);
+        long ttlAfter2ndPut = map.getEntryView(1).getTtl();
+
+        assertEquals(ONE_MINUTE_IN_MILLIS, ttlAfter1stPut);
+        assertEquals(Long.MAX_VALUE, ttlAfter2ndPut);
+    }
+
+    @Test
+    public void put_without_ttl_after_put_ttl_gets_ttl_value_from_map_config() {
+        int ttlSeconds = 100;
+        String mapName = randomMapName();
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setInMemoryFormat(inMemoryFormat());
+        mapConfig.setTimeToLiveSeconds(ttlSeconds);
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = node.getMap(mapName);
+
+        map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        long ttlAfter1stPut = map.getEntryView(1).getTtl();
+
+        map.put(1, 2);
+        long ttlAfter2ndPut = map.getEntryView(1).getTtl();
+
+        assertEquals(ONE_MINUTE_IN_MILLIS, ttlAfter1stPut);
+        assertEquals(SECONDS.toMillis(ttlSeconds), ttlAfter2ndPut);
+    }
+
+    @Test
     public void testExpirationTime_withTTL() {
         IMap<Integer, Integer> map = createMap();
 
@@ -315,7 +350,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
 
-        long expectedExpirationTime = entryView.getLastUpdateTime() + MINUTES.toMillis(1);
+        long expectedExpirationTime = Long.MAX_VALUE;
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
 
@@ -382,7 +417,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         return BINARY;
     }
 
-    private IMap<Integer, Integer> createMap() {
+    private <T, U> IMap<T, U> createMap() {
         String mapName = randomMapName();
         Config config = getConfig();
         config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat());

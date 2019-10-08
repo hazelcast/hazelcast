@@ -27,6 +27,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryEvictedListener;
@@ -47,7 +48,6 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -374,23 +374,6 @@ public class EvictionTest extends HazelcastTestSupport {
         map.set("key", "value2", 0, SECONDS);
         sleepAtLeastSeconds(2);
         assertEquals("value2", map.get("key"));
-    }
-
-    @Test
-    public void testIssue585SetWithoutTTL() {
-        final IMap<String, String> map = createSimpleMap();
-        final String key = "key";
-
-        map.set(key, "value", 5, SECONDS);
-        // this `set` operation should not affect existing TTL, so "key" should be expired after 1 second
-        map.set(key, "value2");
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull("Key should be expired after 1 seconds", map.get(key));
-            }
-        });
     }
 
     @Test
