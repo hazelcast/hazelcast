@@ -5,7 +5,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 
-public final class MCMapConfig {
+public class MCMapConfig {
     private InMemoryFormat inMemoryFormat;
     private int backupCount;
     private int asyncBackupCount;
@@ -18,34 +18,18 @@ public final class MCMapConfig {
     private String mergePolicy;
 
     public static MCMapConfig fromResponse(ResponseParameters params) {
-        return new MCMapConfig(
-                InMemoryFormat.getById(params.inMemoryFormat),
-                params.backupCount,
-                params.asyncBackupCount,
-                params.timeToLiveSeconds,
-                params.maxIdleSeconds,
-                params.maxSize,
-                MaxSizePolicy.getById(params.maxSizePolicy),
-                params.readBackupData,
-                EvictionPolicy.getById(params.evictionPolicy),
-                params.mergePolicy
-        );
-    }
-
-    public MCMapConfig(InMemoryFormat inMemoryFormat, int backupCount, int asyncBackupCount,
-                       int timeToLiveSeconds, int maxIdleSeconds, int maxSize,
-                       MaxSizePolicy maxSizePolicy, boolean readBackupData, EvictionPolicy evictionPolicy,
-                       String mergePolicy) {
-        this.inMemoryFormat = inMemoryFormat;
-        this.backupCount = backupCount;
-        this.asyncBackupCount = asyncBackupCount;
-        this.timeToLiveSeconds = timeToLiveSeconds;
-        this.maxIdleSeconds = maxIdleSeconds;
-        this.maxSize = maxSize;
-        this.maxSizePolicy = maxSizePolicy;
-        this.readBackupData = readBackupData;
-        this.evictionPolicy = evictionPolicy;
-        this.mergePolicy = mergePolicy;
+        MCMapConfig config = new MCMapConfig();
+        config.inMemoryFormat = InMemoryFormat.getById(params.inMemoryFormat);
+        config.backupCount = params.backupCount;
+        config.asyncBackupCount = params.asyncBackupCount;
+        config.timeToLiveSeconds = params.timeToLiveSeconds;
+        config.maxIdleSeconds = params.maxIdleSeconds;
+        config.maxSize = params.maxSize;
+        config.maxSizePolicy = MaxSizePolicy.getById(params.maxSizePolicy);
+        config.readBackupData = params.readBackupData;
+        config.evictionPolicy = EvictionPolicy.getById(params.evictionPolicy);
+        config.mergePolicy = params.mergePolicy;
+        return config;
     }
 
     public InMemoryFormat getInMemoryFormat() {

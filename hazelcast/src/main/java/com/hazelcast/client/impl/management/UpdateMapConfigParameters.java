@@ -12,9 +12,13 @@ public class UpdateMapConfigParameters {
     private final int maxSize;
     private final MaxSizeConfig.MaxSizePolicy maxSizePolicy;
 
-    /**
-     */
-    public UpdateMapConfigParameters(String map, int timeToLiveSeconds, int maxIdleSeconds, EvictionPolicy evictionPolicy, boolean readBackupData, int maxSize, MaxSizeConfig.MaxSizePolicy maxSizePolicy) {
+    public UpdateMapConfigParameters(String map,
+                                     int timeToLiveSeconds,
+                                     int maxIdleSeconds,
+                                     EvictionPolicy evictionPolicy,
+                                     boolean readBackupData,
+                                     int maxSize,
+                                     MaxSizeConfig.MaxSizePolicy maxSizePolicy) {
         this.map = map;
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxIdleSeconds = maxIdleSeconds;
