@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
@@ -60,10 +59,6 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * will be changed to {@code FROZEN} automatically before merge
  * and will be set to the state of the new cluster after merge.
  *
- * <p>
- * Note: Do not re-order, as ordinals are used in the client protocol.
- * See {@link MCChangeClusterStateCodec#encodeRequest(int)}.
- *
  * @see Cluster#getClusterState()
  * @see Cluster#changeClusterState(ClusterState)
  * @see NodeState
@@ -75,7 +70,7 @@ public enum ClusterState {
      * In {@code ACTIVE} state, cluster will continue to operate without any restriction.
      * All operations are allowed. This is the default state of a cluster.
      */
-    ACTIVE(true, true, true),
+    ACTIVE(true, true, true, 0),
 
     /**
      * In {@code NO_MIGRATION} state of the cluster, migrations (partition rebalancing) and backup replications
@@ -94,7 +89,7 @@ public enum ClusterState {
      *
      * @since 3.9
      */
-    NO_MIGRATION(true, false, true),
+    NO_MIGRATION(true, false, true, 1),
 
     /**
      * In {@code FROZEN} state of the cluster:
@@ -123,7 +118,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    FROZEN(false, false, false),
+    FROZEN(false, false, false, 2),
 
     /**
      * In {@code PASSIVE} state of the cluster:
@@ -148,7 +143,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    PASSIVE(false, false, false),
+    PASSIVE(false, false, false, 3),
 
     /**
      * Shows that ClusterState is in transition. When a state change transaction is started,
@@ -168,16 +163,22 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    IN_TRANSITION(false, false, false);
+    IN_TRANSITION(false, false, false, 4);
 
     private final boolean joinAllowed;
     private final boolean migrationAllowed;
     private final boolean partitionPromotionAllowed;
+    private final byte id;
 
-    ClusterState(boolean joinAllowed, boolean migrationAllowed, boolean partitionPromotionAllowed) {
+    ClusterState(boolean joinAllowed,
+                 boolean migrationAllowed,
+                 boolean partitionPromotionAllowed,
+                 int id) {
+
         this.joinAllowed = joinAllowed;
         this.migrationAllowed = migrationAllowed;
         this.partitionPromotionAllowed = partitionPromotionAllowed;
+        this.id = (byte) id;
     }
 
     /**
@@ -202,5 +203,18 @@ public enum ClusterState {
      */
     public boolean isPartitionPromotionAllowed() {
         return partitionPromotionAllowed;
+    }
+
+    public byte getId() {
+        return id;
+    }
+
+    public static ClusterState getById(int id) {
+        for (ClusterState cs : values()) {
+            if (cs.getId() == id) {
+                return cs;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID value");
     }
 }

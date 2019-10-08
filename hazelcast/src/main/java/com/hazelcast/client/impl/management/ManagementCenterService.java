@@ -69,7 +69,7 @@ public class ManagementCenterService {
     public CompletableFuture<Void> changeClusterState(ClusterState newState) {
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCChangeClusterStateCodec.encodeRequest(newState.ordinal()),
+                MCChangeClusterStateCodec.encodeRequest(newState.getId()),
                 null
         );
         return new ClientDelegatingFuture<>(
