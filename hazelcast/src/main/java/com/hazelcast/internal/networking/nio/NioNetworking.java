@@ -222,7 +222,6 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
                     idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
-            thread.setCpuPool(cpuPool);
             outThreads[i] = thread;
             thread.start();
             ThreadAffinity.setThreadAffinity(thread, cpuPool.take());
@@ -246,7 +245,6 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
                     idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
-            thread.setCpuPool(cpuPool);
             inThreads[i] = thread;
             ThreadAffinity.setThreadAffinity(thread, cpuPool.take());
             thread.start();

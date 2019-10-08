@@ -18,8 +18,12 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARTITION_OPERATION_THREAD_NORMAL_PENDING_COUNT;
@@ -45,6 +49,9 @@ public final class PartitionOperationThread extends OperationThread {
         this.partitionOperationRunners = partitionOperationRunners;
     }
 
+    public int activePartitionThreads;
+    public PartitionOperationThread[] partitionOperationThreads;
+
     /**
      * For each partition there is a {@link OperationRunner} instance. So we need
      * to find the right one based on the partition ID.
@@ -62,5 +69,54 @@ public final class PartitionOperationThread extends OperationThread {
     @Probe(name = OPERATION_METRIC_PARTITION_OPERATION_THREAD_NORMAL_PENDING_COUNT)
     int normalPendingCount() {
         return queue.normalSize();
+    }
+
+    @Override
+    protected void process(Operation operation) {
+
+        int partitionId = operation.getPartitionId();
+        if(partitionId>=0) {
+            int indexOf = partitionId % activePartitionThreads;
+            if (indexOf != threadId) {
+                partitionOperationThreads[indexOf].queue.add(operation, operation.isUrgent());
+                return;
+            }
+        }
+
+        currentRunner = operationRunner(partitionId);
+        currentRunner.run(operation);
+        completedOperationCount.inc();
+    }
+
+    @Override
+    protected void process(Packet packet) throws Exception {
+        int partitionId = packet.getPartitionId();
+        if(partitionId>=0) {
+            int indexOf = partitionId % activePartitionThreads;
+            if (indexOf != threadId) {
+                partitionOperationThreads[indexOf].queue.add(packet,packet.isUrgent());
+                return;
+            }
+        }
+
+        currentRunner = operationRunner(partitionId);
+        currentRunner.run(packet);
+        completedPacketCount.inc();
+    }
+
+    @Override
+    protected void process(PartitionSpecificRunnable runnable) {
+        int partitionId = runnable.getPartitionId();
+        if(partitionId>=0) {
+            int indexOf = partitionId % activePartitionThreads;
+            if (indexOf != threadId) {
+                partitionOperationThreads[indexOf].queue.add(runnable, runnable instanceof UrgentSystemOperation);
+                return;
+            }
+        }
+
+        currentRunner = operationRunner(runnable.getPartitionId());
+        currentRunner.run(runnable);
+        completedPartitionSpecificRunnableCount.inc();
     }
 }

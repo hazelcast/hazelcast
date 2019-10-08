@@ -17,8 +17,11 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
  * An {@link OperationThread} for non partition specific operations.
@@ -42,5 +45,28 @@ public final class GenericOperationThread extends OperationThread {
     @Override
     public OperationRunner operationRunner(int partitionId) {
         return operationRunner;
+    }
+
+    @Override
+    protected void process(Operation operation) {
+        currentRunner = operationRunner(operation.getPartitionId());
+        currentRunner.run(operation);
+        completedOperationCount.inc();
+    }
+
+    @Override
+    protected void process(Packet packet) throws Exception {
+        int partitionId = packet.getPartitionId();
+        //todo: if detect
+        currentRunner = operationRunner(partitionId);
+        currentRunner.run(packet);
+        completedPacketCount.inc();
+    }
+
+    @Override
+    protected void process(PartitionSpecificRunnable runnable) {
+        currentRunner = operationRunner(runnable.getPartitionId());
+        currentRunner.run(runnable);
+        completedPartitionSpecificRunnableCount.inc();
     }
 }
