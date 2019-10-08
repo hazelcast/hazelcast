@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -42,13 +43,20 @@ public class SimpleMapTestFromClient {
     private static int entryCount = 10 * 1000;
     private static int valueSize = 1000;
     private static int statsSeconds = 10;
-    private static int getPercentage = 40;
-    private static int putPercentage = 40;
+    private static int getPercentage = 0;
+    private static int putPercentage = 100;
 
     public static void main(String[] args) {
         final ClientConfig clientConfig = new ClientConfig();
-        Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
+
+
+        Config config = new Config();
+
+        Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
+
+
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {
