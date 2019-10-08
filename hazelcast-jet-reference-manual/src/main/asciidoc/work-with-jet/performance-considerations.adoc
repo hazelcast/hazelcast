@@ -59,21 +59,24 @@ data, if the object is not thread-safe.
 
 One use case where it's especially tempting to mutate the item after
 emitting is rolling aggregation. Consider this example where we use
-`mapUsingContext` to implement a custom rolling aggregation:
+`mapStateful` to implement a custom rolling aggregation:
 
 [source]
 ----
 include::{javasource}/Serialization.java[tag=modify-emitted]
 ----
 
-<1>  You keep emitting the same list, changing it in-place
+<1> Modify the state object
+<2> Return the state object
 
-The downstream stage receives the same object each time, but it's
-supposed to see it in the state as it was sent. In reality, the
-aggregating stage keeps changing the object concurrently while the
-downstream stage tries to observe it. In the best case it will crash
-with a `ConcurrentModificationException`, but it may also observe `null`
-or partially initialized objects in the list and a number of other bugs.
+Jet keeps your state object and passes it to each invocation of the
+mapping function. Since you return the state object as the output, the
+downstream stage receives the same object each time. It's supposed to
+see it in the state as it was sent, but the aggregating stage keeps
+changing the object concurrently while the downstream stage tries to
+observe it. In the best case it will crash with a
+`ConcurrentModificationException`, but it may also observe `null` or
+partially initialized objects in the list and a number of other bugs.
 
 Jet's `AggregateOperation` has a primitive specifically devoted to
 avoiding this problem: the

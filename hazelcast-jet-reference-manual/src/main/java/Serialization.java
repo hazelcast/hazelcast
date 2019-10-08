@@ -59,13 +59,11 @@ public class Serialization {
 
         //tag::modify-emitted[]
         Pipeline p = Pipeline.create();
-        ContextFactory<List<String>> contextFactory =
-                ContextFactory.withCreateFn(procCtx -> new ArrayList<>());
         p.drawFrom(source)
-         .mapUsingContext(contextFactory, (list, item) -> {
+         .mapStateful(ArrayList::new, (list, item) -> {
+             list.add(item); // <1>
              // Don't do this!
-             list.add(item);
-             return list; // <1>
+             return list; // <2>
          });
         //end::modify-emitted[]
     }
