@@ -1168,7 +1168,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         assert !cpSubsystemEnabled;
         int partitionId = getCPGroupPartitionId(groupId);
         UnsafeModePartitionState unsafeModeState = unsafeModeStates[partitionId];
-        logger.severe("Register op " + groupId + " -> " + commitIndex);
         if (!unsafeModeState.registerWaitingOp(commitIndex, op)) {
             throw new IllegalArgumentException("Cannot register " + op + " with index " + commitIndex);
         }
