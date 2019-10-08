@@ -57,6 +57,15 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testWriteThroughDoesntEnableBackPressure() {
+        Config config = new Config();
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        BackpressureRegulator regulator = new BackpressureRegulator(hazelcastProperties, logger);
+        CallIdSequence callIdSequence = regulator.newCallIdSequence(ConcurrencyDetection.createEnabled(1000));
+        assertEquals(Integer.MAX_VALUE, callIdSequence.getMaxConcurrentInvocations());
+    }
+
+    @Test
     public void testBackPressureDisabledByDefault() {
         Config config = new Config();
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
@@ -75,7 +84,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConstruction_OneSyncWindow_syncOnEveryCall() {
+    public void testConstruction_OneSyncWindowB_syncOnEveryCall() {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "true");
         config.setProperty(BACKPRESSURE_SYNCWINDOW.getName(), "1");
