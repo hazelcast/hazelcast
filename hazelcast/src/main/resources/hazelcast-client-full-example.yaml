@@ -112,11 +112,12 @@ hazelcast-client:
     - foo
 
   #
-  # The <client-labels> elements lets you enable/disable backups ack to client.
+  # The "backup-ack-to-client-enabled" element lets you enable/disable backups ack to client.
   # This feature reduces number of hops and increase performance for smart clients.
   # It is enabled by default for smart clients. This config has no effect for unisocket clients.
   #
   backup-ack-to-client: true
+
   #
   # ===== HAZELCAST NETWORK CONFIGURATION =====
   #
