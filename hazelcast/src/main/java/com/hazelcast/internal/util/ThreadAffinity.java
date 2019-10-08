@@ -14,10 +14,15 @@ public class ThreadAffinity {
         Thread.currentThread().setName("Peter");
         System.out.println("pid:" + getPid());
         System.out.println("tid:" + getTid(Thread.currentThread()));
-        setThreadAffinity(Thread.currentThread(),5);
-        System.out.println("Thread affinity:"+ getThreadAffinityBitmask(Thread.currentThread()));
+        System.out.println("original thread affinity:"+getThreadAffinityBitmask(Thread.currentThread()));
+
+        System.out.println("Changing thread affinity");
+        setThreadAffinity(Thread.currentThread(), 5);
+        System.out.println("Changing affinity:" + getThreadAffinityBitmask(Thread.currentThread()));
+
+        System.out.println("Resetting thread affinity");
         resetThreadAffinity(Thread.currentThread());
-        System.out.println("Thread affinity:"+ getThreadAffinityBitmask(Thread.currentThread()));
+        System.out.println("Reset affinity:" + getThreadAffinityBitmask(Thread.currentThread()));
 
         //   System.out.println("tid from affinity:"+Affinity.getThreadId());
         Thread.sleep(1000000);
@@ -33,28 +38,33 @@ public class ThreadAffinity {
         return javaDir;
     }
 
-    public static void setThreadAffinity(Thread t, int cpu){
-        long bitmask = 1<<cpu;
-        setThreadAffinityBitmask(t, bitmask);
+    public static void setThreadAffinity(Thread t, int cpu) {
+        long bitmask = 1 << cpu;
+        setThreadAffinityBitmask(t, "" + bitmask);
     }
 
-    public static long getThreadAffinityBitmask(Thread t){
+    public static long getThreadAffinityBitmask(Thread t) {
         int tid = getTid(t);
         String command = "taskset -p " + tid;
-        String result = Bash.bash(command);
-        String[] s = result.split(":");
-        return Integer.parseInt(s[1].trim());
+        String[] results = Bash.bash(command).split(":");
+        String result = results[results.length - 1].trim();
+        System.out.println("result:" + result);
+        return Integer.parseInt(result, 16);
     }
 
-    public static void resetThreadAffinity(Thread t){
-        setThreadAffinityBitmask(t, Integer.MAX_VALUE);
+    public static void setPriority(Thread t, int priority) {
+        throw new RuntimeException("Unsupported operation exception");
     }
 
-    public static void setThreadAffinityBitmask(Thread t, long bitmask) {
+    public static void resetThreadAffinity(Thread t) {
+        setThreadAffinityBitmask(t, "0xFFFFFFFF");
+    }
+
+    public static void setThreadAffinityBitmask(Thread t, String bitmask) {
         int tid = getTid(t);
         String command = "taskset -p " + bitmask + " " + tid;
         Bash.bash(command);
-      //  System.out.println(command);
+        //  System.out.println(command);
     }
 
     public static int getTid(Thread t) {
