@@ -48,7 +48,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     private static final long ONE_MINUTE_IN_MILLIS = MINUTES.toMillis(1);
 
     @Test
-    public void put_without_ttl_after_put_ttl_cancels_previous_ttl() throws InterruptedException {
+    public void put_without_ttl_after_put_with_ttl_cancels_previous_ttl() {
         IMap<Integer, Integer> map = createMap();
 
         map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
@@ -62,7 +62,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void put_without_ttl_after_put_ttl_gets_ttl_value_from_map_config() {
+    public void put_without_ttl_after_put_with_ttl_gets_next_ttl_value_from_map_config() {
         int ttlSeconds = 100;
         String mapName = randomMapName();
         Config config = getConfig();
@@ -80,6 +80,41 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         assertEquals(ONE_MINUTE_IN_MILLIS, ttlAfter1stPut);
         assertEquals(SECONDS.toMillis(ttlSeconds), ttlAfter2ndPut);
+    }
+
+    @Test
+    public void put_without_maxIdle_after_put_with_maxIdle_cancels_previous_maxIdle() {
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, -1, MILLISECONDS, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        long maxIdleAfter1stPut = map.getEntryView(1).getMaxIdle();
+
+        map.put(1, 2);
+        long maxIdleAfter2ndPut = map.getEntryView(1).getMaxIdle();
+
+        assertEquals(ONE_MINUTE_IN_MILLIS, maxIdleAfter1stPut);
+        assertEquals(Long.MAX_VALUE, maxIdleAfter2ndPut);
+    }
+
+    @Test
+    public void put_without_maxIdle_after_put_with_maxIdle_gets_next_maxIdle_value_from_map_config() {
+        int maxIdleSeconds = 100;
+        String mapName = randomMapName();
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setInMemoryFormat(inMemoryFormat());
+        mapConfig.setMaxIdleSeconds(maxIdleSeconds);
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = node.getMap(mapName);
+
+        map.put(1, 1, -1, MILLISECONDS, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        long maxIdleAfter1stPut = map.getEntryView(1).getMaxIdle();
+
+        map.put(1, 2);
+        long maxIdleAfter2ndPut = map.getEntryView(1).getMaxIdle();
+
+        assertEquals(ONE_MINUTE_IN_MILLIS, maxIdleAfter1stPut);
+        assertEquals(SECONDS.toMillis(maxIdleSeconds), maxIdleAfter2ndPut);
     }
 
     @Test
