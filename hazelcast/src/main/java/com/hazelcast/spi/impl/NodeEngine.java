@@ -246,17 +246,6 @@ public interface NodeEngine {
     <T> T toObject(Object object, Class klazz);
 
     /**
-     * Checks if the HazelcastInstance that this {@link NodeEngine} belongs to is still active.
-     * <p>
-     * A HazelcastInstance is not active when it is shutting down or already shut down.
-     * Also see {@link NodeEngine#isRunning()}.
-     *
-     * @return {@code true} if active, {@code false} otherwise
-     */
-    @Deprecated
-    boolean isActive();
-
-    /**
      * Indicates that node is not shutting down or it has not already shut down
      *
      * @return {@code true} if node is not shutting down or it has not already shut down, {@code false} otherwise
