@@ -1,6 +1,7 @@
 package com.hazelcast.internal.util;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -36,13 +37,13 @@ public class ThreadAffinity {
         Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
         int cpus = Runtime.getRuntime().availableProcessors();
 
-        Map<Thread,Long> threadAffinityMap = new HashMap<>();
-        for(Thread thread: threadSet){
+        Map<Thread, Long> threadAffinityMap = new HashMap<>();
+        for (Thread thread : threadSet) {
             threadAffinityMap.put(thread, getThreadAffinityBitmask(thread));
         }
 
         StringBuffer sb = new StringBuffer();
-        for(int cpu=0;cpu<cpus;cpu++){
+        for (int cpu = 0; cpu < cpus; cpu++) {
 
         }
 
@@ -60,22 +61,22 @@ public class ThreadAffinity {
     }
 
     public static synchronized void setThreadAffinity(Thread t, int cpu) {
-          if (cpu == -1) {
+        if (cpu == -1) {
             return;
         }
 
         System.out.println("----------------------------------------------------");
         int tid = getTid(t);
-        System.out.println("Thread:"+t.getName());
-        System.out.println("Tid:"+tid);
-        System.out.println("Cpu:"+cpu);
-      //  long bitmask = 1L << cpu;
-      //  System.out.println("bitmark(decimal):"+bitmask);
-      //  String bitmaskString = "0x" + Long.toHexString(bitmask);
+        System.out.println("Thread:" + t.getName());
+        System.out.println("Tid:" + tid);
+        System.out.println("Cpu:" + cpu);
+        //  long bitmask = 1L << cpu;
+        //  System.out.println("bitmark(decimal):"+bitmask);
+        //  String bitmaskString = "0x" + Long.toHexString(bitmask);
         String command = "taskset -cp " + cpu + " " + tid;
-        System.out.println("setCpusAllowed:"+command);
+        System.out.println("setCpusAllowed:" + command);
         String output = Bash.bash(command);
-        System.out.println("["+output+"]");
+        System.out.println("[" + output + "]");
         System.out.println("----------------------------------------------------");
     }
 
@@ -100,12 +101,12 @@ public class ThreadAffinity {
     public static synchronized void setCpusAllowed(Thread t, String bitmask) {
         System.out.println("----------------------------------------------------");
         int tid = getTid(t);
-        System.out.println("Thread:"+t.getName());
-        System.out.println("Tid:"+tid);
+        System.out.println("Thread:" + t.getName());
+        System.out.println("Tid:" + tid);
         String command = "taskset -p " + bitmask + " " + tid;
-        System.out.println("setCpusAllowed:"+command);
+        System.out.println("setCpusAllowed:" + command);
         String output = Bash.bash(command);
-        System.out.println("["+output+"]");
+        System.out.println("[" + output + "]");
         System.out.println("----------------------------------------------------");
 
         //  System.out.println(command);
@@ -163,11 +164,27 @@ public class ThreadAffinity {
      * @param cpu
      * @return
      */
-    public static float cpuLoad(int cpu) {
-        String cmd = Bash.bash("mpstat -P " + cpu);
-        String[] lines = cmd.split("\n");
-        String lastLine = lines[lines.length - 1];
-        String[] columns = lastLine.split(" ");
-        return 100 - parseFloat(columns[columns.length - 1]);
+    public static float[] cpuLoad(List<Integer> cpus) {
+        StringBuffer sb = new StringBuffer("mpstat -P ");
+        for (int k = 0; k < cpus.size(); k++) {
+            if (k > 0) {
+                sb.append(",");
+            }
+            sb.append(cpus.get(k));
+        }
+        sb.append(" 1 1");
+        System.out.println("command:" + sb);
+        String result = Bash.bash(sb.toString());
+        System.out.println("results:" + result);
+        String[] lines = result.split("\n");
+        float[] f = new float[cpus.size()];
+        for(int k=0;k<cpus.size();k++){
+            String line= lines[lines.length-1-k];
+            System.out.println(line);
+            String[] columns = line.split(" ");
+            f[k] = 100 - parseFloat(columns[columns.length - 1]);
+        }
+        return f;
+
     }
 }

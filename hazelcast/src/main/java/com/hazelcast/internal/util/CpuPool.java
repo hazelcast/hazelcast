@@ -70,6 +70,7 @@ public class CpuPool {
             return;
         }
 
+        usedCpus.add(cpu);
         AffinityLock lock = AffinityLock.acquireLock(cpu);
         System.out.println("Running with affinity");
         try {

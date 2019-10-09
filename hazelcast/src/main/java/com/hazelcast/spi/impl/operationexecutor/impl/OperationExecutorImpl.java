@@ -45,6 +45,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -99,7 +100,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
-    public static final int rescaleDelayMs = Integer.getInteger("partitionRescaleDelayMs", 5000);
+    public static final int rescaleDelayMs = Integer.getInteger("partitionRescaleDelayMs", 2000);
 
     private final ILogger logger;
 
@@ -118,9 +119,9 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
-    private final boolean rescalingEnabled = Boolean.parseBoolean(System.getProperty("partitionCpuRescaling", "false"));
-    private final float lowWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusLowLoad", "0.1"));
-    private final float highWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusHighLoad", "0.4"));
+    private final boolean adaptivePartitionThreadSizing = Boolean.parseBoolean(System.getProperty("adaptivePartitionThreadSizing", "false"));
+    private final float lowWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusLowLoadPercent", "20"));
+    private final float highWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusHighLoadPercent", "40"));
     private RescaleThread rescaleThread;
     private volatile int activePartitionThreads;
 
@@ -131,7 +132,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                  NodeExtension nodeExtension,
                                  String hzName,
                                  ClassLoader configClassLoader) {
-        System.out.println("partitionCpuRescaling:" + rescalingEnabled);
+        System.out.println("partitionCpuRescaling:" + adaptivePartitionThreadSizing);
         System.out.println("partitionCpusLowLoad:" + lowWaterMarkLoad);
         System.out.println("partitionCpusHighLoad:" + highWaterMarkLoad);
 
@@ -527,8 +528,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public void start() {
-        logger.info("Rescaling enabled:" + rescalingEnabled);
-        if (rescalingEnabled) {
+        logger.info("Rescaling enabled:" + adaptivePartitionThreadSizing);
+        if (adaptivePartitionThreadSizing) {
             rescaleThread = new RescaleThread();
             rescaleThread.start();
         }
@@ -588,12 +589,17 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private class RescaleThread extends Thread {
         private volatile boolean shutdown;
 
+        public RescaleThread() {
+            System.out.println("RescaleThread started");
+        }
+
         @Override
         public void run() {
             try {
                 while (!shutdown) {
                     Thread.sleep(rescaleDelayMs);
-                    float load = partitionCpusLoad();
+                    float load = activePartitionCpuLoad();
+                    System.out.println("Load: " + load);
                     if (load < lowWaterMarkLoad) {
                         scaleDown(load);
                     } else if (load > highWaterMarkLoad) {
@@ -601,6 +607,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                     }
                 }
             } catch (InterruptedException e) {
+            } catch (RuntimeException e) {
+                e.printStackTrace();
             }
         }
 
@@ -650,13 +658,20 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
             completeLatch.countDown();
         }
 
-        private float partitionCpusLoad() {
-            float total = 0;
-            List<Integer> usedCpus = cpuPool.usedCpus();
-            for (Integer cpu : usedCpus) {
-                total += ThreadAffinity.cpuLoad(cpu);
+        private float activePartitionCpuLoad() {
+            List<Integer> cpus = new ArrayList<>();
+            for (int k = 0; k < activePartitionThreads; k++) {
+                PartitionOperationThread t = partitionThreads[k];
+                cpus.add(t.getCpu());
             }
-            return total / usedCpus.size();
+
+            float[] load = ThreadAffinity.cpuLoad(cpus);
+            float loadSum = 0;
+            for (int k = 0; k < cpus.size(); k++) {
+                System.out.println("      cpu:" + cpus.get(k) + " load:" + load[k]);
+                loadSum += load[k];
+            }
+            return loadSum / load.length;
         }
 
         public void shutdown() {
