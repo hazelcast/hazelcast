@@ -59,13 +59,20 @@ public class ThreadAffinity {
         return javaDir;
     }
 
-    public static void setThreadAffinity(Thread t, int cpu) {
+    public static synchronized void setThreadAffinity(Thread t, int cpu) {
         if (cpu == -1) {
             return;
         }
 
-        long bitmask = 1 << cpu;
-        setCpusAllowed(t, "" + bitmask);
+        System.out.println("----------------------------------------------------");
+        int tid = getTid(t);
+        System.out.println("Thread:"+t.getName());
+        System.out.println("Tid:"+tid);
+        String command = "taskset -c " + cpu + " " + tid;
+        System.out.println("setCpusAllowed:"+command);
+        String output = Bash.bash(command);
+        System.out.println("["+output+"]");
+        System.out.println("----------------------------------------------------");
     }
 
     public static long getThreadAffinityBitmask(Thread t) {
@@ -86,10 +93,17 @@ public class ThreadAffinity {
         setCpusAllowed(t, "0xFFFFFFFF");
     }
 
-    public static void setCpusAllowed(Thread t, String bitmask) {
+    public static synchronized void setCpusAllowed(Thread t, String bitmask) {
+        System.out.println("----------------------------------------------------");
         int tid = getTid(t);
+        System.out.println("Thread:"+t.getName());
+        System.out.println("Tid:"+tid);
         String command = "taskset -p " + bitmask + " " + tid;
-        Bash.bash(command);
+        System.out.println("setCpusAllowed:"+command);
+        String output = Bash.bash(command);
+        System.out.println("["+output+"]");
+        System.out.println("----------------------------------------------------");
+
         //  System.out.println(command);
     }
 

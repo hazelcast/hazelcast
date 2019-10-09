@@ -228,13 +228,6 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         }
         this.outputThreads = outThreads;
 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
         NioThread[] inThreads = new NioThread[inputThreadCount];
         for (int i = 0; i < inThreads.length; i++) {
             NioThread thread = new NioThread(
@@ -246,8 +239,8 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inThreads[i] = thread;
-            ThreadAffinity.setThreadAffinity(thread, cpuPool.take());
             thread.start();
+            ThreadAffinity.setThreadAffinity(thread, cpuPool.take());
         }
         this.inputThreads = inThreads;
 

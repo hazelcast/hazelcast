@@ -124,13 +124,8 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
-import com.hazelcast.transaction.HazelcastXAResource;
-import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.xa.XAService;
-import net.openhft.affinity.AffinityLock;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

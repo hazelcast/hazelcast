@@ -99,7 +99,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
-    public static final int rescaleDelayMs = Integer.getInteger("partitionRescaleDelayMs",5000);
+    public static final int rescaleDelayMs = Integer.getInteger("partitionRescaleDelayMs", 5000);
 
     private final ILogger logger;
 
@@ -118,7 +118,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
-    private final boolean rescalingEnabled = Boolean.parseBoolean(System.getProperty("partitionCpuRescaling", "true"));
+    private final boolean rescalingEnabled = Boolean.parseBoolean(System.getProperty("partitionCpuRescaling", "false"));
     private final float lowWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusLowLoad", "0.1"));
     private final float highWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusHighLoad", "0.4"));
     private RescaleThread rescaleThread;
@@ -131,14 +131,15 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                  NodeExtension nodeExtension,
                                  String hzName,
                                  ClassLoader configClassLoader) {
+        System.out.println("partitionCpuRescaling:" + rescalingEnabled);
+        System.out.println("partitionCpusLowLoad:" + lowWaterMarkLoad);
+        System.out.println("partitionCpusHighLoad:" + highWaterMarkLoad);
+
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
-
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
-
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
         this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
-        this.activePartitionThreads = partitionThreads.length;
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
         this.genericThreads = initGenericThreads(hzName, nodeExtension, configClassLoader);
@@ -167,7 +168,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                                             NodeExtension nodeExtension, ClassLoader configClassLoader) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
-
+        this.activePartitionThreads = threadCount;
         IdleStrategy idleStrategy = getIdleStrategy(properties, IDLE_STRATEGY);
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
@@ -180,7 +181,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
                     nodeExtension, partitionOperationRunners, configClassLoader);
 
-            partitionThread.activePartitionThreads = threadCount;
+            partitionThread.activePartitionThreads = activePartitionThreads;
             partitionThread.partitionOperationThreads = threads;
             threads[threadId] = partitionThread;
             normalQueue.setConsumerThread(partitionThread);
