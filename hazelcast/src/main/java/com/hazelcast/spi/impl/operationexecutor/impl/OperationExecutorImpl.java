@@ -123,8 +123,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
     private final boolean adaptivePartitionThreadSizing = Boolean.parseBoolean(System.getProperty("adaptivePartitionThreadSizing", "false"));
-    private final float lowWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusLowLoadPercent", "20"));
-    private final float highWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusHighLoadPercent", "40"));
+    private final float lowWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusLowLoadPercent", "40"));
+    private final float highWaterMarkLoad = Float.parseFloat(System.getProperty("partitionCpusHighLoadPercent", "60"));
     private RescaleThread rescaleThread;
     private volatile int activePartitionThreads;
 
