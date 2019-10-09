@@ -126,6 +126,7 @@ import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.xa.XAService;
+import net.openhft.affinity.AffinityLock;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

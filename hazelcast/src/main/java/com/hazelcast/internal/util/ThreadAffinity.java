@@ -60,7 +60,7 @@ public class ThreadAffinity {
     }
 
     public static synchronized void setThreadAffinity(Thread t, int cpu) {
-        if (cpu == -1) {
+          if (cpu == -1) {
             return;
         }
 
@@ -68,7 +68,11 @@ public class ThreadAffinity {
         int tid = getTid(t);
         System.out.println("Thread:"+t.getName());
         System.out.println("Tid:"+tid);
-        String command = "taskset -c " + cpu + " " + tid;
+        System.out.println("Cpu:"+cpu);
+      //  long bitmask = 1L << cpu;
+      //  System.out.println("bitmark(decimal):"+bitmask);
+      //  String bitmaskString = "0x" + Long.toHexString(bitmask);
+        String command = "taskset -cp " + cpu + " " + tid;
         System.out.println("setCpusAllowed:"+command);
         String output = Bash.bash(command);
         System.out.println("["+output+"]");

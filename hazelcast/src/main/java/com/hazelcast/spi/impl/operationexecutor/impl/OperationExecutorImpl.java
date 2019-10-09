@@ -183,6 +183,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
             partitionThread.activePartitionThreads = activePartitionThreads;
             partitionThread.partitionOperationThreads = threads;
+            partitionThread.setCpuPool(cpuPool);
             threads[threadId] = partitionThread;
             normalQueue.setConsumerThread(partitionThread);
         }
@@ -534,9 +535,15 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         logger.info("Starting " + partitionThreads.length + " partition threads and "
                 + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         startAll(partitionThreads);
-        for (PartitionOperationThread thread : partitionThreads) {
-            ThreadAffinity.setThreadAffinity(thread, cpuPool.take());
-        }
+//        for (PartitionOperationThread thread : partitionThreads) {
+//            ThreadAffinity.setThreadAffinity(thread, cpuPool.take());
+//            thread.queue.add(new Runnable() {
+//                @Override
+//                public void run() {
+//                    System.out.println("Println: started "+Thread.currentThread().getName());
+//                }
+//            },true);
+//        }
         startAll(genericThreads);
     }
 

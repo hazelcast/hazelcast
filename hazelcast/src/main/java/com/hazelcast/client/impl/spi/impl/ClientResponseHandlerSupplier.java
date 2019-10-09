@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.CpuPool;
 import com.hazelcast.internal.util.MutableInteger;
-import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
@@ -98,6 +97,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         this.responseThreads = new ResponseThread[responseThreadCount];
         for (int k = 0; k < responseThreads.length; k++) {
             responseThreads[k] = new ResponseThread(invocationService.client.getName() + ".responsethread-" + k + "-");
+            responseThreads[k].setCpuPool(cpuPool);
         }
 
         if (responseThreadCount == 0) {
@@ -118,7 +118,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
         for (ResponseThread responseThread : responseThreads) {
             responseThread.start();
-            ThreadAffinity.setThreadAffinity(responseThread, cpuPool.take());
+         //   ThreadAffinity.setThreadAffinity(responseThread, cpuPool.take());
         }
     }
 

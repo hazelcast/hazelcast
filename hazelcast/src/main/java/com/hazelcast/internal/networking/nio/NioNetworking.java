@@ -23,19 +23,12 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelCloseListener;
-import com.hazelcast.internal.networking.ChannelErrorHandler;
-import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
-import com.hazelcast.internal.networking.InboundHandler;
-import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.OutboundHandler;
+import com.hazelcast.internal.networking.*;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.CpuPool;
-import com.hazelcast.internal.util.ThreadAffinity;
+import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -223,8 +216,8 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outThreads[i] = thread;
+            thread.setCpuPool(cpuPool);
             thread.start();
-            ThreadAffinity.setThreadAffinity(thread, cpuPool.take());
         }
         this.outputThreads = outThreads;
 
@@ -239,8 +232,8 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inThreads[i] = thread;
+            thread.setCpuPool(cpuPool);
             thread.start();
-            ThreadAffinity.setThreadAffinity(thread, cpuPool.take());
         }
         this.inputThreads = inThreads;
 
