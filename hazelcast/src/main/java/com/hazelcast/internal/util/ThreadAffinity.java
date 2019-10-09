@@ -1,9 +1,6 @@
 package com.hazelcast.internal.util;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.Float.parseFloat;
@@ -17,20 +14,11 @@ public class ThreadAffinity {
     public static void main(String[] args) throws InterruptedException {
         Thread thread = Thread.currentThread();
 
-        System.out.println("pid:" + getPid());
-        System.out.println("tid:" + getTid(thread));
-        System.out.println("original thread affinity:" + getThreadAffinityBitmask(thread));
 
-        System.out.println("Changing thread affinity");
-        setThreadAffinity(Thread.currentThread(), 5);
-        System.out.println("Changing affinity:" + getThreadAffinityBitmask(thread));
-
-        System.out.println("Resetting thread affinity");
-        resetThreadAffinity(Thread.currentThread());
-        System.out.println("Reset affinity:" + getThreadAffinityBitmask(thread));
+        System.out.println(cpuLoad(Arrays.asList(1)));
 
         //   System.out.println("tid from affinity:"+Affinity.getThreadId());
-        Thread.sleep(1000000);
+       // Thread.sleep(1000000);
     }
 
     public static String affinityReport() {
@@ -164,7 +152,7 @@ public class ThreadAffinity {
      * @param cpu
      * @return
      */
-    public static float[] cpuLoad(List<Integer> cpus) {
+    public static Map<Integer,Float> cpuLoad(List<Integer> cpus) {
         StringBuffer sb = new StringBuffer("mpstat -P ");
         for (int k = 0; k < cpus.size(); k++) {
             if (k > 0) {
@@ -177,14 +165,21 @@ public class ThreadAffinity {
         String result = Bash.bash(sb.toString());
         System.out.println("results:" + result);
         String[] lines = result.split("\n");
-        float[] f = new float[cpus.size()];
-        for(int k=0;k<cpus.size();k++){
-            String line= lines[lines.length-1-k];
-            System.out.println(line);
-            String[] columns = line.split(" ");
-            f[k] = 100 - parseFloat(columns[columns.length - 1]);
+        //System.out.println("---------------------------");
+        Map<Integer,Float> loadPerCpu = new HashMap<>();
+        for (int k = 0; k < cpus.size(); k++) {
+            String line = lines[lines.length - 1 - k];
+           // System.out.println("----"+line);
+            String[] fields = line.split("\\s+");
+           // System.out.println(Arrays.asList(fields));
+            String cpuField = fields[1].trim();
+          //  System.out.println("cpuField:"+cpuField);
+            int cpu = Integer.parseInt(cpuField);
+            float load = 100 - parseFloat(fields[fields.length - 1]);
+            loadPerCpu.put(cpu,load);
+          //  System.out.println("cpu:" + cpu + " load:" + loadPerCpu.get(cpu));
         }
-        return f;
+        return loadPerCpu;
 
     }
 }

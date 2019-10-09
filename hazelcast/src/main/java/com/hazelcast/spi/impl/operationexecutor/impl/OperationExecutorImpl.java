@@ -48,6 +48,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -667,13 +668,14 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                 cpus.add(t.getCpu());
             }
 
-            float[] load = ThreadAffinity.cpuLoad(cpus);
+            Map<Integer,Float>  load = ThreadAffinity.cpuLoad(cpus);
             float loadSum = 0;
             for (int k = 0; k < cpus.size(); k++) {
-                System.out.println("      cpu:" + cpus.get(k) + " load:" + load[k]);
-                loadSum += load[k];
+                Integer cpu = cpus.get(k);
+                System.out.println("      cpu:" + cpu + " load:" + load.get(cpu));
+                loadSum += load.get(cpu);
             }
-            return loadSum / load.length;
+            return loadSum / load.size();
         }
 
         public void shutdown() {
