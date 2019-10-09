@@ -210,6 +210,21 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
             t.setName(threadNamePrefix + "-NioNetworking-closeListenerExecutor");
             return t;
         });
+        NioThread[] inThreads = new NioThread[inputThreadCount];
+        for (int i = 0; i < inThreads.length; i++) {
+            NioThread thread = new NioThread(
+                    createThreadPoolName(threadNamePrefix, "IO") + "in-" + i,
+                    loggingService.getLogger(NioThread.class),
+                    errorHandler,
+                    selectorMode,
+                    idleStrategy);
+            thread.id = i;
+            thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
+            inThreads[i] = thread;
+            thread.setCpuPool(cpuPool);
+            thread.start();
+        }
+        this.inputThreads = inThreads;
 
         NioThread[] outThreads = new NioThread[outputThreadCount];
         for (int i = 0; i < outThreads.length; i++) {
@@ -227,21 +242,6 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         }
         this.outputThreads = outThreads;
 
-        NioThread[] inThreads = new NioThread[inputThreadCount];
-        for (int i = 0; i < inThreads.length; i++) {
-            NioThread thread = new NioThread(
-                    createThreadPoolName(threadNamePrefix, "IO") + "in-" + i,
-                    loggingService.getLogger(NioThread.class),
-                    errorHandler,
-                    selectorMode,
-                    idleStrategy);
-            thread.id = i;
-            thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
-            inThreads[i] = thread;
-            thread.setCpuPool(cpuPool);
-            thread.start();
-        }
-        this.inputThreads = inThreads;
 
         startIOBalancer();
 
