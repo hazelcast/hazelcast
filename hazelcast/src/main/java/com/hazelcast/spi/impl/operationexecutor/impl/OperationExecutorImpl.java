@@ -99,6 +99,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
+    public static final int rescaleDelayMs = Integer.getInteger("partitionRescaleDelayMs",5000);
 
     private final ILogger logger;
 
@@ -179,8 +180,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
                     nodeExtension, partitionOperationRunners, configClassLoader);
 
-            partitionThread.activePartitionThreads=threadCount;
-            partitionThread.partitionOperationThreads=threads;
+            partitionThread.activePartitionThreads = threadCount;
+            partitionThread.partitionOperationThreads = threads;
             threads[threadId] = partitionThread;
             normalQueue.setConsumerThread(partitionThread);
         }
@@ -583,29 +584,33 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         public void run() {
             try {
                 while (!shutdown) {
-                    Thread.sleep(1000);
+                    Thread.sleep(rescaleDelayMs);
                     float load = partitionCpusLoad();
                     if (load < lowWaterMarkLoad) {
-                        scaleDown();
+                        scaleDown(load);
                     } else if (load > highWaterMarkLoad) {
-                        scaleUp();
+                        scaleUp(load);
                     }
                 }
             } catch (InterruptedException e) {
             }
         }
 
-        private void scaleUp() throws InterruptedException {
+        private void scaleUp(float load) throws InterruptedException {
             if (activePartitionThreads < partitionThreads.length) {
-                updateActivePartitionThreads(activePartitionThreads + 1);
+                int newActivePartitionThreads = activePartitionThreads + 1;
+                System.out.println("Scaling up to " + newActivePartitionThreads + " partition threads, load was " + load + "%");
+                updateActivePartitionThreads(newActivePartitionThreads);
             } else {
                 System.out.println("Can't scale up, maximum number of partition threads is already active");
             }
         }
 
-        private void scaleDown() throws InterruptedException {
+        private void scaleDown(float load) throws InterruptedException {
             if (activePartitionThreads > 2) {
-                updateActivePartitionThreads(activePartitionThreads - 1);
+                int newActivePartitionThreads = activePartitionThreads - 1;
+                System.out.println("Scaling down to " + newActivePartitionThreads + " partition threads, load was " + load + "%");
+                updateActivePartitionThreads(newActivePartitionThreads);
             } else {
                 System.out.println("Can't scale down, minimum number of partition threads is already active");
             }
@@ -631,8 +636,8 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
             startLatch.await();
 
             activePartitionThreads = newActivePartitionThreads;
-            for(PartitionOperationThread t: partitionThreads){
-                t.activePartitionThreads=activePartitionThreads;
+            for (PartitionOperationThread t : partitionThreads) {
+                t.activePartitionThreads = activePartitionThreads;
             }
             completeLatch.countDown();
         }

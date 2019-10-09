@@ -98,7 +98,6 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         this.responseThreads = new ResponseThread[responseThreadCount];
         for (int k = 0; k < responseThreads.length; k++) {
             responseThreads[k] = new ResponseThread(invocationService.client.getName() + ".responsethread-" + k + "-");
-            responseThreads[k].setCpuPool(cpuPool);
         }
 
         if (responseThreadCount == 0) {
