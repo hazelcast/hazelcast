@@ -197,17 +197,6 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
         return this;
     }
 
-    @Deprecated
-    public int getSyncBackupCount() {
-        return backupCount;
-    }
-
-    @Deprecated
-    public MultiMapConfig setSyncBackupCount(int syncBackupCount) {
-        this.backupCount = syncBackupCount;
-        return this;
-    }
-
     /**
      * Gets the number of synchronous backups for this MultiMap.
      *
