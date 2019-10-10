@@ -177,10 +177,4 @@ final class TransactionContextImpl implements TransactionContext {
     Transaction getTransaction() {
         return transaction;
     }
-
-    @Override
-    public XAResource getXaResource() {
-        ProxyService proxyService = nodeEngine.getProxyService();
-        return (HazelcastXAResource) proxyService.getDistributedObject(XAService.SERVICE_NAME, XAService.SERVICE_NAME);
-    }
 }

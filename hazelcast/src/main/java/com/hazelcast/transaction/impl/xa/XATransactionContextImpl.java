@@ -141,9 +141,4 @@ public class XATransactionContextImpl implements TransactionContext {
     XATransaction getTransaction() {
         return transaction;
     }
-
-    @Override
-    public XAResource getXaResource() {
-        throw new UnsupportedOperationException("Use HazelcastInstance.getXAResource() instead!");
-    }
 }

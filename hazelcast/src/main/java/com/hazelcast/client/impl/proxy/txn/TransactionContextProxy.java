@@ -164,9 +164,4 @@ public class TransactionContextProxy implements ClientTransactionContext {
     public HazelcastClientInstanceImpl getClient() {
         return client;
     }
-
-    @Override
-    public XAResource getXaResource() {
-        return client.getXAResource();
-    }
 }

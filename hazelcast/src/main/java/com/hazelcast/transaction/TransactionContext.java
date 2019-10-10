@@ -64,13 +64,4 @@ public interface TransactionContext extends TransactionalTaskContext {
      * @return the transaction ID
      */
     UUID getTxnId();
-
-    /**
-     * Gets xaResource which will participate in XATransaction.
-     *
-     * @return the xaResource.
-     * @deprecated since 3.5 please use HazelcastInstance.getXAResource()
-     */
-    @Deprecated
-    XAResource getXaResource();
 }

@@ -95,10 +95,6 @@ class TransactionContextHolder implements TransactionContext {
         return transactionContext.getTxnId();
     }
 
-    public XAResource getXaResource() {
-        return transactionContext.getXaResource();
-    }
-
     public <E> TransactionalList<E> getList(String name) {
         return transactionContext.getList(name);
     }

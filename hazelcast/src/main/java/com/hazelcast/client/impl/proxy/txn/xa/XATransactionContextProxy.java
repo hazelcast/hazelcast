@@ -173,9 +173,4 @@ public class XATransactionContextProxy implements ClientTransactionContext {
     public XATransactionProxy getTransaction() {
         return transaction;
     }
-
-    @Override
-    public XAResource getXaResource() {
-        throw new UnsupportedOperationException("Use HazelcastInstance.getXAResource() instead!");
-    }
 }
