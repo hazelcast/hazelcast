@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -102,6 +103,38 @@ public class UnsafeFencedLockMigrationTest extends HazelcastRaftTestSupport {
         // Waiting op is triggered after unlock
         waitingLock1.get();
         waitingLock2.get();
+    }
+
+    @Test
+    public void whenLockIsBlocked_thenBackupIsReplicated() {
+        Config config = new Config();
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        FencedLock lock = hz2.getCPSubsystem().getLock("lock@" + generateKeyOwnedBy(hz1));
+        CountDownLatch latch = new CountDownLatch(1);
+
+        spawn(() -> {
+            lock.lock();
+            latch.countDown();
+
+            // wait until other thread blocks
+            LockService lockService = getNodeEngineImpl(hz1).getService(LockService.SERVICE_NAME);
+            assertTrueEventually(() -> {
+                LockRegistry registry = lockService.getRegistryOrNull(lock.getGroupId());
+                assertThat(registry.getLiveOperations(), hasSize(1));
+            });
+            lock.unlock();
+        });
+
+        assertOpenEventually(latch);
+        lock.lock();
+
+        waitAllForSafeState(hz1, hz2);
+        hz1.getLifecycleService().terminate();
+
+        lock.unlock();
     }
 
     private String generateName(HazelcastInstance instance, int partitionId) {
