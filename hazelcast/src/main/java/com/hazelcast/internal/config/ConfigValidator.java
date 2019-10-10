@@ -520,6 +520,9 @@ public final class ConfigValidator {
         checkTrue(config.getMissingCPMemberAutoRemovalSeconds() == 0
                         || config.getSessionTimeToLiveSeconds() <= config.getMissingCPMemberAutoRemovalSeconds(),
                 "Session TTL must be smaller than or equal to missing CP member auto-removal seconds!");
+
+        checkTrue(!config.isPersistenceEnabled() || config.getCPMemberCount() > 0,
+                "CP member count must be greater than 0 to use CP persistence feature!");
     }
 
     /**
