@@ -41,8 +41,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.unmodifiableSet;
 
@@ -58,7 +56,6 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     private final ClientConnectionManagerImpl connectionManager;
     private volatile Set<Member> members = new LinkedHashSet<Member>();
 
-    private volatile CountDownLatch initialListFetchedLatch;
     private volatile long lastCorrelationId = -1;
 
     ClientMembershipListener(HazelcastClientInstanceImpl client) {
@@ -100,14 +97,12 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             logger.info(membersString());
             clusterService.handleInitialMembershipEvent(
                     new InitialMembershipEvent(client.getCluster(), unmodifiableSet(members)));
-            initialListFetchedLatch.countDown();
             return;
         }
 
         List<MembershipEvent> events = detectMembershipEvents(prevMembers);
         logger.info(membersString());
         fireMembershipEvent(events);
-        initialListFetchedLatch.countDown();
     }
 
     @Override
@@ -135,25 +130,8 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     public void onListenerRegister() {
     }
 
-    void listenMembershipEvents(Connection ownerConnection) throws Exception {
-        initialListFetchedLatch = new CountDownLatch(1);
-        ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
-        invocation.setEventHandler(this);
-        invocation.invokeUrgent().get();
-        lastCorrelationId = clientMessage.getCorrelationId();
-        waitInitialMemberListFetched();
-    }
-
     void cleanupOnDisconnect() {
         ((AbstractClientListenerService) client.getListenerService()).removeEventHandler(lastCorrelationId);
-    }
-
-    private void waitInitialMemberListFetched() throws InterruptedException {
-        boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        if (!success) {
-            logger.warning("Error while getting initial member list from cluster!");
-        }
     }
 
     private void memberRemoved(Member member) {

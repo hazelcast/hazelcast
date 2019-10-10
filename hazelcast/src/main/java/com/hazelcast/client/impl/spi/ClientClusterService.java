@@ -112,4 +112,11 @@ public interface ClientClusterService {
     boolean removeMembershipListener(@Nonnull UUID registrationId);
 
     void reset();
+
+    void handleMemberListEvent(Collection<Member> initialMembers);
+
+    void handleMemberEvent(Member member, int eventType);
+
+    void handleMemberAttributeChangeEvent(Member member, Collection<Member> members, String key, int opType,
+                                          String value);
 }

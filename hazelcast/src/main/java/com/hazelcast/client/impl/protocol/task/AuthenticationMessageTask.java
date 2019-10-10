@@ -18,19 +18,25 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * Default Authentication with username password handling task
  */
-public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<ClientAuthenticationCodec.RequestParameters> {
+public class AuthenticationMessageTask
+        extends AuthenticationBaseMessageTask<ClientAuthenticationCodec.RequestParameters> {
 
     public AuthenticationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -59,10 +65,16 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     }
 
     @Override
-    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
-                                       int partitionCount, UUID clusterId) {
-        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, version,
-                getMemberBuildInfo().getVersion(), partitionCount, clusterId);
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version, int partitionCount,
+                                       UUID clusterId) {
+        Set<Member> members = clientEngine.getClusterService().getMembers();
+        IPartitionService partitionService = clientEngine.getPartitionService();
+        Map<Address, List<Integer>> partitionsMap = partitionService.getMemberPartitionsMap();
+        int partitionStateVersion = partitionService.getPartitionStateVersion();
+
+        return ClientAuthenticationCodec
+                .encodeResponse(status, thisAddress, uuid, version, getMemberBuildInfo().getVersion(), partitionCount, clusterId,
+                        members, partitionsMap.entrySet(), partitionStateVersion);
     }
 
     @Override

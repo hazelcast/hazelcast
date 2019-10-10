@@ -16,13 +16,28 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.ClientEndpoint;
+import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.ClientTypes;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
+import com.hazelcast.cluster.InitialMembershipEvent;
+import com.hazelcast.cluster.InitialMembershipListener;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -30,8 +45,11 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.AUTHENTICATED;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.CREDENTIALS_FAILED;
@@ -84,11 +102,36 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                 if (logger.isFineEnabled()) {
                     logger.fine("Processing authentication with clientUuid " + clientUuid);
                 }
+                addPartitionListener();
+                addMembershipListener();
                 sendClientMessage(prepareAuthenticatedClientMessage());
                 break;
             default:
                 throw new IllegalStateException("Unhandled authentication result");
         }
+    }
+
+    private boolean addPartitionListener() {
+        InternalPartitionService internalPartitionService = getService(InternalPartitionService.SERVICE_NAME);
+        internalPartitionService.firstArrangement();
+        final ClientPartitionListenerService service = clientEngine.getPartitionListenerService();
+        service.registerPartitionListener(endpoint, clientMessage.getCorrelationId());
+        endpoint.addDestroyAction(UuidUtil.newUnsecureUUID(), new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                service.deregisterPartitionListener(endpoint);
+                return Boolean.TRUE;
+            }
+        });
+        return true;
+    }
+
+    private void addMembershipListener() {
+        String serviceName = ClusterServiceImpl.SERVICE_NAME;
+        ClusterServiceImpl service = getService(serviceName);
+        boolean advancedNetworkConfigEnabled = isAdvancedNetworkEnabled();
+        UUID registrationId = service.addMembershipListener(new MembershipListenerImpl(endpoint, advancedNetworkConfigEnabled));
+        endpoint.addListenerDestroyAction(serviceName, serviceName, registrationId);
     }
 
     @SuppressWarnings("checkstyle:returncount")
@@ -202,6 +245,106 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         } else {
             logger.info("Unknown client type: " + type);
             connection.setType(ConnectionType.BINARY_CLIENT);
+        }
+    }
+
+    private class MembershipListenerImpl
+            implements InitialMembershipListener {
+        private final ClientEndpoint endpoint;
+        private final boolean advancedNetworkConfigEnabled;
+
+        MembershipListenerImpl(ClientEndpoint endpoint, boolean advancedNetworkConfigEnabled) {
+            this.endpoint = endpoint;
+            this.advancedNetworkConfigEnabled = advancedNetworkConfigEnabled;
+        }
+
+        @Override
+        public void init(InitialMembershipEvent membershipEvent) {
+            ClusterService service = getService(ClusterServiceImpl.SERVICE_NAME);
+            Collection<MemberImpl> members = service.getMemberImpls();
+            Collection<Member> membersToSend = new ArrayList<>();
+            for (MemberImpl member : members) {
+                membersToSend.add(translateMemberAddress(member));
+            }
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberListEvent(membersToSend);
+            sendClientMessage(endpoint.getUuid(), eventMessage);
+        }
+
+        @Override
+        public void memberAdded(MembershipEvent membershipEvent) {
+            if (!shouldSendEvent()) {
+                return;
+            }
+
+            MemberImpl member = (MemberImpl) membershipEvent.getMember();
+
+            ClientMessage eventMessage =
+                    ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member),
+                            MembershipEvent.MEMBER_ADDED);
+            sendClientMessage(endpoint.getUuid(), eventMessage);
+        }
+
+        @Override
+        public void memberRemoved(MembershipEvent membershipEvent) {
+            if (!shouldSendEvent()) {
+                return;
+            }
+
+            MemberImpl member = (MemberImpl) membershipEvent.getMember();
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member),
+                    MembershipEvent.MEMBER_REMOVED);
+            sendClientMessage(endpoint.getUuid(), eventMessage);
+        }
+
+        @Override
+        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+            if (!shouldSendEvent()) {
+                return;
+            }
+
+            MemberAttributeOperationType op = memberAttributeEvent.getOperationType();
+            String key = memberAttributeEvent.getKey();
+            String value = memberAttributeEvent.getValue() == null ? null : memberAttributeEvent.getValue().toString();
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec
+                    .encodeMemberAttributeChangeEvent(memberAttributeEvent.getMember(), memberAttributeEvent.getMembers(), key,
+                            op.getId(), value);
+            sendClientMessage(endpoint.getUuid(), eventMessage);
+        }
+
+        private boolean shouldSendEvent() {
+            if (!endpoint.isAlive()) {
+                return false;
+            }
+
+            boolean localOnly = false;
+            ClusterService clusterService = clientEngine.getClusterService();
+            if (localOnly && !clusterService.isMaster()) {
+                //if client registered localOnly, only master is allowed to send request
+                return false;
+            }
+            return true;
+        }
+
+        // the member partition table that is sent out to clients must contain the addresses
+        // on which cluster members listen for CLIENT protocol connections.
+        // with advanced network config, we need to return Members whose getAddress method
+        // returns the CLIENT server socket address
+        private MemberImpl translateMemberAddress(MemberImpl member) {
+            if (!advancedNetworkConfigEnabled) {
+                return member;
+            }
+
+            Address clientAddress = member.getAddressMap().get(EndpointQualifier.CLIENT);
+
+            MemberImpl result = new MemberImpl.Builder(clientAddress)
+                    .version(member.getVersion())
+                    .uuid(member.getUuid())
+                    .localMember(member.localMember())
+                    .liteMember(member.isLiteMember())
+                    .memberListJoinVersion(member.getMemberListJoinVersion())
+                    .attributes(member.getAttributes())
+                    .build();
+            return result;
         }
     }
 

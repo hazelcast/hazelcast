@@ -40,6 +40,7 @@ import org.junit.runner.RunWith;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -131,7 +132,6 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         Collection<String> labels = new LinkedList<>();
         labels.add("Label");
         UUID uuid = UUID.randomUUID();
-        UUID ownerUuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
         ClientMessage message = ClientAuthenticationCodec.encodeRequest("user", "pass",
                 uuid, "JAVA", (byte) 1,
@@ -186,11 +186,11 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         Address address2 = new Address("127.0.0.1", 5703);
         members.add(new MemberImpl(address2, MemberVersion.of("3.12"), UUID.randomUUID()));
         UUID uuid = UUID.randomUUID();
-        UUID ownerUuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
 
-        ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, (byte) 1, "3.12", 271, clusterId);
+        ClientMessage message = ClientAuthenticationCodec
+                .encodeResponse((byte) 2, new Address("127.0.0.1", 5701), uuid, (byte) 1, "3.12", 271, clusterId,
+                        Collections.EMPTY_LIST, Collections.EMPTY_LIST, -1);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 

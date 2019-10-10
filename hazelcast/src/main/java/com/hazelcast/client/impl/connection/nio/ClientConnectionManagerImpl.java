@@ -32,8 +32,12 @@ import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
+import com.hazelcast.client.impl.spi.ClientPartitionService;
+import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -67,6 +71,8 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,11 +107,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final HazelcastClientInstanceImpl client;
     private final ClientExecutionService executionService;
     private final InetSocketAddressCache inetSocketAddressCache = new InetSocketAddressCache();
-    private final ConcurrentMap<InetSocketAddress, ClientConnection> activeConnections
-            = new ConcurrentHashMap<InetSocketAddress, ClientConnection>();
-    private final ConcurrentMap<InetSocketAddress, AuthenticationFuture> connectionsInProgress =
-            new ConcurrentHashMap<InetSocketAddress, AuthenticationFuture>();
-    private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<ConnectionListener>();
+    private final ConcurrentMap<InetSocketAddress, ClientConnection> activeConnections = new ConcurrentHashMap<>();
+    private final ConcurrentMap<InetSocketAddress, AuthenticationFuture> connectionsInProgress = new ConcurrentHashMap<>();
+    private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
     private final NioNetworking networking;
     private final HeartbeatManager heartbeat;
     private final long authenticationTimeout;
@@ -272,7 +276,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return null;
     }
 
-    private Connection getConnection(Address target) throws IOException {
+    private Connection getConnection(Address target)
+            throws IOException {
         checkAllowed(target);
         if (target == null) {
             throw new IllegalStateException("Address can not be null");
@@ -287,7 +292,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         connectionStrategy.beforeGetConnection(target);
     }
-
 
     private AuthenticationFuture triggerConnect(Address target) {
         connectionStrategy.beforeOpenConnection(target);
@@ -441,6 +445,47 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         currentClusterContext.start();
     }
 
+    private class ClusterEventHandler
+            extends ClientAuthenticationCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+        private final Connection connection;
+
+        ClusterEventHandler(Connection connection) {
+            this.connection = connection;
+        }
+
+        @Override
+        public void handlePartitionsEvent(Collection<Map.Entry<Address, List<Integer>>> partitions, int partitionStateVersion) {
+            client.getClientPartitionService().processPartitionResponse(connection, partitions, partitionStateVersion);
+        }
+
+        @Override
+        public void handleMemberEvent(Member member, int eventType) {
+            client.getClientClusterService().handleMemberEvent(member, eventType);
+        }
+
+        @Override
+        public void handleMemberListEvent(Collection<Member> members) {
+            client.getClientClusterService().handleMemberListEvent(members);
+        }
+
+        @Override
+        public void handleMemberAttributeChangeEvent(Member member, Collection<Member> members, String key, int operationType,
+                                                     String value) {
+            client.getClientClusterService().handleMemberAttributeChangeEvent(member, members, key, operationType, value);
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
+
     private class TimeoutAuthenticationTask implements Runnable {
 
         private final ClientInvocationFuture future;
@@ -513,6 +558,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         private void authenticateAsync(ClientConnection connection) {
             ClientMessage clientMessage = encodeAuthenticationRequest();
             ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
+            clientInvocation.setEventHandler(new ClusterEventHandler(connection));
             ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
 
             ClientInvocationFuture failoverFuture = null;
@@ -542,9 +588,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (credentials instanceof PasswordCredentials) {
                 PasswordCredentials cr = (PasswordCredentials) credentials;
                 return ClientAuthenticationCodec
-                        .encodeRequest(cr.getName(), cr.getPassword(), clientUuid, ClientTypes.JAVA,
-                                serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                                labels, clusterPartitionCount, resolvedClusterId);
+                        .encodeRequest(cr.getName(), cr.getPassword(), clientUuid, ClientTypes.JAVA, serializationVersion,
+                                BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels, clusterPartitionCount,
+                                resolvedClusterId);
             } else {
                 Data data;
                 if (credentials instanceof TokenCredentials) {
@@ -553,8 +599,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     data = ss.toData(credentials);
                 }
                 return ClientAuthenticationCustomCodec.encodeRequest(data, clientUuid, ClientTypes.JAVA, serializationVersion,
-                        BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                        labels, clusterPartitionCount, resolvedClusterId);
+                        BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels, clusterPartitionCount,
+                        resolvedClusterId);
             }
         }
 
@@ -641,6 +687,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             connection.setConnectedServerVersion(result.serverHazelcastVersion);
 
             connection.setRemoteEndpoint(result.address);
+
+            client.getClientClusterService().handleMemberListEvent(result.members);
+            ClientPartitionService clientPartitionService = client.getClientPartitionService();
+            clientPartitionService
+                  .processPartitionResponse(connection, result.partitions, result.partitionStateVersion);
+            ((ClientPartitionServiceImpl) clientPartitionService).initPartitionTable(connection);
         }
 
         private boolean checkFailoverSupportIfNeeded(ClientAuthenticationCodec.ResponseParameters result) {

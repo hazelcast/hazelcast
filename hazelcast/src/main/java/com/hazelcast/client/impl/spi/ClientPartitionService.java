@@ -16,9 +16,14 @@
 
 package com.hazelcast.client.impl.spi;
 
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Partition service for Hazelcast clients.
@@ -38,4 +43,7 @@ public interface ClientPartitionService {
     Partition getPartition(int partitionId);
 
     void reset();
+
+    void processPartitionResponse(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
+                             int partitionStateVersion);
 }

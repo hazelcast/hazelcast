@@ -89,20 +89,13 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    public void listenPartitionTable(Connection connection) throws Exception {
+    public void initPartitionTable(Connection connection) {
         //when we connect to cluster back we need to reset partition state version
         //we are keeping the partition map as is because, user may want its operations run on connected members even if
         //owner connection is gone, and partition table is missing.
         // See @{link ClientProperty#ALLOW_INVOCATIONS_WHEN_DISCONNECTED}
         Int2ObjectHashMap<Address> partitions = getPartitions();
         partitionTable.set(new PartitionTable(connection, -1, partitions));
-
-        //Servers after 3.9 supports listeners
-        ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest();
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, connection);
-        invocation.setEventHandler(new PartitionEventHandler(connection));
-        invocation.invokeUrgent().get();
-        lastCorrelationId = clientMessage.getCorrelationId();
     }
 
     public void cleanupOnDisconnect() {
@@ -169,14 +162,16 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
      * The partitions can be empty on the response, client will not apply the empty partition table,
      * see {@link ClientPartitionListenerService#getPartitions(PartitionTableView)}
      */
-    private void processPartitionResponse(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
+    public void processPartitionResponse(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
                                           int partitionStateVersion) {
 
         while (true) {
             PartitionTable current = this.partitionTable.get();
+/*
             if (!shouldBeApplied(connection, partitions, partitionStateVersion, current)) {
                 return;
             }
+*/
             Int2ObjectHashMap<Address> newPartitions = convertToPartitionToAddressMap(partitions);
             PartitionTable newMetaData = new PartitionTable(connection, partitionStateVersion, newPartitions);
             if (this.partitionTable.compareAndSet(current, newMetaData)) {

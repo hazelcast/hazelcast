@@ -438,8 +438,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public void onClusterConnect(Connection ownerConnection) throws Exception {
-        partitionService.listenPartitionTable(ownerConnection);
-        clusterService.listenMembershipEvents(ownerConnection);
         userCodeDeploymentService.deploy(this, ownerConnection);
         proxyManager.createDistributedObjectsOnCluster(ownerConnection);
     }

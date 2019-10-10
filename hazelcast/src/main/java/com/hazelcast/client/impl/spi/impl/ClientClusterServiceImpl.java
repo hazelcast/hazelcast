@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.spi.ClientClusterService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
@@ -33,12 +34,10 @@ import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
@@ -196,10 +195,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return listeners.remove(registrationId) != null;
     }
 
-    public void listenMembershipEvents(Connection ownerConnection) throws Exception {
-        this.clientMembershipListener.listenMembershipEvents(ownerConnection);
-    }
-
     public void cleanupOnDisconnect() {
         this.clientMembershipListener.cleanupOnDisconnect();
     }
@@ -222,6 +217,21 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             members.set(Collections.unmodifiableMap(newMap));
             fireInitialMembershipEvent(event);
         }
+    }
+
+    public void handleMemberListEvent(Collection<Member> initialMembers) {
+        clientMembershipListener.handleMemberListEvent(initialMembers);
+    }
+
+    @Override
+    public void handleMemberEvent(Member member, int eventType) {
+        clientMembershipListener.handleMemberEvent(member, eventType);
+    }
+
+    @Override
+    public void handleMemberAttributeChangeEvent(Member member, Collection<Member> members, String key, int opType,
+                                                 String value) {
+        clientMembershipListener.handleMemberAttributeChangeEvent(member, members, key, opType, value);
     }
 
     void handleMembershipEvent(MembershipEvent event) {
