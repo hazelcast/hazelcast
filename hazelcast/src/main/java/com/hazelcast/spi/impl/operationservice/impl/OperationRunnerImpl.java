@@ -70,6 +70,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID_BACKUP_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT_ORDINAL;
@@ -229,6 +230,10 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
                 break;
             case WAIT_ORDINAL:
                 nodeEngine.getOperationParker().park((BlockingOperation) op);
+                break;
+            case DONE_VOID_BACKUP_ORDINAL:
+                backupHandler.sendBackups(op);
+                op.afterRun();
                 break;
             default:
                 throw new IllegalStateException();
