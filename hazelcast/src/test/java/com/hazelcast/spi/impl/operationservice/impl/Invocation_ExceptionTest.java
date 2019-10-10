@@ -69,12 +69,12 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                 // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
                 new Object[] {JOIN_INTERNAL, new CancellationException("message"), CancellationException.class,
                               IsNull.nullValue(Throwable.class)},
-                // CheckedException is wrapped in HazelcastException
+                // Checked exception is wrapped in HazelcastException
                 new Object[] {JOIN_INTERNAL, new Exception("message"), HazelcastException.class,
                               new RootCauseMatcher(Exception.class, "message")},
-                // OOME is wrapped in OOME
-                new Object[] {JOIN_INTERNAL, new OutOfMemoryError("message"), OutOfMemoryError.class,
-                              new RootCauseMatcher(OutOfMemoryError.class, "message")},
+                // Error subclass is wrapped in instance of same class
+                new Object[] {JOIN_INTERNAL, new ExceptionInInitializerError("message"), ExceptionInInitializerError.class,
+                              new RootCauseMatcher(ExceptionInInitializerError.class, "message")},
 
                 //// join()
                 // RuntimeException with a constructor accepting a Throwable cause
@@ -83,20 +83,18 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                 // RuntimeException with no constructor accepting a Throwable cause
                 new Object[] {JOIN, new IllegalThreadStateException("message"), CompletionException.class,
                               new RootCauseMatcher(IllegalThreadStateException.class, "message")},
-                // OperationTimeoutException: OperationTimeoutException is only expected to be
-                // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
+                // OperationTimeoutException is wrapped in CompletionException
                 new Object[] {JOIN, new OperationTimeoutException("message"), CompletionException.class,
                               new RootCauseMatcher(OperationTimeoutException.class, "message")},
-                // CancellationException: CancellationException is only expected to be
-                // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
+                // CancellationException is expected to be thrown from join() unwrapped
                 new Object[] {JOIN, new CancellationException("message"), CancellationException.class,
                               IsNull.nullValue(Throwable.class)},
-                // CheckedException is wrapped in HazelcastException
+                // Checked exception is wrapped in CompletionException
                 new Object[] {JOIN, new Exception("message"), CompletionException.class,
                               new RootCauseMatcher(Exception.class, "message")},
-                // OOME is wrapped in OOME
-                new Object[] {JOIN, new OutOfMemoryError("message"), CompletionException.class,
-                              new RootCauseMatcher(OutOfMemoryError.class, "message")},
+                // Error subclass is wrapped in CompletionException
+                new Object[] {JOIN, new ExceptionInInitializerError("message"), CompletionException.class,
+                              new RootCauseMatcher(ExceptionInInitializerError.class, "message")},
 
                 //// get()
                 // RuntimeException with a constructor accepting a Throwable cause
@@ -105,20 +103,18 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                 // RuntimeException with no constructor accepting a Throwable cause
                 new Object[] {GET, new IllegalThreadStateException("message"), ExecutionException.class,
                               new RootCauseMatcher(IllegalThreadStateException.class, "message")},
-                // OperationTimeoutException: OperationTimeoutException is only expected to be
-                // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
+                // OperationTimeoutException is wrapped in ExecutionException
                 new Object[] {GET, new OperationTimeoutException("message"), ExecutionException.class,
                               new RootCauseMatcher(OperationTimeoutException.class, "message")},
-                // CancellationException: CancellationException is only expected to be
-                // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
+                // CancellationException is expected to be thrown from get() unwrapped
                 new Object[] {GET, new CancellationException("message"), CancellationException.class,
                               IsNull.nullValue(Throwable.class)},
-                // CheckedException is wrapped in HazelcastException
+                // Checked exception is wrapped in HazelcastException
                 new Object[] {GET, new Exception("message"), ExecutionException.class,
                               new RootCauseMatcher(Exception.class, "message")},
-                // OOME is wrapped in OOME
-                new Object[] {GET, new OutOfMemoryError("message"), ExecutionException.class,
-                              new RootCauseMatcher(OutOfMemoryError.class, "message")},
+                // Error subclass is wrapped in ExecutionException
+                new Object[] {GET, new ExceptionInInitializerError("message"), ExecutionException.class,
+                              new RootCauseMatcher(ExceptionInInitializerError.class, "message")},
 
         };
     }
