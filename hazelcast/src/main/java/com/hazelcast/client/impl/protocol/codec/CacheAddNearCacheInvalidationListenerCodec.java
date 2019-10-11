@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Eventually consistent client near caches should use this method to add invalidation listeners
  * instead of {@link #addInvalidationListener(String, boolean)}
  */
-@Generated("8a3b0ac6169763e08ffa2522516fd2b4")
+@Generated("6cccf6f776ea16ca45f8cb28541853a2")
 public final class CacheAddNearCacheInvalidationListenerCodec {
     //hex: 0x151E00
     public static final int REQUEST_MESSAGE_TYPE = 1383936;
@@ -139,7 +139,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
         CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
         return clientMessage;
     }
-    public static ClientMessage encodeCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, @Nullable java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
+    public static ClientMessage encodeCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -148,7 +148,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
 
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, sourceUuids, ListUUIDCodec::encode);
+        ListUUIDCodec.encode(clientMessage, sourceUuids);
         ListUUIDCodec.encode(clientMessage, partitionUuids);
         ListLongCodec.encode(clientMessage, sequences);
         return clientMessage;
@@ -174,7 +174,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
                 iterator.next();
                 java.lang.String name = StringCodec.decode(iterator);
                 java.util.Collection<com.hazelcast.nio.serialization.Data> keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-                java.util.Collection<java.util.UUID> sourceUuids = CodecUtil.decodeNullable(iterator, ListUUIDCodec::decode);
+                java.util.Collection<java.util.UUID> sourceUuids = ListUUIDCodec.decode(iterator);
                 java.util.Collection<java.util.UUID> partitionUuids = ListUUIDCodec.decode(iterator);
                 java.util.Collection<java.lang.Long> sequences = ListLongCodec.decode(iterator);
                 handleCacheBatchInvalidationEvent(name, keys, sourceUuids, partitionUuids, sequences);
@@ -183,6 +183,6 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
         public abstract void handleCacheInvalidationEvent(java.lang.String name, @Nullable com.hazelcast.nio.serialization.Data key, @Nullable java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence);
-        public abstract void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, @Nullable java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences);
+        public abstract void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences);
     }
 }
