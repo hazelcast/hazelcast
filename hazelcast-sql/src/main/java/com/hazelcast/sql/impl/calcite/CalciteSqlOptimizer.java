@@ -27,6 +27,7 @@ import com.hazelcast.sql.HazelcastSqlTransientException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
+import com.hazelcast.sql.impl.calcite.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
 import com.hazelcast.sql.impl.calcite.logical.LogicalJoinRules;
 import com.hazelcast.sql.impl.calcite.logical.LogicalProjectFilterRules;
@@ -171,7 +172,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private VolcanoPlanner preparePlanner(CalciteConnectionConfig config) {
         VolcanoPlanner planner = new VolcanoPlanner(
-            null,
+            CostFactory.INSTANCE,
             Contexts.of(config)
         );
 
