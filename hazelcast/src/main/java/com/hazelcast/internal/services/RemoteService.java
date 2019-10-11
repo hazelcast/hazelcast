@@ -28,7 +28,7 @@ public interface RemoteService {
 
     /**
      * Creates a distributed object on the local member only (when {@code local} is
-     * {@code true}) or cluster-wide.
+     * {@code true}), else cluster-wide.
      *
      * @param objectName the name for the created distributed object
      * @param local      when {@code true} then only perform required proxy creation

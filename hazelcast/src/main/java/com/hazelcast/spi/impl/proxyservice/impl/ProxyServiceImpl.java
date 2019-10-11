@@ -248,7 +248,7 @@ public class ProxyServiceImpl
         } else {
             final ProxyRegistry registry = registries.get(serviceName);
             if (registry != null) {
-                registry.destroyProxy(eventPacket.getName(), true);
+                registry.destroyProxy(eventPacket.getName(), false);
             }
         }
     }
