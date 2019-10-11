@@ -33,7 +33,6 @@ import java.io.IOException;
 /**
  * Gets a cache configuration or creates one, if a matching cache config is found in this member's config.
  *
- * @see CacheCreateConfigOperation
  * @see AddCacheConfigOperation
  */
 public class CacheGetConfigOperation extends AbstractNamedOperation implements IdentifiedDataSerializable, ReadonlyOperation {
