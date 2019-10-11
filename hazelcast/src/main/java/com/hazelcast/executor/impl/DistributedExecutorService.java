@@ -168,12 +168,12 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public ExecutorServiceProxy createDistributedObject(String name) {
+    public ExecutorServiceProxy createDistributedObject(String name, boolean local) {
         return new ExecutorServiceProxy(name, nodeEngine, this);
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         shutdownExecutors.remove(name);
         executionService.shutdownExecutor(name);
         statsMap.remove(name);

@@ -83,7 +83,7 @@ public class ListService extends CollectionService {
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectId) {
+    public DistributedObject createDistributedObject(String objectId, boolean local) {
         return new ListProxyImpl(objectId, nodeEngine, this);
     }
 

@@ -184,7 +184,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
         ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(objectName);
         checkReplicatedMapConfig(replicatedMapConfig, mergePolicyProvider);
         if (nodeEngine.getLocalMember().isLiteMember()) {
@@ -202,7 +202,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
+    public void destroyDistributedObject(String objectName, boolean local) {
         if (nodeEngine.getLocalMember().isLiteMember()) {
             return;
         }

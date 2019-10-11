@@ -229,7 +229,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public DistributedObject createDistributedObject(String cacheNameWithPrefix) {
+    public DistributedObject createDistributedObject(String cacheNameWithPrefix, boolean local) {
         try {
             /*
              * In here, cacheNameWithPrefix is the full cache name.
@@ -261,7 +261,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(), true,
                     logger);
 
-            if (putCacheConfigIfAbsent(cacheConfig) == null) {
+            if (putCacheConfigIfAbsent(cacheConfig) == null && !local) {
                 // if the cache config was not previously known, ensure the new cache config
                 // becomes available on all members before the proxy is returned to the caller
                 createCacheConfigOnAllMembers(PreJoinCacheConfig.of(cacheConfig));
@@ -274,7 +274,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
+    public void destroyDistributedObject(String objectName, boolean local) {
         deleteCache(objectName, null, true);
     }
 

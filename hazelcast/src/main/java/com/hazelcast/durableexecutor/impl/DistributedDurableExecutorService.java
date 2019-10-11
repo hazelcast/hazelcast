@@ -99,12 +99,12 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name) {
+    public DistributedObject createDistributedObject(String name, boolean local) {
         return new DurableExecutorServiceProxy(nodeEngine, this, name);
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         shutdownExecutors.remove(name);
         nodeEngine.getExecutionService().shutdownDurableExecutor(name);
         removeAllContainers(name);
