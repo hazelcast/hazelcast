@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -185,10 +184,6 @@ public class ClientMessageProtectionTest {
     }
 
     @Test
-    @Ignore
-    /**
-     * Ignore until issue https://github.com/hazelcast/hazelcast/issues/15658 is resolved
-     */
     public void testAccumulatedMessageSizeOverflow() throws IOException {
         Config config = smallInstanceConfig();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -255,7 +250,7 @@ public class ClientMessageProtectionTest {
         ByteBuffer buffer = ByteBuffer.allocateDirect(frameSize);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putInt(frameSize);
-        if (isLastFrame) {
+        if (!isLastFrame) {
             buffer.putShort((short) frame.flags);
         } else {
             buffer.putShort((short) (frame.flags | IS_FINAL_FLAG));
