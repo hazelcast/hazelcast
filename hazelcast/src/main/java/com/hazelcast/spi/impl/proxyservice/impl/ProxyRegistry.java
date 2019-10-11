@@ -20,12 +20,12 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.internal.util.EmptyStatement;
 
 import java.util.Collection;
 import java.util.Map;
@@ -175,7 +175,7 @@ public final class ProxyRegistry {
             if (!proxyService.nodeEngine.isRunning()) {
                 throw new HazelcastInstanceNotActiveException();
             }
-            proxyFuture = createProxy(name, publishEvent, initialize, false);
+            proxyFuture = createProxy(name, initialize, !publishEvent);
             if (proxyFuture == null) {
                 return getOrCreateProxyFuture(name, publishEvent, initialize);
             }
@@ -187,11 +187,13 @@ public final class ProxyRegistry {
      * Creates a DistributedObject proxy if it is not created yet
      *
      * @param name         The name of the distributedObject proxy object.
-     * @param publishEvent true if a DistributedObjectEvent should be fired.
      * @param initialize   true if he DistributedObject proxy object should be initialized.
+     * @param local        {@code true} if the proxy should be only created on the local member,
+     *                     otherwise fires {@code DistributedObjectEvent} to trigger cluster-wide
+     *                     proxy creation.
      * @return The DistributedObject instance if it is created by this method, null otherwise.
      */
-    public DistributedObjectFuture createProxy(String name, boolean publishEvent, boolean initialize,
+    public DistributedObjectFuture createProxy(String name, boolean initialize,
                                                boolean local) {
         if (proxies.containsKey(name)) {
             return null;
@@ -206,11 +208,12 @@ public final class ProxyRegistry {
             return null;
         }
 
-        return doCreateProxy(name, publishEvent, initialize, proxyFuture, local);
+        return doCreateProxy(name, initialize, proxyFuture, local);
     }
 
-    private DistributedObjectFuture doCreateProxy(String name, boolean publishEvent, boolean initialize,
+    private DistributedObjectFuture doCreateProxy(String name, boolean initialize,
                                                   DistributedObjectFuture proxyFuture, boolean local) {
+        boolean publishEvent = !local;
         DistributedObject proxy;
         try {
             proxy = service.createDistributedObject(name, local);
