@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the config of a map.
  */
-@Generated("d76e1e6ef4f6ba34b91f6b07cb00441c")
+@Generated("78f0719d4a0e829cf9a5640b73890adf")
 public final class MCUpdateMapConfigCodec {
     //hex: 0x270400
     public static final int REQUEST_MESSAGE_TYPE = 2556928;
@@ -71,7 +71,11 @@ public final class MCUpdateMapConfigCodec {
         public int maxIdleSeconds;
 
         /**
-         * ID value of the eviction policy of the map.
+         * The eviction policy of the map:
+         * 0 - LRU
+         * 1 - LFU
+         * 2 - NONE
+         * 3 - RANDOM
          */
         public int evictionPolicy;
 
@@ -86,7 +90,17 @@ public final class MCUpdateMapConfigCodec {
         public int maxSize;
 
         /**
-         * ID value of the maximum size policy of the map.
+         * The maximum size policy of the map:
+         * 0 - PER_NODE
+         * 1 - PER_PARTITION
+         * 2 - USED_HEAP_PERCENTAGE
+         * 3 - USED_HEAP_SIZE
+         * 4 - FREE_HEAP_PERCENTAGE
+         * 5 - FREE_HEAP_SIZE
+         * 6 - USED_NATIVE_MEMORY_SIZE
+         * 7 - USED_NATIVE_MEMORY_PERCENTAGE
+         * 8 - FREE_NATIVE_MEMORY_SIZE
+         * 9 - FREE_NATIVE_MEMORY_PERCENTAGE
          */
         public int maxSizePolicy;
     }

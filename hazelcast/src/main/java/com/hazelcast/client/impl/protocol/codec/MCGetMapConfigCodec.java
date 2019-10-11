@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map.
  */
-@Generated("0a6dff71dfa90a51096b36ce521a371e")
+@Generated("165e5f82d88cb84c718030384a2889ea")
 public final class MCGetMapConfigCodec {
     //hex: 0x270300
     public static final int REQUEST_MESSAGE_TYPE = 2556672;
@@ -89,7 +89,10 @@ public final class MCGetMapConfigCodec {
     public static class ResponseParameters {
 
         /**
-         * ID value of the in memory storage format of the map.
+         * The in memory storage format of the map:
+         * 0 - Binary
+         * 1 - Object
+         * 2 - Native
          */
         public int inMemoryFormat;
 
@@ -119,7 +122,17 @@ public final class MCGetMapConfigCodec {
         public int maxSize;
 
         /**
-         * ID value of the maximum size policy of the map.
+         * The maximum size policy of the map:
+         * 0 - PER_NODE
+         * 1 - PER_PARTITION
+         * 2 - USED_HEAP_PERCENTAGE
+         * 3 - USED_HEAP_SIZE
+         * 4 - FREE_HEAP_PERCENTAGE
+         * 5 - FREE_HEAP_SIZE
+         * 6 - USED_NATIVE_MEMORY_SIZE
+         * 7 - USED_NATIVE_MEMORY_PERCENTAGE
+         * 8 - FREE_NATIVE_MEMORY_SIZE
+         * 9 - FREE_NATIVE_MEMORY_PERCENTAGE
          */
         public int maxSizePolicy;
 
@@ -129,7 +142,11 @@ public final class MCGetMapConfigCodec {
         public boolean readBackupData;
 
         /**
-         * ID value of the eviction policy of the map.
+         * The eviction policy of the map:
+         * 0 - LRU
+         * 1 - LFU
+         * 2 - NONE
+         * 3 - RANDOM
          */
         public int evictionPolicy;
 
