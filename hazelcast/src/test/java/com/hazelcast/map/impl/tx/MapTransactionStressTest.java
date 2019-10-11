@@ -286,12 +286,12 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public DistributedObject createDistributedObject(String objectName) {
+        public DistributedObject createDistributedObject(String objectName, boolean local) {
             return new DummyTransactionalObject(serviceName, objectName, null);
         }
 
         @Override
-        public void destroyDistributedObject(String objectName) {
+        public void destroyDistributedObject(String objectName, boolean local) {
         }
     }
 

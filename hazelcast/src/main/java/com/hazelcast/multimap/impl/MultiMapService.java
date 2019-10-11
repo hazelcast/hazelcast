@@ -186,7 +186,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name) {
+    public DistributedObject createDistributedObject(String name, boolean local) {
         MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
         checkMultiMapConfig(multiMapConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
@@ -194,7 +194,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         for (MultiMapPartitionContainer container : partitionContainers) {
             if (container != null) {
                 container.destroyMultiMap(name);

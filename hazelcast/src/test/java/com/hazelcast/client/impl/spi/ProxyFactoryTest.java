@@ -129,12 +129,12 @@ public class ProxyFactoryTest {
     private class CustomService implements RemoteService {
 
         @Override
-        public DistributedObject createDistributedObject(String objectName) {
+        public DistributedObject createDistributedObject(String objectName, boolean local) {
             return new CustomClientProxy(SERVICE_NAME, objectName, context);
         }
 
         @Override
-        public void destroyDistributedObject(String objectName) {
+        public void destroyDistributedObject(String objectName, boolean local) {
         }
     }
 

@@ -75,12 +75,12 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
         return xaResource;
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
+    public void destroyDistributedObject(String objectName, boolean local) {
     }
 
     public TransactionContext newXATransactionContext(Xid xid, UUID ownerUuid, int timeout, boolean originatedFromClient) {
