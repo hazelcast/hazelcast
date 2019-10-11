@@ -32,12 +32,12 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.Metadata;
-import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.internal.util.SortingUtil.compareAnchor;
 
 /**
@@ -78,13 +77,14 @@ public class PartitionScanRunner {
 
     @SuppressWarnings("unchecked")
     public void run(String mapName, Predicate predicate, int partitionId, Result result) {
-        PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
+        PagingPredicateImpl pagingPredicate = predicate instanceof PagingPredicateImpl ? (PagingPredicateImpl) predicate : null;
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
         Iterator<Record> iterator = recordStore.loadAwareIterator(getNow(), false);
-        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry =
+                pagingPredicate == null ? null : pagingPredicate.getNearestAnchorEntry();
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
         LazyMapEntry queryEntry = new LazyMapEntry();

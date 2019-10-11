@@ -17,15 +17,13 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-
-import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 
 /**
  * Utility class for generating Comparators to be used in sort methods specific to hazelcast classes.
@@ -123,10 +121,9 @@ public final class SortingUtil {
         return (entry1, entry2) -> SortingUtil.compare(comparator, iterationType, entry1, entry2);
     }
 
-    private static Comparator<QueryableEntry> newComparator(final PagingPredicate pagingPredicate) {
-        return (entry1, entry2) -> SortingUtil
-                .compare(pagingPredicate.getComparator(),
-                        PagingPredicateAccessor.getIterationType(pagingPredicate), entry1, entry2);
+    private static Comparator<QueryableEntry> newComparator(final PagingPredicateImpl pagingPredicate) {
+        return (entry1, entry2) ->
+                SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2);
     }
 
     public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate,
@@ -134,7 +131,8 @@ public final class SortingUtil {
         if (pagingPredicate == null || list.isEmpty()) {
             return list;
         }
-        Comparator<QueryableEntry> comparator = newComparator(pagingPredicate);
+        PagingPredicateImpl pagingPredicateImpl = (PagingPredicateImpl) pagingPredicate;
+        Comparator<QueryableEntry> comparator = newComparator(pagingPredicateImpl);
         Collections.sort(list, comparator);
         int nearestPage = nearestAnchorEntry.getKey();
         int pageSize = pagingPredicate.getPageSize();
@@ -153,13 +151,14 @@ public final class SortingUtil {
         if (list.isEmpty()) {
             return new ResultSet();
         }
-        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), iterationType);
+        PagingPredicateImpl pagingPredicateImpl = (PagingPredicateImpl) pagingPredicate;
+        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicateImpl.getComparator(), iterationType);
         Collections.sort(list, comparator);
 
-        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = pagingPredicateImpl.getNearestAnchorEntry();
         int nearestPage = nearestAnchorEntry.getKey();
-        int page = pagingPredicate.getPage();
-        int pageSize = pagingPredicate.getPageSize();
+        int page = pagingPredicateImpl.getPage();
+        int pageSize = pagingPredicateImpl.getPageSize();
         long begin = pageSize * ((long) page - nearestPage - 1);
         int size = list.size();
         if (begin > size) {
@@ -169,7 +168,7 @@ public final class SortingUtil {
         if (end > size) {
             end = size;
         }
-        setAnchor(list, pagingPredicate, nearestPage);
+        setAnchor(list, pagingPredicateImpl, nearestPage);
         // it's safe to cast begin and end back to int here since they are limited by the list size
         List<Map.Entry> subList = list.subList((int) begin, (int) end);
         return new ResultSet(subList, iterationType);
@@ -184,12 +183,13 @@ public final class SortingUtil {
         if (anchor == null) {
             return true;
         }
+        PagingPredicateImpl pagingPredicateImpl = (PagingPredicateImpl) pagingPredicate;
         Comparator<Map.Entry> comparator = pagingPredicate.getComparator();
-        IterationType iterationType = PagingPredicateAccessor.getIterationType(pagingPredicate);
+        IterationType iterationType = pagingPredicateImpl.getIterationType();
         return SortingUtil.compare(comparator, iterationType, anchor, queryEntry) < 0;
     }
 
-    private static void setAnchor(List<Map.Entry> list, PagingPredicate pagingPredicate, int nearestPage) {
+    private static void setAnchor(List<Map.Entry> list, PagingPredicateImpl pagingPredicate, int nearestPage) {
         if (list.isEmpty()) {
             return;
         }
@@ -199,7 +199,7 @@ public final class SortingUtil {
         for (int i = pageSize; i <= size && nearestPage < page; i += pageSize) {
             Map.Entry anchor = list.get(i - 1);
             nearestPage++;
-            PagingPredicateAccessor.setAnchor(pagingPredicate, nearestPage, anchor);
+            pagingPredicate.setAnchor(nearestPage, anchor);
         }
     }
 
