@@ -131,7 +131,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
         RingbufferConfig ringbufferConfig = getRingbufferConfig(objectName);
         checkRingbufferConfig(ringbufferConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
@@ -139,7 +139,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         destroyContainer(getRingbufferPartitionId(name), getRingbufferNamespace(name));
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
         splitBrainProtectionConfigCache.remove(name);

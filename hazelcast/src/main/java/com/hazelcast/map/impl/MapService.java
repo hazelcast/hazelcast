@@ -164,13 +164,13 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
-        return remoteService.createDistributedObject(objectName);
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
+        return remoteService.createDistributedObject(objectName, local);
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
-        remoteService.destroyDistributedObject(objectName);
+    public void destroyDistributedObject(String objectName, boolean local) {
+        remoteService.destroyDistributedObject(objectName, local);
         splitBrainProtectionAwareService.onDestroy(objectName);
     }
 

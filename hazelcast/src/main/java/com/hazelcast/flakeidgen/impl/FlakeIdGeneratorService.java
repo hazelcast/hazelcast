@@ -68,12 +68,12 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name) {
+    public DistributedObject createDistributedObject(String name, boolean local) {
         return new FlakeIdGeneratorProxy(name, nodeEngine, this);
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         statsMap.remove(name);
     }
 

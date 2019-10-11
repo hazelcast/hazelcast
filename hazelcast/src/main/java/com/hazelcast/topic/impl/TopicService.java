@@ -107,7 +107,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public ITopic createDistributedObject(String name) {
+    public ITopic createDistributedObject(String name, boolean local) {
         TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
 
         if (topicConfig.isGlobalOrderingEnabled()) {
@@ -118,7 +118,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public void destroyDistributedObject(String objectId) {
+    public void destroyDistributedObject(String objectId, boolean local) {
         statsMap.remove(objectId);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, objectId);
     }

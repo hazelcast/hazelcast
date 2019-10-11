@@ -167,7 +167,7 @@ public class DistributedScheduledExecutorService
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name) {
+    public DistributedObject createDistributedObject(String name, boolean local) {
         ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
         checkScheduledExecutorConfig(executorConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
@@ -175,7 +175,7 @@ public class DistributedScheduledExecutorService
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         if (shutdownExecutors.remove(name) == null) {
             nodeEngine.getExecutionService().shutdownScheduledDurableExecutor(name);
         }

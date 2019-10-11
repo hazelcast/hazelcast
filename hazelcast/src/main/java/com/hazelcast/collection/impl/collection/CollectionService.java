@@ -89,7 +89,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         CollectionContainer container = getContainerMap().remove(name);
         if (container != null) {
             container.destroy();
