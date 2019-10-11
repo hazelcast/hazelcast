@@ -61,12 +61,6 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
         return partitioningStrategy;
     }
 
-    @Deprecated
-    public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
-        this.partitioningStrategy = partitionStrategy;
-        return this;
-    }
-
     public PartitioningStrategyConfig setPartitioningStrategy(PartitioningStrategy partitionStrategy) {
         this.partitioningStrategy = partitionStrategy;
         return this;
