@@ -16,7 +16,6 @@
 
 package com.hazelcast.transaction;
 
-import javax.transaction.xa.XAResource;
 import java.util.UUID;
 
 /**
