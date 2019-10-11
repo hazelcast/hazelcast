@@ -67,7 +67,8 @@ public class PutAllBackupOperation extends MapOperation
     }
 
     private void putBackup(Record record) {
-        recordStore.putBackup(record, false, getCallerProvenance());
+        Record currentRecord = recordStore.putBackup(record, false, getCallerProvenance());
+        Records.copyMetadataFrom(record, currentRecord);
         publishWanUpdate(record.getKey(), record.getValue());
         evict(record.getKey());
     }

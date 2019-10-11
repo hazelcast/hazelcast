@@ -44,7 +44,8 @@ public class PutBackupOperation
     @Override
     protected void runInternal() {
         // TODO performance: we can put this record directly into record-store if memory format is BINARY
-        recordStore.putBackup(record, isPutTransient(), getCallerProvenance());
+        Record currentRecord = recordStore.putBackup(record, isPutTransient(), getCallerProvenance());
+        Records.copyMetadataFrom(record, currentRecord);
     }
 
     protected boolean isPutTransient() {

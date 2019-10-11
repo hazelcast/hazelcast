@@ -44,12 +44,17 @@ public final class Records {
         return getById(matchingDataRecordId).readRecord(in);
     }
 
-    public static Record copyMetadata(Record fromRecord, Record toRecord) {
+    /**
+     * Except transient field {@link com.hazelcast.query.impl.Metadata},
+     * all record-metadata is copied from one record to another.
+     *
+     * @return populated record object with new metadata
+     */
+    public static Record copyMetadataFrom(Record fromRecord, Record toRecord) {
         toRecord.setHits(fromRecord.getHits());
         toRecord.setTtl(fromRecord.getTtl());
         toRecord.setMaxIdle(fromRecord.getMaxIdle());
         toRecord.setVersion(fromRecord.getVersion());
-        toRecord.setMetadata(fromRecord.getMetadata());
         toRecord.setCreationTime(fromRecord.getCreationTime());
         toRecord.setExpirationTime(fromRecord.getExpirationTime());
         toRecord.setLastAccessTime(fromRecord.getLastAccessTime());

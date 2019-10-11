@@ -81,7 +81,7 @@ public class MergeOperation extends MapOperation
         hasInvalidation = mapContainer.hasInvalidationListener();
 
         if (hasBackups) {
-            backupRecordAndDataValuePairs = new ArrayList<>(mergingEntries.size());
+            backupRecordAndDataValuePairs = new ArrayList<>(mergingEntries.size() * 2);
         }
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<>(mergingEntries.size());

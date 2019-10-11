@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -41,10 +42,10 @@ public class TxnSetBackupOperation extends PutBackupOperation {
 
     @Override
     protected void runInternal() {
-        Record putRecord = recordStore.putBackupTxn(record, isPutTransient(),
+        Record currentRecord = recordStore.putBackupTxn(record, isPutTransient(),
                 getCallerProvenance(), transactionId);
-
-        recordStore.forceUnlock(putRecord.getKey());
+        Records.copyMetadataFrom(record, currentRecord);
+        recordStore.forceUnlock(currentRecord.getKey());
     }
 
     @Override

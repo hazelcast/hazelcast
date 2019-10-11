@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
@@ -45,7 +46,6 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -173,8 +173,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Record putBackup(Record newRecord, boolean putTransient, CallerProvenance provenance) {
-        return putBackup(newRecord.getKey(), newRecord.getValue(),
-                newRecord.getTtl(), newRecord.getMaxIdle(), putTransient, provenance);
+        return putBackupInternal(newRecord.getKey(), newRecord.getValue(),
+                newRecord.getTtl(), newRecord.getMaxIdle(), putTransient, provenance, null);
     }
 
     @Override
@@ -186,13 +186,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Record putBackup(Data key, Object value, CallerProvenance provenance) {
-        return putBackup(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE, false, provenance);
-    }
-
-    @Override
-    public Record putBackup(Data key, Object value, long ttl, long maxIdle,
-                            boolean putTransient, CallerProvenance provenance) {
-        return putBackupInternal(key, value, ttl, maxIdle, putTransient, provenance, null);
+        return putBackupInternal(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE,
+                false, provenance, null);
     }
 
     private Record putBackupInternal(Data key, Object value, long ttl, long maxIdle,

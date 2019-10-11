@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
@@ -30,7 +31,6 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.monitor.LocalRecordStoreStats;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -74,26 +74,20 @@ public interface RecordStore<R extends Record> {
      * @param key        the key
      * @param value      the value to put backup
      * @param provenance origin of call to this method.
-     * @return current record object associated to the key
+     * @return current record after put.
      */
     R putBackup(Data key, Object value, CallerProvenance provenance);
 
     /**
-     * @param key          the key to be processed.
-     * @param value        the value to be processed.
-     * @param ttl          milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
-     * @param maxIdle      milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
-     * @param putTransient {@code true} if putting transient entry, otherwise {@code false}
-     * @param provenance   origin of call to this method.
-     * @return previous record if exists otherwise null.
+     * @return current record after put.
      */
-    R putBackup(Data key, Object value, long ttl, long maxIdle, boolean putTransient,
-                CallerProvenance provenance);
+    R putBackup(Record record, boolean putTransient, CallerProvenance provenance);
 
-    Record putBackupTxn(Record newRecord, boolean putTransient,
-                        CallerProvenance provenance, UUID transactionId);
-
-    Record putBackup(Record record, boolean putTransient, CallerProvenance provenance);
+    /**
+     * @return current record after put.
+     */
+    R putBackupTxn(Record newRecord, boolean putTransient,
+                   CallerProvenance provenance, UUID transactionId);
 
     /**
      * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
