@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("4980fdbf4153c043f7e2cf531158e45d")
+@Generated("8cc433ea3ca17ae7e4f21f9a704f78bc")
 public final class CacheRemoveInvalidationListenerCodec {
     //hex: 0x151600
     public static final int REQUEST_MESSAGE_TYPE = 1381888;

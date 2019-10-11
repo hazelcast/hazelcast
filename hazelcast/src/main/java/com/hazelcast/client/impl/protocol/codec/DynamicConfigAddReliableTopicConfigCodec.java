@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a reliable topic configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("847a840b71c578014e2bb02efaf0bc1b")
+@Generated("1461d6d2d34b6c5ee92681e4905d26a3")
 public final class DynamicConfigAddReliableTopicConfigCodec {
     //hex: 0x1E0F00
     public static final int REQUEST_MESSAGE_TYPE = 1969920;
@@ -61,7 +63,7 @@ public final class DynamicConfigAddReliableTopicConfigCodec {
         /**
          * message listener configurations
          */
-        public java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs;
+        public @Nullable java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs;
 
         /**
          * maximum number of items to read in a batch.
@@ -83,10 +85,10 @@ public final class DynamicConfigAddReliableTopicConfigCodec {
          * a serialized {@link java.util.concurrent.Executor} instance to use for executing
          * message listeners or {@code null}
          */
-        public com.hazelcast.nio.serialization.Data executor;
+        public @Nullable com.hazelcast.nio.serialization.Data executor;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int readBatchSize, boolean statisticsEnabled, java.lang.String topicOverloadPolicy, com.hazelcast.nio.serialization.Data executor) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int readBatchSize, boolean statisticsEnabled, java.lang.String topicOverloadPolicy, @Nullable com.hazelcast.nio.serialization.Data executor) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

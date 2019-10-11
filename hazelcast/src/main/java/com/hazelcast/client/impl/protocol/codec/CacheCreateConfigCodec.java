@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("dbd4aa31b5ae8233c16f75c622b5c222")
+@Generated("e698dfdb7ae68ea9dcd61543fe537166")
 public final class CacheCreateConfigCodec {
     //hex: 0x150700
     public static final int REQUEST_MESSAGE_TYPE = 1378048;
@@ -89,10 +91,10 @@ public final class CacheCreateConfigCodec {
         /**
          * The created configuration object.
          */
-        public com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response;
+        public @Nullable com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

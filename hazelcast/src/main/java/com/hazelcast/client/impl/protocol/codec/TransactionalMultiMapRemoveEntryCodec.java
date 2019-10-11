@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all the entries associated with the given key.
  */
-@Generated("e036ffe55a9e74b20f2fcf85fa06fa40")
+@Generated("45cf33d0be7319e8921fa646366d6fe8")
 public final class TransactionalMultiMapRemoveEntryCodec {
     //hex: 0x110400
     public static final int REQUEST_MESSAGE_TYPE = 1115136;

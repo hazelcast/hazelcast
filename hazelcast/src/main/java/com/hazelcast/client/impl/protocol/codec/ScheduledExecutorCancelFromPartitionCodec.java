@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels further execution and scheduling of the task
  */
-@Generated("81f329ed8743d2d8ce50e06d10f39df1")
+@Generated("c3b83ab0f73c2affa339197ce8c27e92")
 public final class ScheduledExecutorCancelFromPartitionCodec {
     //hex: 0x1D0900
     public static final int REQUEST_MESSAGE_TYPE = 1902848;

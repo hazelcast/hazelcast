@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("ccdb0bd0ea027c14104d35b26d02a60a")
+@Generated("4bd6bb4b74389fe1ccb5d4c48c4563ed")
 public final class DynamicConfigAddExecutorConfigCodec {
     //hex: 0x1E0900
     public static final int REQUEST_MESSAGE_TYPE = 1968384;
@@ -79,10 +81,10 @@ public final class DynamicConfigAddExecutorConfigCodec {
          * required in the cluster for the lock to remain functional. When {@code null}, split brain protection does not
          * apply to this lock configuration's operations.
          */
-        public java.lang.String splitBrainProtectionName;
+        public @Nullable java.lang.String splitBrainProtectionName;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int queueCapacity, boolean statisticsEnabled, java.lang.String splitBrainProtectionName) {
+    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int queueCapacity, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

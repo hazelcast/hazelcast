@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("8a2fc11f1b3aad8e9ce997ff672bb0a0")
+@Generated("fcf9994ae5cf3f59776a2e9ef1fe83ee")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     //hex: 0x1D0400
     public static final int REQUEST_MESSAGE_TYPE = 1901568;

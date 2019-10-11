@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * a write-through cache, the CacheWriter.If the cache is empty, the CacheWriter is not called.
  * This is potentially an expensive operation as listeners are invoked. Use  #clear() to avoid this.
  */
-@Generated("bcb5b3796a1189e2a314a621235ee2fe")
+@Generated("fdf898c2838cdb19502c6dec82100f97")
 public final class CacheRemoveAllCodec {
     //hex: 0x150500
     public static final int REQUEST_MESSAGE_TYPE = 1377536;

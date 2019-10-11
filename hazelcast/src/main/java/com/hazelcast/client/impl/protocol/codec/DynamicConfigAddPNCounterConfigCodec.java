@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a PN counter configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("f38d2692b2707577ec3628e342249013")
+@Generated("7a241b5b8516eb16c1f766b6a33be792")
 public final class DynamicConfigAddPNCounterConfigCodec {
     //hex: 0x1E1600
     public static final int REQUEST_MESSAGE_TYPE = 1971712;
@@ -73,10 +75,10 @@ public final class DynamicConfigAddPNCounterConfigCodec {
          * required in the cluster for the lock to remain functional. When {@code null}, split brain protection does not
          * apply to this lock configuration's operations.
          */
-        public java.lang.String splitBrainProtectionName;
+        public @Nullable java.lang.String splitBrainProtectionName;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int replicaCount, boolean statisticsEnabled, java.lang.String splitBrainProtectionName) {
+    public static ClientMessage encodeRequest(java.lang.String name, int replicaCount, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
