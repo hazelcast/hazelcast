@@ -63,6 +63,7 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -72,7 +73,6 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
@@ -148,7 +148,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanReplicationEndpoint;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -1329,6 +1328,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2222, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(PARTIAL_RECOVERY_MOST_COMPLETE, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
         assertFalse(hotRestartPersistenceConfig.isAutoRemoveStaleData());
+        assertTrue(hotRestartPersistenceConfig.isStoreMetadata());
     }
 
     @Test

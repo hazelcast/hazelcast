@@ -840,6 +840,7 @@ hazelcast:
     data-load-timeout-seconds: 42
     parallelism: 3
     validation-timeout-seconds: 10
+    store-metadata: true
 
   event-journal:
     map:

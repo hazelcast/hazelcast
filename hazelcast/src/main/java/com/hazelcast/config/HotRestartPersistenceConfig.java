@@ -62,6 +62,7 @@ public class HotRestartPersistenceConfig {
     private HotRestartClusterDataRecoveryPolicy clusterDataRecoveryPolicy
             = HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
     private boolean autoRemoveStaleData = true;
+    private boolean storeMetadata;
 
     /**
      * Returns whether hot restart enabled on this member.
@@ -230,8 +231,26 @@ public class HotRestartPersistenceConfig {
         return this;
     }
 
+    /**
+     * Returns whether record metadata should be stored.
+     *
+     * @return true if record metadata is to be stored, false otherwise
+     */
+    public boolean isStoreMetadata() {
+        return storeMetadata;
+    }
+
+    /**
+     * Sets whether record metadata should be stored.
+     * @param storeMetadata true if record metadata is to be stored, false otherwise
+     */
+    public HotRestartPersistenceConfig setStoreMetadata(boolean storeMetadata) {
+        this.storeMetadata = storeMetadata;
+        return this;
+    }
+
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -262,10 +281,14 @@ public class HotRestartPersistenceConfig {
         if (backupDir != null ? !backupDir.equals(that.backupDir) : that.backupDir != null) {
             return false;
         }
-        return clusterDataRecoveryPolicy == that.clusterDataRecoveryPolicy;
+        if (clusterDataRecoveryPolicy != that.clusterDataRecoveryPolicy) {
+            return false;
+        }
+        return storeMetadata == that.storeMetadata;
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public final int hashCode() {
         int result = (enabled ? 1 : 0);
         result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
@@ -275,6 +298,7 @@ public class HotRestartPersistenceConfig {
         result = 31 * result + dataLoadTimeoutSeconds;
         result = 31 * result + (clusterDataRecoveryPolicy != null ? clusterDataRecoveryPolicy.hashCode() : 0);
         result = 31 * result + (autoRemoveStaleData ? 1 : 0);
+        result = 31 * result + (storeMetadata ? 1 : 0);
         return result;
     }
 
@@ -283,6 +307,7 @@ public class HotRestartPersistenceConfig {
         return "HotRestartPersistenceConfig{" + "enabled=" + enabled + ", baseDir=" + baseDir + ", backupDir=" + backupDir
                 + ", parallelism=" + parallelism + ", validationTimeoutSeconds=" + validationTimeoutSeconds
                 + ", dataLoadTimeoutSeconds=" + dataLoadTimeoutSeconds + ", clusterDataRecoveryPolicy="
-                + clusterDataRecoveryPolicy + ", autoRemoveStaleData=" + autoRemoveStaleData + '}';
+                + clusterDataRecoveryPolicy + ", autoRemoveStaleData=" + autoRemoveStaleData
+                + ", storeMetadata=" + storeMetadata + '}';
     }
 }

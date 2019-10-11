@@ -2044,7 +2044,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>"
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
-                + "          </hot-restart>"
+                + "        </hot-restart>\n"
                 + "        <partition-lost-listeners>\n"
                 + "            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>\n"
                 + "          </partition-lost-listeners>"
@@ -2369,7 +2369,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <read-backup-data>true</read-backup-data>"
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
-                + "          </hot-restart>"
+                + "        </hot-restart>\n"
                 + "        <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
                 + "            <class-name>com.hazelcast.examples.DummyStore</class-name>\n"
                 + "            <write-delay-seconds>42</write-delay-seconds>\n"
@@ -2873,6 +2873,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
                 + "    <cluster-data-recovery-policy>" + policy + "</cluster-data-recovery-policy>"
                 + "    <auto-remove-stale-data>false</auto-remove-stale-data>"
+                + "    <store-metadata>true</store-metadata>"
                 + "</hot-restart-persistence>\n"
                 + HAZELCAST_END_TAG;
 
@@ -2887,6 +2888,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(dataLoadTimeout, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
         assertFalse(hotRestartPersistenceConfig.isAutoRemoveStaleData());
+        assertTrue(hotRestartPersistenceConfig.isStoreMetadata());
     }
 
     @Override

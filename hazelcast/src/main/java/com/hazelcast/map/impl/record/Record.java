@@ -19,11 +19,25 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Metadata;
 
+import static com.hazelcast.util.TimeUtil.zeroOutMs;
+
 /**
  * @param <V> the type of value which is in the Record
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface Record<V> {
+
+    /**
+     * Base time to be used for storing time values as diffs (int) rather than full blown epoch based vals (long)
+     * This allows for a space in seconds, of roughly 68 years.
+     *
+     * Reference value (1514764800000) - Monday, January 1, 2018 12:00:00 AM
+     *
+     * The fixed time in the past (instead of {@link System#currentTimeMillis()} prevents any
+     * time discrepancies among nodes, mis-translated as diffs of -1 ie. {@link Record#NOT_AVAILABLE} values.
+     * (see. https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
+     */
+    long EPOCH_TIME = zeroOutMs(1514764800000L);
 
     /**
      * If not a {@link com.hazelcast.map.impl.record.CachedDataRecord}.

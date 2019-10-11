@@ -303,6 +303,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String dataLoadTimeoutName = "data-load-timeout-seconds";
         String clusterDataRecoveryPolicyName = "cluster-data-recovery-policy";
         String autoRemoveStaleDataName = "auto-remove-stale-data";
+        String storeMetadataName = "store-metadata";
 
         for (Node n : childElements(hrRoot)) {
             String name = cleanNodeName(n);
@@ -322,6 +323,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                         .valueOf(upperCaseInternal(value)));
             } else if (autoRemoveStaleDataName.equals(name)) {
                 hrConfig.setAutoRemoveStaleData(getBooleanValue(value));
+            } else if (storeMetadataName.equals(name)) {
+                hrConfig.setStoreMetadata(getBooleanValue(value));
             }
         }
         config.setHotRestartPersistenceConfig(hrConfig);

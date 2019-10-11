@@ -34,7 +34,7 @@ abstract class AbstractRecordWithStats<V>
 
     @Override
     public final void onStore() {
-        lastStoredTime = stripBaseTime(Clock.currentTimeMillis());
+        lastStoredTime = Records.toSecondsSinceEpoch(Clock.currentTimeMillis());
     }
 
     @Override
@@ -53,14 +53,14 @@ abstract class AbstractRecordWithStats<V>
             return Long.MAX_VALUE;
         }
 
-        return recomputeWithBaseTime(expirationTime);
+        return Records.fromSecondsSinceEpoch(expirationTime);
     }
 
     @Override
     public void setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime == Long.MAX_VALUE
                 ? Integer.MAX_VALUE
-                : stripBaseTime(expirationTime);
+                : Records.toSecondsSinceEpoch(expirationTime);
     }
 
     @Override
@@ -69,12 +69,12 @@ abstract class AbstractRecordWithStats<V>
             return 0L;
         }
 
-        return recomputeWithBaseTime(lastStoredTime);
+        return Records.fromSecondsSinceEpoch(lastStoredTime);
     }
 
     @Override
     public void setLastStoredTime(long lastStoredTime) {
-        this.lastStoredTime = stripBaseTime(lastStoredTime);
+        this.lastStoredTime = Records.toSecondsSinceEpoch(lastStoredTime);
     }
 
     @Override
