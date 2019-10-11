@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.physical;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Projection.
@@ -31,23 +33,23 @@ public class ProjectPhysicalNode implements PhysicalNode {
     private PhysicalNode upstream;
 
     /** Projections. */
-    private List<Expression> projections;
+    private List<Expression> projects;
 
     public ProjectPhysicalNode() {
         // No-op.
     }
 
-    public ProjectPhysicalNode(PhysicalNode upstream, List<Expression> projections) {
+    public ProjectPhysicalNode(PhysicalNode upstream, List<Expression> projects) {
         this.upstream = upstream;
-        this.projections = projections;
+        this.projects = projects;
     }
 
     public PhysicalNode getUpstream() {
         return upstream;
     }
 
-    public List<Expression> getProjections() {
-        return projections;
+    public List<Expression> getProjects() {
+        return projects;
     }
 
     @Override
@@ -60,12 +62,37 @@ public class ProjectPhysicalNode implements PhysicalNode {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(upstream);
-        out.writeObject(projections);
+        SerializationUtil.writeList(projects, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         upstream = in.readObject();
-        projections = in.readObject();
+        projects = SerializationUtil.readList(in);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(upstream, projects);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ProjectPhysicalNode that = (ProjectPhysicalNode) o;
+
+        return upstream.equals(that.upstream) && projects.equals(that.projects);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{projects=" + projects + ", upstream=" + upstream + '}';
     }
 }

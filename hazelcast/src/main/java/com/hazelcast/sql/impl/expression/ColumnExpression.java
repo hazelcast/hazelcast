@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Column access expression.
@@ -70,5 +71,30 @@ public class ColumnExpression<T> implements Expression<T> {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         idx = in.readInt();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(idx);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ColumnExpression<?> that = (ColumnExpression<?>) o;
+
+        return idx == that.idx;
+    }
+
+    @Override
+    public String toString() {
+        return "ColumnExpression{idx=" + idx + '}';
     }
 }

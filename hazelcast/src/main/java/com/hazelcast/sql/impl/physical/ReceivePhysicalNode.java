@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Physical node which receives from remote stripes.
@@ -53,5 +54,30 @@ public class ReceivePhysicalNode implements PhysicalNode {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(edgeId);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ReceivePhysicalNode that = (ReceivePhysicalNode) o;
+
+        return edgeId == that.edgeId;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{edgeId=" + edgeId + '}';
     }
 }

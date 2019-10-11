@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.physical;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -31,8 +32,11 @@ public abstract class AbstractMapScanPhysicalNode implements PhysicalNode {
     /** Map name. */
     private String mapName;
 
-    /** Projections. */
-    private List<Expression> projections;
+    /** Field names. */
+    private List<String> fieldNames;
+
+    /** Projects. */
+    private List<Integer> projects;
 
     /** Filter. */
     private Expression<Boolean> filter;
@@ -41,9 +45,15 @@ public abstract class AbstractMapScanPhysicalNode implements PhysicalNode {
         // No-op.
     }
 
-    protected AbstractMapScanPhysicalNode(String mapName, List<Expression> projections, Expression<Boolean> filter) {
+    protected AbstractMapScanPhysicalNode(
+        String mapName,
+        List<String> fieldNames,
+        List<Integer> projects,
+        Expression<Boolean> filter
+    ) {
         this.mapName = mapName;
-        this.projections = projections;
+        this.fieldNames = fieldNames;
+        this.projects = projects;
         this.filter = filter;
     }
 
@@ -51,8 +61,12 @@ public abstract class AbstractMapScanPhysicalNode implements PhysicalNode {
         return mapName;
     }
 
-    public List<Expression> getProjections() {
-        return projections;
+    public List<String> getFieldNames() {
+        return fieldNames;
+    }
+
+    public List<Integer> getProjects() {
+        return projects;
     }
 
     public Expression<Boolean> getFilter() {
@@ -62,15 +76,22 @@ public abstract class AbstractMapScanPhysicalNode implements PhysicalNode {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        out.writeObject(projections);
+        SerializationUtil.writeList(fieldNames, out);
+        SerializationUtil.writeList(projects, out);
         out.writeObject(filter);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        projections = in.readObject();
+        fieldNames = SerializationUtil.readList(in);
+        projects = SerializationUtil.readList(in);
         filter = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mapName, fieldNames, projects, filter);
     }
 
     @Override
@@ -86,18 +107,14 @@ public abstract class AbstractMapScanPhysicalNode implements PhysicalNode {
         AbstractMapScanPhysicalNode that = (AbstractMapScanPhysicalNode) o;
 
         return mapName.equals(that.mapName)
-            && Objects.equals(projections, that.projections)
+            && fieldNames.equals(that.fieldNames)
+            && projects.equals(that.projects)
             && Objects.equals(filter, that.filter);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(mapName, projections, filter);
-    }
-
-    @Override
     public String toString() {
-        return getClass().getSimpleName() + "{mapName=" + mapName + ", projections=" + projections
-            + ", filter=" + filter + '}';
+        return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldNames=" + fieldNames
+            + ", projects=" + projects + ", filter=" + filter + '}';
     }
 }

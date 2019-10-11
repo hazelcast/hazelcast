@@ -16,13 +16,14 @@
 
 package com.hazelcast.sql.impl.physical;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Collocated aggregation.
@@ -37,7 +38,7 @@ public class CollocatedAggregatePhysicalNode implements PhysicalNode {
     /** Accumulators. */
     private List<AggregateExpression> accumulators;
 
-    /** Whether group key is already soreted, and hence blocking behavior is not needed. */
+    /** Whether group key is already sorted, and hence blocking behavior is not needed. */
     private boolean sorted;
 
     public CollocatedAggregatePhysicalNode() {
@@ -83,13 +84,7 @@ public class CollocatedAggregatePhysicalNode implements PhysicalNode {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(upstream);
         out.writeInt(groupKeySize);
-
-        out.writeInt(accumulators.size());
-
-        for (AggregateExpression accumulator : accumulators) {
-            out.writeObject(accumulator);
-        }
-
+        SerializationUtil.writeList(accumulators, out);
         out.writeBoolean(sorted);
     }
 
@@ -97,15 +92,34 @@ public class CollocatedAggregatePhysicalNode implements PhysicalNode {
     public void readData(ObjectDataInput in) throws IOException {
         upstream = in.readObject();
         groupKeySize = in.readInt();
+        accumulators = SerializationUtil.readList(in);
+        sorted = in.readBoolean();
+    }
 
-        int accumulatorsCount = in.readInt();
+    @Override
+    public int hashCode() {
+        return Objects.hash(upstream, groupKeySize, accumulators, sorted);
+    }
 
-        accumulators = new ArrayList<>(accumulatorsCount);
-
-        for (int i = 0; i < accumulatorsCount; i++) {
-            accumulators.add(in.readObject());
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
 
-        sorted = in.readBoolean();
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CollocatedAggregatePhysicalNode that = (CollocatedAggregatePhysicalNode) o;
+
+        return groupKeySize == that.groupKeySize && sorted == that.sorted && upstream.equals(that.upstream)
+            && accumulators.equals(that.accumulators);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{accumulators=" + accumulators + ", groupKeySize=" + groupKeySize
+            + ", sorted=" + sorted + ", upstream=" + upstream + '}';
     }
 }

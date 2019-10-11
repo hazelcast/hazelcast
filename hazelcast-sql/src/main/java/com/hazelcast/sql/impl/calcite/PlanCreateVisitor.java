@@ -38,8 +38,7 @@ package com.hazelcast.sql.impl.calcite;
  import com.hazelcast.sql.impl.expression.ColumnExpression;
  import com.hazelcast.sql.impl.expression.ConstantExpression;
  import com.hazelcast.sql.impl.expression.Expression;
- import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
- import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
+  import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
  import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
  import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
  import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
@@ -149,34 +148,24 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
-        String mapName = rel.getMapName();
-
-        List<String> fieldNames = rel.getRowType().getFieldNames();
-
-        List<Expression> projection = new ArrayList<>();
-
-        for (String fieldName : fieldNames) {
-            projection.add(new KeyValueExtractorExpression(fieldName));
-        }
-
-        MapScanPhysicalNode mapScanNode = new MapScanPhysicalNode(mapName, projection, null);
+        MapScanPhysicalNode mapScanNode = new MapScanPhysicalNode(
+            rel.getMapName(),
+            rel.getTable().getRowType().getFieldNames(),
+            rel.getProjects(),
+            convertFilter(rel.getFilter())
+        );
 
         pushUpstream(mapScanNode);
     }
 
     @Override
     public void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel) {
-        String mapName = rel.getMapName();
-
-        List<String> fieldNames = rel.getRowType().getFieldNames();
-
-        List<Expression> projection = new ArrayList<>();
-
-        for (String fieldName : fieldNames) {
-            projection.add(new KeyValueExtractorExpression(fieldName));
-        }
-
-        ReplicatedMapScanPhysicalNode mapScanNode = new ReplicatedMapScanPhysicalNode(mapName, projection, null);
+        ReplicatedMapScanPhysicalNode mapScanNode = new ReplicatedMapScanPhysicalNode(
+            rel.getMapName(),
+            rel.getTable().getRowType().getFieldNames(),
+            rel.getProjects(),
+            convertFilter(rel.getFilter())
+        );
 
         pushUpstream(mapScanNode);
     }
@@ -285,15 +274,13 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         pushUpstream(projectNode);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onFilter(FilterPhysicalRel rel) {
         PhysicalNode upstreamNode = pollSingleUpstream();
 
-        RexNode condition = rel.getCondition();
-        Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
+        Expression<Boolean> filter = convertFilter(rel.getCondition());
 
-        FilterPhysicalNode filterNode = new FilterPhysicalNode(upstreamNode, (Expression<Boolean>) convertedCondition);
+        FilterPhysicalNode filterNode = new FilterPhysicalNode(upstreamNode, filter);
 
         pushUpstream(filterNode);
     }
@@ -414,4 +401,15 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         currentOutboundEdge = edgeId;
     }
+
+     @SuppressWarnings("unchecked")
+     private static Expression<Boolean> convertFilter(RexNode expression) {
+        if (expression == null) {
+            return null;
+        }
+
+         Expression convertedExpression = expression.accept(ExpressionConverterRexVisitor.INSTANCE);
+
+         return (Expression<Boolean>) convertedExpression;
+     }
 }

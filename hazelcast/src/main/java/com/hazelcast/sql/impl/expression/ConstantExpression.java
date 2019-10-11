@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Constant expression.
@@ -70,5 +71,30 @@ public class ConstantExpression<T> implements Expression<T> {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         val = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(val);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ConstantExpression<?> that = (ConstantExpression<?>) o;
+
+        return Objects.equals(val, that.val);
+    }
+
+    @Override
+    public String toString() {
+        return "ConstantExpression{val=" + val + '}';
     }
 }

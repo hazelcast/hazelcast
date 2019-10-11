@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Filter node.
@@ -30,23 +31,25 @@ public class FilterPhysicalNode implements PhysicalNode {
     private PhysicalNode upstream;
 
     /** Condition. */
-    private Expression<Boolean> condition;
+    private Expression<Boolean> filter;
 
     public FilterPhysicalNode() {
         // No-op.
     }
 
-    public FilterPhysicalNode(PhysicalNode upstream, Expression<Boolean> condition) {
+    public FilterPhysicalNode(PhysicalNode upstream, Expression<Boolean> filter) {
+        assert filter != null;
+
         this.upstream = upstream;
-        this.condition = condition;
+        this.filter = filter;
     }
 
     public PhysicalNode getUpstream() {
         return upstream;
     }
 
-    public Expression<Boolean> getCondition() {
-        return condition;
+    public Expression<Boolean> getFilter() {
+        return filter;
     }
 
     @Override
@@ -59,12 +62,37 @@ public class FilterPhysicalNode implements PhysicalNode {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(upstream);
-        out.writeObject(condition);
+        out.writeObject(filter);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         upstream = in.readObject();
-        condition = in.readObject();
+        filter = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(upstream, filter);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        FilterPhysicalNode that = (FilterPhysicalNode) o;
+
+        return upstream.equals(that.upstream) && filter.equals(that.filter);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{filter=" + filter + ", upstream=" + upstream + '}';
     }
 }

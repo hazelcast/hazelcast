@@ -59,6 +59,11 @@ public class RootPhysicalNode implements PhysicalNode {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(upstream);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -74,12 +79,7 @@ public class RootPhysicalNode implements PhysicalNode {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(upstream);
-    }
-
-    @Override
     public String toString() {
-        return "RootPhysicalNode{upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{upstream=" + upstream + '}';
     }
 }

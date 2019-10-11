@@ -66,7 +66,8 @@ public final class MapScanPhysicalRule extends RelOptRule {
                 scan.getCluster(),
                 RuleUtils.toPhysicalConvention(scan.getTraitSet(), PhysicalDistributionTrait.REPLICATED),
                 table,
-                scan.deriveRowType()
+                scan.getProjects(),
+                scan.getFilter()
             );
         } else {
             PhysicalDistributionTrait distributionTrait = getDistributionTrait(hazelcastTable);
@@ -75,7 +76,8 @@ public final class MapScanPhysicalRule extends RelOptRule {
                 scan.getCluster(),
                 RuleUtils.toPhysicalConvention(scan.getTraitSet(), distributionTrait),
                 table,
-                scan.deriveRowType()
+                scan.getProjects(),
+                scan.getFilter()
             );
         }
 

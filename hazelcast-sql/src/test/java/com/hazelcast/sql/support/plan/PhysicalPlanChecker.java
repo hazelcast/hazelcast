@@ -18,6 +18,7 @@ package com.hazelcast.sql.support.plan;
 
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
+import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
@@ -55,16 +56,19 @@ public class PhysicalPlanChecker {
             // No-op.
         }
 
-        public Builder addReplicatedMapScan(String mapName) {
-            return addReplicatedMapScan(mapName, null, null);
+        public Builder addMapScan(String mapName, List<String> fieldNames, List<Integer> projects,
+            Expression<Boolean> filter) {
+            MapScanPhysicalNode node = new MapScanPhysicalNode(mapName, fieldNames, projects, filter);
+
+            stack.push(node);
+
+            return this;
         }
 
-        public Builder addReplicatedMapScan(String mapName, List<Expression> projections) {
-            return addReplicatedMapScan(mapName, projections, null);
-        }
-
-        public Builder addReplicatedMapScan(String mapName, List<Expression> projections, Expression<Boolean> filter) {
-            ReplicatedMapScanPhysicalNode node = new ReplicatedMapScanPhysicalNode(mapName, projections, filter);
+        public Builder addReplicatedMapScan(String mapName, List<String> fieldNames, List<Integer> projects,
+            Expression<Boolean> filter) {
+            ReplicatedMapScanPhysicalNode node = new
+                ReplicatedMapScanPhysicalNode(mapName, fieldNames, projects, filter);
 
             stack.push(node);
 

@@ -82,7 +82,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
             assertFragment(
                 plan.getFragments().get(0),
                 PhysicalPlanChecker.newBuilder()
-                    .addReplicatedMapScan(ModelGenerator.CITY, expressions(keyValueExtractorExpression("name")), null)
+                    .addReplicatedMapScan(ModelGenerator.CITY, asList("name"), asList(0), null)
                     .addRoot()
                     .build()
             );
@@ -119,7 +119,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
             assertFragment(
                 plan.getFragments().get(0),
                 PhysicalPlanChecker.newBuilder()
-                    .addReplicatedMapScan(ModelGenerator.CITY, expressions(keyValueExtractorExpression("name")), null)
+                    .addReplicatedMapScan(ModelGenerator.CITY, asList("name"), asList(0), null)
                     .addRoot()
                     .build()
             );

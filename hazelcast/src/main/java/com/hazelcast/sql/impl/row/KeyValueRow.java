@@ -16,12 +16,26 @@
 
 package com.hazelcast.sql.impl.row;
 
+import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
+
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Key-value row. Appears during iteration over a data stored in map or it's index.
  */
 public class KeyValueRow implements Row {
+    /** Null-marker. */
+    private static final Object NULL = new Object();
+
     /** Extractor. */
     private final KeyValueRowExtractor extractor;
+
+    /** Field expressions. */
+    private final List<KeyValueExtractorExpression> fieldExpressions;
+
+    /** Cached objects. */
+    private final Object[] cache;
 
     /** Key. */
     private Object key;
@@ -29,23 +43,41 @@ public class KeyValueRow implements Row {
     /** Value. */
     private Object val;
 
-    public KeyValueRow(KeyValueRowExtractor extractor) {
+    public KeyValueRow(KeyValueRowExtractor extractor, List<KeyValueExtractorExpression> fieldExpressions) {
         this.extractor = extractor;
+        this.fieldExpressions = fieldExpressions;
+
+        cache = new Object[fieldExpressions.size()];
     }
 
     public void setKeyValue(Object key, Object val) {
         this.key = key;
         this.val = val;
+
+        Arrays.fill(cache, null);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T getColumn(int idx) {
-        throw new UnsupportedOperationException();
+        Object res = cache[idx];
+
+        if (res == null) {
+            KeyValueExtractorExpression fieldExpression = fieldExpressions.get(idx);
+
+            res = fieldExpression.eval(null, this);
+
+            cache[idx] = res != null ? res : NULL;
+        } else if (res == NULL) {
+            res = null;
+        }
+
+        return (T) res;
     }
 
     @Override
     public int getColumnCount() {
-        throw new UnsupportedOperationException();
+        return fieldExpressions.size();
     }
 
     /**

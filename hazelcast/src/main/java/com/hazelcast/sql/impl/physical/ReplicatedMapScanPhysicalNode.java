@@ -28,8 +28,13 @@ public class ReplicatedMapScanPhysicalNode extends AbstractMapScanPhysicalNode {
         // No-op.
     }
 
-    public ReplicatedMapScanPhysicalNode(String mapName, List<Expression> projections, Expression<Boolean> filter) {
-        super(mapName, projections, filter);
+    public ReplicatedMapScanPhysicalNode(
+        String mapName,
+        List<String> fieldNames,
+        List<Integer> projects,
+        Expression<Boolean> filter
+    ) {
+        super(mapName, fieldNames, projects, filter);
     }
 
     @Override

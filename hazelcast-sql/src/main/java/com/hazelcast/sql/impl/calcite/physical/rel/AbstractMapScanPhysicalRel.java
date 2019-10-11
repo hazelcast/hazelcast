@@ -20,30 +20,62 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexNode;
+
+import java.util.List;
 
 /**
  * Base class for physical map scans.
  */
 public abstract class AbstractMapScanPhysicalRel extends TableScan implements PhysicalRel {
-    /** Row type. */
-    protected final RelDataType rowType;
+    /** Projection. */
+    protected final List<Integer> projects;
+
+    /** Filter. */
+    protected final RexNode filter;
 
     public AbstractMapScanPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelOptTable table,
-        RelDataType rowType
+        List<Integer> projects,
+        RexNode filter
     ) {
         super(cluster, traitSet, table);
 
-        this.rowType = rowType;
+        this.projects = projects;
+        this.filter = filter;
     }
 
     @Override
     public RelDataType deriveRowType() {
-        return rowType;
+        RelDataTypeFactory.Builder builder = getCluster().getTypeFactory().builder();
+        List<RelDataTypeField> fieldList = table.getRowType().getFieldList();
+
+        for (int project : projects) {
+            builder.add(fieldList.get(project));
+        }
+
+        return builder.build();
+    }
+
+    @Override public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+            .itemIf("projects", projects, !projects.isEmpty())
+            .itemIf("filter", filter, filter != null);
+    }
+
+    public List<Integer> getProjects() {
+        return projects;
+    }
+
+    public RexNode getFilter() {
+        return filter;
     }
 
     /**

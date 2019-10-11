@@ -42,7 +42,9 @@ public final class MapScanLogicalRule extends RelOptRule {
         MapScanLogicalRel newScan = new MapScanLogicalRel(
             scan.getCluster(),
             RuleUtils.toLogicalConvention(scan.getTraitSet()),
-            scan.getTable()
+            scan.getTable(),
+            scan.identity(),
+            null
         );
 
         call.transformTo(newScan);

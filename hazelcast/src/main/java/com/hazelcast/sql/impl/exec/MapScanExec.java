@@ -57,10 +57,11 @@ public class MapScanExec extends AbstractMapScanExec {
     public MapScanExec(
         MapProxyImpl map,
         PartitionIdSet parts,
-        List<Expression> projections,
+        List<String> fieldNames,
+        List<Integer> projects,
         Expression<Boolean> filter
     ) {
-        super(map.getName(), projections, filter);
+        super(map.getName(), fieldNames, projects, filter);
 
         this.map = map;
         this.parts = parts;

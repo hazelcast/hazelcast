@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Node which sends data to remote stripes.
@@ -76,5 +77,32 @@ public class SendPhysicalNode implements PhysicalNode {
         edgeId = in.readInt();
         upstream = in.readObject();
         partitionHasher = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(edgeId, upstream, partitionHasher);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SendPhysicalNode that = (SendPhysicalNode) o;
+
+        return edgeId == that.edgeId && upstream.equals(that.upstream)
+            && Objects.equals(partitionHasher, that.partitionHasher);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{edgeId=" + edgeId + ", partitionHasher=" + partitionHasher
+            + ", upstream=" + upstream + '}';
     }
 }

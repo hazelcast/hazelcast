@@ -16,28 +16,72 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexNode;
+
+import java.util.List;
 
 public class MapScanLogicalRel extends TableScan implements LogicalRel {
-    /** Row type of the given scan operator. May differ from the actual scan in case of project pushdown. */
-    private final RelDataType rowType;
+    /** Projection. */
+    private final List<Integer> projects;
 
-    public MapScanLogicalRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
-        this(cluster, traitSet, table, table.getRowType());
-    }
+    /** Filter. */
+    private final RexNode filter;
 
-    public MapScanLogicalRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, RelDataType rowType) {
+    public MapScanLogicalRel(
+        RelOptCluster cluster,
+        RelTraitSet traitSet,
+        RelOptTable table,
+        List<Integer> projects,
+        RexNode filter
+    ) {
         super(cluster, traitSet, table);
 
-        this.rowType = rowType;
+        this.projects = projects;
+        this.filter = filter;
+    }
+
+    @Override
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new MapScanLogicalRel(getCluster(), traitSet, table, projects, filter);
     }
 
     @Override
     public RelDataType deriveRowType() {
-        return rowType;
+        RelDataTypeFactory.Builder builder = getCluster().getTypeFactory().builder();
+        List<RelDataTypeField> fieldList = table.getRowType().getFieldList();
+
+        for (int project : projects) {
+            builder.add(fieldList.get(project));
+        }
+
+        return builder.build();
+    }
+
+    @Override public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+            .itemIf("projects", projects, !projects.isEmpty())
+            .itemIf("filter", filter, filter != null);
+    }
+
+    public List<Integer> getProjects() {
+        return projects;
+    }
+
+    public RexNode getFilter() {
+        return filter;
+    }
+
+    public static boolean isProjectableFilterable(TableScan scan) {
+        return scan.getTable().unwrap(HazelcastTable.class) != null;
     }
 }

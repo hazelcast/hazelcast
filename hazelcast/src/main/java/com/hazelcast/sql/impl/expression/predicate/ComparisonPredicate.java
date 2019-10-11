@@ -35,6 +35,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 
 /**
  * Comparison predicates: {@code =}, {@code <>}, {@code <}, {@code <=}, {@code >}, {@code >=}.
@@ -333,5 +334,30 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
         super.readData(in);
 
         operator = in.readInt();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(operator, operand1, operand2);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ComparisonPredicate that = (ComparisonPredicate) o;
+
+        return operator == that.operator && operand1.equals(that.operand1) && operand2.equals(that.operand2);
+    }
+
+    @Override
+    public String toString() {
+        return "ComparisonPredicate{operator=" + operator + ", operand1=" + operand1 + ", operand2=" + operand2 + '}';
     }
 }

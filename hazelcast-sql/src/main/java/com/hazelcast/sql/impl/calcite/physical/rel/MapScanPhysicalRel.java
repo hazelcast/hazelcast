@@ -20,7 +20,7 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
@@ -40,14 +40,15 @@ public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelOptTable table,
-        RelDataType rowType
+        List<Integer> projects,
+        RexNode filter
     ) {
-        super(cluster, traitSet, table, rowType);
+        super(cluster, traitSet, table, projects, filter);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new MapScanPhysicalRel(this.getCluster(), traitSet, this.getTable(), rowType);
+        return new MapScanPhysicalRel(getCluster(), traitSet, getTable(), projects, filter);
     }
 
     @Override

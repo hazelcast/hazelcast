@@ -23,10 +23,12 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.KeyValueRowExtractor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
@@ -39,8 +41,11 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
     /** Map name. */
     protected final String mapName;
 
-    /** Projection expressions. */
-    protected final List<Expression> projections;
+    /** Field names. */
+    protected final List<String> fieldNames;
+
+    /** Projects. */
+    protected final List<Integer> projects;
 
     /** Filter. */
     protected final Expression<Boolean> filter;
@@ -54,9 +59,15 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
     /** Row to get data with extractors. */
     private KeyValueRow keyValueRow;
 
-    protected AbstractMapScanExec(String mapName, List<Expression> projections, Expression<Boolean> filter) {
+    protected AbstractMapScanExec(
+        String mapName,
+        List<String> fieldNames,
+        List<Integer> projects,
+        Expression<Boolean> filter
+    ) {
         this.mapName = mapName;
-        this.projections = projections;
+        this.fieldNames = fieldNames;
+        this.projects = projects;
         this.filter = filter;
     }
 
@@ -65,7 +76,13 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
         serializationService = (InternalSerializationService) ctx.getNodeEngine().getSerializationService();
         extractors = createExtractors();
 
-        keyValueRow = new KeyValueRow(this);
+        List<KeyValueExtractorExpression> fieldExpressions = new ArrayList<>(fieldNames.size());
+
+        for (String fieldName : fieldNames) {
+            fieldExpressions.add(new KeyValueExtractorExpression(fieldName));
+        }
+
+        keyValueRow = new KeyValueRow(this, fieldExpressions);
     }
 
     @Override
@@ -115,12 +132,12 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
         }
 
         // Project.
-        HeapRow row = new HeapRow(projections.size());
+        HeapRow row = new HeapRow(projects.size());
 
-        for (int j = 0; j < projections.size(); j++) {
-            Object projectionRes = projections.get(j).eval(ctx, keyValueRow);
+        for (int j = 0; j < projects.size(); j++) {
+            Object projectRes = keyValueRow.getColumn(projects.get(j));
 
-            row.set(j, projectionRes);
+            row.set(j, projectRes);
         }
 
         return row;

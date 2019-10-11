@@ -27,13 +27,14 @@ import com.hazelcast.sql.HazelcastSqlTransientException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
+import com.hazelcast.sql.impl.calcite.logical.LogicalJoinRules;
+import com.hazelcast.sql.impl.calcite.logical.LogicalProjectFilterRules;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rule.AggregateLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.FilterLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.JoinLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.MapScanLogicalRule;
-import com.hazelcast.sql.impl.calcite.logical.rule.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.ProjectLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.SortLogicalRule;
 import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
@@ -63,7 +64,6 @@ import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.RelFactories;
-import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
@@ -233,15 +233,33 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private LogicalRel doOptimizeLogical(VolcanoPlanner planner, RelNode rel) {
         RuleSet rules = RuleSets.ofList(
-            ProjectFilterTransposeRule.INSTANCE,
-            ProjectIntoScanLogicalRule.INSTANCE,
+            // Join optimization rules.
+            LogicalJoinRules.FILTER_PULL_RULE,
+            LogicalJoinRules.CONDITION_PUSH_RULE,
+            LogicalJoinRules.EXPRESSIONS_PUSH_RULE,
 
+            // Filter and project rules.
+            LogicalProjectFilterRules.FILTER_MERGE_RULE,
+            LogicalProjectFilterRules.FILTER_PROJECT_TRANSPOSE_RULE,
+            LogicalProjectFilterRules.FILTER_INTO_SCAN_RULE,
+            // TODO: ProjectMergeRule: https://jira.apache.org/jira/browse/CALCITE-2223
+            LogicalProjectFilterRules.PROJECT_FILTER_TRANSPOSE_RULE,
+            LogicalProjectFilterRules.PROJECT_JOIN_TRANSPOSE_RULE,
+            LogicalProjectFilterRules.PROJECT_REMOVE_RULE,
+            LogicalProjectFilterRules.PROJECT_INTO_SCAN_RULE,
+
+
+            // TODO: Aggregate rules
+
+            // Convert Calcite node into Hazelcast nodes.
             MapScanLogicalRule.INSTANCE,
             FilterLogicalRule.INSTANCE,
             ProjectLogicalRule.INSTANCE,
             AggregateLogicalRule.INSTANCE,
             SortLogicalRule.INSTANCE,
             JoinLogicalRule.INSTANCE,
+
+            // TODO: Transitive closures
 
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );

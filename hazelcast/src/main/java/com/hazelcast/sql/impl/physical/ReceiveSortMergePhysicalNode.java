@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Physical node which receives from remote stripes and performs sort-merge.
@@ -75,5 +76,31 @@ public class ReceiveSortMergePhysicalNode implements PhysicalNode {
         edgeId = in.readInt();
         expressions = in.readObject();
         ascs = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(edgeId, expressions, ascs);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ReceiveSortMergePhysicalNode that = (ReceiveSortMergePhysicalNode) o;
+
+        return edgeId == that.edgeId && expressions.equals(that.expressions) && ascs.equals(that.ascs);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{edgeId=" + edgeId + ", expressions=" + expressions
+            + ", ascs=" + ascs + '}';
     }
 }

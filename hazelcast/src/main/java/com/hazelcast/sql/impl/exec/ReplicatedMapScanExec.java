@@ -45,8 +45,13 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
     /** Current row. */
     private Row currentRow;
 
-    public ReplicatedMapScanExec(String mapName, List<Expression> projections, Expression<Boolean> filter) {
-        super(mapName, projections, filter);
+    public ReplicatedMapScanExec(
+        String mapName,
+        List<String> fieldNames,
+        List<Integer> projects,
+        Expression<Boolean> filter
+    ) {
+        super(mapName, fieldNames, projects, filter);
     }
 
     @Override

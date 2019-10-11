@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Collocated join node.
@@ -32,7 +33,7 @@ public class CollocatedJoinPhysicalNode implements PhysicalNode {
     /** Right input. */
     private PhysicalNode right;
 
-    /** Condition. */
+    /** Join condition. */
     private Expression<Boolean> condition;
 
     public CollocatedJoinPhysicalNode() {
@@ -77,5 +78,30 @@ public class CollocatedJoinPhysicalNode implements PhysicalNode {
         left = in.readObject();
         right = in.readObject();
         condition = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(left, right, condition);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CollocatedJoinPhysicalNode that = (CollocatedJoinPhysicalNode) o;
+
+        return left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{condition=" + condition + ", left=" + left + ", right=" + right + '}';
     }
 }

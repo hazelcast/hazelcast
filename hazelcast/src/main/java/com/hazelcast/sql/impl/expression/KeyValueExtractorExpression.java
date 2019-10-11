@@ -31,6 +31,7 @@ import java.util.Objects;
  *
  * @param <T> Return type.
  */
+// TODO: This classshould not be an Expression. It should be inlined into KeyValueRow instead.
 public class KeyValueExtractorExpression<T> implements Expression<T> {
     /** Path for extractor. */
     private String path;

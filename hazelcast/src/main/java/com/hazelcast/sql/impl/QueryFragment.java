@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.physical.PhysicalNode;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Single query fragment. Represents a node to be executed, it's inbound and outbound edges, members where it is
@@ -64,5 +65,34 @@ public class QueryFragment {
 
     public QueryFragmentMapping getMapping() {
         return mapping;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueryFragment fragment = (QueryFragment) o;
+
+        return Objects.equals(node, fragment.node)
+            && Objects.equals(outboundEdge, fragment.outboundEdge)
+            && Objects.equals(inboundEdges, fragment.inboundEdges)
+            && mapping == fragment.mapping;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(node, outboundEdge, inboundEdges, mapping);
+    }
+
+    @Override
+    public String toString() {
+        return "QueryFragment{node=" + node + ", outboundEdge=" + outboundEdge + ", inboundEdges=" + inboundEdges
+            + ", mapping=" + mapping + '}';
     }
 }

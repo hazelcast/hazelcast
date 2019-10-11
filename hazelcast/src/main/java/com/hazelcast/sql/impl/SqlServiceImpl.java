@@ -81,7 +81,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
     @Override
     public SqlCursor query(String sql, Object... args) {
-        QueryPlan plan = optimizer.prepare(sql);
+        QueryPlan plan = getPlan(sql);
 
         List<Object> args0;
 
@@ -96,6 +96,10 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         QueryHandle handle = execute0(plan, args0);
 
         return new SqlCursorImpl(handle);
+    }
+
+    public QueryPlan getPlan(String sql) {
+        return optimizer.prepare(sql);
     }
 
     /**

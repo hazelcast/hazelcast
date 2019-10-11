@@ -20,60 +20,68 @@ import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.util.mapping.Mapping;
 import org.apache.calcite.util.mapping.Mappings;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public final class ProjectIntoScanLogicalRule extends RelOptRule {
-    public static final ProjectIntoScanLogicalRule INSTANCE = new ProjectIntoScanLogicalRule();
+public final class FilterIntoScanLogicalRule extends RelOptRule {
+    public static final FilterIntoScanLogicalRule INSTANCE = new FilterIntoScanLogicalRule();
 
-    private ProjectIntoScanLogicalRule() {
+    private FilterIntoScanLogicalRule() {
         super(
-            operand(Project.class,
+            operand(Filter.class,
                 operandJ(TableScan.class, null, MapScanLogicalRel::isProjectableFilterable, none())),
             RelFactories.LOGICAL_BUILDER,
-            ProjectIntoScanLogicalRule.class.getSimpleName()
+            FilterIntoScanLogicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        Project project = call.rel(0);
+        Filter filter = call.rel(0);
         TableScan scan = call.rel(1);
 
-        Mappings.TargetMapping mapping = project.getMapping();
-
-        if (mapping == null || Mappings.isIdentity(mapping)) {
-            return;
-        }
-
-        List<Integer> oldProjects;
-        RexNode filter;
+        List<Integer> projects;
+        RexNode oldFilter;
 
         if (scan instanceof MapScanLogicalRel) {
             MapScanLogicalRel scan0 = (MapScanLogicalRel) scan;
 
-            oldProjects = scan0.getProjects();
-            filter = scan0.getFilter();
-
+            projects =  scan0.getProjects();
+            oldFilter = scan0.getFilter();
         } else {
-            oldProjects = scan.identity();
-            filter = null;
+            projects = scan.identity();
+            oldFilter = null;
         }
 
-        List<Integer> newProjects = Mappings.apply((Mapping) mapping, oldProjects);
+        RelDataType rowType = scan.getRowType();
+
+        Mapping mapping = Mappings.target(projects, rowType.getFieldCount());
+
+        RexNode newFilter = RexUtil.apply(mapping, filter.getCondition());
+
+        if (oldFilter != null) {
+            List<RexNode> nodes = new ArrayList<>(2);
+            nodes.add(oldFilter);
+            nodes.add(newFilter);
+
+            newFilter = RexUtil.composeConjunction(scan.getCluster().getRexBuilder(), nodes, true);
+        }
 
         MapScanLogicalRel newScan = new MapScanLogicalRel(
             scan.getCluster(),
             RuleUtils.toLogicalConvention(scan.getTraitSet()),
             scan.getTable(),
-            newProjects,
-            filter
+            projects,
+            newFilter
         );
 
         call.transformTo(newScan);

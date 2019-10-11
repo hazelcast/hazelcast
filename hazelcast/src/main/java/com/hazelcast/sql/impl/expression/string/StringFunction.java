@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Family of string functions.
@@ -165,5 +166,30 @@ public class StringFunction<T> extends UniCallExpression<T> {
         super.readData(in);
 
         operator = in.readInt();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(operator, operand);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        StringFunction<?> that = (StringFunction<?>) o;
+
+        return operator == that.operator && operand.equals(that.operand);
+    }
+
+    @Override
+    public String toString() {
+        return "StringFunction{operator=" + operator + ", operand=" + operand + '}';
     }
 }

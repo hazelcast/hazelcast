@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 public class SortPhysicalNode implements PhysicalNode {
     /** Upstream node. */
@@ -74,5 +75,31 @@ public class SortPhysicalNode implements PhysicalNode {
         upstream = in.readObject();
         expressions = in.readObject();
         ascs = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(upstream, expressions, ascs);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SortPhysicalNode that = (SortPhysicalNode) o;
+
+        return upstream.equals(that.upstream) && expressions.equals(that.expressions) && ascs.equals(that.ascs);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{expressions=" + expressions + ", ascs=" + ascs
+            + ", upstream=" + upstream + '}';
     }
 }

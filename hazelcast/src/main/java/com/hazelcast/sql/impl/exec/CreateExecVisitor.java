@@ -200,7 +200,13 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
                 throw new HazelcastSqlException(-1, "IMap doesn't exist: " + mapName);
             }
 
-            res = new MapScanExec(map, localParts, node.getProjections(), node.getFilter());
+            res = new MapScanExec(
+                map,
+                localParts,
+                node.getFieldNames(),
+                node.getProjects(),
+                node.getFilter()
+            );
         }
 
         push(res);
@@ -208,7 +214,12 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
     @Override
     public void onReplicatedMapScanNode(ReplicatedMapScanPhysicalNode node) {
-        Exec res = new ReplicatedMapScanExec(node.getMapName(), node.getProjections(), node.getFilter());
+        Exec res = new ReplicatedMapScanExec(
+            node.getMapName(),
+            node.getFieldNames(),
+            node.getProjects(),
+            node.getFilter()
+        );
 
         push(res);
     }
@@ -222,14 +233,14 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
     @Override
     public void onProjectNode(ProjectPhysicalNode node) {
-        Exec res = new ProjectExec(pop(), node.getProjections());
+        Exec res = new ProjectExec(pop(), node.getProjects());
 
         push(res);
     }
 
     @Override
     public void onFilterNode(FilterPhysicalNode node) {
-        Exec res = new FilterExec(pop(), node.getCondition());
+        Exec res = new FilterExec(pop(), node.getFilter());
 
         push(res);
     }
