@@ -27,17 +27,40 @@ import com.hazelcast.core.DistributedObject;
 public interface RemoteService {
 
     /**
-     * Creates a distributed object.
+     * Creates a distributed object on the local member only (when {@code local} is
+     * {@code true}) or cluster-wide.
      *
      * @param objectName the name for the created distributed object
+     * @param local      when {@code true} then only perform required proxy creation
+     *                   actions on the local member, otherwise perform cluster-wide
+     *                   proxy creation.
      * @return the created distributed object
      */
-    DistributedObject createDistributedObject(String objectName);
+    DistributedObject createDistributedObject(String objectName, boolean local);
 
     /**
      * Destroys a distributed object.
      *
      * @param objectName the name of the distributed object to destroy
      */
-    void destroyDistributedObject(String objectName);
+    void destroyDistributedObject(String objectName, boolean local);
+
+    /**
+     * Creates a distributed object on the cluster.
+     *
+     * @param objectName the name for the created distributed object
+     * @return the created distributed object
+     */
+    default DistributedObject createDistributedObject(String objectName) {
+        return createDistributedObject(objectName, false);
+    }
+
+    /**
+     * Destroys a distributed object on the cluster.
+     *
+     * @param objectName the name of the distributed object to destroy
+     */
+    default void destroyDistributedObject(String objectName) {
+        destroyDistributedObject(objectName, false);
+    }
 }

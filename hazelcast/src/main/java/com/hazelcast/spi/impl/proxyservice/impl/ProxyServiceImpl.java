@@ -131,7 +131,7 @@ public class ProxyServiceImpl
         checkObjectNameNotNull(name);
 
         ProxyRegistry registry = getOrCreateRegistry(serviceName);
-        registry.createProxy(name, true, true);
+        registry.createProxy(name, true, true, false);
         createdCounter.inc();
     }
 
@@ -239,7 +239,7 @@ public class ProxyServiceImpl
             try {
                 final ProxyRegistry registry = getOrCreateRegistry(serviceName);
                 if (!registry.contains(eventPacket.getName())) {
-                    registry.createProxy(eventPacket.getName(), false, true);
+                    registry.createProxy(eventPacket.getName(), false, true, true);
                     // listeners will be called if proxy is created here.
                 }
             } catch (HazelcastInstanceNotActiveException ignored) {
@@ -248,7 +248,7 @@ public class ProxyServiceImpl
         } else {
             final ProxyRegistry registry = registries.get(serviceName);
             if (registry != null) {
-                registry.destroyProxy(eventPacket.getName(), false);
+                registry.destroyProxy(eventPacket.getName(), true);
             }
         }
     }

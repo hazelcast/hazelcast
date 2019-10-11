@@ -175,7 +175,7 @@ public final class ProxyRegistry {
             if (!proxyService.nodeEngine.isRunning()) {
                 throw new HazelcastInstanceNotActiveException();
             }
-            proxyFuture = createProxy(name, publishEvent, initialize);
+            proxyFuture = createProxy(name, publishEvent, initialize, false);
             if (proxyFuture == null) {
                 return getOrCreateProxyFuture(name, publishEvent, initialize);
             }
@@ -191,7 +191,8 @@ public final class ProxyRegistry {
      * @param initialize   true if he DistributedObject proxy object should be initialized.
      * @return The DistributedObject instance if it is created by this method, null otherwise.
      */
-    public DistributedObjectFuture createProxy(String name, boolean publishEvent, boolean initialize) {
+    public DistributedObjectFuture createProxy(String name, boolean publishEvent, boolean initialize,
+                                               boolean local) {
         if (proxies.containsKey(name)) {
             return null;
         }
@@ -205,14 +206,14 @@ public final class ProxyRegistry {
             return null;
         }
 
-        return doCreateProxy(name, publishEvent, initialize, proxyFuture);
+        return doCreateProxy(name, publishEvent, initialize, proxyFuture, local);
     }
 
     private DistributedObjectFuture doCreateProxy(String name, boolean publishEvent, boolean initialize,
-                                                  DistributedObjectFuture proxyFuture) {
+                                                  DistributedObjectFuture proxyFuture, boolean local) {
         DistributedObject proxy;
         try {
-            proxy = service.createDistributedObject(name);
+            proxy = service.createDistributedObject(name, local);
             if (initialize && proxy instanceof InitializingObject) {
                 try {
                     ((InitializingObject) proxy).initialize();

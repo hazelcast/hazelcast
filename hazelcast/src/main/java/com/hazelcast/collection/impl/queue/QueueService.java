@@ -257,7 +257,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public QueueProxyImpl createDistributedObject(String objectId) {
+    public QueueProxyImpl createDistributedObject(String objectId, boolean local) {
         QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(objectId);
         checkQueueConfig(queueConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
@@ -265,7 +265,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         QueueContainer container = containerMap.remove(name);
         if (container != null) {
             container.destroy();

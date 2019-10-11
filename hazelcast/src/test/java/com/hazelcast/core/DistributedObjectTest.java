@@ -185,12 +185,12 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         static final String NAME = "TestInitializingObjectService";
 
         @Override
-        public DistributedObject createDistributedObject(final String objectName) {
+        public DistributedObject createDistributedObject(final String objectName, boolean local) {
             return new TestInitializingObject(objectName);
         }
 
         @Override
-        public void destroyDistributedObject(final String objectName) {
+        public void destroyDistributedObject(final String objectName, boolean local) {
         }
     }
 
@@ -288,12 +288,12 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         static final String NAME = "FailingInitializingObjectService";
 
         @Override
-        public DistributedObject createDistributedObject(String objectName) {
+        public DistributedObject createDistributedObject(String objectName, boolean local) {
             throw new HazelcastException("Object creation is not allowed!");
         }
 
         @Override
-        public void destroyDistributedObject(final String objectName) {
+        public void destroyDistributedObject(final String objectName, boolean local) {
         }
     }
 }

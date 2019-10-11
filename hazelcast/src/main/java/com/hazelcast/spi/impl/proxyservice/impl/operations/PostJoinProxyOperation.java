@@ -124,7 +124,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         @Override
         public void run() {
             try {
-                registry.createProxy(proxyInfo.getObjectName(), false, true);
+                registry.createProxy(proxyInfo.getObjectName(), false, true, true);
             } catch (CacheNotExistsException e) {
                 // this can happen when a cache destroy event is received
                 // after the cache config is replicated during join (pre-join)

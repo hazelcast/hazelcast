@@ -115,12 +115,12 @@ public class CardinalityEstimatorService
     }
 
     @Override
-    public CardinalityEstimatorProxy createDistributedObject(String objectName) {
+    public CardinalityEstimatorProxy createDistributedObject(String objectName, boolean local) {
         return new CardinalityEstimatorProxy(objectName, nodeEngine, this);
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
+    public void destroyDistributedObject(String objectName, boolean local) {
         containers.remove(objectName);
         splitBrainProtectionConfigCache.remove(objectName);
     }

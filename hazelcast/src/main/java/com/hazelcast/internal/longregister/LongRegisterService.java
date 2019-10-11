@@ -75,12 +75,12 @@ public class LongRegisterService implements ManagedService, RemoteService, Migra
     }
 
     @Override
-    public LongRegisterProxy createDistributedObject(String name) {
+    public LongRegisterProxy createDistributedObject(String name, boolean local) {
         return new LongRegisterProxy(name, nodeEngine, this);
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         registers.remove(name);
     }
 
