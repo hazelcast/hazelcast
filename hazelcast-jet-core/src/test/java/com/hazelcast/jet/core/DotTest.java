@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.aggregate.AggregateOperations;
+import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -50,19 +51,21 @@ public class DotTest {
         Vertex d = dag.newVertex("d", noopP())
                       .localParallelism(1);
 
-        dag.edge(from(a, 0).to(c, 0).partitioned(wholeItem()));
+        dag.edge(from(a, 0).to(c, 0)
+                           .partitioned(wholeItem())
+                           .setConfig(new EdgeConfig().setQueueSize(128)));
         dag.edge(from(a, 1).to(b, 0).broadcast().distributed());
 
         String actual = dag.toDotString();
         System.out.println(actual);
         // contains multiple subgraphs, order isn't stable, we'll assert individual lines and the length
         assertTrue(actual.startsWith("digraph DAG {"));
-        assertTrue(actual.contains("\"a\" [tooltip=\"local-parallelism=1\"];"));
-        assertTrue(actual.contains("\"b\" [tooltip=\"local-parallelism=default\"];"));
-        assertTrue(actual.contains("\"c\" [tooltip=\"local-parallelism=1\"];"));
-        assertTrue(actual.contains("\"d\" [tooltip=\"local-parallelism=1\"];"));
-        assertTrue(actual.contains("\"a\" -> \"c\" [label=\"partitioned\", taillabel=0];"));
-        assertTrue(actual.contains("\"a\" -> \"b\" [label=\"distributed-broadcast\", taillabel=1]"));
+        assertTrue(actual.contains("\"a\" [localParallelism=1];"));
+        assertTrue(actual.contains("\"b\" [localParallelism=default];"));
+        assertTrue(actual.contains("\"c\" [localParallelism=1];"));
+        assertTrue(actual.contains("\"d\" [localParallelism=1];"));
+        assertTrue(actual.contains("\"a\" -> \"c\" [label=\"partitioned\", taillabel=0, queueSize=128];"));
+        assertTrue(actual.contains("\"a\" -> \"b\" [label=\"distributed-broadcast\", taillabel=1, queueSize=1024]"));
         assertTrue(actual.endsWith("\n}"));
     }
 
@@ -102,22 +105,22 @@ public class DotTest {
         assertTrue(actualDag.startsWith("digraph DAG {"));
 
         assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
-                + "\" [label=\"partitioned\", taillabel=0];"));
-        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"filter\" [taillabel=2];"));
+                + "\" [label=\"partitioned\", taillabel=0, queueSize=1024];"));
+        assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"filter\" [taillabel=2, queueSize=1024];"));
         assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToSet" + FIRST_STAGE_VERTEX_NAME_SUFFIX
-                + "\" [label=\"partitioned\", taillabel=1];"));
+                + "\" [label=\"partitioned\", taillabel=1, queueSize=1024];"));
         assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n" +
                 "\t\t\"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
-                        + "\" -> \"aggregateToCount\" \\[label=\"distributed-partitioned\"];\n" +
+                        + "\" -> \"aggregateToCount\" \\[label=\"distributed-partitioned\", queueSize=1024];\n" +
                 "\t}"));
 
-        assertTrue(regexContains(actualDag, "\"aggregateToCount\" -> \"loggerSink(-[23])?\";"));
+        assertTrue(regexContains(actualDag, "\"aggregateToCount\" -> \"loggerSink(-[23])?\" \\[queueSize=1024\\];"));
         assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n" +
                 "\t\t\"aggregateToSet" + FIRST_STAGE_VERTEX_NAME_SUFFIX + "\" -> \"aggregateToSet\" "
-                        + "\\[label=\"distributed-partitioned\"];\n" +
+                        + "\\[label=\"distributed-partitioned\", queueSize=1024\\];\n" +
                 "\t}"));
-        assertTrue(regexContains(actualDag, "\"aggregateToSet\" -> \"loggerSink(-[23])?\";"));
-        assertTrue(regexContains(actualDag, "\"filter\" -> \"loggerSink(-[23])?\";"));
+        assertTrue(regexContains(actualDag, "\"aggregateToSet\" -> \"loggerSink(-[23])?\" \\[queueSize=1024\\];"));
+        assertTrue(regexContains(actualDag, "\"filter\" -> \"loggerSink(-[23])?\" \\[queueSize=1024\\];"));
         assertTrue(actualDag.endsWith("\n}"));
     }
 
@@ -140,15 +143,16 @@ public class DotTest {
                 "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
                 "}", p.toDotString());
         assertEquals("digraph DAG {\n" +
-            "\t\"mapSource(source1\\\")\" [tooltip=\"local-parallelism=default\"];\n" +
-            "\t\"aggregateToCount-prepare\" [tooltip=\"local-parallelism=default\"];\n" +
-            "\t\"aggregateToCount\" [tooltip=\"local-parallelism=default\"];\n" +
-            "\t\"loggerSink\" [tooltip=\"local-parallelism=1\"];\n" +
-            "\t\"mapSource(source1\\\")\" -> \"aggregateToCount-prepare\" [label=\"partitioned\"];\n" +
+            "\t\"mapSource(source1\\\")\" [localParallelism=default];\n" +
+            "\t\"aggregateToCount-prepare\" [localParallelism=default];\n" +
+            "\t\"aggregateToCount\" [localParallelism=default];\n" +
+            "\t\"loggerSink\" [localParallelism=1];\n" +
+            "\t\"mapSource(source1\\\")\" -> \"aggregateToCount-prepare\" [label=\"partitioned\", queueSize=1024];\n" +
             "\tsubgraph cluster_0 {\n" +
-            "\t\t\"aggregateToCount-prepare\" -> \"aggregateToCount\" [label=\"distributed-partitioned\"];\n" +
+            "\t\t\"aggregateToCount-prepare\" -> \"aggregateToCount\" " +
+                "[label=\"distributed-partitioned\", queueSize=1024];\n" +
             "\t}\n" +
-            "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
+            "\t\"aggregateToCount\" -> \"loggerSink\" [queueSize=1024];\n" +
             "}", p.toDag().toDotString());
     }
 }

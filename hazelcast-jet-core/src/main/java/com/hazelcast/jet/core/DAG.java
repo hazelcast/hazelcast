@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.nio.ObjectDataInput;
@@ -397,7 +398,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 : String.valueOf(localParallelism);
             builder.append("\t\"")
                    .append(escapeGraphviz(v.getName()))
-                   .append("\" [tooltip=\"local-parallelism=").append(parallelism).append("\"]")
+                   .append("\" [localParallelism=").append(parallelism).append("]")
                    .append(";\n");
         }
 
@@ -421,6 +422,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 if (inOutCounts.get(e.getSourceName())[0] > 1) {
                     attributes.add("taillabel=" + e.getSourceOrdinal());
                 }
+                int queueSize = e.getConfig() == null ? EdgeConfig.DEFAULT_QUEUE_SIZE :
+                        e.getConfig().getQueueSize();
+                attributes.add("queueSize=" + queueSize);
 
                 boolean inSubgraph = e.getSourceName().equals(e.getDestName() + FIRST_STAGE_VERTEX_NAME_SUFFIX);
                 if (inSubgraph) {
