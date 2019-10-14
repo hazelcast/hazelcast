@@ -395,6 +395,7 @@ public class NioThread extends Thread implements OperationHostileThread {
         selectorRebuildCount.inc();
         Selector newSelector = newSelector(logger);
         Selector oldSelector = this.selector;
+        int oldKeysReadyCount = 0;
 
         // reset each pipeline's selectionKey, cancel the old keys
         for (SelectionKey key : oldSelector.keys()) {
@@ -410,9 +411,15 @@ public class NioThread extends Thread implements OperationHostileThread {
                 // in this case, since the key is already cancelled, just do nothing
                 ignore(e);
             }
+            if (key.readyOps() != 0) {
+                oldKeysReadyCount++;
+            }
             key.cancel();
         }
 
+        if (logger.isFineEnabled() && oldKeysReadyCount > 0) {
+            logger.fine("While rebuilding selector, " + oldKeysReadyCount + " old selection keys were ready for selection.");
+        }
         // close the old selector and substitute with new one
         closeSelector();
         this.selector = newSelector;

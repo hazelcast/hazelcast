@@ -17,9 +17,11 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.nio.tcp.TcpIpConnection_AbstractBasicTest;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -27,6 +29,9 @@ import org.junit.runner.RunWith;
 @Category(QuickTest.class)
 public class SelectWithSelectorFix_TcpIpConnection_BasicTest
         extends TcpIpConnection_AbstractBasicTest {
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug-nio.xml");
 
     @Before
     public void setup() throws Exception {
