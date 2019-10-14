@@ -75,10 +75,7 @@ public class ManagementCenterService {
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
-                clientMessage -> {
-                    MCChangeClusterStateCodec.decodeResponse(clientMessage);
-                    return null;
-                }
+                clientMessage -> null
         );
     }
 
@@ -124,11 +121,7 @@ public class ManagementCenterService {
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
-                clientMessage -> {
-                    MCUpdateMapConfigCodec.decodeResponse(clientMessage);
-                    return null;
-                }
+                clientMessage -> null
         );
     }
-
 }
