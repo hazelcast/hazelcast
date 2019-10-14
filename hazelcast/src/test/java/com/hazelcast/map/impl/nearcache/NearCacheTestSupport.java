@@ -92,14 +92,13 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
 
     protected void assertNearCacheExpiration(final IMap<Integer, Integer> map, final int size, int expireSeconds) {
         final NearCacheStats statsBeforeExpiration = getNearCacheStatsCopy(map);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(format("we expected to have all map entries in the Near Cache or already expired (%s)",
-                        statsBeforeExpiration),
-                        statsBeforeExpiration.getOwnedEntryCount() + statsBeforeExpiration.getExpirations() >= size);
+        assertTrueEventually(() -> {
+            final NearCacheStats stats = getNearCacheStatsCopy(map);
+            assertTrue(format("we expected to have all map entries in the Near Cache or already expired (%s)",
+                        stats),
+                        stats.getOwnedEntryCount() + stats.getExpirations() >= size);
             }
-        });
+        );
 
         sleepSeconds(expireSeconds + 1);
 
