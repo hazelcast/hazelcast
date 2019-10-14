@@ -43,6 +43,7 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
         if (uuid != null) {
             clientUuid = uuid;
         }
+        clusterName = parameters.clusterName;
         credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
         clientSerializationVersion = parameters.serializationVersion;
         clientVersion = parameters.clientHazelcastVersion;

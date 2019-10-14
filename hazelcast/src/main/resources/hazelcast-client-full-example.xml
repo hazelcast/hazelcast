@@ -79,10 +79,10 @@
     </config-replacers>
 
     <!--
-        Specifies the client name. It's a name used for client authentication to the cluster and its value is
-        the same as cluster name by default.
+        Specifies the cluster name. It's send as part of the client authentication message to Hazelcast
+        member(s).
     -->
-    <client-name>dev</client-name>
+    <cluster-name>dev</cluster-name>
 
     <!--
         When Hazelcast instances are created, they are put in a global registry with their creation names.

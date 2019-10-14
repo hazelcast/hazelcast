@@ -2155,7 +2155,7 @@ hazelcast:
   #      defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
   #      "name" used to define the name of the attribute. The value of the property is defined in the body.
   #  * username-password
-  #      Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
+  #      Defines a static UsernamePasswordCredentials instance as the member's identity. It has mandatory
   #       "username" and "password" attributes.
   #  * token
   #      Defines a static TokenCredentials instance as the client's identity. It has a "value" and

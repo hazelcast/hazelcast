@@ -419,7 +419,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public String getClusterName() {
-        return instance.getClientConfig().getClientName();
+        return instance.getClientConfig().getClusterName();
     }
 
     @Override

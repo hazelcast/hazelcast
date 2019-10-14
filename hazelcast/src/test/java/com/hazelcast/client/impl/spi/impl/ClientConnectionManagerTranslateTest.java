@@ -64,7 +64,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
         final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         clientConnectionManager = new ClientConnectionManagerImpl(clientInstanceImpl);
-        ICredentialsFactory factory = new StaticCredentialsFactory(new UsernamePasswordCredentials("dev", ""));
+        ICredentialsFactory factory = new StaticCredentialsFactory(new UsernamePasswordCredentials(null, null));
         clientConnectionManager.start();
         ChannelInitializerProvider channelInitializerProvider = new ChannelInitializerProvider() {
 
@@ -73,7 +73,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
                 return clientInstanceImpl.getClientExtension().createChannelInitializer();
             }
         };
-        clientConnectionManager.beforeClusterSwitch(new CandidateClusterContext("client1", provider, null,
+        clientConnectionManager.beforeClusterSwitch(new CandidateClusterContext("dev", provider, null,
                 factory, null, channelInitializerProvider));
         clientConnectionManager.getOrConnect(new Address("127.0.0.1", 5701));
 

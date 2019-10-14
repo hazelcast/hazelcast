@@ -209,7 +209,7 @@ public class YamlClientConfigBuilderResolutionTest {
     @Test
     public void testResolveDefault() {
         ClientConfig config = new YamlClientConfigBuilder().build();
-        assertEquals("dev", config.getClientName());
+        assertEquals("dev", config.getClusterName());
     }
 
 }

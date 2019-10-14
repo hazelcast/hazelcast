@@ -27,17 +27,17 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
  */
 public class CandidateClusterContext {
 
-    private final String clientName;
+    private final String clusterName;
     private final AddressProvider addressProvider;
     private final DiscoveryService discoveryService;
     private final ICredentialsFactory credentialsFactory;
     private final SocketInterceptor socketInterceptor;
     private final ChannelInitializerProvider channelInitializerProvider;
 
-    public CandidateClusterContext(String clientName, AddressProvider addressProvider, DiscoveryService discoveryService,
+    public CandidateClusterContext(String clusterName, AddressProvider addressProvider, DiscoveryService discoveryService,
                                    ICredentialsFactory credentialsFactory, SocketInterceptor socketInterceptor,
                                    ChannelInitializerProvider channelInitializerProvider) {
-        this.clientName = clientName;
+        this.clusterName = clusterName;
         this.addressProvider = addressProvider;
         this.discoveryService = discoveryService;
         this.credentialsFactory = credentialsFactory;
@@ -69,8 +69,8 @@ public class CandidateClusterContext {
         return socketInterceptor;
     }
 
-    public String getClientName() {
-        return clientName;
+    public String getClusterName() {
+        return clusterName;
     }
 
     public ChannelInitializerProvider getChannelInitializerProvider() {

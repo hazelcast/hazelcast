@@ -238,11 +238,11 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "        </replacer>\n"
                 + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
                 + "    </config-replacers>\n"
-                + "    <client-name>${java.version} $ID{dev}</client-name>\n"
+                + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
                 + "    <instance-name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</instance-name>\n"
                 + HAZELCAST_CLIENT_END_TAG;
         ClientConfig config = buildConfig(xml, System.getProperties());
-        assertEquals(System.getProperty("java.version") + " dev", config.getClientName());
+        assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
         assertEquals("My very secret secret", config.getInstanceName());
     }
 
@@ -253,7 +253,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "    <config-replacers>\n"
                 + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'/>\n"
                 + "    </config-replacers>\n"
-                + "    <client-name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</client-name>\n"
+                + "    <cluster-name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</cluster-name>\n"
                 + HAZELCAST_CLIENT_END_TAG;
         buildConfig(xml, System.getProperties());
     }
@@ -272,10 +272,10 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "            </properties>\n"
                 + "        </replacer>\n"
                 + "    </config-replacers>\n"
-                + "    <client-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</client-name>\n"
+                + "    <cluster-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</cluster-name>\n"
                 + HAZELCAST_CLIENT_END_TAG;
         ClientConfig clientConfig = buildConfig(xml, System.getProperties());
-        assertEquals("a property  another property <test/> $T{p5}", clientConfig.getClientName());
+        assertEquals("a property  another property <test/> $T{p5}", clientConfig.getClusterName());
     }
 
 
@@ -289,10 +289,10 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Test
     public void testNoConfigReplacersMissingProperties() {
         String xml = HAZELCAST_CLIENT_START_TAG
-                + "    <client-name>${noSuchPropertyAvailable}</client-name>\n"
+                + "    <cluster-name>${noSuchPropertyAvailable}</cluster-name>\n"
                 + HAZELCAST_CLIENT_END_TAG;
         ClientConfig config = buildConfig(xml, System.getProperties());
-        assertEquals("${noSuchPropertyAvailable}", config.getClientName());
+        assertEquals("${noSuchPropertyAvailable}", config.getClusterName());
     }
 
     @Override
@@ -303,7 +303,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + HAZELCAST_CLIENT_END_TAG;
 
         ClientConfig config = buildConfig(xml);
-        assertEquals("cluster1", config.getClientName());
+        assertEquals("cluster1", config.getClusterName());
     }
 
     @Override

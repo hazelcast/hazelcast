@@ -373,7 +373,9 @@ public class ClusterJoinManager {
             }
             String endpoint = joinRequest.getAddress().getHost();
             try {
-                LoginContext loginContext = node.securityContext.createMemberLoginContext(credentials, connection);
+                String remoteClusterName = joinRequest.getConfigCheck().getClusterName();
+                LoginContext loginContext = node.securityContext.createMemberLoginContext(remoteClusterName, credentials,
+                        connection);
                 loginContext.login();
             } catch (LoginException e) {
                 throw new SecurityException(format("Authentication has failed for %s @%s, cause: %s",

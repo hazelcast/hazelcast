@@ -88,7 +88,7 @@ class ClientDiscoveryServiceBuilder {
             SocketInterceptor interceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
             ICredentialsFactory credentialsFactory = initCredentialsFactory(config);
             if (credentialsFactory == null) {
-                credentialsFactory = new StaticCredentialsFactory(new UsernamePasswordCredentials(config.getClientName(), ""));
+                credentialsFactory = new StaticCredentialsFactory(new UsernamePasswordCredentials(null, null));
             }
             credentialsFactory.configure(cs -> {
                 throw new UnsupportedCallbackException(cs[0]);
@@ -103,7 +103,7 @@ class ClientDiscoveryServiceBuilder {
 
             final SSLConfig sslConfig = networkConfig.getSSLConfig();
             final SocketOptions socketOptions = networkConfig.getSocketOptions();
-            contexts.add(new CandidateClusterContext(config.getClientName(), provider, discoveryService, credentialsFactory,
+            contexts.add(new CandidateClusterContext(config.getClusterName(), provider, discoveryService, credentialsFactory,
                     interceptor, qualifier -> clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
         return new ClientDiscoveryService(configsTryCount, contexts);

@@ -56,8 +56,10 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -84,6 +86,9 @@ import static org.mockito.Mockito.mock;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -360,14 +365,17 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     @Test
     public void testCredentials() {
-        final Config config = new Config();
+        Config config = new Config();
         config.setClusterName("foo");
         hazelcastFactory.newHazelcastInstance(config);
 
-        final ClientConfig clientConfig = new ClientConfig();
-        final ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName("foo");
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(0);
+        ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig();
         securityConfig.setCredentials(new MyCredentials());
-
+        // not null username/password credentials are not allowed when Security is disabled
+        expectedException.expect(IllegalStateException.class);
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
 

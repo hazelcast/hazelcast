@@ -44,20 +44,21 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() throws Exception {
+        String clientName = generateRandomString(1000);
         String username = generateRandomString(1000);
         String password = generateRandomString(1000);
         UUID uuid = UUID.randomUUID();
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);
-        String clientName = generateRandomString(1000);
+        String clusterName = generateRandomString(1000);
         UUID clusterId = UUID.randomUUID();
         LinkedList<String> labels = new LinkedList<>();
         for (int i = 0; i < 10; i++) {
             labels.add(generateRandomString(1000));
         }
 
-        clientMessage = ClientAuthenticationCodec.encodeRequest(username, password, uuid,
-                clientType, (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
+        clientMessage = ClientAuthenticationCodec.encodeRequest(clientName, username, password, uuid,
+                clientType, (byte) 1, clientSerializationVersion, clusterName, labels, 1, clusterId);
     }
 
     @Test
@@ -69,7 +70,7 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
     public void testGetSubFrames() {
         List<ClientMessage> fragments = getFragments(128, clientMessage);
         ClientMessage.ForwardFrameIterator originalIterator = clientMessage.frameIterator();
-        assertEquals(18, fragments.size());
+        assertEquals(19, fragments.size());
 
         assertFragments(fragments, originalIterator);
     }

@@ -26,14 +26,12 @@ import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
-import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -58,7 +56,6 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spring.security.DummyCredentialsFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.AfterClass;
@@ -132,9 +129,6 @@ public class TestClientApplicationContext {
     @Resource(name = "client14-reliable-topic")
     private HazelcastClientProxy hazelcastReliableTopic;
 
-    @Resource(name = "client15-credentials-factory")
-    private HazelcastClientProxy credentialsFactory;
-
     @Resource(name = "client16-name-and-labels")
     private HazelcastClientProxy namedClient;
 
@@ -202,10 +196,6 @@ public class TestClientApplicationContext {
         ClientConfig config = client.getClientConfig();
         assertEquals("13", config.getProperty("hazelcast.client.retry.count"));
         assertEquals(1000, config.getNetworkConfig().getConnectionTimeout());
-
-        ClientConfig config2 = client2.getClientConfig();
-
-        assertEquals(credentials, config2.getSecurityConfig().getCredentialsIdentityConfig().getCredentials());
 
         client.getMap("default").put("Q", "q");
         client2.getMap("default").put("X", "x");
@@ -432,13 +422,6 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testCredentialsFactory() {
-        ClientSecurityConfig securityConfig = credentialsFactory.getClientConfig().getSecurityConfig();
-        CredentialsFactoryConfig credentialsFactoryConfig = securityConfig.getCredentialsFactoryConfig();
-        assertTrue(credentialsFactoryConfig.getImplementation() instanceof DummyCredentialsFactory);
-    }
-
-    @Test
     public void testClientIcmpConfig() {
         ClientIcmpPingConfig icmpPingConfig = icmpPingTestClient.getClientConfig()
                 .getNetworkConfig().getClientIcmpPingConfig();
@@ -491,7 +474,7 @@ public class TestClientApplicationContext {
 
     @Test
     public void testInstanceNameConfig() {
-        assertEquals("clientName", namedClient.getName());
+        assertEquals("clusterName", namedClient.getName());
     }
 
     @Test

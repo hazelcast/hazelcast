@@ -58,7 +58,7 @@
 
     <hz:client-failover id="blueGreenClient" try-count="5" lazy-init="true">
         <hz:client>
-            <hz:client-name>${cluster.name}</hz:client-name>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:network>
                 <hz:member>127.0.0.1:5701</hz:member>
             </hz:network>
@@ -67,7 +67,7 @@
         </hz:client>
 
         <hz:client>
-            <hz:client-name>alternativeClusterName</hz:client-name>
+            <hz:cluster-name>alternativeClusterName</hz:cluster-name>
             <hz:network>
                 <hz:member>127.0.0.1:5702</hz:member>
             </hz:network>

@@ -101,7 +101,7 @@ public final class ClientConfigXmlGenerator {
 
         //InstanceName
         gen.node("instance-name", clientConfig.getInstanceName());
-        gen.node("client-name", clientConfig.getClientName());
+        gen.node("cluster-name", clientConfig.getClusterName());
         //attributes
         gen.appendLabels(clientConfig.getLabels());
         //Properties

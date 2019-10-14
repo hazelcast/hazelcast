@@ -127,7 +127,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         String instanceName = "ClientInstanceTest";
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClientName("cluster1");
+        clientConfig.setClusterName("cluster1");
         clientConfig.setInstanceName(instanceName);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
@@ -146,7 +146,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     @Test
     public void testGetPreConfiguredCache() {
         ClientConfig config = new ClientConfig();
-        config.setClientName("cluster1");
+        config.setClusterName("cluster1");
 
         for (int i = 0; i < 4; i++) {
             HazelcastInstance client = HazelcastClient.newHazelcastClient(config);

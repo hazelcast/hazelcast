@@ -55,8 +55,8 @@ public class TestSpringClientFailoverContext {
         ClientFailoverConfig failoverConfig = blueGreenClient.client.getFailoverConfig();
         List<ClientConfig> clientConfigs = failoverConfig.getClientConfigs();
         assertEquals(2, clientConfigs.size());
-        assertEquals("spring-cluster", clientConfigs.get(0).getClientName());
-        assertEquals("alternativeClusterName", clientConfigs.get(1).getClientName());
+        assertEquals("spring-cluster", clientConfigs.get(0).getClusterName());
+        assertEquals("alternativeClusterName", clientConfigs.get(1).getClusterName());
         assertEquals(5, failoverConfig.getTryCount());
         blueGreenClient.shutdown();
     }

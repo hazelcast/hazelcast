@@ -46,7 +46,7 @@
         </replacer>
     </config-replacers>
 
-    <client-name>dev</client-name>
+    <cluster-name>dev</cluster-name>
 
     <instance-name>CLIENT_NAME</instance-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>

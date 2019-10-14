@@ -103,6 +103,13 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         return equals(clusterName, found.clusterName);
     }
 
+    /**
+     * @return the clusterName
+     */
+    public String getClusterName() {
+        return clusterName;
+    }
+
     private void verifyApplicationValidationToken(ConfigCheck found) {
         String expectedValidationToken = properties.get(APPLICATION_VALIDATION_TOKEN.getName());
         String foundValidationToken = found.properties.get(APPLICATION_VALIDATION_TOKEN.getName());

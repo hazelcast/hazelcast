@@ -74,7 +74,7 @@ import static org.springframework.util.Assert.isTrue;
  * <b>Sample Spring XML for Hazelcast Client:</b>
  * <pre>{@code
  *   <hz:client id="client">
- *      <hz:client-name>${cluster.name}</hz:client-name>
+ *      <hz:cluster-name>${cluster.name}</hz:cluster-name>
  *      <hz:network
  *          connection-timeout="1000"
  *          redo-operation="true"
@@ -147,8 +147,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             handleClientAttributes(rootNode);
             for (Node node : childElements(rootNode)) {
                 String nodeName = cleanNodeName(node);
-                if ("client-name".equals(nodeName)) {
-                    configBuilder.addPropertyValue("clientName", getTextContent(node));
+                if ("cluster-name".equals(nodeName)) {
+                    configBuilder.addPropertyValue("clusterName", getTextContent(node));
                 } else if ("properties".equals(nodeName)) {
                     handleProperties(node, configBuilder);
                 } else if ("network".equals(nodeName)) {

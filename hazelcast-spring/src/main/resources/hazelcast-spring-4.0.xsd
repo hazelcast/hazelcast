@@ -1506,7 +1506,7 @@
                 <xs:choice minOccurs="0" maxOccurs="unbounded">
                     <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                    <xs:element name="client-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="cluster-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="labels" type="labels" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>

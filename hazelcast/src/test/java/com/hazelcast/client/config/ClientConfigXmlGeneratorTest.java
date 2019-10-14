@@ -87,10 +87,10 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         //escape xml value
         //escape xml attribute
         NearCacheConfig nearCacheConfig = new NearCacheConfig(toEscape);
-        clientConfig.setClientName(toEscape).addNearCacheConfig(nearCacheConfig);
+        clientConfig.setClusterName(toEscape).addNearCacheConfig(nearCacheConfig);
 
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(clientConfig.getClientName(), actual.getClientName());
+        assertEquals(clientConfig.getClusterName(), actual.getClusterName());
         assertEquals(toEscape, actual.getNearCacheConfig(toEscape).getName());
     }
 
@@ -121,9 +121,9 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void cluster() {
         String name = randomString();
-        clientConfig.setClientName(name);
+        clientConfig.setClusterName(name);
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(name, actual.getClientName());
+        assertEquals(name, actual.getClusterName());
     }
 
     @Test

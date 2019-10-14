@@ -93,7 +93,7 @@ public class ClientConfig {
      */
     private int executorPoolSize = -1;
     private String instanceName;
-    private String clientName = Config.DEFAULT_CLUSTER_NAME;
+    private String clusterName = Config.DEFAULT_CLUSTER_NAME;
     private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
     private final Map<String, NearCacheConfig> nearCacheConfigMap;
     private final Map<String, ClientReliableTopicConfig> reliableTopicConfigMap;
@@ -126,7 +126,7 @@ public class ClientConfig {
     public ClientConfig(ClientConfig config) {
         properties = new Properties();
         properties.putAll(config.properties);
-        clientName = config.clientName;
+        clusterName = config.clusterName;
         securityConfig = new ClientSecurityConfig(config.securityConfig);
         networkConfig = new ClientNetworkConfig(config.networkConfig);
         loadBalancer = config.loadBalancer;
@@ -733,20 +733,17 @@ public class ClientConfig {
     }
 
     /**
-     * Returns the client name. The name is used as a username in the client protocol authentication message by default. If full
-     * credential object is necessary for the client's authentication, then identity configuration within
-     * {@link ClientSecurityConfig} class should be used. The default authentication method on client protocol just compares
-     * provided {@code clientName} against the {@code clusterName} defined in the Hazelcast member's configuration.
+     * Returns the configured cluster name. The name is send as part of client authentication message and may be verified on the
+     * member.
      *
-     * @see #getSecurityConfig()
-     * @return the configured client name
+     * @return the configured cluster name
      */
-    public String getClientName() {
-        return clientName;
+    public String getClusterName() {
+        return clusterName;
     }
 
-    public ClientConfig setClientName(String clientName) {
-        this.clientName = clientName;
+    public ClientConfig setClusterName(String clusterName) {
+        this.clusterName = clusterName;
         return this;
     }
 
@@ -912,7 +909,7 @@ public class ClientConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(backupAckToClientEnabled, classLoader, clientName, configPatternMatcher, connectionStrategyConfig,
+        return Objects.hash(backupAckToClientEnabled, classLoader, clusterName, configPatternMatcher, connectionStrategyConfig,
                 executorPoolSize, flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
@@ -933,7 +930,7 @@ public class ClientConfig {
         }
         ClientConfig other = (ClientConfig) obj;
         return backupAckToClientEnabled == other.backupAckToClientEnabled && Objects.equals(classLoader, other.classLoader)
-                && Objects.equals(clientName, other.clientName)
+                && Objects.equals(clusterName, other.clusterName)
                 && Objects.equals(configPatternMatcher, other.configPatternMatcher)
                 && Objects.equals(connectionStrategyConfig, other.connectionStrategyConfig)
                 && executorPoolSize == other.executorPoolSize
@@ -957,7 +954,7 @@ public class ClientConfig {
     public String toString() {
         return "ClientConfig{"
                 + "properties=" + properties
-                + ", clientName=" + clientName
+                + ", clusterName=" + clusterName
                 + ", securityConfig=" + securityConfig
                 + ", networkConfig=" + networkConfig
                 + ", loadBalancer=" + loadBalancer

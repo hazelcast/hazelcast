@@ -20,7 +20,7 @@
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd">
 
-    <client-name>cluster1-foobar</client-name>
+    <cluster-name>cluster1-foobar</cluster-name>
 
     <network>
         <cluster-members>

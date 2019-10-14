@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,7 +41,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -81,7 +79,7 @@ public class ClientMessageProtectionTest {
     public void testLimitsRemovedAfterAValidAuthentication() throws IOException {
         Config config = smallInstanceConfig();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
-        ClientMessage clientMessage = createAuthenticationMessage(hz, createPassword(3));
+        ClientMessage clientMessage = createAuthenticationMessage(hz, createString(3));
 
         InetSocketAddress address = getNode(hz).getLocalMember().getSocketAddress(EndpointQualifier.CLIENT);
         try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
@@ -96,7 +94,7 @@ public class ClientMessageProtectionTest {
                 assertEquals(AuthenticationStatus.AUTHENTICATED, AuthenticationStatus.getById(authnResponse.status));
 
                 // the connection is now trusted, lets try bigger and fragmented messages
-                ClientMessage authenticationMessage = createAuthenticationMessage(hz, createPassword(1024));
+                ClientMessage authenticationMessage = createAuthenticationMessage(hz, createString(1024));
                 writeClientMessage(os, authenticationMessage);
                 respMessage = readResponse(is);
                 assertEquals(ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE, respMessage.getMessageType());
@@ -120,7 +118,7 @@ public class ClientMessageProtectionTest {
     public void testMessageFraming() throws IOException {
         Config config = smallInstanceConfig();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
-        ClientMessage clientMessage = createAuthenticationMessage(hz, createPassword(200));
+        ClientMessage clientMessage = createAuthenticationMessage(hz, createString(200));
         InetSocketAddress address = getNode(hz).getLocalMember().getSocketAddress(EndpointQualifier.CLIENT);
         try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
             socket.setSoTimeout(5000);
@@ -129,7 +127,7 @@ public class ClientMessageProtectionTest {
                 List<ClientMessage> subFrames = ClientMessageSplitter.getFragments(50, clientMessage);
                 assertTrue(subFrames.size() > 1);
                 writeClientMessage(os, subFrames.get(0));
-                expected.expect(SocketTimeoutException.class);
+                expected.expect(EOFException.class);
                 readResponse(is);
             }
         }
@@ -141,8 +139,8 @@ public class ClientMessageProtectionTest {
         int limit = 800;
         config.setProperty(GroupProperty.CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES.getName(), Integer.toString(limit));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
-        String password = createPassword(limit);
-        ClientMessage clientMessage = createAuthenticationMessage(hz, password);
+        String str = createString(limit);
+        ClientMessage clientMessage = createAuthenticationMessage(hz, str);
         InetSocketAddress address = getNode(hz).getLocalMember().getSocketAddress(EndpointQualifier.CLIENT);
         try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
             socket.setSoTimeout(5000);
@@ -180,15 +178,11 @@ public class ClientMessageProtectionTest {
         }
     }
 
-    private String createPassword(int pwdLength) {
-        return new String(new char[pwdLength]).replace('\0', 'a');
+    private String createString(int length) {
+        return new String(new char[length]).replace('\0', 'a');
     }
 
     @Test
-    @Ignore
-    /**
-     * Ignore until issue https://github.com/hazelcast/hazelcast/issues/15658 is resolved
-     */
     public void testAccumulatedMessageSizeOverflow() throws IOException {
         Config config = smallInstanceConfig();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -217,9 +211,9 @@ public class ClientMessageProtectionTest {
         }
     }
 
-    private ClientMessage createAuthenticationMessage(HazelcastInstance hz, String passwd) {
-        return ClientAuthenticationCodec.encodeRequest(hz.getConfig().getClusterName(), passwd, UUID.randomUUID(), "FOO",
-                (byte) 1, "abc", "xxx", new ArrayList<>(), -1, null);
+    private ClientMessage createAuthenticationMessage(HazelcastInstance hz, String clientName) {
+        return ClientAuthenticationCodec.encodeRequest(hz.getConfig().getClusterName(), null, null, UUID.randomUUID(), "FOO",
+                (byte) 1, clientName, "xxx", new ArrayList<>(), -1, null);
     }
 
     private ClientMessage readResponse(InputStream is) throws IOException, EOFException {
@@ -244,7 +238,7 @@ public class ClientMessageProtectionTest {
     private void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
         for (ClientMessage.ForwardFrameIterator it = clientMessage.frameIterator(); it.hasNext(); ) {
             ClientMessage.Frame frame = it.next();
-            os.write(frameAsBytes(frame, it.hasNext()));
+            os.write(frameAsBytes(frame, !it.hasNext()));
         }
         os.flush();
     }
@@ -255,7 +249,7 @@ public class ClientMessageProtectionTest {
         ByteBuffer buffer = ByteBuffer.allocateDirect(frameSize);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putInt(frameSize);
-        if (isLastFrame) {
+        if (!isLastFrame) {
             buffer.putShort((short) frame.flags);
         } else {
             buffer.putShort((short) (frame.flags | IS_FINAL_FLAG));

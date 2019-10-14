@@ -45,7 +45,7 @@ public class FailoverConfigTest {
     public void testAllClientConfigsAreHandledInMultipleClientConfigSupport() {
         Set<String> allClientConfigMethods = new HashSet<>();
         Collections.addAll(allClientConfigMethods, "setProperty", "getProperty", "getClassLoader", "getProperties",
-                "setProperties", "getLabels", "getClientName", "getSecurityConfig", "isSmartRouting", "setSmartRouting",
+                "setProperties", "getLabels", "getClusterName", "getSecurityConfig", "isSmartRouting", "setSmartRouting",
                 "getSocketInterceptorConfig", "setSocketInterceptorConfig", "getConnectionAttemptPeriod",
                 "setConnectionAttemptPeriod", "getConnectionAttemptLimit", "setConnectionAttemptLimit", "getConnectionTimeout",
                 "setConnectionTimeout", "addAddress", "setAddresses", "getAddresses", "isRedoOperation", "setRedoOperation",
@@ -54,7 +54,7 @@ public class FailoverConfigTest {
                 "addListenerConfig", "addProxyFactoryConfig", "getNearCacheConfig", "getNearCacheConfigMap",
                 "setNearCacheConfigMap", "getFlakeIdGeneratorConfigMap", "findFlakeIdGeneratorConfig",
                 "getFlakeIdGeneratorConfig", "addFlakeIdGeneratorConfig", "setFlakeIdGeneratorConfigMap",
-                "setReliableTopicConfigMap", "getReliableTopicConfigMap", "getCredentials", "setCredentials", "setClientName",
+                "setReliableTopicConfigMap", "getReliableTopicConfigMap", "getCredentials", "setCredentials", "setClusterName",
                 "getListenerConfigs", "setListenerConfigs", "getLoadBalancer", "setLoadBalancer", "setClassLoader",
                 "getManagedContext", "setManagedContext", "getExecutorPoolSize", "setExecutorPoolSize", "getProxyFactoryConfigs",
                 "setProxyFactoryConfigs", "getSerializationConfig", "setSerializationConfig", "getNativeMemoryConfig",
@@ -98,7 +98,7 @@ public class FailoverConfigTest {
     }
 
     @Test
-    public void testClientConfigWithSameClientName() {
+    public void testClientConfigWithSameClusterName() {
         ClientFailoverConfig clientFailoverConfig = new ClientFailoverConfig();
         clientFailoverConfig.addClientConfig(new ClientConfig());
         clientFailoverConfig.addClientConfig(new ClientConfig());
@@ -106,12 +106,12 @@ public class FailoverConfigTest {
     }
 
     @Test
-    public void testClientConfigWithDifferentClientName() {
+    public void testClientConfigWithDifferentClusterName() {
         ClientFailoverConfig clientFailoverConfig = new ClientFailoverConfig();
         clientFailoverConfig.addClientConfig(new ClientConfig());
 
         ClientConfig alternativeConfig = new ClientConfig();
-        alternativeConfig.setClientName("alternative");
+        alternativeConfig.setClusterName("alternative");
         clientFailoverConfig.addClientConfig(alternativeConfig);
 
         resolveClientFailoverConfig(clientFailoverConfig);
@@ -123,7 +123,7 @@ public class FailoverConfigTest {
         clientFailoverConfig.addClientConfig(new ClientConfig());
 
         ClientConfig alternativeConfig = new ClientConfig();
-        alternativeConfig.setClientName("alternative");
+        alternativeConfig.setClusterName("alternative");
         alternativeConfig.setProperty("newProperty", "newValue");
         clientFailoverConfig.addClientConfig(alternativeConfig);
 
@@ -136,7 +136,7 @@ public class FailoverConfigTest {
         clientFailoverConfig.addClientConfig(new ClientConfig());
 
         ClientConfig alternativeConfig = new ClientConfig();
-        alternativeConfig.setClientName("alternative");
+        alternativeConfig.setClusterName("alternative");
         CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig();
         credentialsFactoryConfig.setClassName("CustomCredentials");
         alternativeConfig.getSecurityConfig().setCredentialsFactoryConfig(credentialsFactoryConfig);
@@ -149,7 +149,7 @@ public class FailoverConfigTest {
     public void test_throwsException_whenFailoverConfigIsIntended_butPassedNull() {
         ClientFailoverConfig clientFailoverConfig = resolveClientFailoverConfig(null);
         assertEquals(1, clientFailoverConfig.getClientConfigs().size());
-        assertEquals("dev", clientFailoverConfig.getClientConfigs().get(0).getClientName());
+        assertEquals("dev", clientFailoverConfig.getClientConfigs().get(0).getClusterName());
     }
 
     @Test(expected = InvalidConfigurationException.class)

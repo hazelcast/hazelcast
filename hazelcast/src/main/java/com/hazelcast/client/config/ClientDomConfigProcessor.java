@@ -141,8 +141,8 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleLabels(node);
         } else if (BACKUP_ACK_TO_CLIENT.isEqual(nodeName)) {
             handleBackupAckToClient(node);
-        } else if ("client-name".equals(nodeName)) {
-            clientConfig.setClientName(getTextContent(node));
+        } else if ("cluster-name".equals(nodeName)) {
+            clientConfig.setClusterName(getTextContent(node));
         }
     }
 

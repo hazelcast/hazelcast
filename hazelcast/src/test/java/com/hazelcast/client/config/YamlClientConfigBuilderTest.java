@@ -103,7 +103,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     public void loadingThroughSystemProperty_existingFile() throws IOException {
         String yaml = ""
                 + "hazelcast-client:\n"
-                + "  client-name: foobar";
+                + "  cluster-name: foobar";
 
         File file = File.createTempFile("foo", ".yaml");
         file.deleteOnExit();
@@ -115,7 +115,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar", config.getClientName());
+        assertEquals("foobar", config.getClusterName());
     }
 
     @Override
@@ -132,7 +132,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar-yaml", config.getClientName());
+        assertEquals("foobar-yaml", config.getClusterName());
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory",
                 config.getNetworkConfig().getSSLConfig().getFactoryClassName());
         assertEquals(128, config.getNetworkConfig().getSocketOptions().getBufferSize());
