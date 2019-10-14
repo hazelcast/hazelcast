@@ -76,7 +76,7 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "changeClusterState";
     }
 
     @Override

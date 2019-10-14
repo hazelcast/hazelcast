@@ -95,7 +95,7 @@ public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<MCRead
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[] {parameters.uuid, parameters.fromSequence};
     }
 }
 

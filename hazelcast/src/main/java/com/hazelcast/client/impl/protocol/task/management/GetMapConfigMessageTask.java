@@ -103,7 +103,7 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
 
     @Override
     public String getMethodName() {
-        return null;
+        return "getMapConfig";
     }
 
     @Override

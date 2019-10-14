@@ -79,7 +79,7 @@ public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<Re
 
     @Override
     public String getMethodName() {
-        return null;
+        return "updateMapConfig";
     }
 
     @Override
