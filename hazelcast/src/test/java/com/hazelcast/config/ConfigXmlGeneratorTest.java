@@ -1675,18 +1675,17 @@ public class ConfigXmlGeneratorTest {
         return discoveryConfig;
     }
 
-    @SuppressWarnings("deprecation")
     private AwsConfig getDummyAwsConfig() {
-        return new AwsConfig().setHostHeader("dummyHost")
-                .setRegion("dummyRegion")
+        return new AwsConfig().setProperty("host-header", "dummyHost")
+                .setProperty("region", "dummyRegion")
                 .setEnabled(false)
-                .setConnectionTimeoutSeconds(1)
-                .setAccessKey("dummyKey")
-                .setIamRole("dummyIam")
-                .setSecretKey("dummySecretKey")
-                .setSecurityGroupName("dummyGroupName")
-                .setTagKey("dummyTagKey")
-                .setTagValue("dummyTagValue");
+                .setProperty("connection-timeout-seconds", "1")
+                .setProperty("access-key", "dummyKey")
+                .setProperty("iam-role", "dummyIam")
+                .setProperty("secret-key", "dummySecretKey")
+                .setProperty("security-group-name", "dummyGroupName")
+                .setProperty("tag-key", "dummyTagKey")
+                .setProperty("tag-value", "dummyTagValue");
     }
 
     private static Config getNewConfigViaXMLGenerator(Config config) {

@@ -800,14 +800,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     private void assertAwsConfig(AwsConfig aws) {
         assertFalse(aws.isEnabled());
-        assertEquals("sample-access-key", aws.getAccessKey());
-        assertEquals("sample-secret-key", aws.getSecretKey());
-        assertEquals("sample-region", aws.getRegion());
-        assertEquals("sample-header", aws.getHostHeader());
-        assertEquals("sample-group", aws.getSecurityGroupName());
-        assertEquals("sample-tag-key", aws.getTagKey());
-        assertEquals("sample-tag-value", aws.getTagValue());
-        assertEquals("sample-role", aws.getIamRole());
+        assertEquals("sample-access-key", aws.getProperty("access-key"));
+        assertEquals("sample-secret-key", aws.getProperty("secret-key"));
+        assertEquals("sample-region", aws.getProperty("region"));
+        assertEquals("sample-header", aws.getProperty("host-header"));
+        assertEquals("sample-group", aws.getProperty("security-group-name"));
+        assertEquals("sample-tag-key", aws.getProperty("tag-key"));
+        assertEquals("sample-tag-value", aws.getProperty("tag-value"));
+        assertEquals("sample-role", aws.getProperty("iam-role"));
     }
 
     private void assertGcpConfig(GcpConfig gcp) {
