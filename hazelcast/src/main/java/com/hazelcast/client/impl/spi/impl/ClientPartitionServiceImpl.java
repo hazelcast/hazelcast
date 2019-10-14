@@ -25,21 +25,25 @@ import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.internal.partition.PartitionTableView;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.NoDataMemberInClusterException;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionLostListener;
 
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
@@ -75,6 +79,24 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     public void start() {
         //scheduling left in place to support server versions before 3.9.
         clientExecutionService.scheduleWithRepetition(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        ClassLoader classLoader = client.getClientConfig().getClassLoader();
+        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
+        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
+            for (ListenerConfig listenerConfig : listenerConfigs) {
+                EventListener implementation = listenerConfig.getImplementation();
+                if (implementation == null) {
+                    try {
+                        implementation = ClassLoaderUtil.newInstance(classLoader, listenerConfig.getClassName());
+                    } catch (Exception e) {
+                        logger.severe(e);
+                    }
+                }
+
+                if (implementation instanceof PartitionLostListener) {
+                    client.getPartitionService().addPartitionLostListener((PartitionLostListener) implementation);
+                }
+            }
+        }
     }
 
     private static class PartitionTable {
