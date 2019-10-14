@@ -225,6 +225,20 @@ public final class ClientProperty {
     public static final HazelcastProperty FAIL_ON_INDETERMINATE_OPERATION_STATE
             = new HazelcastProperty("hazelcast.client.operation.fail.on.indeterminate.state", false);
 
+    /**
+     * Use to enable the client statistics collection.
+     * <p>
+     * The default is false.
+     */
+    public static final HazelcastProperty STATISTICS_ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled",
+            false);
+
+    /**
+     * The period in seconds the statistics run.
+     */
+    public static final HazelcastProperty STATISTICS_PERIOD_SECONDS = new HazelcastProperty(
+            "hazelcast.client.statistics.period.seconds", 3, SECONDS);
+
     private ClientProperty() {
     }
 }
