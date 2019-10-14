@@ -21,6 +21,7 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AcquirePermitsOp;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AvailablePermitsOp;
@@ -75,7 +76,12 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
         checkPositive(permits, "Permits must be positive!");
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, -1L);
-        invocationManager.invoke(groupId, op).joinInternal();
+        try {
+            invocationManager.invoke(groupId, op).joinInternal();
+        } catch (WaitKeyCancelledException e) {
+            throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
+                    + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+        }
     }
 
     @Override
@@ -99,7 +105,12 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         long timeoutMs = max(0, unit.toMillis(timeout));
         RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, timeoutMs);
-        return invocationManager.<Boolean>invoke(groupId, op).joinInternal();
+        try {
+            return invocationManager.<Boolean>invoke(groupId, op).joinInternal();
+        } catch (WaitKeyCancelledException e) {
+            throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
+                    + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+        }
     }
 
     @Override

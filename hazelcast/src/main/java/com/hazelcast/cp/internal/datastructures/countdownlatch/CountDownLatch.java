@@ -60,7 +60,9 @@ public class CountDownLatch extends BlockingResource<AwaitInvocationKey> impleme
      */
     BiTuple<Integer, Collection<AwaitInvocationKey>> countDown(UUID invocationUuid, int expectedRound) {
         if (expectedRound > round) {
-            throw new IllegalArgumentException("expected round: " + expectedRound + ", actual round: " + round);
+            throw new IllegalStateException("Could not could count down the latch because expected round: " + expectedRound
+                    + " is bigger than the actual round: " + round + ". This can happen when CP Subsystem is used in the unsafe "
+                    + "mode if data loss occurs after the count reaches to zero and the latch is reinitialized.");
         }
 
         if (expectedRound < round) {

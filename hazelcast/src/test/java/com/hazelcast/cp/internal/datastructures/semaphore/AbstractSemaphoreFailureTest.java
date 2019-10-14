@@ -83,7 +83,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         return sessionManagerService.getOrCreateUniqueThreadId(groupId);
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testRetriedAcquireDoesNotCancelPendingAcquireRequestWhenAlreadyAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -112,7 +112,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }, 10);
     }
 
-    @Test(timeout = 300000)
+    @Test(timeout = 300_000)
     public void testNewAcquireCancelsPendingAcquireRequestWhenAlreadyAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -143,7 +143,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
     }
 
-    @Test(timeout = 300000)
+    @Test(timeout = 300_000)
     public void testNewAcquireCancelsPendingAcquireRequestWhenNotAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -176,7 +176,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
     }
 
-    @Test(timeout = 300000)
+    @Test(timeout = 300_000)
     public void testTryAcquireWithTimeoutCancelsPendingAcquireRequestWhenAlreadyAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -207,7 +207,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
     }
 
-    @Test(timeout = 300000)
+    @Test(timeout = 300_000)
     public void testNewTryAcquireWithTimeoutCancelsPendingAcquireRequestWhenNotAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -240,7 +240,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
     }
 
-    @Test(timeout = 300000)
+    @Test(timeout = 300_000)
     public void testNewTryAcquireWithoutTimeoutCancelsPendingAcquireRequestWhenAlreadyAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -271,7 +271,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
     }
 
-    @Test(timeout = 300000)
+    @Test(timeout = 300_000)
     public void testNewTryAcquireWithoutTimeoutCancelsPendingAcquireRequestsWhenNotAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -304,7 +304,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
     }
 
-    @Test(timeout = 300000)
+    @Test(timeout = 300_000)
     public void testReleaseCancelsPendingAcquireRequestWhenPermitsAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -337,7 +337,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testReleaseCancelsPendingAcquireRequestWhenNoPermitsAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -362,7 +362,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
 
         try {
             semaphore.release();
-        } catch (IllegalArgumentException ignored) {
+        } catch (IllegalStateException ignored) {
         }
 
         try {
@@ -372,7 +372,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
     }
 
-    @Test(timeout = 300000)
+    @Test(timeout = 300_000)
     public void testDrainCancelsPendingAcquireRequestWhenNotAcquired() throws InterruptedException {
         semaphore.init(1);
         semaphore.acquire();
@@ -404,7 +404,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         }
     }
 
-    @Test(timeout = 300000)
+    @Test(timeout = 300_000)
     public void testRetriedAcquireReceivesPermitsOnlyOnce() throws InterruptedException, ExecutionException {
         semaphore.init(1);
         semaphore.acquire();
@@ -453,13 +453,13 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
 
         spawn(() -> semaphore.increasePermits(3)).get();
 
-        f1.join();
-        f2.join();
+        f1.joinInternal();
+        f2.joinInternal();
 
         assertEquals(2, semaphore.availablePermits());
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testExpiredAndRetriedTryAcquireRequestReceivesFailureResponse() throws InterruptedException, ExecutionException {
         assumeFalse(isJDKCompatible());
 
@@ -475,17 +475,17 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         InternalCompletableFuture<Boolean> f1 = invocationManager.invoke(groupId,
                 new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, SECONDS.toMillis(5)));
 
-        assertFalse(f1.join());
+        assertFalse(f1.joinInternal());
 
         spawn(() -> semaphore.release()).get();
 
         InternalCompletableFuture<Boolean> f2 = invocationManager.invoke(groupId,
                 new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, SECONDS.toMillis(5)));
 
-        assertFalse(f2.join());
+        assertFalse(f2.joinInternal());
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testRetriedDrainRequestIsNotProcessedAgain() throws InterruptedException, ExecutionException {
         assumeFalse(isJDKCompatible());
 
@@ -501,14 +501,14 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         InternalCompletableFuture<Integer> f1 = invocationManager
                 .invoke(groupId, new DrainPermitsOp(objectName, sessionId, threadId, invUid));
 
-        assertEquals(0, (int) f1.join());
+        assertEquals(0, (int) f1.joinInternal());
 
         spawn(() -> semaphore.release()).get();
 
         InternalCompletableFuture<Integer> f2 = invocationManager
                 .invoke(groupId, new DrainPermitsOp(objectName, sessionId, threadId, invUid));
 
-        assertEquals(0, (int) f2.join());
+        assertEquals(0, (int) f2.joinInternal());
     }
 
     @Test

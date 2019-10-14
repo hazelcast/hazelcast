@@ -496,7 +496,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
 
     private void closeSession(HazelcastInstance instance, CPGroupId groupId, long sessionId) {
         RaftService service = getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager().invoke(groupId, new CloseSessionOp(sessionId)).join();
+        service.getInvocationManager().invoke(groupId, new CloseSessionOp(sessionId)).joinInternal();
     }
 
     static void assertValidFence(long fence) {

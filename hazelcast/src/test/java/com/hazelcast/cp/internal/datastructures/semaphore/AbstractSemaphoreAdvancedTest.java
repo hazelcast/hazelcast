@@ -308,7 +308,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         long sessionId = getSessionManager().getSession(groupId);
         UUID invUid = newUnsecureUUID();
 
-        invokeRaftOp(groupId, new ReleasePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).join();
+        invokeRaftOp(groupId, new ReleasePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).joinInternal();
 
         spawn(() -> {
             try {
@@ -318,7 +318,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
             }
         });
 
-        invokeRaftOp(groupId, new ReleasePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).join();
+        invokeRaftOp(groupId, new ReleasePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).joinInternal();
     }
 
     @Test
@@ -333,8 +333,8 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
         UUID invUid = newUnsecureUUID();
 
-        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).join();
-        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).join();
+        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).joinInternal();
+        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).joinInternal();
 
         assertEquals(2, semaphore.availablePermits());
     }
@@ -351,8 +351,8 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
         UUID invUid = newUnsecureUUID();
 
-        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, -1)).join();
-        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, -1)).join();
+        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, -1)).joinInternal();
+        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, -1)).joinInternal();
 
         assertEquals(1, semaphore.availablePermits());
     }
@@ -366,14 +366,14 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
         UUID invUid = newUnsecureUUID();
 
-        int drained1 = this.<Integer>invokeRaftOp(groupId, new DrainPermitsOp(objectName, sessionId, getThreadId(), invUid)).join();
+        int drained1 = this.<Integer>invokeRaftOp(groupId, new DrainPermitsOp(objectName, sessionId, getThreadId(), invUid)).joinInternal();
 
         assertEquals(3, drained1);
         assertEquals(0, semaphore.availablePermits());
 
         spawn(() -> semaphore.increasePermits(1)).get();
 
-        int drained2 = this.<Integer>invokeRaftOp(groupId, new DrainPermitsOp(objectName, sessionId, getThreadId(), invUid)).join();
+        int drained2 = this.<Integer>invokeRaftOp(groupId, new DrainPermitsOp(objectName, sessionId, getThreadId(), invUid)).joinInternal();
 
         assertEquals(3, drained2);
         assertEquals(1, semaphore.availablePermits());
@@ -454,7 +454,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         RaftOp op = new ExpireWaitKeysOp(SemaphoreService.SERVICE_NAME,
                 Collections.singletonList(acquireWaitTimeoutKeyRef[0]));
-        invokeRaftOp(groupId, op).join();
+        invokeRaftOp(groupId, op).joinInternal();
 
         assertTrueEventually(() -> {
             NodeEngineImpl nodeEngine = getNodeEngineImpl(primaryInstance);
@@ -466,8 +466,8 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> assertEquals(1, semaphore.availablePermits()));
 
-        assertFalse(f1.join());
-        assertFalse(f2.join());
+        assertFalse(f1.joinInternal());
+        assertFalse(f2.joinInternal());
     }
 
     @Test

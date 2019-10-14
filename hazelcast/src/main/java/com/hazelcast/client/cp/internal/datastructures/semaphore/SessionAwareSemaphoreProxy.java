@@ -29,9 +29,10 @@ import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
 import com.hazelcast.internal.util.Clock;
@@ -94,6 +95,10 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
                 return;
             } catch (SessionExpiredException e) {
                 sessionManager.invalidateSession(this.groupId, sessionId);
+            } catch (WaitKeyCancelledException e) {
+                sessionManager.releaseSession(this.groupId, sessionId);
+                throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
+                        + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
             }
         }
     }
@@ -139,6 +144,9 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
                 if (timeoutMs <= 0) {
                     return false;
                 }
+            } catch (WaitKeyCancelledException e) {
+                sessionManager.releaseSession(this.groupId, sessionId);
+                return false;
             }
         }
     }

@@ -140,7 +140,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
         assertEquals(7, semaphore.availablePermits());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = IllegalStateException.class)
     public void testRelease_whenNotAcquired() throws InterruptedException {
         assertTrue(semaphore.init(7));
         semaphore.acquire(1);

@@ -19,7 +19,6 @@ package com.hazelcast.cp;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 
@@ -236,20 +235,20 @@ public interface ISemaphore extends DistributedObject {
      * If some threads in the cluster are blocked for acquiring a permit, one
      * of them will unblock by acquiring the permit released by this call.
      * <p>
-     * If the underlying {@link ISemaphore} impl is the non-JDK compatible
-     * CP impl that is configured via {@link SemaphoreConfig} and fetched
-     * via {@link CPSubsystem}, then a thread can only release a permit which
+     * If the underlying {@link ISemaphore} is configured as non-JDK compatible
+     * via {@link SemaphoreConfig} then a thread can only release a permit which
      * it has acquired before. In other words, a thread cannot release a permit
      * without acquiring it first.
      * <p>
-     * Otherwise, which means the underlying impl is either the JDK compatible
-     * CP impl configured via {@link SemaphoreConfig} and fetched
-     * via {@link CPSubsystem}, or it is the old impl fetched via
-     * {@link HazelcastInstance#getSemaphore(String)}, there is no requirement
+     * Otherwise, which means the underlying impl is the JDK compatible
+     * Semaphore is configured via {@link SemaphoreConfig}, there is no requirement
      * that a thread that releases a permit must have acquired that permit by
      * calling one of the {@link #acquire()} methods. A thread can freely
      * release a permit without acquiring it first. In this case, correct usage
      * of a semaphore is established by programming convention in the application.
+     *
+     * @throws IllegalStateException if the Semaphore is non-JDK-compatible
+     *         and the caller does not have a permit
      */
     void release();
 
@@ -264,10 +263,8 @@ public interface ISemaphore extends DistributedObject {
      * it has acquired before. In other words, a thread cannot release a permit
      * without acquiring it first.
      * <p>
-     * Otherwise, which means the underlying impl is either the JDK compatible
-     * CP impl configured via {@link SemaphoreConfig} and fetched
-     * via {@link CPSubsystem}, or it is the old impl fetched via
-     * {@link HazelcastInstance#getSemaphore(String)}, there is no requirement
+     * Otherwise, which means the underlying impl is the JDK compatible
+     * Semaphore is configured via {@link SemaphoreConfig}, there is no requirement
      * that a thread that releases a permit must have acquired that permit by
      * calling one of the {@link #acquire()} methods. A thread can freely
      * release a permit without acquiring it first. In this case, correct usage
@@ -275,6 +272,8 @@ public interface ISemaphore extends DistributedObject {
      *
      * @param permits the number of permits to release
      * @throws IllegalArgumentException if {@code permits} is negative
+     * @throws IllegalStateException if the Semaphore is non-JDK-compatible
+     *         and the caller does not have a permit
      */
     void release(int permits);
 

@@ -21,6 +21,7 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AcquirePermitsOp;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AvailablePermitsOp;
@@ -96,6 +97,10 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
                 return;
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
+            } catch (WaitKeyCancelledException e) {
+                releaseSession(sessionId);
+                throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
+                        + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
             }
         }
     }
@@ -139,6 +144,9 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
                 if (timeoutMs <= 0) {
                     return false;
                 }
+            } catch (WaitKeyCancelledException e) {
+                releaseSession(sessionId);
+                return false;
             }
         }
     }

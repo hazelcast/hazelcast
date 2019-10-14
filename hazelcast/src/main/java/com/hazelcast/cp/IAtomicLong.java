@@ -42,7 +42,7 @@ import java.util.concurrent.CompletionStage;
  * </pre>
  * <p>
  * IAtomicLong is accessed via {@link CPSubsystem#getAtomicLong(String)}.
- * It works ontop of the Raft consensus algorithm. It offers linearizability during crash
+ * It works on top of the Raft consensus algorithm. It offers linearizability during crash
  * failures and network partitions. It is CP with respect to the CAP principle.
  * If a network partition occurs, it remains available on at most one side
  * of the partition.

@@ -92,13 +92,14 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
                     return;
                 }
 
-                throw new LockAcquireLimitReachedException("Lock[" + proxyName + "] reentrant lock limit is already reached!");
+                throw new LockAcquireLimitReachedException("Lock[" + objectName + "] reentrant lock limit is already reached!");
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
                 verifyNoLockedSessionIdPresent(threadId);
             } catch (WaitKeyCancelledException e) {
                 releaseSession(sessionId);
-                throw new IllegalMonitorStateException("Lock[" + proxyName + "] not acquired because its wait is cancelled!");
+                throw new IllegalMonitorStateException("Lock[" + objectName + "] not acquired because the lock call "
+                        + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
             } catch (Throwable t) {
                 if (t instanceof InterruptedException) {
                     throw (InterruptedException) t;
@@ -125,13 +126,14 @@ public abstract class AbstractFencedLockProxy extends SessionAwareProxy implemen
                     return fence;
                 }
 
-                throw new LockAcquireLimitReachedException("Lock[" + proxyName + "] reentrant lock limit is already reached!");
+                throw new LockAcquireLimitReachedException("Lock[" + objectName + "] reentrant lock limit is already reached!");
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
                 verifyNoLockedSessionIdPresent(threadId);
             } catch (WaitKeyCancelledException e) {
                 releaseSession(sessionId);
-                throw new IllegalMonitorStateException("Lock[" + proxyName + "] not acquired because its wait is cancelled!");
+                throw new IllegalMonitorStateException("Lock[" + objectName + "] not acquired because the lock call "
+                        + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
             }
         }
     }

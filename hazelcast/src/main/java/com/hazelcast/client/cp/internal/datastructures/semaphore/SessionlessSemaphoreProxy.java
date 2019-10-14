@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 
 import java.util.UUID;
@@ -80,11 +81,15 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
 
         long clusterWideThreadId = sessionManager.getOrCreateUniqueThreadId(groupId);
         UUID invocationUid = newUnsecureUUID();
-
         ClientMessage request = SemaphoreAcquireCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
                 invocationUid, permits, -1);
         HazelcastClientInstanceImpl client = getClient();
-        new ClientInvocation(client, request, objectName).invoke().joinInternal();
+        try {
+            new ClientInvocation(client, request, objectName).invoke().joinInternal();
+        } catch (WaitKeyCancelledException e) {
+            throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
+                    + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+        }
     }
 
     @Override
@@ -113,8 +118,13 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         ClientMessage request = SemaphoreAcquireCodec.encodeRequest(groupId, objectName, NO_SESSION_ID, clusterWideThreadId,
                 invocationUid, permits, timeoutMs);
         HazelcastClientInstanceImpl client = getClient();
-        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return SemaphoreAcquireCodec.decodeResponse(response).response;
+        try {
+            ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
+            return SemaphoreAcquireCodec.decodeResponse(response).response;
+        } catch (WaitKeyCancelledException e) {
+            throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
+                    + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+        }
     }
 
     @Override
