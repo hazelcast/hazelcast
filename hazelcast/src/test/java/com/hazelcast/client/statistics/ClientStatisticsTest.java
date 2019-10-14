@@ -320,7 +320,6 @@ public class ClientStatisticsTest extends ClientTestSupport {
     private static Map<String, String> getStats(HazelcastClientInstanceImpl client, ClientEngineImpl clientEngine) {
         Map<UUID, String> clientStatistics = clientEngine.getClientStatistics();
         assertNotNull("clientStatistics should not be null", clientStatistics);
-        System.out.println("FATAL " + clientStatistics.size());
         assertEquals("clientStatistics.size() should be 1", 1, clientStatistics.size());
         Set<Map.Entry<UUID, String>> entries = clientStatistics.entrySet();
         Map.Entry<UUID, String> statEntry = entries.iterator().next();
