@@ -25,9 +25,55 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LikePredicateTest {
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testILikePredicateUnicodeCase() {
+        assertTrue(new ILikePredicate("this", "Hazelcast%").apply(entry("Hazelcast is here!")));
+        assertTrue(new ILikePredicate("this", "hazelcast%").apply(entry("Hazelcast is here!")));
+        assertTrue(new ILikePredicate("this", "Хазелкаст%").apply(entry("Хазелкаст с большой буквы")));
+        assertTrue(new ILikePredicate("this", "хазелкаст%").apply(entry("Хазелкаст с большой буквы")));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testLikePredicateUnicodeCase() {
+        assertTrue(new LikePredicate("this", "Hazelcast%").apply(entry("Hazelcast is here!")));
+        assertFalse(new LikePredicate("this", "hazelcast%").apply(entry("Hazelcast is here!")));
+        assertTrue(new LikePredicate("this", "Хазелкаст%").apply(entry("Хазелкаст с большой буквы")));
+        assertFalse(new LikePredicate("this", "хазелкаст%").apply(entry("Хазелкаст с большой буквы")));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testLikePredicateSyntax() {
+        assertTrue(new LikePredicate("this", "%Hazelcast%").apply(entry("Hazelcast is here!")));
+        assertTrue(new LikePredicate("this", "%here_").apply(entry("Hazelcast is here!")));
+        assertTrue(new LikePredicate("this", "%%").apply(entry("Hazelcast is here!")));
+        assertTrue(new LikePredicate("this", "%%").apply(entry("")));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testLikePredicateSyntaxEscape() {
+        assertTrue(new LikePredicate("this", "%\\_is\\_%").apply(entry("Hazelcast_is_here!")));
+        assertTrue(new LikePredicate("this", "%is\\%here!").apply(entry("Hazelcast%is%here!")));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void negative_testLikePredicateSyntax() {
+        assertFalse(new LikePredicate("this", "_Hazelcast%").apply(entry("Hazelcast is here!")));
+        assertFalse(new LikePredicate("this", "_").apply(entry("")));
+        assertFalse(new LikePredicate("this", "Hazelcast%").apply(entry("")));
+    }
 
     @Test
     public void testEqualsAndHashCode() {
