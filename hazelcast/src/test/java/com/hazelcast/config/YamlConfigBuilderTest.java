@@ -2850,7 +2850,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
         assertTrue(secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig);
         JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) secureStoreConfig;
-        assertEquals(keyStorePath, keyStoreConfig.getPath().getAbsolutePath());
+        assertEquals(new File(keyStorePath).getAbsolutePath(), keyStoreConfig.getPath().getAbsolutePath());
         assertEquals(keyStoreType, keyStoreConfig.getType());
         assertEquals(keyStorePassword, keyStoreConfig.getPassword());
         assertEquals(pollingInterval, keyStoreConfig.getPollingInterval());
