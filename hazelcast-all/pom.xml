@@ -153,7 +153,7 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-aws</artifactId>
             <version>3.0</version>
-        </dependency
+        </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-gcp</artifactId>
