@@ -424,15 +424,10 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     @Test
     public void test_removeCPMemberFromNonMaster() throws IOException {
         Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance2, instance3);
 
         CPMember crashedCPMember = instance2.getCPSubsystem().getLocalCPMember();
         instance2.getLifecycleService().terminate();
