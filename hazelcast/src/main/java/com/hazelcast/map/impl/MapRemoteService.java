@@ -46,7 +46,7 @@ class MapRemoteService implements RemoteService {
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name) {
+    public DistributedObject createDistributedObject(String name, boolean local) {
         Config config = nodeEngine.getConfig();
         MapConfig mapConfig = config.findMapConfig(name);
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
@@ -67,7 +67,7 @@ class MapRemoteService implements RemoteService {
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         mapServiceContext.destroyMap(name);
     }
 }

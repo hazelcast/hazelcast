@@ -85,7 +85,7 @@ final class ClientCacheHelper {
      * @param <K>                type of the key of the cache
      * @param <V>                type of the value of the cache
      * @return the created cache configuration
-     * @see com.hazelcast.cache.impl.operation.CacheCreateConfigOperation
+     * @see com.hazelcast.cache.impl.operation.AddCacheConfigOperation
      */
     static <K, V> CacheConfig<K, V> createCacheConfig(HazelcastClientInstanceImpl client,
                                                       CacheConfig<K, V> newCacheConfig) {

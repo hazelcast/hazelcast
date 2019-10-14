@@ -52,13 +52,13 @@ public class ReliableTopicService implements ManagedService, RemoteService, Stat
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
         ReliableTopicConfig topicConfig = nodeEngine.getConfig().findReliableTopicConfig(objectName);
         return new ReliableTopicProxy(objectName, nodeEngine, this, topicConfig);
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
+    public void destroyDistributedObject(String objectName, boolean local) {
         statsMap.remove(objectName);
     }
 

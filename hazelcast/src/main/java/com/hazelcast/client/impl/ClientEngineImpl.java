@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.TransactionalMessageTask;
 import com.hazelcast.client.impl.protocol.task.UrgentMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.AbstractMapQueryMessageTask;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
@@ -48,7 +49,6 @@ import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -76,6 +76,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -93,7 +94,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
      * Service name to be used in requests.
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
-
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
     private static final int BLOCKING_THREADS_PER_CORE = 20;
     private static final int THREADS_PER_CORE = 1;
@@ -118,6 +118,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ClientPartitionListenerService partitionListenerService;
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
+    private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -588,5 +589,27 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     @Override
     public void onClientAcquiredResource(UUID uuid) {
         lifecycleMonitor.addClientToMonitor(uuid);
+    }
+
+    @Override
+    public void addBackupListener(UUID clientUuid, Consumer<Long> backupListener) {
+        backupListeners.put(clientUuid, backupListener);
+    }
+
+    @Override
+    public void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId) {
+        Consumer<Long> backupListener = backupListeners.get(clientUUID);
+        if (backupListener != null) {
+            backupListener.accept(clientCorrelationId);
+        }
+    }
+
+    @Override
+    public boolean deregisterBackupListener(UUID clientUUID) {
+        return backupListeners.remove(clientUUID) != null;
+    }
+
+    public Map<UUID, Consumer<Long>> getBackupListeners() {
+        return backupListeners;
     }
 }

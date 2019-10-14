@@ -44,7 +44,7 @@ public class UnsafeRaftReplicateOp extends AbstractUnsafeRaftOp implements Backu
         if (response == PostponedResponse.INSTANCE) {
             RaftService service = getService();
             service.registerUnsafeWaitingOperation(groupId, commitIndex, this);
-            return CallStatus.DONE_VOID;
+            return CallStatus.DONE_VOID_BACKUP;
         }
         return CallStatus.DONE_RESPONSE;
     }

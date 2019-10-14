@@ -53,6 +53,11 @@ public class CallStatus {
     public static final int OFFLOAD_ORDINAL = 3;
 
     /**
+     * The ordinal value for an {@link #DONE_VOID_BACKUP}.
+     */
+    public static final int DONE_VOID_BACKUP_ORDINAL = 4;
+
+    /**
      * Signals that the Operation is done running and that a response is ready
      * to be returned. Most of the normal operations like IAtomicLong.get will
      * fall in this category.
@@ -66,6 +71,12 @@ public class CallStatus {
      * cluster operations) that don't return a response.
      */
     public static final CallStatus DONE_VOID = new CallStatus(DONE_VOID_ORDINAL);
+
+    /**
+     * Signals that the Operation is done running, its backup should be sent,
+     * but no response will be returned.
+     */
+    public static final CallStatus DONE_VOID_BACKUP = new CallStatus(DONE_VOID_BACKUP_ORDINAL);
 
     /**
      * Indicates that the call could not complete because waiting is required.
