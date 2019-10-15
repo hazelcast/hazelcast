@@ -72,6 +72,7 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableCollection;
@@ -522,7 +523,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         RaftGroupId groupId = group.id();
         if (group.containsMember(getLocalCPMember().toRaftEndpoint())) {
-            raftService.createRaftNode(groupId, group.members());
+            createRaftNodeAsync(group);
         } else {
             // Broadcast group-info to non-metadata group members
             OperationService operationService = nodeEngine.getOperationService();
@@ -536,6 +537,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
 
         return groupId;
+    }
+
+    private void createRaftNodeAsync(CPGroupInfo group) {
+        nodeEngine.getExecutionService().execute(ASYNC_EXECUTOR, () -> raftService.createRaftNode(group.id(), group.members()));
     }
 
     private Map<UUID, CPMemberInfo> getActiveMembersMap() {
@@ -838,7 +843,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
             if (getLocalCPMember().toRaftEndpoint().equals(addedMember)) {
                 // we are the added member to the group, we can try to create the local raft node if not created already
-                raftService.createRaftNode(group.id(), group.members());
+                createRaftNodeAsync(group);
             }
 
             return true;

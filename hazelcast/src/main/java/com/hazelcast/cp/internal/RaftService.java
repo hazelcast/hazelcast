@@ -85,6 +85,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
@@ -357,7 +358,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             try {
                 future.get();
             } catch (Exception e) {
-                logger.fine(e);
+                logger.warning(e);
             }
         }
 
@@ -736,6 +737,15 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     void createRaftNode(CPGroupId groupId, Collection<RaftEndpoint> members, RaftEndpoint localCPMember) {
+        /*
+         * WARNING:
+         * This method is acquiring a lock.
+         * Make sure that you don't call this method from a partition thread.
+         */
+
+        assert !(Thread.currentThread() instanceof PartitionOperationThread)
+                : "Cannot create RaftNode of " + groupId + " in a partition thread!";
+
         if (nodes.containsKey(groupId) || !isStartCompleted() || !hasSameSeed(groupId)) {
             return;
         }

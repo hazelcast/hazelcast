@@ -266,7 +266,7 @@ public final class RaftNodeImpl implements RaftNode {
 
     @Override
     public InternalCompletableFuture forceSetTerminatedStatus() {
-        final InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
+        InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         if (isTerminatedOrSteppedDown()) {
             resultFuture.complete(null);
             return resultFuture;
