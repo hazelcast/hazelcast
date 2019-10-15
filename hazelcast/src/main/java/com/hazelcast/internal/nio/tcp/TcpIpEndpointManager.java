@@ -22,7 +22,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricTaggerSupplier;
-import com.hazelcast.internal.metrics.MetricsExtractor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
@@ -404,14 +404,14 @@ public class TcpIpEndpointManager
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
         if (endpointQualifier == null) {
             MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.connection");
-            extractor.extractMetrics(tagger, this);
+            context.collect(tagger, this);
         } else {
             MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.connection")
                                                 .withIdTag("endpoint", endpointQualifier.toMetricsPrefixString());
-            extractor.extractMetrics(tagger, this);
+            context.collect(tagger, this);
         }
     }
 

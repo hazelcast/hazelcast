@@ -66,7 +66,7 @@ import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricTaggerSupplier;
-import com.hazelcast.internal.metrics.MetricsExtractor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -798,13 +798,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
         MetricTagger rootTagger = taggerSupplier.getMetricTagger("raft.group");
         for (Entry<CPGroupId, RaftNodeMetrics> entry : nodeMetrics.entrySet()) {
             CPGroupId groupId = entry.getKey();
             MetricTagger tagger = rootTagger.withIdTag("groupId", String.valueOf(groupId.getId()))
                     .withTag("name", groupId.getName());
-            extractor.extractMetrics(tagger, entry.getValue());
+            context.collect(tagger, entry.getValue());
         }
     }
 

@@ -23,7 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricTaggerSupplier;
-import com.hazelcast.internal.metrics.MetricsExtractor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -390,23 +390,23 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
             for (ManagedExecutorService executorService : executors.values()) {
                 MetricTagger tagger = taggerSupplier.getMetricTagger("internal-executor")
                                                     .withIdTag("executor", executorService.getName());
-                extractor.extractMetrics(tagger, executorService);
+                context.collect(tagger, executorService);
             }
 
             for (ManagedExecutorService executorService : durableExecutors.values()) {
                 MetricTagger tagger = taggerSupplier.getMetricTagger("durable-executor")
                                                     .withIdTag("executor", executorService.getName());
-                extractor.extractMetrics(tagger, executorService);
+                context.collect(tagger, executorService);
             }
 
             for (ManagedExecutorService executorService : scheduleDurableExecutors.values()) {
                 MetricTagger tagger = taggerSupplier.getMetricTagger("scheduled-durable-executor")
                                                     .withIdTag("executor", executorService.getName());
-                extractor.extractMetrics(tagger, executorService);
+                context.collect(tagger, executorService);
             }
         }
     }
