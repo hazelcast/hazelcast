@@ -291,8 +291,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return Bits.readInt(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
-    @Deprecated
-    public final String readLine() throws EOFException {
+    @Override
+    public final String readLine() {
         throw new UnsupportedOperationException();
     }
 
