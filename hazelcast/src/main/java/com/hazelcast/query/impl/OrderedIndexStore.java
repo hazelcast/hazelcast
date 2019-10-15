@@ -148,13 +148,6 @@ public class OrderedIndexStore extends BaseIndexStore {
                 case GREATER_OR_EQUAL:
                     subMap = recordMap.tailMap(searchedValue, true);
                     break;
-                case NOT_EQUAL:
-                    for (Map.Entry<Comparable, Map<Data, QueryableEntry>> entry : recordMap.entrySet()) {
-                        if (Comparables.compare(searchedValue, entry.getKey()) != 0) {
-                            copyToMultiResultSet(results, entry.getValue());
-                        }
-                    }
-                    return results;
                 default:
                     throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
             }

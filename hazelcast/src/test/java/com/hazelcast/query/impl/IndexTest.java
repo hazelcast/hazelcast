@@ -221,7 +221,6 @@ public class IndexTest {
         }
 
         assertEquals(2, strIndex.getRecords((Comparable) null).size());
-        assertEquals(998, strIndex.getRecords(Comparison.NOT_EQUAL, null).size());
     }
 
     private class TestPortableFactory implements PortableFactory {
@@ -517,9 +516,6 @@ public class IndexTest {
         assertEquals(2, index.getRecords(Comparison.GREATER, 66L).size());
         assertEquals(3, index.getRecords(Comparison.GREATER_OR_EQUAL, 66L).size());
         assertEquals(3, index.getRecords(Comparison.GREATER_OR_EQUAL, 61L).size());
-        assertEquals(3, index.getRecords(Comparison.NOT_EQUAL, 61L).size());
-        assertEquals(2, index.getRecords(Comparison.NOT_EQUAL, 66L).size());
-        assertEquals(1, index.getRecords(Comparison.NOT_EQUAL, 555L).size());
         assertEquals(3, index.getRecords(new Comparable[]{66L, 555L, 34234L}).size());
         assertEquals(2, index.getRecords(new Comparable[]{555L, 34234L}).size());
 
