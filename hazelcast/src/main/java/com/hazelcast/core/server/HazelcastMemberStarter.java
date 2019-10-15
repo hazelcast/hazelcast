@@ -27,11 +27,11 @@ import java.io.UnsupportedEncodingException;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 /**
- * Starts a Hazelcast server.
+ * Starts a Hazelcast Member.
  */
-public final class StartServer {
+public final class HazelcastMemberStarter {
 
-    private StartServer() {
+    private HazelcastMemberStarter() {
     }
 
     /**

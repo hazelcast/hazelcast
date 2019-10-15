@@ -27,7 +27,7 @@ Import-Package: javax.annotation,javax.cache;version="[1.0,2)";resolut
  .osgi.framework;version="[1.5,2)";resolution:=optional,org.slf4j;vers
  ion="[1.6,2)";resolution:=optional,org.w3c.dom,org.xml.sax,sun.misc;r
  esolution:=optional
-Main-Class: com.hazelcast.core.server.StartServer
+Main-Class: com.hazelcast.core.server.HazelcastMemberStarter
 Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  g,com.hazelcast.spi,com.hazelcast.spi.properties,com.hazelcast.internal.util,c
  om.hazelcast.config,com.hazelcast.internal.cluster.impl.operations,co

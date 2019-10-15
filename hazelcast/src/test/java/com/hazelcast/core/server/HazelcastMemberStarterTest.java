@@ -33,7 +33,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class StartServerTest extends HazelcastTestSupport {
+public class HazelcastMemberStarterTest
+        extends HazelcastTestSupport {
 
     private File parent = new File("ports");
     private File child = new File(parent, "hz.ports");
@@ -55,14 +56,14 @@ public class StartServerTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor() {
-        assertUtilityConstructor(StartServer.class);
+        assertUtilityConstructor(HazelcastMemberStarter.class);
     }
 
     @Test
     public void testMain() throws Exception {
         System.setProperty("print.port", child.getName());
 
-        StartServer.main(new String[]{});
+        HazelcastMemberStarter.main(new String[]{});
 
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
         assertTrue(child.exists());
