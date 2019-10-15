@@ -16,8 +16,10 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
@@ -29,7 +31,6 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -565,10 +566,10 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
             EventServiceSegment existingSegment = segments.putIfAbsent(service, newSegment);
             if (existingSegment == null) {
                 segment = newSegment;
-                nodeEngine.getMetricsRegistry()
-                          .newMetricTagger("event")
-                          .withIdTag("service", service)
-                          .registerStaticMetrics(newSegment);
+                MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
+                MetricTagger tagger = metricsRegistry.newMetricTagger("event")
+                                                     .withIdTag("service", service);
+                metricsRegistry.registerStaticMetrics(tagger, newSegment);
             } else {
                 segment = existingSegment;
             }

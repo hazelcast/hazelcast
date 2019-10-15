@@ -16,15 +16,9 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.DoubleProbeFunction;
-import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.ProbeFunction;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeUnit;
 
 import javax.annotation.CheckReturnValue;
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.metrics.MetricsUtil.containsSpecialCharacters;
 import static com.hazelcast.internal.metrics.MetricsUtil.escapeMetricNamePart;
@@ -120,64 +114,4 @@ public class MetricTaggerImpl implements MetricTagger {
         return sb.toString();
     }
 
-    @Override
-    public <S> void registerStaticProbe(
-            @Nonnull S source,
-            @Nonnull String metricName,
-            @Nonnull ProbeLevel level,
-            @Nonnull ProbeUnit unit,
-            @Nonnull DoubleProbeFunction<S> probe) {
-
-        MetricTaggerImpl tagger = withTag("unit", unit.name().toLowerCase())
-                .withMetricTag(metricName);
-        metricsRegistry.registerInternal(source, tagger, level, probe);
-    }
-
-    @Override
-    public <S> void registerStaticProbe(
-            @Nonnull S source,
-            @Nonnull String metricName,
-            @Nonnull ProbeLevel level,
-            @Nonnull DoubleProbeFunction<S> probe) {
-        MetricTaggerImpl tagger = withMetricTag(metricName);
-        metricsRegistry.registerInternal(source, tagger, level, probe);
-    }
-
-    @Override
-    public <S> void registerStaticProbe(
-            @Nonnull S source,
-            @Nonnull String metricName,
-            @Nonnull ProbeLevel level,
-            @Nonnull ProbeUnit unit,
-            @Nonnull LongProbeFunction<S> probe) {
-        MetricTaggerImpl tagger = withTag("unit", unit.name().toLowerCase())
-                .withMetricTag(metricName);
-        metricsRegistry.registerInternal(source, tagger, level, probe);
-    }
-
-    @Override
-    public <S> void registerStaticProbe(
-            @Nonnull S source,
-            @Nonnull String metricName,
-            @Nonnull ProbeLevel level,
-            @Nonnull LongProbeFunction<S> probe) {
-        MetricTaggerImpl tagger = withMetricTag(metricName);
-        metricsRegistry.registerInternal(source, tagger, level, probe);
-    }
-
-    <S> void registerStaticProbe(S source, String metricName, ProbeLevel level, ProbeFunction probe) {
-        metricsRegistry.registerInternal(source, withMetricTag(metricName), level, probe);
-    }
-
-    @Override
-    public <S> void registerStaticMetrics(S source) {
-        SourceMetadata metadata = metricsRegistry.loadSourceMetadata(source.getClass());
-        for (FieldProbe field : metadata.fields()) {
-            field.register(this, source);
-        }
-
-        for (MethodProbe method : metadata.methods()) {
-            method.register(this, source);
-        }
-    }
 }

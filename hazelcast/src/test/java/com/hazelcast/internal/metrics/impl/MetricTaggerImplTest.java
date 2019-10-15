@@ -16,13 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTarget;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.ProbeUnit;
-import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,45 +25,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricTaggerImplTest {
-
-    @Probe
-    private int probe1 = 1;
-
-    @Probe(name = "secondProbe", level = ProbeLevel.MANDATORY, unit = ProbeUnit.BYTES)
-    private int probe2 = 2;
-
-    @Probe(level = ProbeLevel.DEBUG)
-    private int probe3 = 3;
-
-    @Test
-    public void test_scanAndRegister() {
-        testScanAndRegister(null);
-    }
-
-    @Test
-    public void test_scanAndRegisterWithPrefix() {
-        testScanAndRegister("testProbe");
-    }
-
-    @Test
-    public void test_register() {
-        testRegister(null);
-    }
-
-    @Test
-    public void test_registerWithPrefix() {
-        testRegister("test.prefix");
-    }
 
     @Test
     public void testMetricId_withPrefixAndId() {
@@ -145,62 +105,5 @@ public class MetricTaggerImplTest {
                 .withMetricTag("metricValue");
 
         assertEquals("[metric=metricValue]", tagger.metricName());
-    }
-
-    private void testScanAndRegister(String prefix) {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTagger builder = prefix != null ? registry.newMetricTagger(prefix) : registry.newMetricTagger();
-        builder
-                .withTag("tag1", "value1")
-                .registerStaticMetrics(this);
-
-        assertProbes(registry, prefix);
-    }
-
-    private void testRegister(String prefix) {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTagger builder = prefix != null ? registry.newMetricTagger(prefix) : registry.newMetricTagger();
-        builder = builder.withTag("tag1", "value1");
-        builder.registerStaticProbe(this, "probe1", ProbeLevel.INFO, ProbeUnit.COUNT,
-                (LongProbeFunction<MetricTaggerImplTest>) source -> source.probe1);
-        builder.registerStaticProbe(this, "secondProbe", ProbeLevel.INFO, ProbeUnit.BYTES,
-                (LongProbeFunction<MetricTaggerImplTest>) source -> source.probe2);
-
-        assertProbes(registry, prefix);
-    }
-
-    private void assertProbes(MetricsRegistryImpl registry, String prefix) {
-        prefix = prefix != null ? prefix + "." : "";
-        final String p1Name = "[tag1=value1,unit=count,metric=" + prefix + "probe1]";
-        final String p2Name = "[tag1=value1,unit=bytes,metric=" + prefix + "secondProbe]";
-        assertEquals(new HashSet<>(asList(p1Name, p2Name)), registry.getNames());
-
-        registry.collect(new MetricsCollector() {
-            @Override
-            public void collectLong(String name, long value, Set<MetricTarget> excludedTargets) {
-                if (p1Name.equals(name)) {
-                    assertEquals(probe1, value);
-                } else if (p2Name.equals(name)) {
-                    assertEquals(probe2, value);
-                } else {
-                    fail("Unknown metric: " + name);
-                }
-            }
-
-            @Override
-            public void collectDouble(String name, double value, Set<MetricTarget> excludedTargets) {
-                fail("Unknown metric: " + name);
-            }
-
-            @Override
-            public void collectException(String name, Exception e, Set<MetricTarget> excludedTargets) {
-                throw new RuntimeException(e);
-            }
-
-            @Override
-            public void collectNoValue(String name, Set<MetricTarget> excludedTargets) {
-                fail("Unknown metric: " + name);
-            }
-        });
     }
 }

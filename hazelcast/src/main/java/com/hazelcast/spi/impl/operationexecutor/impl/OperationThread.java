@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
@@ -187,9 +188,9 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.newMetricTagger("operation.thread")
-                .withIdTag("thread", getName())
-                .registerStaticMetrics(this);
+        MetricTagger tagger = registry.newMetricTagger("operation.thread")
+                                      .withIdTag("thread", getName());
+        registry.registerStaticMetrics(tagger, this);
     }
 
     public final void shutdown() {

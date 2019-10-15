@@ -24,6 +24,7 @@ import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
@@ -132,7 +133,22 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(source, "source can't be null");
         checkNotNull(namePrefix, "namePrefix can't be null");
 
-        newMetricTagger(namePrefix).registerStaticMetrics(source);
+        registerStaticMetrics(newMetricTagger(namePrefix), source);
+    }
+
+    @Override
+    public <S> void registerStaticMetrics(MetricTagger tagger, S source) {
+        checkNotNull(tagger, "tagger can't be null");
+        checkNotNull(source, "source can't be null");
+
+        SourceMetadata metadata = loadSourceMetadata(source.getClass());
+        for (FieldProbe field : metadata.fields()) {
+            field.register(this, tagger, source);
+        }
+
+        for (MethodProbe method : metadata.methods()) {
+            method.register(this, tagger, source);
+        }
     }
 
     @Override
@@ -146,7 +162,45 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
+    public <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+                                        ProbeFunction function) {
+        registerStaticProbeWithUnit(source, tagger, name, level, unit, function);
+    }
+
+    @Override
     public <S> void registerStaticProbe(S source, String name, ProbeLevel level, LongProbeFunction<S> function) {
+        registerStaticProbeWithoutUnit(source, name, level, function);
+    }
+
+    @Override
+    public <S> void registerStaticProbe(S source, String name, ProbeLevel level, ProbeUnit unit, LongProbeFunction<S> function) {
+        registerStaticProbeWithUnit(source, newMetricTagger(), name, level, unit, function);
+    }
+
+    @Override
+    public <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+                                        LongProbeFunction<S> function) {
+        registerStaticProbeWithUnit(source, tagger, name, level, unit, function);
+    }
+
+    @Override
+    public <S> void registerStaticProbe(S source, String name, ProbeLevel level, DoubleProbeFunction<S> function) {
+        registerStaticProbeWithoutUnit(source, name, level, function);
+    }
+
+    @Override
+    public <S> void registerStaticProbe(S source, String name, ProbeLevel level, ProbeUnit unit,
+                                        DoubleProbeFunction<S> function) {
+        registerStaticProbeWithUnit(source, newMetricTagger(), name, level, unit, function);
+    }
+
+    @Override
+    public <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+                                        DoubleProbeFunction<S> function) {
+        registerStaticProbeWithUnit(source, tagger, name, level, unit, function);
+    }
+
+    private <S> void registerStaticProbeWithoutUnit(S source, String name, ProbeLevel level, ProbeFunction function) {
         checkNotNull(source, "source can't be null");
         checkNotNull(name, "name can't be null");
         checkNotNull(function, "function can't be null");
@@ -155,15 +209,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         registerInternal(source, newMetricTagger().withMetricTag(name), level, function);
     }
 
-    @Override
-    public <S> void registerStaticProbe(S source, String name, ProbeLevel level, DoubleProbeFunction<S> function) {
-        checkNotNull(source, "source can't be null");
-        checkNotNull(name, "name can't be null");
-        checkNotNull(function, "function can't be null");
-        checkNotNull(level, "level can't be null");
-
-        MetricTagger metricTagger = newMetricTagger();
-        registerInternal(source, metricTagger.withMetricTag(name), level, function);
+    private <S> void registerStaticProbeWithUnit(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+                                                 ProbeFunction function) {
+        registerInternal(source, tagger.withTag("unit", unit.name().toLowerCase())
+                                       .withMetricTag(name),
+                level, function);
     }
 
     ProbeInstance getProbeInstance(String name) {
