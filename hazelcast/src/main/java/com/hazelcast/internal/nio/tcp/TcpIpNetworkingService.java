@@ -128,7 +128,8 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
             refreshStatsTask.registerMetrics(metricsRegistry);
         }
 
-        metricsRegistry.registerDynamicMetricsProvider(new MetricsProvider(acceptorRef, endpointManagers));
+        metricsRegistry
+                .registerDynamicMetricsProvider(new MetricsProvider(acceptorRef, endpointManagers, unifiedEndpointManager));
     }
 
     private void initEndpointManager(Config config, IOService ioService,
@@ -363,11 +364,14 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
     private static final class MetricsProvider implements DynamicMetricsProvider {
         private final AtomicReference<TcpIpAcceptor> acceptorRef;
         private final ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers;
+        private final TcpIpUnifiedEndpointManager unifiedEndpointManager;
 
         private MetricsProvider(AtomicReference<TcpIpAcceptor> acceptorRef,
-                                ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers) {
+                                ConcurrentMap<EndpointQualifier, EndpointManager<TcpIpConnection>> endpointManagers,
+                                TcpIpUnifiedEndpointManager unifiedEndpointManager) {
             this.acceptorRef = acceptorRef;
             this.endpointManagers = endpointManagers;
+            this.unifiedEndpointManager = unifiedEndpointManager;
         }
 
         @Override
@@ -385,6 +389,8 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
                     ((DynamicMetricsProvider) manager).provideDynamicMetrics(taggerSupplier, context);
                 }
             }
+
+            unifiedEndpointManager.provideDynamicMetrics(taggerSupplier, context);
         }
     }
 

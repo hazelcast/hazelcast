@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS;
 import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
+import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.WEAK;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Boolean.TRUE;
@@ -63,6 +64,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     // use ConcurrentReferenceHashMap to allow unreferenced Class instances to be garbage collected
     private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
             = new ConcurrentReferenceHashMap<>();
+
+    private final ConcurrentMap<String, AbstractGauge> gauges = new ConcurrentReferenceHashMap<>(STRONG, WEAK);
 
     private final ConcurrentMap<DynamicMetricsProvider, Boolean> metricSourceMap
             = new ConcurrentReferenceHashMap<>(STRONG, STRONG, of(IDENTITY_COMPARISONS));
@@ -242,6 +245,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             probeInstance.source = source;
             probeInstance.function = function;
         }
+
+        AbstractGauge gauge = gauges.get(metricId);
+        if (gauge != null) {
+            gauge.onProbeInstanceSet(probeInstance);
+        }
     }
 
     private void logOverwrite(ProbeInstance probeInstance) {
@@ -254,24 +262,35 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     public LongGaugeImpl newLongGauge(String name) {
         checkNotNull(name, "name can't be null");
 
-        return new LongGaugeImpl(this, name);
+        LongGaugeImpl gauge = new LongGaugeImpl(this, name);
+        gauges.put(name, gauge);
+        return gauge;
     }
 
     @Override
     public DoubleGauge newDoubleGauge(String name) {
         checkNotNull(name, "name can't be null");
 
-        return new DoubleGaugeImpl(this, name);
+        DoubleGaugeImpl gauge = new DoubleGaugeImpl(this, name);
+        gauges.put(name, gauge);
+        return gauge;
     }
 
     @Override
     public void collect(MetricsCollector collector) {
         checkNotNull(collector, "collector can't be null");
 
-        MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(this::loadSourceMetadata, collector, minimumLevel);
+        MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(this::loadSourceMetadata,
+                this::lookupMetricValueCatcher, collector, minimumLevel);
 
-        collectionCycle.collectStaticMetrics(probeInstances.values());
+        collectionCycle.collectStaticMetrics(probeInstances);
         collectionCycle.collectDynamicMetrics(metricSourceMap.keySet());
+        collectionCycle.notifyAllGauges(gauges.values());
+    }
+
+    MetricValueCatcher lookupMetricValueCatcher(String metricId) {
+        AbstractGauge gauge = gauges.get(metricId);
+        return gauge != null ? gauge.getCatcherOrNull() : null;
     }
 
     @Override
