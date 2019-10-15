@@ -669,8 +669,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
     private void handleCPGroup(HttpPostCommand command) throws UnsupportedEncodingException {
         if (!checkCredentials(command)) {
-            textCommandService.sendResponse(command);
             command.send403();
+            textCommandService.sendResponse(command);
             return;
         }
 
