@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricTaggerSupplier;
-import com.hazelcast.internal.metrics.MetricsExtractor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
@@ -371,18 +371,18 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
         }
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
             MetricTagger tagger = taggerSupplier.getMetricTagger("tcp");
-            extractor.extractMetrics(tagger, this);
+            context.collect(tagger, this);
 
             TcpIpAcceptor acceptor = this.acceptorRef.get();
             if (acceptor != null) {
-                acceptor.provideDynamicMetrics(taggerSupplier, extractor);
+                acceptor.provideDynamicMetrics(taggerSupplier, context);
             }
 
             for (EndpointManager<TcpIpConnection> manager : this.endpointManagers.values()) {
                 if (manager instanceof DynamicMetricsProvider) {
-                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(taggerSupplier, extractor);
+                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(taggerSupplier, context);
                 }
             }
         }

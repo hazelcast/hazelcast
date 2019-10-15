@@ -19,7 +19,7 @@ package com.hazelcast.internal.metrics;
 /**
  * Interface used to get a {@link MetricTagger} based on its namespace.
  *
- * @see DynamicMetricsProvider#provideDynamicMetrics(MetricTaggerSupplier, MetricsExtractor)
+ * @see DynamicMetricsProvider#provideDynamicMetrics(MetricTaggerSupplier, MetricsCollectionContext)
  */
 @FunctionalInterface
 public interface MetricTaggerSupplier {
